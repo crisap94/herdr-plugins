@@ -58,7 +58,14 @@ function recapsOf(board: Board, tabs: readonly TabId[], cause: RecapCause): read
         .map(({ tab, lanes }) => ({ kind: 'recap', tab, lanes, cause }));
 }
 
-function onDetected(board: Board, seen: SeenLane, policy: Policy): Step {
+/** An agent appeared in a pane the board held as a column: it is a lane now, and no column. */
+function withoutColumnAt(board: Board, pane: string): Board {
+    const columns = new Map([...board.columns].filter(([, placed]) => String(placed.pane) !== pane));
+    return columns.size === board.columns.size ? board : { ...board, columns };
+}
+
+function onDetected(held: Board, seen: SeenLane, policy: Policy): Step {
+    const board = withoutColumnAt(held, seen.paneId);
     if (!wanted(seen, policy)) {
         return step(board);
     }
@@ -102,10 +109,15 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
     return recapsOf(after, tabs, 'turn-ended');
 }
 
+/**
+ * A pane that hosts an agent is never a column, whatever it is called (any agent kind, not only the
+ * ones we write recaps about): the board drops it if it had taken it for one, and never adopts it.
+ */
 function columnsAfter(board: Board, seen: Reconciliation): ReadonlyMap<TabId, Placement> {
     const alive = new Set(seen.panes);
-    const columns = new Map([...board.columns].filter(([, placed]) => alive.has(placed.pane)));
-    for (const column of seen.columns) {
+    const agents = new Set(seen.lanes.map((lane) => lane.paneId));
+    const columns = new Map([...board.columns].filter(([, placed]) => alive.has(placed.pane) && !agents.has(placed.pane)));
+    for (const column of seen.columns.filter((seenColumn) => !agents.has(seenColumn.paneId))) {
         const tab = column.tabId as TabId;
         if (!columns.has(tab)) {
             columns.set(tab, { pane: column.paneId as PaneId, shape: column.shape });
@@ -167,13 +179,18 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
     }
 }
 
+/** The last line of defence: no close-column intent ever names a pane the board knows as a lane. */
+function closesLane(intent: Intent, ...boards: readonly Board[]): boolean {
+    return intent.kind === 'close-column' && boards.some((board) => board.lanes.has(intent.column));
+}
+
 /** The whole domain: (board, observation, instant) → (board, intents). No I/O, no text. */
 export function observe(board: Board, observation: Observation, now: Instant, policy: Policy): Outcome {
     const routed = route(board, observation, now, policy);
     const [settled, columnIntents] = settle(routed.board, now, policy);
     return {
         board: settled,
-        intents: [...routed.intents, ...columnIntents],
+        intents: [...routed.intents, ...columnIntents].filter((intent) => !closesLane(intent, board, routed.board)),
         watchSet: routed.changed ? 'changed' : 'unchanged',
     };
 }

@@ -42,6 +42,14 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-never-types` | no `send_keys`/`send_text`/`send_input`/`agent.prompt`: a recap never types into a lane |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
 
+**A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts
+an agent.** It is checked three times — `adapters/column-panes.ts` (a column is only a pane titled EXACTLY
+`tab-recap`/`tab-recap:bar` that hosts no agent and, when herdr reports a label, is labelled `Recap`), the domain
+(`fold.ts` never adopts an agent pane as a column and never lets a `close-column` name a lane), and the `HerdrFleet`
+edge (`close`/`resize`/`swap` look the pane up in a fresh snapshot first and refuse with an `Unknown`). The two
+deliberate contacts with a lane are the swap's *target* (the top pane, only re-positioned) and putting the operator's
+focus back on their own pane.
+
 ## Three facts about herdr that shaped the code (measured on 0.9.0)
 
 - **One `events.subscribe` per connection.** A second one resets the socket, so a changed watch
