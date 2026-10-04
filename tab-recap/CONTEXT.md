@@ -8,9 +8,9 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 
 | Term | Means | Is NOT |
 | --- | --- | --- |
-| **Lane** | A herdr pane occupied by a recognised coding agent (`claude`, `codex`). Lanes are what the columns follow; the *harness* below is what writes. | any pane; a column |
+| **Lane** | A herdr pane occupied by a recognised coding agent (`claude`, `codex`). Lanes are what the columns follow; the *harness* below is what writes. **A recap never closes, resizes or moves a lane's pane** — whatever its title says. | any pane; a column |
 | **Tab** | A herdr tab. **The unit of a recap column**: one tab, at most one column. | a workspace |
-| **Column** | The recap pane the daemon docks in a tab, keeps sized and reopens. It has a **shape**: `side` (right edge, wide tabs) or `bar`. | a *sidebar*, a *panel* |
+| **Column** | The recap pane the daemon docks in a tab, keeps sized and reopens. It has a **shape**: `side` (right edge, wide tabs) or `bar`. Recognised by its terminal title being EXACTLY `tab-recap` (side) or `tab-recap:bar` (bar), by hosting no agent and, when herdr reports it, the manifest label `Recap`; a lane that merely has a similar name is never a column. | a *sidebar*, a *panel* |
 | **Bar** | A column's phone shape: ONE row along the top of a narrow tab — 📝, a status dot per lane, one headline (what needs you, else what is happening now). A tap opens the modal. Docked only in the tab you are looking at: putting it on top takes a pane swap, and a swap moves herdr's focus. | a status line |
 | **Modal** | The same view as a column, opened on demand as a herdr popup over everything; `q`/`Esc` closes it. The phone's view of a tab's recap, where a column does not fit. | a column; a notification |
 | **Board** | The domain state: every lane, every column, the reopen history. The only thing the fold changes. | herdr's session snapshot |

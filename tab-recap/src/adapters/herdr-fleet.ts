@@ -1,10 +1,11 @@
 // The ONLY module that talks to herdr (rules/recap-transport-boundary.yml).
+import { agentPanesIn, columnsIn } from './column-panes.ts';
 import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Json, Pushed } from '#src/transport/herdr.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { seenFrom } from '#src/recap/application/decode.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import type { Reconciliation, SeenColumn } from '#src/recap/domain/fold.ts';
+import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
@@ -16,9 +17,7 @@ import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
-/** A column announces itself (and its shape) through its terminal title; that is how a restarted daemon finds it. */
-export const COLUMN_TITLE = 'tab-recap';
-export const BAR_TITLE = 'tab-recap:bar';
+export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
 export const PLUGIN_ID = 'tab-recap';
 export const COLUMN_ENTRYPOINT = 'column';
 export const SETUP_ENTRYPOINT = 'setup';
@@ -39,22 +38,13 @@ function rectOf(value: unknown): Rect {
     return { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
 }
 
-function columnsIn(panes: readonly Json[]): readonly SeenColumn[] {
-    return panes
-        .filter((pane) => str(pane['terminal_title_stripped']).startsWith(COLUMN_TITLE))
-        .map((pane) => ({
-            tabId: str(pane['tab_id']),
-            paneId: str(pane['pane_id']),
-            shape: str(pane['terminal_title_stripped']) === BAR_TITLE ? 'bar' : 'side',
-        }));
-}
-
 export function reconciliationOf(snapshot: Json): Reconciliation {
     const panes = list(snapshot['panes']);
+    const agents = agentPanesIn(panes, list(snapshot['agents']));
     const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent)).filter((lane): lane is SeenLane => lane !== null);
     const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
     const focused = str(snapshot['focused_tab_id']);
-    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes), widths };
+    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths };
 }
 
 function layoutOf(layout: Json): LayoutResult {
@@ -180,17 +170,44 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
+    /**
+     * THE RED LINE: a recap never closes, resizes or moves a pane that hosts an agent. Looked up right
+     * before the call, from herdr itself, so a stale board cannot talk us into it. null = go ahead.
+     */
+    private async refuseAgent(verb: string, pane: string): Promise<Done | null> {
+        try {
+            const snapshot = await this.rawSnapshot();
+            const panes = list(snapshot['panes']);
+            if (!agentPanesIn(panes, list(snapshot['agents'])).has(pane)) {
+                return null;
+            }
+            const why = `refused: ${verb} ${pane} — it hosts an agent`;
+            process.stderr.write(`${new Date().toISOString()} ${why}\n`);
+            return unknown({ why: 'failed', code: 1, detail: why });
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: `refused: ${verb} ${pane} — could not check it hosts no agent (${detail(error)})` });
+        }
+    }
+
+    private async guarded(verb: string, pane: string, method: string, params: Json): Promise<Done> {
+        return (await this.refuseAgent(verb, pane)) ?? this.call(method, params);
+    }
+
     async resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done> {
-        return this.call('pane.resize', { pane_id: String(pane), direction, amount });
+        return this.guarded('resize', String(pane), 'pane.resize', { pane_id: String(pane), direction, amount });
     }
 
     async close(pane: PaneId): Promise<Done> {
-        return this.call('pane.close', { pane_id: String(pane) });
+        return this.guarded('close', String(pane), 'pane.close', { pane_id: String(pane) });
     }
 
-    /** herdr's swap also moves the operator's focus to the source pane: callers put it back. */
+    /**
+     * herdr's swap also moves the operator's focus to the source pane: callers put it back. The source is
+     * always our bar; the target is the tab's top pane, which swap only re-positions (and the focus that
+     * follows goes back to the operator's own pane) — those two contacts with a lane are by design.
+     */
     async swap(source: PaneId, target: string): Promise<Done> {
-        return this.call('pane.swap', { source_pane_id: String(source), target_pane_id: target });
+        return this.guarded('swap', String(source), 'pane.swap', { source_pane_id: String(source), target_pane_id: target });
     }
 
     async focus(pane: string): Promise<Done> {
