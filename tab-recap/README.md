@@ -25,7 +25,8 @@ a rolling, structured recap of the conversation, so a long session never loses i
 - **Written at the end of each turn** by any harness — `claude`, `codex`, `opencode`, `hermes` (the
   first one found, or the one you pick), or your own command —
   from the previous recap plus only the new part of every agent's transcript. Also on tab focus when
-  stale, and on `r` in the column or the modal.
+  stale, and on `r` in the column or the modal. `hermes` runs in safe mode with only its `clarify` tool
+  (it cannot run with zero tools; `clarify` cannot touch files, a shell or the network).
 - **Extensible.** An optional extension can add notes under a lane's header and do housekeeping
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be

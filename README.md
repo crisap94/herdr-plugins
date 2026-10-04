@@ -167,7 +167,7 @@ to run and how pull requests flow.
 
 ## Changelog
 
-Release notes are in [CHANGELOG.md](CHANGELOG.md).
+Release notes are in [CHANGELOG.md](CHANGELOG.md); what is planned next is in [ROADMAP.md](ROADMAP.md).
 
 ## License
 
