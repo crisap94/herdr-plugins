@@ -1,0 +1,21 @@
+id: recap-transport-boundary
+language: typescript
+severity: error
+message: >-
+  Only src/adapters/herdr-fleet.ts may import the herdr transport. Everything else
+  reaches herdr through the FleetSource and Columns ports.
+note: >-
+  This is what makes the transport swappable in one file.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-transport-boundary/**"
+ignores:
+  - "**/src/adapters/herdr-fleet.ts"
+  - "**/src/transport/**"
+rule:
+  kind: string_fragment
+  inside:
+    kind: import_statement
+    stopBy: end
+  regex: "(^#src/transport/|/transport/herdr)"

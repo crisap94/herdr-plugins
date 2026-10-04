@@ -1,0 +1,66 @@
+# tab-recap — vocabulary
+
+This is the plugin's ubiquitous language. **A word here means exactly one thing**, in the
+code, the docs and the UI. `rules/recap-vocabulary.yml` rejects the banned synonyms in any
+identifier, so a new name either uses this vocabulary or adds to it here first.
+
+## The nouns
+
+| Term | Means | Is NOT |
+| --- | --- | --- |
+| **Lane** | A herdr pane occupied by a recognised coding agent (`claude`, `codex`). Lanes are what the columns follow; the *harness* below is what writes. | any pane; a column |
+| **Tab** | A herdr tab. **The unit of a recap column**: one tab, at most one column. | a workspace |
+| **Column** | The recap pane the daemon docks in a tab, keeps sized and reopens. It has a **shape**: `side` (right edge, wide tabs) or `bar`. | a *sidebar*, a *panel* |
+| **Bar** | A column's phone shape: ONE row along the top of a narrow tab — 📝, a status dot per lane, one headline (what needs you, else what is happening now). A tap opens the modal. Docked only in the tab you are looking at: putting it on top takes a pane swap, and a swap moves herdr's focus. | a status line |
+| **Modal** | The same view as a column, opened on demand as a herdr popup over everything; `q`/`Esc` closes it. The phone's view of a tab's recap, where a column does not fit. | a column; a notification |
+| **Board** | The domain state: every lane, every column, the reopen history. The only thing the fold changes. | herdr's session snapshot |
+| **Turn** | One `working → rest` stretch of a lane. A turn **ends** when the lane leaves `working` for `idle`, `done` or `blocked`. | a message |
+| **Transcript** | The agent's own JSONL log (`~/.claude/projects/*/<session>.jsonl`, `~/.codex/sessions/**/rollout-*.jsonl`). Read-only, always. | the recap |
+| **Cursor** | Per lane: the byte position in its transcript up to which the tab's recap is current. A tab's recap holds one cursor per lane. | an *offset* (banned word) |
+| **Excerpt** | The text-only slice of every lane's transcript after its cursor — user prompts, agent replies, one-line tool briefs — one `=== <agent> in <pane> ===` section per lane. What the summarizer reads. | the raw JSONL |
+| **Recap** | The structured Markdown the summarizer writes for one **tab** — all its lanes as one piece of work: Goal · Now · Waiting on you · Done · Decisions · Next · Key refs. Rolling: each new recap is the previous one plus the latest excerpt. One per tab, never one per lane. | a *summary* (banned word); a per-agent note |
+| **Claude recap** | Claude Code's own short recap (`system/away_summary` in the transcript). Shown only until our recap exists. | our recap |
+| **Summarizer** | The port that turns *previous recap + excerpt* into a new recap. One adapter per **harness**, plus `custom`; picked by **backend**. | the daemon |
+| **Harness** | A coding-agent CLI that can write the recap: `claude`, `codex`, `opencode`, `hermes`. Available when herdr's `integration.list` says so AND its program resolves on the daemon's PATH. Run tool-less and without keeping a session (flags where the CLI has them; otherwise the session is deleted after the answer). | a lane's agent kind; a backend |
+| **Backend** | The operator's choice of summarizer: `auto` (default: the first available of claude → codex → opencode → hermes, looked up at start and on every resync), a named harness, or `custom` (`TAB_RECAP_CUSTOM_CMD`: prompt on stdin, Markdown on stdout — never automatic). Each backend keeps its own model. | the agent kind of a lane |
+| **Locale** | The language of the plugin's own words — the column, the footer, the commands' messages: `en` or `es`. `TAB_RECAP_LOCALE=auto|en|es`; `auto` reads `LC_ALL`, then `LC_MESSAGES`, then `LANG`. Catalogs live in `src/i18n/`; `es` is typed as `Messages`, so a missing key fails the typecheck. | the recap language |
+| **Recap language** | The language the recap itself is written in: `en`, `es` or free text (`Português`; letters, spaces, hyphens, ≤ 30 characters, ≤ 3 words). `TAB_RECAP_RECAP_LANG=ui|en|es|<name>`; `ui` follows the locale. Stored on each recap; when it differs from the wanted one the recap is rewritten at once, new excerpt or not. | the locale |
+| **Section** | One of the recap's seven parts (`goal · now · waiting · done · decisions · next · refs`). The id is what the code means; the heading is what a language calls it. Spanish headings are Spanish; every other language keeps the English headings so the column can find them. | a heading's text |
+| **Setup modal** | The settings popup (`tab-recap.configure`): rows for the agent (harness or `auto`), its model, the recap length, the interface language and the recap language; `t` tests the selected agent with one tiny real request, `s` saves to `config.env`. A row an environment variable overrides is read-only and names the variable. Opening it while herdr shows another modal fails with `ui_busy`; the command then prints the CLI equivalent. | the recap modal (`show`) |
+| **Extension** | An optional add-on registered in `src/extensions/index.ts` (`FACTORIES`, empty by default). It may contribute notes, a warning and upkeep; the plugin works with none. Built once when a process starts; it reads its own settings through the config getter at call time, so a value edit applies without a restart, but enabling or disabling one takes a restart. | a plugin; a backend |
+| **Note** | One labelled line-group an extension attaches to a lane; the column shows it under the lane's header (`⚑ label 2m ago · detail · detail`). | a notification we send |
+| **Upkeep** | The housekeeping an extension does on the daemon's resync tick. The column never runs it. | a recap job |
+| **Daemon** | The one long-running process: watches herdr, folds observations, dispatches intents. | a *worker* (banned word) |
+
+## The verbs of the fold
+
+| Term | Means |
+| --- | --- |
+| **Observation** | Something herdr (or the operator) told us: `detected`, `closed`, `status`, `reconciled`, `column-opened`, `column-failed`, `focused`, `requested`, `switched`. The fold's only input. |
+| **Intent** | Something the board now wants done: `open-column`, `close-column`, `recap` (of a tab, carrying all its lanes), `publish`, `give-up`. The fold's only output. Dispatch turns intents into port calls. |
+| **Watch set** | The herdr subscriptions the daemon holds: the global topics plus one `pane.agent_status_changed` per lane. Lives in exactly one file, `watch-set.ts`. |
+| **Reconcile** | Replace the board's picture of herdr with a fresh snapshot. A subscription delivers *changes*, never the present, so the snapshot always comes after subscribing. |
+| **Publish** | Write a tab's view (its lanes and their statuses) for its column to render. |
+| **Reopen budget** | How often a column may be reopened after being closed: 3 times in 2 minutes, then the tab is **given up** for 10 minutes. Stops the daemon fighting an operator who means it. |
+
+## Banned synonyms
+
+`summary` → **recap** · `sidebar`, `panel` → **column** · `offset` → **cursor** ·
+`worker` → **daemon**. Words that come from the outside world (`away_summary`, a herdr field)
+appear only as **string literals** at an adapter's edge, never as our identifiers.
+
+## English ↔ Spanish glossary
+
+| English | Español (neutral, tú) | Used for |
+| --- | --- | --- |
+| recap | resumen | the recap, in Spanish prose |
+| tab | pestaña | a herdr tab |
+| column | columna | the recap column |
+| lane | agente | one agent's pane |
+| backend | motor | which summarizer runs |
+| harness | agente (de código) | claude, codex, opencode, hermes |
+| needs you | te necesita | a lane waiting on the operator |
+| Goal · Now · Waiting on you · Done · Decisions · Next · Key refs | Objetivo · Ahora · Esperando tu respuesta · Hecho · Decisiones · Próximos pasos · Referencias clave | the seven sections |
+
+Spanish is written in the informal «tú» and neutral Latin-American vocabulary; messages are
+phrased the way a Spanish speaker would say them, not translated word for word.

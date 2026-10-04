@@ -1,0 +1,29 @@
+id: recap-no-foreign-write
+language: typescript
+severity: error
+message: >-
+  Only adapters write files, and only under the plugin's own state dir. The domain,
+  the application, the render layer, the ports, the transport and the column
+  never call a filesystem write.
+note: >-
+  Transcripts, and any file an extension reads, are READ-ONLY to this plugin. Every
+  write goes through the RecapStore port (fs-recap-store.ts), the Pidfile adapter or
+  the config-file adapter.
+files:
+  - "**/src/recap/**"
+  - "**/src/ports/**"
+  - "**/src/transport/**"
+  - "**/src/column/**"
+  - "**/src/extensions/**"
+  - "**/src/i18n/**"
+  - "**/src/setup/**"
+  - "**/probes/recap-no-foreign-write/**"
+rule:
+  any:
+    - pattern: writeFileSync($$$)
+    - pattern: appendFileSync($$$)
+    - pattern: rmSync($$$)
+    - pattern: mkdirSync($$$)
+    - pattern: renameSync($$$)
+    - pattern: writeFile($$$)
+    - pattern: appendFile($$$)

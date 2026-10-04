@@ -1,0 +1,20 @@
+id: recap-domain-pure
+language: typescript
+severity: error
+message: >-
+  The domain is a PURE FOLD — (board, observation, instant) -> (board, intents).
+  It performs no I/O, formats no text and knows no adapter, so it imports only its
+  own siblings with './'. One 'node:fs' or '#src/ports/' here inverts the arrow
+  infrastructure -> application -> domain in silence.
+note: >-
+  The domain reaches its siblings with './' precisely so that this rule is one prefix test.
+files:
+  - "**/src/recap/domain/**"
+  - "**/probes/recap-domain-pure/**"
+rule:
+  kind: string_fragment
+  inside:
+    kind: import_statement
+    stopBy: end
+  not:
+    regex: "^\\./"

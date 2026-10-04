@@ -1,0 +1,208 @@
+// The ONLY module that talks to herdr (rules/recap-transport-boundary.yml).
+import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
+import type { Json, Pushed } from '#src/transport/herdr.ts';
+import { AsyncQueue } from '#src/recap/application/async-queue.ts';
+import { seenFrom } from '#src/recap/application/decode.ts';
+import type { Shape } from '#src/recap/domain/board.ts';
+import type { Reconciliation, SeenColumn } from '#src/recap/domain/fold.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
+import type { SeenLane } from '#src/recap/domain/lane.ts';
+import type { Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
+import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
+import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
+import type { Notified, Notifier } from '#src/ports/notifier.ts';
+import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
+import { unknown } from '#src/ports/unknowable.ts';
+
+/** A column announces itself (and its shape) through its terminal title; that is how a restarted daemon finds it. */
+export const COLUMN_TITLE = 'tab-recap';
+export const BAR_TITLE = 'tab-recap:bar';
+export const PLUGIN_ID = 'tab-recap';
+export const COLUMN_ENTRYPOINT = 'column';
+export const SETUP_ENTRYPOINT = 'setup';
+
+const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+function list(value: unknown): readonly Json[] {
+    return Array.isArray(value) ? value.filter((item): item is Json => typeof item === 'object' && item !== null) : [];
+}
+
+function str(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+}
+
+function rectOf(value: unknown): Rect {
+    const r = typeof value === 'object' && value !== null ? (value as Json) : {};
+    const n = (key: string): number => (typeof r[key] === 'number' ? r[key] : 0);
+    return { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
+}
+
+function columnsIn(panes: readonly Json[]): readonly SeenColumn[] {
+    return panes
+        .filter((pane) => str(pane['terminal_title_stripped']).startsWith(COLUMN_TITLE))
+        .map((pane) => ({
+            tabId: str(pane['tab_id']),
+            paneId: str(pane['pane_id']),
+            shape: str(pane['terminal_title_stripped']) === BAR_TITLE ? 'bar' : 'side',
+        }));
+}
+
+export function reconciliationOf(snapshot: Json): Reconciliation {
+    const panes = list(snapshot['panes']);
+    const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent)).filter((lane): lane is SeenLane => lane !== null);
+    const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
+    const focused = str(snapshot['focused_tab_id']);
+    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes), widths };
+}
+
+function layoutOf(layout: Json): LayoutResult {
+    const panes: Placed[] = list(layout['panes']).map((pane) => ({ paneId: str(pane['pane_id']), rect: rectOf(pane['rect']) }));
+    const splits: Split[] = list(layout['splits']).map((split) => ({
+        direction: str(split['direction']),
+        ratio: typeof split['ratio'] === 'number' ? split['ratio'] : 0.5,
+        rect: rectOf(split['rect']),
+    }));
+    const area = rectOf(layout['area']);
+    const focused = str(layout['focused_pane_id']);
+    return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : focused, panes, splits };
+}
+
+/** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
+const MODAL_SIZE = '96%';
+
+export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier {
+    private readonly stateDir: string;
+
+    constructor(stateDir: string) {
+        this.stateDir = stateDir;
+    }
+
+    private async rawSnapshot(): Promise<Json> {
+        const result = await rpc('session.snapshot', {});
+        const snap = result['snapshot'];
+        return typeof snap === 'object' && snap !== null ? (snap as Json) : {};
+    }
+
+    async snapshot(): Promise<SnapshotResult> {
+        try {
+            const snap = await this.rawSnapshot();
+            const focused = str(snap['focused_tab_id']);
+            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    async subscribe(topics: readonly Topic[]): Promise<StreamResult> {
+        const queue = new AsyncQueue<Frame>();
+        try {
+            const live = await subscribe(topics.map((topic) => ({ ...topic })), (pushed: Pushed) => { queue.push(pushed); }, () => { queue.end(); });
+            return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    async layout(tab: TabId): Promise<LayoutResult> {
+        try {
+            const layout = list((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
+            return layout === undefined ? unknown({ why: 'not-found', what: `the layout of ${tab}` }) : layoutOf(layout);
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    async open(tab: TabId, target: string, shape: Shape): Promise<OpenResult> {
+        try {
+            const result = await rpc('plugin.pane.open', {
+                plugin_id: PLUGIN_ID,
+                entrypoint: COLUMN_ENTRYPOINT,
+                placement: 'split',
+                direction: shape === 'side' ? 'right' : 'down',
+                target_pane_id: target,
+                focus: false,
+                env: { TAB_RECAP_TAB: String(tab), TAB_RECAP_STATE: this.stateDir, TAB_RECAP_SHAPE: shape },
+            });
+            const info = typeof result['plugin_pane'] === 'object' && result['plugin_pane'] !== null ? (result['plugin_pane'] as Json) : {};
+            const pane = typeof info['pane'] === 'object' && info['pane'] !== null ? str((info['pane'] as Json)['pane_id']) : '';
+            return pane === '' ? unknown({ why: 'unreadable', detail: 'plugin.pane.open returned no pane' }) : { kind: 'opened', pane: paneId(pane) };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    async show(tab: TabId): Promise<Done> {
+        return this.call('plugin.pane.open', {
+            plugin_id: PLUGIN_ID,
+            entrypoint: COLUMN_ENTRYPOINT,
+            placement: 'popup',
+            width: MODAL_SIZE,
+            height: MODAL_SIZE,
+            focus: true,
+            env: { TAB_RECAP_TAB: String(tab), TAB_RECAP_STATE: this.stateDir, TAB_RECAP_MODE: 'modal' },
+        });
+    }
+
+    /** herdr shows one modal at a time: `ui_busy` means another one is up. */
+    async setup(tab: TabId | null): Promise<SetupOpened> {
+        try {
+            await rpc('plugin.pane.open', {
+                plugin_id: PLUGIN_ID,
+                entrypoint: SETUP_ENTRYPOINT,
+                placement: 'popup',
+                width: MODAL_SIZE,
+                height: MODAL_SIZE,
+                focus: true,
+                env: { TAB_RECAP_TAB: tab === null ? '' : String(tab), TAB_RECAP_STATE: this.stateDir },
+            });
+            return { kind: 'opened' };
+        } catch (error) {
+            return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    /** herdr's own integration table: `available` says the agent's program resolves for herdr. */
+    async available(): Promise<HarnessesResult> {
+        try {
+            const ids = list((await rpc('integration.list', {}))['integrations'])
+                .filter((entry) => entry['available'] === true)
+                .map((entry) => str(entry['target']));
+            return { kind: 'available', ids };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    async notify(title: string, body: string): Promise<Notified> {
+        const done = await this.call('notification.show', { title, body });
+        return done.kind === 'done' ? { kind: 'shown' } : done;
+    }
+
+    async resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done> {
+        return this.call('pane.resize', { pane_id: String(pane), direction, amount });
+    }
+
+    async close(pane: PaneId): Promise<Done> {
+        return this.call('pane.close', { pane_id: String(pane) });
+    }
+
+    /** herdr's swap also moves the operator's focus to the source pane: callers put it back. */
+    async swap(source: PaneId, target: string): Promise<Done> {
+        return this.call('pane.swap', { source_pane_id: String(source), target_pane_id: target });
+    }
+
+    async focus(pane: string): Promise<Done> {
+        return this.call('pane.focus', { pane_id: pane });
+    }
+
+    private async call(method: string, params: Json): Promise<Done> {
+        try {
+            await rpc(method, params);
+            return { kind: 'done' };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+}
