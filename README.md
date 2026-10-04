@@ -19,3 +19,12 @@ herdr plugin link ./<plugin>                     # from a checkout
 - **Layered:** a pure domain fold, sum-typed ports,
   one adapter per port, and ast-grep rules that each prove they bite against a bad probe.
 - **Every plugin has a `CONTEXT.md`** vocabulary and a lint rule that enforces it.
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Release notes are in
+[CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE) © 2026 crisap94
