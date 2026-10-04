@@ -8,7 +8,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 const note = (label: string): Note => ({ label, at: null, details: [] });
 
 test('with no extension registered the plugin loads none and shows nothing', () => {
-    const none = loadExtensions(() => undefined);
+    const none = loadExtensions(() => undefined, []);
     assert.deepEqual(none, []);
     assert.equal(notesOf(none).size, 0);
     assert.deepEqual(warningsOf(none, 'en'), []);

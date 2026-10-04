@@ -1,10 +1,11 @@
 import type { Locale } from '#src/i18n/messages.ts';
-import type { Extension, Note } from '#src/ports/extension.ts';
+import type { Extension, ExtensionFactory, Note } from '#src/ports/extension.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { FACTORIES } from './index.ts';
 
-export function loadExtensions(get: (key: string) => string | undefined): readonly Extension[] {
-    return FACTORIES.flatMap((factory) => factory(get) ?? []);
+/** The registry by default; a caller (a test) may pass its own list. */
+export function loadExtensions(get: (key: string) => string | undefined, factories: readonly ExtensionFactory[] = FACTORIES): readonly Extension[] {
+    return factories.flatMap((factory) => factory(get) ?? []);
 }
 
 /** Every extension's notes, merged per pane in factory order; a failing extension adds none. */
