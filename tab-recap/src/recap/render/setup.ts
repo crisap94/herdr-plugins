@@ -1,6 +1,6 @@
 // The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
-import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf } from '#src/recap/application/setup-keys.ts';
+import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -53,6 +53,8 @@ function valueOf(row: RowId, state: Setup, m: Messages): string {
             return recapText(draft.recapLanguage, m);
         case 'screenAgents':
             return screenText(draft.screenAgents, m);
+        case 'gitNote':
+            return m.setup.gitNoteChoices[draft.gitNote];
         default: {
             const exhaustive: never = row;
             return String(exhaustive);
@@ -87,6 +89,11 @@ function localeChoices(state: Setup, m: Messages, width: number): string[] {
     return LOCALE_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.uiChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
 }
 
+function gitNoteChoices(state: Setup, m: Messages, width: number): string[] {
+    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'gitNote' ? state.editing.at : -1;
+    return SWITCH_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.gitNoteChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
+}
+
 function hintOf(row: RowId, m: Messages): string | null {
     const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint };
     return hints[row] ?? null;
@@ -97,13 +104,22 @@ function under(row: RowId, state: Setup, m: Messages, width: number): string[] {
     const focused = rowOf(state) === row;
     const lock = state.locks[row];
     const hint = focused ? hintOf(row, m) : null;
-    const choosing = focused && state.editing?.kind === 'choice';
     return [
         ...(lock === undefined ? [] : hanging('    ', m.setup.locked(lock), width).map(style.yellow)),
         ...(hint === null ? [] : hanging('    ', hint, width).map(style.dim)),
-        ...(row === 'harness' ? harnessChoices(state, m, width) : []),
-        ...(row === 'locale' && choosing ? localeChoices(state, m, width) : []),
+        ...(focused || row === 'harness' ? choicesUnder(row, state, m, width) : []),
     ];
+}
+
+/** The harness's choices always hang under it; the others open while the row is being edited. */
+function choicesUnder(row: RowId, state: Setup, m: Messages, width: number): string[] {
+    const choosing = state.editing?.kind === 'choice';
+    const drawn: Readonly<Partial<Record<RowId, () => string[]>>> = {
+        harness: () => harnessChoices(state, m, width),
+        locale: () => (choosing ? localeChoices(state, m, width) : []),
+        gitNote: () => (choosing ? gitNoteChoices(state, m, width) : []),
+    };
+    return drawn[row]?.() ?? [];
 }
 
 function rowLines(row: RowId, state: Setup, m: Messages, width: number): string[] {

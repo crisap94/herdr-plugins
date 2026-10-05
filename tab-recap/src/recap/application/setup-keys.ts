@@ -3,8 +3,8 @@
 import { languageSetting } from '#src/i18n/index.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { changes, dirty } from './setup-changes.ts';
-import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS } from './setup-state.ts';
-import type { Editing, Setup, Stepped, TestState } from './setup-state.ts';
+import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS, SWITCH_CHOICES } from './setup-state.ts';
+import type { Editing, RowId, Setup, Stepped, TestState } from './setup-state.ts';
 
 export { changes, dirty, locksOf } from './setup-changes.ts';
 export * from './setup-state.ts';
@@ -25,6 +25,9 @@ function enter(state: Setup): Setup {
     }
     if (row === 'locale') {
         return { ...state, note: null, editing: { kind: 'choice', at: LOCALE_CHOICES.indexOf(draft.locale) } };
+    }
+    if (row === 'gitNote') {
+        return { ...state, note: null, editing: { kind: 'choice', at: SWITCH_CHOICES.indexOf(draft.gitNote) } };
     }
     if (row === 'model') {
         return target === null ? { ...state, note: 'no-agent' } : { ...state, note: null, editing: { kind: 'text', buffer: draft.models[target] } };
@@ -52,17 +55,24 @@ function confirmChoice(state: Setup, at: number): Setup {
         const backend = HARNESS_CHOICES[at];
         return backend === undefined ? done : { ...done, draft: { ...state.draft, backend } };
     }
+    if (rowOf(state) === 'gitNote') {
+        const gitNote = SWITCH_CHOICES[at];
+        return gitNote === undefined ? done : { ...done, draft: { ...state.draft, gitNote } };
+    }
     const locale = LOCALE_CHOICES[at];
     return locale === undefined ? done : { ...done, draft: { ...state.draft, locale } };
 }
 
 const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
 
+const CHOICE_COUNTS: Readonly<Partial<Record<RowId, number>>> = { harness: HARNESS_CHOICES.length, locale: LOCALE_CHOICES.length, gitNote: SWITCH_CHOICES.length };
+const choiceCount = (row: RowId): number => CHOICE_COUNTS[row] ?? 0;
+
 function editChoice(state: Setup, at: number, key: string): Setup {
     if (key === '\r') {
         return confirmChoice(state, at);
     }
-    const size = rowOf(state) === 'harness' ? HARNESS_CHOICES.length : LOCALE_CHOICES.length;
+    const size = choiceCount(rowOf(state));
     const by = (UP.has(key) ? -1 : 0) + (DOWN.has(key) ? 1 : 0);
     return by === 0 ? state : { ...state, editing: { kind: 'choice', at: (at + by + size) % size } };
 }

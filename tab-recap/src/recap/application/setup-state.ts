@@ -4,11 +4,13 @@ import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
-export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents';
-export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents'];
+export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote';
+export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents', 'gitNote'];
 export type LocaleSetting = 'auto' | 'en' | 'es';
 export const HARNESS_CHOICES: readonly BackendChoice[] = ['auto', ...BACKEND_IDS];
 export const LOCALE_CHOICES: readonly LocaleSetting[] = ['auto', 'en', 'es'];
+export type SwitchSetting = 'on' | 'off';
+export const SWITCH_CHOICES: readonly SwitchSetting[] = ['on', 'off'];
 
 /** What the operator is choosing. */
 export interface Draft {
@@ -19,6 +21,8 @@ export interface Draft {
     readonly recapLanguage: string;
     /** the agent kinds read from their screen, as stored: `` (none), `all` or a comma list */
     readonly screenAgents: string;
+    /** the git note under each lane (`TAB_RECAP_GIT_NOTE`) */
+    readonly gitNote: SwitchSetting;
 }
 
 /** Rows whose value an environment variable overrides: row -> the variable's name. */
@@ -61,9 +65,10 @@ export interface Stepped {
 }
 
 /** The settings as they are now: the resolved configuration plus the raw locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined }): Draft {
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents) };
+    const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
+    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {

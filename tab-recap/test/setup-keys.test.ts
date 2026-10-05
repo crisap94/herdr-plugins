@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the five rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the six rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 4);
+    assert.equal(typed(start(), down(20)).state.row, 5);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -131,9 +131,20 @@ test('screen agents: the fifth row takes a list or `all`, keeps only plain names
     assert.deepEqual([...changes(typedList)], [['TAB_RECAP_SCREEN_AGENTS', 'gemini,qwen']]);
     const all = typed(start(), [...down(4), '\r', 'A', 'l', 'L', '\r']).state;
     assert.equal(all.draft.screenAgents, 'all');
-    const cleared = typed({ ...typedList, stored: typedList.draft }, [...down(4), '\r', '\u0015', '\r']).state;
+    const cleared = typed({ ...typedList, stored: typedList.draft }, ['\r', '\u0015', '\r']).state;
     assert.deepEqual([...changes(cleared)], [['TAB_RECAP_SCREEN_AGENTS', '']], 'emptying it writes an empty value (none)');
     const locked = typed(start({ screenAgents: 'TAB_RECAP_SCREEN_AGENTS' }), [...down(4), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual(locksOf({ TAB_RECAP_SCREEN_AGENTS: 'all' }), { screenAgents: 'TAB_RECAP_SCREEN_AGENTS' });
+});
+
+test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOTE, read-only when the variable is set', () => {
+    assert.equal(draft.gitNote, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: ' OFF ' }).gitNote, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: 'maybe' }).gitNote, 'on');
+    const off = typed(start(), [...down(5), '\r', 'j', '\r']);
+    assert.equal(off.state.draft.gitNote, 'off');
+    assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
+    assert.deepEqual(locksOf({ TAB_RECAP_GIT_NOTE: 'off' }), { gitNote: 'TAB_RECAP_GIT_NOTE' });
+    assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
 });

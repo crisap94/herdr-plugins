@@ -104,3 +104,11 @@ test('the recap language row says what the stored value means, in the interface 
     assert.match(rowText(withLanguage('Português'), es), /Português/);
     assert.equal(withLanguage('ui').draft.recapLanguage, 'ui', 'the stored value is untouched');
 });
+
+test('the git note row is drawn with its value and, while choosing, both choices', () => {
+    const onRow = setupView(base, en, 80).join('\n');
+    assert.match(onRow, /Git note\s+on — branch/);
+    const choosing = setupView(step(step({ ...base, row: 5 }, '\r').state, 'j').state, es, 80).join('\n');
+    assert.match(choosing, /Nota de git/);
+    assert.match(choosing, /▸ no/);
+});
