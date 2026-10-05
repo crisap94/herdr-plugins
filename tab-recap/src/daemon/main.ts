@@ -93,7 +93,7 @@ async function start(): Promise<number> {
     process.on('SIGINT', stop);
     setInterval(() => { for (const tab of store.takeRequests()) { informer.push({ kind: 'requested', tab }); } }, REQUEST_POLL_MS).unref();
     setInterval(() => {
-        informer.resync();
+        informer.tick();
         void backends.refresh();
         void upkeep(extensions, log);
     }, RESYNC_MS).unref();

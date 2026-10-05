@@ -104,12 +104,21 @@ export interface Live {
     close(): void;
 }
 
-export function subscribe(topics: readonly Json[], onPush: (pushed: Pushed) => void, onEnd: () => void): Promise<Live> {
+/** herdr acks a subscription at once; no ack in this long means the connection is not going to work. */
+export const ACK_TIMEOUT_MS = 10_000;
+
+export function subscribe(topics: readonly Json[], onPush: (pushed: Pushed) => void, onEnd: () => void, ackTimeoutMs = ACK_TIMEOUT_MS): Promise<Live> {
     return new Promise<Live>((resolve, reject) => {
         const id = nextId('sub');
         const sock = createConnection({ path: socketPath() });
         let acked = false;
         let closing = false;
+        const timer = setTimeout(() => {
+            if (!acked) {
+                reject(new Error(`events.subscribe: no ack in ${ackTimeoutMs} ms`));
+                sock.destroy();
+            }
+        }, ackTimeoutMs);
         onLines(sock, (message) => {
             if (acked) {
                 const event = message['event'];
@@ -124,18 +133,21 @@ export function subscribe(topics: readonly Json[], onPush: (pushed: Pushed) => v
             }
             const error = errorOf('events.subscribe', message);
             if (error !== null) {
+                clearTimeout(timer);
                 sock.destroy();
                 reject(error);
                 return;
             }
             acked = true;
+            clearTimeout(timer);
             resolve({ close: (): void => { closing = true; sock.destroy(); } });
         });
         sock.on('connect', () => {
             sock.write(`${JSON.stringify({ id, method: 'events.subscribe', params: { subscriptions: topics } })}\n`);
         });
-        sock.on('error', (error) => { if (!acked) { reject(error); } });
+        sock.on('error', (error) => { if (!acked) { clearTimeout(timer); reject(error); } });
         sock.on('close', () => {
+            clearTimeout(timer);
             if (!acked) {
                 reject(new Error('events.subscribe: closed before the ack'));
             } else if (!closing) {

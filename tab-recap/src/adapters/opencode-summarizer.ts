@@ -5,8 +5,12 @@ import { duration } from '#src/recap/domain/time.ts';
 import { instructions, message, unfenced } from './recap-prompt.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { run, scrubbedEnv } from './run.ts';
+import type { Runner } from './run.ts';
 
 /** No tool, no permission: measured, the request shrinks from ~9k to <1k tokens and no tool event appears. */
+/** how long after a killed run opencode gets to finish writing its session before we look once more */
+const RELIST_MS = 3000;
+
 const TOOLLESS = JSON.stringify({ tools: { '*': false }, permission: { '*': 'deny' } });
 
 export function opencodeArgs(model: string, title: string): string[] {
@@ -61,20 +65,41 @@ export class OpencodeSummarizer implements Summarizer {
     private readonly model: string;
     private readonly workDir: string;
     private readonly timeoutMs: number;
+    private readonly runner: Runner;
+    private readonly relistMs: number;
 
-    constructor(model: string, workDir: string, timeoutMs: number) {
+    constructor(model: string, workDir: string, timeoutMs: number, runner: Runner = run, relistMs = RELIST_MS) {
+        this.runner = runner;
+        this.relistMs = relistMs;
         this.model = model;
         this.backend = model === '' ? 'opencode' : `opencode/${model}`;
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
     }
 
-    private async forget(session: string | null, title: string, env: NodeJS.ProcessEnv): Promise<void> {
-        const opts = { input: '', timeoutMs: 30_000, cwd: this.workDir, env };
-        const ids = session === null ? sessionsTitled((await run('opencode', ['session', 'list', '--format', 'json'], opts)).stdout, title) : [session];
+    private async titled(title: string, env: NodeJS.ProcessEnv): Promise<string[]> {
+        const listed = await this.runner('opencode', ['session', 'list', '--format', 'json'], { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
+        return sessionsTitled(listed.stdout, title);
+    }
+
+    private async remove(ids: readonly string[], env: NodeJS.ProcessEnv): Promise<void> {
         for (const id of ids) {
-            await run('opencode', ['session', 'delete', id], opts);
+            await this.runner('opencode', ['session', 'delete', id], { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
         }
+    }
+
+    /**
+     * The session is deleted by the id the run printed. A run killed before it printed one is found by its
+     * title — and, because opencode may still be writing the session as it dies, looked for once more after a pause.
+     */
+    private async forget(session: string | null, title: string, env: NodeJS.ProcessEnv): Promise<void> {
+        if (session !== null) {
+            await this.remove([session], env);
+            return;
+        }
+        await this.remove(await this.titled(title, env), env);
+        await new Promise((resolve) => { setTimeout(resolve, this.relistMs); });
+        await this.remove(await this.titled(title, env), env);
     }
 
     async write(request: RecapRequest): Promise<Written> {
@@ -82,7 +107,7 @@ export class OpencodeSummarizer implements Summarizer {
         const env = { ...scrubbedEnv(), OPENCODE_CONFIG_CONTENT: TOOLLESS };
         const input = `${instructions(request)}\n\n${message(request)}`;
         const title = `tab-recap-${process.pid}-${Date.now()}`;
-        const ran = await run('opencode', opencodeArgs(this.model, title), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
+        const ran = await this.runner('opencode', opencodeArgs(this.model, title), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
         const output = opencodeOutput(ran.stdout);
         await this.forget(output.session, title, env);
         if (ran.timedOut) {

@@ -30,9 +30,14 @@ const RESYNC_DEBOUNCE_MS = 400;
 export interface Retry {
     readonly retryBaseMs: number;
     readonly retryMaxMs: number;
+    /** how long `resync` waits to merge a burst of frames into one reconcile (default 400 ms) */
+    readonly resyncDebounceMs?: number;
 }
 
 const DEFAULT_RETRY: Retry = { retryBaseMs: 1000, retryMaxMs: 60_000 };
+
+/** Every Nth tick opens a fresh subscription even though nothing is known to be wrong: a half-open connection says nothing. */
+export const RESUBSCRIBE_EVERY = 10;
 
 /** Holds the board; feeds the fold; keeps the watch set in step with the lanes. */
 export class Informer {
@@ -46,6 +51,7 @@ export class Informer {
     private pendingResync: ReturnType<typeof setTimeout> | null = null;
     private pendingRetry: ReturnType<typeof setTimeout> | null = null;
     private failures = 0;
+    private ticks = 0;
     private readonly retry: Retry;
 
     constructor(source: FleetSource, clock: Clock, policy: Policy, hooks: InformerHooks, retry: Retry = DEFAULT_RETRY) {
@@ -114,6 +120,34 @@ export class Informer {
         this.pendingRetry.unref();
     }
 
+    /**
+     * Refresh the board from a snapshot alone. A subscription is opened only when there is none (it
+     * died, or was never made); a changed watch set resubscribes from `run()`. Resubscribing on every
+     * refresh made herdr log a stream per minute for nothing.
+     */
+    async reconcile(): Promise<void> {
+        if (this.stream === null) {
+            await this.enterSubscription();
+            return;
+        }
+        const snap = await this.source.snapshot();
+        if (isUnknown(snap)) {
+            this.hooks.onBlind({ at: 'snapshot', saying: saying(snap.why) });
+            return;
+        }
+        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+    }
+
+    /** The daemon's once-a-minute beat: a snapshot-only reconcile, and every 10th time a fresh subscription. */
+    tick(): void {
+        this.ticks += 1;
+        if (this.ticks % RESUBSCRIBE_EVERY === 0) {
+            void this.enterSubscription();
+        } else {
+            this.resync();
+        }
+    }
+
     private retire(): void {
         this.stream?.close();
         this.stream = null;
@@ -147,8 +181,8 @@ export class Informer {
         }
         this.pendingResync = setTimeout(() => {
             this.pendingResync = null;
-            void this.enterSubscription();
-        }, RESYNC_DEBOUNCE_MS);
+            void this.reconcile();
+        }, this.retry.resyncDebounceMs ?? RESYNC_DEBOUNCE_MS);
     }
 
     async run(): Promise<void> {
