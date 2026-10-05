@@ -143,7 +143,7 @@ const lane = (pane: string, agent: string, prompt: string, title: string | null)
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
-        tab: 'w1:t1', column: 'w1:p9', at: NOW,
+        tab: 'w1:t1', column: 'w1:p9', at: NOW, daemonVersion: '1.5.0',
         lanes: [
             { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null },
             { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null },
@@ -153,7 +153,7 @@ function columnView(fixture: Fixture): ColumnView {
         ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
-    return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages };
+    return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: '1.5.0' };
 }
 
 function setupState(locale: 'en' | 'es'): Setup {

@@ -9,6 +9,8 @@ import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
+import { MIN_NODE_MAJOR, boundKeys, herdrConfigPath, nodeMajor } from '#src/adapters/host-check.ts';
+import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
@@ -27,8 +29,17 @@ const m = (): Messages => messagesOf();
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const pidfile = new Pidfile(stateDir());
 
+/** A daemon that is alive but has not beaten for this long is stuck: it is killed and a new one takes over. */
+const WEDGED_MS = 180_000;
+
 function launch(): number {
-    const running = pidfile.alive();
+    let running = pidfile.alive();
+    if (running !== null && pidfile.wedged(WEDGED_MS)) {
+        console.log(`tab-recap: ${m().cli.daemonWedged(running)}`);
+        process.kill(running, 'SIGKILL');
+        pidfile.release(running);
+        running = null;
+    }
     if (running !== null) {
         console.log(`tab-recap: ${m().cli.daemonRunning(running)}`);
         return OK;
@@ -80,8 +91,13 @@ function status(): number {
     const config = loadConfig();
     const t = m().cli;
     const running = pidfile.alive();
+    const major = nodeMajor(process.version);
     console.log([
-        t.statusDaemon(running, pidfile.disabled),
+        t.statusVersion(codeVersion()),
+        t.statusNode(process.execPath, process.version),
+        ...(major !== null && major < MIN_NODE_MAJOR ? [t.nodeTooOld(process.version, MIN_NODE_MAJOR)] : []),
+        t.statusKeys(boundKeys(), herdrConfigPath()),
+        t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
         t.statusExtensions(loadExtensions(configGetter()).map((extension) => extension.id).join(', ') || t.none),
         `${t.statusState} ${stateDir()}`,

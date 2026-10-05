@@ -3,6 +3,7 @@
 // refresh request.
 import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
+import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
@@ -35,7 +36,7 @@ const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
 const store = new FsRecapStore(stateDir());
 const config = loadConfig();
 /** the locale is re-read, not frozen at start: a change in config.env shows within a few seconds */
-let settled = { at: 0, locale: config.locale };
+let settled = { at: 0, locale: config.locale, version: codeVersion() };
 /** Notes and warnings only: upkeep belongs to the daemon, the column never runs it. */
 const extensions = loadExtensions(configGetter());
 const glow = glowRenderer(config.glow);
@@ -54,7 +55,7 @@ const markdown: Markdown = (text, width) => {
 
 function localeNow(): Locale {
     if (Date.now() - settled.at > LOCALE_MS) {
-        settled = { at: Date.now(), locale: loadConfig().locale };
+        settled = { at: Date.now(), locale: loadConfig().locale, version: codeVersion() };
     }
     return settled.locale;
 }
@@ -62,7 +63,7 @@ function localeNow(): Locale {
 function view(): ColumnView {
     const locale = localeNow();
     const stored = store.readTab(tab);
-    return { tab: stored, recap: store.readRecap(tab), notes: notesOf(extensions, stored?.lanes, locale), warnings: warningsOf(extensions, locale), now: Date.now(), messages: messagesFor(locale) };
+    return { tab: stored, recap: store.readRecap(tab), notes: notesOf(extensions, stored?.lanes, locale), warnings: warningsOf(extensions, locale), now: Date.now(), messages: messagesFor(locale), version: settled.version };
 }
 
 /**

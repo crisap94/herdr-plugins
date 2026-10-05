@@ -57,6 +57,7 @@ export class Dispatch {
                 await this.open(intent.tab, intent.shape);
                 return;
             case 'close-column':
+                this.deps.log(`tab ${intent.tab}: closing column ${intent.column}`);
                 await this.deps.columns.close(intent.column);
                 return;
             case 'publish':
@@ -111,7 +112,8 @@ export class Dispatch {
         }
         const cells = shape === 'side' ? targetCols(layout.width, this.deps.sizing()) : BAR_ROWS;
         await this.narrow(tab, opened.pane, axis, cells);
-        this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape });
+        this.deps.log(`tab ${tab}: column opened (${opened.pane}, ${shape})`);
+        this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: Date.now() });
     }
 
     private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: number): Promise<void> {

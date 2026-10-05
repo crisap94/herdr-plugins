@@ -6,7 +6,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
-import type { FleetSource, FrameStream } from '#src/ports/fleet-source.ts';
+import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { AsyncQueue } from './async-queue.ts';
 import { decode } from './decode.ts';
@@ -32,9 +32,12 @@ export interface Retry {
     readonly retryMaxMs: number;
     /** how long `resync` waits to merge a burst of frames into one reconcile (default 400 ms) */
     readonly resyncDebounceMs?: number;
+    /** how long without a frame or a snapshot from herdr before the daemon says so and subscribes afresh (default 5 minutes) */
+    readonly watchdogMs?: number;
 }
 
 const DEFAULT_RETRY: Retry = { retryBaseMs: 1000, retryMaxMs: 60_000 };
+const WATCHDOG_MS = 300_000;
 
 /** Every Nth tick opens a fresh subscription even though nothing is known to be wrong: a half-open connection says nothing. */
 export const RESUBSCRIBE_EVERY = 10;
@@ -52,10 +55,13 @@ export class Informer {
     private pendingRetry: ReturnType<typeof setTimeout> | null = null;
     private failures = 0;
     private ticks = 0;
+    /** the last time herdr gave a sign of life: a frame, a snapshot, a subscription */
+    private lastLife: number;
     private readonly retry: Retry;
 
     constructor(source: FleetSource, clock: Clock, policy: Policy, hooks: InformerHooks, retry: Retry = DEFAULT_RETRY) {
         this.retry = retry;
+        this.lastLife = Number(clock.now());
         this.source = source;
         this.clock = clock;
         this.policy = policy;
@@ -66,6 +72,16 @@ export class Informer {
         return this.board;
     }
 
+    /** A snapshot, marked with when it was REQUESTED: the fold needs that to tell "gone" from "opened after this was asked". */
+    private async stamped(): Promise<SnapshotResult> {
+        const requested = Number(this.clock.now());
+        const snap = await this.source.snapshot();
+        if (!isUnknown(snap)) {
+            this.lastLife = Number(this.clock.now());
+        }
+        return isUnknown(snap) ? snap : { ...snap, seen: { ...snap.seen, at: requested } };
+    }
+
     /** Subscribe FIRST, snapshot SECOND: a change between the two is then not lost. */
     async enterSubscription(): Promise<void> {
         const opened = await this.source.subscribe(specsFor(watchSet(this.board)));
@@ -74,7 +90,7 @@ export class Informer {
             await this.recoverWithoutStream();
             return;
         }
-        const snap = await this.source.snapshot();
+        const snap = await this.stamped();
         if (isUnknown(snap)) {
             opened.stream.close();
             this.hooks.onBlind({ at: 'snapshot', saying: saying(snap.why) });
@@ -100,7 +116,7 @@ export class Informer {
      * the next attempt asks only for what exists; and keep trying, with backoff, until it works.
      */
     private async recoverWithoutStream(): Promise<void> {
-        const snap = await this.source.snapshot();
+        const snap = await this.stamped();
         if (!isUnknown(snap)) {
             this.queue.push({ kind: 'reconciled', seen: snap.seen });
         }
@@ -130,7 +146,7 @@ export class Informer {
             await this.enterSubscription();
             return;
         }
-        const snap = await this.source.snapshot();
+        const snap = await this.stamped();
         if (isUnknown(snap)) {
             this.hooks.onBlind({ at: 'snapshot', saying: saying(snap.why) });
             return;
@@ -141,11 +157,19 @@ export class Informer {
     /** The daemon's once-a-minute beat: a snapshot-only reconcile, and every 10th time a fresh subscription. */
     tick(): void {
         this.ticks += 1;
-        if (this.ticks % RESUBSCRIBE_EVERY === 0) {
+        if (this.silentFor() > (this.retry.watchdogMs ?? WATCHDOG_MS)) {
+            this.hooks.onBlind({ at: 'subscribe', saying: `no frame and no snapshot from herdr for ${Math.round(this.silentFor() / 60_000)} min: subscribing afresh` });
+            this.lastLife = Number(this.clock.now());
+            void this.enterSubscription();
+        } else if (this.ticks % RESUBSCRIBE_EVERY === 0) {
             void this.enterSubscription();
         } else {
             this.resync();
         }
+    }
+
+    private silentFor(): number {
+        return Number(this.clock.now()) - this.lastLife;
     }
 
     private retire(): void {
@@ -155,6 +179,7 @@ export class Informer {
 
     private async pump(stream: FrameStream): Promise<void> {
         for await (const frame of stream.frames()) {
+            this.lastLife = Number(this.clock.now());
             const decoded = decode(frame);
             if (decoded.kind === 'unknown') {
                 this.hooks.onUnknownKind(decoded.rawKind);

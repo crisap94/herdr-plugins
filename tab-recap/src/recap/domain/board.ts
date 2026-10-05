@@ -8,6 +8,8 @@ export type Shape = 'side' | 'bar';
 export interface Placement {
     readonly pane: PaneId;
     readonly shape: Shape;
+    /** when the pane was created (ms), if we opened it ourselves: a snapshot requested before that cannot know it */
+    readonly since?: number;
 }
 
 /** What the operator asked of a column: hide it, show it, or flip it from whatever it is NOW — decided by the board that applies the request, never by the one who sent it. */

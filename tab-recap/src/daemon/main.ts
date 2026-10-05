@@ -8,6 +8,7 @@ import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
+import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
@@ -22,6 +23,7 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
+import { bounded } from './bounded.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -29,6 +31,8 @@ import { upkeep } from './upkeep.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
+/** an intent is a handful of herdr requests of at most 10 s each */
+const INTENT_MS = 90_000;
 
 const log = (line: string): void => {
     console.error(`${new Date().toISOString()} ${line}`);
@@ -50,7 +54,7 @@ function wantsScreen(agent: string): boolean {
 function wire(root: string): Wired {
     const config = loadConfig();
     const fleet = new HerdrFleet(root);
-    const store = new FsRecapStore(root);
+    const store = new FsRecapStore(root, codeVersion());
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
@@ -75,7 +79,12 @@ function wire(root: string): Wired {
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
-                await dispatch.send(intent);
+                // one stuck intent must not stop the daemon from ever folding another observation; and a long run of
+                // cheap ones hands the event loop back between intents, so sockets and timers keep being served
+                if (await bounded(dispatch.send(intent), INTENT_MS) === 'timeout') {
+                    log(`intent ${intent.kind} took more than ${INTENT_MS / 1000} s: moving on`);
+                }
+                await new Promise<void>((resolve) => { setImmediate(resolve); });
             }
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
@@ -94,7 +103,8 @@ async function start(): Promise<number> {
         log(`another daemon is running (pid ${other})`);
         return 0;
     }
-    pidfile.claim(process.pid);
+    pidfile.claim(process.pid, codeVersion());
+    pidfile.beat();
     const { informer, backends, extensions, store } = wire(root);
     const stop = (): void => {
         log('stopping: closing every column');
@@ -105,6 +115,7 @@ async function start(): Promise<number> {
     process.on('SIGINT', stop);
     informer.push({ kind: 'hidden-restored', state: store.readHidden() });
     setInterval(() => {
+        pidfile.beat();
         for (const tab of store.takeRequests()) {
             informer.push({ kind: 'requested', tab });
         }
