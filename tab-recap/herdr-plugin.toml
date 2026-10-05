@@ -44,6 +44,19 @@ contexts = ["tab", "pane"]
 command = ["node", "bin/tab-recap.ts", "show"]
 
 [[actions]]
+id = "column"
+title = "Tab Recap: hide / show this tab's column"
+description = "Hides this tab's recap column, or shows it again. Recaps keep being written."
+contexts = ["tab", "pane"]
+command = ["node", "bin/tab-recap.ts", "column"]
+
+[[actions]]
+id = "columns"
+title = "Tab Recap: hide / show all columns"
+description = "Hides every recap column, or shows them all again. Recaps keep being written."
+command = ["node", "bin/tab-recap.ts", "columns"]
+
+[[actions]]
 id = "refresh"
 title = "Tab Recap: recap this tab now"
 contexts = ["tab", "pane"]

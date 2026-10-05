@@ -54,12 +54,14 @@ Markdown when installed.
 | `tab-recap.start` / `stop` / `toggle` | daemon on/off; off closes every column and stays off |
 | `tab-recap.show` | the current tab's recap as a modal (what a tap on the bar does) |
 | `tab-recap.refresh` | recap the current tab now |
+| `tab-recap.column` | hide this tab's column, or show it again (recaps keep being written; remembered across restarts) |
+| `tab-recap.columns` | hide every column, or show them all again |
 | `tab-recap.configure` | the settings modal: agent, model, length, interface and recap language; `t` tests, `s` saves |
 | `tab-recap.status` | daemon, backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH).
 
-In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, Enter or a tap opens the modal, `q`/Esc closes the modal.
+In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 
 Bind one in `~/.config/herdr/config.toml`, e.g.:
 
@@ -67,8 +69,15 @@ Bind one in `~/.config/herdr/config.toml`, e.g.:
 [[keys.command]]
 key = "prefix+r"
 type = "plugin_action"
-command = "tab-recap.refresh"
+command = "tab-recap.column"      # hide / show this tab's column
+
+[[keys.command]]
+key = "prefix+shift+r"
+type = "plugin_action"
+command = "tab-recap.columns"     # hide / show every column
 ```
+
+A hidden column is closed and not reopened, and recaps are still written — showing it again is instant.
 
 ## Configure
 

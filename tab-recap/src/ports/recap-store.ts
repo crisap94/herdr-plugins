@@ -1,3 +1,4 @@
+import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 
 /** What a column renders about one lane of its tab. */
@@ -44,6 +45,15 @@ export function blankRecap(tab: string): TabRecap {
     return { tab, lanes: [], markdown: '', at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' };
 }
 
+/** Something the operator asked for with `hide`/`show`: one tab's column, or every column. */
+export interface VisibilityRequest {
+    /** the word `all`, or a tab id */
+    readonly target: string;
+    readonly hidden: boolean;
+}
+
+export const NOTHING_HIDDEN: HiddenState = { all: false, hidden: [], shown: [] };
+
 export interface RecapStore {
     readRecap(tab: string): TabRecap | null;
     writeRecap(recap: TabRecap): void;
@@ -51,4 +61,9 @@ export interface RecapStore {
     writeTab(view: TabView): void;
     request(tab: string): void;
     takeRequests(): readonly TabId[];
+    /** the hidden columns as last saved by the daemon */
+    readHidden(): HiddenState;
+    writeHidden(state: HiddenState): void;
+    requestVisibility(request: VisibilityRequest): void;
+    takeVisibility(): readonly VisibilityRequest[];
 }

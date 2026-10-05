@@ -14,8 +14,8 @@ export const es: Messages = {
     needsYou: (what) => `te necesita: ${what}`,
     ago: (amount, unit) => `hace ${amount} ${unit}`,
     hints: {
-        column: ['toca: pantalla completa · r actualizar · j/k desplazar', 'toca: pantalla completa · r · j/k', 'r actualizar · j/k', 'r'],
-        modal: ['q cerrar · r actualizar ahora · j/k desplazar · g inicio', 'q cerrar · r actualizar · j/k', 'q cerrar · r · j/k', 'q'],
+        column: ['toca: pantalla completa · r actualizar · h ocultar · j/k desplazar', 'toca: pantalla completa · r · h · j/k', 'r actualizar · h ocultar', 'r h'],
+        modal: ['q cerrar · r actualizar ahora · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
@@ -55,6 +55,10 @@ export const es: Messages = {
         tabUnknown: 'no se pudo saber cuál es la pestaña actual',
         modalFailed: (why) => `no se pudo abrir la ventana (${why})`,
         requested: (tab) => `resumen solicitado para ${tab}`,
+        columnHidden: (tab) => `columna oculta en ${tab} (los resúmenes se siguen escribiendo)`,
+        columnShown: (tab) => `columna visible en ${tab}`,
+        columnsHidden: 'todas las columnas ocultas (los resúmenes se siguen escribiendo)',
+        columnsShown: 'todas las columnas visibles',
         setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|claude|codex|opencode|hermes|custom> [modelo]`,
         backendNow: (what) => `el motor ahora es ${what} (se aplica al próximo resumen)`,
         usageBackend: (choices) => `USO: backend ${choices} [modelo]  (modelo solo para un agente concreto, p. ej. haiku, gpt-6-luna, proveedor/modelo; si lo omites se conserva el actual)`,
