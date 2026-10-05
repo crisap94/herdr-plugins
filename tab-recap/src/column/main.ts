@@ -139,6 +139,7 @@ const KEYS: Readonly<Record<string, () => void>> = {
     g: () => { scroll = 0; },
     G: () => { scroll = Number.MAX_SAFE_INTEGER; },
     r: () => { store.request(tab); },
+    h: () => { store.requestVisibility({ target: tab, hidden: true }); },
     '\r': openModal,
 };
 

@@ -2,6 +2,7 @@ import { added, lanesOf, put, removed, tabsWithLanes, without } from './board.ts
 import type { Board, Shape } from './board.ts';
 import type { TabId } from './ids.ts';
 import type { Intent } from './intent.ts';
+import { isHidden } from './visibility.ts';
 import { duration, elapsed, instant } from './time.ts';
 import type { Duration, Instant } from './time.ts';
 
@@ -38,6 +39,7 @@ export function shapeFor(board: Board, tab: TabId, policy: Policy): Shape {
 
 export function deserves(board: Board, tab: TabId, now: Instant, policy: Policy): boolean {
     return board.enabled
+        && !isHidden(board, tab)
         && (policy.onlyTabs.length === 0 || policy.onlyTabs.includes(String(tab)))
         && lanesOf(board, tab).length > 0
         && !isGivenUp(board, tab, now);
@@ -61,7 +63,7 @@ function opened(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
 /** Close what the board no longer wants — and a column of the wrong shape, so `opened` docks the right one. */
 function closed(board: Board, policy: Policy): [Board, Intent[]] {
     const unwanted = [...board.columns].filter(([tab, placed]) =>
-        !board.enabled || lanesOf(board, tab).length === 0 || placed.shape !== shapeFor(board, tab, policy));
+        !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0 || placed.shape !== shapeFor(board, tab, policy));
     const columns = unwanted.reduce((map, [tab]) => without(map, tab), board.columns);
     return [{ ...board, columns }, unwanted.map(([tab, placed]) => ({ kind: 'close-column', tab, column: placed.pane }))];
 }

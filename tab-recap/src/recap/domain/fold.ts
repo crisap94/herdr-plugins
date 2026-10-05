@@ -1,5 +1,5 @@
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
-import type { Board, Placement, Shape } from './board.ts';
+import type { Board, HiddenState, Placement, Shape, VisibilityTarget } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { laneFrom, withStatus } from './lane.ts';
@@ -8,6 +8,7 @@ import { settle, spend } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
 import type { Instant } from './time.ts';
+import { hiddenState, restoreHidden, withVisibility } from './visibility.ts';
 
 export interface SeenColumn {
     readonly tabId: string;
@@ -32,7 +33,11 @@ export type Observation =
     | { readonly kind: 'column-failed'; readonly tab: TabId }
     | { readonly kind: 'focused'; readonly tab: TabId }
     | { readonly kind: 'requested'; readonly tab: TabId }
-    | { readonly kind: 'switched'; readonly enabled: boolean };
+    | { readonly kind: 'switched'; readonly enabled: boolean }
+    /** the operator hid or showed a column (or all of them) */
+    | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: boolean }
+    /** what was saved before the daemon started */
+    | { readonly kind: 'hidden-restored'; readonly state: HiddenState };
 
 export interface Outcome {
     readonly board: Board;
@@ -150,6 +155,30 @@ function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
     return step(next, [{ kind: 'publish', tab }]);
 }
 
+type Operator = Extract<Observation, { kind: 'focused' | 'requested' | 'switched' | 'visibility' | 'hidden-restored' }>;
+
+/** What the operator did (or what they had saved): looking at a tab, asking for a recap, switching on/off, hiding or showing columns. */
+function onOperator(board: Board, observation: Operator): Step {
+    switch (observation.kind) {
+        case 'focused':
+            return step({ ...board, focused: observation.tab }, recapsOf(board, [observation.tab], 'focused'));
+        case 'requested':
+            return step(board, recapsOf(board, [observation.tab], 'requested'));
+        case 'switched':
+            return step({ ...board, enabled: observation.enabled });
+        case 'hidden-restored':
+            return step(restoreHidden(board, observation.state));
+        case 'visibility': {
+            const next = withVisibility(board, observation.target, observation.hidden);
+            return step(next, [{ kind: 'save-hidden', state: hiddenState(next) }]);
+        }
+        default: {
+            const exhaustive: never = observation;
+            return step(board, [exhaustive]);
+        }
+    }
+}
+
 function route(board: Board, observation: Observation, now: Instant, policy: Policy): Step {
     switch (observation.kind) {
         case 'detected':
@@ -166,16 +195,8 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
             const [spent, intents] = spend(board, observation.tab, now, policy);
             return step(spent, intents);
         }
-        case 'focused':
-            return step({ ...board, focused: observation.tab }, recapsOf(board, [observation.tab], 'focused'));
-        case 'requested':
-            return step(board, recapsOf(board, [observation.tab], 'requested'));
-        case 'switched':
-            return step({ ...board, enabled: observation.enabled });
-        default: {
-            const exhaustive: never = observation;
-            return step(board, [exhaustive]);
-        }
+        default:
+            return onOperator(board, observation);
     }
 }
 

@@ -10,6 +10,16 @@ export interface Placement {
     readonly shape: Shape;
 }
 
+/** What `hide` and `show` act on: one tab, or every tab. */
+export type VisibilityTarget = { readonly tab: TabId } | 'all';
+
+/** The operator's hidden columns, as saved: `all` is the blanket, `shown` the tabs shown again under it. */
+export interface HiddenState {
+    readonly all: boolean;
+    readonly hidden: readonly string[];
+    readonly shown: readonly string[];
+}
+
 export interface Board {
     readonly lanes: ReadonlyMap<PaneId, Lane>;
     /** tab → where its column is */
@@ -26,6 +36,11 @@ export interface Board {
     readonly focused: TabId | null;
     readonly enabled: boolean;
     readonly seeded: boolean;
+    /** tabs whose column the operator hid (their recaps keep being written) */
+    readonly hidden: ReadonlySet<TabId>;
+    /** every column hidden at once; `shown` are the tabs shown again since */
+    readonly allHidden: boolean;
+    readonly shown: ReadonlySet<TabId>;
 }
 
 export function emptyBoard(): Board {
@@ -39,6 +54,9 @@ export function emptyBoard(): Board {
         focused: null,
         enabled: true,
         seeded: false,
+        hidden: new Set(),
+        allHidden: false,
+        shown: new Set(),
     };
 }
 

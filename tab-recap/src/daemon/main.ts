@@ -12,6 +12,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
@@ -91,7 +92,15 @@ async function start(): Promise<number> {
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
-    setInterval(() => { for (const tab of store.takeRequests()) { informer.push({ kind: 'requested', tab }); } }, REQUEST_POLL_MS).unref();
+    informer.push({ kind: 'hidden-restored', state: store.readHidden() });
+    setInterval(() => {
+        for (const tab of store.takeRequests()) {
+            informer.push({ kind: 'requested', tab });
+        }
+        for (const asked of store.takeVisibility()) {
+            informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
+        }
+    }, REQUEST_POLL_MS).unref();
     setInterval(() => {
         informer.tick();
         void backends.refresh();

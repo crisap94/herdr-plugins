@@ -13,8 +13,8 @@ export const en: Messages = {
     needsYou: (what) => `needs you: ${what}`,
     ago: (amount, unit) => `${amount}${unit === 'min' ? 'm' : unit} ago`,
     hints: {
-        column: ['tap: full screen · r recap now · j/k scroll', 'tap: full screen · r · j/k', 'r recap · j/k', 'r'],
-        modal: ['q close · r recap now · j/k scroll · g top', 'q close · r recap now · j/k', 'q close · r · j/k', 'q'],
+        column: ['tap: full screen · r recap now · h hide · j/k scroll', 'tap: full screen · r · h · j/k', 'r recap · h hide', 'r h'],
+        modal: ['q close · r recap now · h hide column · j/k scroll · g top', 'q close · r recap now · h hide · j/k', 'q close · r · h · j/k', 'q'],
     },
     setup: {
         title: 'TAB RECAP — settings',
@@ -54,6 +54,10 @@ export const en: Messages = {
         tabUnknown: 'could not tell which tab is current',
         modalFailed: (why) => `the modal did not open (${why})`,
         requested: (tab) => `recap requested for ${tab}`,
+        columnHidden: (tab) => `column hidden in ${tab} (recaps keep being written)`,
+        columnShown: (tab) => `column shown in ${tab}`,
+        columnsHidden: 'every column hidden (recaps keep being written)',
+        columnsShown: 'every column shown',
         setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|claude|codex|opencode|hermes|custom> [model]`,
         backendNow: (what) => `backend is now ${what} (applies to the next recap)`,
         usageBackend: (choices) => `USAGE: backend ${choices} [model]  (a model only for a named harness, e.g. haiku, gpt-6-luna, provider/model; omitted = keep the one set)`,

@@ -63,16 +63,23 @@ Pick the agent and model, the recap length and the languages. Press **`t`** to r
 current choices (it shows ✓ and how long it took, or why it failed), **`s`** to save, **`q`** to
 close. Changes apply to the next recap.
 
-To open the settings with a key, add this to `~/.config/herdr/config.toml`:
+The settings have no default key. To hide and show columns with a key, add this to
+`~/.config/herdr/config.toml`:
 
 ```toml
 [[keys.command]]
 key = "prefix+r"
 type = "plugin_action"
-command = "tab-recap.configure"
+command = "tab-recap.column"      # hide / show this tab's column
+
+[[keys.command]]
+key = "prefix+shift+r"
+type = "plugin_action"
+command = "tab-recap.columns"     # hide / show every column
 ```
 
-Use any free key, and `tab-recap.refresh` instead if you would rather bind "recap this tab now".
+Use any free keys. The same way you can bind `tab-recap.configure` (the settings) or
+`tab-recap.refresh` ("recap this tab now").
 
 ### Everyday use
 
@@ -87,8 +94,9 @@ Use any free key, and `tab-recap.refresh` instead if you would rather bind "reca
   `r`.
 - One recap per tab, covering all its agents.
 
-The same views are available as actions: `tab-recap.show` (the modal) and `tab-recap.refresh`
-(recap this tab now).
+The same views are available as actions: `tab-recap.show` (the modal), `tab-recap.refresh`
+(recap this tab now), `tab-recap.column` (hide or show this tab's column) and `tab-recap.columns`
+(all columns). Hiding is remembered across restarts and recaps keep being written.
 
 ### Who writes the recap
 

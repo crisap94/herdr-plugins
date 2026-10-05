@@ -5,7 +5,8 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { blankRecap } from '#src/ports/recap-store.ts';
+import type { HiddenState } from '#src/recap/domain/board.ts';
+import { blankRecap, NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, Transcripts } from '#src/ports/transcripts.ts';
@@ -18,6 +19,10 @@ class MemoryStore implements RecapStore {
     writeTab(): void { /* not needed */ }
     request(): void { /* not needed */ }
     takeRequests(): readonly never[] { return []; }
+    readHidden(): HiddenState { return NOTHING_HIDDEN; }
+    writeHidden(): void { /* not needed */ }
+    requestVisibility(): void { /* not needed */ }
+    takeVisibility(): readonly never[] { return []; }
 }
 
 const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'run the tests' };

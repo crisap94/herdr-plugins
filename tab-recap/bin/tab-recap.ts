@@ -9,6 +9,7 @@ import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
+import { hiddenIn } from '#src/recap/domain/visibility.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
@@ -105,6 +106,23 @@ async function configure(): Promise<number> {
     return OK;
 }
 
+/** Hide this tab's column if it shows, show it if it is hidden — or the same for every column. The daemon does the rest. */
+function toggle(all: boolean): number {
+    const tab = all ? 'all' : currentTab();
+    if (tab === null) {
+        console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
+        return NOT_COVERED;
+    }
+    const store = new FsRecapStore(stateDir());
+    const saved = store.readHidden();
+    const hide = all ? !saved.all : !hiddenIn(saved, tab);
+    store.requestVisibility({ target: tab, hidden: hide });
+    const t = m().cli;
+    const said = all ? [t.columnsShown, t.columnsHidden] : [t.columnShown(tab), t.columnHidden(tab)];
+    console.log(`tab-recap: ${said[hide ? 1 : 0] ?? ''}`);
+    return OK;
+}
+
 async function show(): Promise<number> {
     const tab = currentTab();
     if (tab === null) {
@@ -128,6 +146,8 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
     stop,
     toggle: () => (pidfile.disabled || pidfile.alive() === null ? commands['start']?.(undefined) ?? FAILED : stop()),
     status,
+    column: () => toggle(false),
+    columns: () => toggle(true),
     refresh: () => {
         const tab = currentTab();
         if (tab === null) {
