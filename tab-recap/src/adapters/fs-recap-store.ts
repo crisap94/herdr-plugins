@@ -151,7 +151,7 @@ export class FsRecapStore implements RecapStore {
             const path = join(this.root, 'visibility', name);
             const asked = readJson(path) as { target?: unknown; hidden?: unknown } | null;
             rmSync(path, { force: true });
-            if (asked !== null && typeof asked.target === 'string' && asked.target !== '' && typeof asked.hidden === 'boolean') {
+            if (asked !== null && typeof asked.target === 'string' && asked.target !== '' && (typeof asked.hidden === 'boolean' || asked.hidden === 'toggle')) {
                 found.push({ target: asked.target, hidden: asked.hidden });
             }
         }
