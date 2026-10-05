@@ -24,6 +24,7 @@ import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
+import { shutDown } from './shutdown.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -40,6 +41,7 @@ const log = (line: string): void => {
 
 interface Wired {
     readonly informer: Informer;
+    readonly fleet: HerdrFleet;
     readonly backends: Backends;
     readonly extensions: readonly Extension[];
     readonly store: FsRecapStore;
@@ -92,7 +94,7 @@ function wire(root: string): Wired {
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
     });
     box.informer = informer;
-    return { informer, backends, extensions: loadExtensions(configGetter()), store };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store };
 }
 
 async function start(): Promise<number> {
@@ -105,11 +107,14 @@ async function start(): Promise<number> {
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const { informer, backends, extensions, store } = wire(root);
+    const { informer, fleet, backends, extensions, store } = wire(root);
+    let stopping = false;
     const stop = (): void => {
-        log('stopping: closing every column');
-        informer.push({ kind: 'switched', enabled: false });
-        setTimeout(() => { pidfile.release(process.pid); informer.stop(); process.exit(0); }, 1500);
+        if (stopping) {
+            return;
+        }
+        stopping = true;
+        void shutDown(fleet, informer, log).finally(() => { pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
