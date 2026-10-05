@@ -158,7 +158,7 @@ test('against real git, in a linked worktree: matches `git status`, and creates 
     }
 });
 
-test('the registry holds the git note; the extension answers to its id', () => {
-    assert.equal(FACTORIES.length >= 1, true);
-    assert.equal(FACTORIES[0]?.(() => undefined)?.id, 'git-note');
+test('the registry holds the git note exactly once, wherever it sits in the list', () => {
+    const ids = FACTORIES.flatMap((factory) => factory(() => undefined)?.id ?? []);
+    assert.equal(ids.filter((id) => id === 'git-note').length, 1);
 });
