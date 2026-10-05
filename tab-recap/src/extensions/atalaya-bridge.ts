@@ -22,6 +22,22 @@ function expandHome(path: string): string {
     return path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path;
 }
 
+/**
+ * herdr starts the daemon without the user session's environment, and `systemctl --user` needs it to find the
+ * user manager's bus. Fill in the two variables from the uid when they are missing; values already set are kept.
+ */
+export function userBusEnv(base: NodeJS.ProcessEnv, uid: number | undefined): NodeJS.ProcessEnv {
+    if (uid === undefined) {
+        return base;
+    }
+    const runtime = `/run/user/${uid}`;
+    return {
+        ...base,
+        XDG_RUNTIME_DIR: (base['XDG_RUNTIME_DIR'] ?? '') === '' ? runtime : base['XDG_RUNTIME_DIR'],
+        DBUS_SESSION_BUS_ADDRESS: (base['DBUS_SESSION_BUS_ADDRESS'] ?? '') === '' ? `unix:path=${runtime}/bus` : base['DBUS_SESSION_BUS_ADDRESS'],
+    };
+}
+
 function alertOf(line: string): [string, Note] | null {
     const row = parse(line);
     const episode = obj(row?.['episode']);
@@ -50,10 +66,12 @@ export class AtalayaBridge implements Extension {
     private readonly get: (key: string) => string | undefined;
     private readonly runner: Runner;
     private readonly clock: () => number;
+    private readonly env: NodeJS.ProcessEnv;
     private cache: { mtime: number; notes: ReadonlyMap<string, readonly Note[]> } = { mtime: -1, notes: new Map() };
     private lastHeal = 0;
 
-    constructor(dir: string, get: (key: string) => string | undefined, runner: Runner = run, clock: () => number = Date.now) {
+    constructor(dir: string, get: (key: string) => string | undefined, runner: Runner = run, clock: () => number = Date.now, env: NodeJS.ProcessEnv = process.env) {
+        this.env = env;
         this.dir = dir;
         this.get = get;
         this.runner = runner;
@@ -106,7 +124,7 @@ export class AtalayaBridge implements Extension {
             return { kind: 'idle' };
         }
         this.lastHeal = now;
-        const opts = { input: '', timeoutMs: 15_000, cwd: this.dir, env: process.env };
+        const opts = { input: '', timeoutMs: 15_000, cwd: this.dir, env: userBusEnv(this.env, process.getuid?.()) };
         if ((await this.runner('systemctl', ['--user', 'is-active', '--quiet', UNIT], opts)).code === 0) {
             return { kind: 'idle' };
         }

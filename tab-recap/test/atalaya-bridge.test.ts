@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AtalayaBridge, atalayaBridge } from '#src/extensions/atalaya-bridge.ts';
+import { AtalayaBridge, atalayaBridge, userBusEnv } from '#src/extensions/atalaya-bridge.ts';
 import type { Runner } from '#src/extensions/atalaya-bridge.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
@@ -18,13 +18,15 @@ function fixture(files: Readonly<Record<string, string>>): { dir: string; done: 
     return { dir, done: (): void => { rmSync(dir, { recursive: true }); } };
 }
 
-function recorder(codes: Readonly<Record<string, number>> = {}): { runner: Runner; calls: string[] } {
+function recorder(codes: Readonly<Record<string, number>> = {}): { runner: Runner; calls: string[]; envs: NodeJS.ProcessEnv[] } {
     const calls: string[] = [];
-    const runner: Runner = (command, args) => {
+    const envs: NodeJS.ProcessEnv[] = [];
+    const runner: Runner = (command, args, options) => {
+        envs.push(options.env);
         calls.push([command, ...args].join(' '));
         return Promise.resolve({ code: codes[args[1] ?? ''] ?? 0, stdout: '', stderr: 'boom', timedOut: false });
     };
-    return { runner, calls };
+    return { runner, calls, envs };
 }
 
 const noKeys = (): undefined => undefined;
@@ -118,4 +120,27 @@ test('heal: gated by the heartbeat, the switch and the rate limit — and never 
     } finally {
         [stale, fresh, none].forEach((item) => { item.done(); });
     }
+});
+
+test('heal: systemctl --user gets the user session bus in its environment when the daemon was started without it', async () => {
+    const stale = fixture({ heartbeat: String(NOW - 240_000) });
+    try {
+        const down = recorder({ 'is-active': 3, start: 0 });
+        await new AtalayaBridge(stale.dir, noKeys, down.runner, () => NOW, { PATH: '/usr/bin' }).upkeep();
+        const uid = process.getuid?.();
+        assert.equal(down.envs.length, 2, 'both is-active and start');
+        for (const env of down.envs) {
+            assert.equal(env['XDG_RUNTIME_DIR'], `/run/user/${String(uid)}`);
+            assert.equal(env['DBUS_SESSION_BUS_ADDRESS'], `unix:path=/run/user/${String(uid)}/bus`);
+            assert.equal(env['PATH'], '/usr/bin', 'the rest of the environment is kept');
+        }
+    } finally {
+        stale.done();
+    }
+});
+
+test('userBusEnv: values that are already set are kept, empty ones are filled, no uid changes nothing', () => {
+    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' }, 1000), { XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' });
+    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '' }, 1000), { XDG_RUNTIME_DIR: '/run/user/1000', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/run/user/1000/bus' });
+    assert.deepEqual(userBusEnv({ A: '1' }, undefined), { A: '1' });
 });

@@ -32,3 +32,10 @@ See `config.atalaya.example.env`.
 | --- | --- | --- |
 | `TAB_RECAP_BRIDGE_DIR` | `~/.local/state/atalaya-bridge` | the bridge's state dir; empty disables the extension (read at daemon/column start) |
 | `TAB_RECAP_BRIDGE_HEAL` | `1` | `0` = never start the service (read on every tick) |
+
+## Lingering
+
+The heal runs `systemctl --user`, and herdr starts the daemon without the user session's environment, so the
+extension fills in `XDG_RUNTIME_DIR=/run/user/<uid>` and `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/<uid>/bus`
+when they are missing (values that are set are kept). That only works while the user's systemd manager is running:
+on a machine where nobody is logged in, enable lingering once with `loginctl enable-linger <user>`.
