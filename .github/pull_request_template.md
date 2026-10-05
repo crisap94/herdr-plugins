@@ -6,7 +6,12 @@
 
 - [ ] `bash ci/lint.sh` passes (run in the plugin directory)
 - [ ] `bash ci/test.sh` passes
-- [ ] `CHANGELOG.md` updated under `[Unreleased]`
+
+## For the changelog
+
+Say what changes for the user in the description above, and write the title as the line you would
+like to read in the release notes. The maintainer labels the merge request (added, changed, fixed or
+internal), which decides the next version; you do not edit `CHANGELOG.md`.
 
 ## Note on merging
 

@@ -1,5 +1,7 @@
 # herdr-plugins
 
+[![ci](https://github.com/crisap94/herdr-plugins/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/crisap94/herdr-plugins/actions/workflows/ci.yml)
+
 Plugins for [herdr](https://github.com/ogulcancelik/herdr), the terminal multiplexer for coding
 agents. One plugin per directory, each installable on its own.
 
@@ -16,19 +18,17 @@ rolling, structured recap of the conversation (goal, what is happening now, what
 is done, decisions, next steps), so a long session never loses its thread. A coding agent of your
 choice writes it at the end of each turn. It only reads transcripts; it never types into an agent.
 
-```text
- Payments API migration
- ● idle · claude · recap 2m ago
- › keep the old endpoint until Friday
-
- GOAL
- • Move checkout to the v2 API…
- NOW / WAITING ON YOU / DONE /
- DECISIONS / NEXT / KEY REFS
-```
+<p align="center">
+  <img src="tab-recap/docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
+  <img src="tab-recap/docs/screens/column-es.png" alt="The same column in Spanish" width="340">
+</p>
 
 On a phone (a narrow tab) you get a one-row **bar** along the top instead: a status dot per agent
 and one headline. Tap it to open the full recap.
+
+<p align="center">
+  <img src="tab-recap/docs/screens/bar-en.png" alt="The one-row bar" width="460">
+</p>
 
 ### Requirements
 
@@ -58,6 +58,10 @@ Open the settings:
 ```bash
 herdr plugin action invoke tab-recap.configure
 ```
+
+<p align="center">
+  <img src="tab-recap/docs/screens/setup-en.png" alt="The settings modal" width="560">
+</p>
 
 Pick the agent and model, the recap length and the languages. Press **`t`** to run a test with the
 current choices (it shows ✓ and how long it took, or why it failed), **`s`** to save, **`q`** to

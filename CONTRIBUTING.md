@@ -31,6 +31,27 @@ bash ci/test.sh      # node --test
 typechecks, and that a seeded violation is rejected. Exit codes: `0` clean, `1` a finding, `3`
 could not look (a tool is missing — run `npm install`).
 
+Both also run on GitHub Actions (Linux and macOS) for every push and pull request to `main`, and in
+the upstream CI.
+
+## Changelog and versions
+
+You do not edit `CHANGELOG.md` or any version. Every change reaches `main` through a merge request
+with **one label** saying what it is, and the MR title becomes the changelog line:
+
+| label | meaning | release |
+| --- | --- | --- |
+| `changelog::added` | a new capability | minor |
+| `changelog::changed` | a change in behaviour | patch |
+| `changelog::fixed` | a bug fix | patch |
+| `changelog::internal` | tests, refactors, CI, docs: not for the notes | none by itself |
+| `changelog::breaking` | in addition to one of the above, when users must act | major |
+
+Fill in the template's two sections ("What changes for the user", "Why"). A CI job fails the merge
+request without a label or with an empty section. Labels are read when the pipeline starts, so set
+them first; if you add one afterwards, run the pipeline again. Write the title as the line you
+would like to read in the notes ("Hide or show a tab's column with a key").
+
 ## House rules
 
 - **TypeScript on Node ≥ 24, run directly.** No build step, no runtime dependencies.
@@ -53,6 +74,40 @@ The upstream repository is the source of truth; this GitHub repository is a **pu
 are welcome too, but the maintainer applies them upstream and they arrive back through the mirror;
 your PR is then closed with a link to the commit (your authorship is kept).
 
+## Screenshots
+
+The README's pictures are drawn from the plugin's own views with invented data. After a change to
+what the column, bar or settings modal show, regenerate and commit them:
+
+```bash
+cd tab-recap
+npm install --no-save playwright-core && npx playwright-core install chromium   # once
+node docs/screens/shoot.mjs      # docs/screens/render.ts (gated) → HTML → docs/screens/*.png
+```
+
+## Cutting a release
+
+Maintainers only. The version and the notes come from the labels of the merge requests merged since
+the previous `tab-recap-v*` tag: any `breaking` makes a major release, else any `added` a minor one,
+else any `fixed`/`changed` a patch; only `internal` means no release.
+
+1. Merge the merge requests (each with its label) into `main`.
+2. On `main`'s pipeline, run the manual **`release:prepare`** job. It works out the next version
+   (`ci/next-release.sh` prints it with the section it will write), updates the manifest,
+   `package.json`, the lockfile and `CHANGELOG.md` (one bullet per MR: title and `(!number)`, grouped
+   under Breaking/Added/Changed/Fixed, `internal` left out), pushes that commit to `main` and creates
+   the annotated tag `tab-recap-vX.Y.Z`. If nothing is due it says so and stops.
+3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
+   version above the previous one, the three versions equal, a dated and non-empty changelog section
+   with its link, a manifest whose command files exist, no release for the tag yet), then the
+   release is created from that section. The mirror carries the tag to GitHub, whose workflow tests
+   it on Linux and macOS and creates the GitHub release from the same section.
+
+`[Unreleased]` in the changelog stays empty: entries are written only by `release:prepare`
+(a hand-written entry makes it stop). To preview a release, run `bash tab-recap/ci/next-release.sh`
+with `CI_API_V4_URL`, `CI_PROJECT_ID` and a token in the environment. If a release is wrong, fix it
+with a new patch version; never move a tag.
+
 ## Bug reports
 
 Please include:
@@ -71,6 +126,7 @@ Please include:
    (layers and red lines) and its own `ci/lint.sh` and `ci/test.sh`.
 3. Follow the house rules above, add a `## <plugin>` section to [`CHANGELOG.md`](CHANGELOG.md),
    and add a row to the table in the root [`README.md`](README.md).
-4. Wire its gates into the CI configuration.
+4. Wire its gates into the CI configuration (`.github/workflows/ci.yml` and `.gitlab-ci.yml`); a plugin
+   that is released by tag also needs its own `ci/check-release.sh`, `ci/release-notes.sh`, `ci/next-release.sh` and `ci/prepare-release.sh`.
 
 By contributing you agree your work is licensed under the [MIT License](LICENSE).

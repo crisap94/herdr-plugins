@@ -8,10 +8,6 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
-#### Added
-
-- Hide and show columns: `tab-recap.column` hides this tab's column (or shows it again), `tab-recap.columns` does the same for every column, and `h` in the column or the modal hides it. A hidden column is closed and stays closed, recaps keep being written, and the choice is remembered across restarts. The README shows `prefix+r` and `prefix+shift+r` bindings.
-
 ### [1.0.1] — 2026-10-04
 
 #### Changed
