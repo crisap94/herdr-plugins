@@ -27,8 +27,17 @@ const m = (): Messages => messagesOf();
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const pidfile = new Pidfile(stateDir());
 
+/** A daemon that is alive but has not beaten for this long is stuck: it is killed and a new one takes over. */
+const WEDGED_MS = 180_000;
+
 function launch(): number {
-    const running = pidfile.alive();
+    let running = pidfile.alive();
+    if (running !== null && pidfile.wedged(WEDGED_MS)) {
+        console.log(`tab-recap: ${m().cli.daemonWedged(running)}`);
+        process.kill(running, 'SIGKILL');
+        pidfile.release(running);
+        running = null;
+    }
     if (running !== null) {
         console.log(`tab-recap: ${m().cli.daemonRunning(running)}`);
         return OK;

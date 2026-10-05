@@ -54,7 +54,10 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
         'layout w1:t1',
         `resize w1:p9 down ${(1 - 3 / 19 - 0.5).toFixed(3)}`,
     ]);
-    assert.deepEqual(fed, [{ kind: 'column-opened', tab: 'w1:t1', pane: 'w1:p9', shape: 'bar' }]);
+    assert.equal(fed.length, 1);
+    const [feedback] = fed;
+    assert.ok(feedback?.kind === 'column-opened' && feedback.tab === 'w1:t1' && feedback.pane === 'w1:p9' && feedback.shape === 'bar');
+    assert.ok(feedback.at !== undefined && Math.abs(feedback.at - Date.now()) < 5000, 'stamped with when the pane was created');
     assert.ok(calls.every((call) => !/swap|focus/.test(call)));
 });
 
