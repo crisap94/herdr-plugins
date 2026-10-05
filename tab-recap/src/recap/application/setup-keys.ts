@@ -1,122 +1,16 @@
 // The settings modal as a pure reducer: (state, key) -> (state, effects). It never touches the
 // terminal, the config file or a harness; src/setup/main.ts performs the effects.
 import { languageSetting } from '#src/i18n/index.ts';
-import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
-import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
+import { changes, dirty } from './setup-changes.ts';
+import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS } from './setup-state.ts';
+import type { Editing, Setup, Stepped, TestState } from './setup-state.ts';
 
-export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage';
-export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage'];
-export type LocaleSetting = 'auto' | 'en' | 'es';
-export const HARNESS_CHOICES: readonly BackendChoice[] = ['auto', ...BACKEND_IDS];
-export const LOCALE_CHOICES: readonly LocaleSetting[] = ['auto', 'en', 'es'];
-
-/** What the operator is choosing. */
-export interface Draft {
-    readonly backend: BackendChoice;
-    readonly models: Readonly<Record<BackendId, string>>;
-    readonly locale: LocaleSetting;
-    /** `ui`, `en`, `es` or free text, as stored */
-    readonly recapLanguage: string;
-}
-
-/** Rows whose value an environment variable overrides: row -> the variable's name. */
-export type Locks = Readonly<Partial<Record<RowId, string>>>;
-
-export type TestState =
-    | { readonly kind: 'idle' }
-    | { readonly kind: 'running' }
-    | { readonly kind: 'ok'; readonly seconds: number; readonly costUsd: number }
-    | { readonly kind: 'failed'; readonly why: string };
-
-export type Editing =
-    | { readonly kind: 'text'; readonly buffer: string }
-    | { readonly kind: 'choice'; readonly at: number };
-
-export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'no-agent' | { readonly failed: string };
-
-export interface Setup {
-    readonly draft: Draft;
-    readonly stored: Draft;
-    readonly locks: Locks;
-    /** null while herdr and the PATH are still being asked */
-    readonly available: readonly string[] | null;
-    readonly row: number;
-    readonly editing: Editing | null;
-    readonly test: TestState;
-    readonly note: Note | null;
-    /** the operator pressed q with unsaved changes once already */
-    readonly asked: boolean;
-}
-
-export type Effect =
-    | { readonly kind: 'save'; readonly values: ReadonlyMap<string, string>; readonly languageChanged: boolean }
-    | { readonly kind: 'test'; readonly draft: Draft; readonly available: readonly string[] }
-    | { readonly kind: 'close' };
-
-export interface Stepped {
-    readonly state: Setup;
-    readonly effects: readonly Effect[];
-}
+export { changes, dirty, locksOf } from './setup-changes.ts';
+export * from './setup-state.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const UP = new Set(['k', `${ESC}[A`, `${ESC}OA`]);
 const DOWN = new Set(['j', `${ESC}[B`, `${ESC}OB`]);
-
-/** The settings as they are now: the resolved configuration plus the raw locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined }): Draft {
-    const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage) };
-}
-
-const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
-    harness: ['TAB_RECAP_BACKEND'],
-    model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), 'TAB_RECAP_CLAUDE_MODEL', 'TAB_RECAP_CODEX_MODEL'],
-    locale: ['TAB_RECAP_LOCALE'],
-    recapLanguage: ['TAB_RECAP_RECAP_LANG'],
-};
-
-/** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
-export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
-    const locks: Partial<Record<RowId, string>> = {};
-    for (const row of ROWS) {
-        const found = LOCK_KEYS[row].find((key) => (env[key] ?? '') !== '');
-        if (found !== undefined) {
-            locks[row] = found;
-        }
-    }
-    return locks;
-}
-
-export function initial(draft: Draft, locks: Locks): Setup {
-    return { draft, stored: draft, locks, available: null, row: 0, editing: null, test: { kind: 'idle' }, note: null, asked: false };
-}
-
-export const rowOf = (state: Setup): RowId => ROWS[state.row] ?? 'harness';
-
-export const dirty = (state: Setup): boolean => changes(state).size > 0;
-
-/** The harness whose model the Model row edits: the one named, else what `auto` would pick; null = none yet. */
-export function modelTarget(draft: Draft, available: readonly string[] | null): BackendId | null {
-    return draft.backend === 'custom' ? null : pick(draft.backend, available ?? []);
-}
-
-/** The config.env entries that differ from what is stored; a locked row is never written. */
-export function changes(state: Setup): ReadonlyMap<string, string> {
-    const { draft, stored, locks } = state;
-    const out = new Map<string, string>();
-    const set = (row: RowId, key: string, now: string, was: string): void => {
-        if (now !== was && locks[row] === undefined) {
-            out.set(key, now);
-        }
-    };
-    set('harness', 'TAB_RECAP_BACKEND', draft.backend, stored.backend);
-    for (const id of BACKEND_IDS) {
-        set('model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id], stored.models[id]);
-    }
-    set('locale', 'TAB_RECAP_LOCALE', draft.locale, stored.locale);
-    set('recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage, stored.recapLanguage);
-    return out;
-}
 
 function enter(state: Setup): Setup {
     const row = rowOf(state);

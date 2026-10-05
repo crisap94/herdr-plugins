@@ -7,7 +7,7 @@ import type { TabId } from '#src/recap/domain/ids.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
-import type { RecapStore, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
+import type { RecapStore, TabLane, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
 
 /** herdr ids hold ':' — fine on Linux, but a file name should not need quoting. */
 export const fileKey = (id: string): string => id.replaceAll(':', '_').replaceAll('/', '_');
@@ -41,6 +41,11 @@ const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filt
 
 let sequence = 0;
 
+/** A lane as stored; a view written before `cwd` existed has none. */
+function laneOf(lane: Omit<TabLane, 'cwd'> & { cwd?: unknown }): TabLane {
+    return { pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title, cwd: typeof lane.cwd === 'string' ? lane.cwd : null };
+}
+
 export class FsRecapStore implements RecapStore {
     private readonly root: string;
 
@@ -66,7 +71,12 @@ export class FsRecapStore implements RecapStore {
     }
 
     readTab(tab: string): TabView | null {
-        return readJson(this.path('tabs', tab)) as TabView | null;
+        const stored = readJson(this.path('tabs', tab)) as (Omit<TabView, 'lanes'> & { lanes?: readonly (Omit<TabLane, 'cwd'> & { cwd?: unknown })[] }) | null;
+        if (stored === null) {
+            return null;
+        }
+        const lanes = Array.from(stored.lanes ?? [], laneOf);
+        return { ...stored, lanes };
     }
 
     writeTab(view: TabView): void {

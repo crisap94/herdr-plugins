@@ -3,6 +3,7 @@ import { sectionOf } from '#src/i18n/sections.ts';
 import type { SectionId } from '#src/i18n/sections.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
+import { DEFAULT_MARK } from '#src/ports/extension.ts';
 import type { Note } from '#src/ports/extension.ts';
 import type { LaneCursor, TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
@@ -46,7 +47,7 @@ function noteLines(view: ColumnView, pane: string, width: number): string[] {
     return (view.notes.get(pane) ?? []).flatMap((note) => {
         const when = note.at === null ? '' : ` ${ago(view, view.now - note.at)}`;
         const details = note.details.length > 0 ? ` · ${note.details.join(' · ')}` : '';
-        return wrap(`⚑ ${note.label}${when}${details}`, width, '  ').map(style.blue);
+        return wrap(`${note.mark ?? DEFAULT_MARK} ${note.label}${when}${details}`, width, '  ').map(style.blue);
     });
 }
 
