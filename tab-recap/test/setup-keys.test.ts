@@ -112,3 +112,14 @@ test('q: closes at once when clean; with unsaved changes asks once, then a secon
     const retracted = typed(asked.state, ['j', 'q']);
     assert.equal(retracted.effects.length, 0, 'the question is asked again, not skipped');
 });
+
+test('the modal is split into state, changes and keys; the keys module still presents all three', async () => {
+    const keys = await import('#src/recap/application/setup-keys.ts');
+    const changesModule = await import('#src/recap/application/setup-changes.ts');
+    const state = await import('#src/recap/application/setup-state.ts');
+    assert.equal(keys.changes, changesModule.changes);
+    assert.equal(keys.locksOf, changesModule.locksOf);
+    assert.equal(keys.dirty, changesModule.dirty);
+    assert.equal(keys.ROWS, state.ROWS);
+    assert.equal(keys.initial, state.initial);
+});

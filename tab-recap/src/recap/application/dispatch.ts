@@ -26,7 +26,7 @@ export function viewOf(board: Board, tab: TabId, at: number): TabView {
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title,
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd,
         })),
         at,
     };

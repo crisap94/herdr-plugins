@@ -17,7 +17,7 @@ src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is t
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
 src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
-src/setup/              composition root of the settings modal (a popup pane); the keys are `recap/application/setup-keys.ts`, the view `recap/render/setup.ts`
+src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
 bin/                    one-shot commands behind the plugin's actions: 0 · 1 · 2 usage · 3 not covered
 ```
 

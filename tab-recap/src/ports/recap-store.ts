@@ -8,6 +8,8 @@ export interface TabLane {
     readonly agent: string;
     readonly status: string;
     readonly title: string | null;
+    /** where the lane works; null when herdr did not say, or for a view stored before this existed */
+    readonly cwd: string | null;
 }
 
 export interface TabView {
