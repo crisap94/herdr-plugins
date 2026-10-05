@@ -20,8 +20,8 @@ test('fitBytes: one overlong multibyte line loses its head, never a half charact
 
 test('an argv prompt is bounded: the excerpt is trimmed, the instructions and the previous recap are not', () => {
     const excerpt = Array.from({ length: 20_000 }, (_, i) => `turn ${i}: ${'é'.repeat(20)}`).join('\n');
-    const prompt = argvPrompt({ previous: 'PREV-RECAP', excerpt, words: 450, language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] });
+    const prompt = argvPrompt({ previous: 'PREV-RECAP', excerpt, language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] });
     assert.ok(Buffer.byteLength(prompt) <= ARGV_BYTES);
-    assert.ok(prompt.includes('PREV-RECAP') && prompt.includes('## Goal') && prompt.includes('turn 19999'));
+    assert.ok(prompt.includes('PREV-RECAP') && prompt.includes('exactly these keys') && prompt.includes('turn 19999'));
     assert.ok(!prompt.includes('turn 0:'));
 });

@@ -83,7 +83,7 @@ function status(): number {
     const running = pidfile.alive();
     console.log([
         t.statusDaemon(running, pidfile.disabled),
-        t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`, config.words),
+        t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
         t.statusExtensions(loadExtensions(configGetter()).map((extension) => extension.id).join(', ') || t.none),
         `${t.statusState} ${stateDir()}`,
         `${t.statusConfig} ${join(configDir(), 'config.env')}`,

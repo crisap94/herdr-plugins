@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { present } from '#src/recap/render/present.ts';
+import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { blankRecap } from '#src/ports/recap-store.ts';
+import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 
 const noGlow = (): null => null;
 
@@ -64,7 +66,7 @@ test('a modal tells you how to close it; a column never does', async () => {
 });
 
 test('the bar: one row — each lane as a dot, then what needs you (or what is happening now)', async () => {
-    const { presentBar, firstItem } = await import('#src/recap/render/present.ts');
+    const { firstItem } = await import('#src/recap/render/present.ts');
     const markdown = '## Goal\n- migrate\n\n## Now\n- running **CI** on !940\n\n## Waiting on you\n- approve the `prod` deploy\n';
     assert.equal(firstItem(markdown, 'now'), 'running CI on !940');
     const tab = { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null }] };
@@ -105,10 +107,10 @@ test('es: the column speaks Spanish — badge, recap meta, ago, notes, empty sta
 });
 
 test('es: the phone bar still shows needs-you first, then Now, from Spanish headings', async () => {
-    const { presentBar, firstItem } = await import('#src/recap/render/present.ts');
+    const { firstItem } = await import('#src/recap/render/present.ts');
     const markdown = '## Objetivo\n- migrar\n\n## Ahora\n- ejecutando **CI** en !940\n\n## Esperando tu respuesta\n- aprueba el despliegue de `prod`\n';
     assert.equal(firstItem(markdown, 'now'), 'ejecutando CI en !940');
-    assert.equal(firstItem(markdown, 'waiting'), 'aprueba el despliegue de prod');
+    assert.equal(firstItem(markdown, 'needs'), 'aprueba el despliegue de prod');
     const recap = { ...blankRecap('w1:t1'), markdown, language: 'es' };
     const [line] = presentBar({ tab: tabOf('blocked', null), recap, notes: new Map(), warnings: [], now: 0, messages: es }, 60);
     assert.match(line ?? '', /te necesita: aprueba el despliegue/);
@@ -120,12 +122,74 @@ test('es: the phone bar still shows needs-you first, then Now, from Spanish head
 
 test('English headings are read in a recap that was written in English while the UI is Spanish (and vice versa)', async () => {
     const { firstItem } = await import('#src/recap/render/present.ts');
-    assert.equal(firstItem('## Waiting on you\n- the OK', 'waiting'), 'the OK');
-    assert.equal(firstItem('## Esperando tu respuesta\n- el OK', 'waiting'), 'el OK');
+    assert.equal(firstItem('## Waiting on you\n- the OK', 'needs'), 'the OK');
+    assert.equal(firstItem('## Esperando tu respuesta\n- el OK', 'needs'), 'el OK');
 });
 
 test('the Spanish catalog keeps every hint within a phone column', () => {
     for (const hints of [es.hints.column, es.hints.modal]) {
         assert.ok(hints.some((hint) => visibleLength(hint) <= 12), 'a hint fits the narrowest column');
     }
+});
+
+const withSections = (sections: Partial<RecapSections>, language = 'en'): ReturnType<typeof blankRecap> =>
+    ({ ...blankRecap('w1:t1'), language, sections: { ...NO_SECTIONS, ...sections }, markdown: 'stale rendering that must not be shown', at: 0 });
+
+test('a recap with sections is drawn from them: all seven headings, in the interface language, — for the empty ones', () => {
+    const recap = withSections({ goal: 'Ship the uploader', now: ['Running CI'] }, 'en');
+    const draw = (messages: typeof en): string => present({ tab: tabOf('idle', 'x'), recap, notes: new Map(), warnings: [], now: 0, messages }, 60, noGlow).join('\n');
+    const english = draw(en);
+    for (const heading of ['GOAL', 'NOW', 'NEEDS YOU', 'DONE', 'DECISIONS', 'NEXT', 'LINKS']) {
+        assert.ok(english.includes(heading), heading);
+    }
+    assert.ok(english.includes('Ship the uploader') && english.includes('Running CI') && english.includes('—'));
+    assert.ok(!english.includes('stale rendering'));
+    const spanish = draw(es);
+    for (const heading of ['OBJETIVO', 'AHORA', 'TE NECESITA', 'HECHO', 'DECISIONES', 'SIGUIENTE', 'ENLACES']) {
+        assert.ok(spanish.includes(heading), heading);
+    }
+});
+
+const bar = (recap: ReturnType<typeof blankRecap>, messages: typeof en, status = 'blocked'): string =>
+    presentBar({ tab: tabOf(status, null), recap, notes: new Map(), warnings: [], now: 0, messages }, 70)[0] ?? '';
+
+test('the bar reads its headline from the data: needs you first, then now, then nothing', () => {
+    assert.match(bar(withSections({ needs: ['approve the deploy'], now: ['running CI'] }), en), /needs you: approve the deploy/);
+    assert.match(bar(withSections({ needs: ['aprueba el despliegue'], now: ['ejecutando CI'] }, 'es'), es), /te necesita: aprueba el despliegue/);
+    const calm = bar(withSections({ now: ['running CI'] }), en, 'working');
+    assert.match(calm, /running CI/);
+    assert.doesNotMatch(calm, /needs you/);
+    assert.match(bar(withSections({}), en, 'idle'), /no recap yet/);
+});
+
+test('a recap stored before the fixed structure is still shown as it was written, headline included', () => {
+    const old = { ...blankRecap('w1:t1'), markdown: '## Goal\n- old\n\n## Waiting on you\n- answer me\n', at: 0 };
+    assert.equal(old.sections, null);
+    assert.match(present({ tab: tabOf('idle', 'x'), recap: old, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n'), /WAITING ON YOU/);
+    assert.match(presentBar({ tab: tabOf('blocked', null), recap: old, notes: new Map(), warnings: [], now: 0, messages: en }, 60)[0] ?? '', /needs you: answer me/);
+});
+
+const exploding = (): never => { throw new Error('glow must not lay out the fixed structure'); };
+
+const plain = (lines: readonly string[]): string[] => lines.map((line) => line.replace(new RegExp(`${String.fromCodePoint(0x1b)}\\[[0-9;]*m`, 'g'), ''));
+
+test('the recap body: exactly one blank line between sections, none between a heading and its first line — whatever renderer is installed', () => {
+    const recap = withSections({ goal: 'Ship it', now: ['Running CI'], done: ['Added backoff'] });
+    const lines = plain(present({ tab: tabOf('idle', 'x'), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, exploding));
+    const at = lines.indexOf('GOAL');
+    assert.deepEqual(lines.slice(at), [
+        'GOAL', 'Ship it', '',
+        'NOW', '• Running CI', '',
+        'NEEDS YOU', '—', '',
+        'DONE', '• Added backoff', '',
+        'DECISIONS', '—', '',
+        'NEXT', '—', '',
+        'LINKS', '—',
+    ]);
+});
+
+test('plainMarkdown collapses runs of blank lines, so an old recap without blank lines between sections is separated too', async () => {
+    const { plainMarkdown } = await import('#src/recap/render/wrap.ts');
+    const lines = plain(plainMarkdown('## Goal\n- a\n## Now\n- b\n\n\n\n## Next\n- c', 40));
+    assert.deepEqual(lines, ['GOAL', '• a', '', 'NOW', '• b', '', 'NEXT', '• c']);
 });

@@ -42,12 +42,12 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
-        write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', markdown: '## Goal\n- both', costUsd: 0.01 }); },
+        write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'both', now: ['migrating'] }), costUsd: 0.01 }); },
     };
     const store = new MemoryStore();
     const job = new RecapJob({
         transcripts: [transcriptsOf('claude'), transcriptsOf('codex')],
-        store, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, words: (): number => 300, language: (): string => 'en', log: (): void => undefined,
+        store, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
     const lanes = [
         laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }),
@@ -61,7 +61,8 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     assert.match(only.excerpt, /=== claude in w1:p1 ===[\s\S]*migrate victoria[\s\S]*=== codex in w1:p2 ===[\s\S]*run the tests/);
     const recap = store.readRecap('w1:t1');
     assert.ok(recap !== null);
-    assert.equal(recap.markdown, '## Goal\n- both');
+    assert.deepEqual(recap.sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [] });
+    assert.match(recap.markdown, /^## Goal\nboth\n\n## Now\n- migrating\n\n## Needs you\n—/);
     assert.deepEqual(recap.lanes.map((c) => [c.pane, c.cursor]), [['w1:p1', 100], ['w1:p2', 100]]);
 });
 
@@ -75,7 +76,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
-        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', markdown: '## Objetivo\n- hecho', costUsd: 0 }); },
+        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'hecho' }), costUsd: 0 }); },
     };
     const store = new MemoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
@@ -87,7 +88,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     });
     const job = new RecapJob({
         transcripts: [quiet], store, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
-        words: (): number => 300, language: (): string => language, log: (): void => undefined,
+        language: (): string => language, log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [lane], cause);
     await new Promise((resolve) => { setTimeout(resolve, 20); });
@@ -101,7 +102,8 @@ test('a language switch with nothing new REWRITES the recap — on a request and
         const [first] = calls;
         assert.deepEqual([first?.language, first?.previousLanguage, first?.excerpt], ['es', 'en', '']);
         assert.equal(recap?.language, 'es');
-        assert.equal(recap.markdown, '## Objetivo\n- hecho');
+        assert.equal(recap.sections?.goal, 'hecho');
+        assert.match(recap.markdown, /^## Objetivo\nhecho/);
     }
 });
 
@@ -119,8 +121,76 @@ test('a recap stored before languages existed counts as English; a failed rewrit
     const store = new MemoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     store.writeRecap({ ...blankRecap('w1:t1'), markdown: '## Goal\n- m', at: 1, language: 'en' });
-    const job = new RecapJob({ transcripts: [quiet], store, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, words: (): number => 300, language: (): string => 'es', log: (): void => undefined });
+    const job = new RecapJob({ transcripts: [quiet], store, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): string => 'es', log: (): void => undefined });
     job.request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
     assert.equal(store.readRecap('w1:t1')?.language, 'en');
+});
+
+function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; calls: RecapRequest[] } {
+    const calls: RecapRequest[] = [];
+    const summarizer: Summarizer = {
+        backend: 'fake',
+        write: (request: RecapRequest): Promise<Written> => {
+            calls.push(request);
+            return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 });
+        },
+    };
+    return { summarizer, calls };
+}
+
+async function recapWith(answers: readonly string[], stored: Partial<TabRecap> = {}): Promise<{ calls: RecapRequest[]; recap: TabRecap }> {
+    const { summarizer, calls } = scriptedWriter(answers);
+    const store = new MemoryStore();
+    store.writeRecap({ ...blankRecap('w1:t1'), ...stored });
+    const job = new RecapJob({
+        transcripts: [transcriptsOf('claude')], store, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
+        language: (): string => 'en', log: (): void => undefined,
+    });
+    job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+    await new Promise((resolve) => { setTimeout(resolve, 30); });
+    const recap = store.readRecap('w1:t1');
+    assert.ok(recap !== null);
+    return { calls, recap };
+}
+
+test('an unusable answer is retried ONCE with what was wrong; the second answer is used; both cost', async () => {
+    const { calls, recap } = await recapWith(['sorry, no', JSON.stringify({ goal: 'second try', now: ['ok'] })]);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0]?.correction, undefined);
+    assert.match(calls[1]?.correction ?? '', /no JSON object/);
+    assert.equal(recap.sections?.goal, 'second try');
+    assert.equal(recap.error, null);
+    assert.equal(recap.costUsd, 1);
+});
+
+test('two unusable answers keep the previous recap, add an error line and do not advance the cursors', async () => {
+    const previous = { goal: 'old goal', now: ['old'], needs: [], done: [], decisions: [], next: [], links: [] };
+    const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { sections: previous, markdown: '## Goal\nold goal', at: 1 });
+    assert.equal(calls.length, 2, 'one retry, not more');
+    assert.deepEqual(recap.sections, previous);
+    assert.equal(recap.markdown, '## Goal\nold goal');
+    assert.match(recap.error ?? '', /not usable.*previous recap is kept/);
+    assert.equal(recap.at, 1, 'the recap was not rewritten');
+    assert.deepEqual(recap.lanes.map((lane) => lane.cursor), [0], 'the transcript is read again next time');
+    assert.equal(recap.running, false);
+});
+
+test('the previous recap goes back to the writer as its JSON; a recap from before the fixed structure goes back as it was', async () => {
+    const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [] };
+    const fresh = await recapWith([JSON.stringify({ goal: 'x' })], { sections, markdown: 'rendered', at: 1 });
+    assert.deepEqual(JSON.parse(fresh.calls[0]?.previous ?? ''), sections);
+    const old = await recapWith([JSON.stringify({ goal: 'x' })], { markdown: '## Goal\n- from the old days', at: 1 });
+    assert.equal(old.calls[0]?.previous, '## Goal\n- from the old days');
+    assert.equal(old.recap.sections?.goal, 'x', 'the next rewrite moves it to the fixed structure');
+});
+
+test('a harness that fails outright is not retried', async () => {
+    const calls: RecapRequest[] = [];
+    const failing: Summarizer = { backend: 'fake', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
+    const store = new MemoryStore();
+    const job = new RecapJob({ transcripts: [transcriptsOf('claude')], store, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
+    job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+    await new Promise((resolve) => { setTimeout(resolve, 30); });
+    assert.equal(calls.length, 1);
 });

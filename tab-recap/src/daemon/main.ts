@@ -46,7 +46,6 @@ function wire(root: string): Wired {
         transcripts: [new ClaudeTranscripts(), new CodexTranscripts()],
         store, clock, log,
         summarizer: (): Summarizer => backends.summarizer(),
-        words: (): number => loadConfig().words,
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
