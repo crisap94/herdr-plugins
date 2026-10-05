@@ -19,6 +19,8 @@ export interface TabView {
     readonly column: string | null;
     readonly lanes: readonly TabLane[];
     readonly at: number;
+    /** the plugin version the daemon that wrote this view was started with; null for a view stored before this existed */
+    readonly daemonVersion?: string | null;
 }
 
 /** How far one lane's source has been read into the tab's recap, and what it says about itself. */

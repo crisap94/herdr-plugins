@@ -25,6 +25,7 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
 - **On a phone, a bar.** A narrow tab gets a one-row bar along the bottom instead — a status dot
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the
   column on a desktop) and the full recap opens as a modal over everything; `q` closes it.
+- **Know what is deployed.** The column's top line ends with the plugin version on disk (`· v1.5.0`); when the running daemon is another version, a yellow `daemon v1.4.1 — restart` says so.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
   `TAB_RECAP_AGENTS` (default `claude`, `codex` and `opencode`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
   3 times in 2 minutes — then it respects you for 10 minutes, `TAB_RECAP_GIVE_UP_MS`).
@@ -74,7 +75,7 @@ Markdown when installed.
 | `tab-recap.column` | hide this tab's column, or show it again (recaps keep being written; remembered across restarts) |
 | `tab-recap.columns` | hide every column, or show them all again |
 | `tab-recap.configure` | the settings modal: agent, model, interface and recap language; `t` tests, `s` saves |
-| `tab-recap.status` | daemon, backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
+| `tab-recap.status` | the code's version, the Node running it, the keys bound to tab-recap actions, the daemon (pid and the version it started with), backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH).
 
@@ -95,6 +96,27 @@ command = "tab-recap.columns"     # hide / show every column
 ```
 
 A hidden column is closed and not reopened, and recaps are still written — showing it again is instant.
+
+### macOS
+
+If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node that runs the plugin and which keys herdr has bound to a `tab-recap.*` action (or `no key bound — see README`).
+
+- **No key is bound out of the box.** Add the two bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
+- **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
+- **Node ≥ 24 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
+- **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
+
+Read-only diagnosis (run the last two inside a herdr pane):
+
+```bash
+herdr --version; herdr plugin list | grep -i tab-recap
+herdr plugin action list | grep tab-recap.column || echo "missing: update the plugin (>= 1.1.0)"
+CFG="${HERDR_CONFIG_PATH:-$HOME/.config/herdr/config.toml}"; grep -n -B2 -A3 'tab-recap' "$CFG" || echo "no tab-recap binding in $CFG"
+command -v node; node --version
+SP=$(pgrep -f 'herdr.*server' | head -1); ps eww -p "$SP" | tr ' ' '\n' | grep '^PATH='     # the server's PATH
+herdr plugin action invoke tab-recap.status
+herdr plugin log list --plugin tab-recap | tail -30
+```
 
 ## Configure
 
