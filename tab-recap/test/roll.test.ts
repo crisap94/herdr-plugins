@@ -50,9 +50,9 @@ test('shutDown: singular, failures, an unreachable herdr and a batch that takes 
     assert.match(await run(() => new Promise<ClosedAll>(() => undefined), 30), /took more than 0.03 s; leaving/);
 });
 
-/** `script` runs a command in a pty; util-linux and BSD (macOS) spell it differently. */
+/** util-linux `script` runs a command in a pty. (BSD script on macOS gives the child no tty when stdin is a pipe, so the real-pty test is Linux's.) */
 function scriptArgs(command: string): string[] {
-    return process.platform === 'darwin' ? ['-q', '/dev/null', 'sh', '-c', command] : ['-qec', command, '/dev/null'];
+    return ['-qec', command, '/dev/null'];
 }
 
 function hasScript(): boolean {
@@ -74,8 +74,16 @@ function pidOfNode(entry: string): string {
     return found?.[1] ?? '';
 }
 
+test('the in-place roll is possible on this platform: process.execve exists', () => {
+    assert.equal(typeof process.execve, 'function');
+});
+
 /** The real thing: a column process in a pty replaces itself in place when the code on disk changes version. */
-test('a column process rolls to the new version in place: same pid, same terminal, the new code is what draws', { skip: hasScript() ? false : 'the `script` command (a pty) is not installed' }, async () => {
+test('a column process rolls to the new version in place: same pid, same terminal, the new code is what draws', { skip: hasScript() ? false : 'the `script` command (a pty) is not installed' }, async (t) => {
+    if (process.platform === 'darwin') {
+        t.skip('BSD script gives the column no tty when stdin is a pipe; covered on Linux');
+        return;
+    }
     const here = dirname(fileURLToPath(import.meta.url));
     const plugin = join(here, '..');
     const dir = mkdtempSync(join(tmpdir(), 'recap-roll-'));
