@@ -16,7 +16,7 @@ import type { HiddenState } from '#src/recap/domain/board.ts';
 import { blankRecap, NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 
 class MemoryStore implements RecapStore {
     recaps = new Map<string, TabRecap>();
@@ -38,6 +38,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
     const reader: Transcripts = {
         agent,
         locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: source(String(lane.pane)) }),
+        latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {
             seen.push(was);
             return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: 'hello from the screen' }], title: null, lastPrompt: null, claudeRecap: null, position: { cursor: was.cursor + 1, tail }, grew: true });

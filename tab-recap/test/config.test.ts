@@ -105,3 +105,17 @@ test('FsRecapStore: a stored recap with no language reads back as English', () =
         rmSync(dir, { recursive: true });
     }
 });
+
+test('FsRecapStore: a tab view keeps each lane\'s live prompt; a view stored before it existed reads back with none', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-view-'));
+    try {
+        const store = new FsRecapStore(dir);
+        store.writeTab({ tab: 't', column: null, at: 1, lanes: [{ pane: 'p', agent: 'claude', status: 'idle', title: null, cwd: null, lastPrompt: 'ship it' }] });
+        assert.equal(store.readTab('t')?.lanes[0]?.lastPrompt, 'ship it');
+        mkdirSync(join(dir, 'tabs'), { recursive: true });
+        writeFileSync(join(dir, 'tabs', `${fileKey('old')}.json`), JSON.stringify({ tab: 'old', column: null, at: 1, lanes: [{ pane: 'p', agent: 'claude', status: 'idle', title: null }] }));
+        assert.equal(store.readTab('old')?.lanes[0]?.lastPrompt, null);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});

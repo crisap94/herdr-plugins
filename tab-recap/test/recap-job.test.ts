@@ -10,7 +10,7 @@ import { firstTask, NO_REPOS, oneTask } from '#test/support.ts';
 import { blankRecap, NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 
 class MemoryStore implements RecapStore {
     recaps = new Map<string, TabRecap>();
@@ -32,6 +32,7 @@ function transcriptsOf(agent: string): Transcripts {
     return {
         agent,
         locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+        latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => {
             const pane = source.slice(3);
             return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: true });
@@ -70,6 +71,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
 const quiet: Transcripts = {
     agent: 'claude',
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: false }),
 };
 

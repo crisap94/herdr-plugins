@@ -10,6 +10,7 @@ import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
+import { LivePrompts } from '#src/recap/application/live-prompts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
@@ -52,15 +53,16 @@ function wire(root: string): Wired {
     const store = new FsRecapStore(root);
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
+    const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
     const recaps = new RecapJob({
-        transcripts: [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)],
+        transcripts,
         store, clock, log, repos: new GitLaneRepo(clock),
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
     const dispatch = new Dispatch({
-        columns: fleet, store, recaps, log,
+        columns: fleet, store, recaps, log, prompts: new LivePrompts(transcripts),
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

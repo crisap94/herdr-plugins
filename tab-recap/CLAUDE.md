@@ -47,9 +47,9 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 an agent.** It is checked three times — `adapters/column-panes.ts` (a column is only a pane titled EXACTLY
 `tab-recap`/`tab-recap:bar` that hosts no agent and, when herdr reports a label, is labelled `Recap`), the domain
 (`fold.ts` never adopts an agent pane as a column and never lets a `close-column` name a lane), and the `HerdrFleet`
-edge (`close`/`resize`/`swap` look the pane up in a fresh snapshot first and refuse with an `Unknown`). The two
-deliberate contacts with a lane are the swap's *target* (the top pane, only re-positioned) and putting the operator's
-focus back on their own pane.
+edge (`close`/`resize` look the pane up in a fresh snapshot first and refuse with an `Unknown`). There is no
+exception: `HerdrFleet` has no `swap` and no `focus` at all, and a phone bar is docked with a split below the
+tab's lowest pane — herdr splits only right or down, so the bar sits at the bottom, never on top.
 
 ## Three facts about herdr that shaped the code (measured on 0.9.0)
 

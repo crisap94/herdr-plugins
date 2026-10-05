@@ -194,3 +194,15 @@ test('plainMarkdown collapses runs of blank lines, so an old recap without blank
     const lines = plain(plainMarkdown('## Goal\n- a\n## Now\n- b\n\n\n\n## Next\n- c', 40));
     assert.deepEqual(lines, ['GOAL', '• a', '', 'NOW', '• b', '', 'NEXT', '• c']);
 });
+
+test('a lane header shows the live prompt; the recap\'s last prompt only when there is none', () => {
+    const recap = { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: 't', cursor: 1, tail: null, title: 'x', lastPrompt: 'what the last recap saw', claudeRecap: null }] };
+    const draw = (lastPrompt: string | null | undefined): string => {
+        const lane = { pane: 'w1:p1', agent: 'claude', status: 'working', title: 'x', cwd: null, ...(lastPrompt === undefined ? {} : { lastPrompt }) };
+        return present({ tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] }, recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n');
+    };
+    assert.match(draw('what was just typed'), /› what was just typed/);
+    assert.doesNotMatch(draw('what was just typed'), /last recap saw/);
+    assert.match(draw(null), /› what the last recap saw/);
+    assert.match(draw(undefined), /› what the last recap saw/, 'a view stored before the live prompt existed');
+});

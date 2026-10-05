@@ -51,6 +51,8 @@ function label(intent: Intent): string {
             return `${intent.kind} ${intent.tab}`;
         case 'recap':
             return `recap ${intent.tab} (${intent.cause})`;
+        case 'read-prompt':
+            return `read-prompt ${intent.lane.pane}`;
         case 'save-hidden':
             return `save-hidden all=${String(intent.state.all)} hidden=[${intent.state.hidden.join()}] shown=[${intent.state.shown.join()}]`;
         default: {

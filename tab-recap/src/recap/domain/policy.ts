@@ -65,17 +65,9 @@ export function deserves(board: Board, tab: TabId, now: Instant, policy: Policy)
         && !isGivenUp(board, tab, now);
 }
 
-/**
- * Docking a bar on top needs a pane swap, and herdr's swap moves the operator's focus to the
- * swapped tab. So a bar is docked only in the tab the operator is already looking at.
- */
-function dockableNow(board: Board, tab: TabId, policy: Policy): boolean {
-    return shapeFor(board, tab, policy) === 'side' || board.focused === tab;
-}
-
 function opened(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
     const wanting = tabsWithLanes(board).filter((tab) =>
-        !board.columns.has(tab) && !board.opening.has(tab) && deserves(board, tab, now, policy) && dockableNow(board, tab, policy));
+        !board.columns.has(tab) && !board.opening.has(tab) && deserves(board, tab, now, policy));
     const opening = wanting.reduce((set, tab) => added(set, tab), board.opening);
     return [{ ...board, opening }, wanting.map((tab) => ({ kind: 'open-column', tab, shape: shapeFor(board, tab, policy) }))];
 }

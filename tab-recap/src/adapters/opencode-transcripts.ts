@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { obj, parse, str, toolBrief } from './jsonl.ts';
@@ -12,6 +12,8 @@ import type { Row } from './jsonl.ts';
 
 /** the newest messages read per recap: a long session is never read from its start */
 const MESSAGES = 400;
+/** how many of the newest messages are looked through for the newest user prompt */
+const PROMPT_LOOKBACK = 30;
 const SEPARATOR = '#';
 
 export function opencodeDatabase(env: Readonly<Record<string, string | undefined>> = process.env): string {
@@ -82,6 +84,27 @@ export class OpencodeTranscripts implements Transcripts {
         } catch (error) {
             return Promise.resolve(this.unreadable(error));
         }
+    }
+
+    latestPrompt(source: string): Promise<PromptResult> {
+        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
+        try {
+            return Promise.resolve(this.withDatabase((db) => this.promptOf(db, session)));
+        } catch (error) {
+            return Promise.resolve(this.unreadable(error));
+        }
+    }
+
+    private promptOf(db: DatabaseSync, session: string): PromptResult {
+        const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?')
+            .all(session, PROMPT_LOOKBACK) as unknown as readonly MessageRow[];
+        for (const row of rows) {
+            const prompt = entriesOf(db, row).findLast((entry) => entry.role === 'user');
+            if (prompt !== undefined) {
+                return { kind: 'prompt', text: prompt.text };
+            }
+        }
+        return { kind: 'prompt', text: null };
     }
 
     private unreadable(error: unknown): Unknown {

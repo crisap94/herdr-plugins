@@ -215,19 +215,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return this.guarded('close', String(pane), 'pane.close', { pane_id: String(pane) });
     }
 
-    /**
-     * herdr's swap also moves the operator's focus to the source pane: callers put it back. The source is
-     * always our bar; the target is the tab's top pane, which swap only re-positions (and the focus that
-     * follows goes back to the operator's own pane) — those two contacts with a lane are by design.
-     */
-    async swap(source: PaneId, target: string): Promise<Done> {
-        return this.guarded('swap', String(source), 'pane.swap', { source_pane_id: String(source), target_pane_id: target });
-    }
-
-    async focus(pane: string): Promise<Done> {
-        return this.call('pane.focus', { pane_id: pane });
-    }
-
     private async call(method: string, params: Json): Promise<Done> {
         try {
             await rpc(method, params);

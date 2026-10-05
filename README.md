@@ -23,7 +23,7 @@ choice writes it at the end of each turn. It only reads transcripts; it never ty
   <img src="tab-recap/docs/screens/column-es.png" alt="The same column in Spanish" width="340">
 </p>
 
-On a phone (a narrow tab) you get a one-row **bar** along the top instead: a status dot per agent
+On a phone (a narrow tab) you get a one-row **bar** along the bottom instead: a status dot per agent
 and one headline. Tap it to open the full recap.
 
 <p align="center">
@@ -89,7 +89,7 @@ Use any free keys. The same way you can bind `tab-recap.configure` (the settings
 
 - **Column** (wide tabs): the recap, always visible. By default it appears for `claude` and
   `codex` agents.
-- **Bar** (tabs narrower than 110 cells, like a phone): one row along the top.
+- **Bar** (tabs narrower than 110 cells, like a phone): one row along the bottom.
 - **Tap** the bar or the column, or press **Enter** in the column, to open the full recap as a
   modal over everything. **`q`** or **Esc** closes it.
 - In the column or the modal: **`j`/`k`** or the arrow keys scroll, **Space**/**`b`** page down/up,

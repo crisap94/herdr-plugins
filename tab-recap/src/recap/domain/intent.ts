@@ -10,6 +10,8 @@ export type Intent =
     /** one recap per TAB, written from every lane in it */
     | { readonly kind: 'recap'; readonly tab: TabId; readonly lanes: readonly Lane[]; readonly cause: RecapCause }
     | { readonly kind: 'publish'; readonly tab: TabId }
+    /** a lane's status changed or it is new: read the newest thing the operator typed to it (the live prompt) */
+    | { readonly kind: 'read-prompt'; readonly lane: Lane }
     /** the operator's hidden columns changed: keep them across restarts */
     | { readonly kind: 'save-hidden'; readonly state: HiddenState }
     | { readonly kind: 'give-up'; readonly tab: TabId; readonly reopens: number };

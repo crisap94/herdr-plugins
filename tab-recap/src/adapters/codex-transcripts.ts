@@ -2,9 +2,9 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readJsonl, readLines, str, toolBrief } from './jsonl.ts';
+import { arr, obj, parse, readJsonl, readLines, str, tailLines, toolBrief } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
 const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md'];
@@ -99,6 +99,14 @@ export class CodexTranscripts implements Transcripts {
             }
         }
         return unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` });
+    }
+
+    latestPrompt(source: string, budget: number): Promise<PromptResult> {
+        try {
+            return Promise.resolve({ kind: 'prompt', text: extractCodex(tailLines(source, budget)).lastPrompt });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
     }
 
     read(source: string, was: Position, budget: number): Promise<ChunkResult> {

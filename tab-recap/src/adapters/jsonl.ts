@@ -56,6 +56,11 @@ export function toolBrief(name: string, input: Row): string {
     return name;
 }
 
+/** The complete lines in the last `budget` bytes of a file (its first line may be cut: it simply fails to parse). */
+export function tailLines(path: string, budget: number): readonly string[] {
+    return readLines(path, Math.max(0, statSync(path).size - budget), budget).lines;
+}
+
 /** What a JSONL source gives back: the complete lines after the cursor (never reaching back further than the budget) and the new cursor. */
 export function readJsonl(path: string, was: Position, budget: number): { readonly lines: readonly string[]; readonly position: Position; readonly grew: boolean } {
     const size = statSync(path).size;

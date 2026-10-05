@@ -195,3 +195,60 @@ test('opencodeDatabase honours XDG_DATA_HOME', () => {
     assert.equal(opencodeDatabase({ XDG_DATA_HOME: '/data' }), '/data/opencode/opencode.db');
     assert.match(opencodeDatabase({}), /\.local\/share\/opencode\/opencode\.db$/);
 });
+
+const assistantRow = (text: string): string => `${JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } })}\n`;
+
+test('latestPrompt (claude): only the newest user prompt, from the tail of the file — and it moves no position', async () => {
+    const dir = scratch();
+    try {
+        mkdirSync(join(dir, 'proj'));
+        const filler = assistantRow('x'.repeat(300)).repeat(200);
+        writeFileSync(join(dir, 'proj', 's1.jsonl'), `${userRow('very old prompt')}${filler}${userRow('first of the turn')}${assistantRow('ok')}${userRow('the newest prompt')}${assistantRow('on it')}`);
+        const reader = new ClaudeTranscripts(dir);
+        const source = sourceOf(await reader.locate(laneIn('claude', { session: 's1' })));
+        assert.deepEqual(await reader.latestPrompt(source, 4000), { kind: 'prompt', text: 'the newest prompt' });
+        assert.deepEqual(await reader.latestPrompt(source, 100), { kind: 'prompt', text: null }, 'nothing within the budget: none, not the old one');
+        const chunk = chunkOf(await reader.read(source, UNREAD, 1 << 20));
+        assert.equal(chunk.entries.filter((entry) => entry.role === 'user').length, 3, 'the recap read still sees everything from its own cursor');
+        assert.equal((await reader.latestPrompt('/no/such/file', 100)).kind, 'unknown');
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+const message = (role: string, text: string): string => `${JSON.stringify({ type: 'response_item', payload: { type: 'message', role, content: [{ type: 'input_text', text }] } })}\n`;
+
+test('latestPrompt (codex): the newest user message of the rollout tail, not the injected context', async () => {
+    const dir = scratch();
+    try {
+        const day = new Date();
+        const folder = join(dir, String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0'));
+        mkdirSync(folder, { recursive: true });
+        const file = join(folder, 'rollout-1.jsonl');
+        writeFileSync(file, `${message('user', 'first question')}${message('assistant', 'answer')}${message('user', '<environment_context>noise</environment_context>')}${message('user', 'second question')}${message('assistant', 'again')}`);
+        const reader = new CodexTranscripts(dir);
+        assert.deepEqual(await reader.latestPrompt(file, 100_000), { kind: 'prompt', text: 'second question' });
+        assert.deepEqual(await reader.latestPrompt(file, 1), { kind: 'prompt', text: null });
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test('latestPrompt (opencode): the newest user message of the session; none for a session with only agent messages', async () => {
+    const dir = scratch();
+    try {
+        const fixture = opencodeFixture(dir);
+        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'first' }] });
+        fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 110, parts: [{ type: 'text', text: 'reply' }] });
+        fixture.add({ id: 'm3', session: 'ses_new', role: 'user', updated: 120, parts: [{ type: 'text', text: 'second' }, { type: 'text', text: 'injected', synthetic: true }] });
+        fixture.add({ id: 'm4', session: 'ses_new', role: 'assistant', updated: 130, parts: [{ type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } }] });
+        fixture.add({ id: 'm5', session: 'ses_old', role: 'assistant', updated: 20, parts: [{ type: 'text', text: 'only me' }] });
+        fixture.close();
+        const reader = new OpencodeTranscripts(fixture.db);
+        assert.deepEqual(await reader.latestPrompt(`${fixture.db}#ses_new`), { kind: 'prompt', text: 'second' });
+        assert.deepEqual(await reader.latestPrompt(`${fixture.db}#ses_old`), { kind: 'prompt', text: null });
+        assert.equal((await new OpencodeTranscripts(join(dir, 'missing.db')).latestPrompt('x#y')).kind, 'unknown');
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
