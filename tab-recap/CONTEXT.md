@@ -39,7 +39,7 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 | **Observation** | Something herdr (or the operator) told us: `detected`, `closed`, `status`, `reconciled`, `column-opened`, `column-failed`, `focused`, `requested`, `switched`. The fold's only input. |
 | **Intent** | Something the board now wants done: `open-column`, `close-column`, `recap` (of a tab, carrying all its lanes), `publish`, `give-up`. The fold's only output. Dispatch turns intents into port calls. |
 | **Watch set** | The herdr subscriptions the daemon holds: the global topics plus one `pane.agent_status_changed` per lane. Lives in exactly one file, `watch-set.ts`. |
-| **Reconcile** | Replace the board's picture of herdr with a fresh snapshot. A subscription delivers *changes*, never the present, so the snapshot always comes after subscribing. |
+| **Reconcile** | Replace the board's picture of herdr with a fresh snapshot. A subscription delivers *changes*, never the present, so the snapshot always comes after subscribing. A refresh of an already-subscribed daemon (the minute tick, a `resync` frame) takes only the snapshot; a new subscription is opened when the watch set changes, the stream ends, or on every 10th tick. |
 | **Publish** | Write a tab's view (its lanes and their statuses) for its column to render. |
 | **Reopen budget** | How often a column may be reopened after being closed: 3 times in 2 minutes, then the tab is **given up** for 10 minutes. Stops the daemon fighting an operator who means it. |
 

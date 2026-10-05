@@ -8,6 +8,17 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+#### Changed
+
+- The once-a-minute refresh no longer opens a new event subscription (herdr logged one stream per minute for nothing): it takes a snapshot only. A new subscription is opened when the watch set changes, when the stream ends, and on every 10th minute as a safety net against a half-open connection.
+
+#### Fixed
+
+- A subscription that herdr never acknowledges is abandoned after 10 seconds and retried with backoff, instead of hanging.
+- A summarizer that times out is killed with its whole process group (SIGTERM, then SIGKILL after 5 seconds), and a grandchild that keeps the pipes open can no longer hold the daemon waiting forever.
+- A program that exits without reading its input (for example a missing or crashing harness) no longer crashes the daemon with `write EPIPE`.
+- opencode: a run killed before it reported its session id has its stored session found by title and deleted, with one more look a few seconds later in case opencode was still writing it.
+
 ### [1.0.0] — 2026-10-04
 
 First public release.
