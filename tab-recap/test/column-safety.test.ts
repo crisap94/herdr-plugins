@@ -119,7 +119,7 @@ async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: str
     return { server, path, calls, done: (): void => { server.close(); rmSync(dir, { recursive: true }); } };
 }
 
-test('HerdrFleet refuses to close, resize or swap a pane that hosts an agent — and still closes a column', async () => {
+test('HerdrFleet refuses to close or resize a pane that hosts an agent — and still closes a column', async () => {
     const snapshot = {
         panes: [pane('w1:p1', 'tab-recap-harness-config', { agent: 'claude' }), pane('w1:p2', 'tab-recap', { label: 'Recap' }), pane('w1:p3', 'plain')],
         agents: [{ pane_id: 'w1:p1', agent: 'claude' }, { pane_id: 'w1:p3', agent: 'opencode' }],
@@ -133,10 +133,10 @@ test('HerdrFleet refuses to close, resize or swap a pane that hosts an agent —
             const closed = await fleet.close(paneId(target));
             assert.ok(isUnknown(closed) && closed.why.why === 'failed', `close ${target} refused`);
             assert.ok(isUnknown(await fleet.resize(paneId(target), 'left', 0.1)), `resize ${target} refused`);
-            assert.ok(isUnknown(await fleet.swap(paneId(target), 'w1:p2')), `swap ${target} refused`);
         }
-        assert.ok(!herdr.calls.some((method) => method === 'pane.close' || method === 'pane.resize' || method === 'pane.swap'), `herdr was never asked: ${herdr.calls.join()}`);
+        assert.ok(!herdr.calls.some((method) => method === 'pane.close' || method === 'pane.resize'), `herdr was never asked: ${herdr.calls.join()}`);
         assert.deepEqual(await fleet.close(paneId('w1:p2')), { kind: 'done' });
+        assert.ok(!('swap' in fleet) && !('focus' in fleet), 'the fleet cannot swap or focus a pane at all');
         assert.ok(herdr.calls.includes('pane.close'), 'a real column is closed');
     } finally {
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }

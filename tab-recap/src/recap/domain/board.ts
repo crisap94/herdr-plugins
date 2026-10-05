@@ -32,7 +32,7 @@ export interface Board {
     readonly givenUp: ReadonlyMap<TabId, Instant>;
     /** tab → its width in cells, when known */
     readonly widths: ReadonlyMap<TabId, number>;
-    /** the tab the operator is looking at, when known — a bar is docked only there */
+    /** the tab the operator is looking at, when known */
     readonly focused: TabId | null;
     readonly enabled: boolean;
     readonly seeded: boolean;

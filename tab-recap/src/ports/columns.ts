@@ -7,7 +7,7 @@ export interface TabLayout {
     readonly kind: 'layout';
     readonly width: number;
     readonly height: number;
-    /** the pane focused in this tab — focus returns here after a bar is docked */
+    /** the pane focused in this tab (informational: docking a column no longer touches focus) */
     readonly focused: string | null;
     readonly panes: readonly Placed[];
     readonly splits: readonly Split[];
@@ -24,6 +24,4 @@ export interface Columns {
     open(tab: TabId, target: string, shape: Shape): Promise<OpenResult>;
     resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
-    swap(source: PaneId, target: string): Promise<Done>;
-    focus(pane: string): Promise<Done>;
 }

@@ -114,15 +114,16 @@ test('a restarted daemon adopts the columns it finds instead of opening new ones
 const narrowTab = (focusedTab: string | null): Observation =>
     ({ kind: 'reconciled', seen: { focusedTab, lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1'], widths: new Map([['w1:t1', 60]]) } });
 
-test('a narrow tab (a phone) you are looking at gets a bar on top instead of a side column', () => {
+test('a narrow tab (a phone) gets a bar along the bottom instead of a side column', () => {
     assert.deepEqual(run([narrowTab('w1:t1')]).intents.at(-1), { kind: 'open-column', tab: 'w1:t1', shape: 'bar' });
 });
 
-test('a narrow tab in the background waits for you: its bar is docked when you focus it', () => {
+test('a narrow tab in the background gets its bar at once: docking one no longer touches focus', () => {
     const background = run([narrowTab('w9:t9')]);
-    assert.ok(!background.intents.some((intent) => intent.kind === 'open-column'), 'docking a bar swaps panes, which would steal focus');
-    const focused = run([narrowTab('w9:t9'), { kind: 'focused', tab: tabId('w1:t1') }]);
-    assert.deepEqual(focused.intents.find((intent) => intent.kind === 'open-column'), { kind: 'open-column', tab: 'w1:t1', shape: 'bar' });
+    assert.deepEqual(background.intents.find((intent) => intent.kind === 'open-column'), { kind: 'open-column', tab: 'w1:t1', shape: 'bar' });
+    assert.deepEqual(run([narrowTab(null)]).intents.filter((intent) => intent.kind === 'open-column').length, 1, 'with no focused tab known too');
+    const later = run([narrowTab('w9:t9'), { kind: 'focused', tab: tabId('w1:t1') }]).intents.filter((intent) => intent.kind === 'open-column');
+    assert.equal(later.length, 1, 'focusing it later does not open a second one');
 });
 
 test('focusing a tab or pressing r asks for ONE recap of the whole tab', () => {

@@ -65,7 +65,7 @@ command = ["node", "bin/tab-recap.ts", "refresh"]
 [[actions]]
 id = "configure"
 title = "Tab Recap: configure"
-description = "A settings modal: which agent writes the recap, its model, length and languages."
+description = "A settings modal: which agent writes the recap, its model and the languages."
 command = ["node", "bin/tab-recap.ts", "configure"]
 
 [[panes]]

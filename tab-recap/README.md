@@ -22,7 +22,7 @@ The recap always has the same seven sections in the same order (Goal, Now, Needs
 Decisions, Next, Links), an empty one shows `—`, and each is capped (the goal is one line; 3 to 6
 bullets elsewhere, 16 words at most per line). The limits are enforced in code, not left to the model.
 
-- **On a phone, a bar.** A narrow tab gets a one-row bar along the top instead — a status dot
+- **On a phone, a bar.** A narrow tab gets a one-row bar along the bottom instead — a status dot
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the
   column on a desktop) and the full recap opens as a modal over everything; `q` closes it.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
@@ -73,7 +73,7 @@ Markdown when installed.
 | `tab-recap.refresh` | recap the current tab now |
 | `tab-recap.column` | hide this tab's column, or show it again (recaps keep being written; remembered across restarts) |
 | `tab-recap.columns` | hide every column, or show them all again |
-| `tab-recap.configure` | the settings modal: agent, model, length, interface and recap language; `t` tests, `s` saves |
+| `tab-recap.configure` | the settings modal: agent, model, interface and recap language; `t` tests, `s` saves |
 | `tab-recap.status` | daemon, backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH).
