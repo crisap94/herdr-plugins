@@ -32,10 +32,11 @@ Status: **next** = being worked on · *planned* = intended, not started.
 
 *Recap agents that have no transcript to read.*
 
-- Recaps for agents without a readable transcript (gemini, cursor, opencode, …), built from the
-  pane's own output.
-- Harness profiles for gemini, cursor-agent, qwen and copilot, added after live probes show they can
-  run without tools and without keeping a session.
+- opencode reads its own database (read-only), so it gets a column by default.
+- Recaps for agents without a readable transcript (gemini, cursor, …), built from the pane's own
+  screen — opt-in per kind with `TAB_RECAP_SCREEN_AGENTS`.
+- Harness profiles for gemini, cursor-agent, qwen and copilot, *when they are installed*: added after
+  live probes show they can run without tools and without keeping a session.
 
 ### 1.3 — Git note built in *(planned)*
 

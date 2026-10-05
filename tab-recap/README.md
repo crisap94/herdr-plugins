@@ -26,10 +26,19 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the
   column on a desktop) and the full recap opens as a modal over everything; `q` closes it.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
-  `TAB_RECAP_AGENTS` (default `claude` and `codex`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
+  `TAB_RECAP_AGENTS` (default `claude`, `codex` and `opencode`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
   3 times in 2 minutes — then it respects you for 10 minutes, `TAB_RECAP_GIVE_UP_MS`).
-- **One recap per tab, from all its panes.** Every agent in the tab gets a short header (title,
-  status, extension notes, last prompt); below them, ONE recap covers the tab's work as a whole.
+- **One recap per piece of work, from all its panes.** Every agent in the tab gets a short header (title,
+  status, extension notes, last prompt); below them, ONE recap covers the tab's work as a whole. A tab
+  is not assumed to be one task: when its agents work on unrelated things (different repositories, say),
+  the writer groups them into **tasks** and each task gets its own recap under its own name — the grouping
+  stays put unless the writer gives evidence for changing it. The bar's headline takes the most urgent
+  "needs you" of any task.
+- **Every agent can get a column.** `claude`, `codex` and `opencode` are read from their own history
+  (opencode's SQLite database is opened read-only). Any other agent herdr recognises can be read from its
+  **screen** instead — `TAB_RECAP_SCREEN_AGENTS=gemini,qwen` (or `all`), also a row in the settings; its
+  header says `(screen)`, because an agent on the alternate screen shows only what is visible. Reading
+  a screen never types into the pane.
 - **Written at the end of each turn** by any harness — `claude`, `codex`, `opencode`, `hermes` (the
   first one found, or the one you pick), or your own command —
   from the previous recap plus only the new part of every agent's transcript. Also on tab focus when

@@ -33,6 +33,12 @@ function recapText(setting: string, m: Messages): string {
     return names[setting] ?? setting;
 }
 
+/** The stored setting in words: empty is none, `all` is every agent, otherwise the list as typed. */
+function screenText(setting: string, m: Messages): string {
+    const words: Readonly<Record<string, string>> = { '': m.setup.screenNone, all: m.setup.screenAll };
+    return words[setting] ?? setting;
+}
+
 function valueOf(row: RowId, state: Setup, m: Messages): string {
     const { draft } = state;
     const target = modelTarget(draft, state.available);
@@ -45,6 +51,8 @@ function valueOf(row: RowId, state: Setup, m: Messages): string {
             return m.setup.uiChoices[draft.locale];
         case 'recapLanguage':
             return recapText(draft.recapLanguage, m);
+        case 'screenAgents':
+            return screenText(draft.screenAgents, m);
         default: {
             const exhaustive: never = row;
             return String(exhaustive);
@@ -80,7 +88,7 @@ function localeChoices(state: Setup, m: Messages, width: number): string[] {
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint };
     return hints[row] ?? null;
 }
 

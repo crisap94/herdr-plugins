@@ -6,8 +6,11 @@ import { isHidden } from './visibility.ts';
 import { duration, elapsed, instant } from './time.ts';
 import type { Duration, Instant } from './time.ts';
 
+/** In `Policy.kinds`: every agent kind herdr recognises. */
+export const ANY_KIND = '*';
+
 export interface Policy {
-    /** agent kinds that get a column */
+    /** agent kinds that get a column; `ANY_KIND` stands for all of them */
     readonly kinds: readonly string[];
     /** tabs narrower than this (a phone client) get a bar instead of a side column */
     readonly minTabCols: number;
@@ -19,13 +22,30 @@ export interface Policy {
 }
 
 export const DEFAULT_POLICY: Policy = {
-    kinds: ['claude', 'codex'],
+    kinds: ['claude', 'codex', 'opencode'],
     minTabCols: 110,
     reopenLimit: 3,
     reopenWindow: duration(120_000),
     giveUpFor: duration(600_000),
     onlyTabs: [],
 };
+
+export const wantsKind = (policy: Policy, agent: string): boolean => policy.kinds.includes(ANY_KIND) || policy.kinds.includes(agent);
+
+/**
+ * The agent kinds the operator reads from their screen (`TAB_RECAP_SCREEN_AGENTS`): `all` or a list of
+ * kind names, as a setting; the list holds `ANY_KIND` for `all`. Characters that are not part of a plain name are dropped.
+ */
+export function screenKindsOf(setting: string | undefined): readonly string[] {
+    const names = (setting ?? '').toLowerCase().split(/[\s,]+/).map((name) => name.replace(/[^a-z0-9_-]/g, '')).filter((name) => name !== '');
+    return names.includes('all') ? [ANY_KIND] : [...new Set(names)];
+}
+
+/** The setting as it is stored: `all`, a comma list, or empty for none. */
+export function screenSetting(setting: string | undefined): string {
+    const kinds = screenKindsOf(setting);
+    return kinds.includes(ANY_KIND) ? 'all' : kinds.join(',');
+}
 
 function isGivenUp(board: Board, tab: TabId, now: Instant): boolean {
     const until = board.givenUp.get(tab);

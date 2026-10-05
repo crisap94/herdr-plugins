@@ -14,6 +14,7 @@ import type { Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
+import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
@@ -62,7 +63,7 @@ function layoutOf(layout: Json): LayoutResult {
 /** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier {
+export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens {
     private readonly stateDir: string;
 
     constructor(stateDir: string) {
@@ -160,6 +161,19 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 .filter((entry) => entry['available'] === true)
                 .map((entry) => str(entry['target']));
             return { kind: 'available', ids };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    /** `pane.read`: the pane's most recent `lines` lines, unwrapped. Reading never types into the pane. */
+    async readScreen(pane: string, lines: number): Promise<ScreenResult> {
+        try {
+            const read = (await rpc('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' }))['read'];
+            const fields = typeof read === 'object' && read !== null ? (read as Json) : {};
+            return typeof fields['text'] === 'string'
+                ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
+                : unknown({ why: 'unreadable', detail: `pane.read of ${pane} returned no text` });
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
         }

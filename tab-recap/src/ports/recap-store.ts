@@ -1,5 +1,5 @@
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
+import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 
 /** What a column renders about one lane of its tab. */
@@ -8,6 +8,8 @@ export interface TabLane {
     readonly agent: string;
     readonly status: string;
     readonly title: string | null;
+    /** where the lane works; null when herdr did not say, or for a view stored before this existed */
+    readonly cwd: string | null;
 }
 
 export interface TabView {
@@ -17,25 +19,28 @@ export interface TabView {
     readonly at: number;
 }
 
-/** How far one lane's transcript has been read into the tab's recap, and what it says about itself. */
+/** How far one lane's source has been read into the tab's recap, and what it says about itself. */
 export interface LaneCursor {
     readonly pane: string;
     readonly agent: string;
     readonly transcript: string;
+    /** where the lane's reader left off; what the number means is the reader's business (bytes, a time, a revision) */
     readonly cursor: number;
+    /** a hash of the last screen read; null for every other source */
+    readonly tail: string | null;
     readonly title: string | null;
     readonly lastPrompt: string | null;
     readonly claudeRecap: string | null;
 }
 
-/** THE recap of one tab: every lane in it, one Markdown document. */
+/**
+ * The recaps of one tab: every lane in it, grouped into tasks, one recap per task. A tab with one piece of work
+ * (the usual case) has one task; a recap stored before tasks existed reads back as one.
+ */
 export interface TabRecap {
     readonly tab: string;
     readonly lanes: readonly LaneCursor[];
-    /** the recap as the writer's data; null for a recap stored before the fixed structure, which shows its `markdown` as it is */
-    readonly sections: RecapSections | null;
-    /** the sections drawn in the recap language (or, for an old recap, what it always was) */
-    readonly markdown: string;
+    readonly tasks: readonly RecapTask[];
     readonly at: number | null;
     readonly running: boolean;
     readonly backend: string | null;
@@ -46,8 +51,11 @@ export interface TabRecap {
 }
 
 export function blankRecap(tab: string): TabRecap {
-    return { tab, lanes: [], sections: null, markdown: '', at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' };
+    return { tab, lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' };
 }
+
+/** Whether any recap has been written yet. */
+export const hasRecap = (recap: TabRecap): boolean => recap.tasks.some((task) => task.markdown !== '');
 
 /** Something the operator asked for with `hide`/`show`: one tab's column, or every column. */
 export interface VisibilityRequest {

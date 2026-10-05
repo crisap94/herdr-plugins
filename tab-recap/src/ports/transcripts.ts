@@ -6,24 +6,38 @@ export interface Entry {
     readonly text: string;
 }
 
+/**
+ * How far a source has been read. The READER owns what the number means: bytes for a JSONL file, the newest
+ * `time_updated` read for opencode, herdr's `revision` for a screen. `tail` tells a changed screen from a repainted one.
+ */
+export interface Position {
+    readonly cursor: number;
+    readonly tail: string | null;
+}
+
+export const UNREAD: Position = { cursor: 0, tail: null };
+
 export interface Chunk {
     readonly kind: 'chunk';
     readonly entries: readonly Entry[];
     readonly title: string | null;
     readonly lastPrompt: string | null;
     readonly claudeRecap: string | null;
-    /** the byte after the last complete line read: the next cursor */
-    readonly end: number;
-    readonly size: number;
+    /** where the next read starts */
+    readonly position: Position;
+    /** the source holds something past `was`, whether or not it made entries */
+    readonly grew: boolean;
 }
 
-export type Located = { readonly kind: 'located'; readonly path: string; readonly size: number } | Unknown;
+/** `source` names ONE place a lane is read from and is unique to it: a path, `<db>#<session>`, `screen:<pane>`. */
+export type Located = { readonly kind: 'located'; readonly source: string } | Unknown;
 
 export type ChunkResult = Chunk | Unknown;
 
-/** One adapter per agent kind; each knows where its transcripts live and how to read them. */
+/** One adapter per kind of agent (`*`: any agent without a store of its own); each knows where its history lives and how to read it. */
 export interface Transcripts {
     readonly agent: string;
-    locate(lane: Lane): Located;
-    read(path: string, from: number, budget: number): ChunkResult;
+    locate(lane: Lane): Promise<Located>;
+    /** What `source` holds after `was`, at most about `budget` bytes of it (the most recent when there is more). */
+    read(source: string, was: Position, budget: number): Promise<ChunkResult>;
 }

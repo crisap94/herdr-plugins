@@ -139,18 +139,18 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
 };
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
-    ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, title, lastPrompt: prompt, claudeRecap: null });
+    ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, tail: null, title, lastPrompt: prompt, claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
         tab: 'w1:t1', column: 'w1:p9', at: NOW,
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title },
-            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null },
+            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null },
+            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null },
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale),
+        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages };

@@ -17,7 +17,7 @@ src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is t
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
 src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
-src/setup/              composition root of the settings modal (a popup pane); the keys are `recap/application/setup-keys.ts`, the view `recap/render/setup.ts`
+src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
 bin/                    one-shot commands behind the plugin's actions: 0 · 1 · 2 usage · 3 not covered
 ```
 
@@ -40,6 +40,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |
 | `recap-never-types` | no `send_keys`/`send_text`/`send_input`/`agent.prompt`: a recap never types into a lane |
+| `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
 
 **A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts

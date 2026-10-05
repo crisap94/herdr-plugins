@@ -61,7 +61,8 @@ function localeNow(): Locale {
 
 function view(): ColumnView {
     const locale = localeNow();
-    return { tab: store.readTab(tab), recap: store.readRecap(tab), notes: notesOf(extensions), warnings: warningsOf(extensions, locale), now: Date.now(), messages: messagesFor(locale) };
+    const stored = store.readTab(tab);
+    return { tab: stored, recap: store.readRecap(tab), notes: notesOf(extensions, stored?.lanes, locale), warnings: warningsOf(extensions, locale), now: Date.now(), messages: messagesFor(locale) };
 }
 
 /**
