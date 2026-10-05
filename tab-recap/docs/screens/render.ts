@@ -145,8 +145,8 @@ function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
         tab: 'w1:t1', column: 'w1:p9', at: NOW,
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null },
-            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null },
+            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null },
+            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null },
         ],
     };
     const recap: TabRecap = {

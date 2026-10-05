@@ -22,7 +22,7 @@ import { blankRecap } from '#src/ports/recap-store.ts';
 import type { TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { firstTask, oneTask } from '#test/support.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
@@ -139,6 +139,7 @@ test('files touched are the distinct files of the edit tools, the most recent la
 const transcripts: Transcripts = {
     agent: 'claude',
     locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: [{ role: 'tool', text: `Edit: ${source.slice(3)}.ts` }, { role: 'agent', text: `work in ${source.slice(3)}` }],
         title: null, lastPrompt: null, claudeRecap: null, position: { cursor: 5, tail: null }, grew: true,

@@ -76,7 +76,8 @@ function onDetected(held: Board, seen: SeenLane, policy: Policy): Step {
     }
     const lane = laneFrom(seen);
     const isNew = !board.lanes.has(lane.pane);
-    return step({ ...board, lanes: put(board.lanes, lane.pane, lane) }, [{ kind: 'publish', tab: lane.tab }], isNew);
+    const reads: Intent[] = isNew ? [{ kind: 'read-prompt', lane }] : [];
+    return step({ ...board, lanes: put(board.lanes, lane.pane, lane) }, [{ kind: 'publish', tab: lane.tab }, ...reads], isNew);
 }
 
 function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Step {
@@ -100,7 +101,7 @@ function onStatus(board: Board, pane: PaneId, raw: string): Step {
     }
     const after: Board = { ...board, lanes: put(board.lanes, pane, withStatus(lane, next)) };
     const ended = endsTurn(lane.status, next) ? recapsOf(after, [lane.tab], 'turn-ended') : [];
-    return step(after, [{ kind: 'publish', tab: lane.tab }, ...ended]);
+    return step(after, [{ kind: 'publish', tab: lane.tab }, { kind: 'read-prompt', lane: withStatus(lane, next) }, ...ended]);
 }
 
 function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
@@ -147,7 +148,8 @@ function onReconciled(board: Board, seen: Reconciliation, policy: Policy): Step 
     const next: Board = { ...board, lanes, columns, opening, widths, focused, seeded: true };
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
     const published: Intent[] = tabsWithLanes(next).map((tab) => ({ kind: 'publish', tab }));
-    return step(next, [...turnsEndedBetween(board, next), ...published], !sameSet);
+    const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
+    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads], !sameSet);
 }
 
 function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {

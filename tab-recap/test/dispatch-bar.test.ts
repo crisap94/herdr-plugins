@@ -13,6 +13,7 @@ import type { RecapStore } from '#src/ports/recap-store.ts';
 const rect = (x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } => ({ x, y, width, height });
 
 const noop = (): void => undefined;
+const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
 const noBoard = (): Board => emptyBoard();
 const sizing = (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 });
 
@@ -43,7 +44,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     const fed: Observation[] = [];
     const store = {} as RecapStore;
     const dispatch = new Dispatch({
-        columns, store, recaps: {} as RecapJob, log: noop, board: noBoard,
+        columns, store, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
         sizing, feedback: (observation): void => { fed.push(observation); },
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'bar' });
@@ -60,7 +61,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new Dispatch({
-        columns, store: {} as RecapStore, recaps: {} as RecapJob, log: noop, board: noBoard,
+        columns, store: {} as RecapStore, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
         sizing, feedback: noop,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });

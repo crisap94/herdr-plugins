@@ -4,7 +4,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { Screens } from '#src/ports/screens.ts';
-import type { ChunkResult, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
 /** the most recent lines asked of herdr; a viewport-only agent has no more than its rows anyway */
@@ -28,6 +28,11 @@ export class ScreenTranscripts implements Transcripts {
         return Promise.resolve(this.wants(agent)
             ? { kind: 'located', source: `${SCREEN_PREFIX}${lane.pane}` }
             : unknown({ why: 'not-found', what: `a transcript of ${agent} (add it to TAB_RECAP_SCREEN_AGENTS to read its screen)` }));
+    }
+
+    /** A screen holds the agent's chrome, not a transcript: it cannot say what the operator last typed. */
+    latestPrompt(): Promise<PromptResult> {
+        return Promise.resolve({ kind: 'prompt', text: null });
     }
 
     async read(source: string, was: Position, budget: number): Promise<ChunkResult> {

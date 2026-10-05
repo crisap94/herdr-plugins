@@ -32,7 +32,7 @@ const seen = (lanes: readonly SeenLane[], columns: SeenColumn[] = [], panes: str
 
 test('a new agent pops its column up at once', () => {
     const { intents, outcomes } = run([seen([]), { kind: 'detected', lane: lane('w1:p1', 'w1:t1') }]);
-    assert.deepEqual(kinds(intents), ['publish', 'open-column']);
+    assert.deepEqual(kinds(intents), ['publish', 'read-prompt', 'open-column']);
     assert.deepEqual(intents.at(-1), { kind: 'open-column', tab: 'w1:t1', shape: 'side' }, 'width unknown: a side column');
     assert.equal(outcomes[1]?.watchSet, 'changed', 'the new lane joins the watch set');
 });

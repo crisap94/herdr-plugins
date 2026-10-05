@@ -3,6 +3,7 @@ import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
 import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/layout.ts';
 import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -15,18 +16,25 @@ export interface DispatchDeps {
     readonly columns: Columns;
     readonly store: RecapStore;
     readonly recaps: RecapJob;
+    readonly prompts: LivePromptSource;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
     log(line: string): void;
 }
 
-export function viewOf(board: Board, tab: TabId, at: number): TabView {
+/** What the dispatcher needs of the live prompts: what is known, and a way to look again. */
+export interface LivePromptSource {
+    of(pane: string): string | null;
+    refresh(lane: Lane): Promise<boolean>;
+}
+
+export function viewOf(board: Board, tab: TabId, at: number, prompts: (pane: string) => string | null = (): null => null): TabView {
     return {
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd,
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)),
         })),
         at,
     };
@@ -52,7 +60,12 @@ export class Dispatch {
                 await this.deps.columns.close(intent.column);
                 return;
             case 'publish':
-                this.deps.store.writeTab(viewOf(this.deps.board(), intent.tab, Date.now()));
+                this.publish(intent.tab);
+                return;
+            case 'read-prompt':
+                if (await this.deps.prompts.refresh(intent.lane)) {
+                    this.publish(intent.lane.tab);
+                }
                 return;
             case 'recap':
                 this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
@@ -68,6 +81,10 @@ export class Dispatch {
                 this.deps.log(`unhandled intent ${String(exhaustive)}`);
             }
         }
+    }
+
+    private publish(tab: TabId): void {
+        this.deps.store.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane)));
     }
 
     private failed(tab: TabId, why: string): void {
