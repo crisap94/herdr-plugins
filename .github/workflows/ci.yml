@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: lint + test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: tab-recap
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tab-recap/package-lock.json
+      # ci/lint.sh needs bash >= 4 (mapfile); macOS ships 3.2.
+      - name: bash >= 4 (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install bash
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      - name: Show the toolchain
+        run: |
+          bash --version | head -n 1
+          node --version
+          bash -c '[ "${BASH_VERSINFO[0]}" -ge 4 ]'
+      - run: npm ci
+      - run: bash ci/lint.sh
+      - run: bash ci/test.sh
