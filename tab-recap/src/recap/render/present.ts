@@ -20,6 +20,8 @@ export interface ColumnView {
     readonly warnings: readonly string[];
     readonly now: number;
     readonly messages: Messages;
+    /** the plugin version of the code on disk; absent or null when unknown */
+    readonly version?: string | null;
 }
 
 export type Markdown = (markdown: string, width: number) => readonly string[] | null;
@@ -73,6 +75,13 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     ];
 }
 
+/** The daemon runs another version than the code on disk (or is too old to say): the column is not what was deployed until it restarts. */
+function staleLines(view: ColumnView, width: number): string[] {
+    const code = view.version ?? null;
+    const daemon = view.tab?.daemonVersion ?? null;
+    return code === null || daemon === code ? [] : wrap(view.messages.daemonStale(daemon), width).map(style.yellow);
+}
+
 function recapMeta(view: ColumnView, width: number): string[] {
     const { recap, messages: m } = view;
     const at = recap?.at ?? null;
@@ -81,8 +90,9 @@ function recapMeta(view: ColumnView, width: number): string[] {
         at === null ? null : style.gray(ago(view, view.now - at)),
         recap?.backend ?? null,
         recap?.running === true ? style.magenta(m.updating) : null,
+        view.version === undefined || view.version === null ? null : style.dim(`v${view.version}`),
     ].filter((part) => part !== null);
-    return wrap(parts.join(style.gray(' · ')), width, '  ');
+    return [...wrap(parts.join(style.gray(' · ')), width, '  '), ...staleLines(view, width)];
 }
 
 /** A task's Markdown: drawn from its sections in the interface language; a recap from before the fixed structure shows as it was written. */
@@ -202,6 +212,9 @@ function headline(view: ColumnView): string {
     return now ?? view.recap?.lanes.find((c) => c.claudeRecap !== null)?.claudeRecap ?? view.messages.noRecapShort;
 }
 
+/** the least a bar keeps for its headline when it also shows the version */
+const BAR_MIN_HEAD = 20;
+
 const clipTo = (text: string, width: number): string => wrap(text, width)[0] ?? '';
 
 /** A lane's status as one glyph: the bar has no room for words. */
@@ -212,6 +225,12 @@ function dot(status: string, m: Messages): string {
 /** The phone's shape: ONE row along the bottom of a narrow tab — 📝, each lane's dot, the headline. A tap opens the modal. */
 export function presentBar(view: ColumnView, width: number): string[] {
     const dots = (view.tab?.lanes ?? []).map((lane) => dot(lane.status, view.messages)).join('');
-    const line = `${style.bold(style.cyan('📝'))}${dots} ${style.dim(headline(view).split('\n').join(' '))}`;
-    return [clipTo(line, width)];
+    const head = `${style.bold(style.cyan('📝'))}${dots} ${style.dim(headline(view).split('\n').join(' '))}`;
+    const tag = view.version === undefined || view.version === null ? '' : ` · v${view.version}`;
+    // the version is only worth the room it leaves: a headline never gets squeezed below BAR_MIN_HEAD cells for it
+    if (tag === '' || width - tag.length < BAR_MIN_HEAD) {
+        return [clipTo(head, width)];
+    }
+    const clipped = clipTo(head, width - tag.length);
+    return [`${clipped}${style.dim(tag)}`];
 }

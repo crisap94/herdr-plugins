@@ -20,6 +20,8 @@ export interface Messages {
     /** the heading of a task that has no name, when a tab holds several: `Task 2` */
     readonly taskNumber: (n: number) => string;
     readonly updating: string;
+    /** the daemon runs another version than the code on disk: `null` is a daemon too old to say */
+    readonly daemonStale: (daemon: string | null) => string;
     readonly claudeOwn: string;
     readonly noRecapYet: string;
     readonly noRecapShort: string;
@@ -78,7 +80,11 @@ export interface Messages {
         readonly backendNow: (what: string) => string;
         readonly usageBackend: (choices: string) => string;
         readonly usage: (commands: string) => string;
-        readonly statusDaemon: (pid: number | null, off: boolean) => string;
+        readonly statusVersion: (code: string | null) => string;
+        readonly statusNode: (path: string, version: string) => string;
+        readonly nodeTooOld: (version: string, minimum: number) => string;
+        readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
+        readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;

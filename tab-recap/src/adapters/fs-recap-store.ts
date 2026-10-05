@@ -73,9 +73,12 @@ function cursorOf(cursor: Omit<LaneCursor, 'tail'> & { tail?: unknown }): LaneCu
 
 export class FsRecapStore implements RecapStore {
     private readonly root: string;
+    private readonly daemonVersion: string | null;
 
-    constructor(root: string) {
+    /** `daemonVersion` is only given by the daemon: every view it writes says which version it is running. */
+    constructor(root: string, daemonVersion: string | null = null) {
         this.root = root;
+        this.daemonVersion = daemonVersion;
     }
 
     private path(kind: 'recaps' | 'tabs' | 'requests', id: string): string {
@@ -97,16 +100,16 @@ export class FsRecapStore implements RecapStore {
     }
 
     readTab(tab: string): TabView | null {
-        const stored = readJson(this.path('tabs', tab)) as (Omit<TabView, 'lanes'> & { lanes?: readonly (Omit<TabLane, 'cwd'> & { cwd?: unknown })[] }) | null;
+        const stored = readJson(this.path('tabs', tab)) as (Omit<TabView, 'lanes' | 'daemonVersion'> & { lanes?: readonly (Omit<TabLane, 'cwd'> & { cwd?: unknown })[]; daemonVersion?: unknown }) | null;
         if (stored === null) {
             return null;
         }
         const lanes = Array.from(stored.lanes ?? [], laneOf);
-        return { ...stored, lanes };
+        return { ...stored, lanes, daemonVersion: typeof stored.daemonVersion === 'string' ? stored.daemonVersion : null };
     }
 
     writeTab(view: TabView): void {
-        writeAtomically(this.path('tabs', view.tab), `${JSON.stringify(view, null, 1)}\n`);
+        writeAtomically(this.path('tabs', view.tab), `${JSON.stringify({ ...view, daemonVersion: view.daemonVersion ?? this.daemonVersion }, null, 1)}\n`);
     }
 
     request(tab: string): void {

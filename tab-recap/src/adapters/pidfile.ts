@@ -36,8 +36,22 @@ export class Pidfile {
         }
     }
 
-    claim(pid: number): void {
+    private get versionPath(): string {
+        return join(this.root, 'daemon.version');
+    }
+
+    claim(pid: number, version: string | null = null): void {
         writeAtomically(this.path, `${pid}\n`);
+        writeAtomically(this.versionPath, `${version ?? ''}\n`);
+    }
+
+    /** The plugin version the running daemon was started with; null when unknown (a daemon from before this was written). */
+    daemonVersion(): string | null {
+        try {
+            return readFileSync(this.versionPath, 'utf8').trim() || null;
+        } catch {
+            return null;
+        }
     }
 
     release(pid: number): void {

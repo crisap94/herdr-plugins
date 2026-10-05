@@ -8,6 +8,7 @@ import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
+import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
@@ -53,7 +54,7 @@ function wantsScreen(agent: string): boolean {
 function wire(root: string): Wired {
     const config = loadConfig();
     const fleet = new HerdrFleet(root);
-    const store = new FsRecapStore(root);
+    const store = new FsRecapStore(root, codeVersion());
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
@@ -102,7 +103,7 @@ async function start(): Promise<number> {
         log(`another daemon is running (pid ${other})`);
         return 0;
     }
-    pidfile.claim(process.pid);
+    pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
     const { informer, backends, extensions, store } = wire(root);
     const stop = (): void => {
