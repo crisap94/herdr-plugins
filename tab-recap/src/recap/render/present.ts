@@ -208,7 +208,7 @@ function dot(status: string, m: Messages): string {
     return badge(laneStatus(status), m).split(' ').slice(0, 1).join('');
 }
 
-/** The phone's shape: ONE row along the top of a narrow tab — 📝, each lane's dot, the headline. A tap opens the modal. */
+/** The phone's shape: ONE row along the bottom of a narrow tab — 📝, each lane's dot, the headline. A tap opens the modal. */
 export function presentBar(view: ColumnView, width: number): string[] {
     const dots = (view.tab?.lanes ?? []).map((lane) => dot(lane.status, view.messages)).join('');
     const line = `${style.bold(style.cyan('📝'))}${dots} ${style.dim(headline(view).split('\n').join(' '))}`;

@@ -81,7 +81,7 @@ export class Dispatch {
             this.failed(tab, saying(layout.why));
             return;
         }
-        const axis: Axis = shape === 'side' ? 'right' : 'up';
+        const axis: Axis = shape === 'side' ? 'right' : 'down';
         const target = edgePane(layout.panes, axis);
         if (target === null) {
             this.failed(tab, 'the tab has no panes');
@@ -92,22 +92,9 @@ export class Dispatch {
             this.failed(tab, saying(opened.why));
             return;
         }
-        if (shape === 'bar') {
-            await this.lift(opened.pane, target.paneId, layout.focused);
-        }
         const cells = shape === 'side' ? targetCols(layout.width, this.deps.sizing()) : BAR_ROWS;
         await this.narrow(tab, opened.pane, axis, cells);
         this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape });
-    }
-
-    /**
-     * herdr only splits right or down, so a bar opens BELOW the top pane and is swapped above it.
-     * The swap steals focus; it goes straight back — the fold only docks a bar in the focused tab,
-     * so this is a hop inside the tab the operator is looking at, never a jump to another tab.
-     */
-    private async lift(bar: PaneId, top: string, focused: string | null): Promise<void> {
-        await this.deps.columns.swap(bar, top);
-        await this.deps.columns.focus(focused ?? top);
     }
 
     private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: number): Promise<void> {
