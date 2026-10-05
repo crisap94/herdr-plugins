@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 import type { RecapStore, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
 
@@ -26,6 +27,16 @@ function readJson(path: string): unknown {
     }
 }
 
+/** Stored sections, or null for a recap written before the fixed structure (or a damaged one). */
+function sectionsOf(value: unknown): RecapSections | null {
+    if (typeof value !== 'object' || value === null) {
+        return null;
+    }
+    const fields = value as Readonly<Record<string, unknown>>;
+    const list = (key: string): string[] => strings(fields[key]);
+    return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links') };
+}
+
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
 
 let sequence = 0;
@@ -42,8 +53,12 @@ export class FsRecapStore implements RecapStore {
     }
 
     readRecap(tab: string): TabRecap | null {
-        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language'> & { language?: unknown }) | null;
-        return stored === null ? null : { ...stored, language: typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en' };
+        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'sections'> & { language?: unknown; sections?: unknown }) | null;
+        if (stored === null) {
+            return null;
+        }
+        const language = typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en';
+        return { ...stored, language, sections: sectionsOf(stored.sections) };
     }
 
     writeRecap(recap: TabRecap): void {

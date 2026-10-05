@@ -10,9 +10,17 @@ a rolling, structured recap of the conversation, so a long session never loses i
  › keep the old endpoint until Friday
 
  GOAL
- • Move checkout to the v2 API…
- NOW / WAITING ON YOU / DONE / DECISIONS / NEXT / KEY REFS
+ Move checkout to the v2 API
+ NOW
+ • Running CI on !940
+ NEEDS YOU
+ • Approve the prod deploy
+ DONE · DECISIONS · NEXT · LINKS
 ```
+
+The recap always has the same seven sections in the same order (Goal, Now, Needs you, Done,
+Decisions, Next, Links), an empty one shows `—`, and each is capped (the goal is one line; 3 to 6
+bullets elsewhere, 16 words at most per line). The limits are enforced in code, not left to the model.
 
 - **On a phone, a bar.** A narrow tab gets a one-row bar along the top instead — a status dot
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the

@@ -10,6 +10,8 @@ import { blankRecap } from '#src/ports/recap-store.ts';
 import type { TabRecap, TabView } from '#src/ports/recap-store.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
+import { renderRecap } from '#src/recap/application/recap-shape.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { setupView } from '#src/recap/render/setup.ts';
@@ -98,40 +100,41 @@ interface Fixture {
     readonly messages: Messages;
     readonly title: string;
     readonly prompts: readonly [string, string];
-    readonly markdown: string;
+    readonly sections: RecapSections;
     readonly backend: string;
 }
 
+/** Invented content; `decisions` is empty on purpose, to show the dash. */
 const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
     en: {
         messages: en,
         title: 'Checkout migration',
         prompts: ['keep the old endpoint until Friday', 'add a test for expired cards'],
         backend: 'claude/haiku',
-        markdown: [
-            '## Goal', '- Move checkout from the v1 to the v2 payments API without downtime.',
-            '## Now', '- Wiring the v2 client behind a feature flag; unit tests are green.',
-            '## Waiting on you', '- Should the v1 endpoint also keep accepting gift cards after the cut-over?',
-            '## Done', '- Mapped every v1 field to its v2 equivalent.', '- Added retries with backoff to the client.',
-            '## Decisions', '- Keep v1 alive until Friday so a rollback is one flag flip.',
-            '## Next', '- Expired-card test, then a canary at 5% of traffic.',
-            '## Key refs', '- `src/payments/v2/client.ts`', '- branch `feat/payments-v2`',
-        ].join('\n'),
+        sections: {
+            goal: 'Move checkout to the v2 payments API, no downtime.',
+            now: ['Wiring the v2 client behind a feature flag', 'Unit tests are green'],
+            needs: ['Should v1 keep accepting gift cards after the cut-over?'],
+            done: ['Mapped every v1 field to its v2 equivalent', 'Added retries with backoff to the client'],
+            decisions: [],
+            next: ['Test for expired cards', 'Canary at 5% of traffic'],
+            links: ['src/payments/v2/client.ts', 'branch feat/payments-v2'],
+        },
     },
     es: {
         messages: es,
         title: 'Migración del checkout',
         prompts: ['mantén el endpoint viejo hasta el viernes', 'añade una prueba para tarjetas vencidas'],
         backend: 'claude/haiku',
-        markdown: [
-            '## Objetivo', '- Pasar el checkout de la API de pagos v1 a la v2 sin interrupciones.',
-            '## Ahora', '- Conectando el cliente v2 tras un feature flag; las pruebas unitarias pasan.',
-            '## Esperando tu respuesta', '- ¿El endpoint v1 debe seguir aceptando tarjetas de regalo tras el cambio?',
-            '## Hecho', '- Asignado cada campo de v1 a su equivalente en v2.', '- Añadidos reintentos con espera al cliente.',
-            '## Decisiones', '- Mantener v1 hasta el viernes para que volver atrás sea un solo flag.',
-            '## Próximos pasos', '- Prueba de tarjeta vencida y luego un canario al 5 % del tráfico.',
-            '## Referencias clave', '- `src/payments/v2/client.ts`', '- rama `feat/payments-v2`',
-        ].join('\n'),
+        sections: {
+            goal: 'Pasar el checkout a la API de pagos v2, sin cortes.',
+            now: ['Conectando el cliente v2 tras un feature flag', 'Las pruebas unitarias pasan'],
+            needs: ['¿v1 debe seguir aceptando tarjetas de regalo tras el cambio?'],
+            done: ['Cada campo de v1 asignado a su equivalente en v2', 'Reintentos con espera añadidos al cliente'],
+            decisions: [],
+            next: ['Prueba de tarjetas vencidas', 'Canario al 5 % del tráfico'],
+            links: ['src/payments/v2/client.ts', 'rama feat/payments-v2'],
+        },
     },
 };
 
@@ -147,7 +150,7 @@ function columnView(fixture: Fixture): ColumnView {
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, markdown: fixture.markdown,
+        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale),
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages };
@@ -155,7 +158,7 @@ function columnView(fixture: Fixture): ColumnView {
 
 function setupState(locale: 'en' | 'es'): Setup {
     const models = { claude: 'haiku', codex: '', opencode: '', hermes: '', custom: '' };
-    const draft = draftFrom({ backend: 'claude', models, words: 450 }, { locale, recapLanguage: 'ui' });
+    const draft = draftFrom({ backend: 'claude', models }, { locale, recapLanguage: 'ui' });
     return withAvailable(initial(draft, {}), ['claude', 'codex', 'opencode']);
 }
 

@@ -76,7 +76,7 @@ function markdownLine(raw: string, width: number): string[] {
 
 /** The renderer used when glow is not installed: headings, bullets, wrapped paragraphs. */
 export function plainMarkdown(markdown: string, width: number): string[] {
-    const lines = markdown.split('\n').flatMap((raw) => markdownLine(raw, width));
+    const lines = markdown.split('\n').flatMap((raw) => markdownLine(raw, width)).filter((line, at, all) => line !== '' || all[at - 1] !== '');
     while (lines[0] === '') {
         lines.shift();
     }

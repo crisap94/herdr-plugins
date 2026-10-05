@@ -9,22 +9,22 @@ import { readFileSync } from 'node:fs';
 import { instructions } from '#src/adapters/recap-prompt.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
-const request = { previous: '', excerpt: 'user: hi', words: 450, language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] };
+const request = { previous: '', excerpt: 'user: hi', language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] };
 
 test('golden: claude and codex are invoked exactly as before the harness work', () => {
     assert.deepEqual(claudeArgs('', request), [
         '-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--setting-sources', '',
         '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions(request),
     ]);
-    assert.deepEqual(claudeArgs('sonnet', { ...request, words: 300 }).slice(0, 3), ['-p', '--model', 'sonnet']);
+    assert.deepEqual(claudeArgs('sonnet', request).slice(0, 3), ['-p', '--model', 'sonnet']);
     assert.deepEqual(codexArgs('', '/w/o.md'), [
         'exec', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', '-s', 'read-only', '--color', 'never', '-o', '/w/o.md', '-',
     ]);
     assert.deepEqual(codexArgs('gpt-6-luna', '/w/o.md').slice(7, 10), ['never', '-m', 'gpt-6-luna']);
 });
 
-test('golden: the English instructions are byte-for-byte what they were before i18n', () => {
-    const before = readFileSync(new URL('fixtures/instructions-en-450.txt', import.meta.url), 'utf8');
+test('golden: the English instructions are exactly the reviewed JSON-contract text', () => {
+    const before = readFileSync(new URL('fixtures/instructions-en.txt', import.meta.url), 'utf8');
     assert.equal(instructions(request), before);
     assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);
 });
@@ -72,7 +72,7 @@ test('custom: the prompt goes in on stdin and the Markdown comes out on stdout',
     const summarizer = new CustomSummarizer('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     assert.equal(summarizer.backend, 'custom/node');
     const written = await summarizer.write(request);
-    assert.ok(written.kind === 'written' && written.markdown.includes('user: hi') && written.markdown.includes('## Goal'));
+    assert.ok(written.kind === 'written' && written.text.includes('user: hi') && written.text.includes('JSON object'));
     const empty = await new CustomSummarizer('', process.cwd(), 1000).write(request);
     assert.ok(isUnknown(empty));
     const broken = await new CustomSummarizer('node -e "process.exit(3)"', process.cwd(), 20_000).write(request);

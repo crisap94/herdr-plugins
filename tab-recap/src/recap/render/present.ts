@@ -5,6 +5,7 @@ import { laneStatus } from '#src/recap/domain/status.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Note } from '#src/ports/extension.ts';
 import type { LaneCursor, TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
+import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import { elapsed, plainMarkdown, style, wrap } from './wrap.ts';
 
 export interface ColumnView {
@@ -78,9 +79,22 @@ function recapMeta(view: ColumnView, width: number): string[] {
     return wrap(parts.join(style.gray(' · ')), width, '  ');
 }
 
+/** The recap's Markdown: drawn from its sections in the interface language; a recap from before the fixed structure shows as it was written. */
+function markdownOf(recap: TabRecap | null, m: Messages): string {
+    if (recap === null) {
+        return '';
+    }
+    return recap.sections === null ? recap.markdown : renderRecap(recap.sections, m.locale);
+}
+
 function body(recap: TabRecap | null, width: number, markdown: Markdown, m: Messages): string[] {
-    if (recap !== null && recap.markdown !== '') {
-        return [...(markdown(recap.markdown, width) ?? plainMarkdown(recap.markdown, width))];
+    const drawn = markdownOf(recap, m);
+    // the fixed structure is laid out here, never by glow: one blank line between sections, none after a heading
+    if (recap !== null && recap.sections !== null) {
+        return plainMarkdown(drawn, width);
+    }
+    if (drawn !== '') {
+        return [...(markdown(drawn, width) ?? plainMarkdown(drawn, width))];
     }
     const theirs = (recap?.lanes ?? []).flatMap((c) => (c.claudeRecap === null ? [] : [c.claudeRecap]));
     if (theirs.length > 0) {
@@ -142,13 +156,25 @@ export function firstItem(markdown: string, section: SectionId): string | null {
     return null;
 }
 
-function headline(view: ColumnView): string {
-    const markdown = view.recap?.markdown ?? '';
-    const waiting = firstItem(markdown, 'waiting');
-    if (waiting !== null) {
-        return style.red(view.messages.needsYou(waiting));
+/** What leads the recap: from its data; a recap from before the fixed structure is read from its Markdown. */
+function leads(recap: TabRecap | null): { needs: string | null; now: string | null } {
+    if (recap === null) {
+        return { needs: null, now: null };
     }
-    return firstItem(markdown, 'now') ?? view.recap?.lanes.find((c) => c.claudeRecap !== null)?.claudeRecap ?? view.messages.noRecapShort;
+    if (recap.sections === null) {
+        return { needs: firstItem(recap.markdown, 'needs'), now: firstItem(recap.markdown, 'now') };
+    }
+    const lead = headlineOf(recap.sections);
+    return { needs: lead?.kind === 'needs' ? lead.text : null, now: lead?.kind === 'now' ? lead.text : null };
+}
+
+/** What the bar says: what needs the operator first, else what is happening now. */
+function headline(view: ColumnView): string {
+    const { needs, now } = leads(view.recap);
+    if (needs !== null) {
+        return style.red(view.messages.needsYou(needs));
+    }
+    return now ?? view.recap?.lanes.find((c) => c.claudeRecap !== null)?.claudeRecap ?? view.messages.noRecapShort;
 }
 
 const clipTo = (text: string, width: number): string => wrap(text, width)[0] ?? '';

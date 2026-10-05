@@ -26,7 +26,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: { readonly harness: string; readonly model: string; readonly words: string; readonly locale: string; readonly recapLanguage: string };
+        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string };
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -38,8 +38,6 @@ export interface Messages {
         readonly recapLanguageHint: string;
         readonly languageNames: { readonly en: string; readonly es: string };
         readonly sameAsInterface: (language: string) => string;
-        readonly wordsHint: string;
-        readonly wordsInvalid: string;
         readonly editHint: string;
         readonly unsaved: string;
         readonly saved: string;
@@ -72,7 +70,7 @@ export interface Messages {
         readonly usageBackend: (choices: string) => string;
         readonly usage: (commands: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean) => string;
-        readonly statusBackend: (what: string, words: number) => string;
+        readonly statusBackend: (what: string) => string;
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;
         readonly statusConfig: string;

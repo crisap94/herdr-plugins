@@ -14,8 +14,8 @@ agents. One plugin per directory, each installable on its own.
 ## tab-recap
 
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps a
-rolling, structured recap of the conversation (goal, what is happening now, what waits on you, what
-is done, decisions, next steps), so a long session never loses its thread. A coding agent of your
+rolling, structured recap of the conversation (goal, what is happening now, what needs you, what
+is done, decisions, next steps, links — always the same seven sections, kept short), so a long session never loses its thread. A coding agent of your
 choice writes it at the end of each turn. It only reads transcripts; it never types into an agent.
 
 <p align="center">
@@ -63,7 +63,7 @@ herdr plugin action invoke tab-recap.configure
   <img src="tab-recap/docs/screens/setup-en.png" alt="The settings modal" width="560">
 </p>
 
-Pick the agent and model, the recap length and the languages. Press **`t`** to run a test with the
+Pick the agent and model and the languages. Press **`t`** to run a test with the
 current choices (it shows ✓ and how long it took, or why it failed), **`s`** to save, **`q`** to
 close. Changes apply to the next recap.
 
@@ -140,7 +140,6 @@ variables win over the file. The ones people change:
 | key | default | what it does |
 | --- | --- | --- |
 | `TAB_RECAP_BACKEND` | `auto` | who writes the recap |
-| `TAB_RECAP_WORDS` | `450` | target recap length |
 | `TAB_RECAP_WIDTH` | `0.3` | column width as a share of the tab |
 | `TAB_RECAP_MIN_TAB_COLS` | `110` | narrower tabs get a bar (*restart*) |
 | `TAB_RECAP_AGENTS` | `claude,codex` | agent kinds that get a column (*restart*) |
