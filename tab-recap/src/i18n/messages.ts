@@ -23,6 +23,8 @@ export interface Messages {
     readonly claudeOwn: string;
     readonly noRecapYet: string;
     readonly noRecapShort: string;
+    /** the git note's details: `2 unpushed`, `3 changed` */
+    readonly git: { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string };
     readonly recapError: (error: string) => string;
     readonly needsYou: (what: string) => string;
     readonly ago: (amount: number, unit: AgoUnit) => string;
@@ -30,7 +32,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string };
+        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string };
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -39,6 +41,7 @@ export interface Messages {
         readonly modelDefault: (model: string) => string;
         readonly modelNoAgent: string;
         readonly uiChoices: { readonly auto: string; readonly en: string; readonly es: string };
+        readonly gitNoteChoices: { readonly on: string; readonly off: string };
         readonly recapLanguageHint: string;
         readonly screenAgentsHint: string;
         readonly screenNone: string;
