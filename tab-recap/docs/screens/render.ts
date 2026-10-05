@@ -139,7 +139,7 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
 };
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
-    ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, title, lastPrompt: prompt, claudeRecap: null });
+    ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, tail: null, title, lastPrompt: prompt, claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {

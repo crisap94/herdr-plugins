@@ -1,6 +1,8 @@
 // The composition root and the loop. Started detached by `bin/tab-recap.ts start`.
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
+import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
@@ -20,6 +22,7 @@ import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
+import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 
 const REQUEST_POLL_MS = 1000;
@@ -36,6 +39,12 @@ interface Wired {
     readonly store: FsRecapStore;
 }
 
+/** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
+function wantsScreen(agent: string): boolean {
+    const { screenAgents } = loadConfig();
+    return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent);
+}
+
 function wire(root: string): Wired {
     const config = loadConfig();
     const fleet = new HerdrFleet(root);
@@ -43,7 +52,7 @@ function wire(root: string): Wired {
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const recaps = new RecapJob({
-        transcripts: [new ClaudeTranscripts(), new CodexTranscripts()],
+        transcripts: [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)],
         store, clock, log,
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,

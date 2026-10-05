@@ -30,10 +30,10 @@ const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'ru
 function transcriptsOf(agent: string): Transcripts {
     return {
         agent,
-        locate: (lane: Lane): Located => ({ kind: 'located', path: `/t/${lane.pane}`, size: 100 }),
-        read: (path: string): ChunkResult => {
-            const pane = path.slice(3);
-            return { kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, end: 100, size: 100 };
+        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+        read: (source: string): Promise<ChunkResult> => {
+            const pane = source.slice(3);
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: true });
         },
     };
 }
@@ -68,8 +68,8 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
 
 const quiet: Transcripts = {
     agent: 'claude',
-    locate: (lane: Lane): Located => ({ kind: 'located', path: `/t/${lane.pane}`, size: 100 }),
-    read: (): ChunkResult => ({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, end: 100, size: 100 }),
+    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: false }),
 };
 
 async function rewriteWith(language: string, stored: string | undefined, cause: 'requested' | 'focused'): Promise<{ calls: RecapRequest[]; recap: TabRecap | null }> {
@@ -83,7 +83,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     const base = blankRecap('w1:t1');
     store.writeRecap({
         ...base, markdown: '## Goal\n- migrate', at: 1,
-        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, title: null, lastPrompt: null, claudeRecap: null }],
+        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         ...(stored === undefined ? {} : { language: stored }),
     });
     const job = new RecapJob({

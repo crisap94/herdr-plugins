@@ -2,9 +2,9 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readLines, str, toolBrief } from './jsonl.ts';
+import { arr, obj, parse, readJsonl, readLines, str, toolBrief } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
 const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md'];
@@ -33,7 +33,7 @@ function toolEntry(item: Row): Entry {
     return { role: 'tool', text: toolBrief(str(item['name']) ?? 'tool', input) };
 }
 
-export function extractCodex(lines: readonly string[]): Omit<Chunk, 'kind' | 'end' | 'size'> {
+export function extractCodex(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
     const entries: Entry[] = [];
     let lastPrompt: string | null = null;
     for (const row of lines.map(parse)) {
@@ -84,26 +84,29 @@ export class CodexTranscripts implements Transcripts {
         return found.toSorted((a, b) => b.mtime - a.mtime).slice(0, CANDIDATES);
     }
 
-    locate(lane: Lane): Located {
+    locate(lane: Lane): Promise<Located> {
+        return Promise.resolve(this.find(lane));
+    }
+
+    private find(lane: Lane): Located {
         if (lane.cwd === null) {
             return unknown({ why: 'not-found', what: `a cwd for ${lane.pane}` });
         }
         for (const candidate of this.recent()) {
             const first = parse(readLines(candidate.path, 0, 64 * 1024).lines[0] ?? '');
             if (first?.['type'] === 'session_meta' && obj(first['payload'])['cwd'] === lane.cwd) {
-                return { kind: 'located', path: candidate.path, size: candidate.size };
+                return { kind: 'located', source: candidate.path };
             }
         }
         return unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` });
     }
 
-    read(path: string, from: number, budget: number): ChunkResult {
+    read(source: string, was: Position, budget: number): Promise<ChunkResult> {
         try {
-            const size = statSync(path).size;
-            const { lines, end } = readLines(path, from, budget);
-            return { kind: 'chunk', ...extractCodex(lines), end, size };
+            const { lines, position, grew } = readJsonl(source, was, budget);
+            return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew });
         } catch (error) {
-            return unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) });
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }
     }
 }

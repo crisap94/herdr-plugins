@@ -28,7 +28,7 @@ const get = configGetter();
 const config = loadConfig();
 
 let state: Setup = initial(
-    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG') }),
+    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS') }),
     locksOf(process.env),
 );
 let scroll = 0;

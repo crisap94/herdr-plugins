@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
+import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
@@ -25,6 +25,8 @@ export interface Config {
     readonly recapLanguage: string;
     readonly sizing: Sizing;
     readonly policy: Policy;
+    /** the kinds whose lanes are read from their screen, not a transcript: names, or `*` for all */
+    readonly screenAgents: readonly string[];
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
 }
@@ -112,6 +114,7 @@ export function loadConfig(): Config {
     const get = (key: string): string | undefined => given(key) ?? file.get(key);
     const glow = get('TAB_RECAP_GLOW');
     const kinds = get('TAB_RECAP_AGENTS');
+    const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');
     const backend = backendOf(get('TAB_RECAP_BACKEND'));
     const locale = localeOf(get('TAB_RECAP_LOCALE'), process.env);
@@ -128,11 +131,12 @@ export function loadConfig(): Config {
         },
         policy: {
             ...DEFAULT_POLICY,
-            kinds: kinds === undefined ? DEFAULT_POLICY.kinds : kinds.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''),
+            kinds: [...new Set([...(kinds === undefined ? DEFAULT_POLICY.kinds : kinds.split(',').map((kind) => kind.trim()).filter((kind) => kind !== '')), ...screenAgents])],
             minTabCols: number(get('TAB_RECAP_MIN_TAB_COLS'), DEFAULT_POLICY.minTabCols),
             giveUpFor: duration(number(get('TAB_RECAP_GIVE_UP_MS'), DEFAULT_POLICY.giveUpFor)),
             onlyTabs: only === undefined ? [] : only.split(',').map((tab) => tab.trim()).filter((tab) => tab !== ''),
         },
+        screenAgents,
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
     };

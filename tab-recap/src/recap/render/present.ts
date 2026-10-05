@@ -4,6 +4,7 @@ import type { SectionId } from '#src/i18n/sections.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { DEFAULT_MARK } from '#src/ports/extension.ts';
+import { isScreenSource } from '#src/ports/screens.ts';
 import type { Note } from '#src/ports/extension.ts';
 import type { LaneCursor, TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
@@ -62,7 +63,7 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const title = cursor?.title ?? lane.title ?? lane.pane;
     return [
         ...wrap(title, width).map((line) => style.bold(line)),
-        ...wrap([badge(laneStatus(lane.status), view.messages), style.gray(`${lane.agent} ${lane.pane}`)].join(style.gray(' · ')), width, '  '),
+        ...wrap([badge(laneStatus(lane.status), view.messages), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`)].join(style.gray(' · ')), width, '  '),
         ...noteLines(view, lane.pane, width),
         ...promptLines(cursor, width),
     ];

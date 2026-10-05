@@ -2,9 +2,9 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readLines, str, toolBrief } from './jsonl.ts';
+import { arr, obj, parse, readJsonl, str, toolBrief } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
 const NOISE = ['<command-', '<local-command', '<system-reminder', '<task-notification', 'Caveat: The messages below'];
@@ -57,7 +57,7 @@ function agentEntries(row: Row): readonly Entry[] {
     return entries;
 }
 
-export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'end' | 'size'> {
+export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
     const meta: Meta = { title: null, lastPrompt: null, claudeRecap: null };
     const entries: Entry[] = [];
     for (const row of lines.map(parse)) {
@@ -85,30 +85,33 @@ export class ClaudeTranscripts implements Transcripts {
         this.root = root;
     }
 
-    locate(lane: Lane): Located {
+    locate(lane: Lane): Promise<Located> {
+        return Promise.resolve(this.find(lane));
+    }
+
+    private find(lane: Lane): Located {
         if (lane.session === null) {
             return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
         }
-        let best: { path: string; mtime: number; size: number } | null = null;
+        let best: { path: string; mtime: number } | null = null;
         let dirs: string[] = [];
         try { dirs = readdirSync(this.root); } catch { return unknown({ why: 'unreadable', detail: this.root }); }
         for (const dir of dirs) {
             const path = join(this.root, dir, `${lane.session}.jsonl`);
             try {
                 const stat = statSync(path);
-                if (best === null || stat.mtimeMs > best.mtime) { best = { path, mtime: stat.mtimeMs, size: stat.size }; }
+                if (best === null || stat.mtimeMs > best.mtime) { best = { path, mtime: stat.mtimeMs }; }
             } catch { /* not in this project */ }
         }
-        return best === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', path: best.path, size: best.size };
+        return best === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: best.path };
     }
 
-    read(path: string, from: number, budget: number): ChunkResult {
+    read(source: string, was: Position, budget: number): Promise<ChunkResult> {
         try {
-            const size = statSync(path).size;
-            const { lines, end } = readLines(path, from, budget);
-            return { kind: 'chunk', ...extractClaude(lines), end, size };
+            const { lines, position, grew } = readJsonl(source, was, budget);
+            return Promise.resolve({ kind: 'chunk', ...extractClaude(lines), position, grew });
         } catch (error) {
-            return unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) });
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }
     }
 }

@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the four rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the five rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 3);
+    assert.equal(typed(start(), down(20)).state.row, 4);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -122,4 +122,18 @@ test('the modal is split into state, changes and keys; the keys module still pre
     assert.equal(keys.dirty, changesModule.dirty);
     assert.equal(keys.ROWS, state.ROWS);
     assert.equal(keys.initial, state.initial);
+});
+
+test('screen agents: the fifth row takes a list or `all`, keeps only plain names, and writes TAB_RECAP_SCREEN_AGENTS', () => {
+    assert.equal(draft.screenAgents, '', 'none by default');
+    const typedList = typed(start(), [...down(4), '\r', 'G', 'e', 'm', 'i', 'n', 'i', ', ', 'q', 'w', 'e', 'n', '!', '\r']).state;
+    assert.equal(typedList.draft.screenAgents, 'gemini,qwen');
+    assert.deepEqual([...changes(typedList)], [['TAB_RECAP_SCREEN_AGENTS', 'gemini,qwen']]);
+    const all = typed(start(), [...down(4), '\r', 'A', 'l', 'L', '\r']).state;
+    assert.equal(all.draft.screenAgents, 'all');
+    const cleared = typed({ ...typedList, stored: typedList.draft }, [...down(4), '\r', '\u0015', '\r']).state;
+    assert.deepEqual([...changes(cleared)], [['TAB_RECAP_SCREEN_AGENTS', '']], 'emptying it writes an empty value (none)');
+    const locked = typed(start({ screenAgents: 'TAB_RECAP_SCREEN_AGENTS' }), [...down(4), '\r']).state;
+    assert.equal(locked.note, 'locked');
+    assert.deepEqual(locksOf({ TAB_RECAP_SCREEN_AGENTS: 'all' }), { screenAgents: 'TAB_RECAP_SCREEN_AGENTS' });
 });

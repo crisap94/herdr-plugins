@@ -4,7 +4,7 @@ import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { laneFrom, withStatus } from './lane.ts';
 import type { Lane, SeenLane } from './lane.ts';
-import { settle, spend } from './policy.ts';
+import { settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
 import type { Instant } from './time.ts';
@@ -53,7 +53,7 @@ interface Step {
 
 const step = (board: Board, intents: readonly Intent[] = [], changed = false): Step => ({ board, intents, changed });
 
-const wanted = (seen: SeenLane, policy: Policy): boolean => policy.kinds.includes(seen.agent);
+const wanted = (seen: SeenLane, policy: Policy): boolean => wantsKind(policy, seen.agent);
 
 /** One recap intent per tab, carrying every lane of that tab. */
 function recapsOf(board: Board, tabs: readonly TabId[], cause: RecapCause): readonly Intent[] {
