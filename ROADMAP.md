@@ -1,51 +1,24 @@
 # Roadmap
 
-What is planned, per plugin. Nothing here has a date, and the order can change as people use the plugins.
+What has shipped and what is planned, per plugin. Nothing planned has a date, and the order can change as people use the plugins.
 
 **How to propose something:** open a [feature request](https://github.com/crisap94/herdr-plugins/issues/new?template=feature_request.yml)
 (or a [bug report](https://github.com/crisap94/herdr-plugins/issues/new?template=bug_report.yml)) — a short description of the problem
 is more useful than a design.
 
-Status: **next** = being worked on · *planned* = intended, not started.
+Status: **shipped** = released · *planned* = intended, not started.
 
 ## tab-recap
 
-### 1.0.x — Stability *(planned)*
+### Shipped
 
-*Make what shipped boring.*
+- **[1.4.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.4.0)** — the phone bar sits along the bottom and no longer moves any agent pane (herdr cannot split upwards, so a top bar needed a swap); each agent's last prompt in its header is live.
+- **[1.3.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.3.0)** — a git note under each agent: branch, unpushed commits, dirty tree.
+- **[1.2.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.2.0)** — every agent gets a column (opencode by default, others read from the screen on request), and a tab can hold several tasks.
+- **[1.1.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.1.0)** — a key to hide and show columns, a fixed seven-section recap, and a checked release pipeline with CI and screenshots.
+- **[1.0.1](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.0.1)** — stability: quieter event subscriptions, safer process handling, no leftover opencode sessions.
 
-- Check whether the once-a-minute `events.subscribe` stream that herdr logs as closed is expected
-  or wasteful, and reduce it if it is.
-- Verify macOS (declared in the manifest, not yet tested).
-- Prove that opencode leaves no stored session behind after a timeout.
+### Later *(planned)*
 
-### 1.1 — Shipping and trust **(next)**
-
-*Make releases checkable and the README show the thing.*
-
-- CI on GitHub: Actions running lint and tests, with a badge in the README.
-- Release automation: a tag becomes a release, with the notes taken from the changelog.
-- Screenshots or a short GIF in the README.
-- A CI check that the changelog has an entry for the change.
-
-### 1.2 — Every agent gets a column *(planned)*
-
-*Recap agents that have no transcript to read.*
-
-- opencode reads its own database (read-only), so it gets a column by default.
-- Recaps for agents without a readable transcript (gemini, cursor, …), built from the pane's own
-  screen — opt-in per kind with `TAB_RECAP_SCREEN_AGENTS`.
-- Harness profiles for gemini, cursor-agent, qwen and copilot, *when they are installed*: added after
-  live probes show they can run without tools and without keeping a session.
-
-### 1.3 — Git note built in *(planned)*
-
-*See the state of the work under each agent.*
-
-- Branch, unpushed commits and a dirty working tree shown under each agent, read with git in the
-  pane's directory.
-
-### Later
-
-- A phone bar that never moves an agent pane (a split instead of a swap).
+- Harness profiles for gemini, cursor-agent, qwen and copilot, once they can be tested: each is added after live probes show it can run without tools and without keeping a session.
 - More interface languages.

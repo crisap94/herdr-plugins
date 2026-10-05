@@ -13,7 +13,7 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { hiddenIn, hiddenState, restoreHidden } from '#src/recap/domain/visibility.ts';
+import { hiddenState, restoreHidden } from '#src/recap/domain/visibility.ts';
 import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 
 const lane = (pane: string, tab: string): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` });
@@ -28,6 +28,8 @@ const seen = (lanes: readonly SeenLane[], columns: { tab: string; pane: string }
 const opened = (tab: string, pane: string): Observation => ({ kind: 'column-opened', tab: tabId(tab), pane: paneId(pane), shape: 'side' });
 const hide = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: true });
 const show = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: false });
+const toggle = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: 'toggle' });
+const toggleAll: Observation = { kind: 'visibility', target: 'all', hidden: 'toggle' };
 const hideAll: Observation = { kind: 'visibility', target: 'all', hidden: true };
 const showAll: Observation = { kind: 'visibility', target: 'all', hidden: false };
 
@@ -126,15 +128,11 @@ test('showing a tab again forgets its give-up: the operator\'s word beats the da
     assert.ok(steps[1]?.includes('open-column w1:t1'));
 });
 
-test('hiddenState / restoreHidden round-trip, and hiddenIn answers like the board', () => {
+test('hiddenState / restoreHidden round-trip', () => {
     const board = play([seen([]), hide('w1:t2'), hide('w1:t1')]).board;
     const state = hiddenState(board);
     assert.deepEqual(state, { all: false, hidden: ['w1:t1', 'w1:t2'], shown: [] });
     assert.deepEqual(hiddenState(restoreHidden(emptyBoard(), state)), state);
-    assert.equal(hiddenIn(state, 'w1:t1'), true);
-    assert.equal(hiddenIn(state, 'w1:t3'), false);
-    const blanket: HiddenState = { all: true, hidden: [], shown: ['w1:t3'] };
-    assert.deepEqual([hiddenIn(blanket, 'w1:t1'), hiddenIn(blanket, 'w1:t3')], [true, false]);
 });
 
 test('store: hidden.json round-trips; nothing saved or garbage reads as nothing hidden', () => {
@@ -166,6 +164,54 @@ test('store: visibility requests are taken once, in the order they were made; ju
         writeFileSync(join(dir, 'visibility', '999999999999999-x.json'), '{"target":5}');
         assert.deepEqual(store.takeVisibility(), [
             { target: 'w1:t1', hidden: true }, { target: 'all', hidden: true }, { target: 'w1:t1', hidden: false },
+        ]);
+        assert.deepEqual(store.takeVisibility(), []);
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test('toggle: two in a row return to the start — the daemon flips what the board holds, however fast they come', () => {
+    const { board, steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), toggle('w1:t1'), toggle('w1:t1')]);
+    assert.deepEqual(steps[2], ['save-hidden all=false hidden=[w1:t1] shown=[]', 'close-column w1:t1']);
+    assert.deepEqual(steps[3], ['save-hidden all=false hidden=[] shown=[]', 'open-column w1:t1']);
+    assert.equal(board.hidden.size, 0);
+    const odd = play([seen([lane('w1:p1', 'w1:t1')]), toggle('w1:t1'), toggle('w1:t1'), toggle('w1:t1')]);
+    assert.deepEqual([...odd.board.hidden], ['w1:t1'], 'three toggles = hidden');
+});
+
+test('toggle: a toggle after an explicit hide shows, after an explicit show hides — explicit requests keep working', () => {
+    const { steps } = play([seen([lane('w1:p1', 'w1:t1')]), hide('w1:t1'), toggle('w1:t1'), show('w1:t1'), toggle('w1:t1'), hide('w1:t1')]);
+    assert.ok(steps[2]?.includes('save-hidden all=false hidden=[] shown=[]'), 'hidden, so the toggle shows');
+    assert.ok(steps[3]?.includes('save-hidden all=false hidden=[] shown=[]'), 'an explicit show of a shown tab changes nothing');
+    assert.ok(steps[4]?.includes('save-hidden all=false hidden=[w1:t1] shown=[]'), 'shown, so the toggle hides');
+    assert.ok(steps[5]?.includes('save-hidden all=false hidden=[w1:t1] shown=[]'), 'an explicit hide of a hidden tab changes nothing');
+});
+
+test('toggle all, then toggle a tab: everything hides, then that one tab comes back; toggle all again shows everything', () => {
+    const { board, steps } = play([
+        seen([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')]), opened('w1:t1', 'w1:p8'), opened('w1:t2', 'w1:p9'),
+        toggleAll, toggle('w1:t2'), opened('w1:t2', 'w1:p7'), toggle('w1:t2'), toggleAll,
+    ]);
+    assert.deepEqual(steps[3], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t1', 'close-column w1:t2']);
+    assert.deepEqual(steps[4], ['save-hidden all=true hidden=[] shown=[w1:t2]', 'open-column w1:t2']);
+    assert.deepEqual(steps[6], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t2'], 'toggled again: hidden under the blanket');
+    assert.deepEqual(steps[7]?.filter((entry) => entry.startsWith('open-column')).toSorted(), ['open-column w1:t1', 'open-column w1:t2']);
+    assert.equal(board.allHidden, false);
+    const twice = play([seen([lane('w1:p1', 'w1:t1')]), toggleAll, toggleAll]);
+    assert.equal(twice.board.allHidden, false, 'two toggle-alls return to the start');
+});
+
+test('store: a toggle request round-trips with the explicit ones, in order', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-toggle-'));
+    try {
+        const store = new FsRecapStore(dir);
+        store.requestVisibility({ target: 'w1:t1', hidden: 'toggle' });
+        store.requestVisibility({ target: 'all', hidden: 'toggle' });
+        store.requestVisibility({ target: 'w1:t1', hidden: true });
+        writeFileSync(join(dir, 'visibility', '999999999999999-x.json'), '{"target":"w1:t2","hidden":"maybe"}');
+        assert.deepEqual(store.takeVisibility(), [
+            { target: 'w1:t1', hidden: 'toggle' }, { target: 'all', hidden: 'toggle' }, { target: 'w1:t1', hidden: true },
         ]);
         assert.deepEqual(store.takeVisibility(), []);
     } finally {

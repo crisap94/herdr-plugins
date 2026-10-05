@@ -71,10 +71,8 @@ export interface Messages {
         readonly tabUnknown: string;
         readonly modalFailed: (why: string) => string;
         readonly requested: (tab: string) => string;
-        readonly columnHidden: (tab: string) => string;
-        readonly columnShown: (tab: string) => string;
-        readonly columnsHidden: string;
-        readonly columnsShown: string;
+        readonly columnToggled: (tab: string) => string;
+        readonly columnsToggled: string;
         readonly setupBusy: (command: string) => string;
         readonly backendNow: (what: string) => string;
         readonly usageBackend: (choices: string) => string;

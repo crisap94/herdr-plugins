@@ -1,5 +1,5 @@
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
-import type { Board, HiddenState, Placement, Shape, VisibilityTarget } from './board.ts';
+import type { Board, HiddenState, Placement, Shape, Visibility, VisibilityTarget } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { laneFrom, withStatus } from './lane.ts';
@@ -35,7 +35,7 @@ export type Observation =
     | { readonly kind: 'requested'; readonly tab: TabId }
     | { readonly kind: 'switched'; readonly enabled: boolean }
     /** the operator hid or showed a column (or all of them) */
-    | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: boolean }
+    | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
     /** what was saved before the daemon started */
     | { readonly kind: 'hidden-restored'; readonly state: HiddenState };
 

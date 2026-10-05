@@ -10,6 +10,9 @@ export interface Placement {
     readonly shape: Shape;
 }
 
+/** What the operator asked of a column: hide it, show it, or flip it from whatever it is NOW — decided by the board that applies the request, never by the one who sent it. */
+export type Visibility = boolean | 'toggle';
+
 /** What `hide` and `show` act on: one tab, or every tab. */
 export type VisibilityTarget = { readonly tab: TabId } | 'all';
 

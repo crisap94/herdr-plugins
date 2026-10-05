@@ -59,11 +59,11 @@ export function blankRecap(tab: string): TabRecap {
 /** Whether any recap has been written yet. */
 export const hasRecap = (recap: TabRecap): boolean => recap.tasks.some((task) => task.markdown !== '');
 
-/** Something the operator asked for with `hide`/`show`: one tab's column, or every column. */
+/** Something the operator asked for: one tab's column, or every column, hidden, shown or `toggle`d (the daemon flips what it holds at that moment). */
 export interface VisibilityRequest {
     /** the word `all`, or a tab id */
     readonly target: string;
-    readonly hidden: boolean;
+    readonly hidden: boolean | 'toggle';
 }
 
 export const NOTHING_HIDDEN: HiddenState = { all: false, hidden: [], shown: [] };
