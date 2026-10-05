@@ -8,6 +8,9 @@ import { isScreenSource } from '#src/ports/screens.ts';
 import type { Note } from '#src/ports/extension.ts';
 import type { LaneCursor, TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
 import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
+import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import { groupsOf } from './groups.ts';
+import type { Group } from './groups.ts';
 import { elapsed, plainMarkdown, style, wrap } from './wrap.ts';
 
 export interface ColumnView {
@@ -81,18 +84,18 @@ function recapMeta(view: ColumnView, width: number): string[] {
     return wrap(parts.join(style.gray(' · ')), width, '  ');
 }
 
-/** The recap's Markdown: drawn from its sections in the interface language; a recap from before the fixed structure shows as it was written. */
-function markdownOf(recap: TabRecap | null, m: Messages): string {
-    if (recap === null) {
+/** A task's Markdown: drawn from its sections in the interface language; a recap from before the fixed structure shows as it was written. */
+function markdownOf(task: RecapTask | null, m: Messages): string {
+    if (task === null) {
         return '';
     }
-    return recap.sections === null ? recap.markdown : renderRecap(recap.sections, m.locale);
+    return task.sections === null ? task.markdown : renderRecap(task.sections, m.locale);
 }
 
-function body(recap: TabRecap | null, width: number, markdown: Markdown, m: Messages): string[] {
-    const drawn = markdownOf(recap, m);
+function body(recap: TabRecap | null, task: RecapTask | null, width: number, markdown: Markdown, m: Messages): string[] {
+    const drawn = markdownOf(task, m);
     // the fixed structure is laid out here, never by glow: one blank line between sections, none after a heading
-    if (recap !== null && recap.sections !== null) {
+    if (task !== null && task.sections !== null) {
         return plainMarkdown(drawn, width);
     }
     if (drawn !== '') {
@@ -114,21 +117,37 @@ function warningLines(warnings: readonly string[], width: number): string[] {
     return warnings.length === 0 ? [] : [...warnings.flatMap((warning) => wrap(warning, width).map(style.red)), ''];
 }
 
-/** The whole column, as lines: who is in the tab, then the tab's one recap. Total; no I/O. */
+const headersOf = (lanes: readonly TabLane[], view: ColumnView, width: number): string[] =>
+    lanes.flatMap((lane, index) => [...(index > 0 ? [''] : []), ...laneHeader(lane, view, width)]);
+
+/** One task of a tab with several: its name, its lanes, then its recap. A lane no task holds yet has only its header. */
+function taskBlock(group: Group, at: number, view: ColumnView, width: number, markdown: Markdown): string[] {
+    const heading = group.task === null ? [] : [style.bold(style.cyan(`▌ ${group.task.name === '' ? view.messages.taskNumber(at + 1) : group.task.name}`))];
+    const recap = group.task === null ? [] : ['', ...body(view.recap, group.task, width, markdown, view.messages)];
+    return [...heading, ...headersOf(group.lanes, view, width), ...recap];
+}
+
+/** The whole column, as lines: who is in the tab, then its recap — one per task, each under its task's name. Total; no I/O. */
 export function present(view: ColumnView, width: number, markdown: Markdown): string[] {
     if (view.tab === null || view.tab.lanes.length === 0) {
         return wrap(view.messages.waitingForAgent, width).map(style.gray);
     }
-    const headers = view.tab.lanes.flatMap((lane, index) => [...(index > 0 ? [''] : []), ...laneHeader(lane, view, width)]);
+    const groups = groupsOf(view.tab.lanes, view.recap?.tasks ?? []);
+    const rule = style.gray('─'.repeat(width));
+    const end = errorLines(view.recap, width, view.messages);
+    if (groups.length > 1) {
+        const blocks = groups.map((group, at) => taskBlock(group, at, view, width, markdown));
+        return [...warningLines(view.warnings, width), ...recapMeta(view, width), '', ...blocks.reduce<string[]>((lines, block, at) => lines.concat(at > 0 ? ['', rule] : [], block), []), ...end];
+    }
     return [
         ...warningLines(view.warnings, width),
-        ...headers,
+        ...headersOf(view.tab.lanes, view, width),
         '',
-        style.gray('─'.repeat(width)),
+        rule,
         ...recapMeta(view, width),
         '',
-        ...body(view.recap, width, markdown, view.messages),
-        ...errorLines(view.recap, width, view.messages),
+        ...body(view.recap, groups[0]?.task ?? null, width, markdown, view.messages),
+        ...end,
     ];
 }
 
@@ -158,16 +177,19 @@ export function firstItem(markdown: string, section: SectionId): string | null {
     return null;
 }
 
-/** What leads the recap: from its data; a recap from before the fixed structure is read from its Markdown. */
-function leads(recap: TabRecap | null): { needs: string | null; now: string | null } {
-    if (recap === null) {
-        return { needs: null, now: null };
+/** What leads one task: from its data; a recap from before the fixed structure is read from its Markdown. */
+function leadOf(task: RecapTask): { needs: string | null; now: string | null } {
+    if (task.sections === null) {
+        return { needs: firstItem(task.markdown, 'needs'), now: firstItem(task.markdown, 'now') };
     }
-    if (recap.sections === null) {
-        return { needs: firstItem(recap.markdown, 'needs'), now: firstItem(recap.markdown, 'now') };
-    }
-    const lead = headlineOf(recap.sections);
+    const lead = headlineOf(task.sections);
     return { needs: lead?.kind === 'needs' ? lead.text : null, now: lead?.kind === 'now' ? lead.text : null };
+}
+
+/** What leads the tab: the most urgent "needs you" of ANY task, else the first "now". */
+function leads(recap: TabRecap | null): { needs: string | null; now: string | null } {
+    const found = (recap?.tasks ?? []).map(leadOf);
+    return { needs: found.find((lead) => lead.needs !== null)?.needs ?? null, now: found.find((lead) => lead.now !== null)?.now ?? null };
 }
 
 /** What the bar says: what needs the operator first, else what is happening now. */

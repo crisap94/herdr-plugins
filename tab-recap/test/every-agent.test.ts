@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { NO_REPOS } from '#test/support.ts';
 import { FsRecapStore, fileKey } from '#src/adapters/fs-recap-store.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -52,7 +53,7 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
 
 async function recapOf(transcripts: readonly Transcripts[], agents: readonly string[], store = new MemoryStore()): Promise<{ store: MemoryStore; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const job = new RecapJob({ transcripts, store, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ repos: NO_REPOS, transcripts, store, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });

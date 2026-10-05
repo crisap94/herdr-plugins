@@ -150,7 +150,7 @@ function columnView(fixture: Fixture): ColumnView {
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale),
+        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages };

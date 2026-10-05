@@ -6,6 +6,7 @@ export const en: Messages = {
     waitingForAgent: 'Waiting for an agent in this tab…',
     fromScreen: '(screen)',
     recapTitle: 'TAB RECAP',
+    taskNumber: (n) => `Task ${n}`,
     updating: '⟳ updating',
     claudeOwn: "Claude's own recap, until the tab's is written:",
     noRecapYet: 'No recap yet. It is written when an agent in this tab finishes a turn — press r to write it now.',
