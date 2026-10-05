@@ -35,6 +35,7 @@ function fakeColumns(): { columns: Columns; calls: string[] } {
         open: (tab, target, shape) => { calls.push(`open ${tab} next to ${target} as ${shape}`); opened = true; return Promise.resolve({ kind: 'opened', pane: paneId('w1:p9') }); },
         resize: (pane, direction, amount) => { calls.push(`resize ${pane} ${direction} ${amount.toFixed(3)}`); return Promise.resolve({ kind: 'done' }); },
         close: (pane) => { calls.push(`close ${pane}`); return Promise.resolve({ kind: 'done' }); },
+        closeEvery: () => Promise.resolve({ kind: 'closed', closed: 0, failed: 0 }),
     };
     return { columns, calls };
 }

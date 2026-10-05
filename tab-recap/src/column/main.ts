@@ -3,7 +3,7 @@
 // refresh request.
 import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
+import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
@@ -16,7 +16,8 @@ import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
 const ESC = String.fromCodePoint(0x1b);
 const BEL = String.fromCodePoint(0x07);
 const TICK_MS = 1000;
-const LOCALE_MS = 3000;
+/** how often the locale and the code's version are looked at (the variable is for tests: nobody needs it faster) */
+const LOCALE_MS = Number(process.env['TAB_RECAP_COLUMN_POLL_MS'] ?? '') || 3000;
 /** one cell of padding on each side: writing the last column of a row makes ESC[K eat it */
 const GUTTER = 2;
 
@@ -36,7 +37,11 @@ const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
 const store = new FsRecapStore(stateDir());
 const config = loadConfig();
 /** the locale is re-read, not frozen at start: a change in config.env shows within a few seconds */
-let settled = { at: 0, locale: config.locale, version: codeVersion() };
+const startedVersion = codeVersion();
+let settled = { at: 0, locale: config.locale, version: startedVersion };
+/** the version seen on the previous look, and whether replacing this process in place has already failed once */
+let candidate: string | null = null;
+let rollFailed = false;
 /** Notes and warnings only: upkeep belongs to the daemon, the column never runs it. */
 const extensions = loadExtensions(configGetter());
 const glow = glowRenderer(config.glow);
@@ -56,8 +61,29 @@ const markdown: Markdown = (text, width) => {
 function localeNow(): Locale {
     if (Date.now() - settled.at > LOCALE_MS) {
         settled = { at: Date.now(), locale: loadConfig().locale, version: codeVersion() };
+        rollWhenUpgraded();
     }
     return settled.locale;
+}
+
+/**
+ * An upgrade replaces this process in place: the same pid, the same terminal, so herdr sees no pane close and the
+ * daemon spends no reopen budget. (Closing and reopening 27 columns for a new version is what this avoids.) The
+ * terminal is put back first; the new process sets it up again. A modal is short-lived and is left alone.
+ */
+function rollWhenUpgraded(): void {
+    const current = settled.version;
+    if (mode !== 'modal' && !rollFailed && typeof process.execve === 'function' && shouldRoll(startedVersion, current, candidate)) {
+        restore();
+        try {
+            process.execve(process.execPath, [process.execPath, ...process.execArgv, ...process.argv.slice(1)], process.env);
+        } catch {
+            rollFailed = true;
+            enter();
+            draw(true);
+        }
+    }
+    candidate = current;
 }
 
 function view(): ColumnView {
@@ -153,7 +179,11 @@ function restore(): void {
     process.stdout.write(`${MOUSE_OFF}${ESC}[?25h${ESC}[?1049l`);
 }
 
-process.stdout.write(`${ESC}[?1049h${ESC}[?25l${mode === 'modal' ? '' : MOUSE_ON}${ESC}]2;${title}${BEL}`);
+function enter(): void {
+    process.stdout.write(`${ESC}[?1049h${ESC}[?25l${mode === 'modal' ? '' : MOUSE_ON}${ESC}]2;${title}${BEL}`);
+}
+
+enter();
 process.on('exit', restore);
 process.on('SIGTERM', () => { process.exit(0); });
 process.stdout.on('resize', () => { draw(true); });

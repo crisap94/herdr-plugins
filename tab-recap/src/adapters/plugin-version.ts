@@ -16,6 +16,15 @@ export function parseVersion(toml: string): string | null {
     return null;
 }
 
+/**
+ * Should a running process replace itself with the code now on disk? Only when the version on disk differs from the
+ * one it started with AND was the same on the previous look too: a plugin being updated file by file is not rolled
+ * to halfway.
+ */
+export function shouldRoll(started: string | null, current: string | null, seenBefore: string | null): boolean {
+    return started !== null && current !== null && current !== started && seenBefore === current;
+}
+
 /** The plugin root: two levels above `src/adapters/`. */
 const PLUGIN_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 

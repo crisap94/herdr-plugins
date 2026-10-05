@@ -19,9 +19,17 @@ export type OpenResult = { readonly kind: 'opened'; readonly pane: PaneId } | Un
 
 export type Done = { readonly kind: 'done' } | Unknown;
 
+/** How many of our columns were closed, and how many could not be. */
+export type ClosedAll = { readonly kind: 'closed'; readonly closed: number; readonly failed: number } | Unknown;
+
 export interface Columns {
     layout(tab: TabId): Promise<LayoutResult>;
     open(tab: TabId, target: string, shape: Shape): Promise<OpenResult>;
     resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
+    /**
+     * Every column of ours that herdr holds — tracked or not — closed, after ONE look at herdr for the whole batch.
+     * For shutting down: a close that does its own look (the agent guard) is too slow to repeat 27 times in a second.
+     */
+    closeEvery(): Promise<ClosedAll>;
 }

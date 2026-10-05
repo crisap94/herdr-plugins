@@ -154,3 +154,34 @@ test('HerdrFleet refuses when it cannot check: herdr unreachable means no close'
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
     }
 });
+
+test('HerdrFleet.closeEvery: ONE look at herdr, then a close for each of OUR columns — tracked or not — and never for an agent pane', async () => {
+    const snapshot = {
+        panes: [
+            pane('w1:p1', 'tab-recap-harness-config', { agent: 'claude' }), pane('w1:p2', 'tab-recap', { label: 'Recap' }), pane('w2:p2', 'tab-recap:bar', { label: 'Recap' }),
+            pane('w3:p2', 'tab-recap', { label: 'Recap' }), pane('w3:p3', 'tab-recap'), pane('w4:p1', 'tab-recap'), pane('w5:p1', 'plain'),
+        ],
+        agents: [{ pane_id: 'w1:p1', agent: 'claude' }, { pane_id: 'w4:p1', agent: 'opencode' }],
+    };
+    const herdr = await fakeHerdr(snapshot);
+    const before = process.env['HERDR_SOCKET_PATH'];
+    process.env['HERDR_SOCKET_PATH'] = herdr.path;
+    try {
+        const result = await new HerdrFleet('/state').closeEvery();
+        assert.deepEqual(result, { kind: 'closed', closed: 4, failed: 0 });
+        assert.deepEqual(herdr.calls, ['session.snapshot', 'pane.close', 'pane.close', 'pane.close', 'pane.close'], 'one snapshot for the whole batch');
+    } finally {
+        if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        herdr.done();
+    }
+});
+
+test('HerdrFleet.closeEvery: herdr unreachable is an Unknown, not a throw', async () => {
+    const before = process.env['HERDR_SOCKET_PATH'];
+    process.env['HERDR_SOCKET_PATH'] = join(tmpdir(), 'no-such-herdr-either.sock');
+    try {
+        assert.ok(isUnknown(await new HerdrFleet('/state').closeEvery()));
+    } finally {
+        if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+    }
+});
