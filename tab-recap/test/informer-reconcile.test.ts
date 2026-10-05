@@ -110,3 +110,61 @@ test('a changed watch set resubscribes; an unchanged one does not', async () => 
     assert.equal(herdr.subscribes, after, 'a status change is not a watch-set change');
     informer.stop();
 });
+
+/** The stream can end at any point of start-up; the informer must come out of each of them subscribed again. */
+async function recoversFrom(endAt: 'before-snapshot' | 'during-snapshot' | 'right-after'): Promise<{ herdr: CountingHerdr; informer: Informer }> {
+    const herdr = new CountingHerdr();
+    let releaseFirst: (() => void) | null = null;
+    const snapshot = herdr.snapshot.bind(herdr);
+    let first = true;
+    herdr.snapshot = async (): Promise<SnapshotResult> => {
+        const taken = await snapshot();
+        if (first && endAt === 'during-snapshot') {
+            first = false;
+            herdr.latest.end();
+            await new Promise<void>((resolve) => { releaseFirst = resolve; setTimeout(resolve, 20); });
+        }
+        return taken;
+    };
+    const subscribe = herdr.subscribe.bind(herdr);
+    herdr.subscribe = async (): Promise<StreamResult> => {
+        const opened = await subscribe();
+        if (herdr.subscribes === 1 && endAt === 'before-snapshot') {
+            herdr.latest.end();
+        }
+        return opened;
+    };
+    const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
+        onIntents: (): Promise<void> => Promise.resolve(),
+        onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
+    await informer.enterSubscription();
+    void informer.run();
+    if (endAt === 'right-after') {
+        herdr.latest.end();
+    }
+    void releaseFirst;
+    return { herdr, informer };
+}
+
+for (const endAt of ['before-snapshot', 'during-snapshot', 'right-after'] as const) {
+    test(`a stream that ends ${endAt.replace('-', ' ')} at start-up is replaced by a new subscription on its own`, async () => {
+        const { herdr, informer } = await recoversFrom(endAt);
+        try {
+            const first = herdr.subscribes;
+            await until(() => herdr.subscribes > first && herdr.streams.at(-1) !== undefined, 3000);
+            await pause(60);
+            const live = herdr.streams.at(-1);
+            assert.ok(live !== undefined);
+            const frames = new AsyncQueue<Frame>();
+            void frames;
+            assert.ok(herdr.subscribes >= 2, `resubscribed (${herdr.subscribes})`);
+            const before = herdr.snapshots;
+            herdr.latest.push({ event: 'pane_agent_detected', data: {} });
+            await until(() => herdr.snapshots > before, 2000);
+            assert.ok(herdr.snapshots > before, 'and its frames are handled again (a resync frame took a snapshot)');
+        } finally {
+            informer.stop();
+        }
+    });
+}

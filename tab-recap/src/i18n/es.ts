@@ -54,6 +54,7 @@ export const es: Messages = {
     },
     cli: {
         daemonRunning: (pid) => `el daemon ya está en marcha (pid ${pid})`,
+        daemonWedged: (pid) => `el daemon ${pid} estaba atascado (sin latido en 3 minutos): detenido, iniciando uno nuevo`,
         daemonStarted: (pid, log) => `daemon iniciado (pid ${pid}) — registro: ${log}`,
         offIdle: 'apagado (no había ningún daemon en marcha)',
         offClosing: (pid) => `apagado — el daemon ${pid} cierra sus columnas y termina`,

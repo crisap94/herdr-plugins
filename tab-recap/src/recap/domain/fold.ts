@@ -18,6 +18,8 @@ export interface SeenColumn {
 
 export interface Reconciliation {
     readonly focusedTab?: string | null;
+    /** when the snapshot was REQUESTED (ms): one asked for before a column was opened cannot show it */
+    readonly at?: number;
     readonly lanes: readonly SeenLane[];
     readonly panes: readonly string[];
     readonly columns: readonly SeenColumn[];
@@ -29,7 +31,7 @@ export type Observation =
     | { readonly kind: 'closed'; readonly pane: PaneId }
     | { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
     | { readonly kind: 'reconciled'; readonly seen: Reconciliation }
-    | { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape }
+    | { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
     | { readonly kind: 'column-failed'; readonly tab: TabId }
     | { readonly kind: 'focused'; readonly tab: TabId }
     | { readonly kind: 'requested'; readonly tab: TabId }
@@ -119,17 +121,28 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
  * A pane that hosts an agent is never a column, whatever it is called (any agent kind, not only the
  * ones we write recaps about): the board drops it if it had taken it for one, and never adopts it.
  */
-function columnsAfter(board: Board, seen: Reconciliation): ReadonlyMap<TabId, Placement> {
+function columnsAfter(board: Board, seen: Reconciliation): { readonly columns: ReadonlyMap<TabId, Placement>; readonly extras: readonly SeenColumn[] } {
     const alive = new Set(seen.panes);
     const agents = new Set(seen.lanes.map((lane) => lane.paneId));
-    const columns = new Map([...board.columns].filter(([, placed]) => alive.has(placed.pane) && !agents.has(placed.pane)));
+    const columns = new Map([...board.columns].filter(([, placed]) => !agents.has(placed.pane) && (alive.has(placed.pane) || newerThan(placed, seen))));
+    const extras: SeenColumn[] = [];
     for (const column of seen.columns.filter((seenColumn) => !agents.has(seenColumn.paneId))) {
         const tab = column.tabId as TabId;
         if (!columns.has(tab)) {
             columns.set(tab, { pane: column.paneId as PaneId, shape: column.shape });
+        } else if (columns.get(tab)?.pane !== column.paneId && !board.opening.has(tab)) {
+            extras.push(column);
         }
     }
-    return columns;
+    return { columns, extras };
+}
+
+/**
+ * A column we opened after the snapshot was requested cannot be in it: its absence says nothing. (A snapshot is
+ * folded after the opens that happened while it was on its way — the bug that opened a second column in a tab.)
+ */
+function newerThan(placed: Placement, seen: Reconciliation): boolean {
+    return seen.at !== undefined && placed.since !== undefined && seen.at < placed.since;
 }
 
 function onReconciled(board: Board, seen: Reconciliation, policy: Policy): Step {
@@ -138,7 +151,7 @@ function onReconciled(board: Board, seen: Reconciliation, policy: Policy): Step 
         const lane = laneFrom(raw);
         lanes.set(lane.pane, lane);
     }
-    const columns = columnsAfter(board, seen);
+    const { columns, extras } = columnsAfter(board, seen);
     let opening = board.opening;
     for (const tab of columns.keys()) {
         opening = removed(opening, tab);
@@ -149,7 +162,9 @@ function onReconciled(board: Board, seen: Reconciliation, policy: Policy): Step 
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
     const published: Intent[] = tabsWithLanes(next).map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
-    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads], !sameSet);
+    /** two of our columns in one tab (a leftover of a race, or of a close that did not happen): keep one, close the rest */
+    const closing: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
+    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads, ...closing], !sameSet);
 }
 
 function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
@@ -192,7 +207,7 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
         case 'reconciled':
             return onReconciled(board, observation.seen, policy);
         case 'column-opened':
-            return onColumnOpened(board, observation.tab, { pane: observation.pane, shape: observation.shape });
+            return onColumnOpened(board, observation.tab, { pane: observation.pane, shape: observation.shape, ...(observation.at === undefined ? {} : { since: observation.at }) });
         case 'column-failed': {
             const [spent, intents] = spend(board, observation.tab, now, policy);
             return step(spent, intents);

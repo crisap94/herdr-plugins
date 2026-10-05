@@ -65,6 +65,7 @@ export interface Messages {
     };
     readonly cli: {
         readonly daemonRunning: (pid: number) => string;
+        readonly daemonWedged: (pid: number) => string;
         readonly daemonStarted: (pid: string, log: string) => string;
         readonly offIdle: string;
         readonly offClosing: (pid: number) => string;
