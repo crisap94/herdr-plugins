@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_call:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to test (default: the triggering ref)'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -27,6 +32,8 @@ jobs:
         working-directory: tab-recap
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v5
         with:
           node-version: 24
