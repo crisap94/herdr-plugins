@@ -10,7 +10,7 @@ import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import type { Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
+import type { ClosedAll, Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
@@ -213,6 +213,27 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async close(pane: PaneId): Promise<Done> {
         return this.guarded('close', String(pane), 'pane.close', { pane_id: String(pane) });
+    }
+
+    /**
+     * The columns are picked from one snapshot with the same rule that recognises them everywhere else — exact
+     * title, no agent, the manifest's label — so a pane that hosts an agent is never in the batch.
+     */
+    async closeEvery(): Promise<ClosedAll> {
+        try {
+            const snapshot = await this.rawSnapshot();
+            const panes = list(snapshot['panes']);
+            let closed = 0;
+            let failed = 0;
+            for (const column of columnsIn(panes, agentPanesIn(panes, list(snapshot['agents'])))) {
+                const done = await this.call('pane.close', { pane_id: column.paneId });
+                closed += done.kind === 'done' ? 1 : 0;
+                failed += done.kind === 'done' ? 0 : 1;
+            }
+            return { kind: 'closed', closed, failed };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
     }
 
     private async call(method: string, params: Json): Promise<Done> {

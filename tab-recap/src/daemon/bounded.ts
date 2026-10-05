@@ -8,3 +8,14 @@ export async function bounded(task: Promise<void>, ms: number): Promise<'done' |
         clearTimeout(waiting.timer);
     }
 }
+
+/** `task`'s result, or `fallback` when it takes longer than `ms`. */
+export async function within<T>(task: Promise<T>, ms: number, fallback: T): Promise<T> {
+    const waiting: { timer?: ReturnType<typeof setTimeout> } = {};
+    const late = new Promise<T>((resolve) => { waiting.timer = setTimeout(() => { resolve(fallback); }, ms); });
+    try {
+        return await Promise.race([task, late]);
+    } finally {
+        clearTimeout(waiting.timer);
+    }
+}
