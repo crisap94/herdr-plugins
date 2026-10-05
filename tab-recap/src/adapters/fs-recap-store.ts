@@ -6,6 +6,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 import type { LaneCursor, RecapStore, TabLane, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
 
@@ -41,6 +42,22 @@ const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filt
 
 let sequence = 0;
 
+/** The tasks as stored; a recap stored before tasks existed (`sections` and `markdown` of its own) is one task holding every lane. */
+function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown; readonly markdown?: unknown; readonly lanes?: unknown }): readonly RecapTask[] {
+    if (Array.isArray(stored.tasks)) {
+        return stored.tasks.map((task: Readonly<Record<string, unknown>>, at: number) => ({
+            id: typeof task['id'] === 'string' && task['id'] !== '' ? task['id'] : `t${at + 1}`,
+            name: typeof task['name'] === 'string' ? task['name'] : '',
+            lanes: strings(task['lanes']),
+            sections: sectionsOf(task['sections']),
+            markdown: typeof task['markdown'] === 'string' ? task['markdown'] : '',
+        }));
+    }
+    const markdown = typeof stored.markdown === 'string' ? stored.markdown : '';
+    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane: Readonly<Record<string, unknown>>) => (typeof lane['pane'] === 'string' ? [lane['pane']] : [])) : [];
+    return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
+}
+
 /** A lane as stored; a view written before `cwd` existed has none. */
 function laneOf(lane: Omit<TabLane, 'cwd'> & { cwd?: unknown }): TabLane {
     return { pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title, cwd: typeof lane.cwd === 'string' ? lane.cwd : null };
@@ -63,13 +80,13 @@ export class FsRecapStore implements RecapStore {
     }
 
     readRecap(tab: string): TabRecap | null {
-        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'sections' | 'lanes'> & { language?: unknown; sections?: unknown; lanes: readonly (Omit<LaneCursor, 'tail'> & { tail?: unknown })[] }) | null;
+        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'tasks' | 'lanes'> & { language?: unknown; tasks?: unknown; sections?: unknown; markdown?: unknown; lanes: readonly (Omit<LaneCursor, 'tail'> & { tail?: unknown })[] }) | null;
         if (stored === null) {
             return null;
         }
         const language = typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en';
         const lanes = Array.from(stored.lanes, cursorOf);
-        return { ...stored, lanes, language, sections: sectionsOf(stored.sections) };
+        return { tab: stored.tab, lanes, tasks: tasksOf(stored), at: stored.at, running: stored.running, backend: stored.backend, error: stored.error, costUsd: stored.costUsd, language };
     }
 
     writeRecap(recap: TabRecap): void {

@@ -21,13 +21,26 @@ function listOf(value: unknown, cap: number): string[] {
 }
 
 /** The JSON object in the writer's answer: it may be fenced, or wrapped in a sentence. */
-function objectIn(text: string): unknown {
+export function objectIn(text: string): unknown {
     const from = text.indexOf('{');
     const to = text.lastIndexOf('}');
     return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
 }
 
 const KEYS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links'] as const;
+
+/** The seven sections in `fields`, checked and capped; a missing section is an empty one; null when it has none of them. */
+export function sectionsFrom(fields: Readonly<Record<string, unknown>>): RecapSections | null {
+    if (!KEYS.some((key) => key in fields)) {
+        return null;
+    }
+    const list = (key: ListSection): string[] => listOf(fields[key], CAPS[key]);
+    const goal = fields['goal'];
+    return {
+        goal: typeof goal === 'string' ? tidy(goal) : '',
+        now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links'),
+    };
+}
 
 /** Check and cap the writer's answer. A missing section is an empty one; no recognisable section at all is invalid. */
 export function parseRecap(text: string): Parsed {
@@ -40,19 +53,8 @@ export function parseRecap(text: string): Parsed {
     if (typeof found !== 'object' || found === null || Array.isArray(found)) {
         return { kind: 'invalid', why: 'the answer holds no JSON object' };
     }
-    const fields = found as Readonly<Record<string, unknown>>;
-    if (!KEYS.some((key) => key in fields)) {
-        return { kind: 'invalid', why: 'the JSON object has none of the seven sections' };
-    }
-    const list = (key: ListSection): string[] => listOf(fields[key], CAPS[key]);
-    const goal = fields['goal'];
-    return {
-        kind: 'sections',
-        sections: {
-            goal: typeof goal === 'string' ? tidy(goal) : '',
-            now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links'),
-        },
-    };
+    const sections = sectionsFrom(found as Readonly<Record<string, unknown>>);
+    return sections === null ? { kind: 'invalid', why: 'the JSON object has none of the seven sections' } : { kind: 'sections', sections };
 }
 
 /** The Markdown for the column: seven headings, always, in order; an empty section is `—`. */

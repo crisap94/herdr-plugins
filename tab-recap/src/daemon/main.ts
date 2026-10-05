@@ -4,6 +4,7 @@ import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
@@ -53,7 +54,7 @@ function wire(root: string): Wired {
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const recaps = new RecapJob({
         transcripts: [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)],
-        store, clock, log,
+        store, clock, log, repos: new GitLaneRepo(clock),
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
     });

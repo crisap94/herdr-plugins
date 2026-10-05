@@ -17,6 +17,8 @@ export interface Messages {
     /** beside a lane whose recap is read from its terminal screen, not a transcript */
     readonly fromScreen: string;
     readonly recapTitle: string;
+    /** the heading of a task that has no name, when a tab holds several: `Task 2` */
+    readonly taskNumber: (n: number) => string;
     readonly updating: string;
     readonly claudeOwn: string;
     readonly noRecapYet: string;

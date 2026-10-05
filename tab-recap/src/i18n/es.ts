@@ -7,6 +7,7 @@ export const es: Messages = {
     waitingForAgent: 'Esperando a que haya un agente en esta pestaña…',
     fromScreen: '(pantalla)',
     recapTitle: 'RESUMEN DE PESTAÑA',
+    taskNumber: (n) => `Tarea ${n}`,
     updating: '⟳ actualizando',
     claudeOwn: 'El resumen propio de Claude, hasta que se escriba el de la pestaña:',
     noRecapYet: 'Aún no hay resumen. Se escribe cuando un agente de esta pestaña termina un turno; pulsa r para escribirlo ahora.',
