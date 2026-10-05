@@ -50,8 +50,32 @@ test('shutDown: singular, failures, an unreachable herdr and a batch that takes 
     assert.match(await run(() => new Promise<ClosedAll>(() => undefined), 30), /took more than 0.03 s; leaving/);
 });
 
+/** `script` runs a command in a pty; util-linux and BSD (macOS) spell it differently. */
+function scriptArgs(command: string): string[] {
+    return process.platform === 'darwin' ? ['-q', '/dev/null', 'sh', '-c', command] : ['-qec', command, '/dev/null'];
+}
+
+function hasScript(): boolean {
+    try {
+        execFileSync('sh', ['-c', 'command -v script'], { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/** The node process running `entry`: found by its command line, so it does not matter whether `script` put a shell in between. */
+function pidOfNode(entry: string): string {
+    const listing = execFileSync('ps', ['-axo', 'pid=,args='], { encoding: 'utf8' });
+    const found = listing.split('\n').map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).find((match) => {
+        const args = match?.[2] ?? '';
+        return args.includes(entry) && (args.startsWith(`${process.execPath} `) || args.startsWith('node '));
+    });
+    return found?.[1] ?? '';
+}
+
 /** The real thing: a column process in a pty replaces itself in place when the code on disk changes version. */
-test('a column process rolls to the new version in place: same pid, same terminal, the new code is what draws', async () => {
+test('a column process rolls to the new version in place: same pid, same terminal, the new code is what draws', { skip: hasScript() ? false : 'the `script` command (a pty) is not installed' }, async () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const plugin = join(here, '..');
     const dir = mkdtempSync(join(tmpdir(), 'recap-roll-'));
@@ -70,7 +94,8 @@ test('a column process rolls to the new version in place: same pid, same termina
         const old = /^version = "(\d+\.\d+\.\d+)"/m.exec(toml)?.[1] ?? '';
         assert.match(old, /^\d+\.\d+\.\d+$/);
         let output = '';
-        script = spawn('script', ['-qec', 'stty cols 70 rows 20; exec node src/column/main.ts', '/dev/null'], {
+        const entry = join(code, 'src', 'column', 'main.ts');
+        script = spawn('script', scriptArgs(`stty cols 70 rows 20; exec node ${entry}`), {
             cwd: code, stdio: ['pipe', 'pipe', 'ignore'],
             env: { ...process.env, TAB_RECAP_TAB: 'w1:t1', TAB_RECAP_STATE: state, TAB_RECAP_COLUMN_POLL_MS: '150', HERDR_ENV: '', HERDR_SOCKET_PATH: join(dir, 'none.sock') },
         });
@@ -82,7 +107,7 @@ test('a column process rolls to the new version in place: same pid, same termina
             }
             return output.includes(needle);
         };
-        const nodePid = (): string => execFileSync('pgrep', ['-P', String(script?.pid ?? 0)], { encoding: 'utf8' }).trim();
+        const nodePid = (): string => pidOfNode(entry);
         assert.ok(await until(`v${old}`), `the column draws its version (${old})`);
         const before = nodePid();
         assert.match(before, /^\d+$/);
