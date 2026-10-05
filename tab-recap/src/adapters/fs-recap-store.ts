@@ -7,7 +7,7 @@ import type { TabId } from '#src/recap/domain/ids.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
-import type { RecapStore, TabLane, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
+import type { LaneCursor, RecapStore, TabLane, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
 
 /** herdr ids hold ':' — fine on Linux, but a file name should not need quoting. */
 export const fileKey = (id: string): string => id.replaceAll(':', '_').replaceAll('/', '_');
@@ -46,6 +46,11 @@ function laneOf(lane: Omit<TabLane, 'cwd'> & { cwd?: unknown }): TabLane {
     return { pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title, cwd: typeof lane.cwd === 'string' ? lane.cwd : null };
 }
 
+/** A lane's cursor as stored; one written before readers owned their positions has no tail. */
+function cursorOf(cursor: Omit<LaneCursor, 'tail'> & { tail?: unknown }): LaneCursor {
+    return { ...cursor, tail: typeof cursor.tail === 'string' ? cursor.tail : null };
+}
+
 export class FsRecapStore implements RecapStore {
     private readonly root: string;
 
@@ -58,12 +63,13 @@ export class FsRecapStore implements RecapStore {
     }
 
     readRecap(tab: string): TabRecap | null {
-        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'sections'> & { language?: unknown; sections?: unknown }) | null;
+        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'sections' | 'lanes'> & { language?: unknown; sections?: unknown; lanes: readonly (Omit<LaneCursor, 'tail'> & { tail?: unknown })[] }) | null;
         if (stored === null) {
             return null;
         }
         const language = typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en';
-        return { ...stored, language, sections: sectionsOf(stored.sections) };
+        const lanes = Array.from(stored.lanes, cursorOf);
+        return { ...stored, lanes, language, sections: sectionsOf(stored.sections) };
     }
 
     writeRecap(recap: TabRecap): void {

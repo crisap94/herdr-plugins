@@ -1,6 +1,8 @@
 // Shared by the transcript adapters: read complete lines only — the agent is writing
 // the file while we read it, so the trailing line may be half there.
-import { closeSync, openSync, readSync } from 'node:fs';
+import { closeSync, openSync, readSync, statSync } from 'node:fs';
+
+import type { Position } from '#src/ports/transcripts.ts';
 
 export type Row = Readonly<{ [key: string]: unknown }>;
 
@@ -52,4 +54,11 @@ export function toolBrief(name: string, input: Row): string {
         }
     }
     return name;
+}
+
+/** What a JSONL source gives back: the complete lines after the cursor (never reaching back further than the budget) and the new cursor. */
+export function readJsonl(path: string, was: Position, budget: number): { readonly lines: readonly string[]; readonly position: Position; readonly grew: boolean } {
+    const size = statSync(path).size;
+    const { lines, end } = readLines(path, Math.max(was.cursor, size - budget, 0), budget);
+    return { lines, position: { cursor: end, tail: null }, grew: size > was.cursor };
 }

@@ -25,8 +25,8 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
     const recap = {
         ...blankRecap('w1:t1'),
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', transcript: 'a', cursor: 1, title: 'Victoria migration', lastPrompt: 'go', claudeRecap: null },
-            { pane: 'w1:p2', agent: 'codex', transcript: 'b', cursor: 1, title: null, lastPrompt: 'run tests', claudeRecap: null },
+            { pane: 'w1:p1', agent: 'claude', transcript: 'a', cursor: 1, tail: null, title: 'Victoria migration', lastPrompt: 'go', claudeRecap: null },
+            { pane: 'w1:p2', agent: 'codex', transcript: 'b', cursor: 1, tail: null, title: null, lastPrompt: 'run tests', claudeRecap: null },
         ],
         markdown: '## Goal\n- migrate',
         at: 0,

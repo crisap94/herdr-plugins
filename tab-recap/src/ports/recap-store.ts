@@ -19,12 +19,15 @@ export interface TabView {
     readonly at: number;
 }
 
-/** How far one lane's transcript has been read into the tab's recap, and what it says about itself. */
+/** How far one lane's source has been read into the tab's recap, and what it says about itself. */
 export interface LaneCursor {
     readonly pane: string;
     readonly agent: string;
     readonly transcript: string;
+    /** where the lane's reader left off; what the number means is the reader's business (bytes, a time, a revision) */
     readonly cursor: number;
+    /** a hash of the last screen read; null for every other source */
+    readonly tail: string | null;
     readonly title: string | null;
     readonly lastPrompt: string | null;
     readonly claudeRecap: string | null;
