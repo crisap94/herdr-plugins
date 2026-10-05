@@ -10,6 +10,8 @@ export interface TabLane {
     readonly title: string | null;
     /** where the lane works; null when herdr did not say, or for a view stored before this existed */
     readonly cwd: string | null;
+    /** the newest thing the operator typed to this lane (the live prompt); absent or null when unknown, or for a view stored before this existed */
+    readonly lastPrompt?: string | null;
 }
 
 export interface TabView {

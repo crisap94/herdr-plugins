@@ -58,9 +58,12 @@ function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown
     return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
 }
 
-/** A lane as stored; a view written before `cwd` existed has none. */
-function laneOf(lane: Omit<TabLane, 'cwd'> & { cwd?: unknown }): TabLane {
-    return { pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title, cwd: typeof lane.cwd === 'string' ? lane.cwd : null };
+/** A lane as stored; a view written before `cwd` or `lastPrompt` existed has none. */
+function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
+    return {
+        pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title,
+        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null,
+    };
 }
 
 /** A lane's cursor as stored; one written before readers owned their positions has no tail. */

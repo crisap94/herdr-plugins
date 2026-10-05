@@ -34,10 +34,15 @@ export type Located = { readonly kind: 'located'; readonly source: string } | Un
 
 export type ChunkResult = Chunk | Unknown;
 
+/** The newest user prompt of a source; `text` is null when it holds none (or cannot say, like a screen). */
+export type PromptResult = { readonly kind: 'prompt'; readonly text: string | null } | Unknown;
+
 /** One adapter per kind of agent (`*`: any agent without a store of its own); each knows where its history lives and how to read it. */
 export interface Transcripts {
     readonly agent: string;
     locate(lane: Lane): Promise<Located>;
     /** What `source` holds after `was`, at most about `budget` bytes of it (the most recent when there is more). */
     read(source: string, was: Position, budget: number): Promise<ChunkResult>;
+    /** Only the newest user prompt, from at most `budget` bytes at the end of `source`. Moves no position. */
+    latestPrompt(source: string, budget: number): Promise<PromptResult>;
 }

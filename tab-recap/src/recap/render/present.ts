@@ -55,8 +55,9 @@ function noteLines(view: ColumnView, pane: string, width: number): string[] {
     });
 }
 
-function promptLines(cursor: LaneCursor | undefined, width: number): string[] {
-    const prompt = cursor?.lastPrompt ?? null;
+/** The live prompt if there is one, else what the last recap saw. */
+function promptLines(lane: TabLane, cursor: LaneCursor | undefined, width: number): string[] {
+    const prompt = lane.lastPrompt ?? cursor?.lastPrompt ?? null;
     return prompt === null ? [] : wrap(`› ${prompt.split('\n').join(' ')}`, width, '  ').slice(0, PROMPT_LINES).map(style.dim);
 }
 
@@ -68,7 +69,7 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
         ...wrap(title, width).map((line) => style.bold(line)),
         ...wrap([badge(laneStatus(lane.status), view.messages), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`)].join(style.gray(' · ')), width, '  '),
         ...noteLines(view, lane.pane, width),
-        ...promptLines(cursor, width),
+        ...promptLines(lane, cursor, width),
     ];
 }
 
