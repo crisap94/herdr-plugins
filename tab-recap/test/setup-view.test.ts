@@ -13,7 +13,7 @@ import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
-const base = initial(draftFrom({ backend: 'codex', models, words: 450 }, { locale: undefined, recapLanguage: undefined }), { words: 'TAB_RECAP_WORDS' });
+const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);
@@ -26,8 +26,8 @@ const states: readonly [string, Setup][] = [
     ['choosing', typed(withAvailable(base, ['claude']), ['\r', 'j'])],
     ['editing', typed(withAvailable(base, ['claude']), ['j', '\r', 'x', 'y'])],
     ['locked', typed(withAvailable(base, ['claude']), ['j', 'j', '\r'])],
-    ['language', typed(withAvailable(base, ['claude']), ['j', 'j', 'j', 'j'])],
-    ['locale choices', typed(withAvailable(base, ['claude']), ['j', 'j', 'j', '\r'])],
+    ['language', typed(withAvailable(base, ['claude']), ['j', 'j', 'j'])],
+    ['locale choices', typed(withAvailable({ ...base, locks: {} }, ['claude']), ['j', 'j', '\r'])],
     ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
     ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
     ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
@@ -59,7 +59,7 @@ test('the harness list marks the current one ✓, the available ones ● and the
 });
 
 test('a locked row names its variable; the model row names its harness; both languages say so', () => {
-    for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_WORDS'], [es, 'solo lectura: TAB_RECAP_WORDS']] as const) {
+    for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_LOCALE'], [es, 'solo lectura: TAB_RECAP_LOCALE']] as const) {
         const text = setupView(withAvailable(base, ['codex']), messages, 80).join('\n');
         assert.ok(text.includes(expected));
         assert.ok(text.includes(`${messages.setup.rows.model} (codex)`));
@@ -79,11 +79,11 @@ test('config-file: a save changes only its keys and keeps every comment and othe
     const dir = mkdtempSync(join(tmpdir(), 'recap-file-'));
     try {
         const path = join(dir, 'config.env');
-        writeFileSync(path, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_WORDS=450\n');
-        setValues(path, new Map([['TAB_RECAP_WORDS', '600'], ['TAB_RECAP_RECAP_LANG', 'es']]), parseEnv);
+        writeFileSync(path, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_GLOW=450\n');
+        setValues(path, new Map([['TAB_RECAP_GLOW', '600'], ['TAB_RECAP_RECAP_LANG', 'es']]), parseEnv);
         const text = readFileSync(path, 'utf8');
-        assert.equal(text, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_WORDS=600\nTAB_RECAP_RECAP_LANG=es\n');
-        assert.equal(parseEnv(text).get('TAB_RECAP_WORDS'), '600');
+        assert.equal(text, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_GLOW=600\nTAB_RECAP_RECAP_LANG=es\n');
+        assert.equal(parseEnv(text).get('TAB_RECAP_GLOW'), '600');
         setValues(join(dir, 'new', 'config.env'), new Map([['A', '1']]), parseEnv);
         assert.equal(readFileSync(join(dir, 'new', 'config.env'), 'utf8'), 'A=1\n');
     } finally {

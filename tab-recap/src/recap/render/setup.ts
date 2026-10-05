@@ -41,8 +41,6 @@ function valueOf(row: RowId, state: Setup, m: Messages): string {
             return draft.backend;
         case 'model':
             return target === null ? m.setup.modelNoAgent : modelText(draft.models[target], target, m);
-        case 'words':
-            return String(draft.words);
         case 'locale':
             return m.setup.uiChoices[draft.locale];
         case 'recapLanguage':
@@ -82,7 +80,7 @@ function localeChoices(state: Setup, m: Messages, width: number): string[] {
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { words: m.setup.wordsHint, recapLanguage: m.setup.recapLanguageHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint };
     return hints[row] ?? null;
 }
 
@@ -113,7 +111,7 @@ function noteLine(state: Setup, m: Messages): string | null {
     const lock = state.locks[rowOf(state)] ?? '';
     const texts: Readonly<Record<string, string>> = {
         locked: m.setup.locked(lock), unsaved: m.setup.unsaved, saved: m.setup.saved, rewriting: m.setup.rewriting,
-        nothing: m.setup.nothingToSave, invalid: m.setup.wordsInvalid, 'no-agent': m.setup.modelNoAgent,
+        nothing: m.setup.nothingToSave, 'no-agent': m.setup.modelNoAgent,
     };
     if (note === null) {
         return null;

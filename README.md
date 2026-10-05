@@ -1,5 +1,7 @@
 # herdr-plugins
 
+[![ci](https://github.com/crisap94/herdr-plugins/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/crisap94/herdr-plugins/actions/workflows/ci.yml)
+
 Plugins for [herdr](https://github.com/ogulcancelik/herdr), the terminal multiplexer for coding
 agents. One plugin per directory, each installable on its own.
 
@@ -12,23 +14,21 @@ agents. One plugin per directory, each installable on its own.
 ## tab-recap
 
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps a
-rolling, structured recap of the conversation (goal, what is happening now, what waits on you, what
-is done, decisions, next steps), so a long session never loses its thread. A coding agent of your
+rolling, structured recap of the conversation (goal, what is happening now, what needs you, what
+is done, decisions, next steps, links — always the same seven sections, kept short), so a long session never loses its thread. A coding agent of your
 choice writes it at the end of each turn. It only reads transcripts; it never types into an agent.
 
-```text
- Payments API migration
- ● idle · claude · recap 2m ago
- › keep the old endpoint until Friday
-
- GOAL
- • Move checkout to the v2 API…
- NOW / WAITING ON YOU / DONE /
- DECISIONS / NEXT / KEY REFS
-```
+<p align="center">
+  <img src="tab-recap/docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
+  <img src="tab-recap/docs/screens/column-es.png" alt="The same column in Spanish" width="340">
+</p>
 
 On a phone (a narrow tab) you get a one-row **bar** along the top instead: a status dot per agent
 and one headline. Tap it to open the full recap.
+
+<p align="center">
+  <img src="tab-recap/docs/screens/bar-en.png" alt="The one-row bar" width="460">
+</p>
 
 ### Requirements
 
@@ -59,20 +59,31 @@ Open the settings:
 herdr plugin action invoke tab-recap.configure
 ```
 
-Pick the agent and model, the recap length and the languages. Press **`t`** to run a test with the
+<p align="center">
+  <img src="tab-recap/docs/screens/setup-en.png" alt="The settings modal" width="560">
+</p>
+
+Pick the agent and model and the languages. Press **`t`** to run a test with the
 current choices (it shows ✓ and how long it took, or why it failed), **`s`** to save, **`q`** to
 close. Changes apply to the next recap.
 
-To open the settings with a key, add this to `~/.config/herdr/config.toml`:
+The settings have no default key. To hide and show columns with a key, add this to
+`~/.config/herdr/config.toml`:
 
 ```toml
 [[keys.command]]
 key = "prefix+r"
 type = "plugin_action"
-command = "tab-recap.configure"
+command = "tab-recap.column"      # hide / show this tab's column
+
+[[keys.command]]
+key = "prefix+shift+r"
+type = "plugin_action"
+command = "tab-recap.columns"     # hide / show every column
 ```
 
-Use any free key, and `tab-recap.refresh` instead if you would rather bind "recap this tab now".
+Use any free keys. The same way you can bind `tab-recap.configure` (the settings) or
+`tab-recap.refresh` ("recap this tab now").
 
 ### Everyday use
 
@@ -87,8 +98,9 @@ Use any free key, and `tab-recap.refresh` instead if you would rather bind "reca
   `r`.
 - One recap per tab, covering all its agents.
 
-The same views are available as actions: `tab-recap.show` (the modal) and `tab-recap.refresh`
-(recap this tab now).
+The same views are available as actions: `tab-recap.show` (the modal), `tab-recap.refresh`
+(recap this tab now), `tab-recap.column` (hide or show this tab's column) and `tab-recap.columns`
+(all columns). Hiding is remembered across restarts and recaps keep being written.
 
 ### Who writes the recap
 
@@ -128,7 +140,6 @@ variables win over the file. The ones people change:
 | key | default | what it does |
 | --- | --- | --- |
 | `TAB_RECAP_BACKEND` | `auto` | who writes the recap |
-| `TAB_RECAP_WORDS` | `450` | target recap length |
 | `TAB_RECAP_WIDTH` | `0.3` | column width as a share of the tab |
 | `TAB_RECAP_MIN_TAB_COLS` | `110` | narrower tabs get a bar (*restart*) |
 | `TAB_RECAP_AGENTS` | `claude,codex` | agent kinds that get a column (*restart*) |

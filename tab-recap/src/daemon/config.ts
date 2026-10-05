@@ -23,7 +23,6 @@ export interface Config {
     readonly locale: Locale;
     /** `en`, `es` or sanitised free text: what new recaps are written in */
     readonly recapLanguage: string;
-    readonly words: number;
     readonly sizing: Sizing;
     readonly policy: Policy;
     readonly glow: 'auto' | 'on' | 'off';
@@ -122,7 +121,6 @@ export function loadConfig(): Config {
         backend,
         models: modelsOf(get, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
-        words: number(get('TAB_RECAP_WORDS'), 450),
         sizing: {
             fraction: Math.min(0.6, number(get('TAB_RECAP_WIDTH'), 0.3)),
             minCols: number(get('TAB_RECAP_MIN_COLS'), 36),

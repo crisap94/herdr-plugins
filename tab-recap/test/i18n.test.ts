@@ -5,26 +5,35 @@ import { languageName, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { localeOf } from '#src/daemon/config.ts';
 
-const base = { words: 300, previousLanguage: 'en' };
+const base = { previousLanguage: 'en' };
 
-test('sections: seven, each with both headings, and a heading is recognised in either language', () => {
-    assert.deepEqual(SECTIONS.map((section) => section.id), ['goal', 'now', 'waiting', 'done', 'decisions', 'next', 'refs']);
+test('sections: seven, always in this order, with both headings; a heading is recognised in either language — and the old ones too', () => {
+    assert.deepEqual(SECTIONS.map((section) => section.id), ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links']);
+    assert.deepEqual(SECTIONS.map((section) => section.en), ['Goal', 'Now', 'Needs you', 'Done', 'Decisions', 'Next', 'Links']);
+    assert.deepEqual(SECTIONS.map((section) => section.es), ['Objetivo', 'Ahora', 'Te necesita', 'Hecho', 'Decisiones', 'Siguiente', 'Enlaces']);
     for (const section of SECTIONS) {
         assert.equal(sectionOf(`## ${section.en}`), section.id);
         assert.equal(sectionOf(`### ${section.es.toUpperCase()}`), section.id);
     }
+    for (const [old, id] of [['Waiting on you', 'needs'], ['Esperando tu respuesta', 'needs'], ['Key refs', 'links'], ['Referencias clave', 'links'], ['Próximos pasos', 'next']] as const) {
+        assert.equal(sectionOf(`## ${old}`), id, old);
+    }
     assert.equal(sectionOf('## Something else'), null);
 });
 
-test('instructions: Spanish headings for es; English headings for en and for free text, with the model told to keep them', () => {
+test('instructions: the JSON contract — seven keys, the caps, plain-language rules; the language only changes the values', () => {
+    const en = instructions({ ...base, language: 'en' });
+    assert.match(en, /Answer with ONLY one JSON object/);
+    assert.match(en, /"goal": "\.\.\.", "now": \["\.\.\."\], "needs"/);
+    for (const [id, size] of [['goal', 'one line'], ['now', 'at most 3'], ['needs', 'at most 3'], ['done', 'at most 5'], ['decisions', 'at most 3'], ['next', 'at most 5'], ['links', 'at most 6']]) {
+        assert.match(en, new RegExp(`${id} +— .*\\(${size}\\)`), id);
+    }
+    assert.match(en, /Plain everyday words\. Short sentences in the present tense, 16 words or fewer per line\./);
+    assert.doesNotMatch(en, /Spanish|Português|## /);
     const es = instructions({ ...base, language: 'es', previousLanguage: 'es' });
-    assert.match(es, /## Esperando tu respuesta\s+— /);
-    assert.match(es, /Write the recap in Spanish/);
-    assert.match(es, /work to Hecho,/);
-    assert.doesNotMatch(es, /## Goal/);
+    assert.match(es, /Write every value in Spanish \(neutral Latin American, informal "tú"\)\. Keep the JSON keys in English\./);
     const free = instructions({ ...base, language: 'Português', previousLanguage: 'Português' });
-    assert.match(free, /## Waiting on you\s+— /);
-    assert.match(free, /Write the recap in Português: translate only the content, keep the section headings below exactly as given, in English\./);
+    assert.match(free, /Write every value in Português\. Keep the JSON keys in English\./);
     assert.doesNotMatch(free, /Objetivo/);
 });
 
@@ -35,7 +44,8 @@ test('instructions: a recap in another language is carried over translated', () 
 });
 
 test('a switch with nothing new still gives the model something to do', () => {
-    assert.match(message({ ...base, language: 'es', previous: '## Goal\n- x', excerpt: '', lanes: ['claude in p1'] }), /only rewrite the recap as asked above/);
+    assert.match(message({ ...base, language: 'es', previous: '{"goal":"x"}', excerpt: '', lanes: ['claude in p1'] }), /only rewrite the recap as asked above/);
+    assert.match(message({ ...base, language: 'en', previous: '', excerpt: 'x', lanes: [], correction: 'the answer is not valid JSON' }), /YOUR LAST ANSWER WAS REJECTED: the answer is not valid JSON\. Answer again with ONLY the JSON object\./);
 });
 
 test('recap language: ui follows the locale; en/es by code or name; free text is sanitised', () => {

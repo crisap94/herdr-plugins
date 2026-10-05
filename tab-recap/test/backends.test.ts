@@ -76,7 +76,7 @@ test('Backends: picks from the cache, says so when nothing is available, and toa
         await backends.refresh();
         assert.equal(toasts.length, 1, 'one toast, not one per resync');
         assert.equal(backends.summarizer().backend, 'none');
-        const written = await backends.summarizer().write({ previous: '', excerpt: '', words: 100, language: 'en', previousLanguage: 'en', lanes: [] });
+        const written = await backends.summarizer().write({ previous: '', excerpt: '', language: 'en', previousLanguage: 'en', lanes: [] });
         assert.ok(written.kind === 'unknown' && written.why.why === 'not-found');
         ids = ['hermes', 'codex'];
         await backends.refresh();

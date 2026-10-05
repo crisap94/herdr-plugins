@@ -55,6 +55,6 @@ export class HermesSummarizer implements Summarizer {
         if (ran.code !== 0 || ran.stdout.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
         }
-        return { kind: 'written', markdown: unfenced(ran.stdout), costUsd: report.cost };
+        return { kind: 'written', text: unfenced(ran.stdout), costUsd: report.cost };
     }
 }

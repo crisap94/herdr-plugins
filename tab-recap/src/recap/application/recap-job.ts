@@ -1,20 +1,21 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import { blankRecap } from '#src/ports/recap-store.ts';
 import type { LaneCursor, RecapStore, TabRecap } from '#src/ports/recap-store.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { renderExcerpt } from './excerpt.ts';
+import { parseRecap, renderRecap } from './recap-shape.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
     readonly store: RecapStore;
     readonly clock: Clock;
     summarizer(): Summarizer;
-    words(): number;
     /** what recaps should be written in right now (re-read for every recap) */
     language(): string;
     log(line: string): void;
@@ -25,6 +26,10 @@ const TURN_SETTLE_MS = 2500;
 /** At most this much transcript is read per recap, shared by the tab's lanes. */
 const READ_BUDGET = 768 * 1024;
 const EXCERPT_BUDGET = 60_000;
+/** The writer gets two tries at answering in the fixed shape. */
+const ATTEMPTS = 2;
+
+type Asked = { readonly kind: 'sections'; readonly sections: RecapSections; readonly cost: number } | { readonly kind: 'failed'; readonly error: string; readonly cost: number };
 
 /** What one lane contributes to its tab's recap this time. */
 interface Reading {
@@ -140,18 +145,40 @@ export class RecapJob {
         const excerpt = parts.map((r) => `=== ${laneLabel(r.lane, r.cursor.title)} ===\n${renderExcerpt(r.chunk?.entries ?? [], share)}`).join('\n\n');
         const summarizer = this.deps.summarizer();
         this.deps.store.writeRecap({ ...noted, running: true, backend: summarizer.backend });
-        const written = await summarizer.write({
-            previous: prior.markdown, excerpt, words: this.deps.words(),
+        const asked = await this.ask(summarizer, {
+            previous: prior.sections === null ? prior.markdown : JSON.stringify(prior.sections), excerpt,
             language: language.want, previousLanguage: noted.language,
             lanes: readings.map((r) => laneLabel(r.lane, r.cursor.title)),
         });
-        if (isUnknown(written)) {
-            this.deps.store.writeRecap({ ...noted, running: false, error: saying(written.why), backend: summarizer.backend });
+        if (asked.kind === 'failed') {
+            this.deps.store.writeRecap({ ...noted, running: false, error: asked.error, backend: summarizer.backend, costUsd: prior.costUsd + asked.cost });
             return;
         }
         this.deps.store.writeRecap({
-            ...advanced, language: language.want, markdown: written.markdown, at: this.deps.clock.now(), running: false,
-            backend: summarizer.backend, costUsd: prior.costUsd + written.costUsd,
+            ...advanced, language: language.want, sections: asked.sections, markdown: renderRecap(asked.sections, language.want === 'es' ? 'es' : 'en'),
+            at: this.deps.clock.now(), running: false, backend: summarizer.backend, costUsd: prior.costUsd + asked.cost,
         });
+    }
+
+    /**
+     * The writer's answer must be the seven sections as JSON. One retry, saying what was wrong; if it is
+     * still unusable the previous recap stays (with an error line) and the cursors do not advance.
+     */
+    private async ask(summarizer: Summarizer, request: RecapRequest): Promise<Asked> {
+        let cost = 0;
+        let correction: string | undefined;
+        for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
+            const written = await summarizer.write(correction === undefined ? request : { ...request, correction });
+            if (isUnknown(written)) {
+                return { kind: 'failed', error: saying(written.why), cost };
+            }
+            cost += written.costUsd;
+            const parsed = parseRecap(written.text);
+            if (parsed.kind === 'sections') {
+                return { kind: 'sections', sections: parsed.sections, cost };
+            }
+            correction = parsed.why;
+        }
+        return { kind: 'failed', error: `the writer's answer was not usable (${correction ?? 'unknown'}); the previous recap is kept`, cost };
     }
 }

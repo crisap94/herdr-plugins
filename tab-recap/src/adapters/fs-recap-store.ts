@@ -4,7 +4,10 @@ import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
+import type { HiddenState } from '#src/recap/domain/board.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
+import type { RecapStore, TabRecap, TabView, VisibilityRequest } from '#src/ports/recap-store.ts';
 
 /** herdr ids hold ':' — fine on Linux, but a file name should not need quoting. */
 export const fileKey = (id: string): string => id.replaceAll(':', '_').replaceAll('/', '_');
@@ -24,6 +27,20 @@ function readJson(path: string): unknown {
     }
 }
 
+/** Stored sections, or null for a recap written before the fixed structure (or a damaged one). */
+function sectionsOf(value: unknown): RecapSections | null {
+    if (typeof value !== 'object' || value === null) {
+        return null;
+    }
+    const fields = value as Readonly<Record<string, unknown>>;
+    const list = (key: string): string[] => strings(fields[key]);
+    return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links') };
+}
+
+const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
+
+let sequence = 0;
+
 export class FsRecapStore implements RecapStore {
     private readonly root: string;
 
@@ -36,8 +53,12 @@ export class FsRecapStore implements RecapStore {
     }
 
     readRecap(tab: string): TabRecap | null {
-        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language'> & { language?: unknown }) | null;
-        return stored === null ? null : { ...stored, language: typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en' };
+        const stored = readJson(this.path('recaps', tab)) as (Omit<TabRecap, 'language' | 'sections'> & { language?: unknown; sections?: unknown }) | null;
+        if (stored === null) {
+            return null;
+        }
+        const language = typeof stored.language === 'string' && stored.language !== '' ? stored.language : 'en';
+        return { ...stored, language, sections: sectionsOf(stored.sections) };
     }
 
     writeRecap(recap: TabRecap): void {
@@ -69,5 +90,35 @@ export class FsRecapStore implements RecapStore {
             }
         }
         return tabs;
+    }
+
+    readHidden(): HiddenState {
+        const stored = readJson(join(this.root, 'hidden.json')) as { all?: unknown; hidden?: unknown; shown?: unknown } | null;
+        return stored === null ? NOTHING_HIDDEN : { all: stored.all === true, hidden: strings(stored.hidden), shown: strings(stored.shown) };
+    }
+
+    writeHidden(state: HiddenState): void {
+        writeAtomically(join(this.root, 'hidden.json'), `${JSON.stringify(state, null, 1)}\n`);
+    }
+
+    /** One file per request, named so that they are taken in the order they were made. */
+    requestVisibility(request: VisibilityRequest): void {
+        sequence += 1;
+        writeAtomically(join(this.root, 'visibility', `${String(Date.now()).padStart(15, '0')}-${process.pid}-${sequence}.json`), JSON.stringify(request));
+    }
+
+    takeVisibility(): readonly VisibilityRequest[] {
+        let names: string[] = [];
+        try { names = readdirSync(join(this.root, 'visibility')); } catch { return []; }
+        const found: VisibilityRequest[] = [];
+        for (const name of names.filter((candidate) => candidate.endsWith('.json')).toSorted()) {
+            const path = join(this.root, 'visibility', name);
+            const asked = readJson(path) as { target?: unknown; hidden?: unknown } | null;
+            rmSync(path, { force: true });
+            if (asked !== null && typeof asked.target === 'string' && asked.target !== '' && typeof asked.hidden === 'boolean') {
+                found.push({ target: asked.target, hidden: asked.hidden });
+            }
+        }
+        return found;
     }
 }

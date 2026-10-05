@@ -57,6 +57,9 @@ export class Dispatch {
             case 'recap':
                 this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
                 return;
+            case 'save-hidden':
+                this.deps.store.writeHidden(intent.state);
+                return;
             case 'give-up':
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;

@@ -20,7 +20,7 @@ const STYLE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 /** one cell of padding on each side, as in the column */
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
-const TINY = { previous: '', excerpt: '=== test ===\nuser: say hello', words: 20, language: 'en', previousLanguage: 'en', lanes: ['test'] };
+const TINY = { previous: '', excerpt: '=== test ===\nuser: say hello', language: 'en', previousLanguage: 'en', lanes: ['test'] };
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
 const fleet = new HerdrFleet(stateDir());

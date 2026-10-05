@@ -36,6 +36,12 @@ for word in $banned; do
     grep -q "\`$word\`" CONTEXT.md && echo "  ok    $word" || fail "'$word' is banned but CONTEXT.md does not say what replaces it"
 done
 
+echo "versions agree (manifest = package.json = lockfile):"
+bash ci/check-version.sh || fail "the plugin's version is not one number"
+
+echo "the release scripts bite (what is right passes, what is wrong fails):"
+bash ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
+
 echo "typecheck (tsgo, strict + exactOptionalPropertyTypes + erasableSyntaxOnly):"
 node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail "tsgo"
 

@@ -24,7 +24,9 @@
   "include": [
     "src",
     "bin",
-    "test"
+    "test",
+    "docs/screens/render.ts",
+    "ci/*.ts"
   ],
   "exclude": [
     "node_modules",

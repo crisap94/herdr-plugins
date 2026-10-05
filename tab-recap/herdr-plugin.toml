@@ -1,8 +1,8 @@
 id = "tab-recap"
 name = "Tab Recap"
-version = "1.0.1"
+version = "1.1.0"
 min_herdr_version = "0.9.0"
-description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Done · Decisions · Next), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
+description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
 platforms = ["linux", "macos"]
 
 # The column is the default view: the daemon starts with the herdr session…
@@ -42,6 +42,19 @@ title = "Tab Recap: show this tab's recap"
 description = "The tab's recap as a modal over everything — the phone's view. q or Esc closes it."
 contexts = ["tab", "pane"]
 command = ["node", "bin/tab-recap.ts", "show"]
+
+[[actions]]
+id = "column"
+title = "Tab Recap: hide / show this tab's column"
+description = "Hides this tab's recap column, or shows it again. Recaps keep being written."
+contexts = ["tab", "pane"]
+command = ["node", "bin/tab-recap.ts", "column"]
+
+[[actions]]
+id = "columns"
+title = "Tab Recap: hide / show all columns"
+description = "Hides every recap column, or shows them all again. Recaps keep being written."
+command = ["node", "bin/tab-recap.ts", "columns"]
 
 [[actions]]
 id = "refresh"

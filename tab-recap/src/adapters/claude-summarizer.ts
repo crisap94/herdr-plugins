@@ -5,7 +5,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import { instructions, message, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
 
-function resultOf(stdout: string): { text: string; cost: number } | null {
+export function resultOf(stdout: string): { text: string; cost: number } | null {
     try {
         const parsed: unknown = JSON.parse(stdout);
         if (typeof parsed !== 'object' || parsed === null) {
@@ -20,7 +20,7 @@ function resultOf(stdout: string): { text: string; cost: number } | null {
     }
 }
 
-export function claudeArgs(model: string, request: Pick<RecapRequest, 'words' | 'language' | 'previousLanguage'>): string[] {
+export function claudeArgs(model: string, request: Pick<RecapRequest, 'language' | 'previousLanguage'>): string[] {
     return [
         '-p', '--model', model === '' ? 'haiku' : model, '--no-session-persistence', '--tools', '', '--setting-sources', '',
         '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions(request),
@@ -55,6 +55,6 @@ export class ClaudeSummarizer implements Summarizer {
         if (ran.code !== 0 || result === null) {
             return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
         }
-        return { kind: 'written', markdown: unfenced(result.text), costUsd: result.cost };
+        return { kind: 'written', text: unfenced(result.text), costUsd: result.cost };
     }
 }

@@ -42,6 +42,6 @@ export class CodexSummarizer implements Summarizer {
         if (ran.code !== 0 || text.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: ran.stderr.trim().slice(-300) });
         }
-        return { kind: 'written', markdown: unfenced(text), costUsd: 0 };
+        return { kind: 'written', text: unfenced(text), costUsd: 0 };
     }
 }

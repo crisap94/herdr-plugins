@@ -6,20 +6,31 @@ export interface Section {
     readonly hint: string;
 }
 
-export type SectionId = 'goal' | 'now' | 'waiting' | 'done' | 'decisions' | 'next' | 'refs';
+export type SectionId = 'goal' | 'now' | 'needs' | 'done' | 'decisions' | 'next' | 'links';
 
+/** Always all seven, always in this order. */
 export const SECTIONS: readonly Section[] = [
-    { id: 'goal', en: 'Goal', es: 'Objetivo', hint: 'what the operator ultimately wants, 1-3 bullets' },
-    { id: 'now', en: 'Now', es: 'Ahora', hint: 'what the agent is doing or just did, and its state' },
-    { id: 'waiting', en: 'Waiting on you', es: 'Esperando tu respuesta', hint: 'questions or approvals the agent needs from the operator' },
-    { id: 'done', en: 'Done', es: 'Hecho', hint: 'finished work, newest first, concrete results' },
-    { id: 'decisions', en: 'Decisions', es: 'Decisiones', hint: 'choices made and why, including operator preferences' },
-    { id: 'next', en: 'Next', es: 'Próximos pasos', hint: 'open items and the planned next steps' },
-    { id: 'refs', en: 'Key refs', es: 'Referencias clave', hint: 'files, branches, MRs/PRs, commands, hosts, numbers worth keeping' },
+    { id: 'goal', en: 'Goal', es: 'Objetivo', hint: 'what the operator wants, in one short sentence' },
+    { id: 'now', en: 'Now', es: 'Ahora', hint: 'what the agents are doing right now' },
+    { id: 'needs', en: 'Needs you', es: 'Te necesita', hint: 'what the operator must answer or approve before work can go on' },
+    { id: 'done', en: 'Done', es: 'Hecho', hint: 'what is finished, newest first' },
+    { id: 'decisions', en: 'Decisions', es: 'Decisiones', hint: 'choices made, and why when it is not obvious' },
+    { id: 'next', en: 'Next', es: 'Siguiente', hint: 'what comes next' },
+    { id: 'links', en: 'Links', es: 'Enlaces', hint: 'files, branches, merge requests, commands, hosts worth keeping' },
 ];
+
+/** Headings of recaps written before the fixed structure; still recognised until such a recap is rewritten. */
+const LEGACY: Readonly<Record<string, SectionId>> = {
+    'waiting on you': 'needs',
+    'esperando tu respuesta': 'needs',
+    'key refs': 'links',
+    'referencias clave': 'links',
+    'próximos pasos': 'next',
+};
 
 /** The section a Markdown heading names, in any language the plugin writes headings in. */
 export function sectionOf(heading: string): SectionId | null {
     const text = heading.replace(/^#+\s*/, '').trim().toLowerCase();
-    return SECTIONS.find((section) => text.startsWith(section.en.toLowerCase()) || text.startsWith(section.es.toLowerCase()))?.id ?? null;
+    const legacy = Object.entries(LEGACY).find(([name]) => text.startsWith(name));
+    return legacy?.[1] ?? SECTIONS.find((section) => text.startsWith(section.en.toLowerCase()) || text.startsWith(section.es.toLowerCase()))?.id ?? null;
 }

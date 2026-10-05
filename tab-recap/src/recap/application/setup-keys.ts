@@ -4,18 +4,16 @@ import { languageSetting } from '#src/i18n/index.ts';
 import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
-export type RowId = 'harness' | 'model' | 'words' | 'locale' | 'recapLanguage';
-export const ROWS: readonly RowId[] = ['harness', 'model', 'words', 'locale', 'recapLanguage'];
+export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage';
+export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage'];
 export type LocaleSetting = 'auto' | 'en' | 'es';
 export const HARNESS_CHOICES: readonly BackendChoice[] = ['auto', ...BACKEND_IDS];
 export const LOCALE_CHOICES: readonly LocaleSetting[] = ['auto', 'en', 'es'];
-export const WORDS_RANGE = { min: 50, max: 2000 } as const;
 
 /** What the operator is choosing. */
 export interface Draft {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
-    readonly words: number;
     readonly locale: LocaleSetting;
     /** `ui`, `en`, `es` or free text, as stored */
     readonly recapLanguage: string;
@@ -34,7 +32,7 @@ export type Editing =
     | { readonly kind: 'text'; readonly buffer: string }
     | { readonly kind: 'choice'; readonly at: number };
 
-export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'invalid' | 'no-agent' | { readonly failed: string };
+export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'no-agent' | { readonly failed: string };
 
 export interface Setup {
     readonly draft: Draft;
@@ -64,8 +62,8 @@ const ESC = String.fromCodePoint(0x1b);
 const UP = new Set(['k', `${ESC}[A`, `${ESC}OA`]);
 const DOWN = new Set(['j', `${ESC}[B`, `${ESC}OB`]);
 
-/** The settings as they are now: the resolved configuration plus the raw words/locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models' | 'words'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined }): Draft {
+/** The settings as they are now: the resolved configuration plus the raw locale settings. */
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage) };
 }
@@ -73,7 +71,6 @@ export function draftFrom(config: Pick<Draft, 'backend' | 'models' | 'words'>, r
 const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
     model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), 'TAB_RECAP_CLAUDE_MODEL', 'TAB_RECAP_CODEX_MODEL'],
-    words: ['TAB_RECAP_WORDS'],
     locale: ['TAB_RECAP_LOCALE'],
     recapLanguage: ['TAB_RECAP_RECAP_LANG'],
 };
@@ -116,7 +113,6 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
     for (const id of BACKEND_IDS) {
         set('model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id], stored.models[id]);
     }
-    set('words', 'TAB_RECAP_WORDS', String(draft.words), String(stored.words));
     set('locale', 'TAB_RECAP_LOCALE', draft.locale, stored.locale);
     set('recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage, stored.recapLanguage);
     return out;
@@ -138,18 +134,13 @@ function enter(state: Setup): Setup {
     if (row === 'model') {
         return target === null ? { ...state, note: 'no-agent' } : { ...state, note: null, editing: { kind: 'text', buffer: draft.models[target] } };
     }
-    return { ...state, note: null, editing: { kind: 'text', buffer: row === 'words' ? String(draft.words) : draft.recapLanguage } };
+    return { ...state, note: null, editing: { kind: 'text', buffer: draft.recapLanguage } };
 }
 
 function confirmText(state: Setup, buffer: string): Setup {
     const { draft } = state;
     const row = rowOf(state);
     const done = { ...state, editing: null, note: null };
-    if (row === 'words') {
-        const words = Number(buffer);
-        const valid = Number.isInteger(words) && words >= WORDS_RANGE.min && words <= WORDS_RANGE.max;
-        return valid ? { ...done, draft: { ...draft, words } } : { ...state, note: 'invalid' };
-    }
     if (row === 'recapLanguage') {
         return { ...done, draft: { ...draft, recapLanguage: languageSetting(buffer) } };
     }

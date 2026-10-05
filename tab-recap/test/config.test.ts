@@ -55,11 +55,30 @@ test('loadConfig: locale and recap language — ui follows the locale, an explic
     }
 });
 
+test('FsRecapStore: sections round-trip; a recap stored before them reads back with sections null; a damaged one too', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-sections-'));
+    try {
+        const store = new FsRecapStore(dir);
+        const sections = { goal: 'g', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'] };
+        store.writeRecap({ tab: 't', lanes: [], sections, markdown: 'm', at: 1, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
+        assert.deepEqual(store.readRecap('t')?.sections, sections);
+        mkdirSync(join(dir, 'recaps'), { recursive: true });
+        writeFileSync(join(dir, 'recaps', `${fileKey('old')}.json`), JSON.stringify({ tab: 'old', lanes: [], markdown: '## Goal\n- x', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
+        assert.equal(store.readRecap('old')?.sections, null);
+        writeFileSync(join(dir, 'recaps', `${fileKey('bad')}.json`), JSON.stringify({ tab: 'bad', lanes: [], sections: 'oops', markdown: 'y', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
+        assert.equal(store.readRecap('bad')?.sections, null);
+        writeFileSync(join(dir, 'recaps', `${fileKey('half')}.json`), JSON.stringify({ tab: 'half', lanes: [], sections: { goal: 5, now: ['a', 7] }, markdown: 'y', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
+        assert.deepEqual(store.readRecap('half')?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [] });
+    } finally {
+        rmSync(dir, { recursive: true });
+    }
+});
+
 test('FsRecapStore: a stored recap with no language reads back as English', () => {
         const dir = mkdtempSync(join(tmpdir(), 'recap-store-'));
     try {
         const store = new FsRecapStore(dir);
-        store.writeRecap({ tab: 't', lanes: [], markdown: 'x', at: 1, running: false, backend: null, error: null, costUsd: 0, language: 'es' });
+        store.writeRecap({ tab: 't', lanes: [], sections: null, markdown: 'x', at: 1, running: false, backend: null, error: null, costUsd: 0, language: 'es' });
         assert.equal(store.readRecap('t')?.language, 'es');
         const file = join(dir, 'recaps');
         mkdirSync(file, { recursive: true });

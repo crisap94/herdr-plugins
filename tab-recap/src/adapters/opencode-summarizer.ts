@@ -116,6 +116,6 @@ export class OpencodeSummarizer implements Summarizer {
         if (ran.code !== 0 || output.text.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
         }
-        return { kind: 'written', markdown: unfenced(output.text), costUsd: output.cost };
+        return { kind: 'written', text: unfenced(output.text), costUsd: output.cost };
     }
 }
