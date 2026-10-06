@@ -37,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # the newest 24.x: the plugin needs >= 24.21.0 and runner images may cache an older 24
+          check-latest: true
           cache: npm
           cache-dependency-path: tab-recap/package-lock.json
       # ci/lint.sh needs bash >= 4 (mapfile); macOS ships 3.2.
@@ -45,10 +47,15 @@ jobs:
         run: |
           brew install bash
           echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
+      - name: xmllint (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-utils
       - name: Show the toolchain
         run: |
           bash --version | head -n 1
           node --version
+          xmllint --version
           bash -c '[ "${BASH_VERSINFO[0]}" -ge 4 ]'
       - run: npm ci
       - run: bash ci/lint.sh
@@ -70,7 +77,12 @@ jobs:
           node-version: 24.21.0
           cache: npm
           cache-dependency-path: tab-recap/package-lock.json
+      # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
+      - name: xmllint (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-utils
       - run: node --version
+      - run: xmllint --version
       - run: npm ci
       - run: bash ci/lint.sh
       - run: bash ci/test.sh
