@@ -3,6 +3,7 @@
 // refresh request.
 import { stateStore } from '#src/adapters/db/database.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
+import { styleFor } from '#src/adapters/terminal-style.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -12,6 +13,8 @@ import { messagesFor } from '#src/i18n/index.ts';
 import type { Locale } from '#src/i18n/index.ts';
 import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
+import { coloured, plain } from '#src/recap/render/wrap.ts';
+import { stripVTControlCharacters } from 'node:util';
 
 const ESC = String.fromCodePoint(0x1b);
 const BEL = String.fromCodePoint(0x07);
@@ -47,6 +50,9 @@ let rollFailed = false;
 /** Notes and warnings only: upkeep belongs to the daemon, the column never runs it. */
 const extensions = loadExtensions(configGetter());
 const glow = glowRenderer(config.glow);
+const style = styleFor(process.stdout);
+/** ends every row's styling before the erase; with no colour there is nothing to end */
+const RESET = style === coloured ? `${ESC}[0m` : '';
 
 let scroll = 0;
 let lastFrame = '';
@@ -55,7 +61,8 @@ let cache: { key: string; lines: readonly string[] | null } = { key: '', lines: 
 const markdown: Markdown = (text, width) => {
     const key = `${width}\u0000${text}`;
     if (cache.key !== key) {
-        cache = { key, lines: glow(text, width) };
+        const drawn = glow(text, width);
+        cache = { key, lines: style === plain && drawn !== null ? drawn.map(stripVTControlCharacters) : drawn };
     }
     return cache.lines;
 };
@@ -92,7 +99,7 @@ function view(): ColumnView {
     const locale = localeNow();
     const stored = store?.views.readTab(tab) ?? null;
     const newer = opened.kind === 'newer-db' ? [messagesFor(locale).database.newer(opened.backup)] : [];
-    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version };
+    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, style };
 }
 
 /**
@@ -109,7 +116,7 @@ function size(): [number, number] {
 }
 
 function frameOf(lines: readonly string[]): string {
-    return lines.map((line) => ` ${line}${ESC}[0m${ESC}[K`).join('\r\n');
+    return lines.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n');
 }
 
 function paint(frame: string, force: boolean): void {
@@ -134,7 +141,7 @@ function draw(force = false): void {
     while (shown.length < room) {
         shown.push('');
     }
-    shown.push(footer(width, mode, messagesFor(localeNow())));
+    shown.push(footer(width, mode, messagesFor(localeNow()), style));
     paint(frameOf(shown), force);
 }
 

@@ -37,7 +37,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | rule | says |
 | --- | --- |
 | `recap-domain-pure` | the domain imports only `./` |
-| `recap-layers-no-io` | application and render import no `node:`, adapter, transport or composition root |
+| `recap-layers-no-io` | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |
 | `recap-never-types` | no `send_keys`/`send_text`/`send_input`/`agent.prompt`: a recap never types into a lane |

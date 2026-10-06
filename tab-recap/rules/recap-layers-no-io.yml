@@ -3,10 +3,11 @@ language: typescript
 severity: error
 message: >-
   Application and render talk to the world only through ports. They never import
-  node built-ins, an adapter, the transport, or a composition root (daemon, column, setup).
+  node built-ins (except the pure text helpers of node:util), an adapter, the transport, or a
+  composition root (daemon, column, setup).
 note: >-
   src/recap/** is the part that can be tested with no fakes and no timers; an import
-  of 'node:fs' or '#src/adapters/' here is the first step to losing that.
+  of 'node:fs' or '#src/adapters/' here is the first step to losing that. node:util stays allowed: stripVTControlCharacters and styleText are pure text functions.
 files:
   - "**/src/recap/**"
   - "**/src/i18n/**"
@@ -17,3 +18,5 @@ rule:
     kind: import_statement
     stopBy: end
   regex: "^(node:|#src/(adapters|transport|daemon|column|setup)/)"
+  not:
+    regex: "^node:util$"

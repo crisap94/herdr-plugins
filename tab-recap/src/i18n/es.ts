@@ -68,7 +68,7 @@ export const es: Messages = {
         setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|claude|codex|opencode|hermes|custom> [modelo]`,
         backendNow: (what) => `el motor ahora es ${what} (se aplica al próximo resumen)`,
         usageBackend: (choices) => `USO: backend ${choices} [modelo]  (modelo solo para un agente concreto, p. ej. haiku, gpt-6-luna, proveedor/modelo; si lo omites se conserva el actual)`,
-        usage: (commands) => `USO: tab-recap ${commands}`,
+        usage: (commands) => `USO: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `versión  ${code ?? 'desconocida'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
         nodeTooOld: (version, minimum) => `aviso    node ${version} es anterior a ${minimum}: el plugin necesita Node >= ${minimum} en el PATH del servidor de herdr (mira el README, macOS)`,

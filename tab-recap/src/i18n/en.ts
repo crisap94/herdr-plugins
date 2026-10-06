@@ -67,7 +67,7 @@ export const en: Messages = {
         setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|claude|codex|opencode|hermes|custom> [model]`,
         backendNow: (what) => `backend is now ${what} (applies to the next recap)`,
         usageBackend: (choices) => `USAGE: backend ${choices} [model]  (a model only for a named harness, e.g. haiku, gpt-6-luna, provider/model; omitted = keep the one set)`,
-        usage: (commands) => `USAGE: tab-recap ${commands}`,
+        usage: (commands) => `USAGE: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `version  ${code ?? 'unknown'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
         nodeTooOld: (version, minimum) => `warning  node ${version} is older than ${minimum}: the plugin needs Node >= ${minimum} on the PATH of herdr's server (see README, macOS)`,

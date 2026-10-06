@@ -12,7 +12,8 @@ import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { groupsOf } from './groups.ts';
 import type { Group } from './groups.ts';
-import { elapsed, plainMarkdown, style, wrap } from './wrap.ts';
+import { coloured, elapsed, plainMarkdown, wrap } from './wrap.ts';
+import type { Style } from './wrap.ts';
 
 export interface ColumnView {
     readonly tab: TabView | null;
@@ -23,15 +24,19 @@ export interface ColumnView {
     readonly messages: Messages;
     /** the plugin version of the code on disk; absent or null when unknown */
     readonly version?: string | null;
+    /** colours and styles; the process picks them from its terminal. Absent: coloured */
+    readonly style?: Style;
 }
 
 export type Markdown = (markdown: string, width: number) => readonly string[] | null;
 
 const PROMPT_LINES = 2;
 
+const paint = (view: ColumnView): Style => view.style ?? coloured;
+
 const ago = (view: ColumnView, ms: number): string => view.messages.ago(elapsed(ms).amount, elapsed(ms).unit);
 
-export function badge(status: LaneStatus, m: Messages): string {
+export function badge(status: LaneStatus, m: Messages, style: Style = coloured): string {
     switch (status) {
         case 'working':
             return style.yellow(`● ${m.badge.working}`);
@@ -51,6 +56,7 @@ export function badge(status: LaneStatus, m: Messages): string {
 }
 
 function noteLines(view: ColumnView, pane: string, width: number): string[] {
+    const style = paint(view);
     return (view.notes.get(pane) ?? []).flatMap((note) => {
         const when = note.at === null ? '' : ` ${ago(view, view.now - note.at)}`;
         const details = note.details.length > 0 ? ` · ${note.details.join(' · ')}` : '';
@@ -59,31 +65,34 @@ function noteLines(view: ColumnView, pane: string, width: number): string[] {
 }
 
 /** The live prompt if there is one, else what the last recap saw. */
-function promptLines(lane: TabLane, cursor: LaneCursor | undefined, width: number): string[] {
+function promptLines(lane: TabLane, cursor: LaneCursor | undefined, width: number, style: Style): string[] {
     const prompt = lane.lastPrompt ?? cursor?.lastPrompt ?? null;
     return prompt === null ? [] : wrap(`› ${prompt.split('\n').join(' ')}`, width, '  ').slice(0, PROMPT_LINES).map(style.dim);
 }
 
 /** Who is in the tab: one short header per lane. The recap below is the tab's, not the lane's. */
 function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
+    const style = paint(view);
     const cursor = view.recap?.lanes.find((c) => c.pane === lane.pane);
     const title = cursor?.title ?? lane.title ?? lane.pane;
     return [
         ...wrap(title, width).map((line) => style.bold(line)),
-        ...wrap([badge(laneStatus(lane.status), view.messages), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`)].join(style.gray(' · ')), width, '  '),
+        ...wrap([badge(laneStatus(lane.status), view.messages, style), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`)].join(style.gray(' · ')), width, '  '),
         ...noteLines(view, lane.pane, width),
-        ...promptLines(lane, cursor, width),
+        ...promptLines(lane, cursor, width, style),
     ];
 }
 
 /** The daemon runs another version than the code on disk (or is too old to say): the column is not what was deployed until it restarts. */
 function staleLines(view: ColumnView, width: number): string[] {
+    const style = paint(view);
     const code = view.version ?? null;
     const daemon = view.tab?.daemonVersion ?? null;
     return code === null || daemon === code ? [] : wrap(view.messages.daemonStale(daemon), width).map(style.yellow);
 }
 
 function recapMeta(view: ColumnView, width: number): string[] {
+    const style = paint(view);
     const { recap, messages: m } = view;
     const at = recap?.at ?? null;
     const parts = [
@@ -104,14 +113,16 @@ function markdownOf(task: RecapTask | null, m: Messages): string {
     return task.sections === null ? task.markdown : renderRecap(task.sections, m.locale);
 }
 
-function body(recap: TabRecap | null, task: RecapTask | null, width: number, markdown: Markdown, m: Messages): string[] {
+function body(recap: TabRecap | null, task: RecapTask | null, width: number, markdown: Markdown, view: ColumnView): string[] {
+    const { messages: m } = view;
+    const style = paint(view);
     const drawn = markdownOf(task, m);
     // the fixed structure is laid out here, never by glow: one blank line between sections, none after a heading
     if (task !== null && task.sections !== null) {
-        return plainMarkdown(drawn, width);
+        return plainMarkdown(drawn, width, style);
     }
     if (drawn !== '') {
-        return [...(markdown(drawn, width) ?? plainMarkdown(drawn, width))];
+        return [...(markdown(drawn, width) ?? plainMarkdown(drawn, width, style))];
     }
     const theirs = (recap?.lanes ?? []).flatMap((c) => (c.claudeRecap === null ? [] : [c.claudeRecap]));
     if (theirs.length > 0) {
@@ -120,13 +131,14 @@ function body(recap: TabRecap | null, task: RecapTask | null, width: number, mar
     return wrap(m.noRecapYet, width).map(style.gray);
 }
 
-function errorLines(recap: TabRecap | null, width: number, m: Messages): string[] {
+function errorLines(recap: TabRecap | null, width: number, view: ColumnView): string[] {
     const error = recap?.error ?? null;
-    return error === null ? [] : ['', ...wrap(m.recapError(error), width).map(style.red)];
+    return error === null ? [] : ['', ...wrap(view.messages.recapError(error), width).map(paint(view).red)];
 }
 
-function warningLines(warnings: readonly string[], width: number): string[] {
-    return warnings.length === 0 ? [] : [...warnings.flatMap((warning) => wrap(warning, width).map(style.red)), ''];
+function warningLines(view: ColumnView, width: number): string[] {
+    const { warnings } = view;
+    return warnings.length === 0 ? [] : [...warnings.flatMap((warning) => wrap(warning, width).map(paint(view).red)), ''];
 }
 
 const headersOf = (lanes: readonly TabLane[], view: ColumnView, width: number): string[] =>
@@ -134,31 +146,33 @@ const headersOf = (lanes: readonly TabLane[], view: ColumnView, width: number): 
 
 /** One task of a tab with several: its name, its lanes, then its recap. A lane no task holds yet has only its header. */
 function taskBlock(group: Group, at: number, view: ColumnView, width: number, markdown: Markdown): string[] {
+    const style = paint(view);
     const heading = group.task === null ? [] : [style.bold(style.cyan(`▌ ${group.task.name === '' ? view.messages.taskNumber(at + 1) : group.task.name}`))];
-    const recap = group.task === null ? [] : ['', ...body(view.recap, group.task, width, markdown, view.messages)];
+    const recap = group.task === null ? [] : ['', ...body(view.recap, group.task, width, markdown, view)];
     return [...heading, ...headersOf(group.lanes, view, width), ...recap];
 }
 
 /** The whole column, as lines: who is in the tab, then its recap — one per task, each under its task's name. Total; no I/O. */
 export function present(view: ColumnView, width: number, markdown: Markdown): string[] {
+    const style = paint(view);
     if (view.tab === null || view.tab.lanes.length === 0) {
         return wrap(view.messages.waitingForAgent, width).map(style.gray);
     }
     const groups = groupsOf(view.tab.lanes, view.recap?.tasks ?? []);
     const rule = style.gray('─'.repeat(width));
-    const end = errorLines(view.recap, width, view.messages);
+    const end = errorLines(view.recap, width, view);
     if (groups.length > 1) {
         const blocks = groups.map((group, at) => taskBlock(group, at, view, width, markdown));
-        return [...warningLines(view.warnings, width), ...recapMeta(view, width), '', ...blocks.reduce<string[]>((lines, block, at) => lines.concat(at > 0 ? ['', rule] : [], block), []), ...end];
+        return [...warningLines(view, width), ...recapMeta(view, width), '', ...blocks.reduce<string[]>((lines, block, at) => lines.concat(at > 0 ? ['', rule] : [], block), []), ...end];
     }
     return [
-        ...warningLines(view.warnings, width),
+        ...warningLines(view, width),
         ...headersOf(view.tab.lanes, view, width),
         '',
         rule,
         ...recapMeta(view, width),
         '',
-        ...body(view.recap, groups[0]?.task ?? null, width, markdown, view.messages),
+        ...body(view.recap, groups[0]?.task ?? null, width, markdown, view),
         ...end,
     ];
 }
@@ -166,7 +180,7 @@ export function present(view: ColumnView, width: number, markdown: Markdown): st
 export type Mode = 'column' | 'modal' | 'bar';
 
 /** The longest hint that fits: a cut-off hint reads as a bug. */
-export function footer(width: number, mode: Mode, m: Messages): string {
+export function footer(width: number, mode: Mode, m: Messages, style: Style = coloured): string {
     const hints = mode === 'bar' ? [] : m.hints[mode];
     return style.gray(hints.find((hint) => hint.length <= width) ?? '');
 }
@@ -206,6 +220,7 @@ function leads(recap: TabRecap | null): { needs: string | null; now: string | nu
 
 /** What the bar says: what needs the operator first, else what is happening now. */
 function headline(view: ColumnView): string {
+    const style = paint(view);
     const { needs, now } = leads(view.recap);
     if (needs !== null) {
         return style.red(view.messages.needsYou(needs));
@@ -219,13 +234,14 @@ const BAR_MIN_HEAD = 20;
 const clipTo = (text: string, width: number): string => wrap(text, width)[0] ?? '';
 
 /** A lane's status as one glyph: the bar has no room for words. */
-function dot(status: string, m: Messages): string {
-    return badge(laneStatus(status), m).split(' ').slice(0, 1).join('');
+function dot(status: string, m: Messages, style: Style): string {
+    return badge(laneStatus(status), m, style).split(' ').slice(0, 1).join('');
 }
 
 /** The phone's shape: ONE row along the bottom of a narrow tab — 📝, each lane's dot, the headline. A tap opens the modal. */
 export function presentBar(view: ColumnView, width: number): string[] {
-    const dots = (view.tab?.lanes ?? []).map((lane) => dot(lane.status, view.messages)).join('');
+    const style = paint(view);
+    const dots = (view.tab?.lanes ?? []).map((lane) => dot(lane.status, view.messages, style)).join('');
     const head = `${style.bold(style.cyan('📝'))}${dots} ${style.dim(headline(view).split('\n').join(' '))}`;
     const tag = view.version === undefined || view.version === null ? '' : ` · v${view.version}`;
     // the version is only worth the room it leaves: a headline never gets squeezed below BAR_MIN_HEAD cells for it

@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { stateStore } from '#src/adapters/db/database.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
@@ -209,10 +210,27 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
     },
 };
 
-const [name, arg, modelArg] = process.argv.slice(2);
+const HELP_FLAGS = new Set(['--help', '-h']);
+
+/** `<command> [argument] [model]`; an option other than --help/-h is a usage error naming it. */
+function parseArguments(argv: readonly string[]): { positionals: string[] } | { problem: string } {
+    try {
+        return { positionals: parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' } } }).positionals };
+    } catch (error) {
+        return { problem: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+const usage = (): string => m().cli.usage(Object.keys(commands).join('|'));
+const argv = process.argv.slice(2);
+const parsed = parseArguments(argv);
+const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
 const command = name === undefined ? undefined : commands[name];
-if (command === undefined) {
-    console.error(`tab-recap: 2 — ${m().cli.usage(Object.keys(commands).join('|'))}`);
+if (argv.some((word) => HELP_FLAGS.has(word))) {
+    console.log(usage());
+    process.exitCode = OK;
+} else if ('problem' in parsed || command === undefined) {
+    console.error(`tab-recap: 2 — ${'problem' in parsed ? `${parsed.problem}\n` : ''}${usage()}`);
     process.exitCode = USAGE;
 } else {
     try {

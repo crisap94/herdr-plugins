@@ -1,4 +1,5 @@
 // Pure text layout for a narrow column. No I/O.
+import { styleText } from 'node:util';
 import type { AgoUnit } from '#src/i18n/messages.ts';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -46,20 +47,20 @@ export function wrap(text: string, width: number, hang = ''): string[] {
     return lines;
 }
 
-export const style = {
-    bold: (s: string): string => `${ESC}[1m${s}${ESC}[22m`,
-    dim: (s: string): string => `${ESC}[2m${s}${ESC}[22m`,
-    italic: (s: string): string => `${ESC}[3m${s}${ESC}[23m`,
-    red: (s: string): string => `${ESC}[31m${s}${ESC}[39m`,
-    green: (s: string): string => `${ESC}[32m${s}${ESC}[39m`,
-    yellow: (s: string): string => `${ESC}[33m${s}${ESC}[39m`,
-    blue: (s: string): string => `${ESC}[34m${s}${ESC}[39m`,
-    magenta: (s: string): string => `${ESC}[35m${s}${ESC}[39m`,
-    cyan: (s: string): string => `${ESC}[36m${s}${ESC}[39m`,
-    gray: (s: string): string => `${ESC}[90m${s}${ESC}[39m`,
-};
+export type StyleName = 'bold' | 'dim' | 'italic' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'gray';
+export type Style = Readonly<Record<StyleName, (text: string) => string>>;
 
-function markdownLine(raw: string, width: number): string[] {
+const STYLE_NAMES: readonly StyleName[] = ['bold', 'dim', 'italic', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'gray'];
+
+/** Colours and styles; `validateStream: false` keeps rendering pure: the composition root decides whether to use them. */
+export const coloured: Style = Object.fromEntries(
+    STYLE_NAMES.map((name) => [name, (text: string): string => styleText(name, text, { validateStream: false })]),
+) as Style;
+
+/** The same keys with no escape sequences, for a terminal that asks for none. */
+export const plain: Style = Object.fromEntries(STYLE_NAMES.map((name) => [name, (text: string): string => text])) as Style;
+
+function markdownLine(raw: string, width: number, style: Style): string[] {
     const line = raw.trimEnd();
     const heading = /^#{1,6}\s+(.*)$/.exec(line);
     if (heading !== null) {
@@ -75,8 +76,8 @@ function markdownLine(raw: string, width: number): string[] {
 }
 
 /** The renderer used when glow is not installed: headings, bullets, wrapped paragraphs. */
-export function plainMarkdown(markdown: string, width: number): string[] {
-    const lines = markdown.split('\n').flatMap((raw) => markdownLine(raw, width)).filter((line, at, all) => line !== '' || all[at - 1] !== '');
+export function plainMarkdown(markdown: string, width: number, style: Style = coloured): string[] {
+    const lines = markdown.split('\n').flatMap((raw) => markdownLine(raw, width, style)).filter((line, at, all) => line !== '' || all[at - 1] !== '');
     while (lines[0] === '') {
         lines.shift();
     }
