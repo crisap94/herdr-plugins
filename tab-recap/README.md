@@ -25,7 +25,7 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
 - **On a phone, a bar.** A narrow tab gets a one-row bar along the bottom instead — a status dot
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the
   column on a desktop) and the full recap opens as a modal over everything; `q` closes it.
-- **Know what is deployed.** The column's top line ends with the plugin version on disk (`· v1.5.0`); when the running daemon is another version, a yellow `daemon v1.4.1 — restart` says so.
+- **Know what is deployed.** The column's top line ends with the plugin version on disk (`· v1.8.0`); when the running daemon is another version, a yellow `daemon v1.7.0 — restart` says so.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
   `TAB_RECAP_AGENTS` (default `claude`, `codex` and `opencode`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
   3 times in 2 minutes — then it respects you for 10 minutes, `TAB_RECAP_GIVE_UP_MS`).
@@ -45,11 +45,49 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   from the previous recap plus only the new part of every agent's transcript. Also on tab focus when
   stale, and on `r` in the column or the modal. `hermes` runs in safe mode with only its `clarify` tool
   (it cannot run with zero tools; `clarify` cannot touch files, a shell or the network).
+- **Clickable references.** Every merge request (`!252`), pull request or issue (`#12`), commit, branch
+  and file written in backticks, and every full URL, is an OSC 8 hyperlink that herdr opens on
+  Ctrl-click — in every section, in the column and the modal, also when it wraps. The address comes from
+  the repository's `origin` remote (ssh made https, credentials never kept; github.com gets GitHub
+  paths, other hosts GitLab paths); files open on the agent's current branch. When a task's agents work
+  in different repositories, only full URLs are linked.
+- **What the writer sees.** One XML document per run, defined by
+  [`schema/recap-input.dtd`](schema/recap-input.dtd) and validated in tests: the tab's agents (folder,
+  repository, branch, recently edited files), the previous recap, the agents' own away and compaction
+  summaries as hints, and per agent the new prompts (including ones typed while it was busy), replies
+  (beginning and end) and tool calls (Codex's decoded; plain reads only counted), each with its time.
+  The writer runs at `TAB_RECAP_EFFORT` (`low` by default) and drops any earlier item the transcript
+  contradicts.
 - **Extensible.** An optional extension can add notes under a lane's header and do housekeeping
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
-- **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is **compaction**: `tab-recap.compact` (or `c` in the column) asks for an optional note, refreshes the recap, and tells an *idle* agent what to keep while it compacts — in your own voice, without ever mentioning the plugin. A working or blocked agent is skipped and you are told. A lane whose context passes 40 % of its window shows `compact? 45% of 1M` (`TAB_RECAP_COMPACT_HINT`, advisory only).
+- **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is [compaction](#compaction), and only when you ask for it.
+
+## Compaction
+
+`tab-recap.compact` (bind it, e.g. `prefix+shift+c`; or `c` in the column or the modal):
+
+1. A popup asks for an optional note (up to 280 characters). Enter on an empty note sends without it; Esc cancels.
+2. The recap is refreshed. Then each target agent (`TAB_RECAP_COMPACT_TARGET`: `focused` by default,
+   `all`, or kinds like `claude,codex`) that is **idle or done** gets a message written as your own
+   instruction, in English, never naming the plugin, at most 1 500 characters. It asks to keep, in
+   order: your note, the goal, decisions and why, questions waiting for you, unfinished work and next
+   steps, the standing rules you gave (the writer keeps them as an internal list that is never drawn),
+   and exact references (as links); and to drop tool output, finished-step detail and resolved dead
+   ends. References are trimmed first when it is too long; the note and the goal never.
+3. **claude** gets `/compact <that guidance>` typed as one line (a pasted block would not run as a
+   command). **codex** and **opencode** run their own `/compact`, then get one short message with the
+   same points that asks only for "ok".
+
+A working or blocked agent is skipped and a notification names it. Agents read from their screen and
+`hermes` are not offered compaction.
+
+**The hint.** A lane whose context use reaches `TAB_RECAP_COMPACT_HINT` percent (default 40; `off`, or
+10–95) of its window shows `compact? 45% of 1M`. It never compacts by itself. The window is found at
+runtime: Codex's own `model_context_window`; opencode's and Claude's model looked up in opencode's local
+models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
+table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
 
 ## Install
 
@@ -96,10 +134,12 @@ type = "plugin_action"
 command = "tab-recap.columns"     # hide / show every column
 
 [[keys.command]]
-key = "prefix+c"
+key = "prefix+shift+c"
 type = "plugin_action"
 command = "tab-recap.compact"     # ask what to keep, then compact the focused agent
 ```
+
+`prefix+c` is herdr's own "new tab" key; pick free keys. `herdr server reload-config` applies them.
 
 A hidden column is closed and not reopened, and recaps are still written — showing it again is instant.
 
@@ -107,7 +147,7 @@ A hidden column is closed and not reopened, and recaps are still written — sho
 
 If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node that runs the plugin and which keys herdr has bound to a `tab-recap.*` action (or `no key bound — see README`).
 
-- **No key is bound out of the box.** Add the two bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
+- **No key is bound out of the box.** Add the bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
 - **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
 - **Node ≥ 24.21.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.21+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.21, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
 - **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
@@ -144,6 +184,8 @@ touching nothing: `cp -r <state dir> /tmp/state-copy && node src/adapters/db/imp
 directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; recaps written since the upgrade are not carried
 back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
 
+Schema versions so far: **1** (1.6.0, the import), **2** (1.7.0, each lane's web address for links),
+**3** (1.8.0, standing rules, compaction requests and context use).
 An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
 written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
 stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.
