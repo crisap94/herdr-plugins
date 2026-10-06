@@ -39,7 +39,7 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 ## 7. Integration (before merge)
 
 - [ ] 7.1 GitLab pipeline green on the branch (GitHub Actions — ubuntu, macOS, Node 24.14.0 — run on `main` after merge and must be green before `release:prepare`) — verify: pipeline link in the merge request
-- [ ] 7.2 Live check before merge, running a column from the branch's worktree: a recap containing emoji keeps every line inside the column, and a column started with `NO_COLOR=1` has no colours — verify: `herdr pane read` excerpt in the merge request
+- [x] 7.2 Live check before merge, running a column from the branch's worktree: a recap containing emoji keeps every line inside the column, and a column started with `NO_COLOR=1` has no colours — verify: `herdr pane read` excerpt in the merge request — done 2026-10-06: the branch's column in a 32-cell pty with an emoji-heavy recap: 0 lines wider than the column (the code before: 3), and with `NO_COLOR=1` 0 colour escapes (with colour: 118)
 
 ## 8. Archive
 
