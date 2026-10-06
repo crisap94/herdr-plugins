@@ -129,7 +129,7 @@ function dispatchWith(prompts: LivePromptSource): { dispatch: Dispatch; written:
     const views = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as TabViews;
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
-        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts, log: (): void => undefined,
+        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined,
     });
     return { dispatch, written };
