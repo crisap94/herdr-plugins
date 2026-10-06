@@ -1,6 +1,6 @@
 {
   "name": "herdr-tab-recap",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "private": true,
   "type": "module",
   "description": "herdr plugin: a recap column on the right of every tab with a coding agent",
