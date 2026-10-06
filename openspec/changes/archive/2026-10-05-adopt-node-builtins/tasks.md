@@ -38,9 +38,9 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 7. Integration (before merge)
 
-- [ ] 7.1 GitLab pipeline green on the branch (GitHub Actions — ubuntu, macOS, Node 24.14.0 — run on `main` after merge and must be green before `release:prepare`) — verify: pipeline link in the merge request
+- [x] 7.1 GitLab pipeline green on the branch (GitHub Actions — ubuntu, macOS, Node 24.14.0 — run on `main` after merge and must be green before `release:prepare`) — verify: pipeline link in the merge request — MR !24 pipeline 16049 green (lint, test, test:floor on Node 24.14.0)
 - [x] 7.2 Live check before merge, running a column from the branch's worktree: a recap containing emoji keeps every line inside the column, and a column started with `NO_COLOR=1` has no colours — verify: `herdr pane read` excerpt in the merge request — done 2026-10-06: the branch's column in a 32-cell pty with an emoji-heavy recap: 0 lines wider than the column (the code before: 3), and with `NO_COLOR=1` 0 colour escapes (with colour: 118)
 
 ## 8. Archive
 
-- [ ] 8.1 With every task above checked and the gates green, run `openspec archive adopt-node-builtins --yes`, replace any placeholder `## Purpose` it writes, and commit it in this same merge request — verify: `openspec/changes/archive/<date>-adopt-node-builtins/` exists, `openspec/specs/tab-recap/{text-layout,relative-time,cli}/spec.md` exist, `openspec validate --specs --strict` passes and `openspec list` shows no active change
+- [x] 8.1 With every task above checked and the gates green, run `openspec archive adopt-node-builtins --yes`, replace any placeholder `## Purpose` it writes, and commit it in this same merge request — verify: `openspec/changes/archive/<date>-adopt-node-builtins/` exists, `openspec/specs/tab-recap/{text-layout,relative-time,cli}/spec.md` exist, `openspec validate --specs --strict` passes and `openspec list` shows no active change
