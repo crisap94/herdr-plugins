@@ -1,5 +1,6 @@
 // The ONLY module that talks to herdr (rules/recap-transport-boundary.yml).
 import { agentPanesIn, columnsIn } from './column-panes.ts';
+import { HerdrAgents } from './herdr-agents.ts';
 import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Json, Pushed } from '#src/transport/herdr.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
@@ -68,6 +69,11 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     constructor(stateDir: string) {
         this.stateDir = stateDir;
+    }
+
+    /** What the operator's compaction needs of herdr; the wire is ours, so it stays the only import of the transport. */
+    agents(): HerdrAgents {
+        return new HerdrAgents(rpc, { id: PLUGIN_ID, stateDir: this.stateDir });
     }
 
     private async rawSnapshot(): Promise<Json> {

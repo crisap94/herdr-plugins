@@ -40,30 +40,27 @@ function screenText(setting: string, m: Messages): string {
     return words[setting] ?? setting;
 }
 
-function valueOf(row: RowId, state: Setup, m: Messages): string {
-    const { draft } = state;
-    const target = modelTarget(draft, state.available);
-    switch (row) {
-        case 'harness':
-            return draft.backend;
-        case 'model':
-            return target === null ? m.setup.modelNoAgent : modelText(draft.models[target], target, m);
-        case 'locale':
-            return m.setup.uiChoices[draft.locale];
-        case 'recapLanguage':
-            return recapText(draft.recapLanguage, m);
-        case 'screenAgents':
-            return screenText(draft.screenAgents, m);
-        case 'gitNote':
-            return m.setup.gitNoteChoices[draft.gitNote];
-        case 'effort':
-            return m.setup.effortChoices[draft.effort];
-        default: {
-            const exhaustive: never = row;
-            return String(exhaustive);
-        }
-    }
-}
+/** The compaction rows in words: the hint as a percentage (or off), an empty window as «found at runtime». */
+const hintText = (hint: string, m: Messages): string => (hint === 'off' ? m.setup.compactHintOff : `${hint}%`);
+
+/** What each row shows as its value; a row added to `RowId` cannot compile without one. */
+const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
+    harness: (state) => state.draft.backend,
+    model: (state, m) => {
+        const target = modelTarget(state.draft, state.available);
+        return target === null ? m.setup.modelNoAgent : modelText(state.draft.models[target], target, m);
+    },
+    locale: (state, m) => m.setup.uiChoices[state.draft.locale],
+    recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
+    screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
+    gitNote: (state, m) => m.setup.gitNoteChoices[state.draft.gitNote],
+    effort: (state, m) => m.setup.effortChoices[state.draft.effort],
+    compactTarget: (state) => state.draft.compactTarget,
+    compactHint: (state, m) => hintText(state.draft.compactHint, m),
+    contextWindow: (state, m) => (state.draft.contextWindow === '' ? m.setup.contextWindowDetected : state.draft.contextWindow),
+};
+
+const valueOf = (row: RowId, state: Setup, m: Messages): string => VALUES[row](state, m);
 
 function markOf(choice: BackendChoice, state: Setup): string {
     if (state.draft.backend === choice) {
@@ -103,7 +100,7 @@ function effortChoices(state: Setup, m: Messages, width: number, style: Style): 
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 

@@ -1,4 +1,5 @@
 // Tasks within a tab: which lanes work on the same thing, and how sticky that grouping is. Pure.
+import { NO_SECTIONS } from './shape.ts';
 import type { RecapSections } from './shape.ts';
 
 /** One piece of work in a tab and its one recap. `sections` is null (and `markdown` all there is) for a recap stored before the fixed structure. */
@@ -94,7 +95,7 @@ function kept(previous: readonly RecapTask[], proposed: readonly Proposed[], pan
     return [...olds, ...apart];
 }
 
-const EMPTY: RecapSections = { goal: '', now: [], needs: [], done: [], decisions: [], next: [], links: [] };
+const EMPTY: RecapSections = NO_SECTIONS;
 
 /**
  * Whether the writer moved lanes that were already grouped, without saying why. "Unchanged" is judged on the lanes

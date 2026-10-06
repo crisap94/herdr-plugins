@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { fileKey } from '#src/adapters/db/import/legacy-files.ts';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 
-export const sections = { goal: 'ship', now: ['a'], needs: ['review'], done: ['b', 'c'], decisions: ['sqlite'], next: ['n'], links: ['x.ts'] };
+export const sections = { goal: 'ship', now: ['a'], needs: ['review'], done: ['b', 'c'], decisions: ['sqlite'], next: ['n'], links: ['x.ts'], rules: [] };
 export const lane = { pane: 'w1:p1', agent: 'claude', transcript: '/t/a.jsonl', cursor: 120, tail: null, title: 'T', lastPrompt: 'p', claudeRecap: null };
 const base = { running: false, backend: 'claude', error: null, costUsd: 0.12, language: 'en' };
 

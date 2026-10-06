@@ -41,7 +41,7 @@ const get = configGetter();
 const config = loadConfig();
 
 let state: Setup = initial(
-    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE'), effort: get('TAB_RECAP_EFFORT') }),
+    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE'), effort: get('TAB_RECAP_EFFORT'), compactTarget: get('TAB_RECAP_COMPACT_TARGET'), compactHint: get('TAB_RECAP_COMPACT_HINT'), contextWindow: get('TAB_RECAP_CONTEXT_WINDOW') }),
     locksOf(process.env),
 );
 let scroll = 0;

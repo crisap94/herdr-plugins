@@ -2,9 +2,10 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines } from './jsonl.ts';
+import { claudeObserved } from './context-rows.ts';
 import { extractClaude } from './claude-rows.ts';
 
 export { extractClaude };
@@ -43,6 +44,14 @@ export class ClaudeTranscripts implements Transcripts {
         try {
             const found = extractClaude(tailLines(source, budget));
             return Promise.resolve({ kind: 'prompt', text: found.entries.findLast((entry) => entry.role === 'user')?.text ?? found.lastPrompt });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+
+    observed(source: string, budget: number): Promise<ObservedResult> {
+        try {
+            return Promise.resolve({ kind: 'observed', observed: claudeObserved(tailLines(source, budget)) });
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }

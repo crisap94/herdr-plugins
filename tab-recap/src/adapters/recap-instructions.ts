@@ -16,7 +16,7 @@ function languageLines(language: string, previous: string): string[] {
     return [...own, ...carried, ...(own.length + carried.length > 0 ? [''] : [])];
 }
 
-const SECTION_KEYS = '"goal": "...", "now": ["..."], "needs": ["..."], "done": ["..."], "decisions": ["..."], "next": ["..."], "links": ["..."]';
+const SECTION_KEYS = '"goal": "...", "now": ["..."], "needs": ["..."], "done": ["..."], "decisions": ["..."], "next": ["..."], "links": ["..."], "rules": ["..."]';
 const SHAPE = `{${SECTION_KEYS}}`;
 const TASKS_SHAPE = `{"regroup": "", "tasks": [{"name": "...", "lanes": ["<pane id>"], ${SECTION_KEYS}}]}`;
 
@@ -36,7 +36,7 @@ const TASK_RULES: readonly string[] = [
     '<agent> details (directory, repository, branch, files, label) and what each agent says. The same repository',
     'and branch, or one agent continuing the other\'s work, is one task; different repositories rarely are.',
     'Every agent is in exactly one task, named by its pane id in "lanes". "name" is 2 to 5 words saying what',
-    'the task is ("" when there is a single task). Each task has its own seven sections.',
+    'the task is ("" when there is a single task). Each task has its own sections.',
     'KEEP the <current_tasks> (same agents together, same names) unless the evidence is clear — e.g. the agents now',
     'work in different repositories, or one clearly started something unrelated. Then, and only then, say why',
     'in "regroup" (one short sentence). When you keep the grouping, "regroup" is "". Without <current_tasks>, group the agents.',
@@ -62,6 +62,7 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         tasks ? TASKS_SHAPE : SHAPE,
         '',
         ...SECTIONS.map(sectionLine),
+        `rules      — standing constraints the operator stated and still wants kept, never drawn (at most ${CAPS.rules})`,
         '',
         ...languageLines(request.language, request.previousLanguage),
         'How to write:',

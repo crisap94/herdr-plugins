@@ -119,7 +119,7 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
             done: ['Mapped every v1 field to its v2 equivalent', 'Added retries with backoff to the client'],
             decisions: [],
             next: ['Test for expired cards', 'Canary at 5% of traffic'],
-            links: ['src/payments/v2/client.ts', 'branch feat/payments-v2'],
+            links: ['src/payments/v2/client.ts', 'branch feat/payments-v2'], rules: [],
         },
     },
     es: {
@@ -134,7 +134,7 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
             done: ['Cada campo de v1 asignado a su equivalente en v2', 'Reintentos con espera añadidos al cliente'],
             decisions: [],
             next: ['Prueba de tarjetas vencidas', 'Canario al 5 % del tráfico'],
-            links: ['src/payments/v2/client.ts', 'rama feat/payments-v2'],
+            links: ['src/payments/v2/client.ts', 'rama feat/payments-v2'], rules: [],
         },
     },
 };

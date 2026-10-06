@@ -63,6 +63,13 @@ contexts = ["tab", "pane"]
 command = ["node", "bin/tab-recap.ts", "refresh"]
 
 [[actions]]
+id = "compact"
+title = "Tab Recap: compact the focused agent"
+description = "Asks for an optional note, then tells an idle agent what to keep while it compacts its conversation."
+contexts = ["tab", "pane"]
+command = ["node", "bin/tab-recap.ts", "compact"]
+
+[[actions]]
 id = "configure"
 title = "Tab Recap: configure"
 description = "A settings modal: which agent writes the recap, its model and the languages."
@@ -79,3 +86,9 @@ id = "setup"
 title = "Tab Recap settings"
 placement = "popup"
 command = ["node", "src/setup/main.ts"]
+
+[[panes]]
+id = "compact"
+title = "Tab Recap compact"
+placement = "popup"
+command = ["node", "src/compact/main.ts"]

@@ -12,6 +12,9 @@ const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
     gitNote: ['TAB_RECAP_GIT_NOTE'],
     effort: ['TAB_RECAP_EFFORT'],
+    compactTarget: ['TAB_RECAP_COMPACT_TARGET'],
+    compactHint: ['TAB_RECAP_COMPACT_HINT'],
+    contextWindow: ['TAB_RECAP_CONTEXT_WINDOW'],
 };
 
 /** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
@@ -44,6 +47,9 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
     set('screenAgents', 'TAB_RECAP_SCREEN_AGENTS', draft.screenAgents, stored.screenAgents);
     set('gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote, stored.gitNote);
     set('effort', 'TAB_RECAP_EFFORT', draft.effort, stored.effort);
+    set('compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget, stored.compactTarget);
+    set('compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint, stored.compactHint);
+    set('contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow, stored.contextWindow);
     return out;
 }
 
