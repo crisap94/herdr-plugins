@@ -5,6 +5,7 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 1. Text width and wrapping
 
+- [x] 1.0 Narrow `rules/recap-layers-no-io.yml` to exempt exactly `node:util` (design decision 0): add a good probe importing `styleText` from `node:util`, keep the bad probes biting, update the rule's message/note and the red-line row in `CLAUDE.md` — verify: `bash ci/lint.sh` clean, and its probe check shows the bad probes still fail
 - [ ] 1.1 Add the noun **Cell width** to `CONTEXT.md` (escapes 0, emoji presentation 2, combining marks 0, else 1; CJK out of scope) — verify: lint's vocabulary check passes
 - [ ] 1.2 Reimplement `visibleLength` in `src/recap/render/wrap.ts` with `util.stripVTControlCharacters` + `Intl.Segmenter` (grapheme) + emoji-presentation rule — verify: new tests for `recap` in colour = 5, `📝✅` = 4, `👩‍💻` + `é` = 3
 - [ ] 1.3 Make the long-word cut in `wrap()` walk graphemes by cell width instead of `slice` — verify: tests for `xxxxxxx📝📝📝` at width 8 (every line ≤ 8 cells, whole characters only, rejoins to the original) and twenty `é` (no line starts with a combining mark)
@@ -17,9 +18,9 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 3. Colours
 
-- [ ] 3.1 Build the style table in `src/recap/render/wrap.ts` with `util.styleText(format, text, { validateStream: false })`, plus an identity table with the same keys — verify: golden outputs byte-identical with the coloured table
-- [ ] 3.2 Choose the table once at each composition root (`src/column/main.ts`, `src/setup/main.ts`) from `process.stdout.hasColors()` and pass it into rendering — verify: test that `NO_COLOR=1` (and `FORCE_COLOR=0`) yields output with no escape sequences and the same visible text
-- [ ] 3.3 Document `NO_COLOR` support in `README.md` (one line) — verify: README lint/links pass
+- [x] 3.1 Build the style table in `src/recap/render/wrap.ts` with `util.styleText(format, text, { validateStream: false })`, plus an identity table with the same keys — verify: golden outputs byte-identical with the coloured table
+- [x] 3.2 Choose the table once at each composition root (`src/column/main.ts`, `src/setup/main.ts`) from `process.stdout.hasColors()` and pass it into rendering — verify: test that `NO_COLOR=1` (and `FORCE_COLOR=0`) yields output with no escape sequences and the same visible text
+- [x] 3.3 Document `NO_COLOR` support in `README.md` (one line) — verify: README lint/links pass
 
 ## 4. herdr socket framing
 
@@ -27,8 +28,8 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 5. Command-line entry
 
-- [ ] 5.1 Parse `bin/tab-recap.ts` arguments with `util.parseArgs` (`strict`, `allowPositionals`, `--help`/`-h`), positionals unchanged — verify: tests: `backend codex gpt-5-mini` unchanged; unknown command → usage on stderr, exit 2; `--help` → usage on stdout listing every command, exit 0, no side effects; `start --forse` → names the option, exit 2, daemon not started
-- [ ] 5.2 Update the README command list if the usage text changed — verify: README matches `--help` output
+- [x] 5.1 Parse `bin/tab-recap.ts` arguments with `util.parseArgs` (`strict`, `allowPositionals`, `--help`/`-h`), positionals unchanged — verify: tests: `backend codex gpt-5-mini` unchanged; unknown command → usage on stderr, exit 2; `--help` → usage on stdout listing every command, exit 0, no side effects; `start --forse` → names the option, exit 2, daemon not started
+- [x] 5.2 Update the README command list if the usage text changed — verify: README matches `--help` output
 
 ## 6. Small swaps
 

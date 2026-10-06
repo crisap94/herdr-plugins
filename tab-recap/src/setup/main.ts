@@ -4,17 +4,21 @@ import { setValues } from '#src/adapters/config-file.ts';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { styleFor } from '#src/adapters/terminal-style.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
+import { coloured } from '#src/recap/render/wrap.ts';
 import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
 
+const style = styleFor(process.stdout);
 const ESC = String.fromCodePoint(0x1b);
+const RESET = style === coloured ? `${ESC}[0m` : '';
 const BEL = String.fromCodePoint(0x07);
 const STYLE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 /** one cell of padding on each side, as in the column */
@@ -48,7 +52,7 @@ function draw(): void {
     const [columns, rows] = size();
     const width = Math.max(10, columns - GUTTER);
     const m = messages();
-    const lines = setupView(state, m, width);
+    const lines = setupView(state, m, width, style);
     const room = Math.max(3, rows) - 1;
     const focus = Math.max(0, lines.findIndex((line) => line.replace(STYLE, '').startsWith('▸')));
     scroll = Math.max(0, Math.min(focus - Math.floor(room / 3), lines.length - room));
@@ -56,8 +60,8 @@ function draw(): void {
     while (shown.length < room) {
         shown.push('');
     }
-    shown.push(setupFooter(state, m, width));
-    process.stdout.write(`${ESC}[H${shown.map((line) => ` ${line}${ESC}[0m${ESC}[K`).join('\r\n')}${ESC}[J`);
+    shown.push(setupFooter(state, m, width, style));
+    process.stdout.write(`${ESC}[H${shown.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n')}${ESC}[J`);
 }
 
 async function available(): Promise<void> {

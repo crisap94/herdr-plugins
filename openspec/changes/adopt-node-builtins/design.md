@@ -23,6 +23,15 @@ surrogate pair when it cuts a long word.
 
 ## Decisions
 
+0. **`node:util` is allowed in the pure layers; every other built-in stays banned there.** The red line
+   `recap-layers-no-io` forbids any `node:` import under `src/recap/**` and `src/i18n/**` to keep those
+   layers free of I/O. `stripVTControlCharacters` and `styleText` (with `validateStream: false`) are
+   pure text functions, so the rule is narrowed to exempt exactly `node:util` (ast-grep `not` on
+   `^node:util$`; Rust regex has no look-ahead), with a good probe importing `styleText` and the bad
+   probes still biting. Anything that touches a stream (`hasColors()`) stays at the composition roots.
+   Alternatives: hiding the import in a module outside the guarded folders (obeys the letter, not the
+   intent) or injecting the functions from the roots (contradicts decision 3's pure renderer).
+
 1. **Width = grapheme clusters of the escape-free text, 2 cells for emoji presentation.**
    `util.stripVTControlCharacters` removes escapes; `Intl.Segmenter(undefined, {granularity: 'grapheme'})`
    splits clusters; a cluster counts 2 when it matches `\p{Extended_Pictographic}` with emoji

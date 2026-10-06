@@ -30,7 +30,7 @@ English and Spanish), replacing `parseEnv` with util.parseEnv (different quoting
 existing `config.env` values), the process-group kill in the command runner (Node's spawn timeout only
 kills the direct child), TOML parsing (Node has none; the one-line version match stays).
 
-Merge request label: `changelog::fixed` (the overflow and broken-character bug is the user-visible part).
+Delivered in two merge requests: `changelog::added` (colours follow NO_COLOR/FORCE_COLOR; `--help` and refusing unknown options) and then `changelog::fixed` (cell width and grapheme-safe wrapping, plus the internal built-in swaps), which archives this change.
 
 ## Capabilities
 

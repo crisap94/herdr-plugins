@@ -63,7 +63,7 @@ herdr plugin action invoke tab-recap.start                # on; stays on across 
 
 Needs herdr ≥ 0.9.0, Node ≥ 24.14.0 (runs the TypeScript directly, no build) and at least one of
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
-Markdown when installed.
+Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_COLOR=0`) in a column's or modal's environment turns them off.
 
 ## Actions
 
@@ -77,7 +77,7 @@ Markdown when installed.
 | `tab-recap.configure` | the settings modal: agent, model, interface and recap language; `t` tests, `s` saves |
 | `tab-recap.status` | the code's version, the Node running it, the keys bound to tab-recap actions, the daemon (pid and the version it started with), backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
-Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH).
+Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `node bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
 
 In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 

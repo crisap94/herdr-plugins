@@ -4,7 +4,8 @@ import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOIC
 import type { RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-import { style, wrap } from './wrap.ts';
+import { coloured, wrap } from './wrap.ts';
+import type { Style } from './wrap.ts';
 
 const LABEL_WIDTH = 18;
 
@@ -72,7 +73,7 @@ function markOf(choice: BackendChoice, state: Setup): string {
     return state.available.includes(choice) ? '●' : '○';
 }
 
-function harnessChoices(state: Setup, m: Messages, width: number): string[] {
+function harnessChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
     const editing = state.editing?.kind === 'choice' && rowOf(state) === 'harness' ? state.editing.at : -1;
     const notes: Readonly<Partial<Record<BackendChoice, string>>> = { auto: m.setup.auto(AUTO_ORDER.join(' → ')), custom: m.setup.custom };
     const lines = HARNESS_CHOICES.flatMap((choice, at) => {
@@ -84,12 +85,12 @@ function harnessChoices(state: Setup, m: Messages, width: number): string[] {
     return [...lines, ...hanging('    ', legend, width).map(style.dim)];
 }
 
-function localeChoices(state: Setup, m: Messages, width: number): string[] {
+function localeChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
     const editing = state.editing?.kind === 'choice' && rowOf(state) === 'locale' ? state.editing.at : -1;
     return LOCALE_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.uiChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
 }
 
-function gitNoteChoices(state: Setup, m: Messages, width: number): string[] {
+function gitNoteChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
     const editing = state.editing?.kind === 'choice' && rowOf(state) === 'gitNote' ? state.editing.at : -1;
     return SWITCH_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.gitNoteChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
 }
@@ -100,34 +101,34 @@ function hintOf(row: RowId, m: Messages): string | null {
 }
 
 /** What hangs under a row: its lock, its hint while focused, its choices. */
-function under(row: RowId, state: Setup, m: Messages, width: number): string[] {
+function under(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const focused = rowOf(state) === row;
     const lock = state.locks[row];
     const hint = focused ? hintOf(row, m) : null;
     return [
         ...(lock === undefined ? [] : hanging('    ', m.setup.locked(lock), width).map(style.yellow)),
         ...(hint === null ? [] : hanging('    ', hint, width).map(style.dim)),
-        ...(focused || row === 'harness' ? choicesUnder(row, state, m, width) : []),
+        ...(focused || row === 'harness' ? choicesUnder(row, state, m, width, style) : []),
     ];
 }
 
 /** The harness's choices always hang under it; the others open while the row is being edited. */
-function choicesUnder(row: RowId, state: Setup, m: Messages, width: number): string[] {
+function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const choosing = state.editing?.kind === 'choice';
     const drawn: Readonly<Partial<Record<RowId, () => string[]>>> = {
-        harness: () => harnessChoices(state, m, width),
-        locale: () => (choosing ? localeChoices(state, m, width) : []),
-        gitNote: () => (choosing ? gitNoteChoices(state, m, width) : []),
+        harness: () => harnessChoices(state, m, width, style),
+        locale: () => (choosing ? localeChoices(state, m, width, style) : []),
+        gitNote: () => (choosing ? gitNoteChoices(state, m, width, style) : []),
     };
     return drawn[row]?.() ?? [];
 }
 
-function rowLines(row: RowId, state: Setup, m: Messages, width: number): string[] {
+function rowLines(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const focused = rowOf(state) === row;
     const editing = focused && state.editing?.kind === 'text' ? state.editing.buffer : null;
     const value = editing === null ? valueOf(row, state, m) : `${editing}█`;
     const lines = hanging(`${focused ? '▸' : ' '} ${labelOf(row, state, m).padEnd(LABEL_WIDTH)} `, value, width);
-    return [...(focused ? lines.map(style.bold) : lines), ...under(row, state, m, width)];
+    return [...(focused ? lines.map(style.bold) : lines), ...under(row, state, m, width, style)];
 }
 
 function noteLine(state: Setup, m: Messages): string | null {
@@ -146,7 +147,7 @@ function noteLine(state: Setup, m: Messages): string | null {
     return texts[note] ?? null;
 }
 
-function testLine(state: Setup, m: Messages): string | null {
+function testLine(state: Setup, m: Messages, style: Style): string | null {
     const { test } = state;
     switch (test.kind) {
         case 'idle':
@@ -165,23 +166,23 @@ function testLine(state: Setup, m: Messages): string | null {
 }
 
 /** The whole modal, as lines no wider than `width`. */
-export function setupView(state: Setup, m: Messages, width: number): string[] {
+export function setupView(state: Setup, m: Messages, width: number, style: Style = coloured): string[] {
     const note = noteLine(state, m);
     const status = [
         ...(state.available === null ? [style.gray(m.setup.loading)] : []),
         ...(note === null ? [] : wrap(note, width).map(style.cyan)),
-        ...wrap(testLine(state, m) ?? '', width).filter((line) => line !== ''),
+        ...wrap(testLine(state, m, style) ?? '', width).filter((line) => line !== ''),
     ];
     return [
         style.bold(style.cyan(m.setup.title)),
         '',
-        ...ROWS.flatMap((row) => rowLines(row, state, m, width).concat([''])),
+        ...ROWS.flatMap((row) => rowLines(row, state, m, width, style).concat([''])),
         ...status,
     ];
 }
 
 /** The longest hint that fits: a cut-off hint reads as a bug. */
-export function setupFooter(state: Setup, m: Messages, width: number): string {
+export function setupFooter(state: Setup, m: Messages, width: number, style: Style = coloured): string {
     const hints = state.editing === null ? m.setup.keys : m.setup.editKeys;
     return style.gray(hints.find((hint) => hint.length <= width) ?? '');
 }
