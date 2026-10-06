@@ -7,75 +7,75 @@ platforms = ["linux", "macos"]
 
 # The column is the default view: the daemon starts with the herdr session…
 [[startup]]
-command = ["node", "bin/tab-recap.ts", "startup"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "startup"]
 
 # …and is revived whenever an agent appears, so a new agent's column pops up at once.
 [[events]]
 on = "pane.agent_detected"
-command = ["node", "bin/tab-recap.ts", "ensure"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "ensure"]
 
 [[actions]]
 id = "start"
 title = "Tab Recap: on"
 description = "Start the daemon: every tab with an agent gets its recap column."
-command = ["node", "bin/tab-recap.ts", "start"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "start"]
 
 [[actions]]
 id = "stop"
 title = "Tab Recap: off"
 description = "Close every recap column and stop the daemon (stays off across restarts)."
-command = ["node", "bin/tab-recap.ts", "stop"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "stop"]
 
 [[actions]]
 id = "toggle"
 title = "Tab Recap: toggle"
-command = ["node", "bin/tab-recap.ts", "toggle"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "toggle"]
 
 [[actions]]
 id = "status"
 title = "Tab Recap: status"
-command = ["node", "bin/tab-recap.ts", "status"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "status"]
 
 [[actions]]
 id = "show"
 title = "Tab Recap: show this tab's recap"
 description = "The tab's recap as a modal over everything — the phone's view. q or Esc closes it."
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.ts", "show"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "show"]
 
 [[actions]]
 id = "column"
 title = "Tab Recap: hide / show this tab's column"
 description = "Hides this tab's recap column, or shows it again. Recaps keep being written."
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.ts", "column"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "column"]
 
 [[actions]]
 id = "columns"
 title = "Tab Recap: hide / show all columns"
 description = "Hides every recap column, or shows them all again. Recaps keep being written."
-command = ["node", "bin/tab-recap.ts", "columns"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "columns"]
 
 [[actions]]
 id = "refresh"
 title = "Tab Recap: recap this tab now"
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.ts", "refresh"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "refresh"]
 
 [[actions]]
 id = "configure"
 title = "Tab Recap: configure"
 description = "A settings modal: which agent writes the recap, its model and the languages."
-command = ["node", "bin/tab-recap.ts", "configure"]
+command = ["node", "--disable-warning=ExperimentalWarning", "bin/tab-recap.ts", "configure"]
 
 [[panes]]
 id = "column"
 title = "Recap"
 placement = "split"
-command = ["node", "src/column/main.ts"]
+command = ["node", "--disable-warning=ExperimentalWarning", "src/column/main.ts"]
 
 [[panes]]
 id = "setup"
 title = "Tab Recap settings"
 placement = "popup"
-command = ["node", "src/setup/main.ts"]
+command = ["node", "--disable-warning=ExperimentalWarning", "src/setup/main.ts"]
