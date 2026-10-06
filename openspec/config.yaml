@@ -1,0 +1,30 @@
+schema: spec-driven
+
+# Project context: constraints an agent cannot infer by reading the code.
+context: |
+  Repository of herdr plugins; today only tab-recap (tab-recap/). Capabilities are grouped per plugin:
+  openspec/specs/<plugin>/<capability>/spec.md (for example tab-recap/text-layout).
+  Write every artifact in English. This repository is public: never mention private hosts, personal
+  infrastructure or internal tooling.
+  tab-recap runs straight from source on Node >= 24.14.0 with zero runtime dependencies: prefer Node
+  built-ins (node:*, Intl, util) over hand-written code, and never add a runtime package.
+  Every change lands on main through a merge request carrying exactly one changelog:: label
+  (added, changed, fixed, internal; breaking in addition); the release job writes CHANGELOG.md and the
+  version. Never edit CHANGELOG.md or version fields in a change.
+
+rules:
+  proposal:
+    - "State what is out of scope."
+    - "Name the changelog:: label the merge request will carry."
+  design:
+    - "For every hand-written piece kept, say why no Node built-in fits."
+  tasks:
+    - "Every group ends with the plugin gates passing (bash ci/lint.sh and bash ci/test.sh, from tab-recap/)."
+    - "New domain nouns go into tab-recap/CONTEXT.md before code."
+    - "The last group of every change is Archive: once every other task is checked, run openspec archive <change> in the same merge request, so main specs are updated when the change is fully implemented."
+
+operations:
+  archive:
+    guidance:
+      - "Archive only when every task in tasks.md is checked and the gates pass; never leave an implemented change unarchived."
+      - "The archive commit belongs to the change's own merge request, not a follow-up."
