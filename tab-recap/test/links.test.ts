@@ -85,3 +85,15 @@ test('one context per task: lanes of one repository share it, two repositories g
     assert.deepEqual(refs('!7', null), []);
     assert.deepEqual(linkify('!7 https://example.org/z', [GITLAB, other]).flatMap((piece) => (piece.url === undefined ? [] : [piece.url])), ['https://example.org/z']);
 });
+
+// Regression (1.8.1): the lane's branch is matched with a `u` regular expression, where `\-` is a syntax error;
+// a branch with a dash (most of them) made every recap line of that lane throw while being drawn.
+test('links: a lane branch with dashes, dots and plus signs is linked bare and backticked, and never throws', () => {
+    for (const branch of ['feat/payments-v2', 'release-1.8.x', 'fix/a+b', 'docs/0013-absorb-openrig']) {
+        const web: LaneWeb = { ...GITLAB, branch };
+        const tree = `https://gitlab.example/acme/shop/-/tree/${branch.split('/').map(encodeURIComponent).join('/')}`;
+        assert.doesNotThrow(() => linkify(`pushed ${branch} today, see \`src/a.ts\` and !3`, [web]));
+        assert.equal(refs(`pushed ${branch} today`, web).at(0)?.[1], tree, branch);
+        assert.equal(refs(`\`${branch}\``, web).at(0)?.[1], tree, `${branch} (the lane's own branch wins over a file-looking name)`);
+    }
+});

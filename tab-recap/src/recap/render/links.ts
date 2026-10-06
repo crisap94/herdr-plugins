@@ -17,7 +17,8 @@ const EXTENSION = /\.[A-Za-z0-9]*[A-Za-z]/u;
 const TRAILING = '.,;:!?\'"]}>';
 
 const encoded = (path: string): string => path.split('/').map(encodeURIComponent).join('/');
-const escaped = (text: string): string => text.replaceAll(/[.*+?^${}()|[\]\\/-]/gu, String.raw`\$&`);
+/** Escapes what a `u` regular expression treats as syntax; `-` is left alone (escaping it is an error under `u`). */
+const escaped = (text: string): string => text.replaceAll(/[.*+?^${}()|[\]\\/]/gu, String.raw`\$&`);
 
 /** The one web context of a task's lanes: those that know theirs must agree on the repository, else nothing is guessed. */
 export function contextOf(contexts: readonly Context[]): LaneWeb | null {
@@ -77,7 +78,7 @@ function coded(token: string, web: LaneWeb | null): string | null {
     if (web === null) {
         return null;
     }
-    const file = fileUrl(token, web);
+    const file = token === web.branch ? null : fileUrl(token, web);
     if (file !== null) {
         return file;
     }
