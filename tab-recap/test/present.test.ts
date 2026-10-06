@@ -5,7 +5,7 @@ import { es } from '#src/i18n/es.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
-import { blankRecap } from '#src/ports/recap-store.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 

@@ -27,6 +27,9 @@ for rule in "${RULES[@]}"; do
         $AST scan --rule "$rule" "$extra" >/dev/null 2>&1 && fail "$id — $(basename "$extra") does not trigger it: that alternative does not bite"
     done
     $AST scan --rule "$rule" "$probes/good.ts" >/dev/null 2>&1 || { fail "$id — its good probe triggers it: the rule over-reaches"; continue; }
+    while IFS= read -r extra; do
+        $AST scan --rule "$rule" "$extra" >/dev/null 2>&1 || fail "$id — $extra triggers it: that alternative over-reaches"
+    done < <(find "$probes" -path "$probes/good-*" -name '*.ts' 2>/dev/null)
     echo "  ok    $id"
 done
 
@@ -47,6 +50,9 @@ node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail 
 
 echo "oxlint (type-aware, the house configuration):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
+
+echo "released migrations are untouched (no tag yet is clean):"
+bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
 bash ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"

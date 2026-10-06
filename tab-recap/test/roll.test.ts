@@ -5,7 +5,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import { stateStore } from '#src/adapters/db/database.ts';
 import { shouldRoll } from '#src/adapters/plugin-version.ts';
 import { shutDown } from '#src/daemon/shutdown.ts';
 import type { ClosedAll } from '#src/ports/columns.ts';
@@ -96,8 +96,12 @@ test('a column process rolls to the new version in place: same pid, same termina
         for (const file of ['package.json', 'herdr-plugin.toml']) {
             cpSync(join(plugin, file), join(code, file));
         }
-        const store = new FsRecapStore(state);
-        store.writeTab({ tab: 'w1:t1', column: null, at: 1, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'rolling', cwd: null }] });
+        const store = stateStore(state);
+        if (store.kind !== 'ready') {
+            throw new Error('a new state directory holds a database of this version');
+        }
+        store.views.writeTab({ tab: 'w1:t1', column: null, at: 1, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'rolling', cwd: null }] });
+        store.close();
         const toml = readFileSync(join(code, 'herdr-plugin.toml'), 'utf8');
         const old = /^version = "(\d+\.\d+\.\d+)"/m.exec(toml)?.[1] ?? '';
         assert.match(old, /^\d+\.\d+\.\d+$/);

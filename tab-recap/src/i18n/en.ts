@@ -52,6 +52,7 @@ export const en: Messages = {
         keys: ['↑↓ move · ⏎ edit · t test · s save · q close', '↑↓ · ⏎ · t · s · q', '⏎ t s q'],
         editKeys: ['↑↓ choose · ⏎ ok · Esc cancel', '⏎ ok · Esc', '⏎ Esc'],
     },
+    database: { newer: (backup) => `database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade` },
     cli: {
         daemonRunning: (pid) => `daemon already running (pid ${pid})`,
         daemonWedged: (pid) => `daemon ${pid} was stuck (no beat for 3 minutes): stopped it, starting a new one`,

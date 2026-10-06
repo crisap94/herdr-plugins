@@ -3,7 +3,7 @@ import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import type { Store } from '#src/adapters/db/database.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
@@ -25,6 +25,7 @@ import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
+import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -32,6 +33,8 @@ import { upkeep } from './upkeep.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
+/** every this many resync ticks the write-ahead log is folded back into the database file (10 minutes) */
+const CHECKPOINT_EVERY = 10;
 /** an intent is a handful of herdr requests of at most 10 s each */
 const INTENT_MS = 90_000;
 
@@ -44,7 +47,7 @@ interface Wired {
     readonly fleet: HerdrFleet;
     readonly backends: Backends;
     readonly extensions: readonly Extension[];
-    readonly store: FsRecapStore;
+    readonly store: Store;
 }
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
@@ -53,22 +56,20 @@ function wantsScreen(agent: string): boolean {
     return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent);
 }
 
-function wire(root: string): Wired {
+function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const config = loadConfig();
-    const fleet = new HerdrFleet(root);
-    const store = new FsRecapStore(root, codeVersion());
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
     const recaps = new RecapJob({
         transcripts,
-        store, clock, log, repos: new GitLaneRepo(clock),
+        records: store.records, clock, log, repos: new GitLaneRepo(clock),
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
     const dispatch = new Dispatch({
-        columns: fleet, store, recaps, log, prompts: new LivePrompts(transcripts),
+        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts),
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {
@@ -97,9 +98,19 @@ function wire(root: string): Wired {
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store };
 }
 
-async function start(): Promise<number> {
-    const root = stateDir();
-    const pidfile = new Pidfile(root);
+/** Every second: beat, and hand the daemon what the columns and commands asked for since. */
+function poll(pidfile: Pidfile, store: Store, informer: Informer): void {
+    pidfile.beat();
+    for (const tab of store.requests.takeRequests()) {
+        informer.push({ kind: 'requested', tab });
+    }
+    for (const asked of store.requests.takeVisibility()) {
+        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
+    }
+}
+
+/** The daemon's parts, or the exit code when it must not run: another daemon is alive (0), or the state is not usable (1). */
+async function boot(root: string, pidfile: Pidfile): Promise<Wired | number> {
     const other = pidfile.alive();
     if (other !== null && other !== process.pid) {
         log(`another daemon is running (pid ${other})`);
@@ -107,28 +118,41 @@ async function start(): Promise<number> {
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const { informer, fleet, backends, extensions, store } = wire(root);
+    const fleet = new HerdrFleet(root);
+    const opened = await openState(root, fleet, log);
+    if (opened === null) {
+        pidfile.release(process.pid);
+        return 1;
+    }
+    return wire(root, fleet, opened);
+}
+
+async function start(): Promise<number> {
+    const root = stateDir();
+    const pidfile = new Pidfile(root);
+    const booted = await boot(root, pidfile);
+    if (typeof booted === 'number') {
+        return booted;
+    }
+    const { informer, fleet, backends, extensions, store } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
             return;
         }
         stopping = true;
-        void shutDown(fleet, informer, log).finally(() => { pidfile.release(process.pid); process.exit(0); });
+        void shutDown(fleet, informer, log).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
-    informer.push({ kind: 'hidden-restored', state: store.readHidden() });
+    informer.push({ kind: 'hidden-restored', state: store.visibility.readHidden() });
+    setInterval(() => { poll(pidfile, store, informer); }, REQUEST_POLL_MS).unref();
+    let ticks = 0;
     setInterval(() => {
-        pidfile.beat();
-        for (const tab of store.takeRequests()) {
-            informer.push({ kind: 'requested', tab });
+        ticks += 1;
+        if (ticks % CHECKPOINT_EVERY === 0) {
+            store.checkpoint();
         }
-        for (const asked of store.takeVisibility()) {
-            informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
-        }
-    }, REQUEST_POLL_MS).unref();
-    setInterval(() => {
         informer.tick();
         void backends.refresh();
         void upkeep(extensions, log);

@@ -6,12 +6,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { codeVersion, parseVersion } from '#src/adapters/plugin-version.ts';
 import { bindingsOf, boundKeys, herdrConfigPath, nodeMajor } from '#src/adapters/host-check.ts';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { blankRecap } from '#src/ports/recap-store.ts';
-import type { TabView } from '#src/ports/recap-store.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
+import type { TabView } from '#src/ports/tab-views.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
@@ -74,20 +73,6 @@ test('the bar shows the version when it fits and never wraps or overflows', () =
     }
     assert.match(plain(barOf(40)), / · v1\.5\.0$/);
     assert.doesNotMatch(plain(barOf(24)), /v1\.5\.0/, 'too narrow: the headline keeps the room');
-});
-
-test('a view carries the version of the daemon that wrote it; an old view reads back null', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
-    try {
-        new FsRecapStore(dir, '1.5.0').writeTab(tabWith());
-        assert.equal(new FsRecapStore(dir).readTab('w1:t1')?.daemonVersion, '1.5.0');
-        new FsRecapStore(dir).writeTab({ ...tabWith(), tab: 'w1:t2' });
-        assert.equal(new FsRecapStore(dir).readTab('w1:t2')?.daemonVersion, null);
-        writeFileSync(join(dir, 'tabs', 'w1_t3.json'), JSON.stringify({ tab: 'w1:t3', column: null, lanes: [], at: 0 }));
-        assert.equal(new FsRecapStore(dir).readTab('w1:t3')?.daemonVersion, null);
-    } finally {
-        rmSync(dir, { recursive: true, force: true });
-    }
 });
 
 test('status prints the code version and the running daemon\'s pid and version', () => {
@@ -164,6 +149,6 @@ test('status says which node runs it and which keys are bound, or that none is',
 });
 
 test('an old node earns a warning line naming the minimum', () => {
-    assert.match(en.cli.nodeTooOld('v18.0.0', 24), /node v18\.0\.0 is older than 24.*Node >= 24/);
-    assert.match(es.cli.nodeTooOld('v18.0.0', 24), /node v18\.0\.0 es anterior a 24/);
+    assert.match(en.cli.nodeTooOld('v18.0.0', '24.14.0'), /node v18\.0\.0 is older than 24\.14\.0.*Node >= 24\.14\.0/);
+    assert.match(es.cli.nodeTooOld('v18.0.0', '24.14.0'), /node v18\.0\.0 es anterior a 24\.14\.0/);
 });

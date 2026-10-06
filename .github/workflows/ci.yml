@@ -53,3 +53,24 @@ jobs:
       - run: npm ci
       - run: bash ci/lint.sh
       - run: bash ci/test.sh
+
+  # The oldest Node the plugin supports (node:sqlite without the experimental warning): what `engines` promises is tested.
+  floor:
+    name: lint + test (Node 24.14.0)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tab-recap
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: tab-recap/package-lock.json
+      - run: node --version
+      - run: npm ci
+      - run: bash ci/lint.sh
+      - run: bash ci/test.sh

@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import type { Store } from '#src/adapters/db/database.ts';
+import { memoryStore } from '#test/db/support.ts';
 import { instructions, message } from '#src/adapters/recap-prompt.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -18,8 +16,9 @@ import type { Proposal, RecapTask } from '#src/recap/domain/tasks.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
-import { blankRecap } from '#src/ports/recap-store.ts';
-import type { TabLane, TabRecap, TabView } from '#src/ports/recap-store.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
@@ -146,26 +145,12 @@ const transcripts: Transcripts = {
     }),
 };
 
-class MemoryStore {
-    recaps = new Map<string, TabRecap>();
-    readRecap(tab: string): TabRecap | null { return this.recaps.get(tab) ?? null; }
-    writeRecap(recap: TabRecap): void { this.recaps.set(recap.tab, recap); }
-    readTab(): TabView | null { return null; }
-    writeTab(): void { /* not needed */ }
-    request(): void { /* not needed */ }
-    takeRequests(): readonly never[] { return []; }
-    readHidden(): { all: boolean; hidden: string[]; shown: string[] } { return { all: false, hidden: [], shown: [] }; }
-    writeHidden(): void { /* not needed */ }
-    requestVisibility(): void { /* not needed */ }
-    takeVisibility(): readonly never[] { return []; }
-}
-
 const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: '/work/pay', branch: 'feat/v2' } : { kind: 'no-repo' }) };
 
-async function run(answers: readonly string[], lanes: readonly string[], store = new MemoryStore()): Promise<{ store: MemoryStore; requests: RecapRequest[] }> {
+async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: 'fake', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
-    const job = new RecapJob({ transcripts: [transcripts], store, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ transcripts: [transcripts], records: store.records, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
@@ -180,7 +165,7 @@ test('a tab with two lanes: the request carries each lane\'s hints and the previ
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
     assert.deepEqual(request.grouping, []);
-    const recap = store.readRecap('w1:t1');
+    const recap = store.records.readRecap('w1:t1');
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'Payments', ['w1:p1'], 'pay v2'], ['t2', 'Docs', ['w1:p2'], 'docs']]);
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
 });
@@ -189,35 +174,23 @@ test('a tab with ONE lane is not asked to group: no hints, and the answer is one
     const { store, requests } = await run([JSON.stringify({ goal: 'solo' })], ['w1:p1']);
     assert.equal(requests[0]?.hints, undefined);
     assert.equal(requests[0]?.grouping, undefined);
-    assert.deepEqual(store.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
+    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
 test('the second run: the previous grouping goes back to the writer, and an ambiguous answer does not move a lane', async () => {
     const first = JSON.stringify({ tasks: [{ name: 'Payments', lanes: ['w1:p1'], goal: 'a' }, { name: 'Docs', lanes: ['w1:p2'], goal: 'b' }] });
     const merged = JSON.stringify({ regroup: '', tasks: [{ name: 'Everything', lanes: ['w1:p1', 'w1:p2'], goal: 'c' }] });
-    const store = new MemoryStore();
+    const store = memoryStore();
     await run([first], ['w1:p1', 'w1:p2'], store);
     const { requests } = await run([merged], ['w1:p1', 'w1:p2'], store);
     assert.equal(requests.length, 2, 'asked once more, saying what was wrong');
     assert.match(requests[1]?.correction ?? '', /without saying why/);
     assert.deepEqual(requests[0]?.grouping, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
     assert.match(requests[0].previous, /^\{"tasks":\[\{"id":"t1","name":"Payments","lanes":\["w1:p1"\],"recap":\{"goal":"a"/);
-    assert.deepEqual(store.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1']], ['t2', 'Docs', ['w1:p2']]]);
+    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1']], ['t2', 'Docs', ['w1:p2']]]);
     const evidence = JSON.stringify({ regroup: 'both now work in the docs repo', tasks: [{ name: 'Docs sprint', lanes: ['w1:p1', 'w1:p2'], goal: 'd' }] });
     await run([evidence], ['w1:p1', 'w1:p2'], store);
-    assert.deepEqual(store.readRecap('w1:t1')?.tasks.map((task) => [task.name, task.lanes]), [['', ['w1:p1', 'w1:p2']]], 'with evidence the grouping changes (and one task has no name)');
-});
-
-test('tasks round-trip through the store; a task with no sections keeps its Markdown', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-tasks-'));
-    try {
-        const store = new FsRecapStore(dir);
-        const tasks = [taskOf('t1', 'Payments', ['w1:p1']), { id: 't2', name: 'Docs', lanes: ['w1:p2'], sections: null, markdown: '## Goal\n- old' }];
-        store.writeRecap({ ...blankRecap('w1:t1'), tasks });
-        assert.deepEqual(store.readRecap('w1:t1')?.tasks, tasks);
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
+    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.name, task.lanes]), [['', ['w1:p1', 'w1:p2']]], 'with evidence the grouping changes (and one task has no name)');
 });
 
 // ── the column ───────────────────────────────────────────────────────────────────────────────────

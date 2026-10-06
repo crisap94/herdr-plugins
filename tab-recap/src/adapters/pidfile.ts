@@ -1,7 +1,7 @@
 // The daemon's single-instance guard and the on/off switch, both under the state dir.
 import { existsSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
-import { writeAtomically } from './fs-recap-store.ts';
+import { writeAtomically } from './atomic-file.ts';
 
 export class Pidfile {
     private readonly root: string;
