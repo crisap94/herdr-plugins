@@ -4,7 +4,7 @@ import { itemsOf, sectionsOf } from '#src/adapters/db/sections-rows.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 
 test('sections ⇄ item rows: the goal is one row, a list one row per bullet, an empty section no rows', () => {
-    const sections = { goal: 'ship', now: ['a', 'b'], needs: [], done: ['x', 'y', 'z'], decisions: [], next: ['n'], links: ['f.ts'] };
+    const sections = { goal: 'ship', now: ['a', 'b'], needs: [], done: ['x', 'y', 'z'], decisions: [], next: ['n'], links: ['f.ts'], rules: ['no force push'] };
     const rows = itemsOf(sections);
     assert.deepEqual(rows.filter((row) => row.section === 'goal'), [{ section: 'goal', position: 0, text: 'ship' }]);
     assert.equal(rows.filter((row) => row.section === 'needs').length, 0);

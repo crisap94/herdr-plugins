@@ -19,7 +19,7 @@ function run(...args: string[]): { status: number | null; stdout: string; stderr
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, config, state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }
 
-const COMMANDS = ['show', 'configure', 'start', 'startup', 'ensure', 'stop', 'toggle', 'status', 'column', 'columns', 'refresh', 'backend'];
+const COMMANDS = ['show', 'configure', 'start', 'startup', 'ensure', 'stop', 'toggle', 'status', 'column', 'columns', 'refresh', 'compact', 'backend'];
 
 test('`backend codex gpt-5-mini` still sets the backend and its model', () => {
     const ran = run('backend', 'codex', 'gpt-5-mini');

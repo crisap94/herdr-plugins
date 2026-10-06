@@ -29,7 +29,7 @@ export function objectIn(text: string): unknown {
 
 const KEYS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links'] as const;
 
-/** The seven sections in `fields`, checked and capped; a missing section is an empty one; null when it has none of them. */
+/** The seven sections and `rules` in `fields`, checked and capped; a missing one is empty; null when it has none of them. */
 export function sectionsFrom(fields: Readonly<Record<string, unknown>>): RecapSections | null {
     if (!KEYS.some((key) => key in fields)) {
         return null;
@@ -38,7 +38,7 @@ export function sectionsFrom(fields: Readonly<Record<string, unknown>>): RecapSe
     const goal = fields['goal'];
     return {
         goal: typeof goal === 'string' ? tidy(goal) : '',
-        now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links'),
+        now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links'), rules: list('rules'),
     };
 }
 

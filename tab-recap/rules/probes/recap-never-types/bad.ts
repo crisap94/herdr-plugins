@@ -1,1 +1,1 @@
-export const method = 'pane.send_keys';
+export const method = 'pane.send_input';

@@ -50,7 +50,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     assert.deepEqual(only.input.transcripts.map((lane) => [lane.agent, lane.entries.map((entry) => entry.text)]), [['a1', ['migrate victoria']], ['a2', ['run the tests']]]);
     const recap = store.records.readRecap('w1:t1');
     assert.ok(recap !== null);
-    assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [] });
+    assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
     assert.match(firstTask(recap).markdown, /^## Goal\nboth\n\n## Now\n- migrating\n\n## Needs you\n—/);
     assert.deepEqual(recap.lanes.map((c) => [c.pane, c.cursor]), [['w1:p1', 100], ['w1:p2', 100]]);
 });
@@ -155,7 +155,7 @@ test('an unusable answer is retried ONCE with what was wrong; the second answer 
 });
 
 test('two unusable answers keep the previous recap, add an error line and do not advance the cursors', async () => {
-    const previous = { goal: 'old goal', now: ['old'], needs: [], done: [], decisions: [], next: [], links: [] };
+    const previous = { goal: 'old goal', now: ['old'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
     const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { tasks: oneTask('## Goal\nold goal', previous), at: 1 });
     assert.equal(calls.length, 2, 'one retry, not more');
     assert.deepEqual(firstTask(recap).sections, previous);
@@ -167,7 +167,7 @@ test('two unusable answers keep the previous recap, add an error line and do not
 });
 
 test('the previous recap goes back to the writer as its JSON; a recap from before the fixed structure goes back as it was', async () => {
-    const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [] };
+    const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
     const fresh = await recapWith([JSON.stringify({ goal: 'x' })], { tasks: oneTask('rendered', sections), at: 1 });
     assert.deepEqual(JSON.parse(fresh.calls[0]?.input.previous ?? ''), sections);
     const old = await recapWith([JSON.stringify({ goal: 'x' })], { tasks: oneTask('## Goal\n- from the old days'), at: 1 });
@@ -183,4 +183,17 @@ test('a harness that fails outright is not retried', async () => {
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1);
+});
+
+test('refreshNow resolves only once the recap of the tab has been written', async () => {
+    const summarizer: Summarizer = {
+        backend: 'fake',
+        write: (): Promise<Written> => new Promise((resolve) => { setTimeout(() => { resolve({ kind: 'written', text: JSON.stringify({ goal: 'written late' }), costUsd: 0 }); }, 30); }),
+    };
+    const store = memoryStore();
+    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
+    const job = new RecapJob({ repos: NO_REPOS, transcripts: [reader], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    await job.refreshNow(tabId('w1:t1'), [lane]);
+    assert.equal(firstTask(store.records.readRecap('w1:t1') ?? blankRecap('w1:t1')).sections?.goal, 'written late');
 });

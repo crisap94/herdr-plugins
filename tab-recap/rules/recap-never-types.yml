@@ -3,14 +3,15 @@ language: typescript
 severity: error
 message: >-
   tab-recap never types into a lane. It reads transcripts and renders a column; it
-  does not send keys, text or prompts to an agent.
+  does not send raw input to an agent. (The one prompt the operator asks for is
+  `recap-prompt-boundary`.)
 note: >-
-  The red line is «no send_keys, ever», and it is stricter than that: no input of any
-  kind, because a recap that could type would be an agent, not a recap.
+  The red line is «no send_keys, ever», and it is stricter than that: no raw input of any
+  kind except the one compaction the operator asked for, which has its own rule.
 files:
   - "**/src/**"
   - "**/bin/**"
   - "**/probes/recap-never-types/**"
 rule:
   kind: string_fragment
-  regex: "^(pane\\.send_(keys|text|input)|agent\\.(prompt|send_keys)|pane\\.input\\.set)$"
+  regex: "^(pane\\.send_input|agent\\.send_keys|pane\\.input\\.set)$"

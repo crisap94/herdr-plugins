@@ -27,7 +27,7 @@ test('the legacy reader knows a view written before cwd, the live prompt and the
     try {
         everyShape(dir);
         const views = new LegacyFiles(dir).views();
-        assert.deepEqual(views.find((view) => view.tab === 'w1:t2')?.lanes.at(0), { pane: 'w1:p1', agent: 'claude', status: 'working', title: null, cwd: null, lastPrompt: null, web: null });
+        assert.deepEqual(views.find((view) => view.tab === 'w1:t2')?.lanes.at(0), { pane: 'w1:p1', agent: 'claude', status: 'working', title: null, cwd: null, lastPrompt: null, web: null, context: null });
         assert.equal(views.find((view) => view.tab === 'w1:t2')?.daemonVersion, null);
         assert.deepEqual(views.find((view) => view.tab === 'w1:t8')?.lanes, [], 'a view with no lanes');
     } finally {
@@ -47,7 +47,7 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         put(dir, 'visibility', '3.json', { target: 'w1:t1', hidden: false });
         const legacy = new LegacyFiles(dir);
         assert.equal(legacy.recaps().find((recap) => recap.tab === 'bad')?.tasks.at(0)?.sections, null);
-        assert.deepEqual(legacy.recaps().find((recap) => recap.tab === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [] });
+        assert.deepEqual(legacy.recaps().find((recap) => recap.tab === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
         assert.equal(legacy.recaps().length, 2, 'a file that is not JSON is not a recap');
         assert.deepEqual([legacy.pendingRequests(), legacy.pendingVisibility()], [['w1:t1'], [{ target: 'w1:t1', hidden: false }]]);
         assert.deepEqual(legacy.pendingRequests(), ['w1:t1'], 'still there');

@@ -29,7 +29,7 @@ function sectionsOf(value: unknown): RecapSections | null {
         return null;
     }
     const fields = value as Readonly<Record<string, unknown>>;
-    return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: strings(fields['now']), needs: strings(fields['needs']), done: strings(fields['done']), decisions: strings(fields['decisions']), next: strings(fields['next']), links: strings(fields['links']) };
+    return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: strings(fields['now']), needs: strings(fields['needs']), done: strings(fields['done']), decisions: strings(fields['decisions']), next: strings(fields['next']), links: strings(fields['links']), rules: [] };
 }
 
 /** The tasks as stored; a recap stored before tasks existed (`sections` and `markdown` of its own) is one task holding every lane. */
@@ -48,10 +48,10 @@ function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown
     return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
 }
 
-function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
+function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web' | 'context'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
     return {
         pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title,
-        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null, web: null,
+        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null, web: null, context: null,
     };
 }
 

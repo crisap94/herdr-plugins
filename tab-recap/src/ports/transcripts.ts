@@ -1,4 +1,5 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { Unknown } from './unknowable.ts';
 
 /** What a tool call was: `read` is a plain look at files (counted, never listed); the rest are what the writer is told. */
@@ -58,6 +59,9 @@ export type ChunkResult = Chunk | Unknown;
 /** The newest user prompt of a source; `text` is null when it holds none (or cannot say, like a screen). */
 export type PromptResult = { readonly kind: 'prompt'; readonly text: string | null } | Unknown;
 
+/** How full the agent's context is, from its own records; `observed` is null when they say nothing yet. */
+export type ObservedResult = { readonly kind: 'observed'; readonly observed: Observed | null } | Unknown;
+
 /** One adapter per kind of agent (`*`: any agent without a store of its own); each knows where its history lives and how to read it. */
 export interface Transcripts {
     readonly agent: string;
@@ -66,4 +70,6 @@ export interface Transcripts {
     read(source: string, was: Position, budget: number): Promise<ChunkResult>;
     /** Only the newest user prompt, from at most `budget` bytes at the end of `source`. Moves no position. */
     latestPrompt(source: string, budget: number): Promise<PromptResult>;
+    /** Tokens in use now and what the records say about the window, from at most `budget` bytes at the end of `source`. Moves no position. */
+    observed?(source: string, budget: number): Promise<ObservedResult>;
 }

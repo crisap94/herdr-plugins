@@ -7,7 +7,7 @@ Input: <recap_input>. Rewrite the recap from <previous_recap> plus what is NEW i
 long the operator waits. Empty <transcript>: just rewrite. Name agents by label.
 
 Answer with ONLY one JSON object: no other text, no code fence, exactly these keys:
-{"goal": "...", "now": ["..."], "needs": ["..."], "done": ["..."], "decisions": ["..."], "next": ["..."], "links": ["..."]}
+{"goal": "...", "now": ["..."], "needs": ["..."], "done": ["..."], "decisions": ["..."], "next": ["..."], "links": ["..."], "rules": ["..."]}
 
 goal      — what the operator wants, in one short sentence (one line)
 now       — what the agents are doing right now (at most 3)
@@ -16,6 +16,7 @@ done      — what is finished, newest first (at most 5)
 decisions — choices made, and why when it is not obvious (at most 3)
 next      — what comes next (at most 5)
 links     — files, branches, merge requests, commands, hosts worth keeping (at most 6)
+rules      — standing constraints the operator stated and still wants kept, never drawn (at most 5)
 
 How to write:
 - Plain everyday words. Short sentences in the present tense, 16 words or fewer per line.

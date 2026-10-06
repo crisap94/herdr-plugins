@@ -9,6 +9,7 @@ import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
@@ -20,6 +21,8 @@ export interface DispatchDeps {
     readonly recaps: RecapJob;
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
+    /** how full each lane's context is; left out, no lane has a hint */
+    readonly contexts?: LaneContextSource;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
@@ -32,18 +35,32 @@ export interface LivePromptSource {
     refresh(lane: Lane): Promise<boolean>;
 }
 
+/** What the dispatcher needs of the lanes' context use: what is known, and a way to look again. */
+export interface LaneContextSource {
+    of(pane: string): ContextUse | null;
+    refresh(lane: Lane): Promise<boolean>;
+}
+
 /** What the dispatcher needs of the lanes' web contexts: what is known, and a way to look again. */
 export interface LaneWebSource {
     of(pane: string): LaneWeb | null;
     refresh(lane: Lane): Promise<boolean>;
 }
 
-export function viewOf(board: Board, tab: TabId, at: number, prompts: (pane: string) => string | null = (): null => null, webs: (pane: string) => LaneWeb | null = (): null => null): TabView {
+/** What the view knows of a lane besides the board's own facts, by pane. */
+export interface Lookups {
+    readonly prompts?: (pane: string) => string | null;
+    readonly webs?: (pane: string) => LaneWeb | null;
+    readonly contexts?: (pane: string) => ContextUse | null;
+}
+
+export function viewOf(board: Board, tab: TabId, at: number, lookups: Lookups = {}): TabView {
+    const { prompts = (): null => null, webs = (): null => null, contexts = (): null => null } = lookups;
     return {
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)),
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)), context: contexts(String(lane.pane)),
         })),
         at,
     };
@@ -73,9 +90,7 @@ export class Dispatch {
                 this.publish(intent.tab);
                 return;
             case 'read-prompt':
-                if ((await Promise.all([this.deps.prompts.refresh(intent.lane), this.deps.webs.refresh(intent.lane)])).includes(true)) {
-                    this.publish(intent.lane.tab);
-                }
+                await this.look(intent.lane);
                 return;
             case 'recap':
                 this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
@@ -93,8 +108,16 @@ export class Dispatch {
         }
     }
 
+    /** What a lane shows beside its status — its live prompt, where it lives on the web, how full its context is — looked at again. */
+    private async look(lane: Lane): Promise<void> {
+        const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? false]);
+        if (changed.includes(true)) {
+            this.publish(lane.tab);
+        }
+    }
+
     private publish(tab: TabId): void {
-        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane), (pane) => this.deps.webs.of(pane)));
+        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), { prompts: (pane) => this.deps.prompts.of(pane), webs: (pane) => this.deps.webs.of(pane), contexts: (pane) => this.deps.contexts?.of(pane) ?? null }));
     }
 
     private failed(tab: TabId, why: string): void {

@@ -15,6 +15,7 @@ import type { Migration } from '#src/adapters/db/schema/migration.ts';
 import { must, scratchDir } from './support.ts';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
+const FIXTURE_V2 = join(import.meta.dirname, 'fixtures', 'schema-v2.sql');
 
 /** Two toy releases after the real one: a new column, and a table rebuilt with a stricter CHECK. */
 const toy2: Migration = { version: 2, name: 'toy-note', up: ['ALTER TABLE tab ADD COLUMN note TEXT'] };
@@ -37,9 +38,9 @@ const TOYS = [m1, toy2, toy3];
 const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replace(/ALTER|"/g, '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
-function fromFixture(path: string): DatabaseSync {
+function fromFixture(path: string, fixture = FIXTURE): DatabaseSync {
     const db = new DatabaseSync(path);
-    db.exec(readFileSync(FIXTURE, 'utf8'));
+    db.exec(readFileSync(fixture, 'utf8'));
     return db;
 }
 
@@ -71,6 +72,27 @@ test('the real migrations: a fresh install is the 1.6.0 fixture upgraded (migrat
         assert.deepEqual(upgraded.prepare('SELECT pane, cwd, web_base, web_forge, web_branch FROM lane ORDER BY pane').all().slice(0, 1).map((row) => Object.assign({}, row)), [{ pane: 'w1:p1', cwd: '/w', web_base: null, web_forge: null, web_branch: null }]);
         assert.deepEqual(upgraded.prepare('PRAGMA foreign_key_check').all(), []);
         assert.throws(() => { upgraded.exec("UPDATE lane SET web_forge = 'bitbucket'"); }, /CHECK/);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('migration 3 from the 1.7.0 schema (v2): fresh == upgraded, items and foreign keys kept, rules accepted', () => {
+    const dir = scratchDir('v2');
+    try {
+        const fresh = openDatabase(MEMORY);
+        assert.equal(fresh.kind, 'ready');
+        const upgraded = fromFixture(join(dir, 'v2.db'), FIXTURE_V2);
+        assert.equal(versionOf(upgraded), 2);
+        migrate(upgraded, MIGRATIONS);
+        assert.equal(versionOf(upgraded), 3);
+        assert.deepEqual(shape(upgraded), shape(fresh.db));
+        assert.deepEqual(upgraded.prepare('SELECT section, text FROM item ORDER BY section').all().map((row) => Object.assign({}, row)), [{ section: 'done', text: 'wrote the schema' }, { section: 'goal', text: 'keep the fixture readable' }]);
+        assert.deepEqual(upgraded.prepare('PRAGMA foreign_key_check').all(), []);
+        assert.deepEqual(upgraded.prepare('SELECT kind, target, pane, note FROM request').all().map((row) => Object.assign({}, row)), [{ kind: 'refresh', target: 'w1:t1', pane: null, note: null }]);
+        const [run, task] = [new Uint8Array(Buffer.from('0188000000007000800000000000000c', 'hex')), new Uint8Array(Buffer.from('0188000000007000800000000000000d', 'hex'))];
+        upgraded.prepare("INSERT INTO item (run_id, task_id, view, section, position, text) VALUES (?, ?, 'recap', 'rules', 4, 'never push to main')").run(run, task);
+        assert.throws(() => { upgraded.prepare("INSERT INTO item (run_id, task_id, view, section, position, text) VALUES (?, ?, 'recap', 'rules', 5, 'one too many')").run(run, task); }, /CHECK/);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

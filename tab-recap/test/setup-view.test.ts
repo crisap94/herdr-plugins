@@ -112,3 +112,17 @@ test('the git note row is drawn with its value and, while choosing, both choices
     assert.match(choosing, /Nota de git/);
     assert.match(choosing, /▸ no/);
 });
+
+test('the compaction rows are drawn in both languages: 40% by default, the window empty means detected', () => {
+    const english = setupView(base, en, 90).join('\n');
+    assert.match(english, /Compact\s+focused/);
+    assert.match(english, /Compact hint\s+40%/);
+    assert.match(english, /Context window/);
+    const spanish = setupView({ ...base, row: 8 }, es, 90).join('\n');
+    assert.match(spanish, /Aviso de compactar\s+40%/);
+    assert.match(spanish, /Ventana de contexto/);
+    assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
+    assert.match(spanish, /Ventana de contexto\s+se detecta/);
+    assert.match(english, /Context window\s+found at runtime/);
+    assert.match(setupView({ ...base, draft: { ...base.draft, compactHint: 'off' } }, en, 90).join('\n'), /Compact hint\s+off/);
+});

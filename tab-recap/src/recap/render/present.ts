@@ -1,3 +1,4 @@
+import { hintFor, sizeOf } from '#src/recap/domain/compaction.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { sectionOf } from '#src/i18n/sections.ts';
 import type { SectionId } from '#src/i18n/sections.ts';
@@ -25,6 +26,8 @@ export interface ColumnView {
     readonly messages: Messages;
     /** the plugin version of the code on disk; absent or null when unknown */
     readonly version?: string | null;
+    /** the context share (percent) from which a lane shows the compaction hint; absent or null: no hint */
+    readonly compactHint?: number | null;
     /** colours and styles; the process picks them from its terminal. Absent: coloured */
     readonly style?: Style;
 }
@@ -71,6 +74,13 @@ function promptLines(lane: TabLane, cursor: LaneCursor | undefined, width: numbe
     return prompt === null ? [] : wrap(`› ${prompt.split('\n').join(' ')}`, width, '  ').slice(0, PROMPT_LINES).map(style.dim);
 }
 
+/** `compact? 45% of 1M` beside a lane whose context passes the configured share of its window; nothing otherwise. */
+function contextHint(lane: TabLane, view: ColumnView): string[] {
+    const percent = hintFor(lane.context, view.compactHint ?? null);
+    const window = lane.context === null || lane.context === undefined ? '' : sizeOf(lane.context.window);
+    return percent === null ? [] : [view.messages.compaction.hint(percent, window)];
+}
+
 /** Who is in the tab: one short header per lane. The recap below is the tab's, not the lane's. */
 function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const style = paint(view);
@@ -78,7 +88,7 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const title = cursor?.title ?? lane.title ?? lane.pane;
     return [
         ...wrap(title, width).map((line) => style.bold(line)),
-        ...wrap([badge(laneStatus(lane.status), view.messages, style), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`)].join(style.gray(' · ')), width, '  '),
+        ...wrap([badge(laneStatus(lane.status), view.messages, style), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`), ...contextHint(lane, view).map(style.yellow)].join(style.gray(' · ')), width, '  '),
         ...noteLines(view, lane.pane, width),
         ...promptLines(lane, cursor, width, style),
     ];

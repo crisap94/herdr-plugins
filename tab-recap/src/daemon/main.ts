@@ -11,6 +11,9 @@ import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
+import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
+import type { Compaction } from '#src/recap/application/compaction.ts';
+import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
@@ -28,6 +31,7 @@ import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
+import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
@@ -49,6 +53,7 @@ interface Wired {
     readonly backends: Backends;
     readonly extensions: readonly Extension[];
     readonly store: Store;
+    readonly compaction: Compaction;
 }
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
@@ -70,8 +75,10 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
+    const webs = new LaneWebs(repos);
+    const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
     const dispatch = new Dispatch({
-        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs: new LaneWebs(repos),
+        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs, contexts,
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {
@@ -97,14 +104,19 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
     });
     box.informer = informer;
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store };
+    const compaction = wireCompaction({ fleet, records: store.records, webs, recaps, informer, log });
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
-function poll(pidfile: Pidfile, store: Store, informer: Informer): void {
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction'>): void {
+    const { store, informer, compaction } = wired;
     pidfile.beat();
     for (const tab of store.requests.takeRequests()) {
         informer.push({ kind: 'requested', tab });
+    }
+    for (const asked of store.requests.takeCompactions()) {
+        compaction.run(asked).catch((error: unknown) => { log(`compaction ${asked.tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
     for (const asked of store.requests.takeVisibility()) {
         informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
@@ -148,7 +160,7 @@ async function start(): Promise<number> {
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
     informer.push({ kind: 'hidden-restored', state: store.visibility.readHidden() });
-    setInterval(() => { poll(pidfile, store, informer); }, REQUEST_POLL_MS).unref();
+    setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
     setInterval(() => {
         ticks += 1;

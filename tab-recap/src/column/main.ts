@@ -14,6 +14,9 @@ import type { Locale } from '#src/i18n/index.ts';
 import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
+import { spawn } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -99,7 +102,7 @@ function view(): ColumnView {
     const locale = localeNow();
     const stored = store?.views.readTab(tab) ?? null;
     const newer = opened.kind === 'newer-db' ? [messagesFor(locale).database.newer(opened.backup)] : [];
-    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, style };
+    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, style };
 }
 
 /**
@@ -156,6 +159,20 @@ function openModal(): void {
     void new HerdrFleet(stateDir()).show(tabId(tab)).finally(() => { opening = false; });
 }
 
+/**
+ * `c`: ask what to keep, then compact. In a column the popup opens at once; the modal is itself a popup and herdr
+ * shows one at a time, so it closes first and a short-lived command opens the popup right after.
+ */
+function askToCompact(): void {
+    if (mode !== 'modal') {
+        void new HerdrFleet(stateDir()).agents().askNote(tab, null);
+        return;
+    }
+    const command = join(dirname(dirname(fileURLToPath(import.meta.url))), 'bin', 'tab-recap.ts');
+    spawn(process.execPath, [command, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();
+    process.exit(0);
+}
+
 /** SGR mouse report: ESC [ < button ; x ; y M — M is a press. Button 0 is a tap / left click. */
 function isTap(input: string): boolean {
     const at = input.indexOf(`${ESC}[<`);
@@ -177,6 +194,7 @@ const KEYS: Readonly<Record<string, () => void>> = {
     g: () => { scroll = 0; },
     G: () => { scroll = Number.MAX_SAFE_INTEGER; },
     r: () => { store?.requests.request(tab); },
+    c: askToCompact,
     h: () => { store?.requests.requestVisibility({ target: tab, hidden: true }); },
     '\r': openModal,
 };

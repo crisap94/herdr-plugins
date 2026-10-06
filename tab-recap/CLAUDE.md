@@ -11,7 +11,7 @@ src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter
 src/recap/application/  informer · dispatch · decode · watch-set · recap-job · excerpt
 src/recap/render/       pure text for the column; `badge()` ends in `const exhaustive: never`
 src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `TabViews`, `ColumnVisibility`, `Requests`
-src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport
+src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport (it hands its wire to `herdr-agents.ts`)
 src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
 src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is the only registry
@@ -19,6 +19,7 @@ src/transport/          herdr's socket wire (one connection per RPC, one per sub
 src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
 src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
+src/compact/             composition root of the compaction popup (a note, then a request); the reducer is `recap/application/compact-keys.ts`, the flow `compaction.ts`, the words `compaction-message.ts` (pure; never names the plugin)
 bin/                    one-shot commands behind the plugin's actions: 0 · 1 · 2 usage · 3 not covered
 ```
 
@@ -40,7 +41,8 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-layers-no-io` | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |
-| `recap-never-types` | no `send_keys`/`send_text`/`send_input`/`agent.prompt`: a recap never types into a lane |
+| `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane |
+| `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`: the one prompt (codex, opencode) or typed line (claude) of a compaction the operator asked for (`recap/application/compaction.ts`, reached only from the request queue) |
 | `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
 | `recap-write-transactions` | no bare `BEGIN`: a transaction is `writeTx` (`BEGIN IMMEDIATE`, rollback on a throw), in `adapters/db/connection.ts` only |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |

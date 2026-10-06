@@ -8,6 +8,8 @@ import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
+import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
+import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
@@ -31,6 +33,8 @@ export interface Config {
     readonly policy: Policy;
     /** the kinds whose lanes are read from their screen, not a transcript: names, or `*` for all */
     readonly screenAgents: readonly string[];
+    /** `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT` (null = off) and `TAB_RECAP_CONTEXT_WINDOW` (null = found at runtime) */
+    readonly compaction: { readonly target: CompactTarget; readonly hint: number | null; readonly window: number | null };
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
 }
@@ -142,6 +146,7 @@ export function loadConfig(): Config {
             onlyTabs: only === undefined ? [] : only.split(',').map((tab) => tab.trim()).filter((tab) => tab !== ''),
         },
         screenAgents,
+        compaction: { target: targetOf(get('TAB_RECAP_COMPACT_TARGET')), hint: hintOf(get('TAB_RECAP_COMPACT_HINT')), window: windowOf(get('TAB_RECAP_CONTEXT_WINDOW')) },
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
     };

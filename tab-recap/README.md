@@ -49,7 +49,7 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
-- **Read-only.** It reads transcripts; it never types into an agent (a lint rule says so).
+- **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is **compaction**: `tab-recap.compact` (or `c` in the column) asks for an optional note, refreshes the recap, and tells an *idle* agent what to keep while it compacts — in your own voice, without ever mentioning the plugin. A working or blocked agent is skipped and you are told. A lane whose context passes 40 % of its window shows `compact? 45% of 1M` (`TAB_RECAP_COMPACT_HINT`, advisory only).
 
 ## Install
 
@@ -74,12 +74,13 @@ Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_CO
 | `tab-recap.refresh` | recap the current tab now |
 | `tab-recap.column` | hide this tab's column, or show it again (recaps keep being written; remembered across restarts) |
 | `tab-recap.columns` | hide every column, or show them all again |
+| `tab-recap.compact` | compact the focused agent (`TAB_RECAP_COMPACT_TARGET`: `focused`, `all` or kinds like `claude,codex`): a popup asks for an optional note (Enter sends, Esc cancels); claude gets `/compact <what to keep>`, codex and opencode their own `/compact` and then one short message restoring where things stand |
 | `tab-recap.configure` | the settings modal: agent, model, interface and recap language; `t` tests, `s` saves |
 | `tab-recap.status` | the code's version, the Node running it, the keys bound to tab-recap actions, the daemon (pid and the version it started with), backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `node bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
 
-In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
+In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 
 Bind one in `~/.config/herdr/config.toml`, e.g.:
 
@@ -93,6 +94,11 @@ command = "tab-recap.column"      # hide / show this tab's column
 key = "prefix+shift+r"
 type = "plugin_action"
 command = "tab-recap.columns"     # hide / show every column
+
+[[keys.command]]
+key = "prefix+c"
+type = "plugin_action"
+command = "tab-recap.compact"     # ask what to keep, then compact the focused agent
 ```
 
 A hidden column is closed and not reopened, and recaps are still written — showing it again is instant.

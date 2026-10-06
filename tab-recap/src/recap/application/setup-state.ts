@@ -3,11 +3,12 @@ import { languageSetting } from '#src/i18n/index.ts';
 import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
 import { EFFORTS, effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
+import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
-export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'effort';
-export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'effort'];
+export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'effort' | 'compactTarget' | 'compactHint' | 'contextWindow';
+export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'effort', 'compactTarget', 'compactHint', 'contextWindow'];
 export const EFFORT_CHOICES: readonly Effort[] = EFFORTS;
 export type LocaleSetting = 'auto' | 'en' | 'es';
 export const HARNESS_CHOICES: readonly BackendChoice[] = ['auto', ...BACKEND_IDS];
@@ -28,6 +29,12 @@ export interface Draft {
     readonly gitNote: SwitchSetting;
     /** how hard the writer thinks (`TAB_RECAP_EFFORT`) */
     readonly effort: Effort;
+    /** which agents compaction reaches, as stored: `focused`, `all` or a comma list of kinds (`TAB_RECAP_COMPACT_TARGET`) */
+    readonly compactTarget: string;
+    /** the context share that shows the hint, as stored: `off` or 10–95 (`TAB_RECAP_COMPACT_HINT`) */
+    readonly compactHint: string;
+    /** the tokens a Claude agent can hold, as stored (`TAB_RECAP_CONTEXT_WINDOW`) */
+    readonly contextWindow: string;
 }
 
 /** Rows whose value an environment variable overrides: row -> the variable's name. */
@@ -70,10 +77,10 @@ export interface Stepped {
 }
 
 /** The settings as they are now: the resolved configuration plus the raw locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined }): Draft {
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined; readonly compactTarget?: string | undefined; readonly compactHint?: string | undefined; readonly contextWindow?: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort) };
+    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {

@@ -67,6 +67,18 @@ function stop(): number {
     return OK;
 }
 
+/** The pane the action was invoked from, when herdr says (a keybinding names the focused one). */
+function currentPane(): string | null {
+    const context = process.env['HERDR_PLUGIN_CONTEXT_JSON'];
+    try {
+        const parsed = JSON.parse(context ?? '{}') as { pane_id?: unknown; focused_pane_id?: unknown };
+        const found = parsed.pane_id ?? parsed.focused_pane_id;
+        return typeof found === 'string' && found !== '' ? found : (process.env['HERDR_PANE_ID'] ?? null);
+    } catch {
+        return process.env['HERDR_PANE_ID'] ?? null;
+    }
+}
+
 function currentTab(): string | null {
     const context = process.env['HERDR_PLUGIN_CONTEXT_JSON'];
     if (context !== undefined && context !== '') {
@@ -151,6 +163,24 @@ function toggle(all: boolean): number {
     return OK;
 }
 
+/** The compaction popup (its note, then the request): the one place the operator is asked before anything is sent. */
+async function compact(): Promise<number> {
+    const tab = currentTab();
+    if (tab === null) {
+        console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
+        return NOT_COVERED;
+    }
+    // a modal that asked for this is closing: herdr shows one popup at a time
+    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0); });
+    const opened = await new HerdrFleet(stateDir()).agents().askNote(tab, currentPane());
+    if (isUnknown(opened)) {
+        console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
+        return FAILED;
+    }
+    console.log(`tab-recap: ${m().cli.compactAsked}`);
+    return OK;
+}
+
 async function show(): Promise<number> {
     const tab = currentTab();
     if (tab === null) {
@@ -167,6 +197,7 @@ async function show(): Promise<number> {
 
 const commands: Readonly<Record<string, (arg: string | undefined) => number | Promise<number>>> = {
     show,
+    compact,
     configure,
     start: () => { pidfile.disabled = false; return launch(); },
     startup: () => (pidfile.disabled ? OK : launch()),

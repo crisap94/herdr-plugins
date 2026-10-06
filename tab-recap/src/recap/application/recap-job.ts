@@ -44,6 +44,8 @@ interface Slot {
     timer: ReturnType<typeof setTimeout> | null;
     running: boolean;
     again: { lanes: readonly Lane[]; cause: RecapCause } | null;
+    /** callers waiting for the tab's recap to settle */
+    waiting: (() => void)[];
 }
 
 /** Single flight per TAB: one recap at a time, and at most one more queued behind it. */
@@ -57,7 +59,7 @@ export class RecapJob {
 
     request(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void {
         const key = String(tab);
-        const slot = this.slots.get(key) ?? { timer: null, running: false, again: null };
+        const slot = this.slots.get(key) ?? { timer: null, running: false, again: null, waiting: [] };
         this.slots.set(key, slot);
         if (slot.running) {
             slot.again = { lanes, cause };
@@ -82,7 +84,19 @@ export class RecapJob {
         slot.again = null;
         if (again !== null) {
             this.request(tab, again.lanes, again.cause);
+            return;
         }
+        for (const done of slot.waiting.splice(0)) {
+            done();
+        }
+    }
+
+    /** A recap asked for now, and awaited: resolves when the tab's recap has been written (or has failed) and nothing more is queued behind it. */
+    refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> {
+        return new Promise((resolve) => {
+            this.request(tab, lanes, 'requested');
+            this.slots.get(String(tab))?.waiting.push(resolve);
+        });
     }
 
     private async locate(lane: Lane): Promise<{ reader: Transcripts; source: string } | string> {

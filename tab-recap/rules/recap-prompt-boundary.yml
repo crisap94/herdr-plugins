@@ -1,0 +1,18 @@
+id: recap-prompt-boundary
+language: typescript
+severity: error
+message: >-
+  `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, src/adapters/herdr-agents.ts: the compaction the operator asks for.
+  Everything else reaches an agent only through the Agents port, never on its own.
+note: >-
+  This keeps «a recap never types into a lane» true in every other file: typing is one adapter, called from
+  one application service, started only by an operator's request.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-prompt-boundary/**"
+ignores:
+  - "**/src/adapters/herdr-agents.ts"
+rule:
+  kind: string_fragment
+  regex: "^(agent\\.prompt|pane\\.send_(text|keys))$"
