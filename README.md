@@ -16,7 +16,9 @@ agents. One plugin per directory, each installable on its own.
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps a
 rolling, structured recap of the conversation (goal, what is happening now, what needs you, what
 is done, decisions, next steps, links — always the same seven sections, kept short), so a long session never loses its thread. A coding agent of your
-choice writes it at the end of each turn. It only reads transcripts; it never types into an agent on its own — the one exception is the compaction you ask for.
+choice writes it at the end of each turn. Every merge request, commit, branch, file and URL in it is a
+link you can open with Ctrl-click. It only reads transcripts; it never types into an agent on its own —
+the one exception is the [compaction](#compact-an-agent) you ask for.
 
 <p align="center">
   <img src="tab-recap/docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
@@ -33,7 +35,7 @@ and one headline. Tap it to open the full recap.
 ### Requirements
 
 - herdr ≥ 0.9.0 (Linux or macOS)
-- Node ≥ 24 (runs the TypeScript directly, nothing to build)
+- Node ≥ 24.21.0 (runs the TypeScript directly, nothing to build)
 - at least one coding agent on your `PATH`: `claude`, `codex`, `opencode` or `hermes` (or your own
   command, see [Who writes the recap](#who-writes-the-recap))
 - optional: [`glow`](https://github.com/charmbracelet/glow), for nicer Markdown
@@ -67,8 +69,8 @@ Pick the agent and model and the languages. Press **`t`** to run a test with the
 current choices (it shows ✓ and how long it took, or why it failed), **`s`** to save, **`q`** to
 close. Changes apply to the next recap.
 
-The settings have no default key. To hide and show columns with a key, add this to
-`~/.config/herdr/config.toml`:
+The plugin binds no keys by default. To hide and show columns and to compact an agent with a key,
+add this to `~/.config/herdr/config.toml`:
 
 ```toml
 [[keys.command]]
@@ -80,20 +82,29 @@ command = "tab-recap.column"      # hide / show this tab's column
 key = "prefix+shift+r"
 type = "plugin_action"
 command = "tab-recap.columns"     # hide / show every column
+
+[[keys.command]]
+key = "prefix+shift+c"
+type = "plugin_action"
+command = "tab-recap.compact"     # compact the focused agent
 ```
 
-Use any free keys. The same way you can bind `tab-recap.configure` (the settings) or
+Use any free keys (`prefix+c` is herdr's own "new tab", so avoid it). Then run
+`herdr server reload-config`. The same way you can bind `tab-recap.configure` (the settings) or
 `tab-recap.refresh` ("recap this tab now").
 
 ### Everyday use
 
-- **Column** (wide tabs): the recap, always visible. By default it appears for `claude` and
-  `codex` agents.
+- **Column** (wide tabs): the recap, always visible. By default it appears for `claude`, `codex`
+  and `opencode` agents.
 - **Bar** (tabs narrower than 110 cells, like a phone): one row along the bottom.
 - **Tap** the bar or the column, or press **Enter** in the column, to open the full recap as a
   modal over everything. **`q`** or **Esc** closes it.
 - In the column or the modal: **`j`/`k`** or the arrow keys scroll, **Space**/**`b`** page down/up,
-  **`g`**/**`G`** jump to top/bottom, **`r`** writes a new recap now.
+  **`g`**/**`G`** jump to top/bottom, **`r`** writes a new recap now, **`c`** compacts the focused
+  agent.
+- **Ctrl-click** a reference (`!252`, a commit, a branch, a file, a URL) to open it in your browser.
+- A lane that has used 40 % of its context shows **`compact? 45% of 1M`**: a hint, nothing more.
 - Recaps are written at the end of each turn, when you focus a tab whose recap is stale, and on
   `r`.
 - One recap per tab, covering all its agents.
@@ -101,6 +112,43 @@ Use any free keys. The same way you can bind `tab-recap.configure` (the settings
 The same views are available as actions: `tab-recap.show` (the modal), `tab-recap.refresh`
 (recap this tab now), `tab-recap.column` (hide or show this tab's column) and `tab-recap.columns`
 (all columns). Hiding is remembered across restarts and recaps keep being written.
+
+### Clickable links
+
+References in the recap are real links (OSC 8 hyperlinks, which herdr opens on Ctrl-click, also when
+a link wraps). They keep their short text:
+
+| the recap says | opens |
+| --- | --- |
+| a full URL | that URL |
+| `!252` / `#12` | the merge request (GitLab) / the pull request (GitHub) |
+| a commit like `ca9a099` | the commit |
+| `` `feat/cart` `` | the branch |
+| `` `src/cart.ts` `` | the file on the agent's current branch |
+
+The web address comes from the repository's `origin` remote (SSH remotes become https; a token in the
+remote is never stored or shown); github.com gets GitHub paths, any other host GitLab paths. When the
+agents of one task work in different repositories, only full URLs are linked.
+
+### Compact an agent
+
+Long sessions get compacted, and the agent's own summary decides what survives. tab-recap can steer
+it: press **`prefix+shift+c`** (your binding), or **`c`** in the column, or run `tab-recap.compact`.
+
+1. A small popup asks for an **optional note** (up to 280 characters) — what must not be lost. Enter with nothing skips it,
+   Esc cancels.
+2. The recap is refreshed, and the **focused agent** gets — only if it is idle — a message in your own
+   words (it never learns that a recap or plugin exists) asking it to keep, in this order: your note,
+   the goal, decisions and why, questions waiting for you, unfinished work and next steps, rules you
+   gave it, and exact references.
+3. **Claude** runs `/compact` with that guidance. **Codex** and **opencode** run their own `/compact`,
+   then get one short "here is where we stand, reply ok" message.
+
+A working or blocked agent is never typed into: it is skipped and you are told. A lane whose context
+passes 40 % of its window shows `compact? 45% of 1M`; the window is read from the agent itself where it
+says (Codex), from opencode's local model catalogue, or from a small table for Claude, and corrected
+by what has been seen. `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT` and
+`TAB_RECAP_CONTEXT_WINDOW` change who is compacted, the hint threshold and the window.
 
 ### Who writes the recap
 
@@ -113,10 +161,17 @@ node bin/tab-recap.ts backend auto               # back to the default
 ```
 
 Each agent remembers its own model; leave it empty
-for the agent's default. `opencode` wants `provider/model`.
+for the agent's default. `opencode` wants `provider/model`. The writer runs at **low effort** by
+default (`TAB_RECAP_EFFORT`: `low`, `medium`, `high`, or `default` to leave it to the agent), and
+Codex without the agent features a recap never needs.
+
+The writer receives one XML document per run — the tab's agents with their repository and branch,
+the previous recap, the agents' own summaries, and each new prompt, reply and tool call with its
+time — defined by [`tab-recap/schema/recap-input.dtd`](tab-recap/schema/recap-input.dtd).
 
 **Your own command:** set `TAB_RECAP_BACKEND=custom` and `TAB_RECAP_CUSTOM_CMD` to a command line
-(no shell) that reads the prompt on stdin and prints the recap's Markdown on stdout.
+(no shell) that reads the prompt (the document, then the instructions) on stdin and prints the JSON
+answer the instructions ask for on stdout.
 
 ### Languages
 
@@ -142,9 +197,13 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_BACKEND` | `auto` | who writes the recap |
 | `TAB_RECAP_WIDTH` | `0.3` | column width as a share of the tab |
 | `TAB_RECAP_MIN_TAB_COLS` | `110` | narrower tabs get a bar (*restart*) |
-| `TAB_RECAP_AGENTS` | `claude,codex` | agent kinds that get a column (*restart*) |
+| `TAB_RECAP_AGENTS` | `claude,codex,opencode` | agent kinds that get a column (*restart*) |
 | `TAB_RECAP_LOCALE` | `auto` | interface language |
 | `TAB_RECAP_RECAP_LANG` | `ui` | recap language |
+| `TAB_RECAP_EFFORT` | `low` | how hard the writer thinks |
+| `TAB_RECAP_COMPACT_TARGET` | `focused` | who `compact` acts on: `focused`, `all`, or kinds like `claude,codex` |
+| `TAB_RECAP_COMPACT_HINT` | `40` | % of the context window that shows the hint (`off`, or 10–95) |
+| `TAB_RECAP_CONTEXT_WINDOW` | *(detected)* | force a context window in tokens |
 
 ### Troubleshooting
 
@@ -160,8 +219,12 @@ daemon log is `daemon.log` in that state folder (by default
 
 - **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex`,
   `opencode` or `hermes`, or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
-- **No column appears**: the tab needs an agent of a kind in `TAB_RECAP_AGENTS` (default `claude`
-  and `codex`), and the daemon must be on (`tab-recap.start`).
+- **No column appears**: the tab needs an agent of a kind in `TAB_RECAP_AGENTS` (default `claude`,
+  `codex` and `opencode`), and the daemon must be on (`tab-recap.start`).
+- **A link does not open**: hold **Ctrl** while clicking (herdr's modifier on every platform); your
+  terminal must pass the modified click to herdr.
+- **Compact did nothing**: the agent was busy or waiting on a dialog — you get a notification naming
+  it. Try again when it is idle.
 - **The column keeps closing**: if you close it, the daemon reopens it, but at most 3 times in 2
   minutes. After that it leaves you alone for 10 minutes. To turn it off for good, run
   `tab-recap.stop`.
