@@ -1,6 +1,6 @@
 id = "tab-recap"
 name = "Tab Recap"
-version = "1.8.0"
+version = "1.8.1"
 min_herdr_version = "0.9.0"
 description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
 platforms = ["linux", "macos"]
