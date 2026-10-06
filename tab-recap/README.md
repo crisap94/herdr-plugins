@@ -118,7 +118,7 @@ Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_CO
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `node bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
 
-In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
+In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `s` opens the settings, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 
 Bind one in `~/.config/herdr/config.toml`, e.g.:
 
@@ -127,6 +127,11 @@ Bind one in `~/.config/herdr/config.toml`, e.g.:
 key = "prefix+r"
 type = "plugin_action"
 command = "tab-recap.column"      # hide / show this tab's column
+
+[[keys.command]]
+key = "prefix+shift+s"
+type = "plugin_action"
+command = "tab-recap.configure"   # the settings modal, from anywhere
 
 [[keys.command]]
 key = "prefix+shift+r"

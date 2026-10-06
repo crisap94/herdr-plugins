@@ -18,8 +18,8 @@ export const en: Messages = {
     needsYou: (what) => `needs you: ${what}`,
     ago: agoIn('en'),
     hints: {
-        column: ['tap: full screen · r recap now · c compact · h hide · j/k scroll', 'tap: full screen · r · c · h · j/k', 'r recap · h hide', 'r h'],
-        modal: ['q close · r recap now · c compact · h hide column · j/k scroll · g top', 'q close · r recap now · c compact · h hide · j/k', 'q close · r · h · j/k', 'q'],
+        column: ['tap: full screen · r recap · c compact · s settings · h hide · j/k scroll', 'tap: full screen · r · c · s · h · j/k', 'r recap · s settings · h hide', 'r s h'],
+        modal: ['q close · r recap now · c compact · s settings · h hide column · j/k scroll · g top', 'q close · r recap now · c compact · s settings · h hide · j/k', 'q close · r · h · j/k', 'q'],
     },
     setup: {
         title: 'TAB RECAP — settings',

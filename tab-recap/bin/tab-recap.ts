@@ -122,6 +122,8 @@ function status(): number {
 /** The settings modal; when herdr already shows another modal, say how to do the same from the shell. */
 async function configure(): Promise<number> {
     const tab = currentTab();
+    // a modal that asked for this is closing: herdr shows one popup at a time
+    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0); });
     const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);

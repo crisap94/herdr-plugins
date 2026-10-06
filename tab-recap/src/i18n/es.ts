@@ -19,8 +19,8 @@ export const es: Messages = {
     needsYou: (what) => `te necesita: ${what}`,
     ago: agoIn('es'),
     hints: {
-        column: ['toca: pantalla completa · r actualizar · c compactar · h ocultar · j/k desplazar', 'toca: pantalla completa · r · c · h · j/k', 'r actualizar · h ocultar', 'r h'],
-        modal: ['q cerrar · r actualizar ahora · c compactar · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · c compactar · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
+        column: ['toca: pantalla completa · r actualizar · c compactar · s ajustes · h ocultar · j/k desplazar', 'toca: pantalla completa · r · c · s · h · j/k', 'r actualizar · s ajustes · h ocultar', 'r s h'],
+        modal: ['q cerrar · r actualizar ahora · c compactar · s ajustes · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · c compactar · s ajustes · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
