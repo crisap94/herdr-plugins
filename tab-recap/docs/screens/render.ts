@@ -26,6 +26,9 @@ export interface Page {
 
 const ESC = String.fromCodePoint(0x1b);
 const SGR = new RegExp(`${ESC}\\[(\\d+)m`, 'g');
+/** OSC 8 hyperlink: `ESC ] 8 ; ; URL ESC \\ text ESC ] 8 ; ; ESC \\` (the column's clickable references). */
+const LINK = new RegExp(`${ESC}\\]8;;([^${ESC}]*)${ESC}\\\\([^${ESC}]*)${ESC}\\]8;;${ESC}\\\\`, 'g');
+const LINK_MARK = { open: '\u0001', close: '\u0002' };
 const NOW = 1_760_000_000_000;
 const COLOURS: Readonly<Record<number, string>> = { 31: '#ff6b6b', 32: '#7ee787', 33: '#e3b341', 34: '#79c0ff', 35: '#d2a8ff', 36: '#56d4dd', 90: '#8b949e' };
 const MEMO = '<svg class="memo" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="1.5" fill="#f0e6c8"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3" stroke="#6b5d3a" stroke-width="1.2" stroke-linecap="round"/></svg>';
@@ -58,8 +61,9 @@ function apply(pen: Pen, code: number): void {
     }
 }
 
-/** One styled line (ANSI SGR, the only escapes the views use) as HTML spans. */
-export function lineToHtml(line: string): string {
+/** One styled line (ANSI SGR plus OSC 8 links, the only escapes the views use) as HTML spans; links are underlined. */
+export function lineToHtml(raw: string): string {
+    const line = raw.replace(LINK, (_all, _url: string, text: string) => `${LINK_MARK.open}${text}${LINK_MARK.close}`);
     const pen: Pen = { bold: false, dim: false, italic: false, colour: null };
     const out: string[] = [];
     let at = 0;
@@ -68,7 +72,8 @@ export function lineToHtml(line: string): string {
             return;
         }
         const style = pen.colour === null ? '' : ` style="color:${pen.colour}"`;
-        out.push(`<span class="${classOf(pen)}"${style}>${escapeHtml(text).replaceAll('📝', `${MEMO} `)}</span>`);
+        const body = escapeHtml(text).replaceAll('📝', `${MEMO} `).replaceAll(LINK_MARK.open, '<u class="a">').replaceAll(LINK_MARK.close, '</u>');
+        out.push(`<span class="${classOf(pen)}"${style}>${body}</span>`);
     };
     for (const found of line.matchAll(SGR)) {
         emit(line.slice(at, found.index));
@@ -88,6 +93,7 @@ body { padding: 24px; display: inline-block; }
 pre { margin: 0; padding: 14px 16px 18px; color: #e6edf3; font: inherit; white-space: pre; }
 .b { font-weight: 700; } .d { opacity: .6; } .i { font-style: italic; }
 .memo { width: 1.1em; height: 1.1em; vertical-align: -0.2em; }
+.a { color: #79c0ff; text-decoration: underline; text-underline-offset: 2px; }
 `;
 
 function page(name: string, width: number, lines: readonly string[]): Page {
@@ -116,10 +122,10 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
             goal: 'Move checkout to the v2 payments API, no downtime.',
             now: ['Wiring the v2 client behind a feature flag', 'Unit tests are green'],
             needs: ['Should v1 keep accepting gift cards after the cut-over?'],
-            done: ['Mapped every v1 field to its v2 equivalent', 'Added retries with backoff to the client'],
+            done: ['!938 merged: every v1 field mapped to v2', 'Added retries with backoff to the client'],
             decisions: [],
             next: ['Test for expired cards', 'Canary at 5% of traffic'],
-            links: ['src/payments/v2/client.ts', 'branch feat/payments-v2'], rules: [],
+            links: ['`src/payments/v2/client.ts`', '`feat/payments-v2`', '!940'], rules: ['Never push to main'],
         },
     },
     es: {
@@ -131,30 +137,34 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
             goal: 'Pasar el checkout a la API de pagos v2, sin cortes.',
             now: ['Conectando el cliente v2 tras un feature flag', 'Las pruebas unitarias pasan'],
             needs: ['¿v1 debe seguir aceptando tarjetas de regalo tras el cambio?'],
-            done: ['Cada campo de v1 asignado a su equivalente en v2', 'Reintentos con espera añadidos al cliente'],
+            done: ['!938 fusionado: cada campo de v1 asignado en v2', 'Reintentos con espera añadidos al cliente'],
             decisions: [],
             next: ['Prueba de tarjetas vencidas', 'Canario al 5 % del tráfico'],
-            links: ['src/payments/v2/client.ts', 'rama feat/payments-v2'], rules: [],
+            links: ['`src/payments/v2/client.ts`', '`feat/payments-v2`', '!940'], rules: ['Nunca hacer push a main'],
         },
     },
 };
+
+/** Invented repository: references in the recap link to it (drawn underlined). */
+const WEB = { base: 'https://git.example/team/shop', forge: 'gitlab', branch: 'feat/payments-v2' } as const;
+const VERSION = '1.8.1';
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
     ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, tail: null, title, lastPrompt: prompt, claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
-        tab: 'w1:t1', column: 'w1:p9', at: NOW, daemonVersion: '1.5.0',
+        tab: 'w1:t1', column: 'w1:p9', at: NOW, daemonVersion: VERSION,
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null },
-            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null },
+            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null, web: WEB, context: { tokens: 520_000, window: 1_000_000, source: 'catalogue' } },
+            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: 61_000, window: 258_400, source: 'agent' } },
         ],
     };
     const recap: TabRecap = {
         ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
-    return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: '1.5.0' };
+    return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };
 }
 
 function setupState(locale: 'en' | 'es'): Setup {
