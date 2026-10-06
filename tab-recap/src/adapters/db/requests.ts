@@ -2,8 +2,8 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { Requests, VisibilityRequest } from '#src/ports/requests.ts';
-import { all, blob, guarded, text } from './rows.ts';
+import type { CompactRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
+import { all, blob, guarded, maybeText, text } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
 import type { Row } from './rows.ts';
 
@@ -11,6 +11,11 @@ function visibilityOf(row: Row): VisibilityRequest | null {
     const word = text(row, 'hidden');
     const target = text(row, 'target');
     return target === '' ? null : { target, hidden: word === 'toggle' ? 'toggle' : word === 'hide' };
+}
+
+function compactionOf(row: Row): CompactRequest | null {
+    const tab = text(row, 'target');
+    return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note') };
 }
 
 /** The word the table keeps for a visibility request. */
@@ -25,6 +30,8 @@ export class RequestsRepository implements Requests {
     private readonly now: () => number;
     private readonly refresh: StatementSync;
     private readonly visibility: StatementSync;
+    private readonly compact: StatementSync;
+    private readonly takeCompact: StatementSync;
     private readonly takeRefresh: StatementSync;
     private readonly takeHidden: StatementSync;
 
@@ -32,6 +39,8 @@ export class RequestsRepository implements Requests {
         this.now = now;
         this.refresh = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'refresh', ?)");
         this.visibility = db.prepare("INSERT INTO request (id, at, kind, target, hidden) VALUES (?, ?, 'visibility', ?, ?)");
+        this.compact = db.prepare("INSERT INTO request (id, at, kind, target, pane, note) VALUES (?, ?, 'compact', ?, ?, ?)");
+        this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note");
         this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
     }
@@ -42,6 +51,15 @@ export class RequestsRepository implements Requests {
 
     requestVisibility(request: VisibilityRequest): void {
         this.visibility.run(ids.next(), this.now(), request.target, wordOf(request.hidden));
+    }
+
+    requestCompact(request: CompactRequest): void {
+        this.compact.run(ids.next(), this.now(), request.tab, request.pane, request.note);
+    }
+
+    /** In the order they were asked; each one is its own (two notes are two messages). */
+    takeCompactions(): readonly CompactRequest[] {
+        return guarded(() => all(this.takeCompact).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => compactionOf(row) ?? []), []);
     }
 
     /** One tab asked twice is one request. */

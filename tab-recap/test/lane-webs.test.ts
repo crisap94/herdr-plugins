@@ -51,7 +51,7 @@ test('a lane that leaves its repository loses its web context', async () => {
 
 test('viewOf publishes each lane\'s web context, null when unknown', () => {
     const { board } = observe(emptyBoard(), { kind: 'reconciled', seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1'), seen('w1:p2')], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) } }, instant(0), DEFAULT_POLICY);
-    const view = viewOf(board, tabId('w1:t1'), 5, () => null, (pane) => (pane === 'w1:p1' ? { ...WEB, branch: 'main' } : null));
+    const view = viewOf(board, tabId('w1:t1'), 5, { webs: (pane) => (pane === 'w1:p1' ? { ...WEB, branch: 'main' } : null) });
     assert.deepEqual(view.lanes.map((each) => each.web), [{ ...WEB, branch: 'main' }, null]);
     assert.deepEqual(viewOf(board, tabId('w1:t1'), 5).lanes.map((each) => each.web), [null, null], 'a lane with no web source has none');
 });

@@ -16,7 +16,7 @@ agents. One plugin per directory, each installable on its own.
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps a
 rolling, structured recap of the conversation (goal, what is happening now, what needs you, what
 is done, decisions, next steps, links — always the same seven sections, kept short), so a long session never loses its thread. A coding agent of your
-choice writes it at the end of each turn. It only reads transcripts; it never types into an agent.
+choice writes it at the end of each turn. It only reads transcripts; it never types into an agent on its own — the one exception is the compaction you ask for.
 
 <p align="center">
   <img src="tab-recap/docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">

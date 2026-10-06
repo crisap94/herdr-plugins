@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the six rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the ten rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 6);
+    assert.equal(typed(start(), down(20)).state.row, 9);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -158,4 +158,24 @@ test('the effort row: low by default, a choice list, saved as TAB_RECAP_EFFORT, 
     assert.deepEqual([...changes(medium.state)], [['TAB_RECAP_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
     assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), [...down(6), '\r']).state.note, 'locked');
+});
+
+test('the compaction rows: target, hint (40 by default, 10–95 or off) and window (empty = found at runtime), each saved under its variable and read-only when it is set', () => {
+    assert.deepEqual([draft.compactTarget, draft.compactHint, draft.contextWindow], ['focused', '40', '']);
+    const raw = { locale: undefined, recapLanguage: undefined };
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactTarget: ' Claude, codex ', compactHint: '60%', contextWindow: '1_000_000' }).compactTarget, 'claude,codex');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: '5' }).compactHint, '40', 'out of range is the default');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: 'OFF' }).compactHint, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: '1_000_000' }).contextWindow, '1000000');
+    const target = typed(start(), [...down(7), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
+    assert.deepEqual([...changes(target)], [['TAB_RECAP_COMPACT_TARGET', 'all']]);
+    const hint = typed(start(), [...down(8), '\r', '\u0015', '5', '5', '\r']).state;
+    assert.deepEqual([...changes(hint)], [['TAB_RECAP_COMPACT_HINT', '55']]);
+    assert.equal(typed(hint, ['\r', '\u0015', '3', '\r']).state.draft.compactHint, '40', 'a value out of range falls back to the default');
+    assert.equal(typed(hint, ['\r', '\u0015', 'o', 'f', 'f', '\r']).state.draft.compactHint, 'off');
+    const window = typed(start(), [...down(9), '\r', '3', '0', '0', '0', '0', '0', '\r']).state;
+    assert.deepEqual([...changes(window)], [['TAB_RECAP_CONTEXT_WINDOW', '300000']]);
+    assert.equal(typed(window, ['\r', '\u0015', '\r']).state.draft.contextWindow, '', 'emptied: detect at runtime');
+    assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_TARGET: 'all', TAB_RECAP_COMPACT_HINT: 'off', TAB_RECAP_CONTEXT_WINDOW: '1' }), { compactTarget: 'TAB_RECAP_COMPACT_TARGET', compactHint: 'TAB_RECAP_COMPACT_HINT', contextWindow: 'TAB_RECAP_CONTEXT_WINDOW' });
+    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(8), '\r']).state.note, 'locked');
 });

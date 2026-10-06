@@ -1,3 +1,4 @@
+import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Forge } from './lane-repo.ts';
 
 /** Where a lane's repository lives on the web, and the branch its files are linked on. */
@@ -20,6 +21,8 @@ export interface TabLane {
     readonly lastPrompt?: string | null;
     /** the lane's repository on the web; absent or null when it has no `origin` git can turn into one, or for a view stored before this existed */
     readonly web?: LaneWeb | null;
+    /** how full the agent's context is and what it was measured against; absent or null when unknown, or for a view stored before this existed */
+    readonly context?: ContextUse | null;
 }
 
 export interface TabView {

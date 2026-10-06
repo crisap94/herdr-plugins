@@ -27,9 +27,13 @@ typed into a busy agent; the agent never sees plugin vocabulary.
    priorities are omitted. ≤ 1 500 chars: references trimmed first, then next, then decisions; the note
    and the goal are never trimmed. First person, English, no "recap", "tab-recap", "tab" or "tool"
    (asserted by a test over every template).
-3. **Per harness:** claude → `agent.prompt("/compact " + guidance)` (single line breaks kept; herdr uses
-   bracketed paste). codex/opencode → `agent.prompt("/compact", wait until idle/done, 10 min)` then
-   `agent.prompt(restore message)`. Others → not offered.
+3. **Per harness:** claude → the guidance is ONE line (`(1) … (2) …`, no line breaks) and is typed with
+   `pane.send_text("/compact " + guidance)` then `pane.send_keys(enter)`, after an idle check. Live check
+   (2026-10-06): `agent.prompt` sends a bracketed paste, and Claude Code turns a pasted multi-line block
+   into pasted content, so `/compact` never ran (Claude just answered); typed as one line it compacted and
+   kept every priority. codex/opencode → `agent.prompt("/compact", wait until idle/done, 10 min)` then
+   `agent.prompt(restore message)` (verified live: one `compacted` row, then the restore message, reply
+   "ok"). Others → not offered.
 4. **Popup:** `[[panes]] id="compact"` (popup placement) running `src/compact/main.ts`: a one-line
    input (printable keys, Backspace, Enter, Esc), title names the agent; Enter queues the request with
    the trimmed note or null; Esc queues nothing.
@@ -37,19 +41,31 @@ typed into a busy agent; the agent never sees plugin vocabulary.
    operator stated in the transcript. Stored as `item.section='rules'`, view `recap`, never drawn.
    Migration 003 rebuilds `item` (the section CHECK and the cap CASE change) with the rebuild helper;
    fresh == upgraded test; v2 backup.
-6. **Hint:** readers expose `contextUse {tokens, window}` per lane (claude: last assistant usage
-   `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`; window from
-   `TAB_RECAP_CONTEXT_WINDOW`; codex: last `token_count` total and `model_context_window`). The lane
-   header shows `compact? 82%` when ≥ `TAB_RECAP_COMPACT_HINT` percent.
+6. **Hint and context window (runtime first; operator, 2026-10-06):** readers expose
+   `contextUse {tokens, window, source}` per lane. Tokens: claude = last assistant `message.usage`
+   (`input_tokens + cache_read_input_tokens + cache_creation_input_tokens`); codex = last `token_count`
+   total; opencode = last assistant message tokens. Window, in order:
+   - codex: the rollout's `model_context_window` (source `agent`);
+   - opencode: the message's `providerID/modelID` looked up in opencode's local models.dev catalogue
+     `~/.cache/opencode/models.json` → `limit.context` (source `catalogue`);
+   - claude: the transcript's `message.model` looked up in that same local catalogue when the file
+     exists (source `catalogue`); otherwise a small built-in family table — `haiku` 200 000, Opus and
+     Sonnet 4.6 and later 1 000 000, older 200 000 — marked as a fallback in code (source `table`);
+   - any agent: when observed tokens (or a compaction's `preTokens`) exceed the window, raise it to the
+     next known size (200 000 → 1 000 000) (source `observed`);
+   - `TAB_RECAP_CONTEXT_WINDOW`, when set, overrides all (source `setting`).
+   The catalogue is read-only, cached per daemon run, never fetched from the network. The lane header
+   shows `compact? 45% of 1M` when ≥ `TAB_RECAP_COMPACT_HINT` percent (default 40).
 7. **Settings** (setup rows, en/es): `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT`
-   (`off` | 50–95), `TAB_RECAP_CONTEXT_WINDOW`.
+   (`off` | 10–95, default 40), `TAB_RECAP_CONTEXT_WINDOW` (empty = runtime detection).
 
 ## Risks / Trade-offs
 
 - [The operator types in the agent at the same moment] → only idle agents; herdr submits the prompt
   atomically; the popup is explicit.
 - [Codex ignores the restore message's "no action"] → it asks for "ok" only; worst case one short turn.
-- [Wrong context window for Claude 1M models] → configurable window; the hint is advisory only.
+- [Unknown Claude window] → catalogue, then family table, raised by observed use; the hint names its
+  source and is advisory only; the setting overrides.
 - [Migration 003 rebuild] → helper + foreign_key_check + backup; tested on the v2 fixture.
 
 ## Migration Plan

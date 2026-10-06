@@ -2,10 +2,11 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { arr, obj, parse, readJsonl, readLines, str, tailLines } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
+import { codexObserved } from './context-rows.ts';
 import { codexCalls, toolEntry } from './tool-calls.ts';
 
 const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md', '<user_shell_command>', '<recommended_plugins>'];
@@ -109,6 +110,14 @@ export class CodexTranscripts implements Transcripts {
     latestPrompt(source: string, budget: number): Promise<PromptResult> {
         try {
             return Promise.resolve({ kind: 'prompt', text: extractCodex(tailLines(source, budget)).lastPrompt });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+
+    observed(source: string, budget: number): Promise<ObservedResult> {
+        try {
+            return Promise.resolve({ kind: 'observed', observed: codexObserved(tailLines(source, budget)) });
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }

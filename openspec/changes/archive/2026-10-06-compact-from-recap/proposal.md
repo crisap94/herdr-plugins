@@ -23,9 +23,10 @@ operator, without the agent ever learning that a recap exists.
 - Only idle agents are touched; a working or blocked agent is skipped and named in a notification.
 - The writer learns an internal 8th list, `rules` (standing constraints the operator stated), stored but
   never drawn (the 7 visible sections stay fixed); database migration 003.
-- A "compact?" hint on a lane whose context use passes `TAB_RECAP_COMPACT_HINT` (default 80 %) of its
-  window (codex: `model_context_window` from its rollout; claude: `TAB_RECAP_CONTEXT_WINDOW`, default
-  200 000 tokens, from the transcript's usage).
+- A "compact?" hint on a lane whose context use passes `TAB_RECAP_COMPACT_HINT` (default 40 %) of its
+  window, found at runtime: codex from its rollout, opencode and claude from the local models.dev
+  catalogue opencode keeps, else (claude) a small family table raised by observed use;
+  `TAB_RECAP_CONTEXT_WINDOW` overrides.
 
 Out of scope: compacting automatically; compaction for screen-read agents and hermes; chapters/history.
 

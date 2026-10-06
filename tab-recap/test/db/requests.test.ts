@@ -50,3 +50,13 @@ test('a column asks while the daemon writes: two connections to one file lose no
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('compact requests keep their pane and note, come out once in order, and do not touch the other queues', () => {
+    const { requests } = memoryStore();
+    requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p2', note: 'the retry test' });
+    requests.requestCompact({ tab: 'w1:t1', pane: null, note: null });
+    requests.request('w1:t9');
+    assert.deepEqual(requests.takeCompactions(), [{ tab: 'w1:t1', pane: 'w1:p2', note: 'the retry test' }, { tab: 'w1:t1', pane: null, note: null }]);
+    assert.deepEqual(requests.takeCompactions(), []);
+    assert.deepEqual(requests.takeRequests().map(String), ['w1:t9']);
+});

@@ -36,14 +36,20 @@ test('a fresh database passes integrity_check and foreign_key_check', () => {
 test('the caps are the database\'s: a 4th now, a 6th done, a 7th link, a section that does not exist, an empty bullet', () => {
     const db = fresh();
     const ids = withRun(db);
-    for (const [section, count] of [['now', 3], ['needs', 3], ['done', 5], ['decisions', 3], ['next', 5], ['links', 6], ['goal', 1]] as const) {
+    for (const [section, count] of [['now', 3], ['needs', 3], ['done', 5], ['decisions', 3], ['next', 5], ['links', 6], ['rules', 5], ['goal', 1]] as const) {
         for (let at = 0; at < count; at += 1) {
             item(db, ids, { view: 'recap', section, position: at });
         }
         assert.throws(() => { item(db, ids, { view: 'recap', section, position: count }); }, /CHECK constraint failed/, `${section} accepts ${count} and no more`);
     }
-    assert.throws(() => { item(db, ids, { view: 'recap', section: 'extra', position: 0 }); }, /CHECK constraint failed/, 'an eighth section');
+    assert.throws(() => { item(db, ids, { view: 'recap', section: 'extra', position: 0 }); }, /CHECK constraint failed/, 'a ninth section');
     assert.throws(() => { item(db, ids, { view: 'recap', section: 'now', position: 0, text: '' }); }, /CHECK constraint failed|UNIQUE|constraint failed/);
+});
+
+test('a rule belongs to the recap view only', () => {
+    const db = fresh();
+    const ids = withRun(db);
+    assert.throws(() => { item(db, ids, { view: 'story', section: 'rules', position: 0 }); }, /CHECK constraint failed/);
 });
 
 test('the story view holds only goal, done, decisions and links, with its bigger caps', () => {

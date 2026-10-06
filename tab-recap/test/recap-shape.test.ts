@@ -11,7 +11,7 @@ const sections = (found: ReturnType<typeof parseRecap>): RecapSections => {
 
 test('parser: a well-formed answer comes through; missing sections are empty; extra keys are ignored', () => {
     const got = sections(parseRecap('{"goal":"ship the uploader","now":["running CI"],"needs":["approve the deploy"],"extra":"x","links":["upload.ts"]}'));
-    assert.deepEqual(got, { goal: 'ship the uploader', now: ['running CI'], needs: ['approve the deploy'], done: [], decisions: [], next: [], links: ['upload.ts'] });
+    assert.deepEqual(got, { goal: 'ship the uploader', now: ['running CI'], needs: ['approve the deploy'], done: [], decisions: [], next: [], links: ['upload.ts'], rules: [] });
 });
 
 test('parser: the answer may be fenced or wrapped in a sentence — the JSON is found inside', () => {
@@ -72,7 +72,7 @@ test('headline: what needs the operator first, else what is happening now, else 
 });
 
 test('render then parse never loses the data (the previous recap goes back to the writer as JSON)', () => {
-    const original: RecapSections = { goal: 'g', now: ['a'], needs: ['b'], done: ['c', 'd'], decisions: ['e'], next: ['f'], links: ['g.ts'] };
+    const original: RecapSections = { goal: 'g', now: ['a'], needs: ['b'], done: ['c', 'd'], decisions: ['e'], next: ['f'], links: ['g.ts'], rules: ['h'] };
     assert.deepEqual(sections(parseRecap(JSON.stringify(original))), original);
 });
 
@@ -94,4 +94,14 @@ test('the JSON contract survives every summarizer\'s way of handing the answer b
     for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
         assert.equal(sections(parseRecap(unfenced(raw))).now[0], 'running CI');
     }
+});
+
+test('parser: rules — at most 5, each at most 16 words, never drawn', () => {
+    const long = Array.from({ length: 20 }, (_, i) => `w${i}`).join(' ');
+    const many = Array.from({ length: 8 }, (_, i) => `rule ${i}`);
+    const got = sections(parseRecap(JSON.stringify({ goal: 'g', rules: [long, ...many] })));
+    assert.equal(got.rules.length, 5);
+    assert.equal(got.rules[0]?.split(' ').length, 16);
+    assert.ok(!renderRecap({ ...NO_SECTIONS, rules: ['never push to main'] }, 'en').includes('never push'), 'a rule is stored, not drawn');
+    assert.equal(parseRecap('{"rules":["only a rule"]}').kind, 'invalid', 'rules alone are not a recap');
 });

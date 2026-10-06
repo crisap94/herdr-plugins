@@ -1,8 +1,9 @@
-## Purpose
+# tab-recap/agent-compaction Specification
 
+## Purpose
 How an agent is compacted from the plugin, what it is told, and when the operator is offered it.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: The operator triggers compaction
 
@@ -75,10 +76,15 @@ and named in a notification.
 
 ### Requirement: Compaction is suggested, not forced
 
-A lane whose context use reaches the configured share of its window SHALL show a short hint with the
-percentage; the hint SHALL never trigger compaction.
+A lane whose context use reaches the configured share of its full context window (40 % by default)
+SHALL show a short hint with the percentage; the hint SHALL never trigger compaction.
+
+#### Scenario: Window from the agent's own data
+
+- **WHEN** a Codex rollout states its model context window, or the model is in the local catalogue
+- **THEN** that window SHALL be used and the hint SHALL say which size it measured against
 
 #### Scenario: Codex near its window
 
-- **WHEN** a Codex lane's last token count is 82 % of its model context window and the threshold is 80 %
-- **THEN** its header SHALL show the hint with 82 %
+- **WHEN** a Codex lane's last token count is 45 % of its model context window and the threshold is the default
+- **THEN** its header SHALL show the hint with 45 %

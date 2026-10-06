@@ -1,10 +1,11 @@
 // The settings modal as a pure reducer: (state, key) -> (state, effects). It never touches the
 // terminal, the config file or a harness; src/setup/main.ts performs the effects.
 import { languageSetting } from '#src/i18n/index.ts';
+import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { changes, dirty } from './setup-changes.ts';
 import { EFFORT_CHOICES, HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS, SWITCH_CHOICES } from './setup-state.ts';
-import type { Editing, RowId, Setup, Stepped, TestState } from './setup-state.ts';
+import type { Draft, Editing, RowId, Setup, Stepped, TestState } from './setup-state.ts';
 
 export { changes, dirty, locksOf } from './setup-changes.ts';
 export * from './setup-state.ts';
@@ -12,6 +13,15 @@ export * from './setup-state.ts';
 const ESC = String.fromCodePoint(0x1b);
 const UP = new Set(['k', `${ESC}[A`, `${ESC}OA`]);
 const DOWN = new Set(['j', `${ESC}[B`, `${ESC}OB`]);
+
+/** The rows edited as text (other than the model): what they show to edit, and how a typed value is kept. */
+const TEXT_ROWS: Readonly<Partial<Record<RowId, { readonly read: (draft: Draft) => string; readonly keep: (draft: Draft, typed: string) => Draft }>>> = {
+    recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed) => ({ ...draft, recapLanguage: languageSetting(typed) }) },
+    screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed) => ({ ...draft, screenAgents: screenSetting(typed) }) },
+    compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed) => ({ ...draft, compactTarget: targetSetting(typed) }) },
+    compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed) => ({ ...draft, compactHint: hintSetting(typed) }) },
+    contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
+};
 
 function enter(state: Setup): Setup {
     const row = rowOf(state);
@@ -35,18 +45,16 @@ function enter(state: Setup): Setup {
     if (row === 'model') {
         return target === null ? { ...state, note: 'no-agent' } : { ...state, note: null, editing: { kind: 'text', buffer: draft.models[target] } };
     }
-    return { ...state, note: null, editing: { kind: 'text', buffer: row === 'screenAgents' ? draft.screenAgents : draft.recapLanguage } };
+    return { ...state, note: null, editing: { kind: 'text', buffer: TEXT_ROWS[row]?.read(draft) ?? draft.recapLanguage } };
 }
 
 function confirmText(state: Setup, buffer: string): Setup {
     const { draft } = state;
     const row = rowOf(state);
     const done = { ...state, editing: null, note: null };
-    if (row === 'recapLanguage') {
-        return { ...done, draft: { ...draft, recapLanguage: languageSetting(buffer) } };
-    }
-    if (row === 'screenAgents') {
-        return { ...done, draft: { ...draft, screenAgents: screenSetting(buffer) } };
+    const text = TEXT_ROWS[row];
+    if (text !== undefined) {
+        return { ...done, draft: text.keep(draft, buffer) };
     }
     const target = modelTarget(draft, state.available);
     return target === null ? done : { ...done, draft: { ...draft, models: { ...draft.models, [target]: buffer.trim() } } };

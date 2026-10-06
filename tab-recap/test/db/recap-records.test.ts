@@ -6,7 +6,7 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { cursor, memoryStore, must } from './support.ts';
 
-const sections = { goal: 'ship', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'] };
+const sections = { goal: 'ship', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'], rules: [] };
 const task = (id: string, lanes: readonly string[], name = ''): RecapTask => ({ id, name, lanes, sections, markdown: '' });
 const run = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     tab: 'w1:t1', at: 100, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0.25, error: null, lanes: [cursor('w1:p1')], tasks: [task('t1', ['w1:p1'])], ...over,

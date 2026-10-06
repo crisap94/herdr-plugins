@@ -34,7 +34,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string; readonly effort: string };
+        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string; readonly effort: string; readonly compactTarget: string; readonly compactHint: string; readonly contextWindow: string };
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -47,6 +47,11 @@ export interface Messages {
         readonly effortChoices: { readonly low: string; readonly medium: string; readonly high: string; readonly default: string };
         readonly recapLanguageHint: string;
         readonly screenAgentsHint: string;
+        readonly compactTargetHint: string;
+        readonly compactHintHint: string;
+        readonly compactHintOff: string;
+        readonly contextWindowHint: string;
+        readonly contextWindowDetected: string;
         readonly screenNone: string;
         readonly screenAll: string;
         readonly languageNames: { readonly en: string; readonly es: string };
@@ -66,6 +71,18 @@ export interface Messages {
         readonly keys: readonly string[];
         readonly editKeys: readonly string[];
     };
+    /** compaction: the popup that asks for a note, the notices, and the hint beside a lane that is filling up */
+    readonly compaction: {
+        readonly title: (agent: string) => string;
+        readonly noteLabel: string;
+        readonly keys: readonly string[];
+        /** `window` is the size measured against (`1M`), or '' when it is not worth saying */
+        readonly hint: (percent: number, window: string) => string;
+        readonly started: (agent: string) => string;
+        readonly skipped: (agent: string, status: string) => string;
+        readonly nothing: string;
+        readonly failed: (agent: string, why: string) => string;
+    };
     /** the database was written by a newer plugin: `backup` is the copy to restore, when there is one */
     readonly database: { readonly newer: (backup: string | null) => string };
     readonly cli: {
@@ -77,6 +94,7 @@ export interface Messages {
         readonly tabUnknown: string;
         readonly modalFailed: (why: string) => string;
         readonly requested: (tab: string) => string;
+        readonly compactAsked: string;
         readonly columnToggled: (tab: string) => string;
         readonly columnsToggled: string;
         readonly setupBusy: (command: string) => string;

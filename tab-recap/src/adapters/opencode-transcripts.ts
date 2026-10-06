@@ -4,10 +4,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { str } from './jsonl.ts';
+import { opencodeObserved } from './context-rows.ts';
+import { parse, str } from './jsonl.ts';
 import { entriesOf, partsOf } from './opencode-parts.ts';
 import type { MessageRow } from './opencode-parts.ts';
 
@@ -72,6 +73,27 @@ export class OpencodeTranscripts implements Transcripts {
         } catch (error) {
             return Promise.resolve(this.unreadable(error));
         }
+    }
+
+    observed(source: string): Promise<ObservedResult> {
+        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
+        try {
+            return Promise.resolve(this.withDatabase((db) => this.observedIn(db, session)));
+        } catch (error) {
+            return Promise.resolve(this.unreadable(error));
+        }
+    }
+
+    /** The newest assistant message that carries tokens. */
+    private observedIn(db: DatabaseSync, session: string): ObservedResult {
+        const rows = db.prepare('SELECT data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?').all(session, PROMPT_LOOKBACK) as unknown as readonly { readonly data: string }[];
+        for (const row of rows) {
+            const found = opencodeObserved(parse(row.data) ?? {});
+            if (found !== null) {
+                return { kind: 'observed', observed: found };
+            }
+        }
+        return { kind: 'observed', observed: null };
     }
 
     private promptOf(db: DatabaseSync, session: string): PromptResult {
