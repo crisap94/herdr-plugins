@@ -1,0 +1,77 @@
+<!-- recap_input: everything tab-recap gives the recap writer for one tab, one run. Version 1. -->
+<!ELEMENT recap_input (tab, current_tasks?, previous_recap, agent_note*, transcript+, correction?)>
+<!ATTLIST recap_input version CDATA #FIXED "1">
+
+<!-- The tab and who works in it. now = UTC ISO 8601; zone = IANA name the HH:MM times below use. -->
+<!ELEMENT tab (agent+)>
+<!ATTLIST tab
+  id   CDATA #REQUIRED
+  now  CDATA #REQUIRED
+  zone CDATA #REQUIRED>
+
+<!-- One agent (lane). id is a1, a2, … (an XML ID, so tasks/notes/transcripts can point at it). -->
+<!ELEMENT agent (file*)>
+<!ATTLIST agent
+  id     ID    #REQUIRED
+  kind   CDATA #REQUIRED
+  label  CDATA #REQUIRED
+  pane   CDATA #REQUIRED
+  source (transcript|screen) "transcript"
+  cwd    CDATA #IMPLIED
+  repo   CDATA #IMPLIED
+  branch CDATA #IMPLIED>
+<!-- A file the agent edited recently, newest last (at most 5). -->
+<!ELEMENT file (#PCDATA)>
+
+<!-- Only when the tab has two or more agents: the grouping to keep unless the transcript says otherwise. -->
+<!ELEMENT current_tasks (task+)>
+<!ELEMENT task EMPTY>
+<!ATTLIST task
+  id     CDATA  #REQUIRED
+  name   CDATA  #IMPLIED
+  agents IDREFS #REQUIRED>
+
+<!-- The recap written last time, as the JSON the writer answered (one task) or {"tasks":[…]};
+     markdown for a recap from before the fixed sections; empty with format="none" on the first run. -->
+<!ELEMENT previous_recap (#PCDATA)>
+<!ATTLIST previous_recap
+  format   (json|markdown|none) #REQUIRED
+  language CDATA #IMPLIED>
+
+<!-- The agent's own words about its work: hints, never facts that beat the transcript. -->
+<!ELEMENT agent_note (#PCDATA)>
+<!ATTLIST agent_note
+  agent   IDREF #REQUIRED
+  kind    (away_summary|compaction) #REQUIRED
+  at      CDATA #IMPLIED
+  clipped (no|tail) "no">
+
+<!-- What is new for one agent since the last recap, oldest first. Empty = nothing new (rewrite only). -->
+<!ELEMENT transcript (turn|tools)*>
+<!ATTLIST transcript
+  agent   IDREF #REQUIRED
+  since   CDATA #IMPLIED
+  omitted CDATA "0">
+
+<!-- A prompt or a reply. queued = typed while the agent was busy. clipped=middle keeps head and tail. -->
+<!ELEMENT turn (#PCDATA)>
+<!ATTLIST turn
+  role    (user|agent) #REQUIRED
+  at      CDATA #IMPLIED
+  queued  (yes|no) "no"
+  clipped (no|middle) "no">
+
+<!-- One burst of tool use between two turns. reads = plain reads left out; more = calls beyond those shown. -->
+<!ELEMENT tools (call*)>
+<!ATTLIST tools
+  at    CDATA #IMPLIED
+  reads CDATA "0"
+  more  CDATA "0">
+<!-- shell: the command (what = the agent's own description); edit: a path; web: a query or URL. -->
+<!ELEMENT call (#PCDATA)>
+<!ATTLIST call
+  kind (shell|edit|web|agent|other) #REQUIRED
+  what CDATA #IMPLIED>
+
+<!-- Only on the retry: why the last answer was refused. -->
+<!ELEMENT correction (#PCDATA)>

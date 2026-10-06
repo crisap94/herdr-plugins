@@ -25,7 +25,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {
             seen.push(was);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: 'hello from the screen' }], title: null, lastPrompt: null, claudeRecap: null, position: { cursor: was.cursor + 1, tail }, grew: true });
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: 'hello from the screen' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: was.cursor + 1, tail }, grew: true });
         },
     };
     return { reader, seen };
@@ -52,8 +52,8 @@ test('a lane with no reader of its own is read by the `*` reader — the job doe
     const { requests } = await recapOf([recording('claude', (pane) => `/t/${pane}`).reader, screen.reader], ['gemini'], store);
     assert.deepEqual(screen.seen, [{ cursor: 41, tail: 'abc' }], 'the stored cursor and tail went back to the reader as they were');
     assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
-    assert.match(requests[0]?.excerpt ?? '', /=== gemini in w1:p1 \(screen\) ===\nAGENT: hello from the screen/);
-    assert.match(requests[0]?.lanes[0] ?? '', /gemini in w1:p1 \(screen\)/, 'the writer is told the lane is a screen');
+    assert.deepEqual(requests[0]?.input.transcripts[0]?.entries.map((entry) => entry.text), ['hello from the screen']);
+    assert.deepEqual(requests[0].input.agents.map((agent) => [agent.kind, agent.source]), [['gemini', 'screen']], 'the writer is told the lane is a screen');
 });
 
 test('an agent with a reader of its own never goes to the `*` reader; a source is unique, so a stored cursor of another source is not reused', async () => {

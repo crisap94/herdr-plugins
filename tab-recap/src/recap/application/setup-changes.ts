@@ -11,6 +11,7 @@ const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
     recapLanguage: ['TAB_RECAP_RECAP_LANG'],
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
     gitNote: ['TAB_RECAP_GIT_NOTE'],
+    effort: ['TAB_RECAP_EFFORT'],
 };
 
 /** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
@@ -42,6 +43,7 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
     set('recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage, stored.recapLanguage);
     set('screenAgents', 'TAB_RECAP_SCREEN_AGENTS', draft.screenAgents, stored.screenAgents);
     set('gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote, stored.gitNote);
+    set('effort', 'TAB_RECAP_EFFORT', draft.effort, stored.effort);
     return out;
 }
 

@@ -4,10 +4,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts, opencodeDatabase } from '#src/adapters/opencode-transcripts.ts';
+import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
@@ -77,36 +77,6 @@ test('the budget is the reader\'s: a long file is read from its end, never from 
     }
 });
 
-interface Fixture { readonly db: string; add(message: { id: string; session: string; role: string; updated: number; parts: readonly object[] }): void; close(): void }
-
-/** A WAL database like opencode's. Tests create their own fixtures, so they may open one writable. */
-function opencodeFixture(dir: string): Fixture {
-    const db = join(dir, 'opencode.db');
-    const writer = new DatabaseSync(db);
-    writer.exec('PRAGMA journal_mode = WAL');
-    writer.exec('CREATE TABLE session (id text PRIMARY KEY, directory text NOT NULL, parent_id text, title text NOT NULL, time_updated integer NOT NULL, time_archived integer)');
-    writer.exec('CREATE TABLE message (id text PRIMARY KEY, session_id text NOT NULL, time_created integer NOT NULL, time_updated integer NOT NULL, data text NOT NULL)');
-    writer.exec('CREATE TABLE part (id text PRIMARY KEY, message_id text NOT NULL, session_id text NOT NULL, time_created integer NOT NULL, time_updated integer NOT NULL, data text NOT NULL)');
-    const session = writer.prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?)');
-    session.run('ses_new', '/repo', null, 'Fix the build', 50, null);
-    session.run('ses_old', '/repo', null, 'Old', 10, null);
-    session.run('ses_child', '/repo', 'ses_new', 'Subagent', 99, null);
-    session.run('ses_gone', '/repo', null, 'Archived', 98, 1);
-    session.run('ses_other', '/elsewhere', null, 'Other', 97, null);
-    let parts = 0;
-    return {
-        db,
-        add: ({ id, session: sessionId, role, updated, parts: list }): void => {
-            writer.prepare('INSERT INTO message VALUES (?, ?, ?, ?, ?)').run(id, sessionId, updated, updated, JSON.stringify({ role }));
-            for (const part of list) {
-                parts += 1;
-                writer.prepare('INSERT INTO part VALUES (?, ?, ?, ?, ?, ?)').run(`prt_${parts}`, id, sessionId, updated, updated, JSON.stringify(part));
-            }
-        },
-        close: (): void => { writer.close(); },
-    };
-}
-
 test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the cursor is the newest time_updated; a WAL database with no -shm is readable', async () => {
     const dir = scratch();
     try {
@@ -126,7 +96,7 @@ test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the
         assert.equal(source, `${fixture.db}#ses_new`);
         const first = chunkOf(await reader.read(source, UNREAD, 1 << 20));
         assert.deepEqual(first.entries, [
-            { role: 'user', text: 'why does the build fail?' }, { role: 'tool', text: 'bash: npm test' }, { role: 'agent', text: 'A type error in the parser.' },
+            { role: 'user', text: 'why does the build fail?' }, { role: 'tool', kind: 'shell', text: 'npm test' }, { role: 'agent', text: 'A type error in the parser.' },
         ]);
         assert.deepEqual([first.position, first.grew, first.title, first.lastPrompt], [{ cursor: 120, tail: null }, true, 'Fix the build', 'why does the build fail?']);
         const quiet = chunkOf(await reader.read(source, first.position, 1 << 20));
@@ -175,10 +145,7 @@ test('opencode: the reader cannot write — the handle is read-only', () => {
     }
 });
 
-/** The flag every launch carries: the manifest's node commands and the daemon spawn (checked in test/launch-flags.test.ts). */
-const QUIET_FLAGS = ['--disable-warning=ExperimentalWarning'];
-
-test('node:sqlite prints nothing on stderr when run the way the plugin launches node (ExperimentalWarning disabled)', () => {
+test('node:sqlite prints nothing on stderr when run the way the plugin launches node (plain, no flag)', () => {
     const dir = scratch();
     try {
         const fixture = opencodeFixture(dir);
@@ -186,7 +153,7 @@ test('node:sqlite prints nothing on stderr when run the way the plugin launches 
         fixture.close();
         const adapter = new URL('../src/adapters/opencode-transcripts.ts', import.meta.url).href;
         const script = `import { OpencodeTranscripts } from ${JSON.stringify(adapter)};\nconst r = new OpencodeTranscripts(${JSON.stringify(fixture.db)});\nconst l = await r.locate({ cwd: '/repo', pane: 'p' });\nconsole.log(l.kind);`;
-        const ran = spawnSync(process.execPath, [...QUIET_FLAGS, '--input-type=module', '-e', script], { encoding: 'utf8' });
+        const ran = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' });
         assert.equal(ran.stdout.trim(), 'located');
         assert.equal(ran.stderr, '', 'no ExperimentalWarning (nor anything else) on stderr');
     } finally {

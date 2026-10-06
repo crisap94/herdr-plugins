@@ -34,7 +34,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string };
+        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string; readonly effort: string };
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -44,6 +44,7 @@ export interface Messages {
         readonly modelNoAgent: string;
         readonly uiChoices: { readonly auto: string; readonly en: string; readonly es: string };
         readonly gitNoteChoices: { readonly on: string; readonly off: string };
+        readonly effortChoices: { readonly low: string; readonly medium: string; readonly high: string; readonly default: string };
         readonly recapLanguageHint: string;
         readonly screenAgentsHint: string;
         readonly screenNone: string;

@@ -2,7 +2,7 @@
 variables:
   NODE_IMAGE: node:24
   # The oldest Node the plugin supports (package.json engines): tested on every MR, not only after merge.
-  NODE_FLOOR_IMAGE: node:24.14.0
+  NODE_FLOOR_IMAGE: node:24.21.0
   GLAB_IMAGE: registry.gitlab.com/gitlab-org/cli:latest
 
 default:
@@ -30,10 +30,13 @@ lint:
   script:
     - bash ci/lint.sh
 
+# The writer's document is validated against its DTD with xmllint (the node images do not ship it).
 test:
   extends: .tab-recap
   stage: check
   script:
+    - apt-get update -qq && apt-get install -y -qq libxml2-utils
+    - xmllint --version
     - bash ci/test.sh
 
 test:floor:
@@ -42,6 +45,8 @@ test:floor:
   image: $NODE_FLOOR_IMAGE
   script:
     - node --version
+    - apt-get update -qq && apt-get install -y -qq libxml2-utils
+    - xmllint --version
     - bash ci/test.sh
 
 # Only the atalaya branch is held to the allowlist; main never needs it.

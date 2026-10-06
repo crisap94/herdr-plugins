@@ -61,7 +61,7 @@ herdr plugin install crisap94/herdr-plugins/tab-recap     # or, from a checkout:
 herdr plugin action invoke tab-recap.start                # on; stays on across herdr restarts
 ```
 
-Needs herdr ≥ 0.9.0, Node ≥ 24.14.0 (runs the TypeScript directly, no build) and at least one of
+Needs herdr ≥ 0.9.0, Node ≥ 24.21.0 (runs the TypeScript directly, no build) and at least one of
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
 Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_COLOR=0`) in a column's or modal's environment turns them off.
 
@@ -103,7 +103,7 @@ If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node tha
 
 - **No key is bound out of the box.** Add the two bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
 - **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
-- **Node ≥ 24.14.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.14+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.14, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
+- **Node ≥ 24.21.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.21+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.21, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
 - **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
 
 Read-only diagnosis (run the last two inside a herdr pane):

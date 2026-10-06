@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { instructions, message, unfenced } from './recap-prompt.ts';
+import { prompt, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
 
 /** Splits a command line into argv — whitespace, single and double quotes — with no shell involved. */
@@ -53,7 +53,7 @@ export class CustomSummarizer implements Summarizer {
             return unknown({ why: 'not-found', what: 'TAB_RECAP_CUSTOM_CMD (it is empty)' });
         }
         mkdirSync(this.workDir, { recursive: true });
-        const input = `${instructions(request)}\n\n${message(request)}`;
+        const input = prompt(request);
         const ran = await run(program, args, { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });

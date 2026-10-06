@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { instructions, message } from '#src/adapters/recap-prompt.ts';
+import type { Entry } from '#src/ports/transcripts.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
@@ -22,7 +23,7 @@ import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-import { firstTask, oneTask } from '#test/support.ts';
+import { agentOf, firstTask, oneTask, requestOf } from '#test/support.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
 const proposal = (regroup: string, ...tasks: readonly (readonly [string, readonly string[], string])[]): Proposal =>
@@ -110,29 +111,26 @@ test('a tab with one task has no task name, however the writer named it; a lane 
 // ── the prompt and the job ───────────────────────────────────────────────────────────────────────
 
 test('the prompt asks for tasks only when the tab has several lanes, and carries the hints and the current grouping', () => {
-    const base: RecapRequest = { previous: '', excerpt: 'x', language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1', 'codex in w1:p2'] };
-    assert.ok(!instructions(base).includes('"tasks"') && !message(base).includes('AGENT HINTS'), 'no hints: exactly today\'s prompt');
-    const many: RecapRequest = {
-        ...base,
-        hints: [
-            { pane: 'w1:p1', label: 'claude in w1:p1', cwd: '/r/pay', repo: '/r/pay', branch: 'feat/v2', files: ['src/client.ts'] },
-            { pane: 'w1:p2', label: 'codex in w1:p2', cwd: '/tmp', repo: null, branch: null, files: [] },
-        ],
-        grouping: [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }],
-    };
-    assert.ok(instructions(many).includes('"tasks"') && instructions(many).includes('"regroup"') && instructions(many).includes('KEEP the CURRENT TASKS'));
+    const one = requestOf({ entries: [{ role: 'user', text: 'x' }] });
+    assert.ok(!instructions(one).includes('"tasks"') && !message(one).includes('<current_tasks>'), 'one agent: no grouping asked');
+    const many = requestOf({
+        agents: [agentOf('a1', { cwd: '/r/pay', repo: '/r/pay', branch: 'feat/v2', files: ['src/client.ts'] }), agentOf('a2', { kind: 'codex', cwd: '/tmp' })],
+        tasks: [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }],
+    });
+    assert.ok(instructions(many).includes('"tasks"') && instructions(many).includes('"regroup"') && instructions(many).includes('KEEP the <current_tasks>'));
     const text = message(many);
-    assert.ok(text.includes('- w1:p1 (claude in w1:p1): cwd /r/pay; repo /r/pay; branch feat/v2; edited src/client.ts'));
-    assert.ok(text.includes('- w1:p2 (codex in w1:p2): cwd /tmp'));
-    assert.ok(text.includes('CURRENT TASKS:\n- t1 "Payments": w1:p1'));
-    assert.ok(message({ ...many, grouping: [] }).includes('(none yet — group the agents)'));
+    assert.ok(text.includes('<agent id="a1" kind="claude" label="" pane="w1:p1" repo="pay" branch="feat/v2">'), 'the repository by name; the folder only when it is not the repository');
+    assert.ok(text.includes('<file>src/client.ts</file>'));
+    assert.ok(text.includes('<agent id="a2" kind="codex" label="" pane="w1:p2" cwd="/tmp"/>'));
+    assert.ok(text.includes('<task id="t1" name="Payments" agents="a1"/>'));
+    assert.ok(!message({ ...many, input: { ...many.input, tasks: [] } }).includes('<current_tasks>'), 'no grouping yet: none shown');
 });
 
-const tool = (text: string): { role: 'tool'; text: string } => ({ role: 'tool', text });
+const tool = (kind: 'edit' | 'read' | 'shell', text: string): Entry => ({ role: 'tool', kind, text });
 
-test('files touched are the distinct files of the edit tools, the most recent last, at most five', () => {
-    assert.deepEqual(touchedFiles([tool('Edit: a.ts'), tool('Read: r.ts'), tool('Write: b.ts'), tool('Edit: a.ts'), { role: 'agent', text: 'Edit: no.ts' }]), ['b.ts', 'a.ts']);
-    assert.equal(touchedFiles(Array.from({ length: 9 }, (_, i) => tool(`Edit: f${i}.ts`))).length, 5);
+test('files touched are the distinct paths of the edit calls, the most recent last, at most five', () => {
+    assert.deepEqual(touchedFiles([tool('edit', 'a.ts'), tool('read', 'r.ts'), tool('edit', 'b.ts'), tool('edit', 'a.ts'), { role: 'agent', text: 'no.ts' }, tool('shell', 'npm test')]), ['b.ts', 'a.ts']);
+    assert.equal(touchedFiles(Array.from({ length: 9 }, (_, i) => tool('edit', `f${i}.ts`))).length, 5);
 });
 
 const transcripts: Transcripts = {
@@ -140,8 +138,8 @@ const transcripts: Transcripts = {
     locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({
-        kind: 'chunk', entries: [{ role: 'tool', text: `Edit: ${source.slice(3)}.ts` }, { role: 'agent', text: `work in ${source.slice(3)}` }],
-        title: null, lastPrompt: null, claudeRecap: null, position: { cursor: 5, tail: null }, grew: true,
+        kind: 'chunk', entries: [{ role: 'tool', kind: 'edit', text: `${source.slice(3)}.ts` }, { role: 'agent', text: `work in ${source.slice(3)}` }],
+        title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true,
     }),
 };
 
@@ -161,19 +159,19 @@ test('a tab with two lanes: the request carries each lane\'s hints and the previ
     const { store, requests } = await run([answer], ['w1:p1', 'w1:p2']);
     const [request] = requests;
     assert.ok(request !== undefined);
-    assert.deepEqual(request.hints?.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
+    assert.deepEqual(request.input.agents.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
-    assert.deepEqual(request.grouping, []);
+    assert.deepEqual(request.input.tasks, []);
     const recap = store.records.readRecap('w1:t1');
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'Payments', ['w1:p1'], 'pay v2'], ['t2', 'Docs', ['w1:p2'], 'docs']]);
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
 });
 
-test('a tab with ONE lane is not asked to group: no hints, and the answer is one unnamed task', async () => {
+test('a tab with ONE lane is not asked to group, but is still described: the answer is one unnamed task', async () => {
     const { store, requests } = await run([JSON.stringify({ goal: 'solo' })], ['w1:p1']);
-    assert.equal(requests[0]?.hints, undefined);
-    assert.equal(requests[0]?.grouping, undefined);
+    assert.deepEqual(requests[0]?.input.agents.map((agent) => [agent.cwd, agent.repo, agent.branch, agent.files]), [['/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']]], 'the hints are there for a single agent too');
+    assert.deepEqual(requests[0].input.tasks, []);
     assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
@@ -185,8 +183,8 @@ test('the second run: the previous grouping goes back to the writer, and an ambi
     const { requests } = await run([merged], ['w1:p1', 'w1:p2'], store);
     assert.equal(requests.length, 2, 'asked once more, saying what was wrong');
     assert.match(requests[1]?.correction ?? '', /without saying why/);
-    assert.deepEqual(requests[0]?.grouping, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
-    assert.match(requests[0].previous, /^\{"tasks":\[\{"id":"t1","name":"Payments","lanes":\["w1:p1"\],"recap":\{"goal":"a"/);
+    assert.deepEqual(requests[0]?.input.tasks, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
+    assert.match(requests[0].input.previous, /^\{"tasks":\[\{"id":"t1","name":"Payments","lanes":\["w1:p1"\],"recap":\{"goal":"a"/);
     assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1']], ['t2', 'Docs', ['w1:p2']]]);
     const evidence = JSON.stringify({ regroup: 'both now work in the docs repo', tasks: [{ name: 'Docs sprint', lanes: ['w1:p1', 'w1:p2'], goal: 'd' }] });
     await run([evidence], ['w1:p1', 'w1:p2'], store);

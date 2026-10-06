@@ -23,7 +23,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { harness: 'Agent', model: 'Model', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note' },
+        rows: { harness: 'Agent', model: 'Model', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', effort: 'Writer effort' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -33,6 +33,7 @@ export const en: Messages = {
         modelNoAgent: 'no agent found yet — pick one above',
         uiChoices: { auto: 'auto (from your locale)', en: 'English', es: 'Español' },
         gitNoteChoices: { on: 'on — branch, unpushed and changed files under each agent', off: 'off' },
+        effortChoices: { low: 'low — a short rewrite needs no deliberation (cheapest)', medium: 'medium', high: 'high', default: "the agent's own setting (nothing is passed)" },
         recapLanguageHint: 'ui (as the interface) · en · es · or a language name',
         screenAgentsHint: 'agents with no transcript to read, e.g. gemini,qwen — or all; their recap comes from the screen. Applies after the daemon restarts',
         screenNone: 'none (claude, codex and opencode have transcripts)',

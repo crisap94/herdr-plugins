@@ -1,11 +1,14 @@
 // The settings modal's state: what is being chosen, which rows are locked, and the pure reads of it.
 import { languageSetting } from '#src/i18n/index.ts';
 import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
+import { EFFORTS, effortOf } from '#src/recap/domain/effort.ts';
+import type { Effort } from '#src/recap/domain/effort.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
-export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote';
-export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents', 'gitNote'];
+export type RowId = 'harness' | 'model' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'effort';
+export const ROWS: readonly RowId[] = ['harness', 'model', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'effort'];
+export const EFFORT_CHOICES: readonly Effort[] = EFFORTS;
 export type LocaleSetting = 'auto' | 'en' | 'es';
 export const HARNESS_CHOICES: readonly BackendChoice[] = ['auto', ...BACKEND_IDS];
 export const LOCALE_CHOICES: readonly LocaleSetting[] = ['auto', 'en', 'es'];
@@ -23,6 +26,8 @@ export interface Draft {
     readonly screenAgents: string;
     /** the git note under each lane (`TAB_RECAP_GIT_NOTE`) */
     readonly gitNote: SwitchSetting;
+    /** how hard the writer thinks (`TAB_RECAP_EFFORT`) */
+    readonly effort: Effort;
 }
 
 /** Rows whose value an environment variable overrides: row -> the variable's name. */
@@ -65,10 +70,10 @@ export interface Stepped {
 }
 
 /** The settings as they are now: the resolved configuration plus the raw locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined }): Draft {
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote };
+    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {

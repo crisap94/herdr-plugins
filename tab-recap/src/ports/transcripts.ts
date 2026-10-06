@@ -1,8 +1,27 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Unknown } from './unknowable.ts';
 
+/** What a tool call was: `read` is a plain look at files (counted, never listed); the rest are what the writer is told. */
+export type CallKind = 'shell' | 'edit' | 'web' | 'agent' | 'other' | 'read';
+
 export interface Entry {
     readonly role: 'user' | 'agent' | 'tool';
+    /** a tool call's command, path or query */
+    readonly text: string;
+    /** epoch ms, when the store records it */
+    readonly at?: number;
+    /** a prompt typed while the agent was busy */
+    readonly queued?: boolean;
+    /** tool entries only */
+    readonly kind?: CallKind;
+    /** tool entries only: the agent's own description of the call */
+    readonly what?: string;
+}
+
+/** The agent's own words about its work: a hint for the writer, never a fact that beats the transcript. */
+export interface AgentNote {
+    readonly kind: 'away_summary' | 'compaction';
+    readonly at: number | null;
     readonly text: string;
 }
 
@@ -23,6 +42,8 @@ export interface Chunk {
     readonly title: string | null;
     readonly lastPrompt: string | null;
     readonly claudeRecap: string | null;
+    /** the agent's own summaries found in what was read (oldest first) */
+    readonly notes: readonly AgentNote[];
     /** where the next read starts */
     readonly position: Position;
     /** the source holds something past `was`, whether or not it made entries */

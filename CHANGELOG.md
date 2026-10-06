@@ -8,6 +8,12 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [1.6.2] — 2026-10-06
+
+#### Changed
+
+- tab-recap: require Node 24.21 and give the recap writer timed, structured XML context at low effort (!25)
+
 ### [1.6.1] — 2026-10-06
 
 #### Fixed
@@ -121,7 +127,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.6.1...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.6.2...HEAD
+[1.6.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.6.1...tab-recap-v1.6.2
 [1.6.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.6.0...tab-recap-v1.6.1
 [1.6.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.5.2...tab-recap-v1.6.0
 [1.5.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.5.1...tab-recap-v1.5.2

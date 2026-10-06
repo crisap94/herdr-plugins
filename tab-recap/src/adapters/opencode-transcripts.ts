@@ -7,8 +7,9 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { obj, parse, str, toolBrief } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
+import { str } from './jsonl.ts';
+import { entriesOf, partsOf } from './opencode-parts.ts';
+import type { MessageRow } from './opencode-parts.ts';
 
 /** the newest messages read per recap: a long session is never read from its start */
 const MESSAGES = 400;
@@ -19,28 +20,6 @@ const SEPARATOR = '#';
 export function opencodeDatabase(env: Readonly<Record<string, string | undefined>> = process.env): string {
     const data = env['XDG_DATA_HOME'];
     return join(data !== undefined && data !== '' ? data : join(homedir(), '.local', 'share'), 'opencode', 'opencode.db');
-}
-
-interface MessageRow { readonly id: string; readonly time_updated: number; readonly data: string }
-
-function partEntry(role: string, part: Row): Entry | null {
-    const text = str(part['text']);
-    if (part['type'] === 'text' && text !== null && part['synthetic'] !== true && part['ignored'] !== true && text.trim() !== '') {
-        return { role: role === 'user' ? 'user' : 'agent', text };
-    }
-    if (part['type'] === 'tool') {
-        return { role: 'tool', text: toolBrief(str(part['tool']) ?? 'tool', obj(obj(part['state'])['input'])) };
-    }
-    return null;
-}
-
-function entriesOf(db: DatabaseSync, message: MessageRow): readonly Entry[] {
-    const role = str(parse(message.data)?.['role']) ?? 'assistant';
-    const parts = db.prepare('SELECT data FROM part WHERE message_id = ? ORDER BY time_created ASC').all(message.id) as unknown as readonly { readonly data: string }[];
-    return parts.flatMap((part) => {
-        const entry = partEntry(role, parse(part.data) ?? {});
-        return entry === null ? [] : [entry];
-    });
 }
 
 /** Within `budget` bytes of text, keeping the most recent. */
@@ -129,11 +108,12 @@ export class OpencodeTranscripts implements Transcripts {
         const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? AND time_updated > ? ORDER BY time_created DESC LIMIT ?')
             .all(session, was.cursor, MESSAGES) as unknown as readonly MessageRow[];
         const messages = rows.toReversed();
-        const entries = newest(messages.flatMap((message) => entriesOf(db, message)), budget);
+        const read = messages.map((message) => partsOf(db, message));
+        const entries = newest(read.flatMap((one) => one.entries), budget);
         const title = db.prepare('SELECT title FROM session WHERE id = ?').get(session) as { readonly title: string } | undefined;
         const prompts = entries.filter((entry) => entry.role === 'user');
         return {
-            kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null,
+            kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes),
             position: { cursor: Math.max(was.cursor, ...rows.map((row) => row.time_updated)), tail: null }, grew: rows.length > 0,
         };
     }

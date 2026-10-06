@@ -18,10 +18,10 @@ export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
 type Make = (config: Config, work: string) => Summarizer;
 
 const MAKERS: Readonly<Record<BackendId, Make>> = {
-    claude: (config, work) => new ClaudeSummarizer(config.models.claude, work, config.timeoutMs),
-    codex: (config, work) => new CodexSummarizer(config.models.codex, work, config.timeoutMs),
-    opencode: (config, work) => new OpencodeSummarizer(config.models.opencode, work, config.timeoutMs),
-    hermes: (config, work) => new HermesSummarizer(config.models.hermes, work, config.timeoutMs),
+    claude: (config, work) => new ClaudeSummarizer(config.models.claude, work, config.timeoutMs, config.effort),
+    codex: (config, work) => new CodexSummarizer(config.models.codex, work, config.timeoutMs, config.effort),
+    opencode: (config, work) => new OpencodeSummarizer(config.models.opencode, work, config.timeoutMs, config.effort),
+    hermes: (config, work) => new HermesSummarizer(config.models.hermes, work, config.timeoutMs, config.effort),
     custom: (config, work) => new CustomSummarizer(config.customCommand, work, config.timeoutMs),
 };
 
