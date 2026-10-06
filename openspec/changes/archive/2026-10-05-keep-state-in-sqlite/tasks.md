@@ -24,9 +24,9 @@ verified by the reviewer before archiving. Paths under `tab-recap/`.
 
 ## 4. Integration (before merge)
 
-- [ ] 4.1 GitLab pipeline green on the branch (GitHub Actions — ubuntu, macOS, Node 24.14.0 — run on `main` after merge and must be green before `release:prepare`) — verify: MR !20 pipeline
+- [x] 4.1 GitLab pipeline green on the branch (GitHub Actions — ubuntu, macOS, Node 24.14.0 — run on `main` after merge and must be green before `release:prepare`) — verify: MR !20 pipeline 16032 green
 - [x] 4.2 Docs: CONTEXT.md nouns, README (state, dry run, rollback, local disk), CONTRIBUTING (changing the schema) — verify: review
 
 ## 5. Archive
 
-- [ ] 5.1 `openspec archive keep-state-in-sqlite --yes` in this merge request — verify: `openspec validate --specs --strict` passes and `openspec/specs/tab-recap/{state-store,state-migrations,legacy-import}/spec.md` exist
+- [x] 5.1 `openspec archive keep-state-in-sqlite --yes` in this merge request — verify: `openspec validate --specs --strict` passes and `openspec/specs/tab-recap/{state-store,state-migrations,legacy-import}/spec.md` exist

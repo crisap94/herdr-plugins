@@ -1,3 +1,7 @@
+## Purpose
+
+How tab-recap shows elapsed time in the operator's interface language.
+
 ## ADDED Requirements
 
 ### Requirement: Elapsed time is shown in the operator's language

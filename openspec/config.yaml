@@ -28,3 +28,4 @@ operations:
     guidance:
       - "Archive only when every task in tasks.md is checked and the gates pass; never leave an implemented change unarchived."
       - "The archive commit belongs to the change's own merge request, not a follow-up."
+      - "A new capability's delta spec starts with a ## Purpose section; after archiving, no main spec may keep a TBD Purpose (openspec validate --specs --strict must pass)."
