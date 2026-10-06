@@ -5,6 +5,7 @@ import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 
 export type Json = Readonly<Record<string, unknown>>;
 
@@ -36,18 +37,13 @@ function asJson(line: string): Json | null {
 }
 
 function onLines(sock: Socket, handle: (message: Json) => void): void {
-    let buffer = '';
-    sock.setEncoding('utf8');
-    sock.on('data', (chunk: string) => {
-        buffer += chunk;
-        let at = buffer.indexOf('\n');
-        while (at >= 0) {
-            const message = asJson(buffer.slice(0, at));
-            buffer = buffer.slice(at + 1);
-            if (message !== null) {
-                handle(message);
-            }
-            at = buffer.indexOf('\n');
+    const lines = createInterface({ input: sock, crlfDelay: Infinity });
+    // the interface re-emits the socket's errors; the callers already handle them on the socket itself
+    lines.on('error', () => undefined);
+    lines.on('line', (line) => {
+        const message = asJson(line);
+        if (message !== null) {
+            handle(message);
         }
     });
 }

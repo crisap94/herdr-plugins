@@ -6,15 +6,15 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 ## 1. Text width and wrapping
 
 - [x] 1.0 Narrow `rules/recap-layers-no-io.yml` to exempt exactly `node:util` (design decision 0): add a good probe importing `styleText` from `node:util`, keep the bad probes biting, update the rule's message/note and the red-line row in `CLAUDE.md` — verify: `bash ci/lint.sh` clean, and its probe check shows the bad probes still fail
-- [ ] 1.1 Add the noun **Cell width** to `CONTEXT.md` (escapes 0, emoji presentation 2, combining marks 0, else 1; CJK out of scope) — verify: lint's vocabulary check passes
-- [ ] 1.2 Reimplement `visibleLength` in `src/recap/render/wrap.ts` with `util.stripVTControlCharacters` + `Intl.Segmenter` (grapheme) + emoji-presentation rule — verify: new tests for `recap` in colour = 5, `📝✅` = 4, `👩‍💻` + `é` = 3
-- [ ] 1.3 Make the long-word cut in `wrap()` walk graphemes by cell width instead of `slice` — verify: tests for `xxxxxxx📝📝📝` at width 8 (every line ≤ 8 cells, whole characters only, rejoins to the original) and twenty `é` (no line starts with a combining mark)
-- [ ] 1.4 Update golden render tests whose emoji lines change width, each change explained in the test name — verify: `bash ci/test.sh` green
+- [x] 1.1 Add the noun **Cell width** to `CONTEXT.md` (escapes 0, emoji presentation 2, combining marks 0, else 1; CJK out of scope) — verify: lint's vocabulary check passes
+- [x] 1.2 Reimplement `visibleLength` in `src/recap/render/wrap.ts` with `util.stripVTControlCharacters` + `Intl.Segmenter` (grapheme) + emoji-presentation rule — verify: new tests for `recap` in colour = 5, `📝✅` = 4, `👩‍💻` + `é` = 3
+- [x] 1.3 Make the long-word cut in `wrap()` walk graphemes by cell width instead of `slice` — verify: tests for `xxxxxxx📝📝📝` at width 8 (every line ≤ 8 cells, whole characters only, rejoins to the original) and twenty `é` (no line starts with a combining mark)
+- [x] 1.4 Update golden render tests whose emoji lines change width, each change explained in the test name — verify: `bash ci/test.sh` green
 
 ## 2. Escape stripping
 
-- [ ] 2.1 Replace the `STYLE` regex in `src/setup/main.ts` with `util.stripVTControlCharacters` — verify: setup view tests unchanged and green
-- [ ] 2.2 Replace the hand-written SGR parsing in `src/adapters/glow.ts` `trimPadding` where it only strips, keeping the trailing-colour re-attach behaviour — verify: existing glow tests green plus one case with a non-SGR escape
+- [x] 2.1 Replace the `STYLE` regex in `src/setup/main.ts` with `util.stripVTControlCharacters` — verify: setup view tests unchanged and green
+- [x] 2.2 Replace the hand-written SGR parsing in `src/adapters/glow.ts` `trimPadding` where it only strips, keeping the trailing-colour re-attach behaviour — verify: existing glow tests green plus one case with a non-SGR escape
 
 ## 3. Colours
 
@@ -24,7 +24,7 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 4. herdr socket framing
 
-- [ ] 4.1 Replace `onLines` in `src/transport/herdr.ts` with `readline.createInterface({ input: socket, crlfDelay: Infinity })`, ignoring non-object lines as today — verify: tests feeding a message split across two chunks, two messages in one chunk, a multi-byte character split across chunks, and a malformed line (ignored)
+- [x] 4.1 Replace `onLines` in `src/transport/herdr.ts` with `readline.createInterface({ input: socket, crlfDelay: Infinity })`, ignoring non-object lines as today — verify: tests feeding a message split across two chunks, two messages in one chunk, a multi-byte character split across chunks, and a malformed line (ignored)
 
 ## 5. Command-line entry
 
@@ -33,8 +33,8 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 
 ## 6. Small swaps
 
-- [ ] 6.1 Use `setTimeout` from `node:timers/promises` for the re-list delay in `src/adapters/opencode-summarizer.ts` — verify: existing opencode summarizer test green
-- [ ] 6.2 Implement `ago` in `src/i18n/en.ts` and `src/i18n/es.ts` with `Intl.RelativeTimeFormat(locale, { style: 'narrow', numeric: 'always' })`, formatting negative amounts and `-0` for zero; `elapsed()` keeps choosing the unit and clamps future times to 0 — verify: tests for en `12s ago · 5m ago · 3h ago · 2d ago · 0s ago`, es `hace 12 s · hace 5 min · hace 3 h · hace 2 d · hace 0 s`, and a future time → `0s ago`
+- [x] 6.1 Use `setTimeout` from `node:timers/promises` for the re-list delay in `src/adapters/opencode-summarizer.ts` — verify: existing opencode summarizer test green
+- [x] 6.2 Implement `ago` in `src/i18n/en.ts` and `src/i18n/es.ts` with `Intl.RelativeTimeFormat(locale, { style: 'narrow', numeric: 'always' })`, formatting negative amounts and `-0` for zero; `elapsed()` keeps choosing the unit and clamps future times to 0 — verify: tests for en `12s ago · 5m ago · 3h ago · 2d ago · 0s ago`, es `hace 12 s · hace 5 min · hace 3 h · hace 2 d · hace 0 s`, and a future time → `0s ago`
 
 ## 7. Integration (before merge)
 
