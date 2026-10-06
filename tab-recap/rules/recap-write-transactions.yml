@@ -1,0 +1,18 @@
+id: recap-write-transactions
+language: typescript
+severity: error
+message: >-
+  A transaction is opened by `writeTx` (src/adapters/db/connection.ts) and nowhere else: it is `BEGIN IMMEDIATE`,
+  so the write lock is taken up front, and a throw rolls back. No bare `BEGIN`.
+note: >-
+  A deferred `BEGIN` that later upgrades to a write can fail with SQLITE_BUSY at once, whatever the busy timeout
+  says. Wrap the writes in `writeTx(db, () => …)`; inside one already, it joins it.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-write-transactions/**"
+ignores:
+  - "**/src/adapters/db/connection.ts"
+rule:
+  kind: string_fragment
+  regex: '^\s*BEGIN\b'

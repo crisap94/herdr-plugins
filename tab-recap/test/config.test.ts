@@ -1,10 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { FsRecapStore, fileKey } from '#src/adapters/fs-recap-store.ts';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { oneTask } from '#test/support.ts';
 import { configGetter, loadConfig, parseEnv } from '#src/daemon/config.ts';
 
 test('config.env: comments, blanks and quotes', () => {
@@ -56,66 +54,3 @@ test('loadConfig: locale and recap language — ui follows the locale, an explic
     }
 });
 
-test('FsRecapStore: sections round-trip; a recap stored before them reads back with sections null; a damaged one too', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-sections-'));
-    try {
-        const store = new FsRecapStore(dir);
-        const sections = { goal: 'g', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'] };
-        store.writeRecap({ tab: 't', lanes: [], tasks: oneTask('m', sections), at: 1, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
-        assert.deepEqual(store.readRecap('t')?.tasks[0]?.sections, sections);
-        mkdirSync(join(dir, 'recaps'), { recursive: true });
-        writeFileSync(join(dir, 'recaps', `${fileKey('old')}.json`), JSON.stringify({ tab: 'old', lanes: [], markdown: '## Goal\n- x', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.equal(store.readRecap('old')?.tasks[0]?.sections, null);
-        writeFileSync(join(dir, 'recaps', `${fileKey('bad')}.json`), JSON.stringify({ tab: 'bad', lanes: [], sections: 'oops', markdown: 'y', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.equal(store.readRecap('bad')?.tasks[0]?.sections, null);
-        writeFileSync(join(dir, 'recaps', `${fileKey('half')}.json`), JSON.stringify({ tab: 'half', lanes: [], sections: { goal: 5, now: ['a', 7] }, markdown: 'y', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.deepEqual(store.readRecap('half')?.tasks[0]?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [] });
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
-test('FsRecapStore: a recap stored before tasks existed reads back as ONE task holding its lanes and its Markdown', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-legacy-'));
-    try {
-        const store = new FsRecapStore(dir);
-        mkdirSync(join(dir, 'recaps'), { recursive: true });
-        const lane = { pane: 'w1:p1', agent: 'claude', transcript: '/t', cursor: 1, title: null, lastPrompt: null, claudeRecap: null };
-        writeFileSync(join(dir, 'recaps', `${fileKey('old')}.json`), JSON.stringify({ tab: 'old', lanes: [lane], markdown: '## Goal\n- x', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.deepEqual(store.readRecap('old')?.tasks, [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }]);
-        writeFileSync(join(dir, 'recaps', `${fileKey('none')}.json`), JSON.stringify({ tab: 'none', lanes: [], markdown: '', at: null, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.deepEqual(store.readRecap('none')?.tasks, [], 'no recap yet is no task');
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
-test('FsRecapStore: a stored recap with no language reads back as English', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'recap-store-'));
-    try {
-        const store = new FsRecapStore(dir);
-        store.writeRecap({ tab: 't', lanes: [], tasks: oneTask('x'), at: 1, running: false, backend: null, error: null, costUsd: 0, language: 'es' });
-        assert.equal(store.readRecap('t')?.language, 'es');
-        const file = join(dir, 'recaps');
-        mkdirSync(file, { recursive: true });
-        const legacy = { tab: 'u', lanes: [], markdown: 'x', at: 1, running: false, backend: null, error: null, costUsd: 0 };
-        writeFileSync(join(file, `${fileKey('u')}.json`), JSON.stringify(legacy));
-        assert.equal(store.readRecap('u')?.language, 'en');
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
-test('FsRecapStore: a tab view keeps each lane\'s live prompt; a view stored before it existed reads back with none', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-view-'));
-    try {
-        const store = new FsRecapStore(dir);
-        store.writeTab({ tab: 't', column: null, at: 1, lanes: [{ pane: 'p', agent: 'claude', status: 'idle', title: null, cwd: null, lastPrompt: 'ship it' }] });
-        assert.equal(store.readTab('t')?.lanes[0]?.lastPrompt, 'ship it');
-        mkdirSync(join(dir, 'tabs'), { recursive: true });
-        writeFileSync(join(dir, 'tabs', `${fileKey('old')}.json`), JSON.stringify({ tab: 'old', column: null, at: 1, lanes: [{ pane: 'p', agent: 'claude', status: 'idle', title: null }] }));
-        assert.equal(store.readTab('old')?.lanes[0]?.lastPrompt, null);
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});

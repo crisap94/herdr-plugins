@@ -1,5 +1,5 @@
 import type { Locale } from '#src/i18n/messages.ts';
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 import type { Unknown } from './unknowable.ts';
 
 /** One labelled line-group an extension attaches to a lane, shown under the lane's header. */

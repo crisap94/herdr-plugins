@@ -1,6 +1,6 @@
 // Shared by the tests that build recaps: a tab with one task, and a LaneRepo that knows no repository.
 import assert from 'node:assert/strict';
-import type { TabRecap } from '#src/ports/recap-store.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';

@@ -61,7 +61,7 @@ herdr plugin install crisap94/herdr-plugins/tab-recap     # or, from a checkout:
 herdr plugin action invoke tab-recap.start                # on; stays on across herdr restarts
 ```
 
-Needs herdr ≥ 0.9.0, Node ≥ 24 (runs the TypeScript directly, no build) and at least one of
+Needs herdr ≥ 0.9.0, Node ≥ 24.14.0 (runs the TypeScript directly, no build) and at least one of
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
 Markdown when installed.
 
@@ -103,7 +103,7 @@ If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node tha
 
 - **No key is bound out of the box.** Add the two bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
 - **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
-- **Node ≥ 24 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
+- **Node ≥ 24.14.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.14+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.14, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
 - **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
 
 Read-only diagnosis (run the last two inside a herdr pane):
@@ -122,6 +122,25 @@ herdr plugin log list --plugin tab-recap | tail -30
 
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
+
+## State and rolling back
+
+The plugin keeps what it knows in one SQLite file, `tab-recap.db`, in its state directory (the path `tab-recap.status` prints;
+it must be on a local disk — WAL does not work on network filesystems). Process files stay files: `daemon.pid`, `daemon.beat`,
+`daemon.version`, `daemon.log`, `disabled` and `summarizer/`.
+
+**From 1.6.0 on** the first daemon that starts moves the old JSON files (`recaps/`, `tabs/`, `requests/`, `visibility/`,
+`hidden.json`) into the database in one transaction, checks every tab reads back identically, and only then moves the files to
+`legacy-files-<timestamp>/` in the state directory. They are never deleted. Before you upgrade you can see what would happen,
+touching nothing: `cp -r <state dir> /tmp/state-copy && node src/adapters/db/import/dry-run.ts /tmp/state-copy`.
+
+**Back to 1.5.1:** `tab-recap.stop` (stop the daemon), move the contents of `legacy-files-<timestamp>/` back into the state
+directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; recaps written since the upgrade are not carried
+back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
+
+An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
+written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
+stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.
 
 ## Develop
 

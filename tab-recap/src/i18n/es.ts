@@ -53,6 +53,7 @@ export const es: Messages = {
         keys: ['↑↓ mover · ⏎ editar · t probar · s guardar · q cerrar', '↑↓ · ⏎ · t · s · q', '⏎ t s q'],
         editKeys: ['↑↓ elegir · ⏎ aceptar · Esc cancelar', '⏎ ok · Esc', '⏎ Esc'],
     },
+    database: { newer: (backup) => `la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza` },
     cli: {
         daemonRunning: (pid) => `el daemon ya está en marcha (pid ${pid})`,
         daemonWedged: (pid) => `el daemon ${pid} estaba atascado (sin latido en 3 minutos): detenido, iniciando uno nuevo`,

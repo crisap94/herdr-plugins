@@ -1,6 +1,6 @@
 // Asking the writer for the tab's recap, and turning its answer into tasks. The job decides WHEN; this decides what is asked and kept.
 import { saying, isUnknown } from '#src/ports/unknowable.ts';
-import type { TabRecap } from '#src/ports/recap-store.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, TaskGroup } from '#src/ports/summarizer.ts';
 import { settle, unexplained } from '#src/recap/domain/tasks.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';

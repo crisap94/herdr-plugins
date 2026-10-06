@@ -13,7 +13,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Extension, NotesResult } from '#src/ports/extension.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 
 const git = (cwd: string, ...args: string[]): string => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' });
 const lane = (pane: string, cwd: string | null): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd });

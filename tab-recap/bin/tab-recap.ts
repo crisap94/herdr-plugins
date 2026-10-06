@@ -4,12 +4,13 @@ import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import { stateStore } from '#src/adapters/db/database.ts';
+import type { Requests } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
-import { MIN_NODE_MAJOR, boundKeys, herdrConfigPath, nodeMajor } from '#src/adapters/host-check.ts';
+import { MIN_NODE, boundKeys, herdrConfigPath, nodeAtLeast } from '#src/adapters/host-check.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
@@ -17,6 +18,9 @@ import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { setValues } from './set-backend.ts';
+
+/** node:sqlite still says it is experimental on our Node floor (24.14); that line would land in a column or the log. */
+export const QUIET = ['--disable-warning=ExperimentalWarning'];
 
 const OK = 0;
 const FAILED = 1;
@@ -45,7 +49,7 @@ function launch(): number {
         return OK;
     }
     const out = openSync(pidfile.logPath, 'a');
-    const child = spawn(process.execPath, [join(root, 'src', 'daemon', 'main.ts')], {
+    const child = spawn(process.execPath, [...QUIET, join(root, 'src', 'daemon', 'main.ts')], {
         cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDir() },
     });
     child.unref();
@@ -91,11 +95,10 @@ function status(): number {
     const config = loadConfig();
     const t = m().cli;
     const running = pidfile.alive();
-    const major = nodeMajor(process.version);
     console.log([
         t.statusVersion(codeVersion()),
         t.statusNode(process.execPath, process.version),
-        ...(major !== null && major < MIN_NODE_MAJOR ? [t.nodeTooOld(process.version, MIN_NODE_MAJOR)] : []),
+        ...(nodeAtLeast(process.version) ? [] : [t.nodeTooOld(process.version, MIN_NODE)]),
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
@@ -121,6 +124,16 @@ async function configure(): Promise<number> {
     return OK;
 }
 
+/** What the commands ask of the daemon go through the database; one written by a newer plugin is not ours to write. */
+function requests(): Requests | null {
+    const store = stateStore(stateDir());
+    if (store.kind === 'ready') {
+        return store.requests;
+    }
+    console.error(`tab-recap: 1 — ${m().database.newer(store.backup)}`);
+    return null;
+}
+
 /**
  * Flip this tab's column (or every column). The CLI only says "toggle": the daemon decides from the board it holds,
  * so two presses in a row always alternate — deciding here from the saved file let two quick calls repeat each other.
@@ -131,7 +144,11 @@ function toggle(all: boolean): number {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    new FsRecapStore(stateDir()).requestVisibility({ target: tab, hidden: 'toggle' });
+    const queue = requests();
+    if (queue === null) {
+        return FAILED;
+    }
+    queue.requestVisibility({ target: tab, hidden: 'toggle' });
     console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(tab)}`);
     return OK;
 }
@@ -167,7 +184,11 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
             console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
             return NOT_COVERED;
         }
-        new FsRecapStore(stateDir()).request(tab);
+        const queue = requests();
+        if (queue === null) {
+            return FAILED;
+        }
+        queue.request(tab);
         console.log(`tab-recap: ${m().cli.requested(tab)}`);
         return OK;
     },

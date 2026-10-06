@@ -10,8 +10,9 @@ sum-typed ports, one adapter per port.
 src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter
 src/recap/application/  informer · dispatch · decode · watch-set · recap-job · excerpt
 src/recap/render/       pure text for the column; `badge()` ends in `const exhaustive: never`
-src/ports/              interfaces only; every fallible read is a sum type (`Unknown`)
+src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `TabViews`, `ColumnVisibility`, `Requests`
 src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport
+src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
 src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is the only registry
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
@@ -40,7 +41,8 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |
 | `recap-never-types` | no `send_keys`/`send_text`/`send_input`/`agent.prompt`: a recap never types into a lane |
-| `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours |
+| `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
+| `recap-write-transactions` | no bare `BEGIN`: a transaction is `writeTx` (`BEGIN IMMEDIATE`, rollback on a throw), in `adapters/db/connection.ts` only |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
 
 **A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts

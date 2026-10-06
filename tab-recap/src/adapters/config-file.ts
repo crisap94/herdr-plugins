@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { writeAtomically } from './fs-recap-store.ts';
+import { writeAtomically } from './atomic-file.ts';
 
 /** Sets keys in config.env, keeping every other line, comments included. */
 export function setValues(path: string, values: ReadonlyMap<string, string>, parse: (text: string) => ReadonlyMap<string, string>): void {

@@ -1,7 +1,7 @@
 // The column: a long-running pane process that renders its tab's recaps. Composition
 // root for the pane; reads the store the daemon writes, never writes anything but a
 // refresh request.
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import { stateStore } from '#src/adapters/db/database.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
@@ -34,7 +34,9 @@ function modeOf(env: NodeJS.ProcessEnv): Mode {
 }
 const mode = modeOf(process.env);
 const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
-const store = new FsRecapStore(stateDir());
+/** A database written by a newer plugin is read-only and not ours to draw: the column says so instead of a recap. */
+const opened = stateStore(stateDir());
+const store = opened.kind === 'ready' ? opened : null;
 const config = loadConfig();
 /** the locale is re-read, not frozen at start: a change in config.env shows within a few seconds */
 const startedVersion = codeVersion();
@@ -88,8 +90,9 @@ function rollWhenUpgraded(): void {
 
 function view(): ColumnView {
     const locale = localeNow();
-    const stored = store.readTab(tab);
-    return { tab: stored, recap: store.readRecap(tab), notes: notesOf(extensions, stored?.lanes, locale), warnings: warningsOf(extensions, locale), now: Date.now(), messages: messagesFor(locale), version: settled.version };
+    const stored = store?.views.readTab(tab) ?? null;
+    const newer = opened.kind === 'newer-db' ? [messagesFor(locale).database.newer(opened.backup)] : [];
+    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version };
 }
 
 /**
@@ -166,8 +169,8 @@ const KEYS: Readonly<Record<string, () => void>> = {
     [`${ESC}[5~`]: () => { scroll -= (process.stdout.rows || 24) - 2; },
     g: () => { scroll = 0; },
     G: () => { scroll = Number.MAX_SAFE_INTEGER; },
-    r: () => { store.request(tab); },
-    h: () => { store.requestVisibility({ target: tab, hidden: true }); },
+    r: () => { store?.requests.request(tab); },
+    h: () => { store?.requests.requestVisibility({ target: tab, hidden: true }); },
     '\r': openModal,
 };
 

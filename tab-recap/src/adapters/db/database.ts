@@ -1,0 +1,52 @@
+// The composition: one connection, the four repositories. Each consumer takes the port it uses.
+import { join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
+import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { RecapRecords } from '#src/ports/recap-records.ts';
+import type { Requests } from '#src/ports/requests.ts';
+import type { TabViews } from '#src/ports/tab-views.ts';
+import { ColumnVisibilityRepository } from './column-visibility.ts';
+import { openDatabase } from './open.ts';
+import type { NewerDatabase } from './open.ts';
+import { RecapRecordsRepository } from './recap-records.ts';
+import { RequestsRepository } from './requests.ts';
+import { TabViewsRepository } from './tab-views.ts';
+
+export interface Store {
+    readonly kind: 'ready';
+    readonly db: DatabaseSync;
+    readonly records: RecapRecords;
+    readonly views: TabViews;
+    readonly visibility: ColumnVisibility;
+    readonly requests: Requests;
+    /** the daemon's upkeep: fold the write-ahead log back into the file and truncate it */
+    checkpoint(): void;
+    /** the daemon, on shutdown */
+    close(): void;
+}
+
+export interface StoreOptions {
+    /** only the daemon gives it: every view it writes says which version it runs */
+    readonly daemonVersion?: string | null;
+    readonly now?: () => number;
+}
+
+export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
+    return {
+        kind: 'ready', db, records: new RecapRecordsRepository(db), views: new TabViewsRepository(db, options.daemonVersion ?? null),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now),
+        checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
+        close: (): void => { db.close(); },
+    };
+}
+
+/** The store at `path`, or `newer-db` when a newer plugin wrote it (then it is read-only and nothing here writes). */
+export const databasePath = (stateDir: string): string => join(stateDir, 'tab-recap.db');
+
+export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
+    const opened = openDatabase(path);
+    return opened.kind === 'ready' ? storeOver(opened.db, options) : opened;
+}
+
+/** The store in the plugin's state directory — what every process (CLI, setup, column, daemon) opens. */
+export const stateStore = (stateDir: string, options: StoreOptions = {}): Store | NewerDatabase => openStore(databasePath(stateDir), options);

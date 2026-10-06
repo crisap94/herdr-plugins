@@ -4,8 +4,8 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import { blankRecap, hasRecap } from '#src/ports/recap-store.ts';
-import type { LaneCursor, RecapStore, TabRecap } from '#src/ports/recap-store.ts';
+import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
+import type { LaneCursor, RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
@@ -17,7 +17,7 @@ import { hintOf } from './lane-hints.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
-    readonly store: RecapStore;
+    readonly records: RecapRecords;
     /** where a lane's cwd lives in git: a hint for grouping the lanes into tasks */
     readonly repos: LaneRepo;
     readonly clock: Clock;
@@ -125,7 +125,7 @@ export class RecapJob {
     }
 
     private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {
-        const prior = this.deps.store.readRecap(String(tab)) ?? blankRecap(String(tab));
+        const prior = this.deps.records.readRecap(String(tab)) ?? blankRecap(String(tab));
         const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
         const readings = await Promise.all(lanes.map((lane) => this.read(lane, prior, budget)));
         const want = this.deps.language();
@@ -133,7 +133,7 @@ export class RecapJob {
         if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) {
             return;
         }
-        await this.summarize(prior, readings, { want, switched });
+        await this.summarize(prior, readings, { want, switched, cause });
     }
 
     /** A tab with two or more lanes also gets its lanes grouped into tasks: the writer is told where each works and what it touched. */
@@ -150,28 +150,29 @@ export class RecapJob {
     }
 
     /** `switched`: the recap exists in another language than wanted — rewrite it now, new excerpt or not. */
-    private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean }): Promise<void> {
+    private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
-        const noted: TabRecap = { ...prior, language: hasRecap(prior) ? prior.language : language.want, lanes: readings.map((r) => r.cursor), error: errors.length > 0 ? errors.join('; ') : null };
-        const advanced: TabRecap = { ...noted, lanes: readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position })) };
+        const note = errors.length > 0 ? errors.join('; ') : null;
+        const was = hasRecap(prior) ? prior.language : language.want;
+        const unmoved = readings.map((r) => r.cursor);
+        const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
         const parts = readings.filter((r) => r.chunk !== null && r.chunk.entries.length > 0);
+        const { records, clock } = this.deps;
         if (parts.length === 0 && !language.switched) {
-            this.deps.store.writeRecap(advanced);
+            records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced });
             return;
         }
         const share = Math.floor(EXCERPT_BUDGET / Math.max(1, parts.length));
         const excerpt = parts.map((r) => `=== ${laneLabel(r.lane, r.cursor.title, fromScreen(r.cursor))} ===\n${renderExcerpt(r.chunk?.entries ?? [], share)}`).join('\n\n');
         const summarizer = this.deps.summarizer();
-        this.deps.store.writeRecap({ ...noted, running: true, backend: summarizer.backend });
+        records.beginRun(prior.tab, summarizer.backend, clock.now());
         const panes = readings.map((r) => String(r.lane.pane));
-        const asked = await ask(summarizer, await this.requestOf(prior, readings, excerpt, { want: language.want, was: noted.language }), prior, panes, language.want === 'es' ? 'es' : 'en');
+        const asked = await ask(summarizer, await this.requestOf(prior, readings, excerpt, { want: language.want, was }), prior, panes, language.want === 'es' ? 'es' : 'en');
+        const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
-            this.deps.store.writeRecap({ ...noted, running: false, error: asked.error, backend: summarizer.backend, costUsd: prior.costUsd + asked.cost });
+            records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved });
             return;
         }
-        this.deps.store.writeRecap({
-            ...advanced, language: language.want, tasks: asked.tasks,
-            at: this.deps.clock.now(), running: false, backend: summarizer.backend, costUsd: prior.costUsd + asked.cost,
-        });
+        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks: asked.tasks });
     }
 }

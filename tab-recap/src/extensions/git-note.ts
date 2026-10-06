@@ -13,7 +13,7 @@ import type { Locale } from '#src/i18n/messages.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { Extension, ExtensionFactory, Note, NotesResult } from '#src/ports/extension.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 
 export const GIT_NOTE_MARK = '⎇';
 export const STATUS_ARGS: readonly string[] = ['-c', 'core.fsmonitor=false', 'status', '--porcelain=v2', '--branch'];

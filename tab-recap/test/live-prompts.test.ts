@@ -17,7 +17,8 @@ import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Columns } from '#src/ports/columns.ts';
-import type { RecapStore, TabView } from '#src/ports/recap-store.ts';
+import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
@@ -125,10 +126,10 @@ test('fold: a new lane (detected, or first seen in a reconciliation) reads its p
 
 function dispatchWith(prompts: LivePromptSource): { dispatch: Dispatch; written: TabView[] } {
     const written: TabView[] = [];
-    const store = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as RecapStore;
+    const views = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as TabViews;
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
-        columns: {} as Columns, store, recaps: {} as RecapJob, prompts, log: (): void => undefined,
+        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined,
     });
     return { dispatch, written };

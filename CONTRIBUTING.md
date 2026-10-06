@@ -15,7 +15,7 @@ npm install          # dev tools only (tsgo, oxlint, ast-grep); the plugin has z
 herdr plugin link .  # run your checkout inside herdr
 ```
 
-Needs Node ≥ 24 and herdr ≥ 0.9.0.
+Needs Node ≥ 24.14.0 and herdr ≥ 0.9.0.
 
 ## Gates
 
@@ -54,13 +54,37 @@ would like to read in the notes ("Hide or show a tab's column with a key").
 
 ## House rules
 
-- **TypeScript on Node ≥ 24, run directly.** No build step, no runtime dependencies.
+- **TypeScript on Node ≥ 24.14.0, run directly.** No build step, no runtime dependencies.
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
   rules enforce the boundaries and each ships a bad/good probe it must bite. A new rule needs both
   probes. See [`tab-recap/CLAUDE.md`](tab-recap/CLAUDE.md).
 - **Use the vocabulary.** A word means one thing; banned synonyms fail lint. See
   [`tab-recap/CONTEXT.md`](tab-recap/CONTEXT.md), and add new terms there first.
 - **Tests with the change.** Domain decisions are tested as plain folds, without fakes or timers.
+
+## Changing the database schema
+
+The plugin's state is one SQLite file, `tab-recap.db`, in its state directory (which must be on a local disk: WAL does not
+work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/schema/` as **numbered migrations**.
+
+- **Add a file** `NNN-name.ts` exporting `{ version: NNN, name, up }` and list it in `schema/index.ts` (the only registry).
+  `up` is a list of SQL statements, or a function taking the database.
+- **Never edit a released migration** (one that is in a `tab-recap-v*` tag): a fix is a new number. `ci/check-migrations.sh`
+  (part of `ci/lint.sh`) fails when a released file changed or was deleted.
+- **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
+  drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
+  Use only SQL the SQLite bundled with Node 24.14 supports.
+- **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
+  millionths, times as epoch milliseconds.
+- **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
+  one and compares it with a fresh install.
+- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`).
+
+An upgrade first copies the database to `tab-recap.db.v<old>.bak` (the newest three are kept). A database written by a
+**newer** plugin than the one running is opened read-only and left alone: the daemon says so and exits, the columns show the
+message. **Rolling back** a schema change: stop the daemon (`tab-recap.stop`), put the plugin's older version back, restore the
+backup (`cp tab-recap.db.v<n>.bak tab-recap.db`, and delete `tab-recap.db-wal` / `-shm`), start it. To go back to 1.5.1, see the
+plugin's README ("State and rolling back").
 
 ## Commits
 
