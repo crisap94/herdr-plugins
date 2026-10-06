@@ -6,13 +6,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
+/** As herdr runs it: the manifest's node commands carry this flag (test/launch-flags.test.ts). */
+const QUIET = ['--disable-warning=ExperimentalWarning'];
 
 /** Runs the entry in a throw-away config and state directory, so no command can touch the real ones. */
 function run(...args: string[]): { status: number | null; stdout: string; stderr: string; config: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-cli-'));
     const config = join(root, 'config');
     const state = join(root, 'state');
-    const ran = spawnSync(process.execPath, [entry, ...args], {
+    const ran = spawnSync(process.execPath, [...QUIET, entry, ...args], {
         encoding: 'utf8',
         env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: config, TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' },
     });
