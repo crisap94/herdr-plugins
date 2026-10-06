@@ -1,4 +1,5 @@
 import type { Messages } from './messages.ts';
+import { agoIn } from './relative.ts';
 
 /** Neutral Latin-American Spanish, informal «tú». Typed as `Messages`: a missing key fails the typecheck. */
 export const es: Messages = {
@@ -16,7 +17,7 @@ export const es: Messages = {
     git: { unpushed: (count) => `${count} sin subir`, changed: (count) => (count === 1 ? '1 cambiado' : `${count} cambiados`) },
     recapError: (error) => `resumen: ${error}`,
     needsYou: (what) => `te necesita: ${what}`,
-    ago: (amount, unit) => `hace ${amount} ${unit}`,
+    ago: agoIn('es'),
     hints: {
         column: ['toca: pantalla completa · r actualizar · h ocultar · j/k desplazar', 'toca: pantalla completa · r · h · j/k', 'r actualizar · h ocultar', 'r h'],
         modal: ['q cerrar · r actualizar ahora · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
@@ -68,7 +69,7 @@ export const es: Messages = {
         setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|claude|codex|opencode|hermes|custom> [modelo]`,
         backendNow: (what) => `el motor ahora es ${what} (se aplica al próximo resumen)`,
         usageBackend: (choices) => `USO: backend ${choices} [modelo]  (modelo solo para un agente concreto, p. ej. haiku, gpt-6-luna, proveedor/modelo; si lo omites se conserva el actual)`,
-        usage: (commands) => `USO: tab-recap ${commands}`,
+        usage: (commands) => `USO: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `versión  ${code ?? 'desconocida'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
         nodeTooOld: (version, minimum) => `aviso    node ${version} es anterior a ${minimum}: el plugin necesita Node >= ${minimum} en el PATH del servidor de herdr (mira el README, macOS)`,

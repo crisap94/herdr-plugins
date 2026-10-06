@@ -1,6 +1,8 @@
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
   NODE_IMAGE: node:24
+  # The oldest Node the plugin supports (package.json engines): tested on every MR, not only after merge.
+  NODE_FLOOR_IMAGE: node:24.14.0
   GLAB_IMAGE: registry.gitlab.com/gitlab-org/cli:latest
 
 default:
@@ -34,6 +36,14 @@ test:
   script:
     - bash ci/test.sh
 
+test:floor:
+  extends: .tab-recap
+  stage: check
+  image: $NODE_FLOOR_IMAGE
+  script:
+    - node --version
+    - bash ci/test.sh
+
 # Only the atalaya branch is held to the allowlist; main never needs it.
 atalaya-branch-guard:
   stage: guard
@@ -58,7 +68,7 @@ merge-request-notes:
 # main and create the annotated tag. RELEASE_TOKEN is a protected, masked CI variable.
 release:prepare:
   stage: release
-  needs: [lint, test]
+  needs: [lint, test, "test:floor"]
   variables:
     GIT_DEPTH: "0"
   rules:
@@ -72,7 +82,7 @@ release:prepare:
 # CHANGELOG, then create the GitLab release.
 release-notes:
   stage: release
-  needs: [lint, test]
+  needs: [lint, test, "test:floor"]
   variables:
     GIT_DEPTH: "0"
   rules:

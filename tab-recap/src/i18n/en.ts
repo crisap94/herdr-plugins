@@ -1,4 +1,5 @@
 import type { Messages } from './messages.ts';
+import { agoIn } from './relative.ts';
 
 export const en: Messages = {
     locale: 'en',
@@ -15,7 +16,7 @@ export const en: Messages = {
     git: { unpushed: (count) => `${count} unpushed`, changed: (count) => `${count} changed` },
     recapError: (error) => `recap: ${error}`,
     needsYou: (what) => `needs you: ${what}`,
-    ago: (amount, unit) => `${amount}${unit === 'min' ? 'm' : unit} ago`,
+    ago: agoIn('en'),
     hints: {
         column: ['tap: full screen · r recap now · h hide · j/k scroll', 'tap: full screen · r · h · j/k', 'r recap · h hide', 'r h'],
         modal: ['q close · r recap now · h hide column · j/k scroll · g top', 'q close · r recap now · h hide · j/k', 'q close · r · h · j/k', 'q'],
@@ -67,7 +68,7 @@ export const en: Messages = {
         setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|claude|codex|opencode|hermes|custom> [model]`,
         backendNow: (what) => `backend is now ${what} (applies to the next recap)`,
         usageBackend: (choices) => `USAGE: backend ${choices} [model]  (a model only for a named harness, e.g. haiku, gpt-6-luna, provider/model; omitted = keep the one set)`,
-        usage: (commands) => `USAGE: tab-recap ${commands}`,
+        usage: (commands) => `USAGE: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `version  ${code ?? 'unknown'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
         nodeTooOld: (version, minimum) => `warning  node ${version} is older than ${minimum}: the plugin needs Node >= ${minimum} on the PATH of herdr's server (see README, macOS)`,
