@@ -34,6 +34,13 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
+      # ci/lint.sh needs bash >= 4 (mapfile); macOS ships 3.2. Before setup-node: Homebrew's bin also holds a
+      # node@24 that may be older than the plugin's minimum, and the later PATH entry wins.
+      - name: bash >= 4 (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install bash
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -41,12 +48,6 @@ jobs:
           check-latest: true
           cache: npm
           cache-dependency-path: tab-recap/package-lock.json
-      # ci/lint.sh needs bash >= 4 (mapfile); macOS ships 3.2.
-      - name: bash >= 4 (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install bash
-          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'
@@ -56,6 +57,7 @@ jobs:
           bash --version | head -n 1
           node --version
           xmllint --version
+          node -e "const [a,b]=process.versions.node.split('.').map(Number); process.exit(a>24||(a===24&&b>=21)?0:1)"
           bash -c '[ "${BASH_VERSINFO[0]}" -ge 4 ]'
       - run: npm ci
       - run: bash ci/lint.sh
