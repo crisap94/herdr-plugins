@@ -22,7 +22,7 @@ export function resultOf(stdout: string): { text: string; cost: number } | null 
     }
 }
 
-export function claudeArgs(model: string, request: Pick<RecapRequest, 'language' | 'previousLanguage'>, effort: Effort = 'default'): string[] {
+export function claudeArgs(model: string, request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input'>, effort: Effort = 'default'): string[] {
     const level = levelOf(effort, 'low');
     return [
         '-p', '--model', model === '' ? 'haiku' : model, '--no-session-persistence', '--tools', '', '--setting-sources', '',

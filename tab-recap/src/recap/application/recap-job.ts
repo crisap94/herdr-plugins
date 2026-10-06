@@ -10,10 +10,8 @@ import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { isScreenSource } from '#src/ports/screens.ts';
-import { renderExcerpt } from './excerpt.ts';
-import { ask, groupingOf, previousFor } from './recap-ask.ts';
-import { hintOf } from './lane-hints.ts';
+import { ask } from './recap-ask.ts';
+import { inputOf } from './recap-input.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
@@ -31,13 +29,14 @@ export interface RecapJobDeps {
 const TURN_SETTLE_MS = 2500;
 /** At most this much is read per recap, shared by the tab's lanes. */
 const READ_BUDGET = 768 * 1024;
-const EXCERPT_BUDGET = 60_000;
 /** What one lane contributes to its tab's recap this time. */
 interface Reading {
     readonly lane: Lane;
     readonly cursor: LaneCursor;
     readonly chunk: Chunk | null;
     readonly grew: boolean;
+    /** the lane's transcript was never read before */
+    readonly fresh: boolean;
     readonly error: string | null;
 }
 
@@ -46,13 +45,6 @@ interface Slot {
     running: boolean;
     again: { lanes: readonly Lane[]; cause: RecapCause } | null;
 }
-
-export function laneLabel(lane: Lane, title: string | null, screen = false): string {
-    return `${lane.agent} in ${lane.pane}${screen ? ' (screen)' : ''}${title === null ? '' : ` — ${title}`}`;
-}
-
-/** A lane read from its screen says so, to the writer and in the column. */
-const fromScreen = (cursor: LaneCursor): boolean => isScreenSource(cursor.transcript);
 
 /** Single flight per TAB: one recap at a time, and at most one more queued behind it. */
 export class RecapJob {
@@ -107,13 +99,13 @@ export class RecapJob {
         const blank: LaneCursor = { pane: String(lane.pane), agent: String(lane.agent), transcript: '', cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title, lastPrompt: null, claudeRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') {
-            return { lane, cursor: blank, chunk: null, grew: false, error: found };
+            return { lane, cursor: blank, chunk: null, grew: false, fresh: false, error: found };
         }
         const { reader, source } = found;
         const was = prior.lanes.find((c) => c.pane === String(lane.pane) && c.transcript === source) ?? { ...blank, transcript: source };
         const chunk = await reader.read(source, { cursor: was.cursor, tail: was.tail }, budget);
         if (isUnknown(chunk)) {
-            return { lane, cursor: was, chunk: null, grew: false, error: saying(chunk.why) };
+            return { lane, cursor: was, chunk: null, grew: false, fresh: false, error: saying(chunk.why) };
         }
         const cursor: LaneCursor = {
             ...was,
@@ -121,7 +113,7 @@ export class RecapJob {
             lastPrompt: chunk.lastPrompt ?? was.lastPrompt,
             claudeRecap: chunk.claudeRecap ?? was.claudeRecap,
         };
-        return { lane, cursor, chunk, grew: chunk.grew, error: null };
+        return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor, error: null };
     }
 
     private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {
@@ -136,17 +128,9 @@ export class RecapJob {
         await this.summarize(prior, readings, { want, switched, cause });
     }
 
-    /** A tab with two or more lanes also gets its lanes grouped into tasks: the writer is told where each works and what it touched. */
-    private async requestOf(prior: TabRecap, readings: readonly Reading[], excerpt: string, language: { want: string; was: string }): Promise<RecapRequest> {
-        const request: RecapRequest = {
-            previous: previousFor(prior), excerpt, language: language.want, previousLanguage: language.was,
-            lanes: readings.map((r) => laneLabel(r.lane, r.cursor.title, fromScreen(r.cursor))),
-        };
-        if (readings.length < 2) {
-            return request;
-        }
-        const hints = await Promise.all(readings.map((r) => hintOf(r.lane, laneLabel(r.lane, r.cursor.title, fromScreen(r.cursor)), r.chunk?.entries ?? [], this.deps.repos)));
-        return { ...request, hints, grouping: groupingOf(prior) };
+    private async requestOf(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<RecapRequest> {
+        const input = await inputOf(prior, readings, { repos: this.deps.repos, now: this.deps.clock.now() });
+        return { input, language: language.want, previousLanguage: language.was };
     }
 
     /** `switched`: the recap exists in another language than wanted — rewrite it now, new excerpt or not. */
@@ -162,12 +146,10 @@ export class RecapJob {
             records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced });
             return;
         }
-        const share = Math.floor(EXCERPT_BUDGET / Math.max(1, parts.length));
-        const excerpt = parts.map((r) => `=== ${laneLabel(r.lane, r.cursor.title, fromScreen(r.cursor))} ===\n${renderExcerpt(r.chunk?.entries ?? [], share)}`).join('\n\n');
         const summarizer = this.deps.summarizer();
         records.beginRun(prior.tab, summarizer.backend, clock.now());
         const panes = readings.map((r) => String(r.lane.pane));
-        const asked = await ask(summarizer, await this.requestOf(prior, readings, excerpt, { want: language.want, was }), prior, panes, language.want === 'es' ? 'es' : 'en');
+        const asked = await ask(summarizer, await this.requestOf(prior, readings, { want: language.want, was }), prior, panes, language.want === 'es' ? 'es' : 'en');
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved });

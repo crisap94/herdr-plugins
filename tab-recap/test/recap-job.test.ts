@@ -21,7 +21,7 @@ function transcriptsOf(agent: string): Transcripts {
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => {
             const pane = source.slice(3);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: true });
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true });
         },
     };
 }
@@ -46,7 +46,8 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     const [only] = requests;
     assert.equal(requests.length, 1, 'one summarizer call for the whole tab');
     assert.ok(only !== undefined);
-    assert.match(only.excerpt, /=== claude in w1:p1 ===[\s\S]*migrate victoria[\s\S]*=== codex in w1:p2 ===[\s\S]*run the tests/);
+    assert.deepEqual(only.input.agents.map((agent) => [agent.id, agent.kind, agent.pane]), [['a1', 'claude', 'w1:p1'], ['a2', 'codex', 'w1:p2']], 'every lane is described, hints included');
+    assert.deepEqual(only.input.transcripts.map((lane) => [lane.agent, lane.entries.map((entry) => entry.text)]), [['a1', ['migrate victoria']], ['a2', ['run the tests']]]);
     const recap = store.records.readRecap('w1:t1');
     assert.ok(recap !== null);
     assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [] });
@@ -58,7 +59,7 @@ const quiet: Transcripts = {
     agent: 'claude',
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, position: { cursor: 100, tail: null }, grew: false }),
+    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: false }),
 };
 
 async function rewriteWith(language: string, stored: string | undefined, cause: 'requested' | 'focused'): Promise<{ calls: RecapRequest[]; recap: TabRecap | null }> {
@@ -89,7 +90,7 @@ test('a language switch with nothing new REWRITES the recap — on a request and
         const { calls, recap } = await rewriteWith('es', 'en', cause);
         assert.equal(calls.length, 1, `${cause}: the early return is bypassed`);
         const [first] = calls;
-        assert.deepEqual([first?.language, first?.previousLanguage, first?.excerpt], ['es', 'en', '']);
+        assert.deepEqual([first?.language, first?.previousLanguage, first?.input.transcripts.flatMap((lane) => lane.entries).length], ['es', 'en', 0]);
         assert.equal(recap?.language, 'es');
         assert.equal(firstTask(recap).sections?.goal, 'hecho');
         assert.match(firstTask(recap).markdown, /^## Objetivo\nhecho/);
@@ -168,9 +169,9 @@ test('two unusable answers keep the previous recap, add an error line and do not
 test('the previous recap goes back to the writer as its JSON; a recap from before the fixed structure goes back as it was', async () => {
     const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [] };
     const fresh = await recapWith([JSON.stringify({ goal: 'x' })], { tasks: oneTask('rendered', sections), at: 1 });
-    assert.deepEqual(JSON.parse(fresh.calls[0]?.previous ?? ''), sections);
+    assert.deepEqual(JSON.parse(fresh.calls[0]?.input.previous ?? ''), sections);
     const old = await recapWith([JSON.stringify({ goal: 'x' })], { tasks: oneTask('## Goal\n- from the old days'), at: 1 });
-    assert.equal(old.calls[0]?.previous, '## Goal\n- from the old days');
+    assert.equal(old.calls[0]?.input.previous, '## Goal\n- from the old days');
     assert.equal(firstTask(old.recap).sections?.goal, 'x', 'the next rewrite moves it to the fixed structure');
 });
 

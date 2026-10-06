@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { claudeArgs } from '#src/adapters/claude-summarizer.ts';
 import { codexArgs } from '#src/adapters/codex-summarizer.ts';
@@ -9,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { instructions } from '#src/adapters/recap-prompt.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
-const request = { previous: '', excerpt: 'user: hi', language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] };
+const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
 
 test('golden: claude and codex are invoked exactly as before the harness work', () => {
     assert.deepEqual(claudeArgs('', request), [
@@ -88,7 +89,7 @@ test('custom: the prompt goes in on stdin and the Markdown comes out on stdout',
     const summarizer = new CustomSummarizer('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     assert.equal(summarizer.backend, 'custom/node');
     const written = await summarizer.write(request);
-    assert.ok(written.kind === 'written' && written.text.includes('user: hi') && written.text.includes('JSON object'));
+    assert.ok(written.kind === 'written' && written.text.includes('>hi</turn>') && written.text.includes('JSON object') && written.text.indexOf('<recap_input') < written.text.indexOf('JSON object'), 'the data comes first, the instructions after');
     const empty = await new CustomSummarizer('', process.cwd(), 1000).write(request);
     assert.ok(isUnknown(empty));
     const broken = await new CustomSummarizer('node -e "process.exit(3)"', process.cwd(), 20_000).write(request);

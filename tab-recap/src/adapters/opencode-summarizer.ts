@@ -5,7 +5,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { instructions, message, unfenced } from './recap-prompt.ts';
+import { prompt, unfenced } from './recap-prompt.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { run, scrubbedEnv } from './run.ts';
 import type { Runner } from './run.ts';
@@ -111,7 +111,7 @@ export class OpencodeSummarizer implements Summarizer {
     async write(request: RecapRequest): Promise<Written> {
         mkdirSync(this.workDir, { recursive: true });
         const env = { ...scrubbedEnv(), OPENCODE_CONFIG_CONTENT: TOOLLESS };
-        const input = `${instructions(request)}\n\n${message(request)}`;
+        const input = prompt(request);
         const title = `tab-recap-${process.pid}-${Date.now()}`;
         const ran = await this.runner('opencode', opencodeArgs(this.model, title, this.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
         const output = opencodeOutput(ran.stdout);

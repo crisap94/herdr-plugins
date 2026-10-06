@@ -44,7 +44,7 @@ export class ScreenTranscripts implements Transcripts {
         const tail = hashOf(steady(clean));
         const grew = tail !== was.tail && clean !== '';
         return {
-            kind: 'chunk', entries: grew ? screenEntries(clean) : [], title: null, lastPrompt: null, claudeRecap: null,
+            kind: 'chunk', entries: grew ? screenEntries(clean) : [], title: null, lastPrompt: null, claudeRecap: null, notes: [],
             position: { cursor: shown.revision, tail }, grew,
         };
     }

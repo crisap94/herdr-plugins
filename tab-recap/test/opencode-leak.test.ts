@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { OpencodeSummarizer } from '#src/adapters/opencode-summarizer.ts';
 import type { Runner } from '#src/adapters/run.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
-const request = { previous: '', excerpt: 'user: hi', language: 'en', previousLanguage: 'en', lanes: ['claude in w1:p1'] };
+const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
 
 const done = (stdout: string, timedOut = false): ReturnType<Runner> => Promise.resolve({ code: timedOut ? 143 : 0, stdout, stderr: '', timedOut });
 

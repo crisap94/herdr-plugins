@@ -15,7 +15,7 @@ npm install          # dev tools only (tsgo, oxlint, ast-grep); the plugin has z
 herdr plugin link .  # run your checkout inside herdr
 ```
 
-Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0.
+Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
 
 ## Gates
 

@@ -5,7 +5,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { instructions, message, unfenced } from './recap-prompt.ts';
+import { prompt, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
 
 /**
@@ -45,7 +45,7 @@ export class CodexSummarizer implements Summarizer {
         mkdirSync(this.workDir, { recursive: true });
         const out = join(this.workDir, `codex-${process.pid}-${Date.now()}.md`);
         const args = codexArgs(this.model, out, this.effort);
-        const input = `${instructions(request)}\n\n${message(request)}`;
+        const input = prompt(request);
         const ran = await run('codex', args, { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
         let text = '';
         try { text = readFileSync(out, 'utf8'); } catch { /* codex wrote nothing */ }
