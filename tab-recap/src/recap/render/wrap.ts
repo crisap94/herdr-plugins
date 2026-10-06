@@ -1,26 +1,54 @@
 // Pure text layout for a narrow column. No I/O.
-import { styleText } from 'node:util';
+import { stripVTControlCharacters, styleText } from 'node:util';
 import type { AgoUnit } from '#src/i18n/messages.ts';
 
 const ESC = String.fromCodePoint(0x1b);
+const CSI = new RegExp(`(${ESC}\\[[0-?]*[ -/]*[@-~])`, 'u');
+const EMOJI = /\p{Extended_Pictographic}/u;
+const EMOJI_PRESENTATION = /\p{Emoji_Presentation}|\uFE0F/u;
+const FLAG = /^\p{Regional_Indicator}{2}$/u;
+const MARKS_ONLY = /^\p{M}+$/u;
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-/** Length as the terminal shows it: ANSI escapes take no cells. */
-export function visibleLength(text: string): number {
-    let length = 0;
-    let inEscape = false;
-    for (const ch of text) {
-        if (ch === ESC) {
-            inEscape = true;
-        } else if (inEscape) {
-            inEscape = !(ch >= '@' && ch <= '~' && ch !== '[');
-        } else {
-            length++;
-        }
+/** Cells one user-perceived character takes: emoji presentation (or a flag) 2, combining marks alone 0, else 1. */
+function cellsOf(character: string): number {
+    if (MARKS_ONLY.test(character)) {
+        return 0;
     }
-    return length;
+    return (EMOJI.test(character) && EMOJI_PRESENTATION.test(character)) || FLAG.test(character) ? 2 : 1;
 }
 
-/** Word-wraps plain text; a word longer than the width is cut. `hang` indents continuation lines. */
+/** Width as the terminal draws it: escapes take no cells, an emoji two, a combining mark none. */
+export function visibleLength(text: string): number {
+    let cells = 0;
+    for (const { segment } of graphemes.segment(stripVTControlCharacters(text))) {
+        cells += cellsOf(segment);
+    }
+    return cells;
+}
+
+/** Splits `text` after the last whole character that fits in `room` cells; escapes ride along and take none. */
+function cut(text: string, room: number): [string, string] {
+    let cells = 0;
+    let head = '';
+    const pieces = text.split(CSI);
+    for (const [at, piece] of pieces.entries()) {
+        if (at % 2 === 1) {
+            head += piece;
+            continue;
+        }
+        for (const { segment, index } of graphemes.segment(piece)) {
+            cells += cellsOf(segment);
+            if (cells > room && head !== '') {
+                return [head, `${piece.slice(index)}${pieces.slice(at + 1).join('')}`];
+            }
+            head += segment;
+        }
+    }
+    return [head, ''];
+}
+
+/** Word-wraps plain text; a word longer than the width is cut between characters. `hang` indents continuation lines. */
 export function wrap(text: string, width: number, hang = ''): string[] {
     const room = Math.max(8, width);
     const lines: string[] = [];
@@ -36,8 +64,9 @@ export function wrap(text: string, width: number, hang = ''): string[] {
         }
         let rest = `${hang}${word}`;
         while (visibleLength(rest) > room) {
-            lines.push(rest.slice(0, room));
-            rest = `${hang}${rest.slice(room)}`;
+            const [head, tail] = cut(rest, room);
+            lines.push(head);
+            rest = `${hang}${tail}`;
         }
         line = rest;
     }

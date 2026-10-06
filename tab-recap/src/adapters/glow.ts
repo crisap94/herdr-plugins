@@ -1,39 +1,16 @@
 // Renders Markdown through glow when it is installed; the column falls back to its own
 // renderer otherwise. An explicit style is required: glow prints plain text when captured.
 import { spawnSync } from 'node:child_process';
+import { stripVTControlCharacters } from 'node:util';
 
-const CSI = `${String.fromCodePoint(0x1b)}[`;
-const SGR_BODY = new Set('0123456789;');
-
-function endsWithSgr(text: string): number {
-    const at = text.lastIndexOf(CSI);
-    if (at < 0 || !text.endsWith('m')) {
-        return -1;
-    }
-    const body = text.slice(at + CSI.length, -1);
-    for (let i = 0; i < body.length; i++) {
-        if (!SGR_BODY.has(body.charAt(i))) {
-            return -1;
-        }
-    }
-    return at;
-}
-
-/** glow pads every line to the full width with spaces (inside trailing colour codes); drop the padding. */
+/** glow pads every line to the full width with spaces (inside trailing colour codes); drop the padding, keep the codes. */
 export function trimPadding(line: string): string {
-    let rest = line;
-    let tail = '';
-    for (;;) {
-        const at = endsWithSgr(rest);
-        if (at >= 0) {
-            tail = rest.slice(at) + tail;
-            rest = rest.slice(0, at);
-        } else if (rest.endsWith(' ')) {
-            rest = rest.trimEnd();
-        } else {
-            return rest + tail;
-        }
+    const shown = stripVTControlCharacters(line).trimEnd();
+    let end = 0;
+    while (stripVTControlCharacters(line.slice(0, end)) !== shown) {
+        end++;
     }
+    return `${line.slice(0, end)}${line.slice(end).replaceAll(' ', '')}`;
 }
 
 export type MarkdownRenderer = (markdown: string, width: number) => readonly string[] | null;

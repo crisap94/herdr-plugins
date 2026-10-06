@@ -4,7 +4,7 @@ import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOIC
 import type { RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-import { coloured, wrap } from './wrap.ts';
+import { coloured, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
 
 const LABEL_WIDTH = 18;
@@ -184,5 +184,5 @@ export function setupView(state: Setup, m: Messages, width: number, style: Style
 /** The longest hint that fits: a cut-off hint reads as a bug. */
 export function setupFooter(state: Setup, m: Messages, width: number, style: Style = coloured): string {
     const hints = state.editing === null ? m.setup.keys : m.setup.editKeys;
-    return style.gray(hints.find((hint) => hint.length <= width) ?? '');
+    return style.gray(hints.find((hint) => visibleLength(hint) <= width) ?? '');
 }

@@ -1,4 +1,5 @@
 import { mkdirSync } from 'node:fs';
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -98,7 +99,7 @@ export class OpencodeSummarizer implements Summarizer {
             return;
         }
         await this.remove(await this.titled(title, env), env);
-        await new Promise((resolve) => { setTimeout(resolve, this.relistMs); });
+        await sleep(this.relistMs);
         await this.remove(await this.titled(title, env), env);
     }
 

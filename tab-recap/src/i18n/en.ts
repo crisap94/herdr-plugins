@@ -1,4 +1,5 @@
 import type { Messages } from './messages.ts';
+import { agoIn } from './relative.ts';
 
 export const en: Messages = {
     locale: 'en',
@@ -15,7 +16,7 @@ export const en: Messages = {
     git: { unpushed: (count) => `${count} unpushed`, changed: (count) => `${count} changed` },
     recapError: (error) => `recap: ${error}`,
     needsYou: (what) => `needs you: ${what}`,
-    ago: (amount, unit) => `${amount}${unit === 'min' ? 'm' : unit} ago`,
+    ago: agoIn('en'),
     hints: {
         column: ['tap: full screen · r recap now · h hide · j/k scroll', 'tap: full screen · r · h · j/k', 'r recap · h hide', 'r h'],
         modal: ['q close · r recap now · h hide column · j/k scroll · g top', 'q close · r recap now · h hide · j/k', 'q close · r · h · j/k', 'q'],

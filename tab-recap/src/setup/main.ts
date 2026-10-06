@@ -15,12 +15,12 @@ import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 const style = styleFor(process.stdout);
 const ESC = String.fromCodePoint(0x1b);
 const RESET = style === coloured ? `${ESC}[0m` : '';
 const BEL = String.fromCodePoint(0x07);
-const STYLE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 /** one cell of padding on each side, as in the column */
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
@@ -54,7 +54,7 @@ function draw(): void {
     const m = messages();
     const lines = setupView(state, m, width, style);
     const room = Math.max(3, rows) - 1;
-    const focus = Math.max(0, lines.findIndex((line) => line.replace(STYLE, '').startsWith('▸')));
+    const focus = Math.max(0, lines.findIndex((line) => stripVTControlCharacters(line).startsWith('▸')));
     scroll = Math.max(0, Math.min(focus - Math.floor(room / 3), lines.length - room));
     const shown = lines.slice(scroll, scroll + room);
     while (shown.length < room) {

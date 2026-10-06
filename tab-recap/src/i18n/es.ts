@@ -1,4 +1,5 @@
 import type { Messages } from './messages.ts';
+import { agoIn } from './relative.ts';
 
 /** Neutral Latin-American Spanish, informal «tú». Typed as `Messages`: a missing key fails the typecheck. */
 export const es: Messages = {
@@ -16,7 +17,7 @@ export const es: Messages = {
     git: { unpushed: (count) => `${count} sin subir`, changed: (count) => (count === 1 ? '1 cambiado' : `${count} cambiados`) },
     recapError: (error) => `resumen: ${error}`,
     needsYou: (what) => `te necesita: ${what}`,
-    ago: (amount, unit) => `hace ${amount} ${unit}`,
+    ago: agoIn('es'),
     hints: {
         column: ['toca: pantalla completa · r actualizar · h ocultar · j/k desplazar', 'toca: pantalla completa · r · h · j/k', 'r actualizar · h ocultar', 'r h'],
         modal: ['q cerrar · r actualizar ahora · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],

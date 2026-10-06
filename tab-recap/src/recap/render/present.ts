@@ -12,7 +12,7 @@ import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { groupsOf } from './groups.ts';
 import type { Group } from './groups.ts';
-import { coloured, elapsed, plainMarkdown, wrap } from './wrap.ts';
+import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
 
 export interface ColumnView {
@@ -182,7 +182,7 @@ export type Mode = 'column' | 'modal' | 'bar';
 /** The longest hint that fits: a cut-off hint reads as a bug. */
 export function footer(width: number, mode: Mode, m: Messages, style: Style = coloured): string {
     const hints = mode === 'bar' ? [] : m.hints[mode];
-    return style.gray(hints.find((hint) => hint.length <= width) ?? '');
+    return style.gray(hints.find((hint) => visibleLength(hint) <= width) ?? '');
 }
 
 const PLAIN_BULLET = /^\s*[-*+]\s+/;

@@ -56,6 +56,8 @@ test("glow's padding is dropped, its colours kept", async () => {
     const esc = String.fromCodePoint(0x1b);
     assert.equal(trimPadding(`${esc}[1mGoal${esc}[0m     ${esc}[0m`), `${esc}[1mGoal${esc}[0m${esc}[0m`);
     assert.equal(trimPadding('plain   '), 'plain');
+    assert.equal(trimPadding(`${esc}[1m   ${esc}[0m`), `${esc}[1m${esc}[0m`);
+    assert.equal(trimPadding(`${esc}]8;;https://example.org${esc}\\link${esc}]8;;${esc}\\   `), `${esc}]8;;https://example.org${esc}\\link${esc}]8;;${esc}\\`);
 });
 
 test('a modal tells you how to close it; a column never does', async () => {
