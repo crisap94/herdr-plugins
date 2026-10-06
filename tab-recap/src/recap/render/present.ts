@@ -11,6 +11,7 @@ import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { groupsOf } from './groups.ts';
+import { linked } from './linked.ts';
 import type { Group } from './groups.ts';
 import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
@@ -113,16 +114,17 @@ function markdownOf(task: RecapTask | null, m: Messages): string {
     return task.sections === null ? task.markdown : renderRecap(task.sections, m.locale);
 }
 
-function body(recap: TabRecap | null, task: RecapTask | null, width: number, markdown: Markdown, view: ColumnView): string[] {
-    const { messages: m } = view;
+function body(task: RecapTask | null, lanes: readonly TabLane[], width: number, markdown: Markdown, view: ColumnView): string[] {
+    const { messages: m, recap } = view;
     const style = paint(view);
     const drawn = markdownOf(task, m);
+    const links = (text: string): string => linked(text, lanes.map((lane) => lane.web));
     // the fixed structure is laid out here, never by glow: one blank line between sections, none after a heading
     if (task !== null && task.sections !== null) {
-        return plainMarkdown(drawn, width, style);
+        return plainMarkdown(drawn, width, style, links);
     }
     if (drawn !== '') {
-        return [...(markdown(drawn, width) ?? plainMarkdown(drawn, width, style))];
+        return [...(markdown(drawn, width) ?? plainMarkdown(drawn, width, style, links))];
     }
     const theirs = (recap?.lanes ?? []).flatMap((c) => (c.claudeRecap === null ? [] : [c.claudeRecap]));
     if (theirs.length > 0) {
@@ -148,7 +150,7 @@ const headersOf = (lanes: readonly TabLane[], view: ColumnView, width: number): 
 function taskBlock(group: Group, at: number, view: ColumnView, width: number, markdown: Markdown): string[] {
     const style = paint(view);
     const heading = group.task === null ? [] : [style.bold(style.cyan(`▌ ${group.task.name === '' ? view.messages.taskNumber(at + 1) : group.task.name}`))];
-    const recap = group.task === null ? [] : ['', ...body(view.recap, group.task, width, markdown, view)];
+    const recap = group.task === null ? [] : ['', ...body(group.task, group.lanes, width, markdown, view)];
     return [...heading, ...headersOf(group.lanes, view, width), ...recap];
 }
 
@@ -172,7 +174,7 @@ export function present(view: ColumnView, width: number, markdown: Markdown): st
         rule,
         ...recapMeta(view, width),
         '',
-        ...body(view.recap, groups[0]?.task ?? null, width, markdown, view),
+        ...body(groups[0]?.task ?? null, view.tab.lanes, width, markdown, view),
         ...end,
     ];
 }

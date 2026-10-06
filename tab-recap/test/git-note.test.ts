@@ -42,7 +42,7 @@ test('noteOf: ⎇, en and es; clean and not ahead is just the branch', () => {
 
 interface Call { args: readonly string[]; cwd: string; env: NodeJS.ProcessEnv; timeoutMs: number }
 
-function fixture(reply: (args: readonly string[]) => RunResult, found: RepoResult = { kind: 'repo', root: '/nowhere', branch: 'main' }): {
+function fixture(reply: (args: readonly string[]) => RunResult, found: RepoResult = { kind: 'repo', root: '/nowhere', branch: 'main', web: null }): {
     calls: Call[]; note: Extension; config: Map<string, string>; advance: (ms: number) => void;
 } {
     const calls: Call[] = [];
@@ -117,7 +117,7 @@ test('the HEAD or index changing invalidates the cache before the TTL', async ()
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'git-note-')));
     try {
         execFileSync('git', ['init', '-q', dir]);
-        const { note, calls } = fixture(() => ok(PORCELAIN), { kind: 'repo', root: dir, branch: 'main' });
+        const { note, calls } = fixture(() => ok(PORCELAIN), { kind: 'repo', root: dir, branch: 'main', web: null });
         writeFileSync(join(dir, '.git', 'index'), 'x');
         notes(note, [lane('p1', dir)]);
         await settle();

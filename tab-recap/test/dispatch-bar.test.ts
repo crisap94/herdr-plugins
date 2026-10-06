@@ -14,6 +14,7 @@ import type { TabViews } from '#src/ports/tab-views.ts';
 const rect = (x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } => ({ x, y, width, height });
 
 const noop = (): void => undefined;
+const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
 const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
 const noBoard = (): Board => emptyBoard();
 const sizing = (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 });
@@ -47,7 +48,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     const views = {} as TabViews;
     const visibility = {} as ColumnVisibility;
     const dispatch = new Dispatch({
-        columns, views, visibility, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
+        columns, views, visibility, recaps: {} as RecapJob, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: (observation): void => { fed.push(observation); },
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'bar' });
@@ -67,7 +68,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new Dispatch({
-        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
+        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: noop,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });
