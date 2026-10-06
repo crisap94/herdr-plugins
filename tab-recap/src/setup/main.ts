@@ -1,5 +1,6 @@
 // The settings modal: a popup pane process. Composition root — it asks herdr and the PATH what is
 // available, runs the pure reducer on raw keys, and performs the effects it returns.
+import { checked } from '#src/adapters/node-guard-pane.mjs';
 import { setValues } from '#src/adapters/config-file.ts';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
@@ -17,6 +18,8 @@ import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
+
+void checked;
 
 const style = styleFor(process.stdout);
 const ESC = String.fromCodePoint(0x1b);

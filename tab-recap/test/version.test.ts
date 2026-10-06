@@ -157,6 +157,6 @@ test('status says which node runs it and which keys are bound, or that none is',
 });
 
 test('an old node earns a warning line naming the minimum', () => {
-    assert.match(en.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 is older than 24\.21\.0.*Node >= 24\.21\.0/);
-    assert.match(es.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 es anterior a 24\.21\.0/);
+    assert.match(en.cli.nodeTooOld('v18.0.0', '24.21.0', '/usr/bin/node'), /needs Node >= 24\.21\.0, but this is v18\.0\.0 \(\/usr\/bin\/node\)[\s\S]*herdr server stop/);
+    assert.match(es.cli.nodeTooOld('v18.0.0', '24.21.0', '/usr/bin/node'), /necesita Node >= 24\.21\.0, pero este es v18\.0\.0 \(\/usr\/bin\/node\)[\s\S]*herdr server stop/);
 });

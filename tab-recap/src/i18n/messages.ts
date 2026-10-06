@@ -103,7 +103,8 @@ export interface Messages {
         readonly usage: (commands: string) => string;
         readonly statusVersion: (code: string | null) => string;
         readonly statusNode: (path: string, version: string) => string;
-        readonly nodeTooOld: (version: string, minimum: string) => string;
+        /** several lines: what is wrong (the version found, the one required, the node used) and the steps to fix it */
+        readonly nodeTooOld: (version: string, minimum: string, path: string) => string;
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;

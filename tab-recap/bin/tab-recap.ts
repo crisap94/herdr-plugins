@@ -1,5 +1,6 @@
 // One-shot commands behind the plugin's actions. Exit codes: 0 done · 1 failed ·
 // 2 usage · 3 could not look (the house convention).
+import { checked } from '#src/adapters/node-guard-command.mjs';
 import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -19,6 +20,8 @@ import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { setValues } from './set-backend.ts';
+
+void checked;
 
 const OK = 0;
 const FAILED = 1;
@@ -108,7 +111,7 @@ function status(): number {
     console.log([
         t.statusVersion(codeVersion()),
         t.statusNode(process.execPath, process.version),
-        ...(nodeAtLeast(process.version) ? [] : [t.nodeTooOld(process.version, MIN_NODE)]),
+        ...(nodeAtLeast(process.version) ? [] : [t.nodeTooOld(process.version, MIN_NODE, process.execPath)]),
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),

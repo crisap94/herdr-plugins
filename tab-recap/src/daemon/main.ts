@@ -1,4 +1,5 @@
 // The composition root and the loop. Started detached by `bin/tab-recap.ts start`.
+import { checked } from '#src/adapters/node-guard-daemon.mjs';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
@@ -35,6 +36,8 @@ import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
+
+void checked;
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;

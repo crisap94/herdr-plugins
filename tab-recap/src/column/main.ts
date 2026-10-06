@@ -1,6 +1,7 @@
 // The column: a long-running pane process that renders its tab's recaps. Composition
 // root for the pane; reads the store the daemon writes, never writes anything but a
 // refresh request.
+import { checked } from '#src/adapters/node-guard-pane.mjs';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
@@ -18,6 +19,8 @@ import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
+
+void checked;
 
 const ESC = String.fromCodePoint(0x1b);
 const BEL = String.fromCodePoint(0x07);

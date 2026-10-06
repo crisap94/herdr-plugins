@@ -1,4 +1,5 @@
 // The compaction popup: a pane process. It asks for an optional note and queues the request; the daemon does the rest.
+import { checked } from '#src/adapters/node-guard-pane.mjs';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
@@ -9,6 +10,8 @@ import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.
 import { compactFooter, compactView } from '#src/recap/render/compact.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+
+void checked;
 
 const style = styleFor(process.stdout);
 const ESC = String.fromCodePoint(0x1b);
