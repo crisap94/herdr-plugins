@@ -35,10 +35,10 @@ landed. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing.
 - [ ] 6.1 Use `setTimeout` from `node:timers/promises` for the re-list delay in `src/adapters/opencode-summarizer.ts` — verify: existing opencode summarizer test green
 - [ ] 6.2 Implement `ago` in `src/i18n/en.ts` and `src/i18n/es.ts` with `Intl.RelativeTimeFormat(locale, { style: 'narrow', numeric: 'always' })`, formatting negative amounts and `-0` for zero; `elapsed()` keeps choosing the unit and clamps future times to 0 — verify: tests for en `12s ago · 5m ago · 3h ago · 2d ago · 0s ago`, es `hace 12 s · hace 5 min · hace 3 h · hace 2 d · hace 0 s`, and a future time → `0s ago`
 
-## 7. Integration
+## 7. Integration (before merge)
 
 - [ ] 7.1 Both CIs green: GitLab pipeline and GitHub Actions (ubuntu, macOS, Node 24.14.0 job) — verify: pipeline links in the merge request
-- [ ] 7.2 Live check after deploy: a column whose recap contains emoji keeps every line inside the column, and a column started with `NO_COLOR=1` has no colours — verify: screenshot or `herdr pane read` excerpt in the merge request
+- [ ] 7.2 Live check before merge, running a column from the branch's worktree: a recap containing emoji keeps every line inside the column, and a column started with `NO_COLOR=1` has no colours — verify: `herdr pane read` excerpt in the merge request
 
 ## 8. Archive
 
