@@ -2,6 +2,8 @@ import { mkdirSync } from 'node:fs';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { levelOf } from '#src/recap/domain/effort.ts';
+import type { Effort } from '#src/recap/domain/effort.ts';
 import { instructions, message, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
 
@@ -20,10 +22,12 @@ export function resultOf(stdout: string): { text: string; cost: number } | null 
     }
 }
 
-export function claudeArgs(model: string, request: Pick<RecapRequest, 'language' | 'previousLanguage'>): string[] {
+export function claudeArgs(model: string, request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input'>, effort: Effort = 'default'): string[] {
+    const level = levelOf(effort, 'low');
     return [
         '-p', '--model', model === '' ? 'haiku' : model, '--no-session-persistence', '--tools', '', '--setting-sources', '',
         '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions(request),
+        ...(level === null ? [] : ['--effort', level]),
     ];
 }
 
@@ -36,8 +40,10 @@ export class ClaudeSummarizer implements Summarizer {
     private readonly model: string;
     private readonly workDir: string;
     private readonly timeoutMs: number;
+    private readonly effort: Effort;
 
-    constructor(model: string, workDir: string, timeoutMs: number) {
+    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort) {
+        this.effort = effort;
         this.model = model === '' ? 'haiku' : model;
         this.backend = `claude/${this.model}`;
         this.workDir = workDir;
@@ -46,7 +52,7 @@ export class ClaudeSummarizer implements Summarizer {
 
     async write(request: RecapRequest): Promise<Written> {
         mkdirSync(this.workDir, { recursive: true });
-        const args = claudeArgs(this.model, request);
+        const args = claudeArgs(this.model, request, this.effort);
         const ran = await run('claude', args, { input: message(request), timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });

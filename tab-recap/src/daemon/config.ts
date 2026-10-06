@@ -11,6 +11,8 @@ import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
+import { effortOf } from '#src/recap/domain/effort.ts';
+import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
@@ -20,6 +22,8 @@ export interface Config {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
     readonly customCommand: string;
+    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`low` unless set) */
+    readonly effort: Effort;
     readonly locale: Locale;
     /** `en`, `es` or sanitised free text: what new recaps are written in */
     readonly recapLanguage: string;
@@ -124,6 +128,7 @@ export function loadConfig(): Config {
         backend,
         models: modelsOf(get, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
+        effort: effortOf(get('TAB_RECAP_EFFORT')),
         sizing: {
             fraction: Math.min(0.6, number(get('TAB_RECAP_WIDTH'), 0.3)),
             minCols: number(get('TAB_RECAP_MIN_COLS'), 36),

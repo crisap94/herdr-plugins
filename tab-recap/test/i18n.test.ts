@@ -1,11 +1,12 @@
 import { test } from 'node:test';
+import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { instructions, message } from '#src/adapters/recap-prompt.ts';
 import { languageName, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { localeOf } from '#src/daemon/config.ts';
 
-const base = { previousLanguage: 'en' };
+const base = { previousLanguage: 'en', input: requestOf().input };
 
 test('sections: seven, always in this order, with both headings; a heading is recognised in either language — and the old ones too', () => {
     assert.deepEqual(SECTIONS.map((section) => section.id), ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links']);
@@ -39,13 +40,16 @@ test('instructions: the JSON contract — seven keys, the caps, plain-language r
 
 test('instructions: a recap in another language is carried over translated', () => {
     const switching = instructions({ ...base, language: 'es', previousLanguage: 'en' });
-    assert.match(switching, /PREVIOUS RECAP is in English: carry over what is still relevant, rewritten in Spanish/);
+    assert.match(switching, /The <previous_recap> is in English: carry over what is still relevant, rewritten in Spanish/);
     assert.doesNotMatch(instructions({ ...base, language: 'en' }), /carry over/);
 });
 
-test('a switch with nothing new still gives the model something to do', () => {
-    assert.match(message({ ...base, language: 'es', previous: '{"goal":"x"}', excerpt: '', lanes: ['claude in p1'] }), /only rewrite the recap as asked above/);
-    assert.match(message({ ...base, language: 'en', previous: '', excerpt: 'x', lanes: [], correction: 'the answer is not valid JSON' }), /YOUR LAST ANSWER WAS REJECTED: the answer is not valid JSON\. Answer again with ONLY the JSON object\./);
+test('a switch with nothing new still gives the model something to do; a retry says what was wrong', () => {
+    assert.match(instructions({ ...base, language: 'es' }), /Empty <transcript>: just rewrite/);
+    const switching = message(requestOf({ language: 'es', previous: '{"goal":"x"}' }));
+    assert.match(switching, /<previous_recap format="json" language="en">\{"goal":"x"\}<\/previous_recap>/);
+    assert.match(switching, /<transcript agent="a1"\/>/, 'nothing new: an empty transcript');
+    assert.match(message(requestOf({ correction: 'the answer is not valid JSON' })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
 });
 
 test('recap language: ui follows the locale; en/es by code or name; free text is sanitised', () => {

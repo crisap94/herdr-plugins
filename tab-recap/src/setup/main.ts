@@ -5,6 +5,7 @@ import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
+import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
@@ -24,7 +25,15 @@ const BEL = String.fromCodePoint(0x07);
 /** one cell of padding on each side, as in the column */
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
-const TINY = { previous: '', excerpt: '=== test ===\nuser: say hello', language: 'en', previousLanguage: 'en', lanes: ['test'] };
+const TINY: RecapRequest = {
+    language: 'en', previousLanguage: 'en',
+    input: {
+        tab: { id: 'test', now: Date.now(), zone: 'UTC' },
+        agents: [{ id: 'a1', kind: 'test', label: '', pane: 'test', source: 'transcript', cwd: null, repo: null, branch: null, files: [] }],
+        tasks: [], previous: '', notes: [],
+        transcripts: [{ agent: 'a1', entries: [{ role: 'user', text: 'say hello' }] }],
+    },
+};
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
 const fleet = new HerdrFleet(stateDir());
@@ -32,7 +41,7 @@ const get = configGetter();
 const config = loadConfig();
 
 let state: Setup = initial(
-    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE') }),
+    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE'), effort: get('TAB_RECAP_EFFORT') }),
     locksOf(process.env),
 );
 let scroll = 0;
@@ -71,7 +80,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models }, ids, join(stateDir(), 'summarizer'));
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'));
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);

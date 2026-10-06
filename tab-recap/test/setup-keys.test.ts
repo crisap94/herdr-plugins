@@ -30,7 +30,7 @@ test('the draft starts from the configuration: auto UI, recap language follows t
 test('navigation: j/k and arrows move between the six rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 5);
+    assert.equal(typed(start(), down(20)).state.row, 6);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -147,4 +147,15 @@ test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOT
     assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
     assert.deepEqual(locksOf({ TAB_RECAP_GIT_NOTE: 'off' }), { gitNote: 'TAB_RECAP_GIT_NOTE' });
     assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
+});
+
+test('the effort row: low by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {
+    assert.equal(draft.effort, 'low');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: ' HIGH ' }).effort, 'high');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'low');
+    const medium = typed(start(), [...down(6), '\r', 'j', '\r']);
+    assert.equal(medium.state.draft.effort, 'medium');
+    assert.deepEqual([...changes(medium.state)], [['TAB_RECAP_EFFORT', 'medium']]);
+    assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
+    assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), [...down(6), '\r']).state.note, 'locked');
 });

@@ -5,7 +5,7 @@
   "type": "module",
   "description": "herdr plugin: a recap column on the right of every tab with a coding agent",
   "engines": {
-    "node": ">=24.14.0"
+    "node": ">=24.21.0"
   },
   "imports": {
     "#src/*": "./src/*",

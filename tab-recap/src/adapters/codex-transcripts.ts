@@ -4,14 +4,15 @@ import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readJsonl, readLines, str, tailLines, toolBrief } from './jsonl.ts';
+import { arr, obj, parse, readJsonl, readLines, str, tailLines } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
+import { codexCalls, toolEntry } from './tool-calls.ts';
 
-const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md'];
+const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md', '<user_shell_command>', '<recommended_plugins>'];
 const DAYS_BACK = 14;
 const CANDIDATES = 200;
 
-function messageEntry(item: Row): Entry | null {
+function messageEntry(item: Row, at: number | undefined): Entry | null {
     const role = item['role'];
     if (role !== 'user' && role !== 'assistant') {
         return null;
@@ -21,37 +22,41 @@ function messageEntry(item: Row): Entry | null {
     if (text === '' || NOISE.some((noise) => head.startsWith(noise))) {
         return null;
     }
-    return { role: role === 'user' ? 'user' : 'agent', text };
+    return { role: role === 'user' ? 'user' : 'agent', text, ...(at === undefined ? {} : { at }) };
 }
 
-function toolEntry(item: Row): Entry {
+function toolEntries(item: Row, at: number | undefined): readonly Entry[] {
     const raw = item['arguments'] ?? item['input'];
     let input: Row = obj(raw);
     if (typeof raw === 'string') {
         input = parse(raw) ?? { command: raw };
     }
-    return { role: 'tool', text: toolBrief(str(item['name']) ?? 'tool', input) };
+    return codexCalls(str(item['name']) ?? 'tool', raw, input).map((call) => toolEntry(call, at));
+}
+
+const timeOf = (row: Row): number | undefined => {
+    const at = Date.parse(str(row['timestamp']) ?? '');
+    return Number.isNaN(at) ? undefined : at;
+};
+
+function entriesOf(row: Row): readonly Entry[] {
+    const item = obj(row['payload']);
+    if (row['type'] !== 'response_item') {
+        return [];
+    }
+    if (item['type'] === 'message') {
+        const entry = messageEntry(item, timeOf(row));
+        return entry === null ? [] : [entry];
+    }
+    return item['type'] === 'function_call' || item['type'] === 'custom_tool_call' ? toolEntries(item, timeOf(row)) : [];
 }
 
 export function extractCodex(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
-    const entries: Entry[] = [];
-    let lastPrompt: string | null = null;
-    for (const row of lines.map(parse)) {
-        const item = obj(row?.['payload']);
-        if (row?.['type'] !== 'response_item') {
-            continue;
-        }
-        if (item['type'] === 'message') {
-            const entry = messageEntry(item);
-            if (entry !== null) {
-                entries.push(entry);
-                lastPrompt = entry.role === 'user' ? entry.text : lastPrompt;
-            }
-        } else if (item['type'] === 'function_call' || item['type'] === 'custom_tool_call') {
-            entries.push(toolEntry(item));
-        }
-    }
-    return { entries, title: null, lastPrompt, claudeRecap: null };
+    const entries = lines.flatMap((line) => {
+        const row = parse(line);
+        return row === null ? [] : entriesOf(row);
+    });
+    return { entries, notes: [], title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
 }
 
 function dayDir(root: string, back: number): string {

@@ -15,7 +15,7 @@ npm install          # dev tools only (tsgo, oxlint, ast-grep); the plugin has z
 herdr plugin link .  # run your checkout inside herdr
 ```
 
-Needs Node ≥ 24.14.0 and herdr ≥ 0.9.0.
+Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
 
 ## Gates
 
@@ -54,7 +54,7 @@ would like to read in the notes ("Hide or show a tab's column with a key").
 
 ## House rules
 
-- **TypeScript on Node ≥ 24.14.0, run directly.** No build step, no runtime dependencies.
+- **TypeScript on Node ≥ 24.21.0, run directly.** No build step, no runtime dependencies.
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
   rules enforce the boundaries and each ships a bad/good probe it must bite. A new rule needs both
   probes. See [`tab-recap/CLAUDE.md`](tab-recap/CLAUDE.md).
@@ -73,7 +73,7 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   (part of `ci/lint.sh`) fails when a released file changed or was deleted.
 - **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
   drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
-  Use only SQL the SQLite bundled with Node 24.14 supports.
+  Use only SQL the SQLite bundled with Node 24.21 supports (SQLite 3.53).
 - **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
   millionths, times as epoch milliseconds.
 - **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
