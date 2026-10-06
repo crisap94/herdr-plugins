@@ -143,7 +143,7 @@ const transcripts: Transcripts = {
     }),
 };
 
-const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: '/work/pay', branch: 'feat/v2' } : { kind: 'no-repo' }) };
+const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: '/work/pay', branch: 'feat/v2', web: null } : { kind: 'no-repo' }) };
 
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];

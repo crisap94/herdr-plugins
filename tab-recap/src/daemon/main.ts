@@ -11,6 +11,7 @@ import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
+import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import { Informer } from '#src/recap/application/informer.ts';
@@ -61,15 +62,16 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const clock = new SystemClock();
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
+    const repos = new GitLaneRepo(clock);
     const recaps = new RecapJob({
         transcripts,
-        records: store.records, clock, log, repos: new GitLaneRepo(clock),
+        records: store.records, clock, log, repos,
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
     const dispatch = new Dispatch({
-        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts),
+        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs: new LaneWebs(repos),
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

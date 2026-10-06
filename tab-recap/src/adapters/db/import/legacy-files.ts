@@ -48,10 +48,10 @@ function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown
     return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
 }
 
-function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
+function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
     return {
         pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title,
-        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null,
+        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null, web: null,
     };
 }
 

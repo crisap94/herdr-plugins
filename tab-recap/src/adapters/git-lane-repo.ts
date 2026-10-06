@@ -4,6 +4,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { webOf } from './remote-web.ts';
 import { run, scrubbedEnv } from './run.ts';
 import type { Runner, RunResult } from './run.ts';
 
@@ -16,6 +17,9 @@ const GIT = ['-c', 'core.fsmonitor=false'];
 export const ROOT_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel'];
 /** exits 1 on a detached HEAD, and still works in a repository with no commit yet */
 export const BRANCH_ARGS: readonly string[] = [...GIT, 'symbolic-ref', '--short', '-q', 'HEAD'];
+
+/** exits 2 when there is no `origin` */
+export const ORIGIN_ARGS: readonly string[] = [...GIT, 'remote', 'get-url', 'origin'];
 
 export function gitEnv(): NodeJS.ProcessEnv {
     return { ...scrubbedEnv(), GIT_OPTIONAL_LOCKS: '0' };
@@ -65,7 +69,7 @@ export class GitLaneRepo implements LaneRepo {
 
     private async look(cwd: string): Promise<RepoResult> {
         const options = { input: '', timeoutMs: TIMEOUT_MS, cwd, env: gitEnv() };
-        const [root, branch] = await Promise.all([this.runner('git', ROOT_ARGS, options), this.runner('git', BRANCH_ARGS, options)]);
+        const [root, branch, origin] = await Promise.all([this.runner('git', ROOT_ARGS, options), this.runner('git', BRANCH_ARGS, options), this.runner('git', ORIGIN_ARGS, options)]);
         if (root.code === NOT_A_REPOSITORY) {
             return { kind: 'no-repo' };
         }
@@ -73,6 +77,7 @@ export class GitLaneRepo implements LaneRepo {
             return failure(root);
         }
         const name = branch.code === 0 ? branch.stdout.trim() : '';
-        return { kind: 'repo', root: root.stdout.trim(), branch: name === '' ? null : name };
+        const web = origin.code === 0 ? webOf(origin.stdout) : null;
+        return { kind: 'repo', root: root.stdout.trim(), branch: name === '' ? null : name, web };
     }
 }

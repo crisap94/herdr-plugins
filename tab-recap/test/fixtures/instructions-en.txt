@@ -22,6 +22,7 @@ How to write:
 - Name real things: file names, branch names, merge request numbers, commands, error messages.
 - No filler, no hedging, no jargon. One fact per line, never the same fact twice.
 - Keep an item of the <previous_recap> only while the <transcript> does not contradict it; finished work goes to "done".
-- "links" are names (file, branch, !number, command), never descriptions.
+- "links" are names that resolve (!number, #number, a commit SHA, a branch name, a file path) or a full URL copied from the transcript, never descriptions.
+- Write every reference as the transcript does: the column turns !252, a SHA, `feat/x`, `src/a.ts` and URLs into clickable links.
 - Never invent facts that are not in the inputs.
 - When a section has nothing to say, use an empty list [] ("" for goal). Never write "none".

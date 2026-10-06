@@ -17,6 +17,16 @@ test('a view reads back with its lanes in order, cwd and live prompt kept, null 
     assert.deepEqual([read.column, read.at, read.lanes.at(0)?.cwd, read.lanes.at(0)?.lastPrompt, read.lanes.at(1)?.cwd, read.lanes.at(1)?.lastPrompt], ['w1:p9', 1, '/w/x', 'ship it', null, null]);
 });
 
+test('a lane\'s web context reads back; a lane without one has none, and a plain view has web null', () => {
+    const { views } = memoryStore();
+    views.writeTab(view({ lanes: [lane('w1:p1', { web: { base: 'https://gitlab.example/acme/shop', forge: 'gitlab', branch: 'feat/cart' } }), lane('w1:p2', { web: { base: 'https://github.com/acme/shop', forge: 'github', branch: null } }), lane('w1:p3')] }));
+    assert.deepEqual(views.readTab('w1:t1')?.lanes.map((each) => each.web), [
+        { base: 'https://gitlab.example/acme/shop', forge: 'gitlab', branch: 'feat/cart' },
+        { base: 'https://github.com/acme/shop', forge: 'github', branch: null },
+        null,
+    ]);
+});
+
 test('each write replaces the lanes; an unknown tab, and a tab with only a recap, have no view', () => {
     const { views, records } = memoryStore();
     views.writeTab(view({ lanes: [lane('w1:p1'), lane('w1:p2')] }));

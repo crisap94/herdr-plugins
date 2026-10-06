@@ -53,7 +53,24 @@ test('a fresh install is the schema of every released version upgraded to the la
         assert.equal(versionOf(latest), 3);
         assert.deepEqual(shape(latest), shape(opened.db));
         const released = fromFixture(join(dir, 'released.db'));
-        assert.deepEqual(shape(released), shape(openDatabase(MEMORY).db), 'migration 1 still builds what 1.6.0 shipped: a change to it is a new migration');
+        assert.deepEqual(shape(released), shape(openDatabase(MEMORY, [m1]).db), 'migration 1 still builds what 1.6.0 shipped: a change to it is a new migration');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('the real migrations: a fresh install is the 1.6.0 fixture upgraded (migration 2 adds only the lane web columns), and the data stays', () => {
+    const dir = scratchDir('real');
+    try {
+        const fresh = openDatabase(MEMORY);
+        assert.equal(fresh.kind, 'ready');
+        const upgraded = fromFixture(join(dir, 'upgraded.db'));
+        migrate(upgraded, MIGRATIONS);
+        assert.equal(versionOf(upgraded), MIGRATIONS.length);
+        assert.deepEqual(shape(upgraded), shape(fresh.db));
+        assert.deepEqual(upgraded.prepare('SELECT pane, cwd, web_base, web_forge, web_branch FROM lane ORDER BY pane').all().slice(0, 1).map((row) => Object.assign({}, row)), [{ pane: 'w1:p1', cwd: '/w', web_base: null, web_forge: null, web_branch: null }]);
+        assert.deepEqual(upgraded.prepare('PRAGMA foreign_key_check').all(), []);
+        assert.throws(() => { upgraded.exec("UPDATE lane SET web_forge = 'bitbucket'"); }, /CHECK/);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -63,7 +80,7 @@ test('an upgraded fixture keeps its data readable through the repositories', () 
     const dir = scratchDir('fixture');
     try {
         fromFixture(join(dir, 'tab-recap.db')).close();
-        const opened = openDatabase(join(dir, 'tab-recap.db'), TOYS);
+        const opened = openDatabase(join(dir, 'tab-recap.db'), MIGRATIONS);
         assert.equal(opened.kind, 'ready');
         const store = storeOver(opened.db);
         const recap = must(store.records.readRecap('w1:t1'));
@@ -103,7 +120,7 @@ test('two processes open a brand new database at the same moment: the schema is 
         });
         assert.deepEqual(await Promise.all([run(), run(), run()]), [0, 0, 0]);
         const db = new DatabaseSync(path);
-        assert.equal(versionOf(db), 1);
+        assert.equal(versionOf(db), MIGRATIONS.length);
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });
@@ -143,7 +160,7 @@ test('a database newer than the code opens read-only, is not written, and says w
         if (opened.kind !== 'newer-db') {
             assert.fail('a database written by a newer plugin opens as newer-db');
         }
-        assert.deepEqual([opened.found, opened.known], [9, 1]);
+        assert.deepEqual([opened.found, opened.known], [9, MIGRATIONS.length]);
         assert.throws(() => { opened.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('x', 1, 1)"); }, /readonly/i);
         assert.equal(versionOf(opened.db), 9);
         assert.equal(opened.backup, `${path}.v1.bak`, 'the newest copy is the one to restore');

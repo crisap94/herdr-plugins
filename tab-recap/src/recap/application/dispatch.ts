@@ -9,7 +9,7 @@ import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
-import type { TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
 
@@ -19,6 +19,7 @@ export interface DispatchDeps {
     readonly visibility: ColumnVisibility;
     readonly recaps: RecapJob;
     readonly prompts: LivePromptSource;
+    readonly webs: LaneWebSource;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
@@ -31,12 +32,18 @@ export interface LivePromptSource {
     refresh(lane: Lane): Promise<boolean>;
 }
 
-export function viewOf(board: Board, tab: TabId, at: number, prompts: (pane: string) => string | null = (): null => null): TabView {
+/** What the dispatcher needs of the lanes' web contexts: what is known, and a way to look again. */
+export interface LaneWebSource {
+    of(pane: string): LaneWeb | null;
+    refresh(lane: Lane): Promise<boolean>;
+}
+
+export function viewOf(board: Board, tab: TabId, at: number, prompts: (pane: string) => string | null = (): null => null, webs: (pane: string) => LaneWeb | null = (): null => null): TabView {
     return {
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)),
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)),
         })),
         at,
     };
@@ -66,7 +73,7 @@ export class Dispatch {
                 this.publish(intent.tab);
                 return;
             case 'read-prompt':
-                if (await this.deps.prompts.refresh(intent.lane)) {
+                if ((await Promise.all([this.deps.prompts.refresh(intent.lane), this.deps.webs.refresh(intent.lane)])).includes(true)) {
                     this.publish(intent.lane.tab);
                 }
                 return;
@@ -87,7 +94,7 @@ export class Dispatch {
     }
 
     private publish(tab: TabId): void {
-        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane)));
+        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane), (pane) => this.deps.webs.of(pane)));
     }
 
     private failed(tab: TabId, why: string): void {

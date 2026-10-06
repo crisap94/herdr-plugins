@@ -1,13 +1,19 @@
 // The TabViews repository: a tab's row (where its column is, when it was published) and its lanes, replaced on each write.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { LaneWeb, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { writeTx } from './connection.ts';
 import { all, guarded, maybeText, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { TabRow } from './tab-row.ts';
 
+function webOf(row: Row): LaneWeb | null {
+    const base = maybeText(row, 'web_base');
+    const forge = maybeText(row, 'web_forge');
+    return base === null || (forge !== 'gitlab' && forge !== 'github') ? null : { base, forge, branch: maybeText(row, 'web_branch') };
+}
+
 const laneOf = (row: Row): TabLane => ({
-    pane: text(row, 'pane'), agent: text(row, 'agent'), status: text(row, 'status'), title: maybeText(row, 'title'), cwd: maybeText(row, 'cwd'), lastPrompt: maybeText(row, 'last_prompt'),
+    pane: text(row, 'pane'), agent: text(row, 'agent'), status: text(row, 'status'), title: maybeText(row, 'title'), cwd: maybeText(row, 'cwd'), lastPrompt: maybeText(row, 'last_prompt'), web: webOf(row),
 });
 
 export class TabViewsRepository implements TabViews {
@@ -26,10 +32,10 @@ export class TabViewsRepository implements TabViews {
         this.daemonVersion = daemonVersion;
         this.tabs = new TabRow(db);
         this.view = db.prepare('SELECT column_pane, view_at, daemon_version FROM tab WHERE id = ? AND view_at IS NOT NULL');
-        this.lanes = db.prepare('SELECT pane, agent, status, title, cwd, last_prompt FROM lane WHERE tab_id = ? ORDER BY position');
+        this.lanes = db.prepare('SELECT pane, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch FROM lane WHERE tab_id = ? ORDER BY position');
         this.update = db.prepare('UPDATE tab SET column_pane = ?, view_at = ?, daemon_version = ? WHERE id = ?');
         this.clear = db.prepare('DELETE FROM lane WHERE tab_id = ?');
-        this.insert = db.prepare('INSERT INTO lane (tab_id, pane, position, agent, status, title, cwd, last_prompt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        this.insert = db.prepare('INSERT INTO lane (tab_id, pane, position, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     }
 
     readTab(tab: string): TabView | null {
@@ -45,7 +51,7 @@ export class TabViewsRepository implements TabViews {
             this.update.run(view.column, view.at, view.daemonVersion ?? this.daemonVersion, view.tab);
             this.clear.run(view.tab);
             view.lanes.forEach((lane, position) => {
-                this.insert.run(view.tab, lane.pane, position, lane.agent, lane.status, lane.title, lane.cwd, lane.lastPrompt ?? null);
+                this.insert.run(view.tab, lane.pane, position, lane.agent, lane.status, lane.title, lane.cwd, lane.lastPrompt ?? null, lane.web?.base ?? null, lane.web?.forge ?? null, lane.web?.branch ?? null);
             });
         });
     }

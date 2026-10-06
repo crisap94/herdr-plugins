@@ -1,3 +1,13 @@
+import type { Forge } from './lane-repo.ts';
+
+/** Where a lane's repository lives on the web, and the branch its files are linked on. */
+export interface LaneWeb {
+    readonly base: string;
+    readonly forge: Forge;
+    /** null on a detached HEAD */
+    readonly branch: string | null;
+}
+
 /** What a column renders about one lane of its tab. */
 export interface TabLane {
     readonly pane: string;
@@ -8,6 +18,8 @@ export interface TabLane {
     readonly cwd: string | null;
     /** the newest thing the operator typed to this lane (the live prompt); absent or null when unknown, or for a view stored before this existed */
     readonly lastPrompt?: string | null;
+    /** the lane's repository on the web; absent or null when it has no `origin` git can turn into one, or for a view stored before this existed */
+    readonly web?: LaneWeb | null;
 }
 
 export interface TabView {

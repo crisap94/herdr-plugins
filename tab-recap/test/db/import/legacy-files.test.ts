@@ -27,7 +27,7 @@ test('the legacy reader knows a view written before cwd, the live prompt and the
     try {
         everyShape(dir);
         const views = new LegacyFiles(dir).views();
-        assert.deepEqual(views.find((view) => view.tab === 'w1:t2')?.lanes.at(0), { pane: 'w1:p1', agent: 'claude', status: 'working', title: null, cwd: null, lastPrompt: null });
+        assert.deepEqual(views.find((view) => view.tab === 'w1:t2')?.lanes.at(0), { pane: 'w1:p1', agent: 'claude', status: 'working', title: null, cwd: null, lastPrompt: null, web: null });
         assert.equal(views.find((view) => view.tab === 'w1:t2')?.daemonVersion, null);
         assert.deepEqual(views.find((view) => view.tab === 'w1:t8')?.lanes, [], 'a view with no lanes');
     } finally {
