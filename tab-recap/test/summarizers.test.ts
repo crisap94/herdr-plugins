@@ -17,10 +17,26 @@ test('golden: claude and codex are invoked exactly as before the harness work', 
         '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions(request),
     ]);
     assert.deepEqual(claudeArgs('sonnet', request).slice(0, 3), ['-p', '--model', 'sonnet']);
-    assert.deepEqual(codexArgs('', '/w/o.md'), [
-        'exec', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', '-s', 'read-only', '--color', 'never', '-o', '/w/o.md', '-',
+    assert.deepEqual(codexArgs('', '/w/o.md', 'default').slice(0, 8), [
+        'exec', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', '-s', 'read-only', '--color', 'never',
     ]);
     assert.deepEqual(codexArgs('gpt-6-luna', '/w/o.md').slice(7, 10), ['never', '-m', 'gpt-6-luna']);
+});
+
+const LEAN = ['multi_agent', 'plugins', 'browser_use', 'computer_use', 'skill_search', 'tool_suggest', 'hooks'].flatMap((feature) => ['--disable', feature]);
+
+test('effort: each harness gets its own word for it, and `default` passes nothing', () => {
+    assert.deepEqual(codexArgs('', '/w/o.md', 'low').slice(8), ['-c', 'model_reasoning_effort=low', ...LEAN, '-o', '/w/o.md', '-']);
+    assert.deepEqual(codexArgs('', '/w/o.md', 'high').slice(8, 10), ['-c', 'model_reasoning_effort=high']);
+    assert.deepEqual(codexArgs('', '/w/o.md', 'default').slice(8), [...LEAN, '-o', '/w/o.md', '-']);
+    assert.deepEqual(claudeArgs('', request, 'low').slice(-2), ['--effort', 'low']);
+    assert.deepEqual(claudeArgs('', request, 'medium').slice(-2), ['--effort', 'medium']);
+    assert.ok(!claudeArgs('', request, 'default').includes('--effort'));
+    assert.deepEqual(opencodeArgs('', 't1', 'low').slice(-2), ['--variant', 'minimal']);
+    assert.deepEqual(opencodeArgs('', 't1', 'high').slice(-2), ['--variant', 'high']);
+    assert.ok(!opencodeArgs('', 't1', 'default').includes('--variant'));
+    assert.deepEqual(hermesArgs('', 'P', 'u', 'low').slice(-4), ['--reasoning', 'low', '--usage-file', 'u']);
+    assert.ok(!hermesArgs('', 'P', 'u', 'default').includes('--reasoning'));
 });
 
 test('golden: the English instructions are exactly the reviewed JSON-contract text', () => {

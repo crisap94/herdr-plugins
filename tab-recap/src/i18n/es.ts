@@ -24,7 +24,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { harness: 'Agente', model: 'Modelo', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git' },
+        rows: { harness: 'Agente', model: 'Modelo', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', effort: 'Esfuerzo del redactor' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
@@ -34,6 +34,7 @@ export const es: Messages = {
         modelNoAgent: 'aún no hay ningún agente: elige uno arriba',
         uiChoices: { auto: 'auto (según tu idioma)', en: 'English', es: 'Español' },
         gitNoteChoices: { on: 'sí — rama, commits sin subir y archivos cambiados bajo cada agente', off: 'no' },
+        effortChoices: { low: 'bajo — reescribir en corto no pide deliberar (lo más barato)', medium: 'medio', high: 'alto', default: 'el ajuste propio del agente (no se pasa nada)' },
         recapLanguageHint: 'ui (como la interfaz) · en · es · o el nombre de un idioma',
         screenAgentsHint: 'agentes sin transcripción que leer, p. ej. gemini,qwen — o all; su resumen sale de la pantalla. Se aplica al reiniciar el daemon',
         screenNone: 'ninguno (claude, codex y opencode tienen transcripción)',

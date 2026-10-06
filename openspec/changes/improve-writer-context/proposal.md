@@ -26,8 +26,8 @@ markdown and JSON inside agent replies.
 Out of scope: compaction boundaries, chapters, the whole-session view and retention (history release);
 any change to the seven sections, their caps or the JSON answer.
 
-Delivered in two merge requests, both `changelog::changed`: (1) Node 24.21 and the lean writer at low
-effort; (2) the XML context, which archives this change.
+Delivered as one merge request and one release (`changelog::changed`), in three commits: this change;
+Node 24.21 and the lean writer at low effort; the XML context, which archives this change.
 
 ## Capabilities
 

@@ -175,10 +175,7 @@ test('opencode: the reader cannot write — the handle is read-only', () => {
     }
 });
 
-/** The flag every launch carries: the manifest's node commands and the daemon spawn (checked in test/launch-flags.test.ts). */
-const QUIET_FLAGS = ['--disable-warning=ExperimentalWarning'];
-
-test('node:sqlite prints nothing on stderr when run the way the plugin launches node (ExperimentalWarning disabled)', () => {
+test('node:sqlite prints nothing on stderr when run the way the plugin launches node (plain, no flag)', () => {
     const dir = scratch();
     try {
         const fixture = opencodeFixture(dir);
@@ -186,7 +183,7 @@ test('node:sqlite prints nothing on stderr when run the way the plugin launches 
         fixture.close();
         const adapter = new URL('../src/adapters/opencode-transcripts.ts', import.meta.url).href;
         const script = `import { OpencodeTranscripts } from ${JSON.stringify(adapter)};\nconst r = new OpencodeTranscripts(${JSON.stringify(fixture.db)});\nconst l = await r.locate({ cwd: '/repo', pane: 'p' });\nconsole.log(l.kind);`;
-        const ran = spawnSync(process.execPath, [...QUIET_FLAGS, '--input-type=module', '-e', script], { encoding: 'utf8' });
+        const ran = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' });
         assert.equal(ran.stdout.trim(), 'located');
         assert.equal(ran.stderr, '', 'no ExperimentalWarning (nor anything else) on stderr');
     } finally {

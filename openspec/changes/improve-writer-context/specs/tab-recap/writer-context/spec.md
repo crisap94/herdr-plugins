@@ -93,13 +93,14 @@ transcript does not contradict it, and to write links as names, not descriptions
 ### Requirement: The writer runs at the configured effort
 
 The writer SHALL be run at the effort set by `TAB_RECAP_EFFORT` (`low` by default; `default` passes
-nothing) for every harness whose command line supports it, and the Codex writer SHALL run without agent
-features a recap never uses.
+nothing) for every harness whose command line supports it, and the Codex writer SHALL run without the
+agent features a recap never uses whose removal is measured to make its request smaller.
 
 #### Scenario: Default settings with Codex
 
 - **WHEN** recaps are written by Codex with no effort configured
-- **THEN** the Codex command SHALL request low reasoning effort and disable the unused features
+- **THEN** the Codex command SHALL request low reasoning effort and disable multi_agent, plugins,
+  browser_use, computer_use, skill_search, tool_suggest and hooks
 
 #### Scenario: Effort left to the tool
 

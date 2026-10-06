@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-/** The Node the plugin needs: it runs the TypeScript directly, and the state lives in `node:sqlite` as it is from 24.14 (no experimental warning). */
-export const MIN_NODE = '24.14.0';
+/** The Node the plugin needs: it runs the TypeScript directly, and the state lives in `node:sqlite` as it is from 24.15 (no experimental warning, so no launch needs a flag). */
+export const MIN_NODE = '24.21.0';
 
 const versionParts = (text: string): number[] => (/^v?(\d+)\.(\d+)\.(\d+)/.exec(text.trim()) ?? []).slice(1).map(Number);
 
-/** Whether `version` (`v24.14.0`) is `minimum` or newer; false for anything that is not a version. */
+/** Whether `version` (`v24.21.0`) is `minimum` or newer; false for anything that is not a version. */
 export function nodeAtLeast(version: string, minimum: string = MIN_NODE): boolean {
     const [have, need] = [versionParts(version), versionParts(minimum)];
     if (have.length !== 3) {

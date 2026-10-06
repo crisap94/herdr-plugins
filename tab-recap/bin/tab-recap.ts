@@ -20,9 +20,6 @@ import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { setValues } from './set-backend.ts';
 
-/** node:sqlite still says it is experimental on our Node floor (24.14); that line would land in a column or the log. */
-export const QUIET = ['--disable-warning=ExperimentalWarning'];
-
 const OK = 0;
 const FAILED = 1;
 const USAGE = 2;
@@ -50,7 +47,7 @@ function launch(): number {
         return OK;
     }
     const out = openSync(pidfile.logPath, 'a');
-    const child = spawn(process.execPath, [...QUIET, join(root, 'src', 'daemon', 'main.ts')], {
+    const child = spawn(process.execPath, [join(root, 'src', 'daemon', 'main.ts')], {
         cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDir() },
     });
     child.unref();

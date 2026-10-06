@@ -1,21 +1,19 @@
-// Every way the plugin starts node carries the flag that keeps node:sqlite's ExperimentalWarning out of columns and logs.
+// No way the plugin starts node needs a flag: node:sqlite prints no ExperimentalWarning on the Node floor.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-const FLAG = '--disable-warning=ExperimentalWarning';
-
-test('every node command in the manifest disables the ExperimentalWarning', () => {
+test('every node command in the manifest is plain `node <script>`', () => {
     const manifest = readFileSync(new URL('../herdr-plugin.toml', import.meta.url), 'utf8');
     const commands = manifest.split('\n').filter((line) => line.startsWith('command = ["node"'));
     assert.ok(commands.length > 0, 'the manifest launches node');
     for (const command of commands) {
-        assert.ok(command.startsWith(`command = ["node", "${FLAG}", `), command);
+        assert.match(command, /^command = \["node", "[^"-][^"]*"/, command);
     }
 });
 
-test('the daemon is spawned with the same flag', () => {
+test('the daemon is spawned without a flag and nothing mentions the warning flag', () => {
     const cli = readFileSync(new URL('../bin/tab-recap.ts', import.meta.url), 'utf8');
-    assert.match(cli, /export const QUIET = \['--disable-warning=ExperimentalWarning'\];/);
-    assert.match(cli, /spawn\(process\.execPath, \[\.\.\.QUIET, /);
+    assert.match(cli, /spawn\(process\.execPath, \[join\(root, 'src', 'daemon', 'main\.ts'\)\]/);
+    assert.doesNotMatch(cli, /disable-warning/);
 });

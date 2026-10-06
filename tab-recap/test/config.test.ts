@@ -54,3 +54,17 @@ test('loadConfig: locale and recap language — ui follows the locale, an explic
     }
 });
 
+
+test('TAB_RECAP_EFFORT: low unless set to medium, high or default; anything else is low', () => {
+    const saved = process.env['TAB_RECAP_EFFORT'];
+    try {
+        delete process.env['TAB_RECAP_EFFORT'];
+        assert.equal(loadConfig().effort, 'low');
+        for (const [raw, effort] of [['medium', 'medium'], ['HIGH', 'high'], ['default', 'default'], ['max', 'low']] as const) {
+            process.env['TAB_RECAP_EFFORT'] = raw;
+            assert.equal(loadConfig().effort, effort, raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_EFFORT']; } else { process.env['TAB_RECAP_EFFORT'] = saved; }
+    }
+});

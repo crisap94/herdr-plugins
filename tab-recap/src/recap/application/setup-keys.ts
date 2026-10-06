@@ -3,7 +3,7 @@
 import { languageSetting } from '#src/i18n/index.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { changes, dirty } from './setup-changes.ts';
-import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS, SWITCH_CHOICES } from './setup-state.ts';
+import { EFFORT_CHOICES, HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS, SWITCH_CHOICES } from './setup-state.ts';
 import type { Editing, RowId, Setup, Stepped, TestState } from './setup-state.ts';
 
 export { changes, dirty, locksOf } from './setup-changes.ts';
@@ -28,6 +28,9 @@ function enter(state: Setup): Setup {
     }
     if (row === 'gitNote') {
         return { ...state, note: null, editing: { kind: 'choice', at: SWITCH_CHOICES.indexOf(draft.gitNote) } };
+    }
+    if (row === 'effort') {
+        return { ...state, note: null, editing: { kind: 'choice', at: EFFORT_CHOICES.indexOf(draft.effort) } };
     }
     if (row === 'model') {
         return target === null ? { ...state, note: 'no-agent' } : { ...state, note: null, editing: { kind: 'text', buffer: draft.models[target] } };
@@ -59,13 +62,17 @@ function confirmChoice(state: Setup, at: number): Setup {
         const gitNote = SWITCH_CHOICES[at];
         return gitNote === undefined ? done : { ...done, draft: { ...state.draft, gitNote } };
     }
+    if (rowOf(state) === 'effort') {
+        const effort = EFFORT_CHOICES[at];
+        return effort === undefined ? done : { ...done, draft: { ...state.draft, effort } };
+    }
     const locale = LOCALE_CHOICES[at];
     return locale === undefined ? done : { ...done, draft: { ...state.draft, locale } };
 }
 
 const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
 
-const CHOICE_COUNTS: Readonly<Partial<Record<RowId, number>>> = { harness: HARNESS_CHOICES.length, locale: LOCALE_CHOICES.length, gitNote: SWITCH_CHOICES.length };
+const CHOICE_COUNTS: Readonly<Partial<Record<RowId, number>>> = { harness: HARNESS_CHOICES.length, locale: LOCALE_CHOICES.length, gitNote: SWITCH_CHOICES.length, effort: EFFORT_CHOICES.length };
 const choiceCount = (row: RowId): number => CHOICE_COUNTS[row] ?? 0;
 
 function editChoice(state: Setup, at: number, key: string): Setup {

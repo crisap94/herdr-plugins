@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { levelOf } from '#src/recap/domain/effort.ts';
+import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { argvPrompt, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
@@ -11,8 +13,9 @@ import { run, scrubbedEnv } from './run.ts';
  * `--safe-mode` drops user config, rules, memory, plugins and MCP; `-t clarify` leaves the one
  * toolset that cannot touch files, a shell or the network (measured: `-t ''` means "all tools").
  */
-export function hermesArgs(model: string, prompt: string, usage: string): string[] {
-    return ['-z', prompt, '--safe-mode', '-t', 'clarify', ...(model === '' ? [] : ['-m', model]), '--usage-file', usage];
+export function hermesArgs(model: string, prompt: string, usage: string, effort: Effort = 'default'): string[] {
+    const level = levelOf(effort, 'low');
+    return ['-z', prompt, '--safe-mode', '-t', 'clarify', ...(model === '' ? [] : ['-m', model]), ...(level === null ? [] : ['--reasoning', level]), '--usage-file', usage];
 }
 
 export function hermesUsage(json: string): { cost: number; session: string | null } {
@@ -30,8 +33,10 @@ export class HermesSummarizer implements Summarizer {
     private readonly model: string;
     private readonly workDir: string;
     private readonly timeoutMs: number;
+    private readonly effort: Effort;
 
-    constructor(model: string, workDir: string, timeoutMs: number) {
+    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort) {
+        this.effort = effort;
         this.model = model;
         this.backend = model === '' ? 'hermes' : `hermes/${model}`;
         this.workDir = workDir;
@@ -42,7 +47,7 @@ export class HermesSummarizer implements Summarizer {
         mkdirSync(this.workDir, { recursive: true });
         const usage = join(this.workDir, `hermes-${process.pid}-${Date.now()}.json`);
         const opts = { input: '', timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() };
-        const ran = await run('hermes', hermesArgs(this.model, argvPrompt(request), usage), opts);
+        const ran = await run('hermes', hermesArgs(this.model, argvPrompt(request), usage, this.effort), opts);
         let report = { cost: 0, session: null as string | null };
         try { report = hermesUsage(readFileSync(usage, 'utf8')); } catch { /* hermes wrote no report */ }
         rmSync(usage, { force: true });

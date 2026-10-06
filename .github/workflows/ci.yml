@@ -56,7 +56,7 @@ jobs:
 
   # The oldest Node the plugin supports (node:sqlite without the experimental warning): what `engines` promises is tested.
   floor:
-    name: lint + test (Node 24.14.0)
+    name: lint + test (Node 24.21.0)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -67,7 +67,7 @@ jobs:
           ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v5
         with:
-          node-version: 24.14.0
+          node-version: 24.21.0
           cache: npm
           cache-dependency-path: tab-recap/package-lock.json
       - run: node --version

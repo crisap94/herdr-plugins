@@ -32,7 +32,7 @@ const get = configGetter();
 const config = loadConfig();
 
 let state: Setup = initial(
-    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE') }),
+    draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE'), effort: get('TAB_RECAP_EFFORT') }),
     locksOf(process.env),
 );
 let scroll = 0;
@@ -71,7 +71,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models }, ids, join(stateDir(), 'summarizer'));
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'));
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);

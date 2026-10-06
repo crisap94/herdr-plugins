@@ -1,6 +1,6 @@
 // The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
-import { HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
+import { EFFORT_CHOICES, HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -56,6 +56,8 @@ function valueOf(row: RowId, state: Setup, m: Messages): string {
             return screenText(draft.screenAgents, m);
         case 'gitNote':
             return m.setup.gitNoteChoices[draft.gitNote];
+        case 'effort':
+            return m.setup.effortChoices[draft.effort];
         default: {
             const exhaustive: never = row;
             return String(exhaustive);
@@ -95,6 +97,11 @@ function gitNoteChoices(state: Setup, m: Messages, width: number, style: Style):
     return SWITCH_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.gitNoteChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
 }
 
+function effortChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
+    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'effort' ? state.editing.at : -1;
+    return EFFORT_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.effortChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
+}
+
 function hintOf(row: RowId, m: Messages): string | null {
     const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint };
     return hints[row] ?? null;
@@ -119,6 +126,7 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
         harness: () => harnessChoices(state, m, width, style),
         locale: () => (choosing ? localeChoices(state, m, width, style) : []),
         gitNote: () => (choosing ? gitNoteChoices(state, m, width, style) : []),
+        effort: () => (choosing ? effortChoices(state, m, width, style) : []),
     };
     return drawn[row]?.() ?? [];
 }

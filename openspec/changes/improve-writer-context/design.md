@@ -3,7 +3,7 @@
 ## Context
 
 See proposal.md. The reviewed plan with all measurements is summarised here; the DTD itself lives in
-`tab-recap/schema/recap-input.dtd` (created by MR 2) and is quoted in full in decision 2.
+`tab-recap/schema/recap-input.dtd` (created in the third commit) and is quoted in full in decision 2.
 
 ## Goals / Non-Goals
 
@@ -38,7 +38,12 @@ writer runs at low effort; zero runtime dependencies.
 6. **Effort setting** `TAB_RECAP_EFFORT` (`low` default, `medium`, `high`, `default` = pass nothing),
    mapped per CLI (codex `-c model_reasoning_effort`, claude `--effort`, opencode `--variant`, hermes
    `--reasoning`); a mapping ships only if a probe with the installed CLI and its default model
-   succeeds. Codex additionally runs with unused features disabled, each probe-verified.
+   succeeds (all four CLIs accepted their level). Codex additionally runs with unused features disabled,
+   each probe-verified and measured on the same live request: seven cut it by about 6 % (5 870 → 5 550
+   tokens); `apps`, `image_generation`, `sleep_tool` and `goals` are accepted but make it about 2.5×
+   larger (≈ 15 640 tokens), so they stay on. Low effort did not change Codex's token count (its
+   reasoning on a recap is already tiny); most of a Codex call (≈ 5 000 tokens) is its own fixed
+   agent prompt.
 7. **Node floor 24.21.0** (the newest 24.x, operator's choice): node:sqlite prints no warning since
    24.15, so the `--disable-warning=ExperimentalWarning` flag is removed everywhere.
 
@@ -54,5 +59,5 @@ writer runs at low effort; zero runtime dependencies.
 
 ## Migration Plan
 
-Two releases through the usual MR → `release:prepare` flow. No state migration. Rollback: the previous
+One release through the usual MR → `release:prepare` flow. No state migration. Rollback: the previous
 release (it reads the same database).

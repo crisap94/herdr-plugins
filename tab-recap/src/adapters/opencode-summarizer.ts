@@ -3,6 +3,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { levelOf } from '#src/recap/domain/effort.ts';
+import type { Effort } from '#src/recap/domain/effort.ts';
 import { instructions, message, unfenced } from './recap-prompt.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { run, scrubbedEnv } from './run.ts';
@@ -14,8 +16,9 @@ const RELIST_MS = 3000;
 
 const TOOLLESS = JSON.stringify({ tools: { '*': false }, permission: { '*': 'deny' } });
 
-export function opencodeArgs(model: string, title: string): string[] {
-    return ['run', '--pure', '--format', 'json', '--title', title, ...(model === '' ? [] : ['-m', model])];
+export function opencodeArgs(model: string, title: string, effort: Effort = 'default'): string[] {
+    const level = levelOf(effort, 'minimal');
+    return ['run', '--pure', '--format', 'json', '--title', title, ...(model === '' ? [] : ['-m', model]), ...(level === null ? [] : ['--variant', level])];
 }
 
 /** The ids of the sessions called `title` in `opencode session list --format json`. */
@@ -66,12 +69,14 @@ export class OpencodeSummarizer implements Summarizer {
     private readonly model: string;
     private readonly workDir: string;
     private readonly timeoutMs: number;
+    private readonly effort: Effort;
     private readonly runner: Runner;
     private readonly relistMs: number;
 
-    constructor(model: string, workDir: string, timeoutMs: number, runner: Runner = run, relistMs = RELIST_MS) {
-        this.runner = runner;
-        this.relistMs = relistMs;
+    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort, seams: { readonly runner?: Runner; readonly relistMs?: number } = {}) {
+        this.effort = effort;
+        this.runner = seams.runner ?? run;
+        this.relistMs = seams.relistMs ?? RELIST_MS;
         this.model = model;
         this.backend = model === '' ? 'opencode' : `opencode/${model}`;
         this.workDir = workDir;
@@ -108,7 +113,7 @@ export class OpencodeSummarizer implements Summarizer {
         const env = { ...scrubbedEnv(), OPENCODE_CONFIG_CONTENT: TOOLLESS };
         const input = `${instructions(request)}\n\n${message(request)}`;
         const title = `tab-recap-${process.pid}-${Date.now()}`;
-        const ran = await this.runner('opencode', opencodeArgs(this.model, title), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
+        const ran = await this.runner('opencode', opencodeArgs(this.model, title, this.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
         const output = opencodeOutput(ran.stdout);
         await this.forget(output.session, title, env);
         if (ran.timedOut) {

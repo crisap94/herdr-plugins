@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { codeVersion, parseVersion } from '#src/adapters/plugin-version.ts';
-import { bindingsOf, boundKeys, herdrConfigPath, nodeMajor } from '#src/adapters/host-check.ts';
+import { bindingsOf, boundKeys, herdrConfigPath, nodeAtLeast, nodeMajor } from '#src/adapters/host-check.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -118,6 +118,14 @@ test('the node version parses to its major; anything else is null', () => {
     assert.equal(nodeMajor(''), null);
 });
 
+test('the host check refuses Node 24.20.0 and accepts 24.21.0 and newer', () => {
+    assert.equal(nodeAtLeast('v24.20.0'), false);
+    assert.equal(nodeAtLeast('v24.14.0'), false);
+    assert.equal(nodeAtLeast('v24.21.0'), true);
+    assert.equal(nodeAtLeast('v25.0.0'), true);
+    assert.equal(nodeAtLeast('banana'), false);
+});
+
 test('bindings: only tab-recap.* actions of [[keys.command]] blocks count, in either field order', () => {
     assert.deepEqual(bindingsOf(CONFIG), [{ key: 'prefix+r', action: 'tab-recap.column' }, { key: 'ctrl+alt+r', action: 'tab-recap.columns' }]);
     assert.deepEqual(bindingsOf('[keys]\nprefix = "ctrl+b"\n'), []);
@@ -149,6 +157,6 @@ test('status says which node runs it and which keys are bound, or that none is',
 });
 
 test('an old node earns a warning line naming the minimum', () => {
-    assert.match(en.cli.nodeTooOld('v18.0.0', '24.14.0'), /node v18\.0\.0 is older than 24\.14\.0.*Node >= 24\.14\.0/);
-    assert.match(es.cli.nodeTooOld('v18.0.0', '24.14.0'), /node v18\.0\.0 es anterior a 24\.14\.0/);
+    assert.match(en.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 is older than 24\.21\.0.*Node >= 24\.21\.0/);
+    assert.match(es.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 es anterior a 24\.21\.0/);
 });
