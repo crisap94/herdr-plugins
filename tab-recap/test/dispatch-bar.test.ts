@@ -8,7 +8,8 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Columns, LayoutResult } from '#src/ports/columns.ts';
-import type { RecapStore } from '#src/ports/recap-store.ts';
+import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { TabViews } from '#src/ports/tab-views.ts';
 
 const rect = (x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } => ({ x, y, width, height });
 
@@ -43,9 +44,10 @@ function fakeColumns(): { columns: Columns; calls: string[] } {
 test('a bar is docked with a split below the tab\'s bottom pane — no swap, no focus move, and the agent panes are only ever read', async () => {
     const { columns, calls } = fakeColumns();
     const fed: Observation[] = [];
-    const store = {} as RecapStore;
+    const views = {} as TabViews;
+    const visibility = {} as ColumnVisibility;
     const dispatch = new Dispatch({
-        columns, store, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
+        columns, views, visibility, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
         sizing, feedback: (observation): void => { fed.push(observation); },
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'bar' });
@@ -65,7 +67,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new Dispatch({
-        columns, store: {} as RecapStore, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
+        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts: noPrompts, log: noop, board: noBoard,
         sizing, feedback: noop,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });

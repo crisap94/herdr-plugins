@@ -1,5 +1,5 @@
 // Which lane headers go under which task. Pure.
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 
 /** `task` is null for lanes no task holds yet (a lane that arrived after the last recap). */

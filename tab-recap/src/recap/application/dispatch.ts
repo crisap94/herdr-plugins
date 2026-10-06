@@ -8,13 +8,15 @@ import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/la
 import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Columns } from '#src/ports/columns.ts';
-import type { RecapStore, TabView } from '#src/ports/recap-store.ts';
+import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
 
 export interface DispatchDeps {
     readonly columns: Columns;
-    readonly store: RecapStore;
+    readonly views: TabViews;
+    readonly visibility: ColumnVisibility;
     readonly recaps: RecapJob;
     readonly prompts: LivePromptSource;
     sizing(): Sizing;
@@ -72,7 +74,7 @@ export class Dispatch {
                 this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
                 return;
             case 'save-hidden':
-                this.deps.store.writeHidden(intent.state);
+                this.deps.visibility.writeHidden(intent.state);
                 return;
             case 'give-up':
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
@@ -85,7 +87,7 @@ export class Dispatch {
     }
 
     private publish(tab: TabId): void {
-        this.deps.store.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane)));
+        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), (pane) => this.deps.prompts.of(pane)));
     }
 
     private failed(tab: TabId, why: string): void {

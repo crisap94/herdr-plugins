@@ -65,6 +65,8 @@ export interface Messages {
         readonly keys: readonly string[];
         readonly editKeys: readonly string[];
     };
+    /** the database was written by a newer plugin: `backup` is the copy to restore, when there is one */
+    readonly database: { readonly newer: (backup: string | null) => string };
     readonly cli: {
         readonly daemonRunning: (pid: number) => string;
         readonly daemonWedged: (pid: number) => string;
@@ -82,7 +84,7 @@ export interface Messages {
         readonly usage: (commands: string) => string;
         readonly statusVersion: (code: string | null) => string;
         readonly statusNode: (path: string, version: string) => string;
-        readonly nodeTooOld: (version: string, minimum: number) => string;
+        readonly nodeTooOld: (version: string, minimum: string) => string;
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;

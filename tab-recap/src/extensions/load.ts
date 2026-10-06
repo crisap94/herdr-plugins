@@ -1,5 +1,5 @@
 import type { Locale } from '#src/i18n/messages.ts';
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 import type { Extension, ExtensionFactory, Note } from '#src/ports/extension.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { FACTORIES } from './index.ts';

@@ -1,10 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import type { Store } from '#src/adapters/db/database.ts';
+import { memoryStore, seed } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
-import { FsRecapStore, fileKey } from '#src/adapters/fs-recap-store.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
@@ -12,25 +10,11 @@ import { present } from '#src/recap/render/present.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { HiddenState } from '#src/recap/domain/board.ts';
-import { blankRecap, NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
-import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { TabView } from '#src/ports/tab-views.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-
-class MemoryStore implements RecapStore {
-    recaps = new Map<string, TabRecap>();
-    readRecap(tab: string): TabRecap | null { return this.recaps.get(tab) ?? null; }
-    writeRecap(recap: TabRecap): void { this.recaps.set(recap.tab, recap); }
-    readTab(): TabView | null { return null; }
-    writeTab(): void { /* not needed */ }
-    request(): void { /* not needed */ }
-    takeRequests(): readonly never[] { return []; }
-    readHidden(): HiddenState { return NOTHING_HIDDEN; }
-    writeHidden(): void { /* not needed */ }
-    requestVisibility(): void { /* not needed */ }
-    takeVisibility(): readonly never[] { return []; }
-}
 
 /** A reader whose positions are not bytes: it hands back what it was given plus one, and says what it saw. */
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
@@ -52,9 +36,9 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
     write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'g' }), costUsd: 0 }); },
 });
 
-async function recapOf(transcripts: readonly Transcripts[], agents: readonly string[], store = new MemoryStore()): Promise<{ store: MemoryStore; requests: RecapRequest[] }> {
+async function recapOf(transcripts: readonly Transcripts[], agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const job = new RecapJob({ repos: NO_REPOS, transcripts, store, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ repos: NO_REPOS, transcripts, records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
@@ -62,12 +46,12 @@ async function recapOf(transcripts: readonly Transcripts[], agents: readonly str
 }
 
 test('a lane with no reader of its own is read by the `*` reader — the job does not know what a cursor means, it hands it back', async () => {
-    const store = new MemoryStore();
-    store.writeRecap({ ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'gemini', transcript: 'screen:w1:p1', cursor: 41, tail: 'abc', title: null, lastPrompt: null, claudeRecap: null }] });
+    const store = memoryStore();
+    seed(store, { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'gemini', transcript: 'screen:w1:p1', cursor: 41, tail: 'abc', title: null, lastPrompt: null, claudeRecap: null }] });
     const screen = recording('*', (pane) => `screen:${pane}`, 'def');
     const { requests } = await recapOf([recording('claude', (pane) => `/t/${pane}`).reader, screen.reader], ['gemini'], store);
     assert.deepEqual(screen.seen, [{ cursor: 41, tail: 'abc' }], 'the stored cursor and tail went back to the reader as they were');
-    assert.deepEqual(store.readRecap('w1:t1')?.lanes.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
+    assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
     assert.match(requests[0]?.excerpt ?? '', /=== gemini in w1:p1 \(screen\) ===\nAGENT: hello from the screen/);
     assert.match(requests[0]?.lanes[0] ?? '', /gemini in w1:p1 \(screen\)/, 'the writer is told the lane is a screen');
 });
@@ -75,8 +59,8 @@ test('a lane with no reader of its own is read by the `*` reader — the job doe
 test('an agent with a reader of its own never goes to the `*` reader; a source is unique, so a stored cursor of another source is not reused', async () => {
     const own = recording('claude', (pane) => `/t/${pane}`);
     const screen = recording('*', (pane) => `screen:${pane}`);
-    const store = new MemoryStore();
-    store.writeRecap({ ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/old-session', cursor: 999, tail: null, title: null, lastPrompt: null, claudeRecap: null }] });
+    const store = memoryStore();
+    seed(store, { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/old-session', cursor: 999, tail: null, title: null, lastPrompt: null, claudeRecap: null }] });
     await recapOf([screen.reader, own.reader], ['claude'], store);
     assert.equal(screen.seen.length, 0);
     assert.deepEqual(own.seen, [{ cursor: 0, tail: null }], 'a new session starts from the beginning');
@@ -85,23 +69,8 @@ test('an agent with a reader of its own never goes to the `*` reader; a source i
 test('a lane nobody can read is reported by name, and does not stop the others', async () => {
     const own = recording('claude', (pane) => `/t/${pane}`);
     const { store } = await recapOf([own.reader], ['hermes', 'claude']);
-    assert.match(store.readRecap('w1:t1')?.error ?? '', /w1:p1: no reader for hermes/);
-    assert.deepEqual(store.readRecap('w1:t1')?.lanes.map((lane) => lane.cursor), [0, 1]);
-});
-
-test('FsRecapStore: a cursor stored before readers owned their positions reads back with no tail', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-tail-'));
-    try {
-        const store = new FsRecapStore(dir);
-        mkdirSync(join(dir, 'recaps'), { recursive: true });
-        const lane = { pane: 'w1:p1', agent: 'claude', transcript: '/t', cursor: 12, title: null, lastPrompt: null, claudeRecap: null };
-        writeFileSync(join(dir, 'recaps', `${fileKey('w1:t1')}.json`), JSON.stringify({ tab: 'w1:t1', lanes: [lane], markdown: 'x', at: 1, running: false, backend: null, error: null, costUsd: 0 }));
-        assert.deepEqual(store.readRecap('w1:t1')?.lanes, [{ ...lane, tail: null }]);
-        store.writeRecap({ ...blankRecap('w1:t2'), lanes: [{ ...lane, tail: 'f00d' }] });
-        assert.equal(store.readRecap('w1:t2')?.lanes[0]?.tail, 'f00d');
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
+    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p1: no reader for hermes/);
+    assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => lane.cursor), [0, 1]);
 });
 
 const cursor = (pane: string, transcript: string): TabRecap['lanes'][number] => ({ pane, agent: 'x', transcript, cursor: 1, tail: null, title: null, lastPrompt: null, claudeRecap: null });

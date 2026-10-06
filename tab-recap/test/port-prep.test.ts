@@ -1,9 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { FsRecapStore, fileKey } from '#src/adapters/fs-recap-store.ts';
 import { loadExtensions, notesOf } from '#src/extensions/load.ts';
 import { en } from '#src/i18n/en.ts';
 import { viewOf } from '#src/recap/application/dispatch.ts';
@@ -15,7 +11,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { present } from '#src/recap/render/present.ts';
 import type { Extension, ExtensionFactory, Note, NotesResult } from '#src/ports/extension.ts';
-import type { TabLane } from '#src/ports/recap-store.ts';
+import type { TabLane } from '#src/ports/tab-views.ts';
 
 const noGlow = (): null => null;
 
@@ -27,22 +23,6 @@ test('viewOf carries each lane\'s cwd, null when herdr did not say', () => {
         seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) },
     }, instant(0), DEFAULT_POLICY);
     assert.deepEqual(viewOf(board, tabId('w1:t1'), 5).lanes.map((lane) => lane.cwd), ['/w/repo', null]);
-});
-
-test('the store reads a tab view written before cwd existed with cwd null', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-cwd-'));
-    try {
-        const store = new FsRecapStore(dir);
-        mkdirSync(join(dir, 'tabs'), { recursive: true });
-        writeFileSync(join(dir, 'tabs', `${fileKey('t')}.json`), JSON.stringify({ tab: 't', column: null, at: 1, lanes: [{ pane: 'p', agent: 'claude', status: 'idle', title: null }] }));
-        assert.equal(store.readTab('t')?.lanes[0]?.cwd, null);
-        const lane: TabLane = { pane: 'q', agent: 'codex', status: 'idle', title: null, cwd: '/w/x' };
-        store.writeTab({ tab: 'u', column: null, at: 2, lanes: [lane] });
-        assert.equal(store.readTab('u')?.lanes[0]?.cwd, '/w/x');
-        assert.equal(store.readTab('missing'), null);
-    } finally {
-        rmSync(dir, { recursive: true, force: true });
-    }
 });
 
 const lane: TabLane = { pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null };

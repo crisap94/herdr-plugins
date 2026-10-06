@@ -1,7 +1,7 @@
 // The settings modal: a popup pane process. Composition root — it asks herdr and the PATH what is
 // available, runs the pure reducer on raw keys, and performs the effects it returns.
 import { setValues } from '#src/adapters/config-file.ts';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
+import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
@@ -85,7 +85,11 @@ function save(values: ReadonlyMap<string, string>, languageChanged: boolean): vo
         setValues(join(configDir(), 'config.env'), values, parseEnv);
         const rewriting = languageChanged && tab !== '';
         if (rewriting) {
-            new FsRecapStore(stateDir()).request(tab);
+            const store = stateStore(stateDir());
+            if (store.kind !== 'ready') {
+                throw new Error(messages().database.newer(store.backup));
+            }
+            store.requests.request(tab);
         }
         state = saved(state, null, rewriting);
     } catch (error) {

@@ -1,3 +1,7 @@
+## Purpose
+
+How tab-recap measures, wraps and colours text for a narrow terminal pane.
+
 ## ADDED Requirements
 
 ### Requirement: Text width is measured in terminal cells

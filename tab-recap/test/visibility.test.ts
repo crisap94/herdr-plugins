@@ -1,9 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { FsRecapStore } from '#src/adapters/fs-recap-store.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board, HiddenState } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
@@ -14,7 +10,6 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { hiddenState, restoreHidden } from '#src/recap/domain/visibility.ts';
-import { NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
 
 const lane = (pane: string, tab: string): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` });
 const seen = (lanes: readonly SeenLane[], columns: { tab: string; pane: string }[] = []): Observation => ({
@@ -135,42 +130,6 @@ test('hiddenState / restoreHidden round-trip', () => {
     assert.deepEqual(hiddenState(restoreHidden(emptyBoard(), state)), state);
 });
 
-test('store: hidden.json round-trips; nothing saved or garbage reads as nothing hidden', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-hidden-'));
-    try {
-        const store = new FsRecapStore(dir);
-        assert.deepEqual(store.readHidden(), NOTHING_HIDDEN);
-        const state: HiddenState = { all: true, hidden: ['w1:t1'], shown: ['w1:t2'] };
-        store.writeHidden(state);
-        assert.deepEqual(store.readHidden(), state);
-        writeFileSync(join(dir, 'hidden.json'), '{"all":"yes","hidden":[1,"w1:t5"],"shown":null}');
-        assert.deepEqual(store.readHidden(), { all: false, hidden: ['w1:t5'], shown: [] });
-        writeFileSync(join(dir, 'hidden.json'), 'not json');
-        assert.deepEqual(store.readHidden(), NOTHING_HIDDEN);
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
-test('store: visibility requests are taken once, in the order they were made; junk is dropped', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-visibility-'));
-    try {
-        const store = new FsRecapStore(dir);
-        assert.deepEqual(store.takeVisibility(), []);
-        store.requestVisibility({ target: 'w1:t1', hidden: true });
-        store.requestVisibility({ target: 'all', hidden: true });
-        store.requestVisibility({ target: 'w1:t1', hidden: false });
-        mkdirSync(join(dir, 'visibility'), { recursive: true });
-        writeFileSync(join(dir, 'visibility', '999999999999999-x.json'), '{"target":5}');
-        assert.deepEqual(store.takeVisibility(), [
-            { target: 'w1:t1', hidden: true }, { target: 'all', hidden: true }, { target: 'w1:t1', hidden: false },
-        ]);
-        assert.deepEqual(store.takeVisibility(), []);
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
 test('toggle: two in a row return to the start — the daemon flips what the board holds, however fast they come', () => {
     const { board, steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), toggle('w1:t1'), toggle('w1:t1')]);
     assert.deepEqual(steps[2], ['save-hidden all=false hidden=[w1:t1] shown=[]', 'close-column w1:t1']);
@@ -202,19 +161,3 @@ test('toggle all, then toggle a tab: everything hides, then that one tab comes b
     assert.equal(twice.board.allHidden, false, 'two toggle-alls return to the start');
 });
 
-test('store: a toggle request round-trips with the explicit ones, in order', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-toggle-'));
-    try {
-        const store = new FsRecapStore(dir);
-        store.requestVisibility({ target: 'w1:t1', hidden: 'toggle' });
-        store.requestVisibility({ target: 'all', hidden: 'toggle' });
-        store.requestVisibility({ target: 'w1:t1', hidden: true });
-        writeFileSync(join(dir, 'visibility', '999999999999999-x.json'), '{"target":"w1:t2","hidden":"maybe"}');
-        assert.deepEqual(store.takeVisibility(), [
-            { target: 'w1:t1', hidden: 'toggle' }, { target: 'all', hidden: 'toggle' }, { target: 'w1:t1', hidden: true },
-        ]);
-        assert.deepEqual(store.takeVisibility(), []);
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});

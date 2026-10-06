@@ -1,3 +1,7 @@
+## Purpose
+
+How the tab-recap command-line entry accepts commands, help and options.
+
 ## ADDED Requirements
 
 ### Requirement: Commands keep their positional form

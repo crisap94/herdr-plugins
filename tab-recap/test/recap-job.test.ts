@@ -5,26 +5,12 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { HiddenState } from '#src/recap/domain/board.ts';
+import { memoryStore, seed } from '#test/db/support.ts';
 import { firstTask, NO_REPOS, oneTask } from '#test/support.ts';
-import { blankRecap, NOTHING_HIDDEN } from '#src/ports/recap-store.ts';
-import type { RecapStore, TabRecap, TabView } from '#src/ports/recap-store.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-
-class MemoryStore implements RecapStore {
-    recaps = new Map<string, TabRecap>();
-    readRecap(tab: string): TabRecap | null { return this.recaps.get(tab) ?? null; }
-    writeRecap(recap: TabRecap): void { this.recaps.set(recap.tab, recap); }
-    readTab(): TabView | null { return null; }
-    writeTab(): void { /* not needed */ }
-    request(): void { /* not needed */ }
-    takeRequests(): readonly never[] { return []; }
-    readHidden(): HiddenState { return NOTHING_HIDDEN; }
-    writeHidden(): void { /* not needed */ }
-    requestVisibility(): void { /* not needed */ }
-    takeVisibility(): readonly never[] { return []; }
-}
 
 const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'run the tests' };
 
@@ -46,10 +32,10 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
         backend: 'fake',
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'both', now: ['migrating'] }), costUsd: 0.01 }); },
     };
-    const store = new MemoryStore();
+    const store = memoryStore();
     const job = new RecapJob({ repos: NO_REPOS,
         transcripts: [transcriptsOf('claude'), transcriptsOf('codex')],
-        store, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+        records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
     const lanes = [
         laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }),
@@ -61,7 +47,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     assert.equal(requests.length, 1, 'one summarizer call for the whole tab');
     assert.ok(only !== undefined);
     assert.match(only.excerpt, /=== claude in w1:p1 ===[\s\S]*migrate victoria[\s\S]*=== codex in w1:p2 ===[\s\S]*run the tests/);
-    const recap = store.readRecap('w1:t1');
+    const recap = store.records.readRecap('w1:t1');
     assert.ok(recap !== null);
     assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [] });
     assert.match(firstTask(recap).markdown, /^## Goal\nboth\n\n## Now\n- migrating\n\n## Needs you\n—/);
@@ -81,21 +67,21 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
         backend: 'fake',
         write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'hecho' }), costUsd: 0 }); },
     };
-    const store = new MemoryStore();
+    const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     const base = blankRecap('w1:t1');
-    store.writeRecap({
+    seed(store, {
         ...base, tasks: oneTask('## Goal\n- migrate'), at: 1,
         lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         ...(stored === undefined ? {} : { language: stored }),
     });
     const job = new RecapJob({ repos: NO_REPOS,
-        transcripts: [quiet], store, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        transcripts: [quiet], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
         language: (): string => language, log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [lane], cause);
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    return { calls, recap: store.readRecap('w1:t1') };
+    return { calls, recap: store.records.readRecap('w1:t1') };
 }
 
 test('a language switch with nothing new REWRITES the recap — on a request and on a focus', async () => {
@@ -121,13 +107,13 @@ test('a recap stored before languages existed counts as English; a failed rewrit
     const legacy = await rewriteWith('es', undefined, 'requested');
     assert.equal(legacy.calls[0]?.previousLanguage, 'en');
     const failing: Summarizer = { backend: 'fake', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: 'x' } }) };
-    const store = new MemoryStore();
+    const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-    store.writeRecap({ ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
-    const job = new RecapJob({ repos: NO_REPOS, transcripts: [quiet], store, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): string => 'es', log: (): void => undefined });
+    seed(store, { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
+    const job = new RecapJob({ repos: NO_REPOS, transcripts: [quiet], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): string => 'es', log: (): void => undefined });
     job.request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    assert.equal(store.readRecap('w1:t1')?.language, 'en');
+    assert.equal(store.records.readRecap('w1:t1')?.language, 'en');
 });
 
 function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; calls: RecapRequest[] } {
@@ -144,15 +130,15 @@ function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; c
 
 async function recapWith(answers: readonly string[], stored: Partial<TabRecap> = {}): Promise<{ calls: RecapRequest[]; recap: TabRecap }> {
     const { summarizer, calls } = scriptedWriter(answers);
-    const store = new MemoryStore();
-    store.writeRecap({ ...blankRecap('w1:t1'), ...stored });
+    const store = memoryStore();
+    seed(store, { ...blankRecap('w1:t1'), ...stored });
     const job = new RecapJob({ repos: NO_REPOS,
-        transcripts: [transcriptsOf('claude')], store, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
+        transcripts: [transcriptsOf('claude')], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'en', log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
-    const recap = store.readRecap('w1:t1');
+    const recap = store.records.readRecap('w1:t1');
     assert.ok(recap !== null);
     return { calls, recap };
 }
@@ -172,7 +158,7 @@ test('two unusable answers keep the previous recap, add an error line and do not
     const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { tasks: oneTask('## Goal\nold goal', previous), at: 1 });
     assert.equal(calls.length, 2, 'one retry, not more');
     assert.deepEqual(firstTask(recap).sections, previous);
-    assert.equal(firstTask(recap).markdown, '## Goal\nold goal');
+    assert.match(firstTask(recap).markdown, /^## Goal\nold goal\n\n## Now\n- old/, 'the Markdown is drawn from the stored sections');
     assert.match(recap.error ?? '', /not usable.*previous recap is kept/);
     assert.equal(recap.at, 1, 'the recap was not rewritten');
     assert.deepEqual(recap.lanes.map((lane) => lane.cursor), [0], 'the transcript is read again next time');
@@ -191,8 +177,8 @@ test('the previous recap goes back to the writer as its JSON; a recap from befor
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
     const failing: Summarizer = { backend: 'fake', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
-    const store = new MemoryStore();
-    const job = new RecapJob({ repos: NO_REPOS, transcripts: [transcriptsOf('claude')], store, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
+    const store = memoryStore();
+    const job = new RecapJob({ repos: NO_REPOS, transcripts: [transcriptsOf('claude')], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1);
