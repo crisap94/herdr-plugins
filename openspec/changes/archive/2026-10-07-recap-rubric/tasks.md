@@ -26,6 +26,6 @@ Built in parallel with the other 2.0 changes from the shared contracts; first in
 
 ## 4. Integration and archive (before merge)
 
-- [ ] 4.1 Live check from the branch as the daemon: ten real turns stored with `gate_stats`; `eval --gates`; `eval --sample 10` with the default judge (and once with another harness); `eval --label 20` then `--agree` — verify: the report and the agreement table in the MR
-- [ ] 4.2 GitLab pipeline green on the branch — verify: pipeline link
-- [ ] 4.3 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive recap-rubric --yes`; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
+- [x] 4.1 Live check from the branch as the daemon: ten real turns stored with `gate_stats`; `eval --gates`; `eval --sample 10` with the default judge (and once with another harness); `eval --label 20` then `--agree` — verify: the report and the agreement table in the MR — done 2026-10-07 as the live daemon (migration 005, `.v4.bak`): 5 runs with gate stats (G2 1 · G3 4 · G4 5 refused, G8 10 flagged, 3 dropped after the retry); `eval --sample` judged 2 runs / 47 items with critiques, coverage 97 %, filler 62 %, read-back graded; `eval --label 20` + `--agree` per check (I1–I4, I6 100 %; I5 71 %, I7 57 %, S-needs 33 % on 7 overlapping items — the judge passes narrator ids and stale needs: calibration material); `TAB_RECAP_JUDGE_BY=claude` judged 2 runs
+- [x] 4.2 GitLab pipeline green on the branch — verify: pipeline link — MR !37 pipeline 16200 green
+- [x] 4.3 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive recap-rubric --yes`; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
