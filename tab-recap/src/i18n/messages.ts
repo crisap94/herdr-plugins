@@ -37,7 +37,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -59,6 +59,8 @@ export interface Messages {
         readonly jobByChoices: Readonly<Record<JobBy, string>>;
         readonly compactModelSame: string;
         readonly compactJobHint: string;
+        readonly judgeJobHint: string;
+        readonly judgeOffChoice: string;
         readonly contextWindowHint: string;
         readonly contextWindowDetected: string;
         readonly screenNone: string;

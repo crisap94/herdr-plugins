@@ -1,4 +1,5 @@
 import { languageName } from '#src/i18n/index.ts';
+import { RUBRIC } from './rubric.ts';
 import { SECTIONS } from '#src/i18n/sections.ts';
 import type { SectionId } from '#src/i18n/sections.ts';
 import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
@@ -74,5 +75,14 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '- Write every reference as the transcript does: the column turns !252, a SHA, `feat/x`, `src/a.ts` and URLs into clickable links.',
         '- Never invent facts that are not in the inputs.',
         '- When a section has nothing to say, use an empty list [] ("" for goal). Never write "none".',
+        '',
+        'Every item must pass these checks, each with a pass and a fail example:',
+        RUBRIC.items,
+        '',
+        'Each section has a check of its own:',
+        RUBRIC.sections,
+        '',
+        'An item that fails a rule comes back in <correction>, one line each: the rule, the item and why. Rewrite each one so it',
+        'passes, or leave it out of your answer. Never send the same item again.',
     ].join('\n');
 }

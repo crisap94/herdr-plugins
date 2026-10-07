@@ -1,10 +1,12 @@
-// The composition: one connection, the four repositories. Each consumer takes the port it uses.
+// The composition: one connection, the repositories. Each consumer takes the port it uses.
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Requests } from '#src/ports/requests.ts';
+import type { RunInputs } from '#src/ports/run-inputs.ts';
+import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { CompactionRecordsRepository } from './compaction-records.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
@@ -12,6 +14,8 @@ import { openDatabase } from './open.ts';
 import type { NewerDatabase } from './open.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
 import { RequestsRepository } from './requests.ts';
+import { RunInputsRepository } from './run-inputs.ts';
+import { VerdictsRepository } from './verdicts.ts';
 import { TabViewsRepository } from './tab-views.ts';
 
 export interface Store {
@@ -22,6 +26,8 @@ export interface Store {
     readonly visibility: ColumnVisibility;
     readonly requests: Requests;
     readonly compactions: CompactionRecords;
+    readonly inputs: RunInputs;
+    readonly verdicts: Verdicts;
     /** the daemon's upkeep: fold the write-ahead log back into the file and truncate it */
     checkpoint(): void;
     /** the daemon, on shutdown */
@@ -38,6 +44,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), views: new TabViewsRepository(db, options.daemonVersion ?? null),
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db),
+        inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
         close: (): void => { db.close(); },
     };

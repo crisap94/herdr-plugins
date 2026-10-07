@@ -1,9 +1,11 @@
 // What one run writes: the run, the cursors it read from and to, its tasks with their lanes and items.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { RunFacts } from '#src/ports/recap-records.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { blob, one } from './rows.ts';
 import { ids } from './uuid7.ts';
+import { RunInputRows, statsText } from './run-inputs.ts';
 import { itemsOf } from './sections-rows.ts';
 import type { Moved, TranscriptRows } from './transcripts.ts';
 
@@ -12,6 +14,7 @@ export const microsOf = (usd: number): number => Math.round(usd * 1e6);
 
 export class RunRows {
     private readonly transcripts: TranscriptRows;
+    private readonly inputs: RunInputRows;
     private readonly chapterInsert: StatementSync;
     private readonly chapterSelect: StatementSync;
     private readonly runInsert: StatementSync;
@@ -24,9 +27,10 @@ export class RunRows {
 
     constructor(db: DatabaseSync, transcripts: TranscriptRows) {
         this.transcripts = transcripts;
+        this.inputs = new RunInputRows(db);
         this.chapterInsert = db.prepare('INSERT OR IGNORE INTO chapter (id, tab_id, n, started_at) VALUES (?, ?, 1, ?)');
         this.chapterSelect = db.prepare('SELECT id FROM chapter WHERE tab_id = ? AND n = 1');
-        this.runInsert = db.prepare('INSERT INTO run (id, chapter_id, at, cause, backend, language, cost_micro_usd, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        this.runInsert = db.prepare('INSERT INTO run (id, chapter_id, at, cause, backend, language, cost_micro_usd, error, gate_stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.readInsert = db.prepare('INSERT OR REPLACE INTO run_read (run_id, transcript_id, from_cursor, to_cursor) VALUES (?, ?, ?, ?)');
         this.taskInsert = db.prepare('INSERT OR IGNORE INTO task (id, tab_id, key) VALUES (?, ?, ?)');
         this.taskSelect = db.prepare('SELECT id FROM task WHERE tab_id = ? AND key = ?');
@@ -41,11 +45,16 @@ export class RunRows {
         return blob(one(this.chapterSelect, tab) ?? {}, 'id');
     }
 
-    insertRun(facts: RunFacts, error: string | null): Uint8Array {
+    insertRun(facts: RunFacts, error: string | null, gateStats: GateStats | null = null): Uint8Array {
         const chapter = this.firstChapter(facts.tab, facts.at);
         const id = ids.next();
-        this.runInsert.run(id, chapter, facts.at, facts.cause, facts.backend, facts.language, microsOf(facts.costUsd), error);
+        this.runInsert.run(id, chapter, facts.at, facts.cause, facts.backend, facts.language, microsOf(facts.costUsd), error, statsText(gateStats));
         return id;
+    }
+
+    /** The document the writer was given, kept with the run (inside the run's transaction). */
+    insertInput(run: Uint8Array, document: string): void {
+        this.inputs.put(run, document);
     }
 
     insertReads(run: Uint8Array, moved: readonly Moved[]): void {

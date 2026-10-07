@@ -20,6 +20,7 @@ import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 
 const OK = 0;
@@ -203,6 +204,7 @@ async function show(): Promise<number> {
 
 const commands: Readonly<Record<string, (arg: string | undefined) => number | Promise<number>>> = {
     show,
+    eval: () => evalCommand(argv.slice(1)),
     compact,
     configure,
     start: () => { pidfile.disabled = false; return launch(); },
@@ -257,7 +259,8 @@ function parseArguments(argv: readonly string[]): { positionals: string[] } | { 
 
 const usage = (): string => m().cli.usage(Object.keys(commands).join('|'));
 const argv = process.argv.slice(2);
-const parsed = parseArguments(argv);
+// `eval` has options of its own, which it reads itself
+const parsed = argv[0] === 'eval' ? { positionals: ['eval'] } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
 const command = name === undefined ? undefined : commands[name];
 if (argv.some((word) => HELP_FLAGS.has(word))) {

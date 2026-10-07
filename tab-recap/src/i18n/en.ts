@@ -24,7 +24,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -47,6 +47,8 @@ export const en: Messages = {
         jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'your own command, TAB_RECAP_CUSTOM_CMD', off: 'off — compact with the template, no brief' },
         compactModelSame: "the recap writer's model",
         compactJobHint: 'writes what the agent keeps when it is compacted; a high effort is worth it, it runs once per compaction',
+        judgeOffChoice: 'off — no judge: eval says so and stops',
+        judgeJobHint: 'scores stored recaps for `tab-recap eval`; it runs only when you run that command',
         contextWindowDetected: 'found at runtime',
         contextWindowHint: 'tokens a Claude agent can hold, to measure its context (Codex reports its own)',
         languageNames: { en: 'English', es: 'Spanish' },

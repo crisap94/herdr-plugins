@@ -20,6 +20,10 @@ choice writes it at the end of each turn. Every merge request, commit, branch, f
 link you can open with Ctrl-click. It only reads transcripts; it never types into an agent on its own —
 the one exception is the [compaction](#compact-an-agent) you ask for.
 
+Every item is held to one [rubric](tab-recap/schema/recap-rubric.md) (atomic, specific, about the work, with the reason for a
+decision, …). Plain-code gates refuse what fails it before the recap is stored, and `tab-recap eval` scores stored recaps against it —
+see [how recaps are checked](tab-recap/README.md#how-recaps-are-checked).
+
 <p align="center">
   <img src="tab-recap/docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
   <img src="tab-recap/docs/screens/column-es.png" alt="The same column in Spanish" width="340">

@@ -5,9 +5,11 @@ import { CustomHarness } from '#src/adapters/custom-harness.ts';
 import { HermesHarness } from '#src/adapters/hermes-harness.ts';
 import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
 import { HarnessBrief } from '#src/adapters/harness-brief.ts';
+import { HarnessJudge } from '#src/adapters/harness-judge.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Harness } from '#src/ports/harness.ts';
+import type { Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -57,6 +59,12 @@ export function summarizerFor(config: Config, available: readonly string[], work
 export function briefFor(config: Config, available: readonly string[], work: string): CompactionBriefs | null {
     const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
+}
+
+/** The judge's model: the job's placement on a harness; null when the job is off or no harness is there. */
+export function judgeFor(config: Config, available: readonly string[], work: string): Judge | null {
+    const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
+    return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
 }
 
 /**
