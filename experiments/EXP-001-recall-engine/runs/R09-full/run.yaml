@@ -1,6 +1,6 @@
-run: R08-full
+run: R09-full
 experiment: EXP-001-recall-engine
-status: invalid
+status: running
 date: 2026-10-07
 code: as R05
 corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
@@ -9,4 +9,4 @@ writer: codex / gpt-6-luna / medium
 judge: codex / gpt-6-luna / medium
 ran_by: recall-b
 raw: R08-full.txt (and .err when kept) on the private branch, listed in REMOVED-ON-MAIN.txt
-note: task 3.5 first full run; INVALID — the judge switched to claude (the live tab-recap config changed while it ran; the judge placement follows the writer harness), so it is not comparable with R05–R07; superseded by R09
+note: task 3.5, full arm re-run with TAB_RECAP_JUDGE_BY=codex pinned in the environment (judge codex · gpt-6-luna · medium, as R05–R07)

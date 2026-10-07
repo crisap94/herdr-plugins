@@ -1,5 +1,5 @@
 experiment: EXP-001-recall-engine
-status: running (R08 full pending; R04 superseded)
+status: running (R09 full pending; R08 invalid, judge switched to claude; R04 superseded)
 prereg: experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-engine at b56ce24, 2026-10-07)
 code:
   spec: b56ce24 (openspec/changes/recall-engine, main)
@@ -20,4 +20,4 @@ environment:
   isolation: each coder in its own git worktree; the replay writes a fresh database per run under a scratch directory; the live daemon and database untouched
 limits:
   concurrency: R04 ran the four arms in parallel (noisy, superseded); R05–R08 one arm at a time, each arm's model calls in series
-  wall_time: R05 13 min 20 s (one), R06 ~20 min, R07 20 min 17 s; the judge is more than half of each
+  wall_time: R05 13 min 20 s (one), R06 ~20 min, R07 20 min 17 s, R08 29 min 5 s (claude judge); the judge is more than half of each

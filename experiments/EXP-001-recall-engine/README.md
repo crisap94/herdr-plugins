@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **running** — three of the four arms measured under the state ruler (R05–R07); `full` (R08) being judged |
+| Status | **running** — three of the four arms measured under the state ruler (R05–R07); the first `full` run (R08) is invalid (judge switched); its re-run (R09) is being judged |
 | Decision | pending R08. So far: **adopt** the state ruler and the anchors with the 2.1 gates (coverage 78 → 83 %, every fact anchored, 0 dropped); **enumeration alone moves nothing** that counts (coverage 70 %, read-back 1.5/6, filler worse); read-back is still 2/6 against a bar of 4/6 in every arm |
 | Owner | the reviewer (main session); arms run by the coders recall-a and recall-b |
 | Dates | 2026-10-07 → |
@@ -40,13 +40,14 @@ tab-recap 2.0 measured its recaps and found recall weak: key-fact coverage 33 %,
 | [R05](runs/R05-one/run.yaml) | valid | `one`, merged code, sequential | coverage 78 %, I4 87 %, read-back 1/6, 1.17 calls/turn |
 | [R06](runs/R06-enumerate/run.yaml) | valid | `enumerate` (2.0 gate set) | coverage 70 %, I4 95 %, read-back 1.5/6, 2.48 calls/turn |
 | [R07](runs/R07-enumerate-gates/run.yaml) | valid | `enumerate+gates` (2.1 set, retry) | coverage 83 %, I4 89 %, read-back 2/6, 2.39 calls/turn |
-| [R08](runs/R08-full/run.yaml) | running | `full` (+ ask-back) | judging; 2.91 calls/turn |
+| [R08](runs/R08-full/run.yaml) | invalid | `full` (+ ask-back) | judged by **claude**, not codex: the live config's judge changed at 17:44 while it ran; numbers kept (coverage 86 %, read-back 1/6, 2.91 calls/turn) but not comparable |
+| [R09](runs/R09-full/run.yaml) | running | `full`, judge pinned to codex in the environment | judging |
 
 ## Results
 
 State ruler, 40-prompt replay, 23 turns, one run per arm (R05–R08). Secondary numbers from each run's `summary.md`.
 
-| | one (R05) | enumerate (R06) | enumerate+gates (R07) | full (R08) |
+| | one (R05) | enumerate (R06) | enumerate+gates (R07) | full (R09) |
 |---|---|---|---|---|
 | facts stored (open) | 70 (49) | 114 (78) | 140 (98) | |
 | state coverage | 78 % (177/227) | 70 % (198/281) | 83 % (236/286) | |
@@ -71,6 +72,7 @@ The ruler alone (R01 vs the 2.0 number): 33 % → 75 % on the same pipeline; the
 - **No-filler is bounded.** The judge lists at most 15 key facts per run against 20–98 open facts, so it falls as the ledger grows; it is reported, not decided on.
 - **The state shows a fact's latest text** (design decision 3), so an earlier run's state can carry wording written later.
 - **Cost is calls, not money.** The codex harness reports no price; enumeration calls are at low effort and cheaper than a writer call, so "2.5×" on calls overstates the money.
+- **The judge follows the live config.** `TAB_RECAP_JUDGE_BY=recap` places the judge on the writer's harness and the config is re-read on every call, so a settings change on the host switched R08's judge to claude mid-experiment. R09 pins the judge in the environment; a future replay should print and freeze its judge at start.
 - **R04** mixed the old ruler, pre-rebase code and parallel execution; it is kept to show why the sequential runs were needed, and is not read for a decision.
 - **One session, one operator.** The corpus is a single real session; the per-chapter 1.x comparison (`--compare-imported`) was not run because no tab's 1.x chapters overlap the replay's span.
 
