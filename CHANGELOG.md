@@ -8,6 +8,23 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [2.0.0] — 2026-10-07
+
+#### Breaking
+
+- tab-recap: keep the recap as a ledger of facts the writer updates with operations (!38)
+
+#### Added
+
+- tab-recap: show a compaction's progress on the lane and confirm it on herdr's push (!36)
+- tab-recap: check every recap item against a rubric, gate it, and judge stored recaps (tab-recap eval) (!37)
+- tab-recap: add the expanded view and the curator (!39)
+- tab-recap: record chapters and breaks, mark settled facts in the brief, forget closed tabs, document 2.0 (!40)
+
+#### Changed
+
+- tab-recap: keep the recap as a ledger of facts the writer updates with operations (!38)
+
 ### [1.10.0] — 2026-10-07
 
 #### Added
@@ -157,7 +174,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.10.0...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.0.0...HEAD
+[2.0.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.10.0...tab-recap-v2.0.0
 [1.10.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.9.0...tab-recap-v1.10.0
 [1.9.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.8.1...tab-recap-v1.9.0
 [1.8.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v1.8.0...tab-recap-v1.8.1
