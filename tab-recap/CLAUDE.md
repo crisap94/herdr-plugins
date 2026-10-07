@@ -10,9 +10,9 @@ sum-typed ports, one adapter per port.
 src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter
 src/recap/application/  informer · dispatch · decode · watch-set · recap-job · excerpt
 src/recap/render/       pure text for the column; `badge()` ends in `const exhaustive: never`
-src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `TabViews`, `ColumnVisibility`, `Requests`
+src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `TabViews`, `ColumnVisibility`, `Requests`, `CompactionRecords` (the daemon writes, the column and the bar read); `LaneSettling` is the wait for herdr's status push
 src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport (it hands its wire to `herdr-agents.ts`)
-src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests), the numbered migrations in schema/, the one-time import of the old JSON files in import/
+src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests, compaction records), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
 src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is the only registry
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)

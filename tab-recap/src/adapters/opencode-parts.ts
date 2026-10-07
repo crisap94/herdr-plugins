@@ -1,6 +1,7 @@
 // opencode's message and part rows → entries; its compaction answer is a note, not a turn.
 import type { DatabaseSync } from 'node:sqlite';
-import type { AgentNote, Entry } from '#src/ports/transcripts.ts';
+import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
+import { opencodeObserved } from './context-rows.ts';
 import { obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 import { namedCall, toolEntry } from './tool-calls.ts';
@@ -24,7 +25,16 @@ function partEntry(role: string, part: Row, at: number | undefined): Entry | nul
 /** The answer of opencode's compaction turn: the session's own summary, not part of the conversation. */
 const isCompaction = (message: Row): boolean => message['summary'] === true && message['mode'] === 'compaction';
 
-export function partsOf(db: DatabaseSync, message: MessageRow): { readonly entries: readonly Entry[]; readonly notes: readonly AgentNote[] } {
+/** The compaction answer as a mark: its tokens (what the summary was made from) and how long it took, when the message says. */
+function markOf(data: Row): Mark {
+    const [created, completed] = [millis(obj(data['time'])['created']), millis(obj(data['time'])['completed'])];
+    const tokens = opencodeObserved({ ...data, role: 'assistant' })?.tokens;
+    return { kind: 'compacted', at: created ?? null, ...(tokens === undefined ? {} : { tokensBefore: tokens }), ...(created === undefined || completed === undefined || completed < created ? {} : { tookMs: completed - created }) };
+}
+
+export interface Parts { readonly entries: readonly Entry[]; readonly notes: readonly AgentNote[]; readonly marks: readonly Mark[] }
+
+export function partsOf(db: DatabaseSync, message: MessageRow): Parts {
     const data = parse(message.data) ?? {};
     const role = str(data['role']) ?? 'assistant';
     const rows = db.prepare('SELECT data FROM part WHERE message_id = ? ORDER BY time_created ASC').all(message.id) as unknown as readonly { readonly data: string }[];
@@ -34,10 +44,10 @@ export function partsOf(db: DatabaseSync, message: MessageRow): { readonly entri
         return entry === null ? [] : [entry];
     });
     if (!isCompaction(data)) {
-        return { entries, notes: [] };
+        return { entries, notes: [], marks: [] };
     }
     const text = entries.filter((entry) => entry.role === 'agent').map((entry) => entry.text).join('\n').trim();
-    return { entries: [], notes: text === '' ? [] : [{ kind: 'compaction', at: millis(obj(data['time'])['created']) ?? null, text }] };
+    return { entries: [], notes: text === '' ? [] : [{ kind: 'compaction', at: millis(obj(data['time'])['created']) ?? null, text }], marks: text === '' ? [] : [markOf(data)] };
 }
 
 export const entriesOf = (db: DatabaseSync, message: MessageRow): readonly Entry[] => partsOf(db, message).entries;

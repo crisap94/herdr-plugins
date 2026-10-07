@@ -71,11 +71,25 @@ export const en: Messages = {
         keys: ['⏎ send · Esc cancel', '⏎ · Esc'],
         hint: (percent, window) => `compact? ${percent}%${window === '' ? '' : ` of ${window}`}`,
         writing: (agent) => `Writing what ${agent} should keep…`,
-        outcome: (agent, outcome, retried) => {
+        outcome: (agent, outcome, retried, figures) => {
             if (outcome === 'compacted') {
-                return retried ? `${agent} compacted (on the second try)` : `${agent} compacted`;
+                return `${agent} compacted${retried ? ' (on the second try)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` in ${figures.took}`}`;
             }
             return outcome === 'failed' ? `${agent} could not compact, even after trying again` : `${agent}: could not confirm the compaction — check it`;
+        },
+        stage: {
+            briefing: (agent, writer, clock) => `${agent === null ? 'writing what to keep…' : `writing what ${agent} keeps…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
+            compacting: (agent, clock) => `compacting${agent === null ? '' : ` ${agent}`}… ${clock}`,
+            restoring: (agent) => `telling ${agent ?? 'it'} where things stand…`,
+            compacted: (agent, figures) => `${agent === null ? '' : `${agent} `}compacted${figures === '' ? '' : ` ${figures}`}`,
+            template: 'template',
+            failed: (agent, why) => `${agent === null ? '' : `${agent} `}not compacted${why === null ? '' : `: ${why}`}`,
+            unconfirmed: (agent, why) => `${agent === null ? '' : `${agent} `}not confirmed — ${why ?? 'check it'}`,
+            skipped: (agent, why) => `${agent === null ? '' : `${agent} `}not compacted${why === null ? '' : `: ${why}`}`,
+            restarted: 'the daemon restarted',
+            selfFailed: 'its own summary failed, twice',
+            tokens: (before, after) => `${before} → ${after} tokens`,
+            took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compacting ${agent}`,
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,

@@ -88,7 +88,28 @@ export interface Messages {
         /** `window` is the size measured against (`1M`), or '' when it is not worth saying */
         readonly hint: (percent: number, window: string) => string;
         readonly writing: (agent: string) => string;
-        readonly outcome: (agent: string, outcome: 'compacted' | 'failed' | 'unconfirmed', retried: boolean) => string;
+        /** the toast at the end; `figures` are what the records said (`tokens`: "39.5k → 3.1k tokens", `took`: "16 s"), '' when they said nothing */
+        readonly outcome: (agent: string, outcome: 'compacted' | 'failed' | 'unconfirmed', retried: boolean, figures: { readonly tokens: string; readonly took: string }) => string;
+        /** the lane's header while a compaction is shown (`agent` is given on the phone's bar, null on the column); no glyph, no colour */
+        readonly stage: {
+            readonly briefing: (agent: string | null, writer: string | null, clock: string) => string;
+            readonly compacting: (agent: string | null, clock: string) => string;
+            readonly restoring: (agent: string | null) => string;
+            /** `figures`: "39.5k → 3.1k · 16 s", or '' */
+            readonly compacted: (agent: string | null, figures: string) => string;
+            readonly template: string;
+            readonly failed: (agent: string | null, why: string | null) => string;
+            readonly unconfirmed: (agent: string | null, why: string | null) => string;
+            readonly skipped: (agent: string | null, why: string | null) => string;
+            /** why a record left in progress by a daemon that stopped is not confirmed */
+            readonly restarted: string;
+            /** why a compaction failed when the agent's own records say its summarizer did */
+            readonly selfFailed: string;
+            /** the tokens as the toast says them */
+            readonly tokens: (before: string, after: string) => string;
+            /** a duration as words: "16 s" */
+            readonly took: (seconds: number) => string;
+        };
         readonly started: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
         readonly nothing: string;

@@ -18,8 +18,11 @@ import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { SettleHub } from '#src/recap/application/settle-hub.ts';
+import { laneTurns } from './lane-turns.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
+import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -33,7 +36,7 @@ import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { wireCompaction } from './compaction.ts';
-import { configGetter, loadConfig, stateDir } from './config.ts';
+import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 
@@ -76,6 +79,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         language: (): string => loadConfig().recapLanguage,
     });
     const box: { informer: Informer | null } = { informer: null };
+    const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
     const dispatch = new Dispatch({
@@ -103,9 +107,10 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { /* herdr has more events than we map; that is expected */ },
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
+        onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
     });
     box.informer = informer;
-    const compaction = wireCompaction({ fleet, records: store.records, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
+    const compaction = wireCompaction({ fleet, records: store.records, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction };
 }
 
@@ -160,6 +165,10 @@ async function start(): Promise<number> {
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
+    const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
+    if (restarted > 0) {
+        log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
+    }
     informer.push({ kind: 'hidden-restored', state: store.visibility.readHidden() });
     setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
