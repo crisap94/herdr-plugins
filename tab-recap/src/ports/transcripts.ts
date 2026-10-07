@@ -42,6 +42,10 @@ export interface Mark {
     readonly kind: 'compacted' | 'compaction-failed';
     /** epoch ms, when the record has one */
     readonly at: number | null;
+    /** what the records say about the size of the context before and after, and how long it took; left out when they say nothing */
+    readonly tokensBefore?: number;
+    readonly tokensAfter?: number;
+    readonly tookMs?: number;
 }
 
 export interface Chunk {

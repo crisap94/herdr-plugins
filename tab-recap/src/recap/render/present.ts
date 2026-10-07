@@ -4,6 +4,7 @@ import { sectionOf } from '#src/i18n/sections.ts';
 import type { SectionId } from '#src/i18n/sections.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
+import type { CompactionRecord } from '#src/ports/compaction-records.ts';
 import { DEFAULT_MARK } from '#src/ports/extension.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { Note } from '#src/ports/extension.ts';
@@ -11,6 +12,7 @@ import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import { stageLine } from './compaction-stage.ts';
 import { groupsOf } from './groups.ts';
 import { linked } from './linked.ts';
 import type { Group } from './groups.ts';
@@ -28,6 +30,8 @@ export interface ColumnView {
     readonly version?: string | null;
     /** the context share (percent) from which a lane shows the compaction hint; absent or null: no hint */
     readonly compactHint?: number | null;
+    /** the compactions the tab's lanes show (the newest of each, until the agent's next turn); absent: none */
+    readonly compactions?: readonly CompactionRecord[];
     /** colours and styles; the process picks them from its terminal. Absent: coloured */
     readonly style?: Style;
 }
@@ -81,6 +85,14 @@ function contextHint(lane: TabLane, view: ColumnView): string[] {
     return percent === null ? [] : [view.messages.compaction.hint(percent, window)];
 }
 
+const stageShown = (lane: TabLane, view: ColumnView): boolean => view.compactions?.some((each) => each.pane === lane.pane) === true;
+
+/** The stage of the lane's compaction while one is shown: it takes the place of the hint, on a line of its own. */
+function stageLines(lane: TabLane, view: ColumnView, width: number): string[] {
+    const record = view.compactions?.find((each) => each.pane === lane.pane);
+    return record === undefined ? [] : wrap(stageLine(record, view.now, { messages: view.messages, style: paint(view) }), width, '  ');
+}
+
 /** Who is in the tab: one short header per lane. The recap below is the tab's, not the lane's. */
 function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const style = paint(view);
@@ -88,7 +100,8 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const title = cursor?.title ?? lane.title ?? lane.pane;
     return [
         ...wrap(title, width).map((line) => style.bold(line)),
-        ...wrap([badge(laneStatus(lane.status), view.messages, style), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`), ...contextHint(lane, view).map(style.yellow)].join(style.gray(' · ')), width, '  '),
+        ...wrap([badge(laneStatus(lane.status), view.messages, style), style.gray(`${lane.agent} ${lane.pane}${cursor !== undefined && isScreenSource(cursor.transcript) ? ` ${view.messages.fromScreen}` : ''}`), ...(stageShown(lane, view) ? [] : contextHint(lane, view).map(style.yellow))].join(style.gray(' · ')), width, '  '),
+        ...stageLines(lane, view, width),
         ...noteLines(view, lane.pane, width),
         ...promptLines(lane, cursor, width, style),
     ];
@@ -233,6 +246,10 @@ function leads(recap: TabRecap | null): { needs: string | null; now: string | nu
 /** What the bar says: what needs the operator first, else what is happening now. */
 function headline(view: ColumnView): string {
     const style = paint(view);
+    const shown = (view.compactions ?? []).toSorted((a, b) => b.startedAt - a.startedAt || b.stageAt - a.stageAt)[0];
+    if (shown !== undefined) {
+        return stageLine(shown, view.now, { messages: view.messages, style }, shown.agent);
+    }
     const { needs, now } = leads(view.recap);
     if (needs !== null) {
         return style.red(view.messages.needsYou(needs));

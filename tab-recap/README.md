@@ -80,17 +80,40 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
    to drop tool output, finished-step detail and resolved dead ends. A notification says it is being written.
    If the brief cannot be written (the job is `off`, no such CLI, a timeout, an answer that names the plugin),
    a template filled from the latest recap is used instead (references are trimmed first when it is too long;
-   the note and the goal never), so compaction always happens.
+   the note and the goal never), so compaction always happens. A word like `tab`, `recap` or `plugin` is
+   refused in a brief only when the agent's own conversation never uses it (a session about a browser tab
+   may say "tab"); the names `tab-recap` and `recap column` stay refused unless the conversation says them.
+   The template obeys the same rule: a recap item that names the plugin is left out of it.
 3. **claude** gets `/compact ` typed, then the guidance typed, then Enter — in pieces, so it runs as a command
    at any length (a pasted block, or one long send, would be taken as a message and never compact).
    **codex** and **opencode** run their own `/compact`, then get one short message with the same points that
    asks only for "ok".
 
-After the command is sent the agent is waited for until it is idle or done again, and its own records
-(read-only) say what happened: Claude's `compact_boundary` row means it compacted; an `Error during
-compaction` row (its own summarizer failed) means the same guidance is typed once more; Codex's `compacted`
-row means it compacted, and only then does it get the restore message. A notification says the outcome:
-compacted (on the second try), could not compact even after trying again, or could not confirm.
+After the command is sent, herdr's own push says when the agent is free again (idle or done); the flow
+reacts to it at once (it polls only while the daemon is not hearing from herdr) and reads the agent's records
+(read-only): Claude's `compact_boundary` row means it compacted, and carries the tokens before and after and
+how long it took; an `Error during compaction` row (its own summarizer failed) means the same guidance is
+typed once more; Codex's `compacted` row means it compacted (the context before and after come from the
+`token_count` rows around it), and only then does it get the restore message. If the records say nothing yet
+they are read again a moment later.
+
+**Progress on the lane.** Every compaction is a record in the database; the column, the phone bar and the
+modal show its stage in the place of the `compact?` hint, with a clock from when the stage began:
+
+| stage | the lane says |
+| --- | --- |
+| writing the brief | `✎ writing what to keep… (codex · gpt-6-luna · high) 0:08` |
+| the command typed | `◐ compacting… 0:12` |
+| codex / opencode, the reminder sent | `◐ telling it where things stand…` |
+| confirmed | `✓ compacted 39.5k → 3.1k · 16 s` (`· template` when the template was sent) |
+| failed | `✗ not compacted: …` |
+| the agent is free and its records say nothing | `? not confirmed — check it` |
+| the agent was busy | `– not compacted: working` |
+
+A missing number is left out, never guessed. On the phone bar the headline says the same, with the agent
+(`◐ compacting claude… 0:12`). The result stays until the agent's **next turn**; a newer compaction of the
+lane replaces it, and a daemon that restarts mid-compaction leaves it as "not confirmed". Notifications are
+two: when it starts, and when it ends with the numbers (`claude compacted: 39.5k → 3.1k tokens in 16 s`).
 
 A working or blocked agent is skipped and a notification names it. Agents read from their screen and
 `hermes` are not offered compaction.

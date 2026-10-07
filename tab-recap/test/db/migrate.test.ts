@@ -85,7 +85,7 @@ test('migration 3 from the 1.7.0 schema (v2): fresh == upgraded, items and forei
         const upgraded = fromFixture(join(dir, 'v2.db'), FIXTURE_V2);
         assert.equal(versionOf(upgraded), 2);
         migrate(upgraded, MIGRATIONS);
-        assert.equal(versionOf(upgraded), 3);
+        assert.equal(versionOf(upgraded), MIGRATIONS.length);
         assert.deepEqual(shape(upgraded), shape(fresh.db));
         assert.deepEqual(upgraded.prepare('SELECT section, text FROM item ORDER BY section').all().map((row) => Object.assign({}, row)), [{ section: 'done', text: 'wrote the schema' }, { section: 'goal', text: 'keep the fixture readable' }]);
         assert.deepEqual(upgraded.prepare('PRAGMA foreign_key_check').all(), []);

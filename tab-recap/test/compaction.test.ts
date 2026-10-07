@@ -11,6 +11,8 @@ import type { Mark } from '#src/ports/transcripts.ts';
 import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import { memoryStore } from './db/support.ts';
 import { oneTask } from './support.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
@@ -19,10 +21,14 @@ const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'g
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
 
 /** A fleet of fake agents: what each reports, what was typed into it, and what happened around it. */
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[] } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[] } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
+    const settledAfter: string[] = [];
+    const store = memoryStore();
+    store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
+    const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
         status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait): Promise<Prompted> => {
@@ -37,7 +43,7 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    return { agents, typed, toasts, events };
+    return { agents, typed, toasts, events, store, settling, settledAfter };
 }
 
 interface Briefing { readonly documents: string[]; readonly answer: string | null }
@@ -49,14 +55,18 @@ const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 /** `reads`: what the agent's own records show each time they are looked at; the last one repeats. */
 function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
+    const store = world.store;
+    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap, readHistory: () => [{ section: 'decisions', text: 'Keep SQLite', firstAt: 1, lastAt: 2, seen: 3 }] },
+        compactions: store.compactions,
+        settling: world.settling,
         brief: {
             enabled: () => briefing !== null,
-            write: (document) => { world.events.push('brief'); briefing?.documents.push(document); return Promise.resolve(briefing?.answer ?? null); },
+            job: () => (briefing === null ? null : 'codex · gpt-6-luna · high'),
+            write: (document) => { world.events.push('brief'); briefing?.documents.push(document); return Promise.resolve({ text: briefing?.answer ?? null, why: briefing?.answer === null ? 'the answer is empty' : null }); },
         },
         recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
         now: () => NOW,
@@ -95,13 +105,13 @@ test('claude without a note: no trace of one', async () => {
     assert.ok(!/above all/i.test(world.typed[0]?.text ?? ''));
 });
 
-test('codex: its own /compact, waited until idle, then the restore message — in that order', async () => {
+test('codex: its own /compact typed with Enter (a prompt reaches it as a message), then the restore message — in that order', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
     await flow(world, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: 'keep the schema' });
     assert.deepEqual(world.typed.map((each) => each.text.split('\n')[0]), ['/compact', 'We just compacted this conversation. This is where things stand:']);
-    assert.deepEqual(world.typed[0]?.wait, { until: ['idle', 'done'], timeoutMs: 600_000 });
-    assert.equal(world.typed[1]?.wait, undefined);
+    assert.deepEqual([world.typed[0]?.typed, world.typed[0]?.pieces], [true, ['/compact']], 'typed as a command, in one piece');
     assert.ok(world.typed[1]?.text.includes('keep the schema'));
+    assert.deepEqual(world.typed[1]?.wait, { until: ['idle', 'done'], timeoutMs: 120_000 }, 'the restore message is waited for, up to two minutes');
 });
 
 test('a working agent is left alone and the operator is told; so is a blocked one', async () => {
@@ -182,11 +192,12 @@ test('no brief written (the job is on but nothing came): the template is used an
     assert.ok(world.typed[0]?.text.startsWith('/compact When you summarize'));
 });
 
-test('claude: a compaction its records confirm is announced; the guidance is typed once', async () => {
+test('claude: a compaction its records confirm is announced with the numbers they gave; the guidance is typed once', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    await flow(world, 'focused', 'w1:p1', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow(world, 'focused', 'w1:p1', null, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
-    assert.match(world.toasts.at(-1) ?? '', /claude compacted$/);
+    assert.equal(world.toasts.at(-1), 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s');
+    assert.equal(world.toasts.length, 2, 'two toasts: when it starts, when it ends');
 });
 
 test('claude: its own summarizer failing is retried once with the same guidance, and the second try is announced', async () => {
@@ -216,25 +227,93 @@ test('codex: a confirmed compaction is followed by the restore message and annou
     const world = fleet({ 'w1:p2': 'idle' });
     await flow(world, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 2);
-    assert.match(world.toasts.at(-1) ?? '', /codex compacted$/);
+    assert.match(world.toasts.at(-1) ?? '', /codex compacted in 0 s$/, 'no numbers in the records: none are guessed, the time is the stage time');
 });
 
-test('the outcome is read once the agent is free again: a working agent is waited for', async () => {
+test('the outcome is awaited on herdr\'s push for the lane, after the command is typed; codex waits inside its own prompt, then for the restore turn\'s own pushes', async () => {
+    const world = fleet({ 'w1:p1': 'idle', 'w1:p2': 'idle' });
+    await flow(world, 'focused', 'w1:p1', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.settledAfter, ['w1:p1: after refresh,type w1:p1']);
+    const codex = fleet({ 'w1:p2': 'idle' });
+    await flow(codex, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(codex.settledAfter, ['w1:p2: after refresh,type w1:p2,prompt w1:p2'], 'the restore answer\'s working → done must not pass for the operator\'s next turn');
+});
+
+const records = (world: ReturnType<typeof fleet>): ReturnType<typeof world.store.compactions.shownFor> => world.store.compactions.shownFor('w1:t1');
+
+test('the record: a claude compaction with a written brief walks briefing → compacting → compacted and keeps what each step knew', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    const log: string[] = [];
-    let busy = 2;
-    const agents: Agents = {
+    const seen: string[] = [];
+    const briefing = { documents: [] as string[], answer: 'We kept SQLite.' };
+    const looking: Agents = { ...world.agents, typeLine: (pane, pieces) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, pieces); } };
+    const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: 900, tokensAfter: 100, tookMs: 4000 }]]);
+    await flowing.run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual([...new Set(seen)], ['writing: briefing', 'typing: compacting']);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.agent, r.pane, r.brief, r.writer, r.templateWhy, r.tokensBefore, r.tokensAfter, r.tookMs, r.retried, r.finishedAt === NOW]), [['compacted', 'claude', 'w1:p1', 'written', 'codex · gpt-6-luna · high', null, 900, 100, 4000, false, true]]);
+});
+
+test('the record: the template says why it was used; with no brief job it is a template with no reason; a retry is recorded', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', { documents: [], answer: null }, [[failed], [failed, compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(world).map((r) => [r.stage, r.brief, r.templateWhy, r.retried]), [['compacted', 'template', 'the answer is empty', true]]);
+    const plain = fleet({ 'w1:p1': 'idle' });
+    await flow(plain, 'focused', 'w1:p1', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(plain).map((r) => [r.brief, r.writer, r.templateWhy]), [['template', null, null]]);
+});
+
+test('the record: codex passes through restoring; the end comes after the restore message was answered', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const seen: string[] = [];
+    const looking: Agents = {
         ...world.agents,
-        typeLine: (pane, pieces) => { log.push('typed'); return world.agents.typeLine(pane, pieces); },
-        status: () => {
-            const status = log.includes('typed') && busy > 0 ? 'working' : 'idle';
-            busy -= log.includes('typed') ? 1 : 0;
-            log.push(`status ${status}`);
-            return Promise.resolve({ kind: 'agent', agent: 'claude', status });
-        },
+        typeLine: (pane, pieces) => { seen.push(`${pieces.join('').slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, pieces); },
+        prompt: (pane, text, wait) => { seen.push(`${text.split('\n')[0]?.slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.prompt(pane, text, wait); },
     };
-    const looked = flow({ ...world, agents }, 'focused', 'w1:p1', null, [[compacted]]);
-    await looked.run({ tab: 'w1:t1', pane: null, note: null });
-    assert.deepEqual(log.slice(log.indexOf('typed')), ['typed', 'status working', 'status working', 'status idle']);
-    assert.match(world.toasts.at(-1) ?? '', /claude compacted$/);
+    await flow({ ...world, agents: looking }, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(seen, ['/compact: compacting', 'We just comp: restoring']);
+    assert.equal(records(world)[0]?.stage, 'compacted');
+});
+
+test('the record: busy is skipped, with the reason; a refused typing is failed, with the reason', async () => {
+    const busy = fleet({ 'w1:p1': 'working' });
+    await flow(busy).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(busy).map((r) => [r.stage, r.why, r.finishedAt]), [['skipped', 'working', NOW]]);
+    const refused = fleet({ 'w1:p1': 'idle' }, ['w1:p1']);
+    await flow(refused).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(refused).map((r) => [r.stage, r.why]), [['failed', en.badge.blocked]]);
+});
+
+test('the record: failing twice is failed (with the reason), nothing in the records is unconfirmed', async () => {
+    const twice = fleet({ 'w1:p1': 'idle' });
+    await flow(twice, 'focused', 'w1:p1', null, [[failed]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(twice).map((r) => [r.stage, r.retried, r.why]), [['failed', true, 'its own summary failed, twice']]);
+    const unsure = fleet({ 'w1:p1': 'idle' });
+    await flow(unsure).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(records(unsure).map((r) => [r.stage, r.why]), [['unconfirmed', null]]);
+});
+
+test('the record: an agent that turns busy while the brief is written is skipped, and nothing is typed', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const asked: string[] = [];
+    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'working' : 'idle' }); } };
+    await flow({ ...world, agents }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed, []);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', 'working']]);
+    assert.match(world.toasts.at(-1) ?? '', /claude is working: not compacted/);
+});
+
+test('the toasts are two: Writing what claude should keep… and the end with the numbers; a skip is one', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.toasts, ['Compact claude | Writing what claude should keep…', 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s']);
+    const busy = fleet({ 'w1:p1': 'working' });
+    await flow(busy).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.equal(busy.toasts.length, 1);
+});
+
+test('the template leaves out recap items that name the plugin, unless the conversation itself does', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.ok(world.typed[0]?.text.includes('Ship the cart rewrite'));
+    assert.ok(!/recap|\btab\b/iu.test(world.typed[0]?.text ?? ''), world.typed[0]?.text);
 });

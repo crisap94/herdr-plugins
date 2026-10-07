@@ -144,6 +144,15 @@ it: press **`prefix+shift+c`** (your binding), or **`c`** in the column, or run 
 3. **Claude** runs `/compact` with that guidance. **Codex** and **opencode** run their own `/compact`,
    then get one short "here is where we stand, reply ok" message.
 
+While it runs, the agent's header in the column (and the headline of the phone bar) shows where it is, in
+place of the `compact?` hint: `✎ writing what to keep… (codex · gpt-6-luna · high) 0:08`, then
+`◐ compacting… 0:12`, then (Codex, opencode) `◐ telling it where things stand…`, and at the end
+`✓ compacted 39.5k → 3.1k · 16 s` (`· template` when the brief could not be written and the template was
+sent), `✗ not compacted: …`, `? not confirmed — check it` or `– not compacted: working`. The tokens and the
+time are what the agent's own records say; a number they do not give is left out. The result stays until
+the agent's next turn. A word like "tab" or "recap" is only kept out of the message when the agent's own
+conversation never uses it.
+
 A working or blocked agent is never typed into: it is skipped and you are told. A lane whose context
 passes 40 % of its window shows `compact? 45% of 1M`; the window is read from the agent itself where it
 says (Codex), from opencode's local model catalogue, or from a small table for Claude, and corrected

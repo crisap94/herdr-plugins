@@ -7,6 +7,7 @@ import { unfenced } from './recap-prompt.ts';
 /** The compaction brief: one job on a harness. */
 export class HarnessBrief implements CompactionBriefs {
     readonly backend: string;
+    readonly job: string;
     private readonly harness: Harness;
     private readonly settings: HarnessSettings;
 
@@ -14,6 +15,7 @@ export class HarnessBrief implements CompactionBriefs {
         this.harness = harness;
         this.settings = settings;
         this.backend = harness.label(settings);
+        this.job = [harness.id, settings.model, settings.effort === 'default' ? '' : settings.effort].filter((part) => part !== '').join(' · ');
     }
 
     async write(document: string): Promise<Briefed> {

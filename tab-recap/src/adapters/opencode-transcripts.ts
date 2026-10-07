@@ -135,7 +135,7 @@ export class OpencodeTranscripts implements Transcripts {
         const title = db.prepare('SELECT title FROM session WHERE id = ?').get(session) as { readonly title: string } | undefined;
         const prompts = entries.filter((entry) => entry.role === 'user');
         return {
-            kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes),
+            kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
             position: { cursor: Math.max(was.cursor, ...rows.map((row) => row.time_updated)), tail: null }, grew: rows.length > 0,
         };
     }

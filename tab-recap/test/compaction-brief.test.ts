@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/brief-instructions.ts';
-import { BriefDesk, FORBIDDEN, vetted } from '#src/recap/application/compaction-brief.ts';
+import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { BriefDesk, clean, FORBIDDEN, vetted } from '#src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-message.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -42,18 +43,20 @@ test('the writer is told the same words the brief is held to', () => {
 function desk(writer: CompactionBriefs | null, log: string[] = []): BriefDesk {
     return new BriefDesk({ writer: () => writer, log: (line) => { log.push(line); } });
 }
-const answering = (text: string): CompactionBriefs => ({ backend: 'codex/gpt-6-luna', write: () => Promise.resolve({ kind: 'briefed', text }) });
+const answering = (text: string): CompactionBriefs => ({ backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve({ kind: 'briefed', text }) });
 
 test('the desk returns a usable brief; no writer means no brief and no log; a failing or refused one is logged with its reason', async () => {
-    assert.equal(await desk(answering('I want X.')).write('<doc/>'), 'I want X.');
+    assert.deepEqual(await desk(answering('I want X.')).write('<doc/>'), { text: 'I want X.', why: null });
+    assert.equal(desk(answering('I want X.')).job(), 'codex · gpt-6-luna · high');
     const quiet: string[] = [];
-    assert.equal(await desk(null, quiet).write('<doc/>'), null);
+    assert.deepEqual(await desk(null, quiet).write('<doc/>'), { text: null, why: null });
+    assert.equal(desk(null).job(), null);
     assert.equal(desk(null).enabled(), false);
     assert.deepEqual(quiet, []);
     const log: string[] = [];
-    const failing: CompactionBriefs = { backend: 'codex/gpt-6-luna', write: () => Promise.resolve(unknown({ why: 'timeout', after: duration(120_000) })) };
-    assert.equal(await desk(failing, log).write('<doc/>'), null);
-    assert.equal(await desk(answering('a plugin said so'), log).write('<doc/>'), null);
+    const failing: CompactionBriefs = { backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve(unknown({ why: 'timeout', after: duration(120_000) })) };
+    assert.deepEqual(await desk(failing, log).write('<doc/>'), { text: null, why: 'timed out after 120000 ms' });
+    assert.deepEqual(await desk(answering('a plugin said so'), log).write('<doc/>'), { text: null, why: 'the answer says "plugin"' });
     assert.match(log[0] ?? '', /codex\/gpt-6-luna gave none \(timed out after 120000 ms\); the template is used/);
     assert.match(log[1] ?? '', /the answer says "plugin"/);
 });
@@ -79,4 +82,28 @@ test('where the brief runs: `recap` inherits the recap writer\'s harness and mod
 
 test('golden: the brief writer\'s instructions are exactly the reviewed text', () => {
     assert.equal(BRIEF_INSTRUCTIONS, readFileSync(new URL('fixtures/brief-instructions.txt', import.meta.url), 'utf8').trimEnd());
+});
+
+test('forbidden words are relative to the conversation: a word the agent\'s own text uses is allowed, the others are not', () => {
+    const own = 'Fix the browser tab that crashes; the plugin loader is in src/plugins.';
+    assert.equal(vetted('We fix the tab crash and the plugin loader.', own).kind, 'ok', 'a word in the own text is kept');
+    assert.equal(vetted('We fix the tabs crash.', own).kind, 'ok', 'its plural is the same word');
+    assert.deepEqual(vetted('We fix the tab crash and the recap.', own), { kind: 'bad', why: 'the answer says "recap"' }, 'a word the conversation never uses is refused');
+    assert.equal(vetted('Ask herdr.', own).kind, 'bad');
+    assert.equal(vetted('We fix the tab crash.').kind, 'bad', 'with no conversation the old rule holds');
+});
+
+test('tab-recap and recap column stay refused unless the conversation itself contains them', () => {
+    assert.deepEqual(vetted('Keep the tab-recap column.', 'a tab opens, a recap is a thing'), { kind: 'bad', why: 'the answer says "tab-recap"' });
+    assert.equal(vetted('Keep the tab-recap project.', 'we maintain tab-recap in this repo').kind, 'ok');
+    assert.deepEqual(vetted('Hide the recap column.', 'the recap of the tab'), { kind: 'bad', why: 'the answer says "recap column"' });
+    assert.equal(vetted('Hide the recap column.', 'we hide the Recap column on phones').kind, 'ok');
+});
+
+test('the template obeys the same rule: recap items with a refused word are left out, unless the conversation uses it', () => {
+    const sections = { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite', 'The recap column shows 3 lines'], next: ['Fix the browser tab leak', 'Ask herdr'], rules: ['Never push to main'] };
+    assert.deepEqual(clean(sections, ''), { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite'], rules: ['Never push to main'] });
+    const kept = clean(sections, 'the browser tab leaks');
+    assert.deepEqual(kept.next, ['Fix the browser tab leak']);
+    assert.deepEqual(clean({ ...NO_SECTIONS, goal: 'Reduce the recap noise' }, '').goal, '', 'a goal with a refused word is left out');
 });
