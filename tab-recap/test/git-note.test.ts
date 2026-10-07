@@ -5,8 +5,8 @@ import { existsSync, mkdtempSync, realpathSync, rmSync, utimesSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { run } from '#src/adapters/run.ts';
-import type { Runner, RunResult } from '#src/adapters/run.ts';
+import { run } from '#src/adapters/process.ts';
+import type { Runner, RunResult } from '#src/adapters/process.ts';
 import { createGitNote, noteOf, parseStatus, STATUS_ARGS, TIMEOUT_MS } from '#src/extensions/git-note.ts';
 import { FACTORIES } from '#src/extensions/index.ts';
 import { instant } from '#src/recap/domain/time.ts';

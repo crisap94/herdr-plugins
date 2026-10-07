@@ -1,12 +1,12 @@
 // The git note: under each lane, `⎇ <branch> · N unpushed · M changed` for the repository the lane works in.
 // notes() runs in the column's 1 s render path, so it only ever reads a cache; a stale or missing entry
-// starts ONE async refresh (git through adapters/run.ts) and the next render shows the answer.
+// starts ONE async refresh (git through adapters/process.ts) and the next render shows the answer.
 import { statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { GitLaneRepo, gitEnv } from '#src/adapters/git-lane-repo.ts';
-import { run } from '#src/adapters/run.ts';
-import type { Runner } from '#src/adapters/run.ts';
+import { run } from '#src/adapters/process.ts';
+import type { Runner } from '#src/adapters/process.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { Locale } from '#src/i18n/messages.ts';

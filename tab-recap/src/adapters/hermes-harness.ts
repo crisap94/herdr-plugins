@@ -7,8 +7,8 @@ import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { ARGV_BYTES } from './recap-prompt.ts';
-import { run, scrubbedEnv } from './run.ts';
-import type { Runner } from './run.ts';
+import { run, scrubbedEnv } from './process.ts';
+import type { Runner } from './process.ts';
 
 /**
  * `--safe-mode` drops user config, rules, memory, plugins and MCP; `-t clarify` leaves the one

@@ -1,0 +1,36 @@
+id: recap-host-probes-at-the-edge
+language: typescript
+severity: error
+message: >-
+  The operating system and the PATH are probed only at the edge: src/host/ and the per-OS adapters
+  (`*-posix.ts`, `*-windows.ts`, `*-xdg.ts`). Everything else asks the Host port, ConfigPaths or ProcessControl.
+note: >-
+  Bad: `process.platform`, `os.platform()`, `os.type()`, `import { platform } from 'node:os'`, `process.env.PATH`
+  (also `process.env['PATH']`). `homedir()` and `tmpdir()` are not host probes: they stay allowed everywhere.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-host-probes-at-the-edge/**"
+ignores:
+  - "**/src/host/**"
+  - "**/*-posix.ts"
+  - "**/*-windows.ts"
+  - "**/*-xdg.ts"
+rule:
+  any:
+    - pattern: process.platform
+    - pattern: process.env.PATH
+    - pattern: process.env['PATH']
+    - pattern: process.env["PATH"]
+    - pattern: $OS.platform()
+    - pattern: $OS.type()
+    - all:
+        - kind: import_specifier
+        - regex: '^(platform|type|arch|release|version)( as \w+)?$'
+        - inside:
+            kind: import_statement
+            stopBy: end
+            has:
+              kind: string_fragment
+              regex: '^(node:)?os$'
+              stopBy: end

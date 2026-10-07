@@ -5,8 +5,8 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { webOf } from './remote-web.ts';
-import { run, scrubbedEnv } from './run.ts';
-import type { Runner, RunResult } from './run.ts';
+import { run, scrubbedEnv } from './process.ts';
+import type { Runner, RunResult } from './process.ts';
 
 export const REPO_TTL_MS = 10_000;
 const TIMEOUT_MS = 1500;

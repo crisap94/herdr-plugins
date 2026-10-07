@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { memoryStore } from '#test/db/support.ts';
 import { GitLaneRepo, ORIGIN_ARGS, ROOT_ARGS } from '#src/adapters/git-lane-repo.ts';
-import type { Runner, RunResult } from '#src/adapters/run.ts';
+import type { Runner, RunResult } from '#src/adapters/process.ts';
 import { en } from '#src/i18n/en.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
