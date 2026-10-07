@@ -26,5 +26,5 @@ Paths under `tab-recap/` unless noted. Every group ends with `bash ci/lint.sh` a
 ## 5. Integration and archive (before merge)
 
 - [x] 5.1 Live check: column, setup and a command started with `npx node@24.13.0` and with `npx node@20` show the refusal with Linux steps; with Node 24.21 everything runs; `s` opens the settings in a real column — verify: excerpts in the MR
-- [ ] 5.2 GitLab pipeline green on the branch (GitHub runs after merge, green before `release:prepare`) — verify: pipeline link
-- [ ] 5.3 `openspec archive host-ports --yes`; `grep -c '\- \[ \]' tasks.md` is 0 first; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
+- [x] 5.2 GitLab pipeline green on the branch (GitHub runs after merge, green before `release:prepare`) — verify: pipeline link — MR !34 pipeline 16185 green
+- [x] 5.3 `openspec archive host-ports --yes`; `grep -c '\- \[ \]' tasks.md` is 0 first; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
