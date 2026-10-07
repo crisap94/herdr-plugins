@@ -15,7 +15,7 @@ npm install          # dev tools only (tsgo, oxlint, ast-grep); the plugin has z
 herdr plugin link .  # run your checkout inside herdr
 ```
 
-Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
+Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3.2 as well as on Linux: write `ci/*.sh` without `mapfile` and other bash 4 features. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
 
 ## Gates
 
@@ -54,7 +54,9 @@ would like to read in the notes ("Hide or show a tab's column with a key").
 
 ## House rules
 
-- **TypeScript on Node ≥ 24.21.0, run directly.** No build step, no runtime dependencies.
+- **TypeScript on Node ≥ 24.21.0, run directly.** No build step, no runtime dependencies. The files herdr runs first (the
+  `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Node can say it is too old; anything that
+  depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
   rules enforce the boundaries and each ships a bad/good probe it must bite. A new rule needs both
   probes. See [`tab-recap/CLAUDE.md`](tab-recap/CLAUDE.md).

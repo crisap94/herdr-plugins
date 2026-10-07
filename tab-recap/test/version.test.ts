@@ -155,8 +155,3 @@ test('status says which node runs it and which keys are bound, or that none is',
         rmSync(dir, { recursive: true, force: true });
     }
 });
-
-test('an old node earns a warning line naming the minimum', () => {
-    assert.match(en.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 is older than 24\.21\.0.*Node >= 24\.21\.0/);
-    assert.match(es.cli.nodeTooOld('v18.0.0', '24.21.0'), /node v18\.0\.0 es anterior a 24\.21\.0/);
-});

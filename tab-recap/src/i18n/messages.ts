@@ -1,4 +1,5 @@
 import type { JobBy } from '#src/recap/domain/job.ts';
+import type { Refusal } from '#src/host/policy.mjs';
 
 /** The languages the UI speaks. The recap language is separate: any language, see `recapLanguageOf`. */
 export type Locale = 'en' | 'es';
@@ -113,7 +114,8 @@ export interface Messages {
         readonly usage: (commands: string) => string;
         readonly statusVersion: (code: string | null) => string;
         readonly statusNode: (path: string, version: string) => string;
-        readonly nodeTooOld: (version: string, minimum: string) => string;
+        /** several lines: what is wrong (the version found, the one required, the `node` that ran) and the steps to fix it on this OS */
+        readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;

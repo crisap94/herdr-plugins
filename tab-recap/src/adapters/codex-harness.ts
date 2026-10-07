@@ -5,8 +5,8 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { run, scrubbedEnv } from './run.ts';
-import type { Runner } from './run.ts';
+import { run, scrubbedEnv } from './process.ts';
+import type { Runner } from './process.ts';
 
 /**
  * Features a recap never uses, each probe-verified on codex 0.157.1 (an unknown one is an error) and measured:

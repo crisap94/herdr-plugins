@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { run, scrubbedEnv } from './run.ts';
+import { run, scrubbedEnv } from './process.ts';
 
 /** Splits a command line into argv — whitespace, single and double quotes — with no shell involved. */
 export function splitArgv(line: string): string[] {
