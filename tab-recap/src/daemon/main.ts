@@ -14,6 +14,7 @@ import type { Summarizer } from '#src/ports/summarizer.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
+import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
@@ -104,7 +105,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
     });
     box.informer = informer;
-    const compaction = wireCompaction({ fleet, records: store.records, webs, recaps, informer, log });
+    const compaction = wireCompaction({ fleet, records: store.records, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction };
 }
 

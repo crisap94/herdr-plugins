@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import type { TestContext } from 'node:test';
 
-const DTD = new URL('../schema/recap-input.dtd', import.meta.url).pathname;
+const dtdPath = (name: string): string => new URL(`../schema/${name}`, import.meta.url).pathname;
 const installed = spawnSync('xmllint', ['--version'], { encoding: 'utf8' }).status === 0;
 
 export interface Verdict {
@@ -12,9 +12,9 @@ export interface Verdict {
     readonly output: string;
 }
 
-/** `xmllint --noout --dtdvalid schema/recap-input.dtd` on `document`. */
-export function validate(document: string): Verdict {
-    const ran = spawnSync('xmllint', ['--noout', '--dtdvalid', DTD, '-'], { input: document, encoding: 'utf8' });
+/** `xmllint --noout --dtdvalid schema/<dtd>` on `document` (the recap writer's input unless another is named). */
+export function validate(document: string, dtd = 'recap-input.dtd'): Verdict {
+    const ran = spawnSync('xmllint', ['--noout', '--dtdvalid', dtdPath(dtd), '-'], { input: document, encoding: 'utf8' });
     return { valid: ran.status === 0, output: `${ran.stdout}${ran.stderr}` };
 }
 

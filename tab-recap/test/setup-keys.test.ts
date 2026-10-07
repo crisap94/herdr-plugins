@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the ten rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the nine rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 9);
+    assert.equal(typed(start(), down(20)).state.row, 8);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -44,18 +44,18 @@ test('harness: ⏎ opens the choices, j/k choose, ⏎ confirms, Esc cancels', ()
 });
 
 test('model: edits the model of the harness in force; with auto that is the first available one', () => {
-    const edited = typed(start(), ['j', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
+    const edited = typed(start(), ['l', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
     assert.equal(edited.draft.models.codex, 'gpt-6');
     assert.deepEqual([...changes(edited)], [['TAB_RECAP_MODEL_CODEX', 'gpt-6']]);
     const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['hermes', 'codex']);
     assert.equal(modelTarget(auto.draft, auto.available), 'codex');
     const none = withAvailable(initial({ ...draft, backend: 'auto' }, {}), []);
-    assert.equal(typed(none, ['j', '\r']).state.note, 'no-agent');
+    assert.equal(typed(none, ['l', '\r']).state.note, 'no-agent');
     assert.equal(modelTarget({ ...draft, backend: 'custom' }, ['claude']), null);
 });
 
 test('text rows: backspace and ctrl-u; typing ‘q’, ‘s’ or ‘t’ is text while editing, not a command', () => {
-    const state = typed(start(), ['j', '\r', '\u007f', 'q', 's', 't']).state;
+    const state = typed(start(), ['l', '\r', '\u007f', 'q', 's', 't']).state;
     assert.equal(state.editing?.kind === 'text' ? state.editing.buffer : null, 'gpt-6-lunqst');
 });
 
@@ -73,7 +73,7 @@ test('interface language: auto · en · es; recap language: ui · en · es · fr
 test('a row an environment variable overrides is read-only and says which variable', () => {
     const locks = locksOf({ TAB_RECAP_WORDS: '300', TAB_RECAP_MODEL_CODEX: 'x', TAB_RECAP_LOCALE: 'es', TAB_RECAP_BACKEND: '' });
     assert.deepEqual(locks, { model: 'TAB_RECAP_MODEL_CODEX', locale: 'TAB_RECAP_LOCALE' }, 'the retired TAB_RECAP_WORDS locks nothing');
-    const locked = typed(start(locks), ['j', '\r']).state;
+    const locked = typed(start(locks), ['l', '\r']).state;
     assert.equal(locked.editing, null);
     assert.equal(locked.note, 'locked');
     const forced = { ...start(locks), draft: { ...draft, locale: 'en' as const, models: { ...draft.models, codex: 'other' } } };
@@ -153,11 +153,11 @@ test('the effort row: low by default, a choice list, saved as TAB_RECAP_EFFORT, 
     assert.equal(draft.effort, 'low');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: ' HIGH ' }).effort, 'high');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'low');
-    const medium = typed(start(), [...down(6), '\r', 'j', '\r']);
+    const medium = typed(start(), ['l', 'l', '\r', 'j', '\r']);
     assert.equal(medium.state.draft.effort, 'medium');
     assert.deepEqual([...changes(medium.state)], [['TAB_RECAP_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
-    assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), [...down(6), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), ['l', 'l', '\r']).state.note, 'locked');
 });
 
 test('the compaction rows: target, hint (40 by default, 10–95 or off) and window (empty = found at runtime), each saved under its variable and read-only when it is set', () => {
@@ -167,15 +167,43 @@ test('the compaction rows: target, hint (40 by default, 10–95 or off) and wind
     assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: '5' }).compactHint, '40', 'out of range is the default');
     assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: 'OFF' }).compactHint, 'off');
     assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: '1_000_000' }).contextWindow, '1000000');
-    const target = typed(start(), [...down(7), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
+    const target = typed(start(), [...down(6), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
     assert.deepEqual([...changes(target)], [['TAB_RECAP_COMPACT_TARGET', 'all']]);
-    const hint = typed(start(), [...down(8), '\r', '\u0015', '5', '5', '\r']).state;
+    const hint = typed(start(), [...down(7), '\r', '\u0015', '5', '5', '\r']).state;
     assert.deepEqual([...changes(hint)], [['TAB_RECAP_COMPACT_HINT', '55']]);
     assert.equal(typed(hint, ['\r', '\u0015', '3', '\r']).state.draft.compactHint, '40', 'a value out of range falls back to the default');
     assert.equal(typed(hint, ['\r', '\u0015', 'o', 'f', 'f', '\r']).state.draft.compactHint, 'off');
-    const window = typed(start(), [...down(9), '\r', '3', '0', '0', '0', '0', '0', '\r']).state;
+    const window = typed(start(), [...down(8), '\r', '3', '0', '0', '0', '0', '0', '\r']).state;
     assert.deepEqual([...changes(window)], [['TAB_RECAP_CONTEXT_WINDOW', '300000']]);
     assert.equal(typed(window, ['\r', '\u0015', '\r']).state.draft.contextWindow, '', 'emptied: detect at runtime');
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_TARGET: 'all', TAB_RECAP_COMPACT_HINT: 'off', TAB_RECAP_CONTEXT_WINDOW: '1' }), { compactTarget: 'TAB_RECAP_COMPACT_TARGET', compactHint: 'TAB_RECAP_COMPACT_HINT', contextWindow: 'TAB_RECAP_CONTEXT_WINDOW' });
-    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(8), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(7), '\r']).state.note, 'locked');
+});
+
+test('the Models group: ←/→ walk the harness · model · effort of a job row, and do nothing elsewhere', () => {
+    assert.equal(typed(start(), ['l', 'l', 'l']).state.part, 2, 'stops at the last part');
+    assert.equal(typed(start(), ['l', 'l', 'h', 'h', 'h']).state.part, 0, 'stops at the first');
+    assert.equal(typed(start(), [`${ESC}[C`, `${ESC}[C`, `${ESC}[D`]).state.part, 1, 'arrows work too');
+    assert.equal(typed(start(), [...down(2), 'l']).state.part, 0, 'a row that is not a job has no parts');
+    assert.equal(typed(start(), ['j', 'l']).state.part, 1, 'the compact job has them too');
+});
+
+test('the compact brief job: as the recap writer, no model of its own and high effort until set; each part is edited and saved under its variable', () => {
+    assert.deepEqual(draft.compact, { by: 'recap', model: '', effort: 'high' });
+    const raw = { locale: undefined, recapLanguage: undefined };
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: ' Claude ', compactModel: ' sonnet ', compactEffort: 'MEDIUM' }).compact, { by: 'claude', model: 'sonnet', effort: 'medium' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: 'nonsense', compactEffort: 'max' }).compact, { by: 'recap', model: '', effort: 'high' }, 'invalid values are the defaults');
+    const by = typed(start(), ['j', '\r', 'j', 'j', '\r']).state;
+    assert.equal(by.draft.compact.by, 'claude', 'recap → auto → claude');
+    assert.deepEqual([...changes(by)], [['TAB_RECAP_COMPACT_BY', 'claude']]);
+    const off = typed(start(), ['j', '\r', 'k', '\r']).state;
+    assert.equal(off.draft.compact.by, 'off', 'the list wraps to off');
+    const model = typed(start(), ['j', 'l', '\r', 's', 'o', 'n', 'n', 'e', 't', '\r']).state;
+    assert.deepEqual([...changes(model)], [['TAB_RECAP_COMPACT_MODEL', 'sonnet']]);
+    assert.equal(typed(model, ['\r', '\u0015', '\r']).state.draft.compact.model, '', 'emptied: the harness\'s configured model');
+    const effort = typed(start(), ['j', 'l', 'l', '\r', 'k', '\r']).state;
+    assert.deepEqual([...changes(effort)], [['TAB_RECAP_COMPACT_EFFORT', 'medium']]);
+    assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_BY: 'off', TAB_RECAP_COMPACT_MODEL: 'x', TAB_RECAP_COMPACT_EFFORT: 'low' }), { compactBy: 'TAB_RECAP_COMPACT_BY', compactModel: 'TAB_RECAP_COMPACT_MODEL', compactEffort: 'TAB_RECAP_COMPACT_EFFORT' });
+    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });

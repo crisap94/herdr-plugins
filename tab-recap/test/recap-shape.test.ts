@@ -77,8 +77,8 @@ test('render then parse never loses the data (the previous recap goes back to th
 });
 
 test('the JSON contract survives every summarizer\'s way of handing the answer back', async () => {
-    const { resultOf } = await import('#src/adapters/claude-summarizer.ts');
-    const { opencodeOutput } = await import('#src/adapters/opencode-summarizer.ts');
+    const { resultOf } = await import('#src/adapters/claude-harness.ts');
+    const { opencodeOutput } = await import('#src/adapters/opencode-harness.ts');
     const { unfenced } = await import('#src/adapters/recap-prompt.ts');
     const answer = JSON.stringify({ goal: 'ship it', now: ['running CI'], needs: ['approve the deploy'] });
     const fenced = `\`\`\`json\n${answer}\n\`\`\``;

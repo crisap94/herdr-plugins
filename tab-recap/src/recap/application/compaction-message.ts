@@ -5,7 +5,7 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 
 /** The longest a message may be; the note and the goal are never cut to fit. */
-export const MESSAGE_LIMIT = 1500;
+export const MESSAGE_LIMIT = 3000;
 
 /** The most the popup lets the operator type as a note. */
 export const NOTE_LIMIT = 280;
@@ -95,3 +95,6 @@ export function restoreOf(material: Material): string {
     const note = noteOf(material);
     return fitted((p) => [...linesOf(note, p, 'We just compacted this conversation. This is where things stand:'), CARRY_ON].join('\n'), prioritiesOf(material));
 }
+
+/** The restore message around a written brief: said once, in a line, asking for no work. */
+export const restoreFrom = (brief: string): string => `We just compacted this conversation. This is where things stand: ${brief} Nothing needs doing yet: just answer "ok".`;

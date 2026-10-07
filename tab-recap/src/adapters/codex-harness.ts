@@ -1,12 +1,12 @@
 import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { prompt, unfenced } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
+import type { Runner } from './run.ts';
 
 /**
  * Features a recap never uses, each probe-verified on codex 0.157.1 (an unknown one is an error) and measured:
@@ -25,28 +25,29 @@ export function codexArgs(model: string, out: string, effort: Effort = 'default'
     ];
 }
 
-/** `codex exec`, ephemeral (no rollout written), read-only sandbox, user config ignored. */
-export class CodexSummarizer implements Summarizer {
-    readonly backend: string;
-    private readonly model: string;
+/** `codex exec`, ephemeral (no rollout written), read-only sandbox, user config ignored; the data first, then the instructions, on stdin. */
+export class CodexHarness implements Harness {
+    readonly id = 'codex';
+    readonly limit = null;
     private readonly workDir: string;
     private readonly timeoutMs: number;
-    private readonly effort: Effort;
+    private readonly runner: Runner;
 
-    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort) {
-        this.effort = effort;
-        this.model = model;
-        this.backend = model === '' ? 'codex' : `codex/${model}`;
+    constructor(workDir: string, timeoutMs: number, runner: Runner = run) {
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
+        this.runner = runner;
     }
 
-    async write(request: RecapRequest): Promise<Written> {
+    label(settings: HarnessSettings): string {
+        return settings.model === '' ? 'codex' : `codex/${settings.model}`;
+    }
+
+    async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
         const out = join(this.workDir, `codex-${process.pid}-${Date.now()}.md`);
-        const args = codexArgs(this.model, out, this.effort);
-        const input = prompt(request);
-        const ran = await run('codex', args, { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
+        const input = `${call.input}\n\n${call.instructions}`;
+        const ran = await this.runner('codex', codexArgs(settings.model, out, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
         let text = '';
         try { text = readFileSync(out, 'utf8'); } catch { /* codex wrote nothing */ }
         rmSync(out, { force: true });
@@ -56,6 +57,6 @@ export class CodexSummarizer implements Summarizer {
         if (ran.code !== 0 || text.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: ran.stderr.trim().slice(-300) });
         }
-        return { kind: 'written', text: unfenced(text), costUsd: 0 };
+        return { kind: 'ran', text, costUsd: 0 };
     }
 }

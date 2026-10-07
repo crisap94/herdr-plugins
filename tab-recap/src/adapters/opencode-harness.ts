@@ -1,11 +1,10 @@
 import { mkdirSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { prompt, unfenced } from './recap-prompt.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { run, scrubbedEnv } from './run.ts';
 import type { Runner } from './run.ts';
@@ -64,23 +63,23 @@ export function opencodeOutput(stdout: string): OpencodeOutput {
  * ephemeral flag, so the session it stored is deleted once the answer is read — found by the id in
  * the output or, when the run died before printing one, by its unique title.
  */
-export class OpencodeSummarizer implements Summarizer {
-    readonly backend: string;
-    private readonly model: string;
+export class OpencodeHarness implements Harness {
+    readonly id = 'opencode';
+    readonly limit = null;
     private readonly workDir: string;
     private readonly timeoutMs: number;
-    private readonly effort: Effort;
     private readonly runner: Runner;
     private readonly relistMs: number;
 
-    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort, seams: { readonly runner?: Runner; readonly relistMs?: number } = {}) {
-        this.effort = effort;
+    constructor(workDir: string, timeoutMs: number, seams: { readonly runner?: Runner; readonly relistMs?: number } = {}) {
         this.runner = seams.runner ?? run;
         this.relistMs = seams.relistMs ?? RELIST_MS;
-        this.model = model;
-        this.backend = model === '' ? 'opencode' : `opencode/${model}`;
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
+    }
+
+    label(settings: HarnessSettings): string {
+        return settings.model === '' ? 'opencode' : `opencode/${settings.model}`;
     }
 
     private async titled(title: string, env: NodeJS.ProcessEnv): Promise<string[]> {
@@ -108,12 +107,12 @@ export class OpencodeSummarizer implements Summarizer {
         await this.remove(await this.titled(title, env), env);
     }
 
-    async write(request: RecapRequest): Promise<Written> {
+    async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
         const env = { ...scrubbedEnv(), OPENCODE_CONFIG_CONTENT: TOOLLESS };
-        const input = prompt(request);
+        const input = `${call.input}\n\n${call.instructions}`;
         const title = `tab-recap-${process.pid}-${Date.now()}`;
-        const ran = await this.runner('opencode', opencodeArgs(this.model, title, this.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
+        const ran = await this.runner('opencode', opencodeArgs(settings.model, title, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
         const output = opencodeOutput(ran.stdout);
         await this.forget(output.session, title, env);
         if (ran.timedOut) {
@@ -122,6 +121,6 @@ export class OpencodeSummarizer implements Summarizer {
         if (ran.code !== 0 || output.text.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
         }
-        return { kind: 'written', text: unfenced(output.text), costUsd: output.cost };
+        return { kind: 'ran', text: output.text, costUsd: output.cost };
     }
 }
