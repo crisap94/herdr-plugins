@@ -2,7 +2,7 @@ run: R07-enumerate-gates
 experiment: EXP-001-recall-engine
 status: valid
 date: 2026-10-07
-code: as R05
+code: as R05 (dadb961 + the fixes committed as 376c3c9)
 corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
 command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline enumerate+gates
 writer: codex / gpt-6-luna / medium

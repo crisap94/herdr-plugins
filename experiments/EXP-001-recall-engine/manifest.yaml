@@ -4,7 +4,7 @@ prereg: experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-e
 code:
   spec: b56ce24 (openspec/changes/recall-engine, main)
   recall-a: 9575e0f feat/tab-recap-recall-judge, merged to main as b0e31b9 (!42) — state ruler, anchors, G11/G12, short retry, kappa, per-chapter comparison
-  recall-b: dadb961 feat/tab-recap-recall-pipeline (rebased on 9575e0f; its final commit and MR are added when it lands) — chunking, triggers, enumerate, ask-back, reconcile, --pipeline, curator reconcile
+  recall-b: dadb961 + 376c3c9 feat/tab-recap-recall-pipeline (rebased on 9575e0f; !43) — chunking, triggers, enumerate, ask-back, reconcile, --pipeline (default one since 376c3c9), curator reconcile
   snapshots: R01 ran on recall-a's uncommitted tree after task group 1 (ruler only); R02/R03 on its tree after group 2 (ruler + gates), both before 9575e0f and reported in scratchpad/recall-a.md; R04 on recall-b's pre-rebase tree b0d6082 (old ruler)
 data:
   corpus: replay-mine-40.jsonl (private, never on main) — 40 prompts of one real session, 23 turns after grouping, 2248 lines, 4493783 bytes

@@ -9,7 +9,7 @@
 | Parent | OpenSpec change `recall-engine` (`b56ce24`, !41): design decisions 1, 3, 5, 9 and task 3.5 |
 | Pre-registration | [`PREREG.md`](PREREG.md), frozen as the OpenSpec design before any run |
 | Manifest | [`manifest.yaml`](manifest.yaml) |
-| Links | !41 (spec), !42 (ruler, anchors, gates, calibration), the pipeline MR (pending) |
+| Links | !41 (spec), !42 (ruler, anchors, gates, calibration), !43 (pipeline, curator reconcile) |
 
 ## Question and hypothesis
 
@@ -95,7 +95,7 @@ What the evidence supports:
 
 ## Reproducibility checklist
 
-- [ ] Code commit recorded for every run — R01–R03 ran on uncommitted snapshots of recall-a's tree (described, not hashed); R05–R08 on `dadb961` plus the reconciliation fixes (final commit added when the MR lands)
+- [ ] Code commit recorded for every run — R01–R03 ran on uncommitted snapshots of recall-a's tree (described, not hashed); R05–R09 on `dadb961` plus the reconciliation fixes committed as `376c3c9`
 - [x] Corpus versioned and hashed (`manifest.yaml`; private)
 - [ ] Container images pinned by digest or checksum — none: Node v24.21.0 and codex-cli 0.161.0 on the host
 - [x] Exact commands in every `run.yaml`

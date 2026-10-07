@@ -2,7 +2,7 @@ run: R05-one
 experiment: EXP-001-recall-engine
 status: valid
 date: 2026-10-07
-code: recall-b's tree dadb961 (rebased on 9575e0f) with its reconciliation fixes; final commit in the MR
+code: recall-b's tree dadb961 (rebased on 9575e0f) with the reconciliation fixes committed as 376c3c9 (!43), default pipeline aside
 corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
 command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline one
 writer: codex / gpt-6-luna / medium
