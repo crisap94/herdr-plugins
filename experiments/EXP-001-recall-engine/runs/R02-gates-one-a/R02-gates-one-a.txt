@@ -1,0 +1,179 @@
+pipeline one · writer codex/gpt-6-luna · judge codex · gpt-6-luna · medium
+
+replay of /home/coder/.cache/factory-scratch/claude-1000/-home-coder-homelab-herdr-plugins/4d354e8b-1871-4578-82cf-46b8bd607efd/scratchpad/replay-mine-40.jsonl: 23 turns: 71 facts, 54 open, 17 closed
+  short (≤ 16 words)            100%  (71/71)
+  decisions carry a why         100%  (5/5)
+  no open repeats               100%  (54/54)
+
+the ledger after the replay:
+  goal      open   16:37–16:42  Refactor the recap plugin for available harnesses, plain Herdr, English and Spanish UI, and selectable recap…
+  needs     open   16:39–17:20  Choose whether recap support covers only the writer or other pane harnesses too; implementation depends on…
+  needs     open   16:39–17:20  Choose supported harnesses; implementation depends on the profile list.
+  needs     open   16:39–17:20  Choose `auto` or `claude` as the default backend; implementation depends on this.
+  needs     answered 16:41–17:48  Choose branch names and merge direction; branch setup depends on this.
+  needs     open   16:41–17:20  Choose English and Spanish only or allow a free-text recap language.
+  needs     open   16:41–17:20  Choose `README.md` plus `README.es.md` or an English-only README.
+  done      open   17:19–17:20  Phase 2 passed review; lint is clean and all 60 tests pass.
+  now       done   17:20–17:48  a1: reviewing phase 3 language changes and two phase 2 fixes.
+  needs     open   17:20–17:20  Accept Hermes with safe mode and the `clarify` tool, or drop Hermes from supported harnesses. — The one-shot run cannot use zero tools; `clarify` cannot touch files, shell, or network.
+  next      done   17:20–17:48  Review phase 3 Spanish and English UI, recap language setting, and rewrite behavior.
+  links     open   17:43–17:48  78a16bd
+  done      open   17:48–17:48  Local `main` and `atalaya` branches are committed; `atalaya` passes 99/99 tests and the branch guard.
+  needs     answered 17:48–18:01  Provide the GitLab project path and GitHub owner/repo; remotes and the protected-branch mirror wait on them.
+  needs     answered 17:48–18:22  Choose whether to keep the recap-coder tab open; it will close after the daemon check unless…
+  next      done   17:48–18:29  Add the GitHub mirror in GitLab, detect host keys, and enable protected-branch mirroring.
+  decisions open   18:00–18:01  Keep `main` and `atalaya` separate; push both to `homelab/herdr-plugins`. — The operator chose to keep both branches.
+  decisions open   18:00–18:01  Configure GitHub as a push mirror inside GitLab; keep only GitLab as a local remote. — The operator specified that GitHub remote configuration belongs in GitLab only.
+  done      open   18:01–18:48  GitLab has `main` at `c12b4e2` and `atalaya` at `305b328`.
+  links     open   18:01–18:01  https://gitlab.devel.crisaac.dev/homelab/herdr-plugins
+  done      open   18:08–18:08  The daemon runs the new code from `atalaya`.
+  done      open   18:08–18:08  The daemon log shows no subscription errors more than a minute after restart.
+  needs     open   18:08–18:08  Should the coder fix daemon reconnection on `main`? Work on the reconnect fix waits on your…
+  needs     done   18:12–18:29  Detect GitHub host keys in GitLab’s mirroring settings; GitHub syncing waits on this.
+  needs     open   18:12–18:13  Choose whether to keep Hermes with the `clarify` tool or drop Hermes support.
+  done      open   18:13–18:13  `LICENSE`, `CHANGELOG.md`, `CONTRIBUTING.md`, and GitHub issue forms are committed on `main` as `5a821d2`.
+  now       done   18:13–18:22  a1: watching the daemon log for four minutes to confirm it stays connected.
+  done      open   18:17–18:17  The daemon runs the reconnect fix; its cause was a dead pane blocking later subscriptions and…
+  done      open   18:29–18:29  GitLab mirrors `main` to GitHub; the mirror sync succeeds.
+  done      open   18:29–18:29  `herdr plugin install crisap94/herdr-plugins/tab-recap` installs `bea98f0` from GitHub.
+  needs     open   18:29–18:29  Choose whether to close the recap-coder tab and keep or remove the `herdr-plugins-main` worktree.
+  next      open   18:30–18:48  Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced.
+  rules     open   18:31–18:48  Resume agents from their saved sessions; do not start fresh sessions.
+  done      open   18:44–18:48  tab-recap 1.0.0 is released on GitHub and GitLab; the daemon runs 1.0.0.
+  done      open   18:44–18:48  `main` passes 104 tests; `atalaya` passes 109 tests.
+  links     open   18:44–18:48  https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.0.0
+  links     open   18:48–18:48  ROADMAP.md
+  next      open   18:48–19:08  Start 1.2 and 1.3 in parallel after wave 1 and a preparation commit.
+  decisions open   19:05–19:08  Put the recap pane toggle key in 1.1.0. — The operator requested a prefix to show or hide the recap pane.
+  done      open   19:06–19:08  Tabs 1 and 2 are closed; workspace w21 now has the planner and two release tabs.
+  done      open   19:07–19:08  Wave 1 worktrees are ready at `c12b4e2`.
+  now       done   19:08–19:08  a1: coordinating 1.0.1 and 1.1 tooling work across two release agents.
+  now       done   19:08–19:08  recap-coder: implementing 1.0.1 Stability in worktree `hp-1.0.1`.
+  now       done   19:08–19:08  ship-1-1: implementing 1.1 Shipping & trust tooling in worktree `hp-1.1`.
+  next      done   19:08–19:08  Review both wave-1 branches, then merge 1.0.1 into `main`.
+  next      done   19:08–19:08  Tag and publish 1.0.1 by hand after merging it into `main`.
+  links     open   19:08–19:08  release/tab-recap-1.0.1
+  links     open   19:08–19:08  hp-1.0.1
+  links     open   19:08–19:08  hp-1.1
+  needs     open   19:08–19:08  Choose whether to add live prompt updates to 1.0.1 or 1.1; the header change waits on…
+  done      open   19:10–19:10  Wave 1 adds task grouping within a tab to the 1.2.0 release plan.
+  done      open   19:10–19:10  1.2 groups agents into tasks during recap writing, using agent hints and the previous grouping.
+  done      open   19:10–19:10  Old stored recaps load as one task; each agent keeps its read position.
+  done      open   19:10–19:10  Wave 2 preparation adds a cached git repo and branch lookup shared by 1.2 and 1.3.
+  next      open   19:10–19:10  Publish the task grouping item in ROADMAP.md at the next merge.
+  decisions open   19:11–19:16  Keep all seven recap sections in fixed English or Spanish order, with short bullet lists. — Code will render consistent recaps with easy wording across harnesses.
+  done      open   19:16–19:16  1.0.1 is released and deployed.
+  now       superseded 19:16–19:19  a1: monitoring the new daemon’s subscription rate for 12 minutes.
+  now       superseded 19:16–19:19  ship-1-1: finishing screenshot fixtures for 1.1 tooling.
+  now       superseded 19:16–19:19  recap-coder: implementing the `prefix+r` column toggle on a branch from `main` at 1.0.1.
+  next      open   19:16–19:43  The column toggle and 1.1 tooling are reviewed and ready to land through merge requests.
+  needs     open   19:19–19:19  Approve automatic tagging for 1.1.0 and create a GitLab project access token; the tagging job waits…
+  next      open   19:19–19:19  Expand `check-version.sh` and `release-notes.sh` into `check-release.sh` with bad-tag tests.
+  decisions open   19:19–19:34  Generate release notes from incoming merge requests, using their labels and descriptions. — The operator clarified the notes should come from PRs, not code.
+  needs     open   19:28–19:34  Choose whether CI/CD should call LiteLLM directly or use a Fission function for release notes.
+  now       done   19:31–19:43  a1: checking whether `gitlab-webhooks` in `homelab/serverless-functions` writes release notes.
+  rules     open   19:39–19:43  Sync every GitLab variable from Infisical.
+  done      open   19:43–19:43  The 1.0.1 GitLab release has a `## ✨ Highlights` block.
+  next      open   19:43–19:43  Update `gitlab-webhooks` to read merged MRs and use a separate tag series per plugin.
+  next      open   19:43–19:43  Add webhook creation and Infisical sync to repository onboarding.
+  now       open   19:43–19:43  a1: coordinating merge requests for the column toggle and 1.1 tooling.
+
+the judge over the replay (19 runs):
+tab-recap eval — judge codex · gpt-6-luna · medium — 19 runs sampled, 18 judged
+
+pass rate by check
+I1           atomic                    88%   58/66
+I2           stands alone              100%  66/66
+I3           specific                  97%   64/66
+I4           supported                 89%   59/66
+I5           about the work            100%  66/66
+I6           new                       98%   65/66
+I7           still true                94%   62/66
+S-goal       goal section              100%  1/1
+S-now        now section               80%   8/10
+S-needs      needs section             71%   10/14
+S-done       done section              94%   17/18
+S-decisions  decisions section         20%   1/5
+S-next       next section              80%   8/10
+S-rules      rules section             100%  2/2
+S-links      links section             100%  6/6
+coverage     key facts carried         84%   201/239
+filler       items tied to a key fact  36%   196/546
+readback-1   read-back question 1      78%   14/18
+readback-2   read-back question 2      28%   5/18
+readback-3   read-back question 3      22%   4/18
+readback-4   read-back question 4      50%   9/18
+readback-5   read-back question 5      0%    0/18
+readback-6   read-back question 6      17%   3/18
+
+failing items (35)
+I1  t1/goal/0  "Refactor the recap plugin for available harnesses, plain Herdr, English and Spanish UI, and selectable recap…" — Combines harness support, plain Herdr, UI languages, and recap selection into one item.
+I4  t1/goal/0  "Refactor the recap plugin for available harnesses, plain Herdr, English and Spanish UI, and selectable recap…" — English and Spanish UI and selectable recap are not stated in the visible input.
+I4  t1/done/0  "GitLab has `main` at `c12b4e2` and `atalaya` at `305b328`." — The input does not support the claim that GitLab has `main` at `c12b4e2` and `atalaya` at `305b328`.
+S-decisions  t1/decisions/0  "Keep `main` and `atalaya` separate; push both to `homelab/herdr-plugins`." — The item gives no reason for keeping the branches separate.
+I4  t1/now/0  "a1: watching the daemon log for four minutes to confirm it stays connected." — The input says the coder is working on the reconnect bug; it does not say a1 is watching the daemon log for four minutes.
+I7  t1/now/0  "a1: watching the daemon log for four minutes to confirm it stays connected." — The input does not establish this log-watching activity, so it cannot be confirmed as still in progress.
+S-now  t1/now/0  "a1: watching the daemon log for four minutes to confirm it stays connected." — The reported log-watching activity is unsupported; the input says the coder is working on the reconnect bug.
+S-needs  t1/needs/0  "Detect GitHub host keys in GitLab’s mirroring settings; GitHub syncing waits on this." — This is an instruction to perform a UI step, not a question or choice the operator can answer.
+S-needs  t1/needs/1  "Choose whether to keep Hermes with the `clarify` tool or drop Hermes support." — The input asks whether to keep Hermes with `clarify` or drop it, but this item omits what that choice blocks.
+I1  t1/done/0  "The daemon runs the reconnect fix; its cause was a dead pane blocking later subscriptions and…" — Combines the daemon’s running state with an explanation of the reconnect bug.
+I3  t1/done/0  "The daemon runs the reconnect fix; its cause was a dead pane blocking later subscriptions and…" — Names no file, command, reference, value, version, error, or person-role.
+S-done  t1/done/0  "The daemon runs the reconnect fix; its cause was a dead pane blocking later subscriptions and…" — The item combines a checkable daemon state with the cause of the reconnect bug.
+I1  t1/needs/0  "Choose whether to close the recap-coder tab and keep or remove the `herdr-plugins-main` worktree." — Combines the separate choices of closing the tab and keeping or removing the worktree.
+S-needs  t1/needs/0  "Choose whether to close the recap-coder tab and keep or remove the `herdr-plugins-main` worktree." — It does not say what work is waiting on the choice.
+I1  t1/next/0  "Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced." — Combines reviewing, pushing several changes, and syncing the mirror.
+I4  t1/next/0  "Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced." — The input only says the README work is underway; it does not say these changes were reviewed or pushed, or that the mirror synced.
+I7  t1/next/0  "Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced." — The input does not establish these actions as completed; the last update says README work is underway.
+S-next  t1/next/0  "Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced." — This reports unsupported completed work instead of an action an agent can start.
+I1  t1/done/0  "tab-recap 1.0.0 is released on GitHub and GitLab; the daemon runs 1.0.0." — Combines the release status with the daemon’s deployment status.
+I1  t1/done/1  "`main` passes 104 tests; `atalaya` passes 109 tests." — Combines separate test results for `main` and `atalaya`.
+I4  t1/next/0  "Start 1.2 and 1.3 in parallel after wave 1 and a preparation commit." — The input does not say to start 1.2 and 1.3 in parallel after wave 1 and a preparation commit.
+S-decisions  t1/decisions/0  "Put the recap pane toggle key in 1.1.0." — The item gives the toggle placement but omits why it was assigned to 1.1.0.
+S-needs  t1/needs/0  "Choose whether to add live prompt updates to 1.0.1 or 1.1; the header change waits on…" — The item is truncated after “waits on…” and does not say what the choice blocks.
+I1  t1/done/2  "Old stored recaps load as one task; each agent keeps its read position." — Combines old recap loading behavior with preservation of each agent's read position.
+S-decisions  t1/decisions/0  "Keep all seven recap sections in fixed English or Spanish order, with short bullet lists." — Gives the fixed sections and order but omits why the operator chose this structure.
+I4  t1/next/0  "The column toggle and 1.1 tooling are reviewed and ready to land through merge requests." — The input says both efforts are still underway and will be reviewed when they report back; it does not say they are reviewed or ready to land.
+I7  t1/next/0  "The column toggle and 1.1 tooling are reviewed and ready to land through merge requests." — The input says ship-1-1 is still working and the column toggle is being implemented, so they are not yet reviewed and ready to land.
+S-next  t1/next/0  "The column toggle and 1.1 tooling are reviewed and ready to land through merge requests." — States a readiness condition instead of an action an agent can start.
+I1  t1/needs/0  "Approve automatic tagging for 1.1.0 and create a GitLab project access token; the tagging job waits…" — Combines approving automatic tagging with creating a GitLab project access token.
+S-decisions  t1/decisions/0  "Generate release notes from incoming merge requests, using their labels and descriptions." — It gives the release-note source but does not explain why that choice was made.
+I4  t1/now/0  "a1: coordinating merge requests for the column toggle and 1.1 tooling." — The input says the column toggle and 1.1 tooling are reviewed and ready to land, not that a1 is coordinating their merge requests.
+I7  t1/now/0  "a1: coordinating merge requests for the column toggle and 1.1 tooling." — The input says both pieces are ready to land through merge requests, not that a1 is coordinating them.
+S-now  t1/now/0  "a1: coordinating merge requests for the column toggle and 1.1 tooling." — The input does not show a1 coordinating merge requests as an activity in progress at recap time.
+I3  t1/rules/0  "Sync every GitLab variable from Infisical." — The item gives no specific reference, value, or object for the GitLab variables.
+I6  t1/rules/0  "Sync every GitLab variable from Infisical." — This duplicates the standing rule already present in the state.
+
+judge vs anchor (7): the fact quotes its input and the judge calls it unsupported
+I4  t1/goal/0  "Refactor the recap plugin for available harnesses, plain Herdr, English and Spanish UI, and selectable recap…" — English and Spanish UI and selectable recap are not stated in the visible input.
+I4  t1/done/0  "GitLab has `main` at `c12b4e2` and `atalaya` at `305b328`." — The input does not support the claim that GitLab has `main` at `c12b4e2` and `atalaya` at `305b328`.
+I4  t1/now/0  "a1: watching the daemon log for four minutes to confirm it stays connected." — The input says the coder is working on the reconnect bug; it does not say a1 is watching the daemon log for four minutes.
+I4  t1/next/0  "Reviewed and pushed the README, column fix, 1.0.0 release, and roadmap to GitLab; GitHub mirror synced." — The input only says the README work is underway; it does not say these changes were reviewed or pushed, or that the mirror synced.
+I4  t1/next/0  "Start 1.2 and 1.3 in parallel after wave 1 and a preparation commit." — The input does not say to start 1.2 and 1.3 in parallel after wave 1 and a preparation commit.
+I4  t1/next/0  "The column toggle and 1.1 tooling are reviewed and ready to land through merge requests." — The input says both efforts are still underway and will be reviewed when they report back; it does not say they are reviewed or ready to land.
+I4  t1/now/0  "a1: coordinating merge requests for the column toggle and 1.1 tooling." — The input says the column toggle and 1.1 tooling are reviewed and ready to land, not that a1 is coordinating their merge requests.
+
+all judged runs (state after each run; the facts each run added in brackets)
+coverage 84% (201/239) [added 18% (42/239)]
+no-filler 36% (196/546) [added 59% (39/66)]
+read-back median 2/6
+
+runs
+run_…eynpqx  replay:t1  2026-10-04 21:39  coverage 57% (4/7) [added 57% (4/7)] · no-filler 100% (4/4) [added 100% (4/4)] · read-back 1/6
+run_…5ydsm5  replay:t1  2026-10-04 21:42  coverage 88% (7/8) [added 38% (3/8)] · no-filler 100% (7/7) [added 100% (3/3)] · read-back 2/6
+run_…8jk8we  replay:t1  2026-10-04 22:20  coverage 11% (1/9) [added 0% (0/9)] · no-filler 9% (1/11) [added 0% (0/4)] · read-back 3/6
+run_…q5d6bk  replay:t1  2026-10-04 22:48  not judged: the answer is not valid JSON
+run_…vx139p  replay:t1  2026-10-04 23:01  coverage 67% (8/12) [added 17% (2/12)] · no-filler 50% (8/16) [added 50% (2/4)] · read-back 1/6
+run_…dat4j7  replay:t1  2026-10-04 23:08  coverage 100% (19/19) [added 16% (3/19)] · no-filler 100% (19/19) [added 100% (3/3)] · read-back 4/6
+run_…vxf68p  replay:t1  2026-10-04 23:13  coverage 75% (9/12) [added 42% (5/12)] · no-filler 30% (7/23) [added 75% (3/4)] · read-back 2/6
+run_…aq6vcw  replay:t1  2026-10-04 23:17  coverage 93% (14/15) [added 7% (1/15)] · no-filler 54% (13/24) [added 100% (1/1)] · read-back 2/6
+run_…z6zb1x  replay:t1  2026-10-04 23:29  coverage 86% (12/14) [added 21% (3/14)] · no-filler 52% (12/23) [added 100% (3/3)] · read-back 2/6
+run_…kahmh3  replay:t1  2026-10-04 23:31  coverage 93% (14/15) [added 0% (0/15)] · no-filler 58% (14/24) [added 0% (0/1)] · read-back 1/6
+run_…frbkx7  replay:t1  2026-10-04 23:48  coverage 87% (13/15) [added 33% (5/15)] · no-filler 40% (12/30) [added 67% (4/6)] · read-back 2/6
+run_…jnvycf  replay:t1  2026-10-05 00:08  coverage 100% (15/15) [added 33% (5/15)] · no-filler 37% (15/41) [added 45% (5/11)] · read-back 2/6
+run_…fzxqxv  replay:t1  2026-10-05 00:08  coverage 100% (15/15) [added 0% (0/15)] · no-filler 41% (15/37) [added 0% (0/1)] · read-back 3/6
+run_…qg5d9x  replay:t1  2026-10-05 00:10  coverage 100% (15/15) [added 0% (0/15)] · no-filler 36% (15/42) [added 0% (0/5)] · read-back 1/6
+run_…xp6327  replay:t1  2026-10-05 00:16  coverage 87% (13/15) [added 40% (6/15)] · no-filler 27% (13/48) [added 100% (6/6)] · read-back 1/6
+run_…tde4tq  replay:t1  2026-10-05 00:19  coverage 80% (12/15) [added 7% (1/15)] · no-filler 26% (12/46) [added 100% (1/1)] · read-back 3/6
+run_…drcftj  replay:t1  2026-10-05 00:19  coverage 60% (6/10) [added 10% (1/10)] · no-filler 13% (6/47) [added 100% (1/1)] · read-back 1/6
+run_…sjfmjy  replay:t1  2026-10-05 00:34  coverage 69% (9/13) [added 23% (3/13)] · no-filler 16% (8/50) [added 100% (3/3)] · read-back 2/6
+run_…be6aq2  replay:t1  2026-10-05 00:43  coverage 100% (15/15) [added 0% (0/15)] · no-filler 28% (15/54) [added 0% (0/5)] · read-back 2/6

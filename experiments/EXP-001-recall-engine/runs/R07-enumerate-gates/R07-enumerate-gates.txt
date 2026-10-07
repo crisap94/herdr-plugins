@@ -1,0 +1,318 @@
+pipeline enumerate+gates · writer codex/gpt-6-luna medium · enumeration codex · gpt-6-luna · low · judge codex · gpt-6-luna · medium · cost: $0.000 over 23 turns ($0.0000 per turn; a harness that reports no cost shows 0) · calls: 27 writer + 28 enumeration (2.39 per turn)
+replay of /home/coder/.cache/factory-scratch/claude-1000/-home-coder-homelab-herdr-plugins/4d354e8b-1871-4578-82cf-46b8bd607efd/scratchpad/replay-mine-40.jsonl: 23 turns: 140 facts, 98 open, 42 closed
+  short (≤ 16 words)            100%  (140/140)
+  decisions carry a why         100%  (26/26)
+  no open repeats                99%  (97/98)
+
+the ledger after the replay:
+  goal      open   16:37–19:34  Ship 1.1.0 with fixed recap sections and AI-written release notes from incoming merge requests.
+  done      open   16:39–16:39  Inspected Herdr APIs, live manifests, plugin UI docs, and bridge dependencies.
+  done      open   16:39–16:39  No files have been changed; a plan was presented for review.
+  needs     answered 16:39–19:34  Choose whether harness support covers only the recap writer or also other agent panes.
+  needs     superseded 16:39–19:34  Choose whether to research Gemini, Cursor Agent, Qwen, and Copilot headless flags now.
+  needs     superseded 16:39–19:34  Choose the default backend: auto-detect in the proposed order or keep Claude fixed.
+  needs     answered 16:39–19:34  Choose whether the public mirror keeps the bridge as an opt-in adapter or strips it.
+  needs     answered 16:39–19:34  Provide the GitHub owner and repository name, and say who should set up the mirror.
+  decisions open   16:39–16:39  Support the recap writer first; add other agent panes later because this keeps the initial scope… — A focused first step limits the initial scope.
+  decisions open   16:39–16:39  Keep the bridge as an opt-in adapter in shared public code because one codebase is simpler. — One shared codebase is simpler to maintain.
+  next      done   16:39–18:48  Review the root README, commit it on main, push to GitLab, then merge main into atalaya.
+  now       superseded 16:42–17:20  a1: planning the changes; no code has changed yet.
+  needs     answered 16:42–19:34  Choose branch names and change flow; branch setup blocks implementation.
+  needs     answered 16:42–19:34  Choose English and Spanish only or free-text recap languages; this sets the language selector scope.
+  needs     answered 16:42–19:34  Choose separate English and Spanish README files or English only on GitHub; this blocks documentation work.
+  now       superseded 17:20–17:48  a1: implementing Spanish and English UI, recap language selection, immediate rewrites, and phone bar line matching.
+  done      open   17:20–17:20  Phase 2 passed review; lint is clean and all 60 tests pass.
+  needs     answered 17:20–19:34  Accept Hermes with the harmless `clarify` tool, or drop Hermes; the backend list waits on this…
+  next      done   17:20–17:48  Review the Spanish and English support diff when phase 3 reports back.
+  done      open   17:43–17:48  `main` commit 78a16bd contains no bridge in its history.
+  done      open   17:48–17:48  The `atalaya` branch passed 99/99 tests.
+  done      open   17:48–18:01  Both branches are pushed to GitLab project homelab/herdr-plugins; GitHub is not a local remote.
+  needs     answered 17:48–19:34  Keep Hermes with its harmless `clarify` tool or drop it?
+  needs     answered 17:48–18:13  Provide the GitHub owner/repo for the GitLab push mirror.
+  needs     superseded 17:48–18:22  Should the recap-coder tab be closed?
+  next      done   17:48–18:08  Restart with `tab-recap.stop` then `tab-recap.start` to load the new code.
+  next      open   17:48–18:17  After you save GitLab’s fresh mirror, add its key to GitHub and sync; verify only `main`…
+  rules     open   18:00–18:01  Configure the GitHub remote only as a push mirror in GitLab.
+  decisions open   18:00–18:01  Keep main and atalaya separate and push both to homelab/herdr-plugins. — The operator chose to keep both branches.
+  done      open   18:01–18:01  Both branches are pushed to the GitLab project homelab/herdr-plugins.
+  links     open   18:01–18:01  https://gitlab.devel.crisaac.dev/homelab/herdr-plugins
+  done      open   18:08–18:17  The tab-recap daemon runs the fixed code as PID 1287711.
+  done      open   18:08–18:08  The restarted daemon logged no subscription errors for more than a minute.
+  done      open   18:08–18:08  The old daemon logged 4,727 `events.subscribe: closed before the ack` errors since 2026-09-27.
+  done      open   18:08–18:08  Restarting the daemon restored its lost Herdr event subscription.
+  needs     answered 18:08–18:13  Should the reconnect fix target `main` and then merge into `atalaya`?
+  next      done   18:08–18:17  Investigate why the daemon cannot reconnect after losing its Herdr event subscription.
+  links     open   18:08–18:08  atalaya
+  done      open   18:13–18:22  Community files and the reconnect fix are committed and pushed to GitLab main.
+  now       superseded 18:13–18:17  a1: reviewing the reconnect fix and recovery test in informer.ts before committing.
+  needs     done   18:13–19:34  Add GitLab’s fresh mirror and tell me when it is saved; the GitHub sync waits on…
+  done      open   18:13–18:13  Added an MIT license, changelog, GitHub issue forms, PR template, and README sections.
+  done      open   18:14–18:17  Git remote lookup failed with `Host key verification failed`.
+  decisions open   18:14–18:17  Delete mirror 108 and its deploy key because the API cannot provide GitHub’s host keys. — GitLab must detect GitHub’s host keys before the mirror can sync.
+  done      open   18:14–18:17  The operator clarified that the repository had already been added.
+  now       done   18:17–18:22  a1: watching the fixed daemon log for four minutes to confirm it stays connected.
+  done      open   18:17–18:17  Mirror 108 and its deploy key are deleted; GitLab has no mirror.
+  links     open   18:17–18:17  ssh://git@github.com/crisap94/herdr-plugins.git
+  links     open   18:21–18:22  bea98f0
+  links     open   18:21–18:22  af892b5
+  done      open   18:22–18:22  The reconnect fix ran for 4+ minutes without subscription errors; three tabs updated recaps.
+  done      open   18:22–18:22  The recap-coder and repo-docs tabs were closed, and the temporary main worktree was removed.
+  decisions open   18:22–18:22  Use GitLab’s stored “Herdr” token for API access because `glab`’s token is rejected. — GitLab rejects the token used by `glab`.
+  links     open   18:22–18:22  Herdr token expires 2026-10-31.
+  next      open   18:22–18:22  Recheck the daemon later to confirm the reconnect fix still holds.
+  needs     superseded 18:29–18:48  Should the recap-coder tab close, and should the `herdr-plugins-main` worktree stay?
+  done      open   18:29–18:29  GitLab mirror 110 uses SSH-key authentication and syncs to GitHub.
+  done      open   18:29–18:29  A throwaway home installed GitHub commit `bea98f0`; the test home was deleted.
+  done      open   18:29–18:29  The daemon has had no subscription errors since its 18:17 restart.
+  next      done   18:29–18:48  Wait for the herdr marketplace scan, which runs every 30 minutes.
+  links     open   18:29–18:29  crisap94/herdr-plugins/tab-recap
+  links     open   18:29–18:29  herdr-plugins-main
+  rules     open   18:29–18:29  Pushes to `main` sync automatically to GitHub.
+  decisions open   18:30–18:31  Use the root README as an index and tab-recap quick start; keep tab-recap/README.md as the detailed… — Tab-recap is the only plugin so far.
+  now       done   18:31–18:48  a1: reviewing the root README while the writer updates tab-recap/README.md.
+  decisions open   18:31–18:31  Keep GitLab, atalaya, and homelab details out of both README files. — The README is for the public GitHub repository.
+  links     open   18:31–18:31  tab-recap/README.md
+  done      open   18:44–18:48  tab-recap 1.0.0 is released on GitHub and GitLab; the daemon runs 1.0.0.
+  done      open   18:44–18:48  Lint is clean; 104 tests pass on main and 109 on atalaya.
+  links     open   18:44–18:48  https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.0.0
+  done      open   18:48–18:48  ROADMAP.md is pushed; main is c12b4e2 and atalaya is 305b328.
+  links     open   18:48–18:48  ROADMAP.md
+  decisions open   18:48–18:48  Drop SQLite from the roadmap, as requested. — The operator said to drop it.
+  next      open   18:48–18:50  Build the built-in git note in 1.3.
+  done      open   18:50–18:50  The recap column shows each agent’s repository branch, uncommitted changes, and commits ahead of upstream.
+  decisions open   18:50–18:50  Ship the git note enabled by default on main, with a setting to disable it. — It builds on the 1.0 extension point.
+  next      open   18:50–18:50  Decide how the built-in git note avoids duplicating bridge notes on atalaya.
+  done      open   19:06–19:08  The approved release plan is saved in `woolly-forging-river.md`.
+  done      open   19:07–19:08  Two wave-one worktrees are ready from `c12b4e2`.
+  now       superseded 19:08–19:08  a1: coordinating wave one while `recap-coder` builds 1.0.1 and `ship-1-1` builds 1.1 tooling.
+  next      done   19:08–19:16  Review both wave-one branches, then merge 1.0.1 into `main`.
+  next      done   19:08–19:16  Tag and publish 1.0.1 manually; release automation arrives in 1.1.
+  needs     done   19:08–19:34  Add `prefix+r` and `prefix+shift+r` to `config.toml` before 1.1.0.
+  needs     done   19:08–19:34  Wait for the GitHub macOS run to pass before tagging 1.1.0.
+  decisions open   19:08–19:16  Merge each release into atalaya, deploy it to the daemon, and close its agent tab. — Keep the deployed daemon current and the workspace tidy.
+  done      open   19:08–19:08  Each tab shows a separate header for every agent in its recap.
+  done      open   19:08–19:08  The excerpt has one section per agent, with the read budget split evenly.
+  done      open   19:08–19:08  The harness writes one rolling tab recap from the previous recap and agent sections.
+  decisions open   19:08–19:08  Keep one recap per tab because agents sharing a tab usually work on one task. — A shared recap captures the whole task without repeating information across agents.
+  next      open   19:08–19:08  Plan separate per-agent recaps if the operator requests them.
+  needs     answered 19:08–19:34  Choose live prompt updates in 1.0.1 or 1.1; implementation waits on your choice.
+  decisions open   19:10–19:10  Group agents into tasks during recap generation using agent hints and prior grouping. — Grouping runs in the existing recap call without an extra model call.
+  decisions open   19:10–19:10  Store each task with its agents and Markdown; load old recaps as one task. — This preserves compatibility and keeps each agent's read position unchanged.
+  decisions open   19:10–19:10  Add “Task” to CONTEXT.md and remove the one-recap-per-tab rule. — The new grouping lets a tab hold multiple tasks.
+  decisions open   19:10–19:10  Share cached agent repo and branch lookup between 1.2 grouping and 1.3 git notes. — This avoids building the same lookup twice.
+  next      open   19:10–19:16  Add the task grouping item to public ROADMAP.md at the next merge.
+  now       superseded 19:10–19:19  a1: checking the daemon’s subscription rate while the 1.1 branches are underway.
+  now       superseded 19:10–19:19  Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle.
+  links     open   19:10–19:10  /home/coder/.claude/plans/woolly-forging-river.md
+  decisions open   19:11–19:16  Use structured model output and render recap headings in code. — This keeps headings and order consistent across models and languages.
+  decisions open   19:11–19:16  Retry invalid recap output once, then keep the previous recap. — This prevents malformed model output from appearing.
+  done      open   19:16–19:16  The fixed recap structure is in the 1.1.0 plan.
+  done      open   19:16–19:16  Released 1.0.1, merged it into atalaya, and deployed it.
+  done      open   19:16–19:16  The atalaya guard is clean; all 121 tests pass.
+  done      open   19:16–19:16  The daemon restarted normally; all 30 agent panes survived.
+  done      open   19:16–19:16  Fixed the daemon crash when a harness exited before reading input.
+  now       superseded 19:16–19:19  a1: measuring the daemon’s subscription rate for 12 minutes.
+  now       superseded 19:16–19:19  ship-1-1: building screenshot fixtures for 1.1 tooling.
+  now       superseded 19:16–19:19  recap-coder: implementing the prefix+r column toggle from main at 1.0.1.
+  decisions open   19:16–19:16  Keep seven recap sections in the same order in English and Spanish. — A fixed structure makes recaps consistent across models and languages.
+  next      done   19:16–19:34  Review ship-1-1 and recap-coder’s work, then merge all three pieces for 1.1.0.
+  needs     answered 19:19–19:19  Choose automatic tagging for 1.1.0; if approved, create a GitLab project access token.
+  decisions open   19:19–19:19  Keep 1.1.0 tags manual; GitLab and GitHub pipelines will handle release steps. — Tagging automation is undecided; pipelines can publish releases after a tag is created.
+  done      open   19:19–19:19  Versions 1.0.0 and 1.0.1 were tagged and released manually on GitHub and GitLab.
+  next      superseded 19:19–19:34  If automatic tagging is approved, wire GitLab project access token support into 1.1.0.
+  links     open   19:19–19:19  GitLab CI
+  rules     open   19:19–19:19  Create release tags on GitLab only; GitHub is a mirror.
+  decisions open   19:19–19:19  Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions. — Protected tags limit who can create them; shared checks block invalid releases in both pipelines.
+  next      superseded 19:19–19:34  Expand `check-release.sh` with release checks and tests that reject bad tags.
+  next      superseded 19:19–19:34  Send the release checks to ship-1-1 after its current task finishes.
+  decisions open   19:19–19:34  Use LiteLLM for release notes; `check-release.sh` remains the release authority. — Agent-written notes must pass deterministic release checks.
+  links     open   19:19–19:34  check-release.sh
+  done      open   19:23–19:34  Wave-one column toggle and 1.1 tooling passed initial review; their reports show 127/127 and 107/107 tests.
+  decisions open   19:23–19:34  Run the release-notes job on `k8s-runner-homelab`. — The 1.1 plan places the job on this runner.
+  decisions open   19:23–19:34  Require one `changelog::` label and a completed MR description; generate `CHANGELOG.md` from merge requests. — Release notes should reflect incoming merge requests.
+  decisions open   19:23–19:34  Release 1.1.0 in this order: tooling, toggle, fixed-structure, then release-pipeline MRs. — The release pipeline MR should publish 1.1.0 as its first real test.
+  done      open   19:28–19:34  The 1.0.1 daemon had two subscriptions in 12 minutes, about its previous rate, with no blind…
+  next      open   19:28–19:34  Check whether GitLab runners can reach LiteLLM under current network policy.
+  needs     open   19:28–19:34  Choose whether to invoke a LiteLLM agent directly or run release-note generation inside the CI pipeline;…
+  next      done   19:29–19:43  Check whether `gitlab-webhooks` already writes release notes.
+  done      open   19:31–19:34  `homelab/serverless-functions` contains a Fission `gitlab-webhooks` function.
+  rules     open   19:39–19:43  Sync all GitLab variables from Infisical.
+  done      open   19:43–19:43  The 1.0.1 GitLab release has a Highlights block.
+  decisions open   19:43–19:43  Use one webhook per repo because GitLab Community Edition has no group webhooks. — Community Edition has no group webhooks.
+  decisions open   19:43–19:43  Read MR titles and descriptions for highlights; commit subjects provide too little input. — Commit subjects do not provide enough input for useful highlights.
+  next      open   19:43–19:43  Upgrade the function to read merged MRs and use one tag series per plugin.
+  next      open   19:43–19:43  Update repo onboarding to add the webhook and Infisical sync together.
+  next      open   19:43–19:43  Land the column toggle and 1.1 tooling through merge requests.
+  next      open   19:43–19:43  Resume recap-coder after its unsent fixed-structure approval.
+  links     open   19:43–19:43  /home/coder/.claude/projects/-home-coder-homelab-herdr-plugins/memory/release-highlights-hub.md
+
+facts with an anchor found in the input: 140 of 140 (100%)
+gates over 23 runs
+G2   1 refused  0 flagged
+G4   0 refused  5 flagged
+G8   0 refused  13 flagged
+G11  3 refused  0 flagged
+0 items dropped after the retry
+
+the judge over the replay (23 runs):
+tab-recap eval — judge codex · gpt-6-luna · medium — 23 runs sampled, 22 judged
+
+pass rate by check
+I1           atomic                    93%   124/133
+I2           stands alone              99%   132/133
+I3           specific                  95%   127/133
+I4           supported                 89%   118/133
+I5           about the work            100%  133/133
+I6           new                       97%   129/133
+I7           still true                94%   125/133
+S-goal       goal section              0%    0/1
+S-now        now section               73%   8/11
+S-needs      needs section             50%   10/20
+S-done       done section              92%   34/37
+S-decisions  decisions section         12%   3/25
+S-next       next section              95%   21/22
+S-rules      rules section             75%   3/4
+S-links      links section             85%   11/13
+coverage     key facts carried         83%   236/286
+filler       items tied to a key fact  19%   230/1242
+readback-1   read-back question 1      55%   12/22
+readback-2   read-back question 2      32%   7/22
+readback-3   read-back question 3      5%    1/22
+readback-4   read-back question 4      68%   15/22
+readback-5   read-back question 5      50%   11/22
+readback-6   read-back question 6      9%    2/22
+
+failing items (86)
+I4  t1/goal/0  "Ship 1.1.0 with fixed recap sections and AI-written release notes from incoming merge requests." — The input does not mention shipping version 1.1.0, fixed sections, or AI-written release notes.
+S-goal  t1/goal/0  "Ship 1.1.0 with fixed recap sections and AI-written release notes from incoming merge requests." — This goal is not the outcome the operator asked for: planning harness support and reviewing the GitHub mirror.
+S-needs  t1/needs/0  "Choose whether harness support covers only the recap writer or also other agent panes." — It does not say what work waits on this choice.
+S-needs  t1/needs/1  "Choose whether to research Gemini, Cursor Agent, Qwen, and Copilot headless flags now." — It does not say what work waits on this research choice.
+S-needs  t1/needs/2  "Choose the default backend: auto-detect in the proposed order or keep Claude fixed." — It does not say what work waits on the backend choice.
+S-needs  t1/needs/3  "Choose whether the public mirror keeps the bridge as an opt-in adapter or strips it." — It does not say what work waits on the bridge choice.
+S-needs  t1/needs/4  "Provide the GitHub owner and repository name, and say who should set up the mirror." — It does not say what work waits on the GitHub repository details.
+I4  t1/decisions/0  "Support the recap writer first; add other agent panes later because this keeps the initial scope…" — The input recommends this scope but does not show the operator choosing it.
+S-decisions  t1/decisions/0  "Support the recap writer first; add other agent panes later because this keeps the initial scope…" — It presents a recommendation as a decision and does not identify a rejected option.
+I4  t1/decisions/1  "Keep the bridge as an opt-in adapter in shared public code because one codebase is simpler." — The input recommends keeping the bridge opt-in but does not show the operator choosing it.
+S-decisions  t1/decisions/1  "Keep the bridge as an opt-in adapter in shared public code because one codebase is simpler." — It presents a recommendation as a decision and does not identify a rejected option.
+I4  t1/next/0  "Review the root README, commit it on main, push to GitLab, then merge main into atalaya." — The input does not mention reviewing the root README, committing on main, pushing to GitLab, or merging into atalaya.
+S-next  t1/next/0  "Review the root README, commit it on main, push to GitLab, then merge main into atalaya." — The proposed next action is unsupported by the input.
+S-needs  t1/needs/2  "Should the recap-coder tab be closed?" — The question does not say what work or next step closing the tab blocks.
+I4  t1/done/2  "Both branches are pushed to GitLab project homelab/herdr-plugins; GitHub is not a local remote." — The input says the branches are local and there are no remotes; it does not say they were pushed to GitLab.
+I7  t1/done/2  "Both branches are pushed to GitLab project homelab/herdr-plugins; GitHub is not a local remote." — The input says nothing has been pushed and there are no remotes, contradicting this claim.
+I4  t1/next/1  "After you save GitLab’s fresh mirror, add its key to GitHub and sync; verify only `main`…" — The input does not say a fresh GitLab mirror has been saved or provide the stated key and sync procedure.
+I6  t1/done/0  "Both branches are pushed to the GitLab project homelab/herdr-plugins." — This repeats the same result as t1/decisions/0: both branches were pushed to homelab/herdr-plugins.
+I6  t1/decisions/0  "Keep main and atalaya separate and push both to homelab/herdr-plugins." — This repeats the same result as t1/done/0: both branches were pushed to homelab/herdr-plugins.
+S-decisions  t1/decisions/0  "Keep main and atalaya separate and push both to homelab/herdr-plugins." — It gives no reason for keeping the branches separate or rejected alternative.
+S-needs  t1/needs/0  "Should the reconnect fix target `main` and then merge into `atalaya`?" — It does not say what the choice blocks.
+I4  t1/done/0  "The tab-recap daemon runs the fixed code as PID 1287711." — The input gives the new daemon PID as 1189993, not 1287711.
+I7  t1/done/0  "The tab-recap daemon runs the fixed code as PID 1287711." — The input contradicts the stated PID: the daemon is PID 1189993.
+S-done  t1/done/0  "The tab-recap daemon runs the fixed code as PID 1287711." — The PID is incorrect, so this is not a supported checkable result.
+I1  t1/done/0  "Community files and the reconnect fix are committed and pushed to GitLab main." — Combines the community files and reconnect fix in one item.
+I4  t1/done/0  "Community files and the reconnect fix are committed and pushed to GitLab main." — The reconnect fix was still under review and had not been committed or pushed.
+I7  t1/done/0  "Community files and the reconnect fix are committed and pushed to GitLab main." — The transcript says the reconnect fix is still being reviewed before committing.
+S-done  t1/done/0  "Community files and the reconnect fix are committed and pushed to GitLab main." — The stated result is not supported because the reconnect fix was not yet committed or pushed.
+I3  t1/done/1  "The operator clarified that the repository had already been added." — It says a repository was added but does not identify which repository.
+I4  t1/decisions/0  "Delete mirror 108 and its deploy key because the API cannot provide GitHub’s host keys." — The input does not say mirror 108 or its deploy key was deleted, or that the API cannot provide GitHub host keys.
+S-decisions  t1/decisions/0  "Delete mirror 108 and its deploy key because the API cannot provide GitHub’s host keys." — The stated choice and reason are not supported by the input.
+S-links  t1/links/2  "Herdr token expires 2026-10-31." — This is an expiration note, not a resolvable reference such as a SHA, branch, path, or URL.
+I1  t1/needs/0  "Should the recap-coder tab close, and should the `herdr-plugins-main` worktree stay?" — Combines two separate choices: closing the tab and keeping the worktree.
+S-needs  t1/needs/0  "Should the recap-coder tab close, and should the `herdr-plugins-main` worktree stay?" — It asks for choices but does not say what work is blocked on them.
+I4  t1/now/0  "a1: reviewing the root README while the writer updates tab-recap/README.md." — The transcript says review will happen after the writer finishes, so reviewing now is unsupported.
+I7  t1/now/0  "a1: reviewing the root README while the writer updates tab-recap/README.md." — The transcript says the README is underway and review comes after it is done.
+S-now  t1/now/0  "a1: reviewing the root README while the writer updates tab-recap/README.md." — The stated review is a future action; the transcript only supports that README work is underway.
+I2  t1/decisions/0  "Use the root README as an index and tab-recap quick start; keep tab-recap/README.md as the detailed…" — The trailing ellipsis leaves the decision incomplete.
+S-decisions  t1/decisions/0  "Use the root README as an index and tab-recap quick start; keep tab-recap/README.md as the detailed…" — It gives the choice but omits why the root README will serve as an index and quick start.
+S-decisions  t1/decisions/1  "Keep GitLab, atalaya, and homelab details out of both README files." — It states the choice but gives no reason for keeping internal project details out of both README files.
+I4  t1/done/0  "The recap column shows each agent’s repository branch, uncommitted changes, and commits ahead of upstream." — The transcript describes what the planned built-in note would show, not a result that is already present in the recap column.
+I7  t1/done/0  "The recap column shows each agent’s repository branch, uncommitted changes, and commits ahead of upstream." — The transcript says the built-in note is a future 1.3 feature; currently only the atalaya bridge shows a note.
+S-done  t1/done/0  "The recap column shows each agent’s repository branch, uncommitted changes, and commits ahead of upstream." — This describes a planned feature rather than a checkable result.
+S-decisions  t1/decisions/0  "Ship the git note enabled by default on main, with a setting to disable it." — It gives the choice but omits why the note should be enabled by default and whether an alternative was rejected.
+S-needs  t1/needs/0  "Add `prefix+r` and `prefix+shift+r` to `config.toml` before 1.1.0." — This is an implementation action, not a question or choice for the operator to answer.
+S-needs  t1/needs/1  "Wait for the GitHub macOS run to pass before tagging 1.1.0." — Waiting for a required macOS run is a release gate, not a question or choice the operator can answer.
+I1  t1/decisions/0  "Merge each release into atalaya, deploy it to the daemon, and close its agent tab." — The item groups three actions: merge, deploy, and close the agent tab.
+S-decisions  t1/decisions/0  "Merge each release into atalaya, deploy it to the daemon, and close its agent tab." — It states the release procedure but gives no reason for choosing it.
+I3  t1/done/0  "Each tab shows a separate header for every agent in its recap." — It gives no concrete reference, value, file, or agent role to identify which recap behavior changed.
+I3  t1/done/1  "The excerpt has one section per agent, with the read budget split evenly." — It does not identify a concrete excerpt, agent, or read-budget value.
+I3  t1/done/2  "The harness writes one rolling tab recap from the previous recap and agent sections." — It names no concrete recap, agent, or other identifying reference.
+I3  t1/decisions/0  "Keep one recap per tab because agents sharing a tab usually work on one task." — It does not name a concrete tab or agent role.
+S-decisions  t1/decisions/0  "Keep one recap per tab because agents sharing a tab usually work on one task." — It gives the reason but omits the rejected option of separate recaps and the reason they were rejected.
+I3  t1/next/0  "Plan separate per-agent recaps if the operator requests them." — It names no concrete reference or person-role for the requested recaps.
+I4  t1/now/0  "a1: checking the daemon’s subscription rate while the 1.1 branches are underway." — The input does not say a1 is checking the daemon’s subscription rate.
+I7  t1/now/0  "a1: checking the daemon’s subscription rate while the 1.1 branches are underway." — The input gives no evidence this activity is still in progress at recap time.
+S-now  t1/now/0  "a1: checking the daemon’s subscription rate while the 1.1 branches are underway." — The stated activity is unsupported by the input.
+I1  t1/now/1  "Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle." — It combines two agents’ separate activities into one item.
+I4  t1/now/1  "Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle." — The input says recap-coder builds 1.0.1, not the prefix+r column toggle.
+I7  t1/now/1  "Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle." — The input says wave one is still running, but does not support the recap-coder activity stated here.
+S-now  t1/now/1  "Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle." — The recap-coder activity is wrong; the input says recap-coder is building 1.0.1.
+S-decisions  t1/decisions/0  "Group agents into tasks during recap generation using agent hints and prior grouping." — It gives no reason for grouping agents into tasks.
+S-decisions  t1/decisions/1  "Store each task with its agents and Markdown; load old recaps as one task." — It states the storage choice but gives no reason for it.
+I1  t1/decisions/2  "Add “Task” to CONTEXT.md and remove the one-recap-per-tab rule." — It combines adding a term and removing a rule.
+S-decisions  t1/decisions/2  "Add “Task” to CONTEXT.md and remove the one-recap-per-tab rule." — It gives no reason for the vocabulary and rule changes.
+S-decisions  t1/decisions/3  "Share cached agent repo and branch lookup between 1.2 grouping and 1.3 git notes." — It gives no reason for sharing the cached lookup.
+I6  t1/now/0  "a1: measuring the daemon’s subscription rate for 12 minutes." — Repeats the same measurement activity as t1/now/2.
+I6  t1/now/2  "recap-coder: implementing the prefix+r column toggle from main at 1.0.1." — Repeats the same measurement activity as t1/now/0.
+I1  t1/done/1  "Released 1.0.1, merged it into atalaya, and deployed it." — Combines release, merge, and deployment into one item.
+I1  t1/done/3  "The daemon restarted normally; all 30 agent panes survived." — Combines the daemon restart and survival of all 30 panes.
+S-decisions  t1/decisions/0  "Keep seven recap sections in the same order in English and Spanish." — Gives the section choice but omits why the seven sections should stay fixed and in order.
+S-decisions  t1/decisions/1  "Use structured model output and render recap headings in code." — Gives the implementation choice but omits its reason: consistent headings regardless of model or language.
+S-decisions  t1/decisions/2  "Retry invalid recap output once, then keep the previous recap." — Gives the retry choice but omits why the previous recap is retained after the retry.
+I4  t1/decisions/0  "Keep 1.1.0 tags manual; GitLab and GitHub pipelines will handle release steps." — The input presents manual tagging as the current 1.1.0 plan and asks whether to automate it; it does not record a decision to keep tags manual.
+S-decisions  t1/decisions/0  "Keep 1.1.0 tags manual; GitLab and GitHub pipelines will handle release steps." — The operator has not chosen to keep tags manual, and the item gives no reason for that choice.
+S-links  t1/links/0  "GitLab CI" — “GitLab CI” names a service but is not a resolving reference such as a URL, path, branch, or SHA.
+S-rules  t1/rules/0  "Create release tags on GitLab only; GitHub is a mirror." — The input describes GitLab-only tagging as the location for a proposed automatic-tagging job, not as a standing operator instruction.
+I1  t1/decisions/0  "Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions." — Combines tag protection and running the script in CI as separate facts.
+I4  t1/decisions/0  "Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions." — The transcript says `ci/check-release.sh` will be built by widening existing scripts; it does not say that it already runs in both pipelines.
+I7  t1/decisions/0  "Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions." — The item presents the script as already running, but the transcript describes it as future work.
+S-decisions  t1/decisions/0  "Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions." — It gives no reason for the choice or rejected alternative.
+I1  t1/decisions/0  "Use LiteLLM for release notes; `check-release.sh` remains the release authority." — Combines the LiteLLM choice with the separate release-authority check.
+S-decisions  t1/decisions/0  "Use LiteLLM for release notes; `check-release.sh` remains the release authority." — Does not give the reason for choosing LiteLLM or identify the rejected option.
+S-decisions  t1/decisions/1  "Run the release-notes job on `k8s-runner-homelab`." — Omits why `k8s-runner-homelab` was recommended and the rejected `deploy-infra-runner` option.
+S-decisions  t1/decisions/2  "Require one `changelog::` label and a completed MR description; generate `CHANGELOG.md` from merge requests." — Omits why MR labels and descriptions were chosen and the rejected changelog-file check.
+S-decisions  t1/decisions/3  "Release 1.1.0 in this order: tooling, toggle, fixed-structure, then release-pipeline MRs." — Lists the MR order but gives no reason for choosing it.
+
+judge vs anchor (15): the fact quotes its input and the judge calls it unsupported
+I4  t1/goal/0  "Ship 1.1.0 with fixed recap sections and AI-written release notes from incoming merge requests." — The input does not mention shipping version 1.1.0, fixed sections, or AI-written release notes.
+I4  t1/decisions/0  "Support the recap writer first; add other agent panes later because this keeps the initial scope…" — The input recommends this scope but does not show the operator choosing it.
+I4  t1/decisions/1  "Keep the bridge as an opt-in adapter in shared public code because one codebase is simpler." — The input recommends keeping the bridge opt-in but does not show the operator choosing it.
+I4  t1/next/0  "Review the root README, commit it on main, push to GitLab, then merge main into atalaya." — The input does not mention reviewing the root README, committing on main, pushing to GitLab, or merging into atalaya.
+I4  t1/done/2  "Both branches are pushed to GitLab project homelab/herdr-plugins; GitHub is not a local remote." — The input says the branches are local and there are no remotes; it does not say they were pushed to GitLab.
+I4  t1/next/1  "After you save GitLab’s fresh mirror, add its key to GitHub and sync; verify only `main`…" — The input does not say a fresh GitLab mirror has been saved or provide the stated key and sync procedure.
+I4  t1/done/0  "The tab-recap daemon runs the fixed code as PID 1287711." — The input gives the new daemon PID as 1189993, not 1287711.
+I4  t1/done/0  "Community files and the reconnect fix are committed and pushed to GitLab main." — The reconnect fix was still under review and had not been committed or pushed.
+I4  t1/decisions/0  "Delete mirror 108 and its deploy key because the API cannot provide GitHub’s host keys." — The input does not say mirror 108 or its deploy key was deleted, or that the API cannot provide GitHub host keys.
+I4  t1/now/0  "a1: reviewing the root README while the writer updates tab-recap/README.md." — The transcript says review will happen after the writer finishes, so reviewing now is unsupported.
+I4  t1/done/0  "The recap column shows each agent’s repository branch, uncommitted changes, and commits ahead of upstream." — The transcript describes what the planned built-in note would show, not a result that is already present in the recap column.
+I4  t1/now/0  "a1: checking the daemon’s subscription rate while the 1.1 branches are underway." — The input does not say a1 is checking the daemon’s subscription rate.
+I4  t1/now/1  "Wave 1: ship-1-1 builds 1.1 tooling; recap-coder builds the prefix+r column toggle." — The input says recap-coder builds 1.0.1, not the prefix+r column toggle.
+I4  t1/decisions/0  "Keep 1.1.0 tags manual; GitLab and GitHub pipelines will handle release steps." — The input presents manual tagging as the current 1.1.0 plan and asks whether to automate it; it does not record a decision to keep tags manual.
+I4  t1/decisions/0  "Protect `tab-recap-v*` tags and run `ci/check-release.sh <tag>` in GitLab CI and GitHub Actions." — The transcript says `ci/check-release.sh` will be built by widening existing scripts; it does not say that it already runs in both pipelines.
+
+all judged runs (state after each run; the facts each run added in brackets)
+coverage 83% (236/286) [added 33% (95/286)]
+no-filler 19% (230/1242) [added 68% (90/133)]
+read-back median 2/6
+
+runs
+run_…qxs772  replay:t1  2026-10-04 21:39  coverage 78% (7/9) [added 78% (7/9)] · no-filler 64% (7/11) [added 64% (7/11)] · read-back 1/6
+run_…h1wys2  replay:t1  2026-10-04 21:42  coverage 86% (12/14) [added 21% (3/14)] · no-filler 80% (12/15) [added 75% (3/4)] · read-back 2/6
+run_…fzs05z  replay:t1  2026-10-04 22:20  coverage 64% (7/11) [added 36% (4/11)] · no-filler 39% (7/18) [added 100% (4/4)] · read-back 1/6
+run_…cewxpt  replay:t1  2026-10-04 22:48  coverage 94% (15/16) [added 25% (4/16)] · no-filler 63% (15/24) [added 50% (4/8)] · read-back 1/6
+run_…tb8rwz  replay:t1  2026-10-04 23:01  coverage 92% (12/13) [added 15% (2/13)] · no-filler 39% (11/28) [added 50% (2/4)] · read-back 3/6
+run_…eazb9b  replay:t1  2026-10-04 23:08  coverage 87% (13/15) [added 27% (4/15)] · no-filler 38% (13/34) [added 57% (4/7)] · read-back 4/6
+run_…y33k62  replay:t1  2026-10-04 23:13  coverage 80% (12/15) [added 20% (3/15)] · no-filler 33% (12/36) [added 75% (3/4)] · read-back 3/6
+run_…hschea  replay:t1  2026-10-04 23:17  coverage 79% (11/14) [added 14% (2/14)] · no-filler 29% (11/38) [added 67% (2/3)] · read-back 2/6
+run_…me17q1  replay:t1  2026-10-04 23:17  coverage 93% (14/15) [added 7% (1/15)] · no-filler 35% (14/40) [added 33% (1/3)] · read-back 2/6
+run_…7qj2yw  replay:t1  2026-10-04 23:22  coverage 80% (12/15) [added 33% (5/15)] · no-filler 27% (12/45) [added 71% (5/7)] · read-back 5/6
+run_…yeqcv8  replay:t1  2026-10-04 23:29  coverage 92% (11/12) [added 58% (7/12)] · no-filler 19% (10/53) [added 75% (6/8)] · read-back 3/6
+run_…2nzabe  replay:t1  2026-10-04 23:31  coverage 87% (13/15) [added 13% (2/15)] · no-filler 23% (13/57) [added 50% (2/4)] · read-back 1/6
+run_…04gna6  replay:t1  2026-10-04 23:48  not judged: the answer is not valid JSON
+run_…ea1fcr  replay:t1  2026-10-04 23:50  coverage 60% (6/10) [added 20% (2/10)] · no-filler 8% (5/63) [added 33% (1/3)] · read-back 1/6
+run_…hqctpk  replay:t1  2026-10-05 00:08  coverage 75% (6/8) [added 63% (5/8)] · no-filler 8% (6/71) [added 63% (5/8)] · read-back 2/6
+run_…sh4dxr  replay:t1  2026-10-05 00:08  coverage 92% (12/13) [added 38% (5/13)] · no-filler 16% (12/75) [added 100% (5/5)] · read-back 3/6
+run_…stv8gw  replay:t1  2026-10-05 00:08  coverage 92% (11/12) [added 8% (1/12)] · no-filler 14% (11/76) [added 100% (1/1)] · read-back 3/6
+run_…gxa7h2  replay:t1  2026-10-05 00:10  coverage 73% (11/15) [added 13% (2/15)] · no-filler 13% (11/84) [added 25% (2/8)] · read-back 2/6
+run_…d639zz  replay:t1  2026-10-05 00:16  coverage 77% (10/13) [added 69% (9/13)] · no-filler 11% (10/94) [added 75% (9/12)] · read-back 1/6
+run_…s20zrw  replay:t1  2026-10-05 00:19  coverage 73% (11/15) [added 33% (5/15)] · no-filler 11% (10/95) [added 67% (4/6)] · read-back 2/6
+run_…1nx6b2  replay:t1  2026-10-05 00:19  coverage 58% (7/12) [added 25% (3/12)] · no-filler 7% (7/97) [added 100% (3/3)] · read-back 2/6
+run_…rxccwg  replay:t1  2026-10-05 00:34  coverage 100% (10/10) [added 90% (9/10)] · no-filler 11% (10/90) [added 82% (9/11)] · read-back 2/6
+run_…m6v14a  replay:t1  2026-10-05 00:43  coverage 93% (13/14) [added 71% (10/14)] · no-filler 11% (11/98) [added 89% (8/9)] · read-back 2/6
