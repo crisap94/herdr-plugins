@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { cursor, memoryStore, must } from './support.ts';
 
@@ -102,4 +103,42 @@ test('a connection that cannot answer (closed, locked, damaged) reads as no reca
     records.recordRun(run());
     db.close();
     assert.equal(records.readRecap('w1:t1'), null);
+});
+
+const withItems = (over: Partial<RecapSections>): RecapSections => ({ ...sections, ...over });
+
+test('history: every distinct line of the agent\'s tasks across runs and chapters, with first, last and how often; other tasks and other panes stay out', () => {
+    const { records } = memoryStore();
+    records.recordRun(run({ at: 100, lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [
+        { ...task('t1', ['w1:p1']), sections: withItems({ decisions: ['Use SQLite'], done: ['a'] }) },
+        { ...task('t2', ['w1:p2']), sections: withItems({ decisions: ['Other pane decision'] }) },
+    ] }));
+    records.recordRun(run({ at: 200, lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [
+        { ...task('t1', ['w1:p1']), sections: withItems({ decisions: ['Use SQLite', 'Split send'], done: ['b'] }) },
+        { ...task('t2', ['w1:p2']), sections: NO_SECTIONS },
+    ] }));
+    const items = records.readHistory('w1:t1', 'w1:p1');
+    const sqlite = items.find((item) => item.text === 'Use SQLite');
+    assert.deepEqual(sqlite, { section: 'decisions', text: 'Use SQLite', firstAt: 100, lastAt: 200, seen: 2 });
+    assert.deepEqual(items.filter((item) => item.section === 'goal').map((item) => [item.text, item.seen]), [['ship', 2]], 'a goal repeated in every run is one line');
+    assert.ok(items.some((item) => item.text === 'a') && items.some((item) => item.text === 'b'), 'a finished item that left the latest recap is still there');
+    assert.ok(!items.some((item) => item.text === 'Other pane decision'), 'the task of another pane is not this agent\'s');
+    assert.deepEqual(items.map((item) => item.lastAt), items.map((item) => item.lastAt).toSorted((a, b) => b - a), 'newest first');
+    assert.deepEqual(records.readHistory('w1:t1', 'w1:p9'), [], 'a pane in no task has no history');
+    assert.deepEqual(records.readHistory('w1:t9', 'w1:p1'), []);
+});
+
+test('history: at most 300 lines; finished items and references are cut first, decisions and open questions last', () => {
+    const { records } = memoryStore();
+    for (let at = 1; at <= 60; at += 1) {
+        records.recordRun(run({ at, tasks: [{ ...task('t1', ['w1:p1']), sections: { ...NO_SECTIONS, decisions: [`d${at}`], needs: [`q${at}`], done: [`x${at}a`, `x${at}b`], links: [`l${at}a`, `l${at}b`], next: [`n${at}`] } }] }));
+    }
+    const items = records.readHistory('w1:t1', 'w1:p1');
+    const count = (...names: string[]): number => items.filter((item) => names.includes(item.section)).length;
+    assert.equal(items.length, 300);
+    assert.equal(count('decisions'), 60, 'every decision survives');
+    assert.equal(count('needs'), 60, 'every open question survives');
+    assert.equal(count('next'), 60);
+    assert.equal(count('done', 'links'), 120, 'finished items and references took the whole cut (240 → 120)');
+    assert.ok(!items.some((item) => item.text === 'x1a'), 'the oldest finished item went');
 });

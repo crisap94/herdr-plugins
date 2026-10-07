@@ -23,7 +23,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { harness: 'Agent', model: 'Model', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', effort: 'Writer effort', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -41,6 +41,11 @@ export const en: Messages = {
         compactTargetHint: 'which agents the compact action reaches: focused (the one you are in), all, or kinds like claude,codex',
         compactHintHint: 'show “compact?” beside an agent whose context passes this share of its window: 10 to 95, or off',
         compactHintOff: 'off',
+        modelsHeading: 'Models — harness · model · effort, ←/→ pick a part',
+        jobBy: { recap: 'as the recap writer', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', off: 'off' },
+        jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'your own command, TAB_RECAP_CUSTOM_CMD', off: 'off — compact with the template, no brief' },
+        compactModelSame: "the recap writer's model",
+        compactJobHint: 'writes what the agent keeps when it is compacted; a high effort is worth it, it runs once per compaction',
         contextWindowDetected: 'found at runtime',
         contextWindowHint: 'tokens a Claude agent can hold, to measure its context (Codex reports its own)',
         languageNames: { en: 'English', es: 'Spanish' },
@@ -64,6 +69,13 @@ export const en: Messages = {
         noteLabel: 'Anything it must keep? (optional)',
         keys: ['⏎ send · Esc cancel', '⏎ · Esc'],
         hint: (percent, window) => `compact? ${percent}%${window === '' ? '' : ` of ${window}`}`,
+        writing: (agent) => `Writing what ${agent} should keep…`,
+        outcome: (agent, outcome, retried) => {
+            if (outcome === 'compacted') {
+                return retried ? `${agent} compacted (on the second try)` : `${agent} compacted`;
+            }
+            return outcome === 'failed' ? `${agent} could not compact, even after trying again` : `${agent}: could not confirm the compaction — check it`;
+        },
         started: (agent) => `Compacting ${agent}`,
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
         nothing: 'No agent here can be compacted',

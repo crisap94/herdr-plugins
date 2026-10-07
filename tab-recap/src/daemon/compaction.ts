@@ -1,5 +1,8 @@
 // The composition of compaction: the daemon's parts, handed to the one service that types into an agent.
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
+import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
+import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
@@ -20,11 +23,15 @@ export function wireCompaction(parts: {
     readonly webs: { of(pane: string): LaneWeb | null };
     readonly recaps: RecapJob;
     readonly informer: Informer;
+    readonly briefs: () => CompactionBriefs | null;
+    readonly recent: LaneRecent;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
+    const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: string): void => { parts.log(line); } });
     return new Compaction({
         agents: fleet.agents(), notifier: fleet, records: parts.records, webs: parts.webs, log: (line) => { parts.log(line); },
+        brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: () => Date.now(),
         lanes: (tab) => lanesOf(informer.current, tabId(tab)),
         focused: async (tab) => {
             const layout = await fleet.layout(tabId(tab));

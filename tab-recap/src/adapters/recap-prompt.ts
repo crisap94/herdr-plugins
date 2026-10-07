@@ -1,3 +1,4 @@
+import type { HarnessCall } from '#src/ports/harness.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
 import { instructions } from './recap-instructions.ts';
@@ -52,13 +53,20 @@ export function fitBytes(text: string, max: number): string {
     return chars.join('');
 }
 
-/** The one prompt for a harness that takes it as an argument: the document is re-rendered with a smaller transcript budget (whole oldest turns dropped, never a cut tag) until it fits. */
-export function argvPrompt(request: RecapRequest): string {
+/** What a harness that takes its prompt as an argument is given: the document is re-rendered with a smaller transcript budget (whole oldest turns dropped, never a cut tag) until both parts fit `limit` bytes. */
+export function fittedCall(request: RecapRequest, limit: number): HarnessCall {
+    const rules = instructions(request);
     let budget = TRANSCRIPT_BUDGET;
-    let text = prompt(request);
-    while (Buffer.byteLength(text) > ARGV_BYTES && budget > 0) {
+    let input = writerContext(request, budget);
+    while (Buffer.byteLength(input) + Buffer.byteLength(rules) > limit && budget > 0) {
         budget = budget < 500 ? 0 : Math.floor(budget / 2);
-        text = `${writerContext(request, budget)}\n\n${instructions(request)}`;
+        input = writerContext(request, budget);
     }
-    return text;
+    return { instructions: rules, input };
+}
+
+/** The one prompt for a harness that takes it as an argument, data first. */
+export function argvPrompt(request: RecapRequest): string {
+    const call = fittedCall(request, ARGV_BYTES);
+    return `${call.input}\n\n${call.instructions}`;
 }

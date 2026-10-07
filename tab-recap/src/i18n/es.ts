@@ -24,7 +24,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { harness: 'Agente', model: 'Modelo', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', effort: 'Esfuerzo del redactor', compactTarget: 'Compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto' },
+        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
@@ -42,6 +42,11 @@ export const es: Messages = {
         compactTargetHint: 'a qué agentes llega la acción de compactar: focused (en el que estás), all, o tipos como claude,codex',
         compactHintHint: 'muestra «compactar?» junto a un agente cuyo contexto pasa esta parte de su ventana: de 10 a 95, u off',
         compactHintOff: 'off',
+        modelsHeading: 'Modelos — agente · modelo · esfuerzo, ←/→ elige una parte',
+        jobBy: { recap: 'como el redactor', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', off: 'off' },
+        jobByChoices: { recap: 'como el redactor del resumen — el mismo agente', auto: 'auto — el primero que se encuentre', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD', off: 'off — compacta con la plantilla, sin guion' },
+        compactModelSame: 'el modelo del redactor',
+        compactJobHint: 'escribe qué conserva el agente al compactar; vale la pena un esfuerzo alto, corre una vez por compactación',
         contextWindowDetected: 'se detecta',
         contextWindowHint: 'tokens que cabe en un agente (vacío = se detecta); sirve para medir su contexto',
         languageNames: { en: 'inglés', es: 'español' },
@@ -65,6 +70,13 @@ export const es: Messages = {
         noteLabel: '¿Algo que deba conservar? (opcional)',
         keys: ['⏎ enviar · Esc cancelar', '⏎ · Esc'],
         hint: (percent, window) => `¿compactar? ${percent}%${window === '' ? '' : ` de ${window}`}`,
+        writing: (agent) => `Escribiendo qué debe conservar ${agent}…`,
+        outcome: (agent, outcome, retried) => {
+            if (outcome === 'compacted') {
+                return retried ? `${agent} compactado (al segundo intento)` : `${agent} compactado`;
+            }
+            return outcome === 'failed' ? `${agent} no pudo compactar, ni al reintentar` : `${agent}: no se pudo confirmar la compactación — revísalo`;
+        },
         started: (agent) => `Compactando ${agent}`,
         skipped: (agent, status) => `${agent} está ${status}: no se compactó — inténtalo cuando esté libre`,
         nothing: 'Ningún agente de aquí se puede compactar',

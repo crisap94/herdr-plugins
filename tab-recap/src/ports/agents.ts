@@ -18,8 +18,8 @@ export interface PromptWait {
 export interface Agents {
     status(pane: string): Promise<AgentState>;
     prompt(pane: string, text: string, wait?: PromptWait): Promise<Prompted>;
-    /** Type one line (no line break) and press Enter, without pasting: what `/compact <instructions>` of Claude Code needs. */
-    typeLine(pane: string, line: string): Promise<Prompted>;
+    /** Type one line, piece by piece (no line break in any), and press Enter once all went in, without pasting: what `/compact <instructions>` of Claude Code needs. */
+    typeLine(pane: string, pieces: readonly string[]): Promise<Prompted>;
     /** The compaction popup, over everything, for the agent in `pane` of `tab` (pane is null when none is known). */
     askNote(tab: string, pane: string | null): Promise<Done>;
 }

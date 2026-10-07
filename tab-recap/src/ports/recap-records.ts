@@ -70,10 +70,21 @@ export interface Advance {
     readonly lanes: readonly LaneCursor[];
 }
 
+/** One distinct line of the recap across a session: the section it stood in, when it first and last appeared (epoch ms) and in how many runs. */
+export interface HistoryItem {
+    readonly section: string;
+    readonly text: string;
+    readonly firstAt: number;
+    readonly lastAt: number;
+    readonly seen: number;
+}
+
 /** The history of a tab's recaps (chapter → run → task → item). A run's writes land together or not at all. */
 export interface RecapRecords {
     /** The current recap: the last run that wrote one, plus the tab's lanes, running flag and error line. */
     readRecap(tab: string): TabRecap | null;
+    /** Every distinct recap line of the tasks that hold `pane`, across all runs and chapters: newest first, at most 300 (finished items and references are cut first). */
+    readHistory(tab: string, pane: string): readonly HistoryItem[];
     beginRun(tab: string, backend: string | null, at: number): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;

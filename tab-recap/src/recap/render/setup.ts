@@ -1,7 +1,7 @@
 // The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
-import { EFFORT_CHOICES, HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
-import type { RowId, Setup } from '#src/recap/application/setup-keys.ts';
+import { EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
+import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import { coloured, visibleLength, wrap } from './wrap.ts';
@@ -16,10 +16,7 @@ function hanging(prefix: string, text: string, width: number, extra = ''): strin
 }
 const costOf = (usd: number): string => (usd > 0 ? `$${usd.toFixed(4)}` : '');
 
-function labelOf(row: RowId, state: Setup, m: Messages): string {
-    const target = row === 'model' ? modelTarget(state.draft, state.available) : null;
-    return target === null ? m.setup.rows[row] : `${m.setup.rows[row]} (${target})`;
-}
+const labelOf = (row: RowId, m: Messages): string => m.setup.rows[row];
 
 function modelText(model: string, id: BackendId, m: Messages): string {
     return model === '' ? m.setup.modelDefault(MODEL_DEFAULTS[id]) : model;
@@ -43,18 +40,32 @@ function screenText(setting: string, m: Messages): string {
 /** The compaction rows in words: the hint as a percentage (or off), an empty window as «found at runtime». */
 const hintText = (hint: string, m: Messages): string => (hint === 'off' ? m.setup.compactHintOff : `${hint}%`);
 
+/** A job's three parts in words, `harness · model · effort`; the focused one is bracketed (the model's text is the buffer while it is typed). */
+function jobText(row: RowId, state: Setup, m: Messages): string {
+    const focused = rowOf(state) === row ? state.part : -1;
+    const typing = focused === 1 && state.editing?.kind === 'text' ? state.editing.buffer : null;
+    const { draft } = state;
+    const target = modelTarget(draft, state.available);
+    const parts = row === 'recapJob'
+        ? [draft.backend, target === null ? m.setup.modelNoAgent : modelText(draft.models[target], target, m), draft.effort]
+        : [m.setup.jobBy[draft.compact.by], draft.compact.model === '' ? m.setup.compactModelSame : draft.compact.model, draft.compact.effort];
+    const shown = (part: string, at: number): string => {
+        if (at === 1 && typing !== null) {
+            return `[${typing}█]`;
+        }
+        return at === focused && state.editing === null ? `[${part}]` : part;
+    };
+    return parts.map(shown).join(' · ');
+}
+
 /** What each row shows as its value; a row added to `RowId` cannot compile without one. */
 const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
-    harness: (state) => state.draft.backend,
-    model: (state, m) => {
-        const target = modelTarget(state.draft, state.available);
-        return target === null ? m.setup.modelNoAgent : modelText(state.draft.models[target], target, m);
-    },
+    recapJob: (state, m) => jobText('recapJob', state, m),
+    compactJob: (state, m) => jobText('compactJob', state, m),
     locale: (state, m) => m.setup.uiChoices[state.draft.locale],
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
     gitNote: (state, m) => m.setup.gitNoteChoices[state.draft.gitNote],
-    effort: (state, m) => m.setup.effortChoices[state.draft.effort],
     compactTarget: (state) => state.draft.compactTarget,
     compactHint: (state, m) => hintText(state.draft.compactHint, m),
     contextWindow: (state, m) => (state.draft.contextWindow === '' ? m.setup.contextWindowDetected : state.draft.contextWindow),
@@ -73,7 +84,7 @@ function markOf(choice: BackendChoice, state: Setup): string {
 }
 
 function harnessChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
-    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'harness' ? state.editing.at : -1;
+    const editing = state.editing?.kind === 'choice' && fieldOf(state) === 'harness' ? state.editing.at : -1;
     const notes: Readonly<Partial<Record<BackendChoice, string>>> = { auto: m.setup.auto(AUTO_ORDER.join(' → ')), custom: m.setup.custom };
     const lines = HARNESS_CHOICES.flatMap((choice, at) => {
         const note = notes[choice];
@@ -84,61 +95,56 @@ function harnessChoices(state: Setup, m: Messages, width: number, style: Style):
     return [...lines, ...hanging('    ', legend, width).map(style.dim)];
 }
 
-function localeChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
-    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'locale' ? state.editing.at : -1;
-    return LOCALE_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.uiChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
-}
-
-function gitNoteChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
-    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'gitNote' ? state.editing.at : -1;
-    return SWITCH_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.gitNoteChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
-}
-
-function effortChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
-    const editing = state.editing?.kind === 'choice' && rowOf(state) === 'effort' ? state.editing.at : -1;
-    return EFFORT_CHOICES.flatMap((choice, at) => hanging(`    ${at === editing ? '▸' : ' '} `, m.setup.effortChoices[choice], width).map((line) => (at === editing ? style.bold(line) : line)));
+/** The choices of the field being edited, one per line, the highlighted one marked. */
+function pickList(state: Setup, labels: readonly string[], width: number, style: Style): string[] {
+    const editing = state.editing?.kind === 'choice' ? state.editing.at : -1;
+    return labels.flatMap((label, at) => hanging(`    ${at === editing ? '▸' : ' '} `, label, width).map((line) => (at === editing ? style.bold(line) : line)));
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
-/** What hangs under a row: its lock, its hint while focused, its choices. */
+/** What hangs under a row: the locks, its hint while focused, its choices. */
 function under(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const focused = rowOf(state) === row;
-    const lock = state.locks[row];
+    const locks = [...new Set((JOB_FIELDS[row] ?? [row as FieldId]).flatMap((field) => state.locks[field] ?? []))];
     const hint = focused ? hintOf(row, m) : null;
     return [
-        ...(lock === undefined ? [] : hanging('    ', m.setup.locked(lock), width).map(style.yellow)),
+        ...locks.flatMap((lock) => hanging('    ', m.setup.locked(lock), width).map(style.yellow)),
         ...(hint === null ? [] : hanging('    ', hint, width).map(style.dim)),
-        ...(focused || row === 'harness' ? choicesUnder(row, state, m, width, style) : []),
+        ...(focused || row === 'recapJob' ? choicesUnder(row, state, m, width, style) : []),
     ];
 }
 
-/** The harness's choices always hang under it; the others open while the row is being edited. */
+/** The harness's choices always hang under the recap writer; the others open while their field is being edited. */
 function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const choosing = state.editing?.kind === 'choice';
-    const drawn: Readonly<Partial<Record<RowId, () => string[]>>> = {
-        harness: () => harnessChoices(state, m, width, style),
-        locale: () => (choosing ? localeChoices(state, m, width, style) : []),
-        gitNote: () => (choosing ? gitNoteChoices(state, m, width, style) : []),
-        effort: () => (choosing ? effortChoices(state, m, width, style) : []),
+    const lists: Readonly<Partial<Record<FieldId, () => string[]>>> = {
+        locale: () => pickList(state, LOCALE_CHOICES.map((choice) => m.setup.uiChoices[choice]), width, style),
+        gitNote: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.gitNoteChoices[choice]), width, style),
+        effort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
+        compactBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => m.setup.jobByChoices[choice]), width, style),
+        compactEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
     };
-    return drawn[row]?.() ?? [];
+    const field = fieldOf(state);
+    const drawn = row === 'recapJob' && (field === 'harness' || !choosing) ? harnessChoices(state, m, width, style) : [];
+    return [...drawn, ...(choosing ? (lists[field]?.() ?? []) : [])];
 }
 
 function rowLines(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const focused = rowOf(state) === row;
-    const editing = focused && state.editing?.kind === 'text' ? state.editing.buffer : null;
+    const jobRow = JOB_FIELDS[row] !== undefined;
+    const editing = focused && !jobRow && state.editing?.kind === 'text' ? state.editing.buffer : null;
     const value = editing === null ? valueOf(row, state, m) : `${editing}█`;
-    const lines = hanging(`${focused ? '▸' : ' '} ${labelOf(row, state, m).padEnd(LABEL_WIDTH)} `, value, width);
+    const lines = hanging(`${focused ? '▸' : ' '} ${labelOf(row, m).padEnd(LABEL_WIDTH)} `, value, width);
     return [...(focused ? lines.map(style.bold) : lines), ...under(row, state, m, width, style)];
 }
 
 function noteLine(state: Setup, m: Messages): string | null {
     const { note } = state;
-    const lock = state.locks[rowOf(state)] ?? '';
+    const lock = state.locks[fieldOf(state)] ?? '';
     const texts: Readonly<Record<string, string>> = {
         locked: m.setup.locked(lock), unsaved: m.setup.unsaved, saved: m.setup.saved, rewriting: m.setup.rewriting,
         nothing: m.setup.nothingToSave, 'no-agent': m.setup.modelNoAgent,
@@ -181,7 +187,7 @@ export function setupView(state: Setup, m: Messages, width: number, style: Style
     return [
         style.bold(style.cyan(m.setup.title)),
         '',
-        ...ROWS.flatMap((row) => rowLines(row, state, m, width, style).concat([''])),
+        ...ROWS.flatMap((row) => (row === 'recapJob' ? wrap(m.setup.modelsHeading, width).map(style.dim) : []).concat(rowLines(row, state, m, width, style), [''])),
         ...status,
     ];
 }

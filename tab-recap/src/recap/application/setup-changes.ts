@@ -1,10 +1,10 @@
 // What the modal writes: the lock table (row -> environment variables) and the config.env entries a draft changes.
 // A new setup row adds its lock keys and its entry here.
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
-import type { Locks, RowId, Setup } from './setup-state.ts';
-import { ROWS } from './setup-state.ts';
+import type { FieldId, Locks, Setup } from './setup-state.ts';
+import { FIELDS } from './setup-state.ts';
 
-const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
+const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
     model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), 'TAB_RECAP_CLAUDE_MODEL', 'TAB_RECAP_CODEX_MODEL'],
     locale: ['TAB_RECAP_LOCALE'],
@@ -12,6 +12,9 @@ const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
     gitNote: ['TAB_RECAP_GIT_NOTE'],
     effort: ['TAB_RECAP_EFFORT'],
+    compactBy: ['TAB_RECAP_COMPACT_BY'],
+    compactModel: ['TAB_RECAP_COMPACT_MODEL'],
+    compactEffort: ['TAB_RECAP_COMPACT_EFFORT'],
     compactTarget: ['TAB_RECAP_COMPACT_TARGET'],
     compactHint: ['TAB_RECAP_COMPACT_HINT'],
     contextWindow: ['TAB_RECAP_CONTEXT_WINDOW'],
@@ -19,8 +22,8 @@ const LOCK_KEYS: Readonly<Record<RowId, readonly string[]>> = {
 
 /** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
 export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
-    const locks: Partial<Record<RowId, string>> = {};
-    for (const row of ROWS) {
+    const locks: Partial<Record<FieldId, string>> = {};
+    for (const row of FIELDS) {
         const found = LOCK_KEYS[row].find((key) => (env[key] ?? '') !== '');
         if (found !== undefined) {
             locks[row] = found;
@@ -33,7 +36,7 @@ export function locksOf(env: Readonly<Record<string, string | undefined>>): Lock
 export function changes(state: Setup): ReadonlyMap<string, string> {
     const { draft, stored, locks } = state;
     const out = new Map<string, string>();
-    const set = (row: RowId, key: string, now: string, was: string): void => {
+    const set = (row: FieldId, key: string, now: string, was: string): void => {
         if (now !== was && locks[row] === undefined) {
             out.set(key, now);
         }
@@ -49,6 +52,9 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
     set('effort', 'TAB_RECAP_EFFORT', draft.effort, stored.effort);
     set('compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget, stored.compactTarget);
     set('compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint, stored.compactHint);
+    set('compactBy', 'TAB_RECAP_COMPACT_BY', draft.compact.by, stored.compact.by);
+    set('compactModel', 'TAB_RECAP_COMPACT_MODEL', draft.compact.model, stored.compact.model);
+    set('compactEffort', 'TAB_RECAP_COMPACT_EFFORT', draft.compact.effort, stored.compact.effort);
     set('contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow, stored.contextWindow);
     return out;
 }

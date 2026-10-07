@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { guidanceOf, MESSAGE_LIMIT, restoreOf } from '#src/recap/application/compaction-message.ts';
+import { guidanceOf, MESSAGE_LIMIT, restoreFrom, restoreOf } from '#src/recap/application/compaction-message.ts';
 import type { Material } from '#src/recap/application/compaction-message.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 
@@ -11,7 +11,7 @@ const sections = {
 };
 const material = (over: Partial<Material> = {}): Material => ({ sections, web, note: null, ...over });
 
-const many = (label: string): string[] => Array.from({ length: 5 }, (_, at) => `${label} ${at} ${'x'.repeat(90)}`);
+const many = (label: string): string[] => Array.from({ length: 14 }, (_, at) => `${label} ${at} ${'x'.repeat(60)}`);
 const FORBIDDEN = /recap|\btabs?\b|tool/iu;
 
 test('golden: the guidance with a note is ONE line, numbered, references as URLs', () => {
@@ -49,18 +49,22 @@ test('over the limit: references go first, then next steps, then decisions; the 
     const text = guidanceOf(material({ sections: big, note: 'keep the note whole' }));
     assert.ok(text.length <= MESSAGE_LIMIT, String(text.length));
     assert.ok(text.includes('keep the note whole') && text.includes('Ship the cart rewrite'));
-    assert.ok(!text.includes('ref 4') && text.includes('next 4'), 'references are cut first, from the end');
-    assert.ok(text.includes('decision 4'), 'decisions are whole while references can still give');
-    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => line + 'y'.repeat(200)) }, note: 'n' }));
+    assert.ok(!text.includes('ref 13') && text.includes('next 13'), 'references are cut first, from the end');
+    assert.ok(text.includes('decision 13'), 'decisions are whole while references can still give');
+    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => line + 'y'.repeat(150)) }, note: 'n' }));
     assert.ok(tighter.length <= MESSAGE_LIMIT && !tighter.includes('next 0'), 'next steps go before decisions');
 });
 
 test('the agent never hears about the plugin: no template, with or without a note, names it', () => {
-    for (const text of [guidanceOf(material({ note: 'x' })), guidanceOf(material()), restoreOf(material({ note: 'x' })), restoreOf(material()), guidanceOf(material({ sections: NO_SECTIONS })), restoreOf(material({ sections: NO_SECTIONS }))]) {
+    for (const text of [guidanceOf(material({ note: 'x' })), guidanceOf(material()), restoreOf(material({ note: 'x' })), restoreOf(material()), guidanceOf(material({ sections: NO_SECTIONS })), restoreOf(material({ sections: NO_SECTIONS })), restoreFrom('We kept SQLite.')]) {
         assert.ok(!FORBIDDEN.test(text), text);
     }
 });
 
 test('references stay as written when the lane has no web context', () => {
     assert.ok(guidanceOf(material({ web: null })).includes('Exact references to keep as written: !252; src/cart.ts.'));
+});
+
+test('the message limit is 3 000, for the template and the brief alike', () => {
+    assert.equal(MESSAGE_LIMIT, 3000);
 });

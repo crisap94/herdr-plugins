@@ -1,10 +1,11 @@
 // The RecapRecords repository: a run's writes land in one transaction — the run, what it read, its tasks, the cursors it advanced.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { Advance, FailedRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, HistoryItem, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import { writeTx } from './connection.ts';
 import { RecapReader } from './recap-read.ts';
 import { guarded } from './rows.ts';
 import { RunRows } from './run-write.ts';
+import { SessionHistory } from './session-history.ts';
 import { TabRow } from './tab-row.ts';
 import { TranscriptRows } from './transcripts.ts';
 
@@ -14,6 +15,7 @@ export class RecapRecordsRepository implements RecapRecords {
     private readonly tabs: TabRow;
     private readonly transcripts: TranscriptRows;
     private readonly runs: RunRows;
+    private readonly history: SessionHistory;
     private readonly begin: StatementSync;
     private readonly settleStatement: StatementSync;
     private readonly errorOnly: StatementSync;
@@ -24,6 +26,7 @@ export class RecapRecordsRepository implements RecapRecords {
         this.tabs = new TabRow(db);
         this.transcripts = new TranscriptRows(db);
         this.runs = new RunRows(db, this.transcripts);
+        this.history = new SessionHistory(db);
         this.begin = db.prepare('UPDATE tab SET running = 1, backend = ? WHERE id = ?');
         this.settleStatement = db.prepare('UPDATE tab SET running = 0, backend = ?, error = ? WHERE id = ?');
         this.errorOnly = db.prepare('UPDATE tab SET error = ? WHERE id = ?');
@@ -31,6 +34,10 @@ export class RecapRecordsRepository implements RecapRecords {
 
     readRecap(tab: string): TabRecap | null {
         return guarded(() => this.reader.read(tab), null);
+    }
+
+    readHistory(tab: string, pane: string): readonly HistoryItem[] {
+        return guarded(() => this.history.read(tab, pane), []);
     }
 
     beginRun(tab: string, backend: string | null, at: number): void {

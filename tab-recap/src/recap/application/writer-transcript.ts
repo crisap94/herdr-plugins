@@ -71,12 +71,18 @@ function firstThatFits(items: readonly Item[], budget: number): number {
     return from;
 }
 
-export function transcriptOf(agent: string, entries: readonly Entry[], clock: Clock, budget: number): string {
+/** The newest items of `entries` that fit `budget`, as the attributes (`since`, `omitted`) and the markup a transcript-like element holds. */
+export function turnsOf(entries: readonly Entry[], clock: Clock, budget: number): { readonly attrs: Readonly<Record<string, string | number | null>>; readonly body: string } {
     const items = itemsOf(entries, clock);
     const from = firstThatFits(items, budget);
     const shown = items.slice(from);
     const omitted = items.slice(0, from).filter((item) => item.turn).length;
     const first = shown.find((item) => item.at !== undefined)?.at;
-    const attrs = { agent, since: first === undefined || shown[0]?.at === first ? null : localTime(first, clock.now, clock.zone), omitted: omitted === 0 ? null : omitted };
-    return element('transcript', attrs, shown.map((item) => `\n${INDENT}${item.markup}`).join('') + (shown.length > 0 ? '\n' : ''));
+    const attrs = { since: first === undefined || shown[0]?.at === first ? null : localTime(first, clock.now, clock.zone), omitted: omitted === 0 ? null : omitted };
+    return { attrs, body: shown.map((item) => `\n${INDENT}${item.markup}`).join('') + (shown.length > 0 ? '\n' : '') };
+}
+
+export function transcriptOf(agent: string, entries: readonly Entry[], clock: Clock, budget: number): string {
+    const { attrs, body } = turnsOf(entries, clock, budget);
+    return element('transcript', { agent, ...attrs }, body);
 }

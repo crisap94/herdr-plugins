@@ -1,3 +1,5 @@
+import type { JobBy } from '#src/recap/domain/job.ts';
+
 /** The languages the UI speaks. The recap language is separate: any language, see `recapLanguageOf`. */
 export type Locale = 'en' | 'es';
 
@@ -34,7 +36,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: { readonly harness: string; readonly model: string; readonly locale: string; readonly recapLanguage: string; readonly screenAgents: string; readonly gitNote: string; readonly effort: string; readonly compactTarget: string; readonly compactHint: string; readonly contextWindow: string };
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -50,6 +52,12 @@ export interface Messages {
         readonly compactTargetHint: string;
         readonly compactHintHint: string;
         readonly compactHintOff: string;
+        /** the heading over the job rows */
+        readonly modelsHeading: string;
+        readonly jobBy: Readonly<Record<JobBy, string>>;
+        readonly jobByChoices: Readonly<Record<JobBy, string>>;
+        readonly compactModelSame: string;
+        readonly compactJobHint: string;
         readonly contextWindowHint: string;
         readonly contextWindowDetected: string;
         readonly screenNone: string;
@@ -78,6 +86,8 @@ export interface Messages {
         readonly keys: readonly string[];
         /** `window` is the size measured against (`1M`), or '' when it is not worth saying */
         readonly hint: (percent: number, window: string) => string;
+        readonly writing: (agent: string) => string;
+        readonly outcome: (agent: string, outcome: 'compacted' | 'failed' | 'unconfirmed', retried: boolean) => string;
         readonly started: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
         readonly nothing: string;

@@ -1,0 +1,49 @@
+<!-- compaction_input: everything tab-recap gives the brief writer for one agent, one compaction. Version 1. -->
+<!ELEMENT compaction_input (agent, note?, current_recap, session_history, recent)>
+<!ATTLIST compaction_input version CDATA #FIXED "1">
+
+<!-- The agent about to be compacted. -->
+<!ELEMENT agent EMPTY>
+<!ATTLIST agent
+  kind   CDATA #REQUIRED
+  label  CDATA #REQUIRED
+  repo   CDATA #IMPLIED
+  branch CDATA #IMPLIED>
+
+<!-- What the operator asked the summary to keep above all, verbatim. Absent when none was given. -->
+<!ELEMENT note (#PCDATA)>
+
+<!-- The latest recap of the agent's task, as JSON: goal, now, needs, done, decisions, next, links, rules. -->
+<!ELEMENT current_recap (#PCDATA)>
+
+<!-- Every distinct line the recap carried over the whole session, newest first. first/last = when it first and last
+     appeared (local time, HH:MM or a date), seen = in how many recaps. Sections: goal, now, needs, done, decisions,
+     next, links, rules. -->
+<!ELEMENT session_history (item*)>
+<!ELEMENT item (#PCDATA)>
+<!ATTLIST item
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  first   CDATA #REQUIRED
+  last    CDATA #REQUIRED
+  seen    CDATA #REQUIRED>
+
+<!-- The agent's last turns, oldest first (the most recent ones that fit). omitted = turns left out before them. -->
+<!ELEMENT recent (turn|tools)*>
+<!ATTLIST recent
+  since   CDATA #IMPLIED
+  omitted CDATA "0">
+<!ELEMENT turn (#PCDATA)>
+<!ATTLIST turn
+  role    (user|agent) #REQUIRED
+  at      CDATA #IMPLIED
+  queued  (yes|no) "no"
+  clipped (no|middle) "no">
+<!ELEMENT tools (call*)>
+<!ATTLIST tools
+  at    CDATA #IMPLIED
+  reads CDATA "0"
+  more  CDATA "0">
+<!ELEMENT call (#PCDATA)>
+<!ATTLIST call
+  kind (shell|edit|web|agent|other) #REQUIRED
+  what CDATA #IMPLIED>

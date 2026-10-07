@@ -3,20 +3,32 @@ import type { Messages } from '#src/i18n/index.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import type { Agents } from '#src/ports/agents.ts';
+import type { Agents, Prompted } from '#src/ports/agents.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
+import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { guidanceOf, restoreOf } from './compaction-message.ts';
+import { outcomeOf } from './compaction-outcome.ts';
+import type { Outcome } from './compaction-outcome.ts';
+import { compactionInput } from './compaction-input.ts';
+import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
 import { targetsOf } from './compaction-targets.ts';
 
 export interface CompactionDeps {
     readonly agents: Agents;
     readonly notifier: Notifier;
-    readonly records: Pick<RecapRecords, 'readRecap'>;
+    readonly records: Pick<RecapRecords, 'readRecap' | 'readHistory'>;
+    /** writes the brief from a document; null when it is off or gave none (the template is used) */
+    readonly brief: { enabled(): boolean; write(document: string): Promise<string | null> };
+    /** the agent's last turns, read from its own records; empty when they cannot be read */
+    recent(lane: Lane): Promise<readonly Entry[]>;
+    /** the compactions the agent's own records show, newest last; empty when they cannot be read */
+    marks(lane: Lane): Promise<readonly Mark[]>;
+    pause(ms: number): Promise<void>;
+    now(): number;
     readonly webs: { of(pane: string): LaneWeb | null };
     /** the lanes the daemon holds for the tab */
     lanes(tab: string): readonly Lane[];
@@ -67,19 +79,52 @@ export class Compaction {
         return { sections: task?.sections ?? NO_SECTIONS, web: this.deps.webs.of(pane), note };
     }
 
-    /** The one place anything is typed into an agent: claude takes instructions with `/compact`; the others are compacted, then reminded. */
-    private async send(lane: Lane, material: Material): Promise<void> {
+    /** What the agent's own summary should keep, written from the whole session; null when no brief was written (the template is used). */
+    private async briefOf(lane: Lane, tab: string, material: Material): Promise<string | null> {
+        const { brief, records } = this.deps;
+        if (!brief.enabled()) {
+            return null;
+        }
+        const [pane, agent] = [String(lane.pane), String(lane.agent)];
+        await this.tell(this.deps.messages().compaction.title(agent), this.deps.messages().compaction.writing(agent));
+        const label = records.readRecap(tab)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
+        const clock = { now: this.deps.now(), zone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+        return brief.write(compactionInput({ agent: { kind: agent, label, repo: null, branch: null }, note: material.note, current: material.sections, history: records.readHistory(tab, pane), recent: await this.deps.recent(lane), clock }));
+    }
+
+    /** One go at the compaction command: typed, announced (the first time), then confirmed from the agent's own records. */
+    private async attempt(lane: Lane, command: () => Promise<Prompted>, announce: boolean): Promise<{ readonly sent: Prompted; readonly outcome: Outcome | null }> {
+        const agent = String(lane.agent);
+        const since = this.deps.now();
+        const sent = await command();
+        if (sent.kind !== 'sent') {
+            return { sent, outcome: null };
+        }
+        if (announce) {
+            await this.tell(this.deps.messages().compaction.title(agent), this.deps.messages().compaction.started(agent));
+        }
+        return { sent, outcome: await outcomeOf(this.deps, lane, since, agent === 'claude') };
+    }
+
+    /** The one place anything is typed into an agent: claude takes `/compact ` and then its guidance, typed in two pieces (once more when its own summarizer failed); the others are compacted, then reminded. */
+    private async send(lane: Lane, material: Material, brief: string | null): Promise<void> {
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
         const { compaction } = this.deps.messages();
-        const first = agent === 'claude'
-            ? await this.deps.agents.typeLine(pane, `/compact ${guidanceOf(material)}`)
-            : await this.deps.agents.prompt(pane, '/compact', { until: ['idle', 'done'], timeoutMs: COMPACTING_MS });
-        const second = first.kind === 'sent' && agent !== 'claude' ? await this.deps.agents.prompt(pane, restoreOf(material)) : first;
-        if (second.kind === 'sent') {
-            await this.tell(compaction.title(agent), compaction.started(agent));
+        const typed = agent === 'claude';
+        const command = (): Promise<Prompted> => (typed
+            ? this.deps.agents.typeLine(pane, ['/compact ', brief ?? guidanceOf(material)])
+            : this.deps.agents.prompt(pane, '/compact', { until: ['idle', 'done'], timeoutMs: COMPACTING_MS }));
+        let tried = await this.attempt(lane, command, true);
+        const retried = typed && tried.outcome === 'failed';
+        tried = retried ? await this.attempt(lane, command, false) : tried;
+        if (tried.sent.kind !== 'sent') {
+            await this.tell(compaction.title(agent), compaction.failed(agent, tried.sent.kind === 'blocked' ? this.deps.messages().badge.blocked : saying(tried.sent.why)));
             return;
         }
-        await this.tell(compaction.title(agent), compaction.failed(agent, second.kind === 'blocked' ? this.deps.messages().badge.blocked : saying(second.why)));
+        if (!typed && tried.outcome !== 'failed') {
+            await this.deps.agents.prompt(pane, brief === null ? restoreOf(material) : restoreFrom(brief));
+        }
+        await this.tell(compaction.title(agent), compaction.outcome(agent, tried.outcome ?? 'unconfirmed', retried));
     }
 
     async run(request: CompactRequest): Promise<void> {
@@ -96,8 +141,10 @@ export class Compaction {
         }
         await this.deps.refresh(tab, lanes);
         await Promise.all(ready.map(async (lane) => {
+            const material = this.materialOf(tab, String(lane.pane), request.note);
+            const brief = await this.briefOf(lane, tab, material);
             if (await this.free(lane)) {
-                await this.send(lane, this.materialOf(tab, String(lane.pane), request.note));
+                await this.send(lane, material, brief);
             }
         }));
     }

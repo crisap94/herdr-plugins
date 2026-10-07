@@ -24,7 +24,7 @@ const states: readonly [string, Setup][] = [
     ['available', withAvailable(base, ['claude', 'codex', 'opencode'])],
     ['no agent', typed(withAvailable({ ...base, draft: { ...base.draft, backend: 'auto' } }, []), ['j'])],
     ['choosing', typed(withAvailable(base, ['claude']), ['\r', 'j'])],
-    ['editing', typed(withAvailable(base, ['claude']), ['j', '\r', 'x', 'y'])],
+    ['editing', typed(withAvailable(base, ['claude']), ['l', '\r', 'x', 'y'])],
     ['locked', typed(withAvailable(base, ['claude']), ['j', 'j', '\r'])],
     ['language', typed(withAvailable(base, ['claude']), ['j', 'j', 'j'])],
     ['locale choices', typed(withAvailable({ ...base, locks: {} }, ['claude']), ['j', 'j', '\r'])],
@@ -58,18 +58,17 @@ test('the harness list marks the current one ✓, the available ones ● and the
     assert.match(text, /auto — the first one found: claude → codex → opencode → hermes/);
 });
 
-test('a locked row names its variable; the model row names its harness; both languages say so', () => {
+test('a locked row names its variable; the recap writer row shows harness · model · effort; both languages say so', () => {
     for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_LOCALE'], [es, 'solo lectura: TAB_RECAP_LOCALE']] as const) {
         const text = setupView(withAvailable(base, ['codex']), messages, 80).join('\n');
         assert.ok(text.includes(expected));
-        assert.ok(text.includes(`${messages.setup.rows.model} (codex)`));
-        assert.ok(text.includes('gpt-6-luna'));
+        assert.match(text, new RegExp(`${messages.setup.rows.recapJob}\\s+\\[codex\\] · gpt-6-luna · low`));
     }
 });
 
 test('Spanish: rows, legend, hints and test results are Spanish', () => {
     const text = setupView(tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), es, 80).join('\n');
-    for (const expected of ['ajustes', 'Agente', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {
+    for (const expected of ['ajustes', 'Redactor del resumen', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {
         assert.ok(text.includes(expected), expected);
     }
     assert.match(setupFooter(base, es, 80), /guardar/);
@@ -118,11 +117,31 @@ test('the compaction rows are drawn in both languages: 40% by default, the windo
     assert.match(english, /Compact\s+focused/);
     assert.match(english, /Compact hint\s+40%/);
     assert.match(english, /Context window/);
-    const spanish = setupView({ ...base, row: 8 }, es, 90).join('\n');
+    const spanish = setupView({ ...base, row: 7 }, es, 90).join('\n');
     assert.match(spanish, /Aviso de compactar\s+40%/);
     assert.match(spanish, /Ventana de contexto/);
     assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
     assert.match(spanish, /Ventana de contexto\s+se detecta/);
     assert.match(english, /Context window\s+found at runtime/);
     assert.match(setupView({ ...base, draft: { ...base.draft, compactHint: 'off' } }, en, 90).join('\n'), /Compact hint\s+off/);
+});
+
+test('the Models group: a heading, one row per job showing harness · model · effort, the focused part bracketed, in both languages', () => {
+    const english = setupView(withAvailable(base, ['codex']), en, 100).join('\n');
+    assert.match(english, /Models — harness · model · effort/);
+    assert.match(english, /Recap writer\s+\[codex\] · gpt-6-luna · low/);
+    assert.match(english, /Compact brief\s+as the recap writer · the recap writer's model · high/);
+    const second = setupView(typed(withAvailable(base, ['codex']), ['j', 'l']), en, 100).join('\n');
+    assert.match(second, /Compact brief\s+as the recap writer · \[the recap writer's model\] · high/);
+    assert.match(second, /writes what the agent keeps when it is compacted/, 'the focused job explains itself');
+    const spanish = setupView(base, es, 100).join('\n');
+    assert.match(spanish, /Modelos — agente · modelo · esfuerzo/);
+    assert.match(spanish, /Guion de compactar\s+como el redactor · el modelo del redactor · high/);
+    const set = { ...base, draft: { ...base.draft, compact: { by: 'claude' as const, model: 'sonnet', effort: 'medium' as const } } };
+    assert.match(setupView(set, en, 100).join('\n'), /Compact brief\s+claude · sonnet · medium/);
+    const choosing = setupView(typed(withAvailable(base, ['codex']), ['j', '\r']), en, 100).join('\n');
+    assert.match(choosing, /▸ as the recap writer — the same harness/);
+    assert.match(choosing, /off — compact with the template/);
+    const typing = setupView(typed(withAvailable(base, ['codex']), ['j', 'l', '\r', 'x']), en, 100).join('\n');
+    assert.match(typing, /\[x█\]/);
 });

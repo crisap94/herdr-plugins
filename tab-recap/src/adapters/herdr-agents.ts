@@ -50,15 +50,17 @@ export class HerdrAgents implements Agents {
     }
 
     /**
-     * Type one line and press Enter, as the operator would (no paste): for an agent that takes `/compact <text>` and would
-     * treat a pasted block as content. Only a line with no line break is typed.
+     * Type one line in pieces and press Enter, as the operator would (no paste): for an agent that takes `/compact <text>` and would
+     * treat a pasted block, or a long single send, as content. A piece with a line break is refused; Enter only follows when every piece went in.
      */
-    async typeLine(pane: string, line: string): Promise<Prompted> {
-        if (/[\r\n]/u.test(line)) {
+    async typeLine(pane: string, pieces: readonly string[]): Promise<Prompted> {
+        if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: 'a typed line has no line break' });
         }
         try {
-            await this.wire('pane.send_text', { pane_id: pane, text: line });
+            for (const piece of pieces) {
+                await this.wire('pane.send_text', { pane_id: pane, text: piece });
+            }
             await this.wire('pane.send_keys', { pane_id: pane, keys: ['enter'] });
             return { kind: 'sent' };
         } catch (error) {

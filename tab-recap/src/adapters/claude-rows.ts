@@ -1,5 +1,5 @@
 // Claude Code's JSONL rows → entries, notes and the few things the column shows (title, last prompt, away summary).
-import type { AgentNote, Chunk, Entry } from '#src/ports/transcripts.ts';
+import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 import { namedCall, toolEntry } from './tool-calls.ts';
@@ -66,6 +66,16 @@ function noteOf(row: Row): AgentNote | null {
     return text === '' ? null : { kind: 'compaction', at, text };
 }
 
+/** Claude Code's record of a compaction: a `compact_boundary` row when it ran, a local-command error row when its own summarizer failed. */
+function markOf(row: Row): Mark | null {
+    const at = timeOf(row) ?? null;
+    if (row['type'] === 'system' && row['subtype'] === 'compact_boundary') {
+        return { kind: 'compacted', at };
+    }
+    const said = typeof row['content'] === 'string' ? row['content'] : textOf(obj(row['message'])['content']);
+    return said.includes('Error during compaction') && (row['subtype'] === 'local_command' || said.includes('<local-command-stderr>')) ? { kind: 'compaction-failed', at } : null;
+}
+
 function agentEntries(row: Row): readonly Entry[] {
     if (row['isSidechain'] === true) {
         return [];
@@ -87,11 +97,16 @@ export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'p
     const meta: Meta = { title: null, lastPrompt: null, claudeRecap: null };
     const entries: Entry[] = [];
     const notes: AgentNote[] = [];
+    const marks: Mark[] = [];
     for (const row of lines.map(parse)) {
         if (row === null) {
             continue;
         }
         noteMeta(row, meta);
+        const mark = markOf(row);
+        if (mark !== null) {
+            marks.push(mark);
+        }
         const note = noteOf(row);
         const user = row['type'] === 'user' ? userEntry(row) : queuedEntry(row);
         if (note !== null) {
@@ -104,6 +119,6 @@ export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'p
             entries.push(...agentEntries(row));
         }
     }
-    return { entries, notes, ...meta };
+    return { entries, notes, marks, ...meta };
 }
 

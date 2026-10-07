@@ -1,9 +1,13 @@
 import { join } from 'node:path';
-import { ClaudeSummarizer } from '#src/adapters/claude-summarizer.ts';
-import { CodexSummarizer } from '#src/adapters/codex-summarizer.ts';
-import { CustomSummarizer } from '#src/adapters/custom-summarizer.ts';
-import { HermesSummarizer } from '#src/adapters/hermes-summarizer.ts';
-import { OpencodeSummarizer } from '#src/adapters/opencode-summarizer.ts';
+import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
+import { CodexHarness } from '#src/adapters/codex-harness.ts';
+import { CustomHarness } from '#src/adapters/custom-harness.ts';
+import { HermesHarness } from '#src/adapters/hermes-harness.ts';
+import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
+import { HarnessBrief } from '#src/adapters/harness-brief.ts';
+import { RecapWriter } from '#src/adapters/recap-writer.ts';
+import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { Harness } from '#src/ports/harness.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -11,18 +15,19 @@ import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import { loadConfig } from './config.ts';
 import { pick } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
+import { placementOf } from '#src/recap/domain/job.ts';
 import type { Config } from './config.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
 
-type Make = (config: Config, work: string) => Summarizer;
+type Make = (config: Config, work: string) => Harness;
 
 const MAKERS: Readonly<Record<BackendId, Make>> = {
-    claude: (config, work) => new ClaudeSummarizer(config.models.claude, work, config.timeoutMs, config.effort),
-    codex: (config, work) => new CodexSummarizer(config.models.codex, work, config.timeoutMs, config.effort),
-    opencode: (config, work) => new OpencodeSummarizer(config.models.opencode, work, config.timeoutMs, config.effort),
-    hermes: (config, work) => new HermesSummarizer(config.models.hermes, work, config.timeoutMs, config.effort),
-    custom: (config, work) => new CustomSummarizer(config.customCommand, work, config.timeoutMs),
+    claude: (config, work) => new ClaudeHarness(work, config.timeoutMs),
+    codex: (config, work) => new CodexHarness(work, config.timeoutMs),
+    opencode: (config, work) => new OpencodeHarness(work, config.timeoutMs),
+    hermes: (config, work) => new HermesHarness(work, config.timeoutMs),
+    custom: (config, work) => new CustomHarness(config.customCommand, work, config.timeoutMs),
 };
 
 /** Herdr's list and the PATH must both say yes; when herdr cannot be asked, the PATH alone decides. */
@@ -45,7 +50,13 @@ class Nothing implements Summarizer {
 /** The summarizer `config` asks for, given what is available; one that explains itself when there is none. */
 export function summarizerFor(config: Config, available: readonly string[], work: string): Summarizer {
     const id = pick(config.backend, available);
-    return id === null ? new Nothing() : MAKERS[id](config, work);
+    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work), { model: config.models[id], effort: config.effort });
+}
+
+/** The compaction brief's writer: the job's placement on a harness; null when the job is off or no harness is there. */
+export function briefFor(config: Config, available: readonly string[], work: string): CompactionBriefs | null {
+    const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
+    return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
 }
 
 /**
@@ -85,6 +96,10 @@ export class Backends {
         this.warned = true;
         this.log(`no backend: ${NONE}`);
         await this.notifier.notify('Tab Recap', `No recap writer found — ${NONE}`);
+    }
+
+    brief(): CompactionBriefs | null {
+        return briefFor(loadConfig(), this.available, this.work);
     }
 
     summarizer(): Summarizer {
