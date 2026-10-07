@@ -1,0 +1,20 @@
+id: recap-domain-pure-gates
+language: typescript
+severity: error
+message: >-
+  The gates are part of the domain: pure functions over operations and facts. They import their own
+  siblings with './' and the domain's files with '../name.ts' (one level up, one file), nothing else —
+  no 'node:' module, no port, no adapter, no application.
+note: >-
+  `recap-domain-pure` holds the rest of the domain to './' alone; this folder needs one step up to reach
+  fact.ts and ops.ts, and no further.
+files:
+  - "**/src/recap/domain/gates/**"
+  - "**/probes/recap-domain-pure-gates/**"
+rule:
+  kind: string_fragment
+  inside:
+    kind: import_statement
+    stopBy: end
+  not:
+    regex: "^(\\./|\\.\\./[a-z0-9-]+\\.ts$)"

@@ -20,6 +20,7 @@ import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 
 const OK = 0;
@@ -203,6 +204,7 @@ async function show(): Promise<number> {
 
 const commands: Readonly<Record<string, (arg: string | undefined) => number | Promise<number>>> = {
     show,
+    eval: () => evalCommand(argv.slice(1)),
     compact,
     configure,
     start: () => { pidfile.disabled = false; return launch(); },
@@ -246,6 +248,9 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
 
 const HELP_FLAGS = new Set(['--help', '-h']);
 
+/** `eval` has options of its own (see `bin/eval.ts`): it is handed the rest of the line before the plain commands parse theirs. */
+const EVAL = 'eval';
+
 /** `<command> [argument] [model]`; an option other than --help/-h is a usage error naming it. */
 function parseArguments(argv: readonly string[]): { positionals: string[] } | { problem: string } {
     try {
@@ -255,12 +260,19 @@ function parseArguments(argv: readonly string[]): { positionals: string[] } | { 
     }
 }
 
-const usage = (): string => m().cli.usage(Object.keys(commands).join('|'));
+const usage = (): string => m().cli.usage([...Object.keys(commands), EVAL].join('|'));
 const argv = process.argv.slice(2);
-const parsed = parseArguments(argv);
+const parsed = argv[0] === EVAL ? { positionals: [EVAL] } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
-const command = name === undefined ? undefined : commands[name];
-if (argv.some((word) => HELP_FLAGS.has(word))) {
+
+function commandOf(word: string | undefined): ((arg: string | undefined) => number | Promise<number>) | undefined {
+    if (word === EVAL) {
+        return () => evalCommand(argv.slice(1));
+    }
+    return word === undefined ? undefined : commands[word];
+}
+const command = commandOf(name);
+if (name !== EVAL && argv.some((word) => HELP_FLAGS.has(word))) {
     console.log(usage());
     process.exitCode = OK;
 } else if ('problem' in parsed || command === undefined) {

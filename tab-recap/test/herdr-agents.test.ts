@@ -36,3 +36,22 @@ test('prompt keeps agent.prompt for codex and opencode: target, text, and the wa
     await fake.prompt('w1:p2', '/compact', { until: ['idle', 'done'], timeoutMs: 600_000 });
     assert.deepEqual(calls, [{ method: 'agent.prompt', params: { target: 'w1:p2', text: '/compact', wait: { until: ['idle', 'done'], timeout_ms: 600_000 } } }]);
 });
+
+test('prompt counts a stalled prompt as sent: the text went in, the agent just ran it at once (codex `/compact`)', async () => {
+    const calls: { method: string; params: unknown }[] = [];
+    const wire: Wire = (method, params) => {
+        calls.push({ method, params });
+        return Promise.reject(Object.assign(new Error('agent prompt produced no observed working or blocked state within 5000 ms; current status is done'), { code: 'agent_prompt_stalled' }));
+    };
+    const fake = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' });
+    assert.deepEqual(await fake.prompt('w1:p2', '/compact', { until: ['idle', 'done'], timeoutMs: 1000 }), { kind: 'sent' });
+    assert.equal(calls.length, 1);
+});
+
+test('typeLine waits a moment before Enter: an agent\'s slash-command popup swallows an Enter that comes at once', async () => {
+    const order: string[] = [];
+    const wire: Wire = (method) => { order.push(method); return Promise.resolve({}); };
+    const fake = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, (ms) => { order.push(`pause ${ms}`); return Promise.resolve(); });
+    await fake.typeLine('w1:p2', ['/compact']);
+    assert.deepEqual(order, ['pane.send_text', 'pause 300', 'pane.send_keys']);
+});

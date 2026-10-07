@@ -1,23 +1,16 @@
-// The recap's fixed structure, as three pure functions: check what the writer returned, draw it,
-// and read the bar's headline from it. Nothing here asks the model politely: the caps are enforced.
+// The recap's fixed structure, as pure functions: tidy a line the writer returned, find its JSON, draw the sections
+// and read the bar's headline from them. Nothing here asks the model politely: the caps are enforced.
 import { SECTIONS } from '#src/i18n/sections.ts';
-import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
-import type { ListSection, RecapSections } from '#src/recap/domain/shape.ts';
-
-export type Parsed = { readonly kind: 'sections'; readonly sections: RecapSections } | { readonly kind: 'invalid'; readonly why: string };
+import { MAX_WORDS } from '#src/recap/domain/shape.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 
 const NOTHING = new Set(['', '-', '—', '–', 'none', 'n/a', 'ninguno', 'ninguna', 'nada']);
 
-/** One line: no bullet, no markdown emphasis, one space between words, at most MAX_WORDS words (clipped with `…`). */
-export function tidy(raw: string): string {
+/** One line: no bullet, no markdown emphasis, one space between words, at most `limit` words (MAX_WORDS unless said; clipped with `…`). */
+export function tidy(raw: string, limit = MAX_WORDS): string {
     const words = raw.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replaceAll('**', '').replace(/\s+/g, ' ').trim().split(' ').filter((word) => word !== '');
-    const clipped = words.length > MAX_WORDS ? `${words.slice(0, MAX_WORDS).join(' ')}…` : words.join(' ');
+    const clipped = words.length > limit ? `${words.slice(0, limit).join(' ')}…` : words.join(' ');
     return NOTHING.has(clipped.toLowerCase()) ? '' : clipped;
-}
-
-function listOf(value: unknown, cap: number): string[] {
-    const items: unknown[] = Array.isArray(value) ? value : [value];
-    return items.flatMap((item: unknown) => (typeof item === 'string' ? [tidy(item)] : [])).filter((line) => line !== '').slice(0, cap);
 }
 
 /** The JSON object in the writer's answer: it may be fenced, or wrapped in a sentence. */
@@ -25,36 +18,6 @@ export function objectIn(text: string): unknown {
     const from = text.indexOf('{');
     const to = text.lastIndexOf('}');
     return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
-}
-
-const KEYS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links'] as const;
-
-/** The seven sections and `rules` in `fields`, checked and capped; a missing one is empty; null when it has none of them. */
-export function sectionsFrom(fields: Readonly<Record<string, unknown>>): RecapSections | null {
-    if (!KEYS.some((key) => key in fields)) {
-        return null;
-    }
-    const list = (key: ListSection): string[] => listOf(fields[key], CAPS[key]);
-    const goal = fields['goal'];
-    return {
-        goal: typeof goal === 'string' ? tidy(goal) : '',
-        now: list('now'), needs: list('needs'), done: list('done'), decisions: list('decisions'), next: list('next'), links: list('links'), rules: list('rules'),
-    };
-}
-
-/** Check and cap the writer's answer. A missing section is an empty one; no recognisable section at all is invalid. */
-export function parseRecap(text: string): Parsed {
-    let found: unknown;
-    try {
-        found = objectIn(text);
-    } catch {
-        return { kind: 'invalid', why: 'the answer is not valid JSON' };
-    }
-    if (typeof found !== 'object' || found === null || Array.isArray(found)) {
-        return { kind: 'invalid', why: 'the answer holds no JSON object' };
-    }
-    const sections = sectionsFrom(found as Readonly<Record<string, unknown>>);
-    return sections === null ? { kind: 'invalid', why: 'the JSON object has none of the seven sections' } : { kind: 'sections', sections };
 }
 
 /** The Markdown for the column: seven headings, always, in order; an empty section is `—`. */

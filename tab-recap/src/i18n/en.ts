@@ -24,7 +24,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -46,7 +46,11 @@ export const en: Messages = {
         jobBy: { recap: 'as the recap writer', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', off: 'off' },
         jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'your own command, TAB_RECAP_CUSTOM_CMD', off: 'off — compact with the template, no brief' },
         compactModelSame: "the recap writer's model",
+        curateJobHint: 'runs when the full-screen view opens: merges duplicate facts and writes the "session so far" paragraph; once per task at most every 5 minutes',
+        curateOff: 'off — no paragraph, no merges',
         compactJobHint: 'writes what the agent keeps when it is compacted; a high effort is worth it, it runs once per compaction',
+        judgeOffChoice: 'off — no judge: eval says so and stops',
+        judgeJobHint: 'scores stored recaps for `tab-recap eval`; it runs only when you run that command',
         contextWindowDetected: 'found at runtime',
         contextWindowHint: 'tokens a Claude agent can hold, to measure its context (Codex reports its own)',
         languageNames: { en: 'English', es: 'Spanish' },
@@ -71,16 +75,45 @@ export const en: Messages = {
         keys: ['⏎ send · Esc cancel', '⏎ · Esc'],
         hint: (percent, window) => `compact? ${percent}%${window === '' ? '' : ` of ${window}`}`,
         writing: (agent) => `Writing what ${agent} should keep…`,
-        outcome: (agent, outcome, retried) => {
+        outcome: (agent, outcome, retried, figures) => {
             if (outcome === 'compacted') {
-                return retried ? `${agent} compacted (on the second try)` : `${agent} compacted`;
+                return `${agent} compacted${retried ? ' (on the second try)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` in ${figures.took}`}`;
             }
             return outcome === 'failed' ? `${agent} could not compact, even after trying again` : `${agent}: could not confirm the compaction — check it`;
+        },
+        stage: {
+            briefing: (agent, writer, clock) => `${agent === null ? 'writing what to keep…' : `writing what ${agent} keeps…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
+            compacting: (agent, clock) => `compacting${agent === null ? '' : ` ${agent}`}… ${clock}`,
+            restoring: (agent) => `telling ${agent ?? 'it'} where things stand…`,
+            compacted: (agent, figures) => `${agent === null ? '' : `${agent} `}compacted${figures === '' ? '' : ` ${figures}`}`,
+            template: 'template',
+            failed: (agent, why) => `${agent === null ? '' : `${agent} `}not compacted${why === null ? '' : `: ${why}`}`,
+            unconfirmed: (agent, why) => `${agent === null ? '' : `${agent} `}not confirmed — ${why ?? 'check it'}`,
+            skipped: (agent, why) => `${agent === null ? '' : `${agent} `}not compacted${why === null ? '' : `: ${why}`}`,
+            restarted: 'the daemon restarted',
+            selfFailed: 'its own summary failed, twice',
+            tokens: (before, after) => `${before} → ${after} tokens`,
+            took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compacting ${agent}`,
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
         nothing: 'No agent here can be compacted',
         failed: (agent, why) => `Could not compact ${agent}: ${why}`,
+    },
+    expanded: {
+        timeline: 'Timeline', rules: 'Rules', session: 'Session', story: 'Session so far', updatingStory: 'updating…',
+        waiting: (amount, unit) => `waiting ${amount} ${unit}`,
+        closed: (why) => `closed: ${why}`,
+        started: 'started', turns: 'turns', causes: { 'turn-ended': 'turn', focused: 'focus', requested: 'asked' },
+        compactions: 'compactions', of: 'of', repo: 'repo', branch: 'branch', files: 'files',
+    },
+    chapters: {
+        label: 'chapters',
+        count: (chapters) => `chapters ${chapters}`,
+        compacted: 'compacted',
+        newSession: 'new session',
+        seconds: (seconds) => `${seconds} s`,
+        minutes: (minutes, seconds) => (seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`),
     },
     database: { newer: (backup) => `database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade` },
     cli: {

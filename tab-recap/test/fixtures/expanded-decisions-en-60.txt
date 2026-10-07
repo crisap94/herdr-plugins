@@ -1,0 +1,18 @@
+DECISIONS
+10:00 Retry three times, not five · closed: superseded
+      the gateway rate-limits after four
+09:10 Keep SQLite
+
+TIMELINE
+11:00 Retry three times, not five · closed: superseded
+09:30 Use the old cart endpoint · closed: rewritten
+
+SESSION
+started 09:12 · 7 h 18 min
+turns 41 (turn 36 · focus 3 · asked 2)
+compactions 2 (800k → 14k · 39k → 3k)
+claude · orchestrator 34 % of 1M
+codex · host 12 % of 272k
+repo herdr-plugins · branch feat/expanded
+files src/recap/application/compaction.ts (7),
+  src/recap/render/present.ts (5)

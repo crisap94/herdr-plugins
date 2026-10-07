@@ -66,11 +66,19 @@ function noteOf(row: Row): AgentNote | null {
     return text === '' ? null : { kind: 'compaction', at, text };
 }
 
+const figure = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined);
+
+/** What `compactMetadata` says (`preTokens`, `postTokens`, `durationMs`); a number it does not give is left out. */
+function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter' | 'tookMs'> {
+    const [before, after, took] = [figure(metadata['preTokens']), figure(metadata['postTokens']), figure(metadata['durationMs'])];
+    return { ...(before === undefined ? {} : { tokensBefore: before }), ...(after === undefined ? {} : { tokensAfter: after }), ...(took === undefined ? {} : { tookMs: took }) };
+}
+
 /** Claude Code's record of a compaction: a `compact_boundary` row when it ran, a local-command error row when its own summarizer failed. */
 function markOf(row: Row): Mark | null {
     const at = timeOf(row) ?? null;
     if (row['type'] === 'system' && row['subtype'] === 'compact_boundary') {
-        return { kind: 'compacted', at };
+        return { kind: 'compacted', at, ...compactFigures(obj(row['compactMetadata'])) };
     }
     const said = typeof row['content'] === 'string' ? row['content'] : textOf(obj(row['message'])['content']);
     return said.includes('Error during compaction') && (row['subtype'] === 'local_command' || said.includes('<local-command-stderr>')) ? { kind: 'compaction-failed', at } : null;

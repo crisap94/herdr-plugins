@@ -33,12 +33,12 @@ function recording(agent: string, source: (pane: string) => string, tail: string
 
 const writer = (requests: RecapRequest[]): Summarizer => ({
     backend: 'fake',
-    write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'g' }), costUsd: 0 }); },
+    write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 }); },
 });
 
 async function recapOf(transcripts: readonly Transcripts[], agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const job = new RecapJob({ repos: NO_REPOS, transcripts, records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ repos: NO_REPOS, transcripts, records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });

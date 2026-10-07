@@ -2,8 +2,8 @@
 export const EFFORTS = ['low', 'medium', 'high', 'default'] as const;
 export type Effort = (typeof EFFORTS)[number];
 
-/** What a recap needs when nothing is set: a short rewrite, not a deliberation. */
-export const DEFAULT_EFFORT: Effort = 'low';
+/** What the ledger's operations need when nothing is set: at `low` the writer files choices as open questions and adds no decisions (measured on a replay); `medium` records them with their why. */
+export const DEFAULT_EFFORT: Effort = 'medium';
 
 /** The effort named by a setting; anything unknown is the default. */
 export const effortOf = (raw: string | undefined): Effort => EFFORTS.find((effort) => effort === (raw ?? '').trim().toLowerCase()) ?? DEFAULT_EFFORT;

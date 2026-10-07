@@ -1,0 +1,32 @@
+<!-- The documents tab-recap gives the judge, one per call. Version 1. All three are plain text in, JSON out. -->
+
+<!-- 1. Scoring: the rubric, the document the recap writer was given for one run (as it was saved), and the items it wrote. -->
+<!ELEMENT judge_input (rubric, writer_input, recap)>
+<!ATTLIST judge_input version CDATA #FIXED "1">
+
+<!-- The rubric file, verbatim (schema/recap-rubric.md). -->
+<!ELEMENT rubric (#PCDATA)>
+
+<!-- The writer's whole input document of that run (a recap_input), as text. -->
+<!ELEMENT writer_input (#PCDATA)>
+
+<!-- The items the run produced. key = <task>/<section>/<position>, the name a verdict gives an item. -->
+<!ELEMENT recap (item*)>
+<!ELEMENT item (#PCDATA)>
+<!ATTLIST item
+  key     CDATA #REQUIRED
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED>
+
+<!-- 2. Read-back: the recap items alone. A fresh call answers the six fixed questions from them. -->
+<!ELEMENT readback_input (recap)>
+<!ATTLIST readback_input version CDATA #FIXED "1">
+
+<!-- 3. Grading the read-back: the writer's input, the key facts found while scoring, the six answers. -->
+<!ELEMENT grading_input (writer_input, keyfacts, answers)>
+<!ATTLIST grading_input version CDATA #FIXED "1">
+<!ELEMENT keyfacts (keyfact*)>
+<!ELEMENT keyfact (#PCDATA)>
+<!ELEMENT answers (answer+)>
+<!ELEMENT answer (#PCDATA)>
+<!ATTLIST answer
+  question CDATA #REQUIRED>

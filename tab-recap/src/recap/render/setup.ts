@@ -46,9 +46,11 @@ function jobText(row: RowId, state: Setup, m: Messages): string {
     const typing = focused === 1 && state.editing?.kind === 'text' ? state.editing.buffer : null;
     const { draft } = state;
     const target = modelTarget(draft, state.available);
+    const others = { judgeJob: draft.judge, curatorJob: draft.curate } as const;
+    const other = row === 'judgeJob' || row === 'curatorJob' ? others[row] : draft.compact;
     const parts = row === 'recapJob'
         ? [draft.backend, target === null ? m.setup.modelNoAgent : modelText(draft.models[target], target, m), draft.effort]
-        : [m.setup.jobBy[draft.compact.by], draft.compact.model === '' ? m.setup.compactModelSame : draft.compact.model, draft.compact.effort];
+        : [m.setup.jobBy[other.by], other.model === '' ? m.setup.compactModelSame : other.model, other.effort];
     const shown = (part: string, at: number): string => {
         if (at === 1 && typing !== null) {
             return `[${typing}█]`;
@@ -62,6 +64,8 @@ function jobText(row: RowId, state: Setup, m: Messages): string {
 const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     recapJob: (state, m) => jobText('recapJob', state, m),
     compactJob: (state, m) => jobText('compactJob', state, m),
+    judgeJob: (state, m) => jobText('judgeJob', state, m),
+    curatorJob: (state, m) => jobText('curatorJob', state, m),
     locale: (state, m) => m.setup.uiChoices[state.draft.locale],
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
@@ -102,7 +106,7 @@ function pickList(state: Setup, labels: readonly string[], width: number, style:
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
@@ -127,6 +131,10 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
         effort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         compactBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => m.setup.jobByChoices[choice]), width, style),
         compactEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
+        judgeBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.judgeOffChoice : m.setup.jobByChoices[choice])), width, style),
+        judgeEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
+        curateBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.curateOff : m.setup.jobByChoices[choice])), width, style),
+        curateEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
     };
     const field = fieldOf(state);
     const drawn = row === 'recapJob' && (field === 'harness' || !choosing) ? harnessChoices(state, m, width, style) : [];

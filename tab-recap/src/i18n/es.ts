@@ -26,7 +26,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto' },
+        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
@@ -48,7 +48,11 @@ export const es: Messages = {
         jobBy: { recap: 'como el redactor', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', off: 'off' },
         jobByChoices: { recap: 'como el redactor del resumen — el mismo agente', auto: 'auto — el primero que se encuentre', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD', off: 'off — compacta con la plantilla, sin guion' },
         compactModelSame: 'el modelo del redactor',
+        curateJobHint: 'corre al abrir la vista de pantalla completa: fusiona hechos repetidos y escribe el párrafo «la sesión hasta ahora»; una vez por tarea, como mucho cada 5 minutos',
+        curateOff: 'apagado — sin párrafo ni fusiones',
         compactJobHint: 'escribe qué conserva el agente al compactar; vale la pena un esfuerzo alto, corre una vez por compactación',
+        judgeOffChoice: 'off — sin juez: eval lo dice y termina',
+        judgeJobHint: 'puntúa los resúmenes guardados para `tab-recap eval`; solo corre cuando ejecutas ese comando',
         contextWindowDetected: 'se detecta',
         contextWindowHint: 'tokens que cabe en un agente (vacío = se detecta); sirve para medir su contexto',
         languageNames: { en: 'inglés', es: 'español' },
@@ -73,16 +77,45 @@ export const es: Messages = {
         keys: ['⏎ enviar · Esc cancelar', '⏎ · Esc'],
         hint: (percent, window) => `¿compactar? ${percent}%${window === '' ? '' : ` de ${window}`}`,
         writing: (agent) => `Escribiendo qué debe conservar ${agent}…`,
-        outcome: (agent, outcome, retried) => {
+        outcome: (agent, outcome, retried, figures) => {
             if (outcome === 'compacted') {
-                return retried ? `${agent} compactado (al segundo intento)` : `${agent} compactado`;
+                return `${agent} compactado${retried ? ' (al segundo intento)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` en ${figures.took}`}`;
             }
             return outcome === 'failed' ? `${agent} no pudo compactar, ni al reintentar` : `${agent}: no se pudo confirmar la compactación — revísalo`;
+        },
+        stage: {
+            briefing: (agent, writer, clock) => `${agent === null ? 'escribiendo qué conservar…' : `escribiendo qué conserva ${agent}…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
+            compacting: (agent, clock) => `compactando${agent === null ? '' : ` ${agent}`}… ${clock}`,
+            restoring: (agent) => (agent === null ? 'recordándole cómo van las cosas…' : `recordándole a ${agent} cómo van las cosas…`),
+            compacted: (agent, figures) => `${agent === null ? '' : `${agent} `}compactado${figures === '' ? '' : ` ${figures}`}`,
+            template: 'plantilla',
+            failed: (agent, why) => `${agent === null ? '' : `${agent} `}no se compactó${why === null ? '' : `: ${why}`}`,
+            unconfirmed: (agent, why) => `${agent === null ? '' : `${agent} `}sin confirmar — ${why ?? 'revísalo'}`,
+            skipped: (agent, why) => `${agent === null ? '' : `${agent} `}no se compactó${why === null ? '' : `: ${why}`}`,
+            restarted: 'el daemon se reinició',
+            selfFailed: 'su propio resumen falló, dos veces',
+            tokens: (before, after) => `${before} → ${after} tokens`,
+            took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compactando ${agent}`,
         skipped: (agent, status) => `${agent} está ${status}: no se compactó — inténtalo cuando esté libre`,
         nothing: 'Ningún agente de aquí se puede compactar',
         failed: (agent, why) => `No se pudo compactar ${agent}: ${why}`,
+    },
+    expanded: {
+        timeline: 'Cronología', rules: 'Reglas', session: 'Sesión', story: 'La sesión hasta ahora', updatingStory: 'actualizando…',
+        waiting: (amount, unit) => `esperando ${amount} ${unit}`,
+        closed: (why) => `cerrado: ${{ done: 'hecho', wrong: 'erróneo', superseded: 'reemplazado', answered: 'respondido', merged: 'fusionado', rewritten: 'reescrito' }[why]}`,
+        started: 'inicio', turns: 'turnos', causes: { 'turn-ended': 'turno', focused: 'foco', requested: 'pedido' },
+        compactions: 'compactaciones', of: 'de', repo: 'repo', branch: 'rama', files: 'archivos',
+    },
+    chapters: {
+        label: 'capítulos',
+        count: (chapters) => `capítulos ${chapters}`,
+        compacted: 'compactado',
+        newSession: 'sesión nueva',
+        seconds: (seconds) => `${seconds} s`,
+        minutes: (minutes, seconds) => (seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`),
     },
     database: { newer: (backup) => `la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza` },
     cli: {

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { latestVersion } from '#src/adapters/db/migrate.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { openState } from '#src/daemon/state.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
@@ -60,7 +61,7 @@ test('a database newer than this plugin: the daemon says which backup to restore
     process.env['TAB_RECAP_LOCALE'] = 'en';
     try {
         const db = new DatabaseSync(databasePath(dir));
-        db.exec('PRAGMA user_version = 7');
+        db.exec(`PRAGMA user_version = ${latestVersion() + 1}`);
         db.close();
         const { notifier, told } = recorder();
         const lines: string[] = [];

@@ -23,19 +23,25 @@ version, log, the disabled marker) and the recap writer's scratch directory SHAL
 
 ### Requirement: The store refuses shapes it cannot show
 
-The database SHALL reject any row that breaks the recap's fixed structure: a section outside the seven
-fixed sections, more bullets than a section's cap, an empty bullet, a value of the wrong type, a
-reference to a missing row, or an id that is not 16 bytes.
+The database SHALL reject any fact that breaks the ledger's structure: a section outside the eight fixed
+sections, an empty text, a decision without a why, a closed fact without a reason or a time, an open fact
+with one, a value of the wrong type, a reference to a missing task or run, or an id that is not 16 bytes.
+The per-section caps SHALL be applied by the views, not by the database.
 
-#### Scenario: Too many bullets
+#### Scenario: Closed without a reason
 
-- **WHEN** a fourth bullet is written to a recap's "Now" section
+- **WHEN** a fact is written with state closed and no closed_why
 - **THEN** the write SHALL fail and nothing of that run SHALL be stored
 
 #### Scenario: Unknown section
 
-- **WHEN** a bullet is written to a section that is not one of the seven
+- **WHEN** a fact is written to a section that is not one of the eight
 - **THEN** the write SHALL fail
+
+#### Scenario: Too many bullets
+
+- **WHEN** a task has twenty open "done" facts, more than the column's cap of five
+- **THEN** all twenty SHALL be stored and the column SHALL show the five last seen
 
 ### Requirement: Writes are all or nothing
 
@@ -77,3 +83,38 @@ launch of the plugin SHALL need a command-line flag to keep Node warnings out of
 
 - **WHEN** a column, the daemon or the command-line entry runs on Node 24.21.0 without extra flags
 - **THEN** nothing SHALL be printed about experimental features
+
+### Requirement: Compactions are recorded
+
+Every compaction the operator asks for SHALL be one row in the `compaction` table (migration 004), written by
+the daemon at each stage and read by the column: the lane, the stage, where the brief came from and the job
+that wrote it, the stage times, tokens before and after, the agent's own duration, whether it was retried, the
+reason when it failed or was skipped, and when the lane stopped showing it. The table SHALL refuse a stage it
+does not know and a finished stage without an end time. Rows SHALL be removed with their tab.
+
+#### Scenario: Readable
+
+- **WHEN** the operator opens the database with `sqlite3`
+- **THEN** `compaction_readable` SHALL show every compaction with a text id
+
+#### Scenario: Unknown stage
+
+- **WHEN** a write gives a stage outside the known list
+- **THEN** the database SHALL refuse it and nothing SHALL be written
+
+### Requirement: Inputs, verdicts and gate counts are stored
+
+The database SHALL hold, with each run, the compressed input document (`run_input`), the gate counts
+(`run.gate_stats`) and the verdicts of the judge and the operator (`verdict`, with the run, the item key, the
+check, pass/fail, the critique, the judge and the source). Rows SHALL go with their run; a verdict with an
+unknown check source or a pass value other than 0 or 1 SHALL be refused.
+
+#### Scenario: Run removed
+
+- **WHEN** a run is deleted
+- **THEN** its input and its verdicts SHALL be deleted with it
+
+#### Scenario: Bad verdict
+
+- **WHEN** a verdict is written with `source = 'guess'`
+- **THEN** the database SHALL refuse it

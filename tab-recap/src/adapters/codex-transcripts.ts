@@ -2,10 +2,11 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, Mark, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { arr, obj, parse, readJsonl, readLines, str, tailLines } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
+import { codexMarks } from './codex-marks.ts';
 import { codexObserved } from './context-rows.ts';
 import { codexCalls, toolEntry } from './tool-calls.ts';
 
@@ -52,20 +53,12 @@ function entriesOf(row: Row): readonly Entry[] {
     return item['type'] === 'function_call' || item['type'] === 'custom_tool_call' ? toolEntries(item, timeOf(row)) : [];
 }
 
-/** Codex writes a `compacted` row to its rollout when a compaction ran. */
-function marksOf(lines: readonly string[]): readonly Mark[] {
-    return lines.flatMap((line) => {
-        const row = parse(line);
-        return row?.['type'] === 'compacted' ? [{ kind: 'compacted' as const, at: timeOf(row) ?? null }] : [];
-    });
-}
-
 export function extractCodex(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
     const entries = lines.flatMap((line) => {
         const row = parse(line);
         return row === null ? [] : entriesOf(row);
     });
-    return { entries, notes: [], marks: marksOf(lines), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
+    return { entries, notes: [], marks: codexMarks(lines), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
 }
 
 function dayDir(root: string, back: number): string {

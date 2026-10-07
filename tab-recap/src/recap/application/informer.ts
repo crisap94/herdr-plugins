@@ -22,6 +22,8 @@ export interface InformerHooks {
     onBlind(blindness: Blindness): void;
     onUnknownKind(rawKind: string): void;
     onBeat(): void;
+    /** herdr pushed a lane's status (the compaction flow waits on it, and an agent's next turn ends the compaction's showing) */
+    onStatus?(pane: string, status: string): void;
 }
 
 const RESYNC_DEBOUNCE_MS = 400;
@@ -70,6 +72,11 @@ export class Informer {
 
     get current(): Board {
         return this.board;
+    }
+
+    /** whether herdr's pushes are arriving (a subscription is open) */
+    get listening(): boolean {
+        return this.stream !== null;
     }
 
     /** A snapshot, marked with when it was REQUESTED: the fold needs that to tell "gone" from "opened after this was asked". */
@@ -186,6 +193,9 @@ export class Informer {
             } else if (decoded.kind === 'resync') {
                 this.resync();
             } else {
+                if (decoded.kind === 'status') {
+                    this.hooks.onStatus?.(String(decoded.pane), decoded.status);
+                }
                 this.queue.push(decoded);
             }
         }

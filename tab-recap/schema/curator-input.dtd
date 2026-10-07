@@ -1,0 +1,29 @@
+<!-- curator_input: everything tab-recap gives the curator for one task. Version 1. -->
+<!ELEMENT curator_input (task, rubric, ledger)>
+<!ATTLIST curator_input version CDATA #FIXED "1">
+
+<!-- The task the ledger belongs to. name is blank when the tab has one task; language is what the paragraph is written in. -->
+<!ELEMENT task EMPTY>
+<!ATTLIST task
+  name     CDATA #IMPLIED
+  language CDATA #REQUIRED
+  now      CDATA #REQUIRED>
+
+<!-- The rubric's item checks (schema/recap-rubric.md, "Every item"), verbatim: every fact must pass them; keep the better-worded of two facts that say the same. -->
+<!ELEMENT rubric (#PCDATA)>
+
+<!-- Every fact of the task, open and closed, oldest first. first/last/closed are local times (HH:MM, or a date when not
+     today); why is the reason a decision or a close gave; ref the reference the fact is about; agent the lane's label. -->
+<!ELEMENT ledger (fact*)>
+<!ELEMENT fact (#PCDATA)>
+<!ATTLIST fact
+  id      ID #REQUIRED
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  state   (open|closed) "open"
+  first   CDATA #REQUIRED
+  last    CDATA #REQUIRED
+  why     CDATA #IMPLIED
+  ref     CDATA #IMPLIED
+  agent   CDATA #IMPLIED
+  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED
+  closedat CDATA #IMPLIED>

@@ -126,6 +126,14 @@ export const shareOf = (use: ContextUse): number => Math.round((100 * use.tokens
 /** The size in words: `200k`, `1M`. */
 export const sizeOf = (window: number): string => (window >= 1_000_000 ? `${Number((window / 1_000_000).toFixed(1))}M` : `${Math.round(window / 1000)}k`);
 
+/** A token count in the short form of the hint: `812`, `39.5k`, `100k`, `1M`. */
+export function tokensOf(count: number): string {
+    if (count >= 1_000_000) {
+        return `${Number((count / 1_000_000).toFixed(1))}M`;
+    }
+    return count >= 1000 ? `${Number((count / 1000).toFixed(1))}k` : String(count);
+}
+
 /** The percentage to show beside a lane, or null when it is under the threshold (or the hint is off). */
 export const hintFor = (use: ContextUse | null | undefined, threshold: number | null): number | null => {
     if (use === null || use === undefined || threshold === null || use.window <= 0) {

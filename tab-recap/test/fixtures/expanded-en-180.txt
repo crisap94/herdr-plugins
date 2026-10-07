@@ -1,0 +1,21 @@
+SESSION SO FAR · 16:10                                                                   │ DECISIONS
+The 2.0 engine is being built in four changes; the expanded view is drawn from the       │ 11:30 Keep the guard out of sibling modules
+ledger and waits on one answer.                                                          │       an import guard cannot stop sibling modules
+                                                                                         │
+GOAL                                                                                     │ NEXT
+Ship the expanded view in tab-recap 2.0                                                  │ • Draw the expanded view from the ledger
+                                                                                         │
+NOW                                                                                      │ RULES
+• host · Writing the timeline renderer                                                   │ • Never touch the live checkout
+                                                                                         │
+NEEDS YOU                                                                                │ LINKS
+• Approve the migration number 007 for the story columns · waiting 3 h                   │ • compaction records !34
+• Which effort should the curator default to: low or medium? · waiting 25 min            │
+                                                                                         │ SESSION
+TIMELINE                                                                                 │ started 09:12 · 7 h 18 min
+14:02 Merged !34 adding the compaction records                                           │ turns 41 (turn 36 · focus 3 · asked 2)
+14:02 Add a retention sweep to this change · closed: wrong                               │ compactions 2 (800k → 14k · 39k → 3k)
+2026-10-06                                                                               │ claude · orchestrator 34 % of 1M
+17:10 Fixed the context share in src/recap/render/present.ts                             │ codex · host 12 % of 272k
+                                                                                         │ repo herdr-plugins · branch feat/expanded
+                                                                                         │ files src/recap/application/compaction.ts (7), src/recap/render/present.ts (5)

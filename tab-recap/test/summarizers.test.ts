@@ -46,7 +46,7 @@ test('effort: each harness gets its own word for it, and `default` passes nothin
     assert.ok(!hermesArgs('', 'P', 'u', 'default').includes('--reasoning'));
 });
 
-test('golden: the English instructions are exactly the reviewed JSON-contract text', () => {
+test('golden: the English instructions are exactly the reviewed operations-contract text', () => {
     const before = readFileSync(new URL('fixtures/instructions-en.txt', import.meta.url), 'utf8');
     assert.equal(instructions(request), before);
     assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);

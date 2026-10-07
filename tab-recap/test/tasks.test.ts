@@ -1,19 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
-import { memoryStore } from '#test/db/support.ts';
+import { memoryStore, seed } from '#test/db/support.ts';
 import { instructions, message } from '#src/adapters/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { parseProposal } from '#src/recap/application/recap-tasks.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { settle, unexplained } from '#src/recap/domain/tasks.ts';
-import type { Proposal, RecapTask } from '#src/recap/domain/tasks.ts';
+import { keptGrouping } from '#src/recap/domain/grouping.ts';
+import type { PlacedLane, TaskShape } from '#src/recap/domain/grouping.ts';
+import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
@@ -26,103 +26,74 @@ import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports
 import { agentOf, firstTask, oneTask, requestOf } from '#test/support.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
-const proposal = (regroup: string, ...tasks: readonly (readonly [string, readonly string[], string])[]): Proposal =>
-    ({ regroup, tasks: tasks.map(([name, lanes, goal]) => ({ name, lanes, sections: sections(goal) })) });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id, name, lanes, sections: sections(goal), markdown: `## Goal\n${goal}` });
+const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id, name, lanes });
 
-const P = ['w1:p1', 'w1:p2', 'w1:p10'];
+// ── the grouping ─────────────────────────────────────────────────────────────────────────────────
 
-// ── parsing ──────────────────────────────────────────────────────────────────────────────────────
+const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane, place }));
+const PAY = '/work/pay';
+const DOCS = '/work/docs';
 
-test('parser: the seven sections alone are ONE task holding every lane — what a one-task tab has always answered', () => {
-    const parsed = parseProposal('{"goal":"ship it","now":["CI"]}', P);
-    assert.ok(parsed.kind === 'proposal');
-    assert.deepEqual(parsed.proposal.tasks.map((task) => [task.name, task.lanes, task.sections.goal]), [['', P, 'ship it']]);
-    assert.equal(parsed.proposal.regroup, '');
+test('grouping: with none yet the lanes that work in one place are one unnamed task; no lanes, no task', () => {
+    assert.deepEqual(keptGrouping([], [...lanesIn(PAY, 'w1:p1', 'w1:p2')]), [shape('t1', '', ['w1:p1', 'w1:p2'])]);
+    assert.deepEqual(keptGrouping([], []), []);
 });
 
-test('parser: tasks, each with its lanes (a pane id or a whole label) and its own seven sections, capped as ever', () => {
-    const answer = JSON.stringify({
-        regroup: '', tasks: [
-            { name: 'Payments **API**', lanes: ['w1:p1', 'codex in w1:p10 — tests'], goal: 'one', now: Array.from({ length: 9 }, (_, i) => `n${i}`) },
-            { name: 'x'.repeat(10), lanes: 'w1:p2', goal: 'two' },
-        ],
-    });
-    const parsed = parseProposal(`here: ${answer}`, P);
-    assert.ok(parsed.kind === 'proposal');
-    const [first, second] = parsed.proposal.tasks;
-    assert.deepEqual([first?.name, first?.lanes, first?.sections.now.length], ['Payments API', ['w1:p1', 'w1:p10'], 3], 'p1 is not p10, and the cap still applies');
-    assert.deepEqual([second?.lanes, second?.sections.goal], [['w1:p2'], 'two']);
+test('grouping: lanes in different places are different tasks, named by their folder; a lane with no known place joins the first task', () => {
+    const lanes = [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2'), ...lanesIn(PAY, 'w1:p3'), ...lanesIn(null, 'w1:p4')];
+    assert.deepEqual(keptGrouping([], lanes), [shape('t1', 'pay', ['w1:p1', 'w1:p3', 'w1:p4']), shape('t2', 'docs', ['w1:p2'])]);
 });
 
-test('parser: a malformed grouping falls back to ONE task; an answer with no sections at all is invalid', () => {
-    const fallback = parseProposal('{"tasks":"oops","goal":"whole","now":["a"]}', P);
-    assert.ok(fallback.kind === 'proposal');
-    assert.deepEqual(fallback.proposal.tasks.map((task) => [task.lanes, task.sections.goal]), [[P, 'whole']]);
-    const empties = parseProposal('{"tasks":[1,null,{"name":"no sections"},[]],"goal":"top"}', P);
-    assert.ok(empties.kind === 'proposal' && empties.proposal.tasks.length === 1 && empties.proposal.tasks[0]?.sections.goal === 'top');
-    assert.equal(parseProposal('{"tasks":[{"name":"x"}]}', P).kind, 'invalid');
-    assert.equal(parseProposal('not json {', P).kind, 'invalid');
-    assert.equal(parseProposal('no object at all', P).kind, 'invalid');
+test('grouping: the previous grouping is kept — same ids, same names; a closed lane leaves, a task left with no lane is gone', () => {
+    const before = [shape('t1', 'Payments', ['w1:p1']), shape('t2', 'Docs', ['w1:p2', 'w1:p3'])];
+    const now = [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2', 'w1:p3')];
+    assert.deepEqual(keptGrouping(before, now), before);
+    assert.deepEqual(keptGrouping(before, [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p3')]), [shape('t1', 'Payments', ['w1:p1']), shape('t2', 'Docs', ['w1:p3'])]);
+    assert.deepEqual(keptGrouping(before, lanesIn(DOCS, 'w1:p3')), [shape('t2', '', ['w1:p3'])], 'one task left: no task name');
 });
 
-// ── hysteresis ───────────────────────────────────────────────────────────────────────────────────
-
-const two = [taskOf('t1', 'Payments', ['w1:p1', 'w1:p2']), taskOf('t2', 'Docs', ['w1:p10'])];
-
-test('hysteresis: the same grouping keeps its ids and names, and takes the new sections', () => {
-    const settled = settle(two, proposal('', ['', ['w1:p10'], 'docs v2'], ['Payments v2', ['w1:p2', 'w1:p1'], 'pay v2']), P);
-    assert.deepEqual(settled.map((task) => [task.id, task.name, task.lanes, task.sections.goal]), [
-        ['t2', 'Docs', ['w1:p10'], 'docs v2'], ['t1', 'Payments v2', ['w1:p2', 'w1:p1'], 'pay v2'],
-    ]);
+test('grouping: kept even when the lanes now work elsewhere; a new lane joins the task of the lanes in its place, else it is a task of its own', () => {
+    const before = [shape('t1', 'Payments', ['w1:p1']), shape('t2', 'Docs', ['w1:p2'])];
+    const moved = [...lanesIn(DOCS, 'w1:p1'), ...lanesIn(PAY, 'w1:p2')];
+    assert.deepEqual(keptGrouping(before, moved), before, 'sticky: no evidence is asked for, none can move a lane');
+    const joined = keptGrouping(before, [...moved, ...lanesIn(PAY, 'w1:p9')]);
+    assert.deepEqual(joined.map((task) => task.lanes), [['w1:p1'], ['w1:p2', 'w1:p9']]);
+    const apart = keptGrouping(before, [...moved, ...lanesIn('/work/infra', 'w1:p9')]);
+    assert.deepEqual(apart.map((task) => [task.id, task.name]), [['t1', 'Payments'], ['t2', 'Docs'], ['t3', 'infra']]);
+    assert.deepEqual(keptGrouping(before, [...moved, ...lanesIn(null, 'w1:p9')]).map((task) => task.lanes.length), [2, 1]);
 });
 
-test('hysteresis: an AMBIGUOUS run — the writer moves a lane with no evidence — keeps the previous grouping, with the closest new text', () => {
-    const merged = settle(two, proposal('', ['All of it', P, 'one big thing']), P);
-    assert.deepEqual(merged.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1', 'w1:p2']], ['t2', 'Docs', ['w1:p10']]]);
-    assert.equal(unexplained(two, proposal('', ['All of it', P, 'x']), P), true);
-    assert.equal(unexplained(two, proposal('they split', ['All of it', P, 'x']), P), false, 'evidence explains it');
-    const moved = settle(two, proposal('', ['Payments', ['w1:p1'], 'pay'], ['Docs', ['w1:p2', 'w1:p10'], 'docs']), P);
-    assert.deepEqual(moved.map((task) => [task.id, task.lanes, task.sections.goal]), [['t1', ['w1:p1', 'w1:p2'], 'pay'], ['t2', ['w1:p10'], 'docs']]);
+test('grouping: when every lane of a tab\'s only task is gone, the next lanes continue it; of several tasks, they are a new one', () => {
+    assert.deepEqual(keptGrouping([shape('t1', '', ['w1:p1'])], lanesIn(PAY, 'w1:p9')), [shape('t1', '', ['w1:p9'])]);
+    assert.deepEqual(keptGrouping([shape('t1', 'A', ['w1:p1']), shape('t2', 'B', ['w1:p2'])], lanesIn(PAY, 'w1:p9')), [shape('t3', '', ['w1:p9'])]);
 });
 
-test('hysteresis: a change WITH evidence is adopted — unchanged groups keep their ids, new ones get a fresh id', () => {
-    const split = settle(two, proposal('p2 now works in another repo', ['Payments', ['w1:p1'], 'pay'], ['Spike', ['w1:p2'], 'spike'], ['Docs', ['w1:p10'], 'docs']), P);
-    assert.deepEqual(split.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1']], ['t3', 'Spike', ['w1:p2']], ['t2', 'Docs', ['w1:p10']]]);
+test('grouping: a key that has ever held a ledger is not given to another task, even when its task is long gone', () => {
+    const before = [shape('t1', 'Payments', ['w1:p1'])];
+    assert.deepEqual(keptGrouping(before, [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2')], ['t1', 't2', 't3']).map((task) => task.id), ['t1', 't4']);
 });
 
-test('lanes come and go without it being a regrouping: a closed lane leaves, a new lane joins the task the writer put it in', () => {
-    const left = settle(two, proposal('', ['Payments', ['w1:p1'], 'pay'], ['Docs', ['w1:p10'], 'docs']), ['w1:p1', 'w1:p10']);
-    assert.deepEqual(left.map((task) => [task.id, task.lanes]), [['t1', ['w1:p1']], ['t2', ['w1:p10']]]);
-    const joined = settle(two, proposal('', ['Payments', ['w1:p1', 'w1:p2', 'w1:p3'], 'pay'], ['Docs', ['w1:p10'], 'docs']), [...P, 'w1:p3']);
-    assert.deepEqual(joined.map((task) => [task.id, task.lanes]), [['t1', ['w1:p1', 'w1:p2', 'w1:p3']], ['t2', ['w1:p10']]]);
-    const apart = settle(two, proposal('', ['Payments', ['w1:p1', 'w1:p2'], 'pay'], ['Docs', ['w1:p10'], 'docs'], ['Elsewhere', ['w1:p3'], 'new']), [...P, 'w1:p3']);
-    assert.deepEqual(apart.map((task) => [task.id, task.name, task.lanes]).at(-1), ['t3', 'Elsewhere', ['w1:p3']], 'a new lane the writer set apart is a task of its own');
-});
-
-test('a tab with one task has no task name, however the writer named it; a lane nobody named joins the first task', () => {
-    const one = settle([], proposal('', ['Named', ['w1:p1'], 'g']), ['w1:p1']);
-    assert.deepEqual(one.map((task) => [task.id, task.name]), [['t1', '']]);
-    const forgot = settle([], proposal('', ['A', ['w1:p1'], 'a'], ['B', ['w1:p2'], 'b']), P);
-    assert.deepEqual(forgot.map((task) => task.lanes), [['w1:p1', 'w1:p10'], ['w1:p2']]);
-    assert.deepEqual(settle([], proposal('', ['A', ['nowhere'], 'a']), P), [], 'a grouping that names no real lane settles to nothing');
+test('grouping: a tab that had one unnamed task and gets a lane elsewhere names both tasks', () => {
+    assert.deepEqual(keptGrouping([shape('t1', '', ['w1:p1'])], [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2')]), [shape('t1', 'pay', ['w1:p1']), shape('t2', 'docs', ['w1:p2'])]);
 });
 
 // ── the prompt and the job ───────────────────────────────────────────────────────────────────────
 
-test('the prompt asks for tasks only when the tab has several lanes, and carries the hints and the current grouping', () => {
+test('the document lists the current tasks only when the tab has several lanes, and carries the hints and one ledger per task', () => {
     const one = requestOf({ entries: [{ role: 'user', text: 'x' }] });
-    assert.ok(!instructions(one).includes('"tasks"') && !message(one).includes('<current_tasks>'), 'one agent: no grouping asked');
+    assert.ok(!message(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
     const many = requestOf({
         agents: [agentOf('a1', { cwd: '/r/pay', repo: '/r/pay', branch: 'feat/v2', files: ['src/client.ts'] }), agentOf('a2', { kind: 'codex', cwd: '/tmp' })],
         tasks: [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }],
+        ledgers: [{ task: 't1', facts: [] }],
     });
-    assert.ok(instructions(many).includes('"tasks"') && instructions(many).includes('"regroup"') && instructions(many).includes('KEEP the <current_tasks>'));
     const text = message(many);
     assert.ok(text.includes('<agent id="a1" kind="claude" label="" pane="w1:p1" repo="pay" branch="feat/v2">'), 'the repository by name; the folder only when it is not the repository');
     assert.ok(text.includes('<file>src/client.ts</file>'));
     assert.ok(text.includes('<agent id="a2" kind="codex" label="" pane="w1:p2" cwd="/tmp"/>'));
     assert.ok(text.includes('<task id="t1" name="Payments" agents="a1"/>'));
+    assert.ok(text.includes('<ledger task="t1"/>'));
     assert.ok(!message({ ...many, input: { ...many.input, tasks: [] } }).includes('<current_tasks>'), 'no grouping yet: none shown');
 });
 
@@ -148,47 +119,44 @@ const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ?
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: 'fake', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
-    const job = new RecapJob({ transcripts: [transcripts], records: store.records, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ transcripts: [transcripts], records: store.records, ledger: store.ledger, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
 }
 
-test('a tab with two lanes: the request carries each lane\'s hints and the previous grouping; the answer is stored as tasks, each with its drawn Markdown', async () => {
-    const answer = JSON.stringify({ regroup: '', tasks: [{ name: 'Payments', lanes: ['w1:p1'], goal: 'pay v2', now: ['wiring'] }, { name: 'Docs', lanes: ['w1:p2'], goal: 'docs' }] });
+const op = (section: string, text: string, task?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(task === undefined ? {} : { task }) });
+
+test('a tab with two lanes in two places: the request carries each lane\'s hints; the operations are stored per task, each task\'s facts drawn as its Markdown', async () => {
+    const answer = JSON.stringify({ ops: [op('goal', 'pay v2'), op('now', 'wiring'), op('goal', 'docs', 't2')] });
     const { store, requests } = await run([answer], ['w1:p1', 'w1:p2']);
     const [request] = requests;
     assert.ok(request !== undefined);
     assert.deepEqual(request.input.agents.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
-    assert.deepEqual(request.input.tasks, []);
     const recap = store.records.readRecap('w1:t1');
-    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'Payments', ['w1:p1'], 'pay v2'], ['t2', 'Docs', ['w1:p2'], 'docs']]);
+    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'pay', ['w1:p1'], 'pay v2'], ['t2', 'docs', ['w1:p2'], 'docs']], 'no grouping yet: one task per place, named by its folder');
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
+    assert.deepEqual(request.input.tasks, [{ id: 't1', name: 'pay', lanes: ['w1:p1'] }, { id: 't2', name: 'docs', lanes: ['w1:p2'] }], 'and the grouping is told to the writer');
 });
 
-test('a tab with ONE lane is not asked to group, but is still described: the answer is one unnamed task', async () => {
-    const { store, requests } = await run([JSON.stringify({ goal: 'solo' })], ['w1:p1']);
+test('a tab with ONE lane is not told about tasks, but is still described: the answer is one unnamed task', async () => {
+    const { store, requests } = await run([JSON.stringify({ ops: [op('goal', 'solo')] })], ['w1:p1']);
     assert.deepEqual(requests[0]?.input.agents.map((agent) => [agent.cwd, agent.repo, agent.branch, agent.files]), [['/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']]], 'the hints are there for a single agent too');
     assert.deepEqual(requests[0].input.tasks, []);
     assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
-test('the second run: the previous grouping goes back to the writer, and an ambiguous answer does not move a lane', async () => {
-    const first = JSON.stringify({ tasks: [{ name: 'Payments', lanes: ['w1:p1'], goal: 'a' }, { name: 'Docs', lanes: ['w1:p2'], goal: 'b' }] });
-    const merged = JSON.stringify({ regroup: '', tasks: [{ name: 'Everything', lanes: ['w1:p1', 'w1:p2'], goal: 'c' }] });
+test('the second run: the grouping is kept and goes back to the writer; an add names its task; an update or close goes to the fact\'s own task', async () => {
     const store = memoryStore();
-    await run([first], ['w1:p1', 'w1:p2'], store);
-    const { requests } = await run([merged], ['w1:p1', 'w1:p2'], store);
-    assert.equal(requests.length, 2, 'asked once more, saying what was wrong');
-    assert.match(requests[1]?.correction ?? '', /without saying why/);
+    const seeded = { ...blankRecap('w1:t1'), at: 1, lanes: [], tasks: [taskOf('t1', 'Payments', ['w1:p1'], 'a'), taskOf('t2', 'Docs', ['w1:p2'], 'b')] };
+    seed(store, seeded);
+    const { requests } = await run([JSON.stringify({ ops: [op('done', 'wrote the intro', 't2'), { op: 'close', id: 'f1', why: 'done' }] })], ['w1:p1', 'w1:p2'], store);
     assert.deepEqual(requests[0]?.input.tasks, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
-    assert.match(requests[0].input.previous, /^\{"tasks":\[\{"id":"t1","name":"Payments","lanes":\["w1:p1"\],"recap":\{"goal":"a"/);
-    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes]), [['t1', 'Payments', ['w1:p1']], ['t2', 'Docs', ['w1:p2']]]);
-    const evidence = JSON.stringify({ regroup: 'both now work in the docs repo', tasks: [{ name: 'Docs sprint', lanes: ['w1:p1', 'w1:p2'], goal: 'd' }] });
-    await run([evidence], ['w1:p1', 'w1:p2'], store);
-    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.name, task.lanes]), [['', ['w1:p1', 'w1:p2']]], 'with evidence the grouping changes (and one task has no name)');
+    assert.deepEqual(requests[0].input.ledgers.map((ledger) => [ledger.task, ledger.facts.map((fact) => fact.id)]), [['t1', ['f1']], ['t2', ['f2']]]);
+    const recap = store.records.readRecap('w1:t1');
+    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
 
 // ── the column ───────────────────────────────────────────────────────────────────────────────────

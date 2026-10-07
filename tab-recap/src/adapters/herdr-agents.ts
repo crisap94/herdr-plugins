@@ -14,6 +14,8 @@ const POPUP_WIDTH = '90%';
 const POPUP_HEIGHT = '30%';
 /** a reply is awaited this much longer than the wait it asked herdr for */
 const WIRE_MARGIN_MS = 15_000;
+/** Between the typed text and Enter: an agent's slash-command popup needs a moment, or Enter is swallowed (measured on codex: 0 ms swallows it, 250 ms runs it). */
+const ENTER_AFTER_MS = 300;
 
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 const codeOf = (error: unknown): unknown => (typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined);
@@ -22,9 +24,12 @@ export class HerdrAgents implements Agents {
     private readonly wire: Wire;
     private readonly plugin: { readonly id: string; readonly stateDir: string };
 
-    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }) {
+    private readonly pause: (ms: number) => Promise<void>;
+
+    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }, pause: (ms: number) => Promise<void> = (ms): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); })) {
         this.wire = wire;
         this.plugin = plugin;
+        this.pause = pause;
     }
 
     async status(pane: string): Promise<AgentState> {
@@ -45,6 +50,10 @@ export class HerdrAgents implements Agents {
             await this.wire('agent.prompt', params, (wait?.timeoutMs ?? 0) + WIRE_MARGIN_MS);
             return { kind: 'sent' };
         } catch (error) {
+            // `agent_prompt_stalled`: the text went in but no working state followed — a command the agent runs at once (codex's `/compact`) looks like that
+            if (codeOf(error) === 'agent_prompt_stalled') {
+                return { kind: 'sent' };
+            }
             return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: detail(error) });
         }
     }
@@ -61,6 +70,7 @@ export class HerdrAgents implements Agents {
             for (const piece of pieces) {
                 await this.wire('pane.send_text', { pane_id: pane, text: piece });
             }
+            await this.pause(ENTER_AFTER_MS);
             await this.wire('pane.send_keys', { pane_id: pane, keys: ['enter'] });
             return { kind: 'sent' };
         } catch (error) {

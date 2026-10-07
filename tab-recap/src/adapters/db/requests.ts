@@ -32,6 +32,8 @@ export class RequestsRepository implements Requests {
     private readonly visibility: StatementSync;
     private readonly compact: StatementSync;
     private readonly takeCompact: StatementSync;
+    private readonly curate: StatementSync;
+    private readonly takeCurate: StatementSync;
     private readonly takeRefresh: StatementSync;
     private readonly takeHidden: StatementSync;
 
@@ -40,6 +42,8 @@ export class RequestsRepository implements Requests {
         this.refresh = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'refresh', ?)");
         this.visibility = db.prepare("INSERT INTO request (id, at, kind, target, hidden) VALUES (?, ?, 'visibility', ?, ?)");
         this.compact = db.prepare("INSERT INTO request (id, at, kind, target, pane, note) VALUES (?, ?, 'compact', ?, ?, ?)");
+        this.curate = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'curate', ?)");
+        this.takeCurate = db.prepare("DELETE FROM request WHERE kind = 'curate' RETURNING id, target");
         this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note");
         this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
@@ -55,6 +59,15 @@ export class RequestsRepository implements Requests {
 
     requestCompact(request: CompactRequest): void {
         this.compact.run(ids.next(), this.now(), request.tab, request.pane, request.note);
+    }
+
+    requestCurate(tab: string): void {
+        this.curate.run(ids.next(), this.now(), tab);
+    }
+
+    /** One tab asked twice is one request. */
+    takeCurations(): readonly TabId[] {
+        return guarded(() => [...new Set(all(this.takeCurate).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
     }
 
     /** In the order they were asked; each one is its own (two notes are two messages). */

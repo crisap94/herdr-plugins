@@ -10,13 +10,14 @@ import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import { compactJobOf } from '#src/recap/domain/job.ts';
+import { compactJobOf, curateJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import type { Job } from '#src/recap/domain/job.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
+import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -28,7 +29,7 @@ export interface Config {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
     readonly customCommand: string;
-    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`low` unless set) */
+    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`medium` unless set) */
     readonly effort: Effort;
     readonly locale: Locale;
     /** `en`, `es` or sanitised free text: what new recaps are written in */
@@ -41,6 +42,14 @@ export interface Config {
     readonly compaction: { readonly target: CompactTarget; readonly hint: number | null; readonly window: number | null };
     /** the compaction brief's job: `TAB_RECAP_COMPACT_BY`, `_MODEL`, `_EFFORT` */
     readonly brief: Job;
+    /** the judge's job: `TAB_RECAP_JUDGE_BY`, `_MODEL`, `_EFFORT` */
+    readonly judge: Job;
+    /** `TAB_RECAP_KEEP_INPUT_DAYS`: how long a run's input document is kept for judging (14; 0 = not kept) */
+    readonly keepInputDays: number;
+    /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
+    readonly curator: Job;
+    /** `TAB_RECAP_KEEP_DAYS`: how long a closed tab's data is kept (30; 0 = for ever) */
+    readonly keepDays: number;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
 }
@@ -155,6 +164,10 @@ export function loadConfig(): Config {
         screenAgents,
         compaction: { target: targetOf(get('TAB_RECAP_COMPACT_TARGET')), hint: hintOf(get('TAB_RECAP_COMPACT_HINT')), window: windowOf(get('TAB_RECAP_CONTEXT_WINDOW')) },
         brief: compactJobOf(get),
+        judge: judgeJobOf(get),
+        keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
+        curator: curateJobOf(get),
+        keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
     };

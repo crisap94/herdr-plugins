@@ -77,3 +77,17 @@ test('a mistyped option names the option, prints the usage on stderr, exits 2 an
         ran.done();
     }
 });
+
+test('`eval --replay`: a missing transcript is a could-not-look error, an unknown option or one that does not go with it a usage error; the plain commands still refuse options', () => {
+    for (const [args, status, says] of [[['eval', '--bogus'], 2, /Unknown option/], [['eval', '--replay', '/nonexistent/s.jsonl'], 3, /cannot read/], [['eval', '--replay', 'x', '--sample', '3'], 2, /--replay excludes --sample/], [['eval', '--kind', 'codex'], 2, /go with --replay/], [['status', '--replay', 'x'], 2, /USAGE: tab-recap/]] as const) {
+        const ran = run(...args);
+        try {
+            assert.equal(ran.status, status, args.join(' '));
+            assert.match(ran.stderr, says);
+            assert.equal(ran.stdout, '');
+            assert.equal(existsSync(ran.state) ? readdirSync(ran.state).length : 0, 0, 'no state written');
+        } finally {
+            ran.done();
+        }
+    }
+});

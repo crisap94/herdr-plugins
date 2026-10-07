@@ -7,9 +7,11 @@ What the recap writer receives for one tab and one run, and how the writer is ru
 
 ### Requirement: The input is one valid recap_input document
 
-Everything tab-recap gives the writer about a tab SHALL be one XML document, `recap_input` version 1,
+Everything tab-recap gives the writer about a tab SHALL be one XML document, `recap_input` version 2,
 that is well-formed XML 1.0 and valid against `tab-recap/schema/recap-input.dtd`, whatever the
-transcripts contain.
+transcripts contain. In place of a previous recap, the document SHALL carry one `ledger` per task with the
+task's open facts and the facts closed in the last two hours, each with an id the writer's operations refer to,
+its section, state, first and last time, why, reference and agent.
 
 #### Scenario: Hostile content
 
@@ -19,8 +21,13 @@ transcripts contain.
 
 #### Scenario: Dangling reference
 
-- **WHEN** a transcript, note or task names an agent the tab does not list
+- **WHEN** a transcript, note or task names an agent the tab does not list, or a fact names an agent id the tab does not list
 - **THEN** DTD validation of that document SHALL fail (the test suite proves the DTD catches it)
+
+#### Scenario: First run
+
+- **WHEN** a task has no facts yet
+- **THEN** the document SHALL carry an empty `ledger` for it and the writer SHALL add facts
 
 ### Requirement: Every agent is described
 
@@ -84,12 +91,19 @@ the instructions SHALL say the transcript wins over a note.
 ### Requirement: Contradicted facts do not survive
 
 The instructions SHALL tell the writer to keep an item from the previous recap only while the new
-transcript does not contradict it, and to write links as names, not descriptions.
+transcript does not contradict it, and to write links as names, not descriptions. The instructions SHALL
+quote the rubric's item checks and section checks from `tab-recap/schema/recap-rubric.md`, and SHALL tell
+the writer that refused items come back in `<correction>` with the gate's reason, to be rewritten or left out.
 
 #### Scenario: A wrong link label
 
 - **WHEN** the previous recap describes a merge request wrongly and the transcript shows what it is
 - **THEN** the instructions given to the writer SHALL require dropping or correcting that item
+
+#### Scenario: A refused item
+
+- **WHEN** the gates refuse two items of an answer
+- **THEN** the retry's `<correction>` SHALL list both with the gate's reason and the instructions SHALL say how to answer it
 
 ### Requirement: The writer runs at the configured effort
 

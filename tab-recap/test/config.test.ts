@@ -55,17 +55,31 @@ test('loadConfig: locale and recap language — ui follows the locale, an explic
 });
 
 
-test('TAB_RECAP_EFFORT: low unless set to medium, high or default; anything else is low', () => {
+test('TAB_RECAP_EFFORT: medium unless set to low, high or default; anything else is medium', () => {
     const saved = process.env['TAB_RECAP_EFFORT'];
     try {
         delete process.env['TAB_RECAP_EFFORT'];
-        assert.equal(loadConfig().effort, 'low');
-        for (const [raw, effort] of [['medium', 'medium'], ['HIGH', 'high'], ['default', 'default'], ['max', 'low']] as const) {
+        assert.equal(loadConfig().effort, 'medium');
+        for (const [raw, effort] of [['low', 'low'], ['HIGH', 'high'], ['default', 'default'], ['max', 'medium']] as const) {
             process.env['TAB_RECAP_EFFORT'] = raw;
             assert.equal(loadConfig().effort, effort, raw);
         }
     } finally {
         if (saved === undefined) { delete process.env['TAB_RECAP_EFFORT']; } else { process.env['TAB_RECAP_EFFORT'] = saved; }
+    }
+});
+
+test('TAB_RECAP_KEEP_DAYS: 30 unless set to whole days; 0 keeps everything', () => {
+    const saved = process.env['TAB_RECAP_KEEP_DAYS'];
+    try {
+        delete process.env['TAB_RECAP_KEEP_DAYS'];
+        assert.equal(loadConfig().keepDays, 30);
+        for (const [raw, days] of [['7', 7], ['0', 0], ['soon', 30], ['-2', 30]] as const) {
+            process.env['TAB_RECAP_KEEP_DAYS'] = raw;
+            assert.equal(loadConfig().keepDays, days, raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_KEEP_DAYS']; } else { process.env['TAB_RECAP_KEEP_DAYS'] = saved; }
     }
 });
 
