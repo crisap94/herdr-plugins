@@ -10,6 +10,7 @@ import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -24,6 +25,7 @@ export function wireCompaction(parts: {
     readonly records: RecapRecords;
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;
+    readonly ledger: Ledger;
     readonly webs: { of(pane: string): LaneWeb | null };
     readonly recaps: RecapJob;
     readonly informer: Informer;
@@ -34,7 +36,7 @@ export function wireCompaction(parts: {
     const { fleet, informer, recaps } = parts;
     const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: string): void => { parts.log(line); } });
     return new Compaction({
-        agents: fleet.agents(), notifier: fleet, records: parts.records, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
+        agents: fleet.agents(), notifier: fleet, records: parts.records, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
         brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: () => Date.now(),
         lanes: (tab) => lanesOf(informer.current, tabId(tab)),
         focused: async (tab) => {

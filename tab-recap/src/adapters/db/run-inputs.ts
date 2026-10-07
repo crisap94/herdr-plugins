@@ -1,4 +1,4 @@
-// The RunInputs repository: the writer's document per run (gzip), the run's items and its gate counts. Written inside the run's transaction by `RunRows`.
+// The RunInputs repository: the writer's document per run (gzip), the run's items (the facts it added) and its gate counts. Written inside the run's transaction by `RunRows`.
 import { gunzipSync, gzipSync } from 'node:zlib';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
@@ -37,13 +37,14 @@ export class RunInputRows {
 
 const RUNS = `SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
   FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
-  WHERE EXISTS (SELECT 1 FROM item WHERE run_id = r.id) AND (?1 IS NULL OR c.tab_id = ?1) AND r.at >= ?2 AND (?3 = 0 OR i.run_id IS NOT NULL)
+  WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (?1 IS NULL OR c.tab_id = ?1) AND r.at >= ?2 AND (?3 = 0 OR i.run_id IS NOT NULL)
   ORDER BY r.id DESC LIMIT ?4`;
 
-const ITEMS = `SELECT t.key AS task, i.section, i.position, i.text FROM item i
-  JOIN task t ON t.id = i.task_id JOIN run_task rt ON rt.run_id = i.run_id AND rt.task_id = i.task_id
-  WHERE i.run_id = ? AND i.view = 'recap'
-  ORDER BY rt.position, CASE i.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END, i.position`;
+/** A run's items are the facts it added (its `add` operations): updates and closes change what is already there. The position counts within the task and section. */
+const ITEMS = `SELECT t.key AS task, f.section, f.text, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+  FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
+  WHERE f.born_run = ?
+  ORDER BY COALESCE(rt.position, 0), CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END, f.id`;
 
 const storedRun = (row: Row): StoredRun => ({
     id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),

@@ -8,14 +8,14 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
 import { cursor, memoryStore } from './support.ts';
-import { oneTask } from '#test/support.ts';
+import { oneTask, withFacts } from '#test/support.ts';
 
 const DAY = 86_400_000;
 const STATS: GateStats = { refused: { G1: 2 }, flagged: { G8: 1 }, dropped: 1 };
 const SECTIONS = { goal: 'Ship retries', now: ['Review !256.'], needs: [], done: ['Merged !250.', 'Tagged 1.9.0.'], decisions: [], next: [], links: ['!256'], rules: [] };
 
 const run = (at: number, extra: Partial<RecordedRun> = {}): RecordedRun => ({
-    tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask('', SECTIONS), ...extra,
+    tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), ...extra,
 });
 
 const QUERY = { tab: null, since: null, limit: 20, withInput: false } as const;

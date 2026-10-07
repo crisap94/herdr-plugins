@@ -30,7 +30,7 @@ const TINY: RecapRequest = {
     input: {
         tab: { id: 'test', now: Date.now(), zone: 'UTC' },
         agents: [{ id: 'a1', kind: 'test', label: '', pane: 'test', source: 'transcript', cwd: null, repo: null, branch: null, files: [] }],
-        tasks: [], previous: '', notes: [],
+        tasks: [], ledgers: [{ task: null, facts: [] }], notes: [],
         transcripts: [{ agent: 'a1', entries: [{ role: 'user', text: 'say hello' }] }],
     },
 };

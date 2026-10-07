@@ -7,10 +7,10 @@ sum-typed ports, one adapter per port.
 ## Where things are, and where new work goes
 
 ```text
-src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter
-src/recap/application/  informer · dispatch · decode · watch-set · recap-job · excerpt
+src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter (fact · ops: the ledger's fold · grouping · gates/, which may also reach one file up)
+src/recap/application/  informer · dispatch · decode · watch-set · recap-job · extract-job (operations, gates, one retry) · ops-answer · ledger-input · replay · excerpt
 src/recap/render/       pure text for the column; `badge()` ends in `const exhaustive: never`
-src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `TabViews`, `ColumnVisibility`, `Requests`, `CompactionRecords` (the daemon writes, the column and the bar read); `LaneSettling` is the wait for herdr's status push
+src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `Ledger` (the facts), `TabViews`, `ColumnVisibility`, `Requests`, `CompactionRecords` (the daemon writes, the column and the bar read); `LaneSettling` is the wait for herdr's status push
 src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport (it hands its wire to `herdr-agents.ts`)
 src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests, compaction records), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
@@ -40,6 +40,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | rule | says |
 | --- | --- |
 | `recap-domain-pure` | the domain imports only `./` |
+| `recap-domain-pure-gates` | `domain/gates/` imports `./` and `../name.ts` (one file up), nothing else |
 | `recap-layers-no-io` | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |

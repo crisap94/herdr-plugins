@@ -1,6 +1,6 @@
 // G4 link: a "links" item must be a reference that resolves — `!n`, `#n`, a hex SHA of 7+ digits, name/with-slash, a path, a file name with an extension or a URL.
-import { said } from './gate.ts';
-import type { Gate } from './gate.ts';
+import { said } from './item-gate.ts';
+import type { Gate } from './item-gate.ts';
 
 const REFERENCE = [
     /^[!#]\d+$/u,

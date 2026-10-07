@@ -1,23 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
+import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { cursor, memoryStore, must } from './support.ts';
 
 const sections = { goal: 'ship', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'], rules: [] };
-const task = (id: string, lanes: readonly string[], name = ''): RecapTask => ({ id, name, lanes, sections, markdown: '' });
+const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id, name, lanes });
+const adds = (task: string, of: RecapSections = sections): RecordedRun['ops'] => [{ task, ops: opsOfSections(of) }];
 const run = (over: Partial<RecordedRun> = {}): RecordedRun => ({
-    tab: 'w1:t1', at: 100, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0.25, error: null, lanes: [cursor('w1:p1')], tasks: [task('t1', ['w1:p1'])], ...over,
+    tab: 'w1:t1', at: 100, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0.25, error: null, lanes: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], ops: adds('t1'), ...over,
 });
 
 test('a tab nobody wrote anything for has no recap', () => {
     assert.equal(memoryStore().records.readRecap('w1:t1'), null);
 });
 
-test('a recorded run reads back as the recap: sections, the Markdown drawn from them, lanes, time, writer, cost', () => {
+test('a recorded run reads back as the recap: sections from the open facts, the Markdown drawn from them, lanes, time, writer, cost', () => {
     const { records } = memoryStore();
     records.recordRun(run());
     const recap = must(records.readRecap('w1:t1'));
@@ -28,10 +30,10 @@ test('a recorded run reads back as the recap: sections, the Markdown drawn from 
     assert.deepEqual(recap.tasks.at(0)?.lanes, ['w1:p1']);
 });
 
-test('the recap is the LAST run that wrote one; cost adds up over every run; Spanish headings follow the run\'s language', () => {
+test('the recap is the LAST run that wrote one, over the facts of all of them; cost adds up; Spanish headings follow the run\'s language', () => {
     const { records } = memoryStore();
     records.recordRun(run());
-    records.recordRun(run({ at: 200, language: 'es', costUsd: 0.5, tasks: [task('t1', ['w1:p1'])] }));
+    records.recordRun(run({ at: 200, language: 'es', costUsd: 0.5, ops: [] }));
     const recap = must(records.readRecap('w1:t1'));
     assert.equal(recap.at, 200);
     assert.equal(recap.language, 'es');
@@ -69,30 +71,31 @@ test('cursors only (no run yet) is already a recap with no tasks; a lane that le
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM transcript').get() as { n: number }).n, 2);
 });
 
-test('lanes and tasks keep their order; a task that names a closed lane keeps naming it; a task with no sections keeps its Markdown', () => {
+test('lanes and tasks keep their order; a task that names a closed lane keeps naming it; each task has its own facts', () => {
     const { records } = memoryStore();
-    const legacy: RecapTask = { id: 't2', name: 'Docs', lanes: ['w1:p3'], sections: null, markdown: '## Goal\n- old' };
-    records.recordRun(run({ lanes: [cursor('w1:p2'), cursor('w1:p1')], tasks: [legacy, task('t1', ['w1:p2', 'w1:p1', 'w1:gone'], 'Payments')] }));
+    records.recordRun(run({
+        lanes: [cursor('w1:p2'), cursor('w1:p1')], tasks: [shape('t2', ['w1:p3'], 'Docs'), shape('t1', ['w1:p2', 'w1:p1', 'w1:gone'], 'Payments')],
+        ops: [...adds('t1'), ...adds('t2', { ...NO_SECTIONS, goal: 'document it' })],
+    }));
     const recap = must(records.readRecap('w1:t1'));
     assert.deepEqual(recap.lanes.map((lane) => lane.pane), ['w1:p2', 'w1:p1']);
-    assert.deepEqual(recap.tasks.map((each) => [each.id, each.name, each.lanes]), [['t2', 'Docs', ['w1:p3']], ['t1', 'Payments', ['w1:p2', 'w1:p1', 'w1:gone']]]);
-    assert.deepEqual(recap.tasks[0], legacy);
+    assert.deepEqual(recap.tasks.map((each) => [each.id, each.name, each.lanes, each.sections?.goal]), [['t2', 'Docs', ['w1:p3'], 'document it'], ['t1', 'Payments', ['w1:p2', 'w1:p1', 'w1:gone'], 'ship']]);
 });
 
-test('an empty recap (every section empty) is still a task; a second tab is a separate recap', () => {
+test('an empty recap (no facts) is still a task; a second tab is a separate recap', () => {
     const { records } = memoryStore();
-    records.recordRun(run({ tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: NO_SECTIONS, markdown: '' }] }));
+    records.recordRun(run({ ops: [] }));
     records.recordRun(run({ tab: 'w1:t2', at: 50 }));
     assert.deepEqual(records.readRecap('w1:t1')?.tasks.at(0)?.sections, NO_SECTIONS);
     assert.equal(records.readRecap('w1:t2')?.at, 50);
     assert.deepEqual(blankRecap('x').tasks, []);
 });
 
-test('a run is all or nothing: a run the schema refuses (a 7th "done" bullet) leaves no trace', () => {
+test('a run is all or nothing: a run whose fact the schema refuses (an empty text) leaves no trace', () => {
     const { records, db } = memoryStore();
-    const tooMany = { ...sections, done: ['1', '2', '3', '4', '5', '6'] };
-    assert.throws(() => { records.recordRun(run({ tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: tooMany, markdown: '' }] })); }, /CHECK constraint failed/);
-    for (const table of ['run', 'task', 'transcript', 'item', 'run_task']) {
+    const refused = [{ task: 't1', ops: [{ op: 'add' as const, section: 'done' as const, text: 'fine', why: null, ref: null, at: null, agent: null }, { op: 'add' as const, section: 'done' as const, text: '', why: null, ref: null, at: null, agent: null }] }];
+    assert.throws(() => { records.recordRun(run({ ops: refused })); }, /CHECK constraint failed/);
+    for (const table of ['run', 'task', 'transcript', 'fact', 'run_task']) {
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
     }
     assert.equal(db.isTransaction, false);
@@ -105,40 +108,9 @@ test('a connection that cannot answer (closed, locked, damaged) reads as no reca
     assert.equal(records.readRecap('w1:t1'), null);
 });
 
-const withItems = (over: Partial<RecapSections>): RecapSections => ({ ...sections, ...over });
-
-test('history: every distinct line of the agent\'s tasks across runs and chapters, with first, last and how often; other tasks and other panes stay out', () => {
-    const { records } = memoryStore();
-    records.recordRun(run({ at: 100, lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [
-        { ...task('t1', ['w1:p1']), sections: withItems({ decisions: ['Use SQLite'], done: ['a'] }) },
-        { ...task('t2', ['w1:p2']), sections: withItems({ decisions: ['Other pane decision'] }) },
-    ] }));
-    records.recordRun(run({ at: 200, lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [
-        { ...task('t1', ['w1:p1']), sections: withItems({ decisions: ['Use SQLite', 'Split send'], done: ['b'] }) },
-        { ...task('t2', ['w1:p2']), sections: NO_SECTIONS },
-    ] }));
-    const items = records.readHistory('w1:t1', 'w1:p1');
-    const sqlite = items.find((item) => item.text === 'Use SQLite');
-    assert.deepEqual(sqlite, { section: 'decisions', text: 'Use SQLite', firstAt: 100, lastAt: 200, seen: 2 });
-    assert.deepEqual(items.filter((item) => item.section === 'goal').map((item) => [item.text, item.seen]), [['ship', 2]], 'a goal repeated in every run is one line');
-    assert.ok(items.some((item) => item.text === 'a') && items.some((item) => item.text === 'b'), 'a finished item that left the latest recap is still there');
-    assert.ok(!items.some((item) => item.text === 'Other pane decision'), 'the task of another pane is not this agent\'s');
-    assert.deepEqual(items.map((item) => item.lastAt), items.map((item) => item.lastAt).toSorted((a, b) => b - a), 'newest first');
-    assert.deepEqual(records.readHistory('w1:t1', 'w1:p9'), [], 'a pane in no task has no history');
-    assert.deepEqual(records.readHistory('w1:t9', 'w1:p1'), []);
-});
-
-test('history: at most 300 lines; finished items and references are cut first, decisions and open questions last', () => {
-    const { records } = memoryStore();
-    for (let at = 1; at <= 60; at += 1) {
-        records.recordRun(run({ at, tasks: [{ ...task('t1', ['w1:p1']), sections: { ...NO_SECTIONS, decisions: [`d${at}`], needs: [`q${at}`], done: [`x${at}a`, `x${at}b`], links: [`l${at}a`, `l${at}b`], next: [`n${at}`] } }] }));
-    }
-    const items = records.readHistory('w1:t1', 'w1:p1');
-    const count = (...names: string[]): number => items.filter((item) => names.includes(item.section)).length;
-    assert.equal(items.length, 300);
-    assert.equal(count('decisions'), 60, 'every decision survives');
-    assert.equal(count('needs'), 60, 'every open question survives');
-    assert.equal(count('next'), 60);
-    assert.equal(count('done', 'links'), 120, 'finished items and references took the whole cut (240 → 120)');
-    assert.ok(!items.some((item) => item.text === 'x1a'), 'the oldest finished item went');
+test('the item rows are no longer written: a run adds facts and no items', () => {
+    const { records, db } = memoryStore();
+    records.recordRun(run());
+    assert.equal((db.prepare('SELECT COUNT(*) AS n FROM item').get() as { n: number }).n, 0);
+    assert.equal((db.prepare('SELECT COUNT(*) AS n FROM fact').get() as { n: number }).n, 5);
 });

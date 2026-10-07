@@ -11,6 +11,8 @@ note: >-
 files:
   - "**/src/recap/domain/**"
   - "**/probes/recap-domain-pure/**"
+ignores:
+  - "**/src/recap/domain/gates/**"
 rule:
   kind: string_fragment
   inside:

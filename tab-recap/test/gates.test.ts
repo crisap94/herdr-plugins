@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { duplicate } from '#src/recap/domain/gates/duplicate.ts';
-import type { Context, Gate, GatedSection, Item } from '#src/recap/domain/gates/gate.ts';
+import type { Context, Gate, GatedSection, Item } from '#src/recap/domain/gates/item-gate.ts';
 import { wrongLanguage } from '#src/recap/domain/gates/language.ts';
 import { unresolved } from '#src/recap/domain/gates/link.ts';
 import { narrator } from '#src/recap/domain/gates/narrator.ts';

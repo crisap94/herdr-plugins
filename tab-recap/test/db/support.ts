@@ -7,6 +7,7 @@ import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
+import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 
 export function memoryStore(options: StoreOptions = {}): Store {
@@ -20,14 +21,14 @@ export function memoryStore(options: StoreOptions = {}): Store {
 export const scratchDir = (name: string): string => mkdtempSync(join(tmpdir(), `recap-${name}-`));
 
 /**
- * Put `recap` in the store the way the old files held it: one imported run (when it has a time, an error or a cost), the lanes' cursors,
+ * Put `recap` in the store the way the old files held it: one imported run, each task's sections as the facts it added, (when it has a time, an error or a cost), the lanes' cursors,
  * the writer's flag and error line. For tests that start from "a recap already exists".
  */
 export function seed(store: Store, recap: TabRecap): void {
     const at = recap.at ?? 1;
     const facts = { tab: recap.tab, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
     if (recap.at !== null) {
-        store.records.recordRun({ ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks });
+        store.records.recordRun({ ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
     } else if (recap.lanes.length > 0) {
         store.records.advance({ tab: recap.tab, at, error: recap.error, lanes: recap.lanes });
     }

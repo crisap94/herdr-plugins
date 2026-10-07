@@ -1,6 +1,6 @@
 // G2 duplicate: token Jaccard ≥ THRESHOLD with an item of the same task kept before it in the same answer (I6). The later one is refused.
-import { said } from './gate.ts';
-import type { Gate } from './gate.ts';
+import { said } from './item-gate.ts';
+import type { Gate } from './item-gate.ts';
 import { jaccard, tokensOf } from './words.ts';
 
 /** The one constant a too-strict gate is tuned with. */

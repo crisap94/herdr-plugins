@@ -20,13 +20,13 @@ test('fitBytes: one overlong multibyte line loses its head, never a half charact
     assert.equal(fitBytes('x', 0), '');
 });
 
-test('an argv prompt is bounded: whole oldest turns are dropped, the instructions and the previous recap are not, and the markup stays whole', () => {
+test('an argv prompt is bounded: whole oldest turns are dropped, the instructions and the ledger are not, and the markup stays whole', () => {
     const entries = Array.from({ length: 200 }, (_, i): Entry => ({ role: 'agent', text: `turn ${i}: ${'日'.repeat(1500)}` }));
-    const request = requestOf({ entries, previous: 'PREV-RECAP' });
+    const request = requestOf({ entries, ledgers: [{ task: null, facts: [{ id: 'f1', section: 'goal', text: 'PREV-RECAP', state: 'open', first: 1, last: 1, why: null, ref: null, agent: null, closed: null }] }] });
     assert.ok(Buffer.byteLength(prompt(request)) > ARGV_BYTES, 'the full document would not fit');
     const text = argvPrompt(request);
     assert.ok(Buffer.byteLength(text) <= ARGV_BYTES);
-    assert.ok(text.includes('PREV-RECAP') && text.includes('exactly these keys') && text.includes('turn 199:'));
+    assert.ok(text.includes('PREV-RECAP') && text.includes('Operations on the ledger') && text.includes('turn 199:'));
     assert.ok(!text.includes('turn 0:'));
     const turns = text.match(/<turn /g)?.length ?? 0;
     assert.equal(turns, text.match(/<\/turn>/g)?.length, 'no turn is cut in half');

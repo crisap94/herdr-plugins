@@ -1,6 +1,6 @@
-<!-- recap_input: everything tab-recap gives the recap writer for one tab, one run. Version 1. -->
-<!ELEMENT recap_input (tab, current_tasks?, previous_recap, agent_note*, transcript+, correction?)>
-<!ATTLIST recap_input version CDATA #FIXED "1">
+<!-- recap_input: everything tab-recap gives the recap writer for one tab, one run. Version 2. -->
+<!ELEMENT recap_input (tab, current_tasks?, ledger+, agent_note*, transcript+, correction?)>
+<!ATTLIST recap_input version CDATA #FIXED "2">
 
 <!-- The tab and who works in it. now = UTC ISO 8601; zone = IANA name the HH:MM times below use. -->
 <!ELEMENT tab (agent+)>
@@ -31,12 +31,24 @@
   name   CDATA  #IMPLIED
   agents IDREFS #REQUIRED>
 
-<!-- The recap written last time, as the JSON the writer answered (one task) or {"tasks":[…]};
-     markdown for a recap from before the fixed sections; empty with format="none" on the first run. -->
-<!ELEMENT previous_recap (#PCDATA)>
-<!ATTLIST previous_recap
-  format   (json|markdown|none) #REQUIRED
-  language CDATA #IMPLIED>
+<!-- The facts of one task: its open facts, and the ones closed in the last two hours (state="closed", with closed), newest last.
+     The writer answers operations on these by id (f1, f2, … — an XML ID, unique in the document). With several tasks there is
+     one ledger per task (task = the id of a task in current_tasks); an empty ledger means the task has no facts yet.
+     first / last = when the fact was first and last seen (HH:MM in the tab's zone, or a date when older); why = the reason a
+     decision or a close carries; ref = a reference the text is about; agent = the agent whose work the fact is. -->
+<!ELEMENT ledger (fact*)>
+<!ATTLIST ledger task CDATA #IMPLIED>
+<!ELEMENT fact (#PCDATA)>
+<!ATTLIST fact
+  id      ID    #REQUIRED
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  state   (open|closed) "open"
+  first   CDATA #IMPLIED
+  last    CDATA #IMPLIED
+  why     CDATA #IMPLIED
+  ref     CDATA #IMPLIED
+  agent   IDREF #IMPLIED
+  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED>
 
 <!-- The agent's own words about its work: hints, never facts that beat the transcript. -->
 <!ELEMENT agent_note (#PCDATA)>
@@ -73,5 +85,5 @@
   kind (shell|edit|web|agent|other) #REQUIRED
   what CDATA #IMPLIED>
 
-<!-- Only on the retry: why the last answer was refused. -->
+<!-- Only on the retry: the operations that were refused, one per line, each with the reason. -->
 <!ELEMENT correction (#PCDATA)>

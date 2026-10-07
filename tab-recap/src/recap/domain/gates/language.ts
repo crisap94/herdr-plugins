@@ -1,6 +1,6 @@
 // G5 language: an item written in English where the recap is Spanish, or the other way round, is refused. Only en and es are told apart: another language is never refused.
-import { LISTED, said } from './gate.ts';
-import type { Gate } from './gate.ts';
+import { LISTED, said } from './item-gate.ts';
+import type { Gate } from './item-gate.ts';
 import { wordsOf } from './words.ts';
 
 const ENGLISH = new Set(['the', 'and', 'of', 'to', 'is', 'are', 'with', 'for', 'in', 'on', 'that', 'this', 'it', 'was', 'were', 'has', 'have', 'been', 'will', 'not', 'from', 'after', 'before', 'when', 'until', 'because', 'but', 'its']);

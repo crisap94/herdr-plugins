@@ -60,7 +60,8 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
     const deps: CompactionDeps = {
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
-        records: { readRecap: () => recap, readHistory: () => [{ section: 'decisions', text: 'Keep SQLite', firstAt: 1, lastAt: 2, seen: 3 }] },
+        records: { readRecap: () => recap },
+        ledger: { historyOf: () => [{ section: 'decisions', text: 'Keep SQLite', why: 'one file', state: 'open', closedWhy: null, firstAt: 1, lastAt: 2 }] },
         compactions: store.compactions,
         settling: world.settling,
         brief: {

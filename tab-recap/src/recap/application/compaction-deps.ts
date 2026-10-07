@@ -4,6 +4,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Agents } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
+import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
@@ -13,7 +14,8 @@ import type { Records } from './compaction-trail.ts';
 export interface CompactionDeps {
     readonly agents: Agents;
     readonly notifier: Notifier;
-    readonly records: Pick<RecapRecords, 'readRecap' | 'readHistory'>;
+    readonly records: Pick<RecapRecords, 'readRecap'>;
+    readonly ledger: Pick<Ledger, 'historyOf'>;
     /** the compaction records: every stage of every compaction is written here, the column and the bar read it */
     readonly compactions: Records;
     /** herdr's push that a lane is free again (polling when the daemon is blind) */

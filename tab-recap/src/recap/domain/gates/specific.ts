@@ -1,6 +1,6 @@
 // G8 not specific (flag): the item names nothing concrete — no file, command, reference, number, version, error or person-role (I3).
-import { LISTED, said } from './gate.ts';
-import type { Gate } from './gate.ts';
+import { LISTED, said } from './item-gate.ts';
+import type { Gate } from './item-gate.ts';
 import { hasReference } from './link.ts';
 import { wordsOf } from './words.ts';
 

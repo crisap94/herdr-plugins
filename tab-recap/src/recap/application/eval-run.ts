@@ -102,6 +102,9 @@ export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<num
             deps.out(options.json ? JSON.stringify(report) : gateLines(report, deps.style).join('\n'));
             return 0;
         }
+        case 'replay':
+            deps.err('tab-recap: 2 — --replay is run by the command, not by this report');
+            return 2;
         default: {
             const exhaustive: never = options.mode;
             return Number(exhaustive);

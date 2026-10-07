@@ -178,13 +178,19 @@ for the agent's default. `opencode` wants `provider/model`. The writer runs at *
 default (`TAB_RECAP_EFFORT`: `low`, `medium`, `high`, or `default` to leave it to the agent), and
 Codex without the agent features a recap never needs.
 
-The writer receives one XML document per run — the tab's agents with their repository and branch,
-the previous recap, the agents' own summaries, and each new prompt, reply and tool call with its
-time — defined by [`tab-recap/schema/recap-input.dtd`](tab-recap/schema/recap-input.dtd).
+The writer receives one XML document per run (version 2) — the tab's agents with their repository and branch,
+the ledger of facts so far, the agents' own summaries, and each new prompt, reply and tool call with its
+time — defined by [`tab-recap/schema/recap-input.dtd`](tab-recap/schema/recap-input.dtd). It answers
+**operations** on the ledger (`add`, `update`, `close`), not a whole new recap; see
+[How the recap is kept](tab-recap/README.md#how-the-recap-is-kept).
 
 **Your own command:** set `TAB_RECAP_BACKEND=custom` and `TAB_RECAP_CUSTOM_CMD` to a command line
-(no shell) that reads the prompt (the document, then the instructions) on stdin and prints the JSON
-answer the instructions ask for on stdout.
+(no shell) that reads the prompt (the version 2 document, then the instructions) on stdin and prints the JSON
+object of operations the instructions ask for on stdout:
+`{"ops": [{"op": "add", "section": "done", "text": "…"}, {"op": "close", "id": "f3", "why": "done"}]}`.
+Ids (`f1`, `f2`, …) are the ones of the `<ledger>` in the document; `{"ops": []}` means nothing changed.
+**Breaking since 2.0:** a command that still answers the old recap JSON (`{"goal": …}`) is refused — the run fails
+with `custom writer must answer operations (see README)` in the log and nothing is stored.
 
 ### Languages
 

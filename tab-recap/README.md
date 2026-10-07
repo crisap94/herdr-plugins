@@ -32,8 +32,8 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
 - **One recap per piece of work, from all its panes.** Every agent in the tab gets a short header (title,
   status, extension notes, last prompt); below them, ONE recap covers the tab's work as a whole. A tab
   is not assumed to be one task: when its agents work on unrelated things (different repositories, say),
-  the writer groups them into **tasks** and each task gets its own recap under its own name — the grouping
-  stays put unless the writer gives evidence for changing it. The bar's headline takes the most urgent
+  the plugin groups them into **tasks** by where they work (the repository, else the folder) and each task gets
+  its own recap under its own name — the grouping stays put once made. The bar's headline takes the most urgent
   "needs you" of any task.
 - **Every agent can get a column.** `claude`, `codex` and `opencode` are read from their own history
   (opencode's SQLite database is opened read-only). Any other agent herdr recognises can be read from its
@@ -42,7 +42,7 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   a screen never types into the pane.
 - **Written at the end of each turn** by any harness — `claude`, `codex`, `opencode`, `hermes` (the
   first one found, or the one you pick), or your own command —
-  from the previous recap plus only the new part of every agent's transcript. Also on tab focus when
+  as operations on the ledger of facts plus only the new part of every agent's transcript (see [How the recap is kept](#how-the-recap-is-kept)). Also on tab focus when
   stale, and on `r` in the column or the modal. `hermes` runs in safe mode with only its `clarify` tool
   (it cannot run with zero tools; `clarify` cannot touch files, a shell or the network).
 - **Clickable references.** Every merge request (`!252`), pull request or issue (`#12`), commit, branch
@@ -53,16 +53,60 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   in different repositories, only full URLs are linked.
 - **What the writer sees.** One XML document per run, defined by
   [`schema/recap-input.dtd`](schema/recap-input.dtd) and validated in tests: the tab's agents (folder,
-  repository, branch, recently edited files), the previous recap, the agents' own away and compaction
+  repository, branch, recently edited files), the ledger of facts so far, the agents' own away and compaction
   summaries as hints, and per agent the new prompts (including ones typed while it was busy), replies
   (beginning and end) and tool calls (Codex's decoded; plain reads only counted), each with its time.
-  The writer runs at `TAB_RECAP_EFFORT` (`low` by default) and drops any earlier item the transcript
+  The writer runs at `TAB_RECAP_EFFORT` (`low` by default) and closes any earlier fact the transcript
   contradicts.
 - **Extensible.** An optional extension can add notes under a lane's header and do housekeeping
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
 - **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is [compaction](#compaction), and only when you ask for it.
+
+## How the recap is kept
+
+Since 2.0 a recap is not rewritten on every turn: it is a **ledger of facts** per task. A fact has an id, a
+section (goal, now, needs, done, decisions, next, links, rules), a text of at most 16 words, a why (always for a
+decision), an optional reference and agent, when it was first and last seen, and a state: *open*, or *closed* with
+the reason — `done`, `wrong`, `superseded`, `answered` (the writer), `merged` or `rewritten` (the upkeep and the import).
+Facts are never deleted.
+
+The writer is shown the task's open facts (and those closed in the last two hours) as `<ledger>` in the version 2
+document, with ids `f1…fn`, plus only what is new in each transcript, and answers **operations** only:
+
+```json
+{"ops": [
+  {"op": "add", "section": "done", "text": "Opened !34 for feat/cart", "why": null, "ref": "!34", "at": "16:41", "agent": "a1"},
+  {"op": "update", "id": "f12", "text": "Merge !34 after the pipeline", "why": null},
+  {"op": "close", "id": "f3", "why": "done"}
+]}
+```
+
+Closes are applied first, then updates, then adds, in one transaction with the run. An operation naming an unknown id,
+changing a closed fact, closing without a reason, adding a second goal, or adding what the ledger already says is
+**refused**, sent back to the writer once with the reason, and dropped if it is still refused. `goal` is one open fact
+per task: adding one closes the previous as `superseded`.
+
+The column, the bar and the modal draw, per task and section, the **newest open facts** under the same caps as always
+(now 3, needs 3, done 5, decisions 3, next 5, links 6, rules 5, one goal). The caps only decide what is *shown*: the
+database keeps every fact, and the compaction brief is written from all of them, closed ones with their reasons.
+
+**Upgrading from 1.x:** the first start of 2.0 copies the database to `tab-recap.db.v5.bak`, then turns the stored
+recaps into facts — equal lines of a task across runs become one fact with its first and last time, the last good run's
+lines are open, the rest are closed as `rewritten`, a decision that never said why carries "(not recorded)". Every
+column shows exactly what it showed before. The old `item` rows are kept, no longer written.
+
+**Breaking, for a custom writer:** `TAB_RECAP_CUSTOM_CMD` now receives the version 2 document and must print the
+`{"ops": [...]}` object above (one task: no `task` field; several: an `add` may carry `"task": "t2"`). A command that still
+prints the old recap JSON makes the run fail with `custom writer must answer operations (see README)` in the log, and
+nothing is stored: the old shape has no ids to operate on.
+
+**Measure it:** `node bin/tab-recap.ts eval --replay <transcript.jsonl> [--kind claude|codex] [--tab <label>]
+[--compare-imported <tab>]` reads a stored transcript from the start, runs the writer once per turn against a scratch
+database in a temporary directory (the real one is never written), judges the facts it leaves with the judge job (the same
+report as `eval --sample`, below), and prints the ledger it ends with; `--compare-imported` prints the judge's report over
+what the migration imported for a tab beside it, read-only. With the judge job off it prints the checks that need no model.
 
 ## Compaction
 
@@ -167,8 +211,9 @@ runs stay).
 | `tab-recap eval --label <n>` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work |
 | `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, beside the 85 % target |
 | `tab-recap eval --gates [--since <days>]` | the gates' counts per gate, with no model call |
+| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
 
-`--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`. A judge on the same model as
+`--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`; `--replay` excludes all of them. A judge on the same model as
 the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job
 can run on another harness.
 
@@ -274,7 +319,8 @@ directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; r
 back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
 
 Schema versions so far: **1** (1.6.0, the import), **2** (1.7.0, each lane's web address for links),
-**3** (1.8.0, standing rules, compaction requests and context use), **5** (2.0.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`).
+**3** (1.8.0, standing rules, compaction requests and context use), **4** (2.0.0, compaction records), **5** (2.0.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`),
+**6** (2.0.0, the ledger of facts).
 An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
 written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
 stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.

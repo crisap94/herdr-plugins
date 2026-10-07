@@ -10,7 +10,7 @@ test('`eval` with no option judges the newest 20 runs that have a stored input, 
     const { store, deps, out } = rig();
     seed(store, 3, { input: false, first: 0 });
     seed(store, 25);
-    assert.deepEqual(optionsOf(), { mode: 'sample', count: DEFAULT_SAMPLE, tab: null, since: null, json: false });
+    assert.deepEqual(optionsOf(), { mode: 'sample', count: DEFAULT_SAMPLE, tab: null, since: null, json: false, replay: null, kind: null, compareImported: null });
     assert.equal(await runEval(optionsOf(), deps), 0);
     const report = out.join('\n');
     assert.match(report, /judge claude · sonnet · medium — 20 runs sampled, 20 judged/);

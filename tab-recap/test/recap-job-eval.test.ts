@@ -19,11 +19,11 @@ const transcripts: Transcripts = {
 };
 
 async function recapWith(keepInput: (() => boolean) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {
-    const answer = JSON.stringify({ goal: 'Migrate the metrics store', done: ['claude completed the migration.', 'Metrics are copied to `victoria`.'] });
+    const answer = JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'Migrate the metrics store' }, { op: 'add', section: 'done', text: 'claude completed the migration.' }, { op: 'add', section: 'done', text: 'Metrics are copied to `victoria`.' }] });
     const summarizer: Summarizer = { backend: 'fake', write: (_request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: answer, costUsd: 0 }) };
     const store = memoryStore();
     const job = new RecapJob({
-        repos: NO_REPOS, transcripts: [transcripts], records: store.records, clock: { now: (): ReturnType<typeof instant> => instant(5) },
+        repos: NO_REPOS, transcripts: [transcripts], records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) },
         summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
@@ -31,7 +31,7 @@ async function recapWith(keepInput: (() => boolean) | undefined): Promise<Return
     const runs = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false });
     const [run] = runs;
     if (run !== undefined && run.hasInput) {
-        assert.match(store.inputs.document(run.id) ?? '', /^<recap_input version="1">[\s\S]*migrate victoria[\s\S]*<\/recap_input>$/, 'the document as the writer saw it, without a correction');
+        assert.match(store.inputs.document(run.id) ?? '', /^<recap_input version="2">[\s\S]*migrate victoria[\s\S]*<\/recap_input>$/, 'the document as the writer saw it, without a correction');
         assert.doesNotMatch(store.inputs.document(run.id) ?? '', /<correction>/);
     }
     return runs;
