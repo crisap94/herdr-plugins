@@ -3,10 +3,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';
 import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '#src/recap/application/ask-back.ts';
+import { JUDGE_INSTRUCTIONS, READBACK_QUESTIONS } from '#src/adapters/judge-instructions.ts';
 import { READBACK } from '#src/recap/domain/questions.ts';
 
 const candidate = (section: InputCandidate['section'], text: string, ref: string | null = null): InputCandidate => ({ section, text, why: null, ref, at: null, anchor: 'a', agent: 'a1', flagged: false });
-const fact = (id: string, text: string, over: Partial<InputFact> = {}): InputFact => ({ id, section: 'now', text, state: 'open', first: 1, last: 2, why: null, ref: null, agent: null, closed: null, ...over });
+const fact = (id: string, text: string, over: Partial<InputFact> = {}): InputFact => ({ id, section: 'now', text, state: 'open', first: 1, last: 2, why: null, ref: null, anchor: null, agent: null, closed: null, ...over });
 const found = (over: Partial<Parameters<typeof askBackFor>[0]> = {}): Parameters<typeof askBackFor>[0] => ({ chunks: 1, chars: 4_000, candidates: [], open: [], said: '', ...over });
 
 test('a second look is due when the run took more than one chunk, or read at least one rate-unit and gave fewer than one candidate per 2 000 characters', () => {
@@ -44,4 +45,15 @@ test('what changed about an open fact is asked for the facts the turns mention (
     assert.deepEqual(about, ['What changed about the open fact "Migration test fails on the staging database"?', 'What changed about the open fact "Review the release notes draft"?'], 'f3 is not mentioned, f4 has a candidate, f5 is closed');
     const many = askBackFor(found({ chunks: 2, said: 'alpha bravo charlie', open: Array.from({ length: 9 }, (_, at) => fact(`f${at}`, 'alpha bravo charlie')) }));
     assert.equal(many.filter((each) => each.text.startsWith('What changed')).length, MAX_FACT_QUESTIONS);
+});
+
+test('the six questions are one list: the judge asks the read-back, and grades it, with the very questions the ask-back puts to the enumeration', () => {
+    assert.deepEqual(READBACK_QUESTIONS, READBACK.map((each) => each.text));
+    assert.equal(READBACK.length, 6);
+    for (const task of ['readback', 'grade'] as const) {
+        const told = JUDGE_INSTRUCTIONS[task];
+        READBACK.forEach((each, at) => { assert.ok(told.includes(`${at + 1}. ${each.text}`), `${task}: ${each.text}`); });
+    }
+    const asked = askBackFor(found({ chunks: 2 })).map((each) => each.text);
+    assert.deepEqual(asked, READBACK.map((each) => each.text), 'with no candidate, all six are asked, in the judge\'s order');
 });

@@ -1,17 +1,12 @@
 // Whether a quote is in a text: compared by words (`Intl.Segmenter`), so whitespace and punctuation do not matter and case does.
-const WORDS = new Intl.Segmenter(undefined, { granularity: 'word' });
+import { ANCHOR_CHARS, quotedIn as inFolded } from './gates/g11-anchor.ts';
+import { foldedOf } from './gates/words.ts';
 
-/** The words of `text`, in order, as one space-separated line. */
-export const wordsOf = (text: string): string => [...WORDS.segment(text)].filter((part) => part.isWordLike === true).map((part) => part.segment).join(' ');
+/** The longest a quote (an anchor) may be: the gate's. */
+export const QUOTE_CHARS = ANCHOR_CHARS;
 
-/** The longest a quote (an anchor) may be. */
-export const QUOTE_CHARS = 120;
-
-/** `quote` is found in `text` after folding both to their words; a quote with no word is in nothing. */
-export function quotedIn(quote: string, text: string): boolean {
-    const needle = wordsOf(quote);
-    return needle !== '' && ` ${wordsOf(text)} `.includes(` ${needle} `);
-}
+/** `quote` is found in `text` as whole words in a row, as gate G11 finds an anchor in the input; a quote with no word is in nothing. */
+export const quotedIn = (quote: string, text: string): boolean => inFolded(quote, foldedOf(text));
 
 /** At most QUOTE_CHARS characters of `text` around `at`, cut at word edges, as a verbatim piece of it (never rewritten). */
 export function pieceOf(text: string, at = 0): string {

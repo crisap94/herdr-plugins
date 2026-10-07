@@ -334,7 +334,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |
 | `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job behind `tab-recap eval` |
 | `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job that tidies the ledger when the expanded view opens |
-| `TAB_RECAP_PIPELINE` | `full` | how a run reads its new turns: `one` (a single call), `enumerate`, `enumerate+gates`, or `full` (list the facts of every chunk with a quote, take one second look when the turn was long or the list short, then reconcile with the ledger) |
+| `TAB_RECAP_PIPELINE` | `one` | how a run reads its new turns: `one` (a single call), `enumerate`, `enumerate+gates`, or `full` (list the facts of every chunk with a quote, take one second look when the turn was long or the list short, then reconcile with the ledger) |
 | `TAB_RECAP_RECONCILE_EVERY` | `8` | turns between two reconciliations of the open facts by the curator |
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daily upkeep removes it (`0` = keep everything) |

@@ -34,7 +34,7 @@ export interface Config {
     readonly customCommand: string;
     /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`medium` unless set) */
     readonly effort: Effort;
-    /** `TAB_RECAP_PIPELINE`: the steps a run's new turns go through (`full` unless set) */
+    /** `TAB_RECAP_PIPELINE`: the steps a run's new turns go through (`one` unless set) */
     readonly pipeline: Pipeline;
     /** `TAB_RECAP_RECONCILE_EVERY`: the turns between two reconciliations of a tab's ledger by the curator (8 unless set) */
     readonly reconcileEvery: number;

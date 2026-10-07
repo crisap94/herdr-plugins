@@ -188,7 +188,7 @@ pipeline, the writer job and the judge job, so two reports can be compared. With
 need no model.
 
 **How a turn is read.** The new turns of a run are not summarised in one call. They go through a *pipeline*
-(`TAB_RECAP_PIPELINE`, default `full`):
+(`TAB_RECAP_PIPELINE`, default `one`):
 
 1. **Enumerate.** A long turn is cut into chunks of at most 6 000 characters (between turns; inside a turn, between bursts of
    tool calls) and each chunk is read by one call at *low* effort that goes through every section and lists the facts it
@@ -203,7 +203,9 @@ need no model.
    newest turns for context, and answers the usual operations; a new fact is added only from a candidate, copying its anchor.
    The gates and the one correction retry work as before.
 
-`TAB_RECAP_PIPELINE` takes `one` (the single call of 2.0), `enumerate`, `enumerate+gates` or `full`; `tab-recap eval --replay
+`TAB_RECAP_PIPELINE` takes `one` (the single call of 2.0 with the 2.1 gates, the default), `enumerate`, `enumerate+gates` or `full`; on
+the 40-prompt replay of `experiments/EXP-001` the piped ones did not raise coverage or the read-back beyond `one` and cost 2.4–2.8× the
+model calls, so they are off unless set; `tab-recap eval --replay
 <file> --pipeline <name>` runs the same transcript through any of them, and its report names the pipeline, the writer, the
 enumeration and the cost per turn, so two reports can be compared. A writer that is a custom command (`TAB_RECAP_CUSTOM_CMD`)
 always takes the single call. When the enumeration fails the run takes the single call, so a turn is never lost.
@@ -446,7 +448,7 @@ herdr plugin log list --plugin tab-recap | tail -30
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
 
-Keys new in 2.1: `TAB_RECAP_PIPELINE` (`full`, `enumerate+gates`, `enumerate` or `one`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
+Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
 
 Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
 

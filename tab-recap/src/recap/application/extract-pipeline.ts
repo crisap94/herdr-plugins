@@ -2,6 +2,7 @@
 // (enumerate), optionally take one second look (ask-back), then reconcile the candidates with the ledger in the writer's call.
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import { gatesOf, retriesTargeted } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { askBackFor } from './ask-back.ts';
 import { deduplicated, enumerate, enumerateAsked } from './enumerate.ts';
@@ -10,7 +11,7 @@ import { extract } from './extract-job.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { reconcileRequest } from './reconcile.ts';
 
-/** The steps of each pipeline. The gates are the ledger gates in `Ground`, the same in all of them: choosing a gate set per pipeline is the caller's. */
+/** The steps of each pipeline; the gates it judges with and how it retries are `gatesOf` and `retriesTargeted` (domain/pipeline.ts). */
 const STEPS: Readonly<Record<Pipeline, { readonly enumerate: boolean; readonly askBack: boolean }>> = {
     one: { enumerate: false, askBack: false },
     enumerate: { enumerate: true, askBack: false },
@@ -28,7 +29,8 @@ export interface PipelineParts {
 const costing = (done: Extracted, extra: number): Extracted => ({ ...done, cost: done.cost + extra });
 
 /** The run's operations, by the pipeline: what it cost includes every call it made. */
-export async function extractPiped(summarizer: Summarizer, request: RecapRequest, ground: Ground, parts: PipelineParts): Promise<Extracted> {
+export async function extractPiped(summarizer: Summarizer, request: RecapRequest, judging: Ground, parts: PipelineParts): Promise<Extracted> {
+    const ground: Ground = parts.pipeline === 'one' ? judging : { ...judging, gates: gatesOf(parts.pipeline), targeted: retriesTargeted(parts.pipeline) };
     const lanes = request.input.transcripts.filter((lane) => lane.entries.length > 0);
     const { enumerator } = parts;
     if (!STEPS[parts.pipeline].enumerate || enumerator === null || lanes.length === 0) {

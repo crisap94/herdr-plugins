@@ -24,15 +24,15 @@ function withConfig(lines: string, body: () => void): void {
     }
 }
 
-test('TAB_RECAP_PIPELINE names the steps of a run (full unless set; nonsense is the default); TAB_RECAP_RECONCILE_EVERY the turns between two reconciliations (8; a whole number of 1 or more)', () => {
+test('TAB_RECAP_PIPELINE names the steps of a run (one unless set; nonsense is the default); TAB_RECAP_RECONCILE_EVERY the turns between two reconciliations (8; a whole number of 1 or more)', () => {
     withConfig('', () => {
-        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['full', 8]);
+        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['one', 8]);
     });
     withConfig('TAB_RECAP_PIPELINE=Enumerate+Gates\nTAB_RECAP_RECONCILE_EVERY=3\n', () => {
         assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['enumerate+gates', 3]);
     });
     withConfig('TAB_RECAP_PIPELINE=fast\nTAB_RECAP_RECONCILE_EVERY=0\n', () => {
-        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['full', 8]);
+        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['one', 8]);
     });
     withConfig('TAB_RECAP_RECONCILE_EVERY=2.7\n', () => {
         assert.equal(loadConfig().reconcileEvery, 2);

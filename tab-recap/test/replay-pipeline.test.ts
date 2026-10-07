@@ -26,7 +26,8 @@ function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
         write: (request): Promise<Written> => {
             seen.push(request);
             const picked = request.input.candidates?.[0];
-            const op = picked === undefined ? { op: 'add', section: 'done', text: ['Wrote the cart schema', 'Opened the checkout flow', 'Tested guests baskets', 'Shipped the invoice export', 'Reviewed pricing rules', 'Merged the tax fix'][seen.length - 1] ?? 'More work' } : { op: 'add', section: picked.section, text: picked.text };
+            const first = request.input.transcripts[0]?.entries[0]?.text.split(/\s+/).slice(0, 5).join(' ') ?? '';
+            const op = picked === undefined ? { op: 'add', anchor: first, section: 'done', text: ['Wrote the cart schema', 'Opened the checkout flow', 'Tested guests baskets', 'Shipped the invoice export', 'Reviewed pricing rules', 'Merged the tax fix'][seen.length - 1] ?? 'More work' } : { op: 'add', anchor: picked.anchor, section: picked.section, text: picked.text };
             return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [op] }), costUsd: 0.25 });
         },
     };
@@ -53,7 +54,7 @@ async function run(pipeline: Pipeline | undefined): Promise<Ran> {
 }
 
 test('--pipeline is parsed, checked, and goes with --replay only', () => {
-    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full' } });
+    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', check: null } });
     for (const name of ['one', 'enumerate', 'enumerate+gates', 'full']) {
         const parsed = parseEval(['--replay', 'x.jsonl', '--pipeline', name]);
         assert.ok(parsed.kind === 'options' && parsed.options.pipeline === name, name);
@@ -63,7 +64,7 @@ test('--pipeline is parsed, checked, and goes with --replay only', () => {
     const alone = parseEval(['--pipeline', 'one']);
     assert.ok(alone.kind === 'usage' && /go with --replay/.test(alone.why));
     const without = parseEval(['--replay', 'x.jsonl']);
-    assert.ok(without.kind === 'options' && !('pipeline' in without.options));
+    assert.ok(without.kind === 'options' && without.options.pipeline === null);
 });
 
 test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, the writer reconciles the candidates, the cost is summed', async () => {
@@ -78,7 +79,7 @@ test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, 
 test('replay with --pipeline one, or none named: the single call, the enumeration is never asked', async () => {
     for (const pipeline of ['one', undefined] as const) {
         const { done, seen, documents } = await run(pipeline);
-        assert.equal(documents.length, pipeline === undefined ? 6 : 0, pipeline ?? 'the job\'s default is full');
+        assert.equal(documents.length, 0, pipeline ?? 'the job\'s default is one: nothing is enumerated');
         assert.equal(seen.length, 6);
         assert.ok(done.costUsd > 0);
     }

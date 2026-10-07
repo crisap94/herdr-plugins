@@ -7,6 +7,9 @@ import { extractPiped } from '#src/recap/application/extract-pipeline.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { numbered } from '#src/recap/application/ledger-input.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
+import { writerContext } from '#src/recap/application/writer-context.ts';
+import { foldedOf } from '#src/recap/domain/gates/words.ts';
+import { gatesOf, PIPELINES, retriesTargeted } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { answer, scripted } from '#test/fakes/enumerator.ts';
 import type { Reply } from '#test/fakes/enumerator.ts';
@@ -18,9 +21,9 @@ const NOW = START + 3_600_000;
 const open = factOf('next', 'Review the migration test');
 const numbering = numbered([{ key: 't1', open: [open], closed: [] }], [], false);
 const ground: Ground = {
-    gates: LEDGER_GATES, now: NOW,
+    gates: LEDGER_GATES, now: NOW, facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((each) => [each.id, each] as const))),
     resolving: { tasks: ['t1'], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: NOW, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get('t1') ?? new Map(), closedLately: [], language: 'en', agents: [] }],
+    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get('t1') ?? new Map(), closedLately: [], source: foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"'), language: 'en', agents: [] }],
 };
 const SMALL: readonly Entry[] = [
     { role: 'user', text: 'Add retries to the uploader', at: START },
@@ -28,7 +31,7 @@ const SMALL: readonly Entry[] = [
     { role: 'tool', kind: 'shell', text: 'git commit -m "uploader: retry"', at: START + 120_000 },
 ];
 const request = (entries: readonly Entry[]): RecapRequest => requestOf({ entries, ledgers: [{ task: null, facts: numbering.ledgers[0]?.facts ?? [] }] });
-const OPS = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added retry with backoff' }] });
+const OPS = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added retry with backoff', anchor: 'Added a retry with backoff in src/upload.ts' }] });
 
 function writer(): { summarizer: Summarizer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
@@ -105,13 +108,51 @@ test('enumerate on the same long turn takes no ask-back; full on a short, rich t
     assert.equal(rich.documents.length, 1, 'six candidates for a short turn: nothing left to ask');
 });
 
-test('the writer\'s correction retry carries the candidates too: the writer reconciles the same material', async () => {
+test('the writer\'s targeted retry is the short document: no transcript and no candidates, only the refused operation; the cost is the sum', async () => {
     const calls: RecapRequest[] = [];
     const bad = JSON.stringify({ ops: [{ op: 'close', id: 'f99', why: 'done' }] });
     const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
     const { enumerator } = scripted([talk]);
-    const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'enumerate', enumerator, log: () => undefined });
+    const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'enumerate+gates', enumerator, log: () => undefined });
     assert.equal(calls.length, 2);
-    assert.ok(calls[1]?.correction !== undefined && calls[1].input.candidates?.length === 2);
+    assert.equal(calls[0]?.input.candidates?.length, 2, 'the first call reconciles the candidates');
+    const retry = calls[1];
+    assert.ok(retry?.retry !== undefined && !writerContext(retry).includes('<candidates') && !writerContext(retry).includes('<transcript'));
     assert.equal(cost(done), 1.01);
+});
+
+const ids = (pipeline: Pipeline): readonly string[] => gatesOf(pipeline).map((gate) => gate.id);
+
+test('the gate set and the retry of each pipeline: one, enumerate+gates and full judge with every 2.1 gate and retry only what was refused; enumerate keeps the 2.0 set and the whole-document retry', () => {
+    const every = LEDGER_GATES.map((gate) => gate.id);
+    assert.ok(every.includes('G11') && every.includes('G12'));
+    assert.deepEqual(Object.fromEntries(PIPELINES.map((pipeline) => [pipeline, ids(pipeline)])), {
+        one: every, enumerate: every.filter((id) => id !== 'G11' && id !== 'G12'), 'enumerate+gates': every, full: every,
+    });
+    assert.deepEqual(PIPELINES.map(retriesTargeted), [true, false, true, true]);
+});
+
+test('enumerate adds a fact with no anchor (the 2.0 gates); enumerate+gates refuses it and sends back only that operation', async () => {
+    const noAnchor = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added retry with backoff' }] });
+    for (const pipeline of ['enumerate', 'enumerate+gates'] as const) {
+        const calls: RecapRequest[] = [];
+        const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? noAnchor : OPS, costUsd: 0.5 }); } };
+        const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline, enumerator: scripted([talk]).enumerator, log: () => undefined });
+        assert.ok(done.kind === 'ops' && done.tasks[0]?.ops.length === 1, pipeline);
+        assert.equal(calls.length, pipeline === 'enumerate' ? 1 : 2, pipeline);
+        if (pipeline === 'enumerate+gates') {
+            assert.ok(calls[1]?.retry !== undefined && calls[1].correction === undefined);
+        }
+    }
+});
+
+test('enumerate retries with the whole document and a line per refusal, as 2.0 did', async () => {
+    const calls: RecapRequest[] = [];
+    const bad = JSON.stringify({ ops: [{ op: 'close', id: 'f99', why: 'done' }] });
+    const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
+    await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'enumerate', enumerator: scripted([talk]).enumerator, log: () => undefined });
+    assert.equal(calls.length, 2);
+    assert.match(calls[1]?.correction ?? '', /G6/);
+    assert.equal(calls[1]?.retry, undefined);
+    assert.ok(calls[1]?.input.candidates?.length === 2, 'the whole document, candidates included');
 });

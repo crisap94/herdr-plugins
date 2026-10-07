@@ -25,6 +25,8 @@ import type { EvalOptions } from '#src/recap/application/eval-options.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay } from '#src/recap/application/replay.ts';
 import type { Replayed } from '#src/recap/application/replay.ts';
+import type { Scratch } from '#src/adapters/db/scratch.ts';
+import type { Config } from '#src/daemon/config.ts';
 import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
@@ -58,7 +60,7 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
 }
 
 /** The writer and the enumeration the config asks for, each counting its calls (a harness that reports no cost still shows how much was asked). */
-function counted(config: ReturnType<typeof loadConfig>, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
+function counted(config: Config, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, available, join(dir, 'summarizer'));
     const writer: Summarizer = { backend: made.backend, write: (request) => { calls.writer += 1; return made.write(request); } };
@@ -67,23 +69,28 @@ function counted(config: ReturnType<typeof loadConfig>, available: readonly stri
     return { writer, enumerator, calls };
 }
 
+/** The replay itself, then what needs no model: the header (pipeline, jobs, calls), the checks, the ledger, the anchors and the gate counts. */
+async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalOptions; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Config; readonly available: readonly string[] }): Promise<void> {
+    const { config, available } = parts;
+    const { writer, enumerator, calls } = counted(config, available, scratch.dir);
+    const pipeline = input.options.pipeline ?? config.pipeline;
+    const done = await replay({
+        reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
+        summarizer: () => writer, pipeline, enumerator: () => enumerator,
+    }, input.file, input.options.tab ?? 'replay:t1', input.size);
+    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
+    console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
+}
+
 async function run(file: string, reader: Transcripts, options: EvalOptions, size: number): Promise<number> {
     const config = loadConfig();
     const found = await new PathHarnesses(AUTO_ORDER).available();
     const available = isUnknown(found) ? [] : found.ids;
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const anchors = operatorAnchors(databasePath(stateDir()));
-    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), anchors);
+    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), operatorAnchors(databasePath(stateDir())));
     try {
-        const { writer, enumerator, calls } = counted(config, available, scratch.dir);
-        const pipeline = options.pipeline ?? config.pipeline;
-        const done = await replay({
-            reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
-            summarizer: () => writer, pipeline, enumerator: () => enumerator,
-        }, file, label, size);
-        printMechanical(done, file, options.compareImported, ranLine(done, { pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: judge?.label ?? 'none', calls }));
-        console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
+        await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available });
         if (judge === null) {
             console.log('\nmodel judging: off (no harness is available for the judge job); the checks above need no model');
             return 0;

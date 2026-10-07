@@ -1,17 +1,11 @@
 // What the judge is told, per task. The rubric's item and section checks are quoted from the file, as the writer's instructions quote them.
+import { READBACK as QUESTIONS } from '#src/recap/domain/questions.ts';
 import { RUBRIC } from './rubric.ts';
 import type { CheckAnchor, CheckAnchors, JudgeTask } from '#src/ports/judge.ts';
 import { ANCHORS_PER_CHECK } from '#src/recap/application/judge-anchors.ts';
 
-/** The six fixed questions of the read-back, in the order they are graded as `readback-1` … `readback-6`. */
-export const READBACK_QUESTIONS: readonly string[] = [
-    'What is the goal?',
-    'What has finished?',
-    'What is waiting on the operator?',
-    'What must not be done?',
-    'Why was the most important decision taken?',
-    'What is the next action?',
-];
+/** The six fixed questions of the read-back, in the order they are graded as `readback-1` … `readback-6`: the domain's list, the one the ask-back reads too. */
+export const READBACK_QUESTIONS: readonly string[] = QUESTIONS.map((question) => question.text);
 
 const SCORE = [
     'You judge a recap that an AI wrote for a terminal tab. Input: one <judge_input> document. <rubric> is the rubric,',
