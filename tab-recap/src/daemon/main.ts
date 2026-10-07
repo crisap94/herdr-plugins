@@ -39,6 +39,7 @@ import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
+import { InputRetention } from '#src/recap/application/input-retention.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
@@ -58,6 +59,7 @@ interface Wired {
     readonly extensions: readonly Extension[];
     readonly store: Store;
     readonly compaction: Compaction;
+    readonly retention: InputRetention;
 }
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
@@ -77,6 +79,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         records: store.records, clock, log, repos,
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
+        keepInput: (): boolean => loadConfig().keepInputDays > 0,
     });
     const box: { informer: Informer | null } = { informer: null };
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
@@ -111,7 +114,8 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     box.informer = informer;
     const compaction = wireCompaction({ fleet, records: store.records, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction };
+    const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
@@ -154,7 +158,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store } = booted;
+    const { informer, fleet, backends, extensions, store, retention } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -178,6 +182,7 @@ async function start(): Promise<number> {
             store.checkpoint();
         }
         informer.tick();
+        retention.tick();
         void backends.refresh();
         void upkeep(extensions, log);
     }, RESYNC_MS).unref();

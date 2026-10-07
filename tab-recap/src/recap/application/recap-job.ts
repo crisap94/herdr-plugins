@@ -12,6 +12,7 @@ import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { ask } from './recap-ask.ts';
 import { inputOf } from './recap-input.ts';
+import { writerContext } from './writer-context.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
@@ -22,6 +23,8 @@ export interface RecapJobDeps {
     summarizer(): Summarizer;
     /** what recaps should be written in right now (re-read for every recap) */
     language(): string;
+    /** whether each run's input document is kept for judging (`TAB_RECAP_KEEP_INPUT_DAYS` above 0); kept when not given */
+    keepInput?(): boolean;
     log(line: string): void;
 }
 
@@ -163,12 +166,14 @@ export class RecapJob {
         const summarizer = this.deps.summarizer();
         records.beginRun(prior.tab, summarizer.backend, clock.now());
         const panes = readings.map((r) => String(r.lane.pane));
-        const asked = await ask(summarizer, await this.requestOf(prior, readings, { want: language.want, was }), prior, panes, language.want === 'es' ? 'es' : 'en');
+        const request = await this.requestOf(prior, readings, { want: language.want, was });
+        const asked = await ask(summarizer, request, prior, panes, language.want === 'es' ? 'es' : 'en');
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved });
             return;
         }
-        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks: asked.tasks });
+        const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
+        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks: asked.tasks, gateStats: asked.stats, ...input });
     }
 }

@@ -29,6 +29,8 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     effort: choice(EFFORT_CHOICES, (draft) => draft.effort, (draft, effort) => ({ ...draft, effort })),
     compactBy: choice(JOB_BY_OPTIONS, (draft) => draft.compact.by, (draft, by) => ({ ...draft, compact: { ...draft.compact, by } })),
     compactEffort: choice(EFFORT_CHOICES, (draft) => draft.compact.effort, (draft, effort) => ({ ...draft, compact: { ...draft.compact, effort } })),
+    judgeBy: choice(JOB_BY_OPTIONS, (draft) => draft.judge.by, (draft, by) => ({ ...draft, judge: { ...draft.judge, by } })),
+    judgeEffort: choice(EFFORT_CHOICES, (draft) => draft.judge.effort, (draft, effort) => ({ ...draft, judge: { ...draft.judge, effort } })),
 };
 
 /** The fields typed as text (other than the recap writer's model, which belongs to the harness in force). */
@@ -39,4 +41,5 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed) => ({ ...draft, compactHint: hintSetting(typed) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
     compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed) => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
+    judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed) => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },
 };

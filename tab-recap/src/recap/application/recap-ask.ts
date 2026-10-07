@@ -5,13 +5,15 @@ import type { TaskGroup } from '#src/ports/recap-input.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { settle, unexplained } from '#src/recap/domain/tasks.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import { correctionOf, gate, NO_STATS, statsOf } from './gatekeeper.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { parseProposal } from './recap-tasks.ts';
 import { renderRecap } from './recap-shape.ts';
 
 /** The writer gets two tries at answering in the fixed shape. */
 const ATTEMPTS = 2;
 
-export type Asked = { readonly kind: 'tasks'; readonly tasks: readonly RecapTask[]; readonly cost: number } | { readonly kind: 'failed'; readonly error: string; readonly cost: number };
+export type Asked = { readonly kind: 'tasks'; readonly tasks: readonly RecapTask[]; readonly cost: number; readonly stats: GateStats } | { readonly kind: 'failed'; readonly error: string; readonly cost: number };
 
 /**
  * The previous recap as the writer gets it: with one task, that task's sections as JSON (as ever) or, for a recap
@@ -47,24 +49,46 @@ function judge(text: string, prior: TabRecap, panes: readonly string[], language
     return tasks.length === 0 ? { kind: 'again', why: 'no task names any of the agents' } : { kind: 'tasks', tasks };
 }
 
+/** The task with its Markdown drawn again, after items were dropped. */
+const redrawn = (task: RecapTask, language: 'en' | 'es'): RecapTask => (task.sections === null ? task : { ...task, markdown: renderRecap(task.sections, language) });
+
+/** What a refused-then-retried run falls back to when the retry cannot be used: the first answer without its refused items. */
+interface Fallback {
+    readonly tasks: readonly RecapTask[];
+    readonly stats: GateStats;
+}
+
 /**
- * The writer's answer must be the seven sections (per task) as JSON. One retry, saying what was wrong; if it is
+ * The writer's answer must be the seven sections (per task) as JSON, and pass the gates. One retry, saying what was
+ * wrong (the shape, or the refused items); items still refused after it are dropped and the rest kept. If the answer is
  * still unusable the previous recap stays (with an error line) and the cursors do not advance.
  */
 export async function ask(summarizer: Summarizer, request: RecapRequest, prior: TabRecap, panes: readonly string[], language: 'en' | 'es'): Promise<Asked> {
+    const agents = request.input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]);
     let cost = 0;
     let correction: string | undefined;
+    let stats = NO_STATS;
+    let fallback: Fallback | null = null;
     for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
         const written = await summarizer.write(correction === undefined ? request : { ...request, correction });
         if (isUnknown(written)) {
-            return { kind: 'failed', error: saying(written.why), cost };
+            return fallback === null ? { kind: 'failed', error: saying(written.why), cost } : { kind: 'tasks', ...fallback, cost };
         }
         cost += written.costUsd;
         const judged = judge(written.text, prior, panes, language, attempt < ATTEMPTS - 1);
-        if (judged.kind === 'tasks') {
-            return { kind: 'tasks', tasks: judged.tasks, cost };
+        if (judged.kind === 'again') {
+            correction = judged.why;
+            continue;
         }
-        correction = judged.why;
+        const gated = gate(judged.tasks, { language: request.language, agents });
+        const tasks = gated.tasks.map((task) => redrawn(task, language));
+        if (gated.refusals.length > 0 && attempt < ATTEMPTS - 1) {
+            fallback = { tasks, stats: statsOf(gated, stats, true) };
+            stats = statsOf(gated, stats, false);
+            correction = correctionOf(gated.refusals);
+            continue;
+        }
+        return { kind: 'tasks', tasks, cost, stats: statsOf(gated, stats, true) };
     }
-    return { kind: 'failed', error: `the writer's answer was not usable (${correction ?? 'unknown'}); the previous recap is kept`, cost };
+    return fallback === null ? { kind: 'failed', error: `the writer's answer was not usable (${correction ?? 'unknown'}); the previous recap is kept`, cost } : { kind: 'tasks', ...fallback, cost };
 }

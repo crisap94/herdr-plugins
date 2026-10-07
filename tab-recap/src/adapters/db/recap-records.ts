@@ -50,7 +50,10 @@ export class RecapRecordsRepository implements RecapRecords {
     recordRun(run: RecordedRun): void {
         writeTx(this.db, () => {
             this.tabs.ensure(run.tab, run.at);
-            const id = this.runs.insertRun(run, null);
+            const id = this.runs.insertRun(run, null, run.gateStats ?? null);
+            if (run.input !== undefined) {
+                this.runs.insertInput(id, run.input);
+            }
             this.runs.insertReads(id, this.transcripts.attach(run.tab, run.lanes, run.at));
             this.runs.writeTasks(id, run, run.tasks);
             this.settleStatement.run(run.backend, run.error, run.tab);

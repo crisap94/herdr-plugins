@@ -1,4 +1,5 @@
 import type { RecapCause } from '#src/recap/domain/intent.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 
 /** How far one lane's source has been read into the tab's recap, and what it says about itself. */
@@ -54,6 +55,10 @@ export interface RecordedRun extends RunFacts {
     readonly error: string | null;
     readonly lanes: readonly LaneCursor[];
     readonly tasks: readonly RecapTask[];
+    /** the document the writer was given, kept (compressed) for judging; absent: not kept */
+    readonly input?: string;
+    /** what the gates refused, flagged and dropped; absent for a run that was not gated (an import) */
+    readonly gateStats?: GateStats;
 }
 
 /** A run that did not: the cursors stay where they were (only what the lanes say about themselves moves). */

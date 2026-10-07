@@ -135,8 +135,42 @@ command) with a model and an effort. The settings modal lists them under **Model
 | recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`low`) |
 | compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
 
+| recap judge | `TAB_RECAP_JUDGE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off`) | `TAB_RECAP_JUDGE_MODEL` (empty = the recap writer's model for that harness) | `TAB_RECAP_JUDGE_EFFORT` (`medium`) |
+
 Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
-settings or MCP and no session left behind.
+settings or MCP and no session left behind. The judge runs only when you run `tab-recap eval` (below).
+
+## How recaps are checked
+
+Three things keep a recap's items worth reading, none of them a second model call on every turn.
+
+**The rubric.** [`schema/recap-rubric.md`](schema/recap-rubric.md) is one file of yes/no checks: seven for every item
+(atomic, stands alone, specific, supported by the input, about the work and not the agent, new, still true) and one per
+section (a goal is an outcome, a decision carries its reason, a link resolves, …), each with a pass and a fail example.
+The writer's instructions and the judge's instructions quote it verbatim, so the writer is asked for exactly what the judge checks;
+edit a check in the file and both carry the new wording.
+
+**Gates.** Before a recap is stored every item passes plain-code rules, no model involved. An item is **refused** when its subject
+is an agent (`claude completed the research…`), when a decision gives no reason, when a link does not resolve (`!n`, `#n`, a SHA, a
+path, a URL, `name/with-slash`), when it repeats another item of the same task (word overlap of 0.6 or more), or when it is in
+the wrong language. An item that names nothing concrete or opens with a pronoun is only **flagged** and kept. Refused items go back
+to the writer once, in a `<correction>` that quotes each one with the rule it broke; what is still refused after that is dropped and
+the rest of the recap is kept. The counts per gate are stored with the run: `tab-recap eval --gates [--since <days>]` prints them.
+
+**The judge.** `tab-recap eval` scores stored recaps against the rubric using the judge job (above). It needs each run's input, which
+the plugin keeps, compressed, for `TAB_RECAP_KEEP_INPUT_DAYS` days (default 14; `0` keeps none; older ones are deleted once a day, the
+runs stay).
+
+| command | does |
+| --- | --- |
+| `tab-recap eval [--sample <n>] [--tab <id>] [--since <days>]` | judges the newest `n` runs (default 20) with a stored input: pass rate per check, every failing item with a one-line critique, the share of the input's key facts the recap carries (coverage), the share of items tied to a key fact (no-filler), and a read-back — a fresh call answers six fixed questions (goal, what finished, what waits on you, what must not be done, why a decision was taken, next action) from the recap alone, and its answers are graded against the input. Verdicts are stored. Exit 1 when no harness is available for the judge, or every run failed to be judged |
+| `tab-recap eval --label <n>` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work |
+| `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, beside the 85 % target |
+| `tab-recap eval --gates [--since <days>]` | the gates' counts per gate, with no model call |
+
+`--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`. A judge on the same model as
+the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job
+can run on another harness.
 
 ## Install
 
@@ -240,7 +274,7 @@ directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; r
 back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
 
 Schema versions so far: **1** (1.6.0, the import), **2** (1.7.0, each lane's web address for links),
-**3** (1.8.0, standing rules, compaction requests and context use).
+**3** (1.8.0, standing rules, compaction requests and context use), **5** (2.0.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`).
 An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
 written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
 stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.

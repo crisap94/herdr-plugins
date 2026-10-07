@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the nine rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the ten rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 8);
+    assert.equal(typed(start(), down(20)).state.row, 9);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -206,4 +206,22 @@ test('the compact brief job: as the recap writer, no model of its own and high e
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_BY: 'off', TAB_RECAP_COMPACT_MODEL: 'x', TAB_RECAP_COMPACT_EFFORT: 'low' }), { compactBy: 'TAB_RECAP_COMPACT_BY', compactModel: 'TAB_RECAP_COMPACT_MODEL', compactEffort: 'TAB_RECAP_COMPACT_EFFORT' });
     assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', '\r']).state.note, 'locked');
     assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
+});
+
+test('the judge job: as the recap writer, no model of its own and medium effort until set; each part is edited and saved under its variable, read-only when set', () => {
+    assert.deepEqual(draft.judge, { by: 'recap', model: '', effort: 'medium' });
+    const raw = { locale: undefined, recapLanguage: undefined };
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: ' Codex ', judgeModel: ' gpt-6-luna ', judgeEffort: 'HIGH' }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: 'nonsense', judgeEffort: 'max' }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
+    const toJudge = down(9);
+    const by = typed(start(), [...toJudge, '\r', 'j', 'j', '\r']).state;
+    assert.equal(by.draft.judge.by, 'claude', 'recap → auto → claude');
+    assert.deepEqual([...changes(by)], [['TAB_RECAP_JUDGE_BY', 'claude']]);
+    const model = typed(start(), [...toJudge, 'l', '\r', 'o', 'p', 'u', 's', '\r']).state;
+    assert.deepEqual([...changes(model)], [['TAB_RECAP_JUDGE_MODEL', 'opus']]);
+    const effort = typed(start(), [...toJudge, 'l', 'l', '\r', 'j', '\r']).state;
+    assert.deepEqual([...changes(effort)], [['TAB_RECAP_JUDGE_EFFORT', 'high']]);
+    assert.deepEqual(locksOf({ TAB_RECAP_JUDGE_BY: 'off', TAB_RECAP_JUDGE_MODEL: 'x', TAB_RECAP_JUDGE_EFFORT: 'low' }), { judgeBy: 'TAB_RECAP_JUDGE_BY', judgeModel: 'TAB_RECAP_JUDGE_MODEL', judgeEffort: 'TAB_RECAP_JUDGE_EFFORT' });
+    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });

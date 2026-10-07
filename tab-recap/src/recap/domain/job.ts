@@ -17,6 +17,9 @@ export interface Job {
 /** What the compaction brief does until told otherwise: the recap writer's harness and model, thinking hard. */
 export const COMPACT_DEFAULT: Job = { by: 'recap', model: '', effort: 'high' };
 
+/** What the judge does until told otherwise: the recap writer's harness and model, at medium effort. */
+export const JUDGE_DEFAULT: Job = { by: 'recap', model: '', effort: 'medium' };
+
 export const JOB_BY_CHOICES: readonly JobBy[] = ['recap', 'auto', 'claude', 'codex', 'opencode', 'hermes', 'custom', 'off'];
 
 const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
@@ -29,6 +32,24 @@ export function compactJobOf(get: (key: string) => string | undefined): Job {
         effort: EFFORTS.find((effort) => effort === word(get('TAB_RECAP_COMPACT_EFFORT'))) ?? COMPACT_DEFAULT.effort,
     };
 }
+
+/** The judge's job from `TAB_RECAP_JUDGE_BY`, `_MODEL` and `_EFFORT`; unknown values are the defaults. */
+export function judgeJobOf(get: (key: string) => string | undefined): Job {
+    return {
+        by: JOB_BY_CHOICES.find((by) => by === word(get('TAB_RECAP_JUDGE_BY'))) ?? JUDGE_DEFAULT.by,
+        model: (get('TAB_RECAP_JUDGE_MODEL') ?? '').trim(),
+        effort: EFFORTS.find((effort) => effort === word(get('TAB_RECAP_JUDGE_EFFORT'))) ?? JUDGE_DEFAULT.effort,
+    };
+}
+
+export const KEEP_INPUT_DAYS = 14;
+
+/** Days a run's input is kept (`TAB_RECAP_KEEP_INPUT_DAYS`): a whole number of 0 or more, 14 when missing or nonsense; 0 keeps none. */
+export function keepDaysOf(raw: string | undefined): number {
+    const days = Number((raw ?? '').trim());
+    return (raw ?? '').trim() !== '' && Number.isInteger(days) && days >= 0 ? days : KEEP_INPUT_DAYS;
+}
+
 
 /** Where a job runs: the harness and the model to give it. */
 export interface Placement {
