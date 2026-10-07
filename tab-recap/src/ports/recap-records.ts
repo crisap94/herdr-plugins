@@ -1,5 +1,7 @@
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import type { TaskOps } from '#src/recap/domain/ops.ts';
+import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 
 /** How far one lane's source has been read into the tab's recap, and what it says about itself. */
@@ -50,11 +52,15 @@ export interface RunFacts {
     readonly costUsd: number;
 }
 
-/** A run that wrote a recap: the tasks it settled on and every lane's cursor, advanced. `error` is the lane read errors, when some lane could not be read. */
+/**
+ * A run that wrote to the ledger: the tasks it settled on, the operations applied to each (in the run's one transaction) and every lane's
+ * cursor, advanced. `error` is the lane read errors, when some lane could not be read.
+ */
 export interface RecordedRun extends RunFacts {
     readonly error: string | null;
     readonly lanes: readonly LaneCursor[];
-    readonly tasks: readonly RecapTask[];
+    readonly tasks: readonly TaskShape[];
+    readonly ops: readonly TaskOps[];
     /** the document the writer was given, kept (compressed) for judging; absent: not kept */
     readonly input?: string;
     /** what the gates refused, flagged and dropped; absent for a run that was not gated (an import) */
@@ -75,21 +81,10 @@ export interface Advance {
     readonly lanes: readonly LaneCursor[];
 }
 
-/** One distinct line of the recap across a session: the section it stood in, when it first and last appeared (epoch ms) and in how many runs. */
-export interface HistoryItem {
-    readonly section: string;
-    readonly text: string;
-    readonly firstAt: number;
-    readonly lastAt: number;
-    readonly seen: number;
-}
-
-/** The history of a tab's recaps (chapter → run → task → item). A run's writes land together or not at all. */
+/** The runs of a tab's recaps (chapter → run → task) and the lanes' cursors; the facts a run changed are written with it (see `Ledger`). A run's writes land together or not at all. */
 export interface RecapRecords {
-    /** The current recap: the last run that wrote one, plus the tab's lanes, running flag and error line. */
+    /** The current recap: the tasks of the last good run with their open facts under the caps, plus the tab's lanes, running flag and error line. */
     readRecap(tab: string): TabRecap | null;
-    /** Every distinct recap line of the tasks that hold `pane`, across all runs and chapters: newest first, at most 300 (finished items and references are cut first). */
-    readHistory(tab: string, pane: string): readonly HistoryItem[];
     beginRun(tab: string, backend: string | null, at: number): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;

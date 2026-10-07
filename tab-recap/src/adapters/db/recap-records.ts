@@ -1,13 +1,16 @@
 // The RecapRecords repository: a run's writes land in one transaction — the run, what it read, its tasks, the cursors it advanced.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { Advance, FailedRun, HistoryItem, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import { writeTx } from './connection.ts';
+import { LedgerRows } from './ledger-rows.ts';
 import { RecapReader } from './recap-read.ts';
 import { guarded } from './rows.ts';
 import { RunRows } from './run-write.ts';
-import { SessionHistory } from './session-history.ts';
 import { TabRow } from './tab-row.ts';
 import { TranscriptRows } from './transcripts.ts';
+import { typeIdOf } from './typeid.ts';
+import { ids } from './uuid7.ts';
 
 export class RecapRecordsRepository implements RecapRecords {
     private readonly db: DatabaseSync;
@@ -15,18 +18,18 @@ export class RecapRecordsRepository implements RecapRecords {
     private readonly tabs: TabRow;
     private readonly transcripts: TranscriptRows;
     private readonly runs: RunRows;
-    private readonly history: SessionHistory;
+    private readonly ledger: LedgerRows;
     private readonly begin: StatementSync;
     private readonly settleStatement: StatementSync;
     private readonly errorOnly: StatementSync;
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.reader = new RecapReader(db);
+        this.ledger = new LedgerRows(db);
+        this.reader = new RecapReader(db, this.ledger);
         this.tabs = new TabRow(db);
         this.transcripts = new TranscriptRows(db);
         this.runs = new RunRows(db, this.transcripts);
-        this.history = new SessionHistory(db);
         this.begin = db.prepare('UPDATE tab SET running = 1, backend = ? WHERE id = ?');
         this.settleStatement = db.prepare('UPDATE tab SET running = 0, backend = ?, error = ? WHERE id = ?');
         this.errorOnly = db.prepare('UPDATE tab SET error = ? WHERE id = ?');
@@ -34,10 +37,6 @@ export class RecapRecordsRepository implements RecapRecords {
 
     readRecap(tab: string): TabRecap | null {
         return guarded(() => this.reader.read(tab), null);
-    }
-
-    readHistory(tab: string, pane: string): readonly HistoryItem[] {
-        return guarded(() => this.history.read(tab, pane), []);
     }
 
     beginRun(tab: string, backend: string | null, at: number): void {
@@ -56,6 +55,9 @@ export class RecapRecordsRepository implements RecapRecords {
             }
             this.runs.insertReads(id, this.transcripts.attach(run.tab, run.lanes, run.at));
             this.runs.writeTasks(id, run, run.tasks);
+            for (const { task, ops } of run.ops) {
+                this.ledger.applyTo(id, { id: typeIdOf('run', id) as RunId, task: { tab: run.tab, key: task }, at: run.at, language: run.language, mint: () => typeIdOf('fact', ids.next()) as FactId }, ops);
+            }
             this.settleStatement.run(run.backend, run.error, run.tab);
         });
     }

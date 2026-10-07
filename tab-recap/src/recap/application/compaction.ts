@@ -75,10 +75,10 @@ export class Compaction {
 
     /** What the brief job is given, and what the agent's own conversation says (the words it may use). */
     private async briefOf(lane: Lane, tab: string, material: Material): Promise<{ readonly text: string | null; readonly why: string | null; readonly own: string }> {
-        const { brief, records } = this.deps;
+        const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
-        const [recent, history]: [readonly Entry[], ReturnType<typeof records.readHistory>] = [await this.deps.recent(lane), records.readHistory(tab, pane)];
-        const own = [...recent.map((entry) => entry.text), ...history.map((item) => item.text)].join('\n');
+        const [recent, history]: [readonly Entry[], ReturnType<typeof ledger.historyOf>] = [await this.deps.recent(lane), ledger.historyOf(tab, pane)];
+        const own = [...recent.map((entry) => entry.text), ...history.flatMap((item) => [item.text, item.why ?? ''])].join('\n');
         if (!brief.enabled()) {
             return { text: null, why: null, own };
         }

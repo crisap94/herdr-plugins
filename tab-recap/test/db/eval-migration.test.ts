@@ -52,7 +52,7 @@ test('every registered migration runs from the oldest fixture; a fresh install h
     }
 });
 
-test('opening a version 4 database backs it up as .v4.bak and brings it to 5, its runs untouched (gate_stats null)', () => {
+test('opening a version 4 database backs it up as .v4.bak and brings it to the latest, its runs untouched (gate_stats null)', () => {
     const dir = scratchDir('eval-backup');
     try {
         const path = join(dir, 'tab-recap.db');
@@ -63,7 +63,7 @@ test('opening a version 4 database backs it up as .v4.bak and brings it to 5, it
         if (opened.kind !== 'ready') {
             assert.fail('a version 4 database opens');
         }
-        assert.equal(versionOf(opened.db), 5);
+        assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v4.bak']);
         assert.equal(versionOf(new DatabaseSync(`${path}.v4.bak`)), 4);
         assert.deepEqual(Object.assign({}, opened.db.prepare('SELECT gate_stats FROM run WHERE id = ?').get(run)), { gate_stats: null });

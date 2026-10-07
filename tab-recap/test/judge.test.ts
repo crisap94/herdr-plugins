@@ -10,7 +10,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { StoredRun } from '#src/ports/run-inputs.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore } from '#test/db/support.ts';
-import { oneTask } from '#test/support.ts';
+import { oneTask, withFacts } from '#test/support.ts';
 
 const SECTIONS = { goal: 'Ship retries for the upload client.', now: [], needs: [], done: ['Merged !256 after both pipelines went green.', 'Spent the morning on it.'], decisions: ['Keep three retries because the API limits bursts.'], next: [], links: ['!256'], rules: [] };
 const CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
@@ -47,7 +47,7 @@ function judgeOf(script: Script): { judge: Judge; asked: { task: JudgeTask; docu
 function setup(script: Script, input: string | null = '<recap_input version="1">what the writer saw</recap_input>'): { deps: JudgeDeps; run: StoredRun; store: ReturnType<typeof memoryStore>; asked: { task: JudgeTask; document: string }[] } {
     const store = memoryStore();
     store.records.recordRun({
-        tab: 'w1:t1', at: 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask('', SECTIONS),
+        tab: 'w1:t1', at: 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
         ...(input === null ? {} : { input }),
     });
     const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false }).at(0);

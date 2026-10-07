@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
+import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { RunInputs } from '#src/ports/run-inputs.ts';
@@ -10,6 +11,7 @@ import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { CompactionRecordsRepository } from './compaction-records.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
+import { LedgerRepository } from './ledger.ts';
 import { openDatabase } from './open.ts';
 import type { NewerDatabase } from './open.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
@@ -22,6 +24,7 @@ export interface Store {
     readonly kind: 'ready';
     readonly db: DatabaseSync;
     readonly records: RecapRecords;
+    readonly ledger: Ledger;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
     readonly requests: Requests;
@@ -42,7 +45,7 @@ export interface StoreOptions {
 
 export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     return {
-        kind: 'ready', db, records: new RecapRecordsRepository(db), views: new TabViewsRepository(db, options.daemonVersion ?? null),
+        kind: 'ready', db, records: new RecapRecordsRepository(db), ledger: new LedgerRepository(db), views: new TabViewsRepository(db, options.daemonVersion ?? null),
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },

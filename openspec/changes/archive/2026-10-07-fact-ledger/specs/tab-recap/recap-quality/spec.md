@@ -23,7 +23,7 @@ with the run.
 - **WHEN** an added "decisions" fact reads "Leave the unrelated db tab alone." with no why
 - **THEN** it SHALL be refused and the same text with why "it is not part of this task" SHALL pass
 
-#### Scenario: A duplicate of the ledger
+#### Scenario: A duplicate
 
 - **WHEN** the writer adds a "done" fact that shares most of its words with open fact `f4`
 - **THEN** it SHALL be refused and the correction SHALL say to update `f4` instead

@@ -10,6 +10,7 @@ import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { EVAL_USAGE, parseEval } from '#src/recap/application/eval-options.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';
+import { replayCommand } from './replay.ts';
 
 /** The operator's lines, one at a time; null once the input has ended (readline's own question would wait forever then). */
 function lines(): { ask(prompt: string): Promise<string | null>; close(): void } {
@@ -37,6 +38,9 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
     if (parsed.kind === 'usage') {
         console.error(`tab-recap: 2 — ${parsed.why}\n${EVAL_USAGE}`);
         return 2;
+    }
+    if (parsed.options.mode === 'replay') {
+        return replayCommand(parsed.options);
     }
     const store = stateStore(stateDir());
     if (store.kind !== 'ready') {

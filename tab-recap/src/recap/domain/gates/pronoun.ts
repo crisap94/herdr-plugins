@@ -1,6 +1,6 @@
 // G9 pronoun opener (flag): the item opens with it / this / that / the issue / the bug / the problem — it cannot stand alone (I2).
-import { LISTED, said } from './gate.ts';
-import type { Gate } from './gate.ts';
+import { LISTED, said } from './item-gate.ts';
+import type { Gate } from './item-gate.ts';
 
 const OPENERS = /^\W*(it|this|that|the issue|the bug|the problem|eso|esto|el problema|el error)(?![\p{L}\p{N}_-])/iu;
 

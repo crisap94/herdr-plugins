@@ -22,32 +22,40 @@ test('sections: seven, always in this order, with both headings; a heading is re
     assert.equal(sectionOf('## Something else'), null);
 });
 
-test('instructions: the JSON contract — seven keys, the caps, plain-language rules; the language only changes the values', () => {
+test('instructions: the operations contract — add, update, close, the sections and what the column shows; the language only changes the values', () => {
     const en = instructions({ ...base, language: 'en' });
     assert.match(en, /Answer with ONLY one JSON object/);
-    assert.match(en, /"goal": "\.\.\.", "now": \["\.\.\."\], "needs"/);
-    for (const [id, size] of [['goal', 'one line'], ['now', 'at most 3'], ['needs', 'at most 3'], ['done', 'at most 5'], ['decisions', 'at most 3'], ['next', 'at most 5'], ['links', 'at most 6']]) {
+    assert.match(en, /\{"op": "add", "section": "done", "text": "\.\.\."/);
+    assert.match(en, /\{"op": "update", "id": "f12"/);
+    assert.match(en, /\{"op": "close", "id": "f3", "why": "done"\}/);
+    assert.match(en, /never add a fact that is in the ledger: update it/);
+    for (const [id, size] of [['goal', 'one line, one open at a time'], ['now', 'the column shows the newest 3'], ['needs', 'the column shows the newest 3'], ['done', 'the column shows the newest 5'], ['decisions', 'the column shows the newest 3'], ['next', 'the column shows the newest 5'], ['links', 'the column shows the newest 6']]) {
         assert.match(en, new RegExp(`${id} +— .*\\(${size}\\)`), id);
     }
-    assert.match(en, /Plain everyday words\. Short sentences in the present tense, 16 words or fewer per line\./);
-    assert.doesNotMatch(en, /Spanish|Português|## /);
+    assert.match(en, /Plain everyday words\. Short sentences in the present tense, 16 words or fewer per text, 24 per why\./);
+    assert.doesNotMatch(en, /Spanish|Português|## |"tasks"/);
     const es = instructions({ ...base, language: 'es', previousLanguage: 'es' });
-    assert.match(es, /Write every value in Spanish \(neutral Latin American, informal "tú"\)\. Keep the JSON keys in English\./);
+    assert.match(es, /Write every text and why in Spanish \(neutral Latin American, informal "tú"\)\. Keep the JSON keys and the words add, update, close in English\./);
     const free = instructions({ ...base, language: 'Português', previousLanguage: 'Português' });
-    assert.match(free, /Write every value in Português\. Keep the JSON keys in English\./);
+    assert.match(free, /Write every text and why in Português\. Keep the JSON keys and the words add, update, close in English\./);
     assert.doesNotMatch(free, /Objetivo/);
 });
 
-test('instructions: a recap in another language is carried over translated', () => {
+test('instructions: with several tasks an add names its task', () => {
+    const several = requestOf({ ledgers: [{ task: 't1', facts: [] }, { task: 't2', facts: [] }] });
+    assert.match(instructions({ ...base, input: several.input, language: 'en' }), /one <ledger task="…"> per task: give an add the "task" it belongs to/);
+    assert.doesNotMatch(instructions({ ...base, language: 'en' }), /<ledger task=/);
+});
+
+test('instructions: a ledger in another language is updated to the new one', () => {
     const switching = instructions({ ...base, language: 'es', previousLanguage: 'en' });
-    assert.match(switching, /The <previous_recap> is in English: carry over what is still relevant, rewritten in Spanish/);
-    assert.doesNotMatch(instructions({ ...base, language: 'en' }), /carry over/);
+    assert.match(switching, /The facts in <ledger> are in English: update every open fact that is still relevant, rewritten in Spanish/);
+    assert.doesNotMatch(instructions({ ...base, language: 'en' }), /rewritten in/);
 });
 
 test('a switch with nothing new still gives the model something to do; a retry says what was wrong', () => {
-    assert.match(instructions({ ...base, language: 'es' }), /Empty <transcript>: just rewrite/);
-    const switching = message(requestOf({ language: 'es', previous: '{"goal":"x"}' }));
-    assert.match(switching, /<previous_recap format="json" language="en">\{"goal":"x"\}<\/previous_recap>/);
+    const switching = message(requestOf({ language: 'es' }));
+    assert.match(switching, /<ledger\/>/);
     assert.match(switching, /<transcript agent="a1"\/>/, 'nothing new: an empty transcript');
     assert.match(message(requestOf({ correction: 'the answer is not valid JSON' })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
 });

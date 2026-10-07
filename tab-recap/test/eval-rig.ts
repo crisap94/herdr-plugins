@@ -6,7 +6,7 @@ import type { EvalDeps } from '#src/recap/application/eval-run.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore } from '#test/db/support.ts';
-import { oneTask } from '#test/support.ts';
+import { oneTask, withFacts } from '#test/support.ts';
 
 export const DAY = 86_400_000;
 export const NOW = 100 * DAY;
@@ -48,7 +48,7 @@ export function seed(store: Rig['store'], count: number, over: { readonly input?
     for (let n = 0; n < count; n += 1) {
         store.records.recordRun({
             tab: over.tab ?? 'w1:t1', at: NOW - (over.first ?? 1) * DAY + n * 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')],
-            tasks: oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` }), ...(over.input === false ? {} : { input: `<recap_input version="1">run ${n}</recap_input>` }),
+            ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: `<recap_input version="1">run ${n}</recap_input>` }),
             ...(over.gate === true ? { gateStats: { refused: { G1: 1 }, flagged: { G8: 2 }, dropped: 0 } } : {}),
         });
     }

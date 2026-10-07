@@ -62,7 +62,7 @@ test('a locked row names its variable; the recap writer row shows harness · mod
     for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_LOCALE'], [es, 'solo lectura: TAB_RECAP_LOCALE']] as const) {
         const text = setupView(withAvailable(base, ['codex']), messages, 80).join('\n');
         assert.ok(text.includes(expected));
-        assert.match(text, new RegExp(`${messages.setup.rows.recapJob}\\s+\\[codex\\] · gpt-6-luna · low`));
+        assert.match(text, new RegExp(`${messages.setup.rows.recapJob}\\s+\\[codex\\] · gpt-6-luna · medium`));
     }
 });
 
@@ -129,7 +129,7 @@ test('the compaction rows are drawn in both languages: 40% by default, the windo
 test('the Models group: a heading, one row per job showing harness · model · effort, the focused part bracketed, in both languages', () => {
     const english = setupView(withAvailable(base, ['codex']), en, 100).join('\n');
     assert.match(english, /Models — harness · model · effort/);
-    assert.match(english, /Recap writer\s+\[codex\] · gpt-6-luna · low/);
+    assert.match(english, /Recap writer\s+\[codex\] · gpt-6-luna · medium/);
     assert.match(english, /Compact brief\s+as the recap writer · the recap writer's model · high/);
     const second = setupView(typed(withAvailable(base, ['codex']), ['j', 'l']), en, 100).join('\n');
     assert.match(second, /Compact brief\s+as the recap writer · \[the recap writer's model\] · high/);

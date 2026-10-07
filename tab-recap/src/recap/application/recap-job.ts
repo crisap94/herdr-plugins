@@ -4,19 +4,26 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { Ledger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { LaneCursor, RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
-import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import type { Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { ask } from './recap-ask.ts';
+import { keptGrouping } from '#src/recap/domain/grouping.ts';
+import type { PlacedLane, TaskShape } from '#src/recap/domain/grouping.ts';
+import { CLOSED_SHOWN_MS } from './ledger-input.ts';
+import type { TaskFacts } from './ledger-input.ts';
+import { groundOf } from './extract-ground.ts';
+import { extract } from './extract-job.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
     readonly records: RecapRecords;
+    readonly ledger: Ledger;
     /** where a lane's cwd lives in git: a hint for grouping the lanes into tasks */
     readonly repos: LaneRepo;
     readonly clock: Clock;
@@ -32,6 +39,12 @@ export interface RecapJobDeps {
 const TURN_SETTLE_MS = 2500;
 /** At most this much is read per recap, shared by the tab's lanes. */
 const READ_BUDGET = 768 * 1024;
+/** Where a lane works, for grouping: its repository's top-level folder, else its working folder. */
+async function placeOf(lane: Lane, repos: LaneRepo): Promise<PlacedLane> {
+    const found = lane.cwd === null ? null : await repos.repoOf(lane.cwd);
+    return { pane: String(lane.pane), place: found?.kind === 'repo' ? found.root : lane.cwd };
+}
+
 /** What one lane contributes to its tab's recap this time. */
 interface Reading {
     readonly lane: Lane;
@@ -145,9 +158,9 @@ export class RecapJob {
         await this.summarize(prior, readings, { want, switched, cause });
     }
 
-    private async requestOf(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<RecapRequest> {
-        const input = await inputOf(prior, readings, { repos: this.deps.repos, now: this.deps.clock.now() });
-        return { input, language: language.want, previousLanguage: language.was };
+    private factsOf(tab: string, tasks: readonly TaskShape[], now: number): readonly TaskFacts[] {
+        const { ledger } = this.deps;
+        return tasks.map((task) => ({ key: task.id, open: ledger.openOf({ tab, key: task.id }), closed: ledger.recentlyClosed({ tab, key: task.id }, now - CLOSED_SHOWN_MS) }));
     }
 
     /** `switched`: the recap exists in another language than wanted — rewrite it now, new excerpt or not. */
@@ -165,15 +178,18 @@ export class RecapJob {
         }
         const summarizer = this.deps.summarizer();
         records.beginRun(prior.tab, summarizer.backend, clock.now());
-        const panes = readings.map((r) => String(r.lane.pane));
-        const request = await this.requestOf(prior, readings, { want: language.want, was });
-        const asked = await ask(summarizer, request, prior, panes, language.want === 'es' ? 'es' : 'en');
+        const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
+        const now = clock.now();
+        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now) });
+        const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
+        const request = { input: built.input, language: language.want, previousLanguage: was };
+        const asked = await extract(summarizer, request, ground);
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved });
             return;
         }
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
-        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks: asked.tasks, gateStats: asked.stats, ...input });
+        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, ...input });
     }
 }

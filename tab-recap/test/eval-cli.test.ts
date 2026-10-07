@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { cursor } from '#test/db/support.ts';
-import { oneTask } from '#test/support.ts';
+import { oneTask, withFacts } from '#test/support.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -28,7 +28,7 @@ function seeded(): ReturnType<typeof run> {
     const state = join(root, 'state');
     const store = stateStore(state);
     assert.ok(store.kind === 'ready');
-    store.records.recordRun({ tab: 'w1:t1', at: Date.now(), cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask('', { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] }), input: '<recap_input version="1"/>' });
+    store.records.recordRun({ tab: 'w1:t1', at: Date.now(), cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] })), input: '<recap_input version="1"/>' });
     store.close();
     return { status: null, stdout: '', stderr: '', state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }

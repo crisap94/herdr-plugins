@@ -149,13 +149,13 @@ test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOT
     assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
 });
 
-test('the effort row: low by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {
-    assert.equal(draft.effort, 'low');
+test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {
+    assert.equal(draft.effort, 'medium');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: ' HIGH ' }).effort, 'high');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'low');
-    const medium = typed(start(), ['l', 'l', '\r', 'j', '\r']);
-    assert.equal(medium.state.draft.effort, 'medium');
-    assert.deepEqual([...changes(medium.state)], [['TAB_RECAP_EFFORT', 'medium']]);
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'medium');
+    const high = typed(start(), ['l', 'l', '\r', 'j', '\r']);
+    assert.equal(high.state.draft.effort, 'high');
+    assert.deepEqual([...changes(high.state)], [['TAB_RECAP_EFFORT', 'high']]);
     assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
     assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), ['l', 'l', '\r']).state.note, 'locked');
 });

@@ -1,12 +1,13 @@
-// The current recap of a tab, assembled from the last run that wrote one (queries only).
+// The current recap of a tab: the tasks of the last run that wrote one, each with its open facts drawn under the caps (queries only).
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
+import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { all, blob, flag, maybeText, one, text, whole } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { Row } from './rows.ts';
-import { sectionsOf } from './sections-rows.ts';
+import type { LedgerRows } from './ledger-rows.ts';
 
 const cursorOf = (row: Row): LaneCursor => ({
     pane: text(row, 'pane'), agent: text(row, 'agent'), transcript: text(row, 'source'), cursor: whole(row, 'cursor'),
@@ -31,9 +32,10 @@ export class RecapReader {
     private readonly lanes: StatementSync;
     private readonly tasks: StatementSync;
     private readonly taskLanes: StatementSync;
-    private readonly items: StatementSync;
+    private readonly ledger: LedgerRows;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: DatabaseSync, ledger: LedgerRows) {
+        this.ledger = ledger;
         // a tab has a recap once anything was written for it: a lane's cursor, a run, a writer in flight, an error line
         this.current = db.prepare(`SELECT t.running, t.backend, t.error FROM tab t WHERE t.id = ? AND (t.running = 1 OR t.error IS NOT NULL OR t.backend IS NOT NULL
           OR EXISTS (SELECT 1 FROM transcript WHERE tab_id = t.id) OR EXISTS (SELECT 1 FROM chapter WHERE tab_id = t.id))`);
@@ -43,17 +45,16 @@ export class RecapReader {
         this.lanes = db.prepare('SELECT pane, agent, source, cursor, tail, title, last_prompt, claude_note FROM transcript WHERE tab_id = ? AND attached = 1 ORDER BY position, id');
         this.tasks = db.prepare('SELECT r.task_id, k.key, r.name, r.legacy_markdown FROM run_task r JOIN task k ON k.id = r.task_id WHERE r.run_id = ? ORDER BY r.position');
         this.taskLanes = db.prepare('SELECT l.task_id, t.pane FROM run_task_lane l JOIN transcript t ON t.id = l.transcript_id WHERE l.run_id = ? ORDER BY l.task_id, l.position');
-        this.items = db.prepare("SELECT task_id, section, position, text FROM item WHERE run_id = ? AND view = 'recap'");
     }
 
-    private tasksOf(run: Uint8Array, language: string): readonly RecapTask[] {
+    private tasksOf(tab: string, run: Uint8Array, language: string): readonly RecapTask[] {
         const lanes = groupBy(all(this.taskLanes, run), (row) => text(row, 'pane'));
-        const items = groupBy(all(this.items, run), (row) => ({ section: text(row, 'section'), position: whole(row, 'position'), text: text(row, 'text') }));
         return all(this.tasks, run).map((row) => {
             const legacy = maybeText(row, 'legacy_markdown');
-            const sections = legacy === null ? sectionsOf(items.get(typeIdOf('task', blob(row, 'task_id'))) ?? []) : null;
+            const key = text(row, 'key');
+            const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ tab, key })) : null;
             return {
-                id: text(row, 'key'), name: maybeText(row, 'name') ?? '', lanes: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
+                id: key, name: maybeText(row, 'name') ?? '', lanes: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
                 markdown: sections === null ? (legacy ?? '') : renderRecap(sections, language === 'es' ? 'es' : 'en'),
             };
         });
@@ -77,7 +78,7 @@ export class RecapReader {
         }
         const facts = this.facts(tab);
         return {
-            tab, lanes: all(this.lanes, tab).map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(facts.run, facts.language), at: facts.at, running: flag(row, 'running'),
+            tab, lanes: all(this.lanes, tab).map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(tab, facts.run, facts.language), at: facts.at, running: flag(row, 'running'),
             backend: maybeText(row, 'backend'), error: maybeText(row, 'error'), costUsd: whole(one(this.cost, tab) ?? {}, 'micro') / 1e6, language: facts.language,
         };
     }

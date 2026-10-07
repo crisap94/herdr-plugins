@@ -76,7 +76,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const repos = new GitLaneRepo(clock);
     const recaps = new RecapJob({
         transcripts,
-        records: store.records, clock, log, repos,
+        records: store.records, ledger: store.ledger, clock, log, repos,
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
@@ -113,7 +113,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
     });
     box.informer = informer;
-    const compaction = wireCompaction({ fleet, records: store.records, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
+    const compaction = wireCompaction({ fleet, records: store.records, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention };
 }

@@ -1,6 +1,6 @@
 // The gates, in the order they are run. G6 and G7 are not here: G7 (length) is the clip in `recap-shape.ts`, G6 belongs to the ledger.
 import { duplicate } from './duplicate.ts';
-import type { Context, Gate, GateId, Item, Outcome } from './gate.ts';
+import type { Context, Gate, GateId, Item, Outcome } from './item-gate.ts';
 import { wrongLanguage } from './language.ts';
 import { unresolved } from './link.ts';
 import { narrator } from './narrator.ts';
@@ -8,8 +8,8 @@ import { pronounOpener } from './pronoun.ts';
 import { notSpecific } from './specific.ts';
 import { withoutWhy } from './why.ts';
 
-export type { Context, Gate, GateId, GatedSection, GateStats, Item, Outcome } from './gate.ts';
-export { itemKey } from './gate.ts';
+export type { Context, Gate, GateId, GatedSection, GateStats, Item, Outcome } from './item-gate.ts';
+export { itemKey } from './item-gate.ts';
 
 export const GATES: readonly Gate[] = [narrator, duplicate, withoutWhy, unresolved, wrongLanguage, notSpecific, pronounOpener];
 

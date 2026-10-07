@@ -2,18 +2,23 @@
 import { parseArgs } from 'node:util';
 
 export interface EvalOptions {
-    readonly mode: 'sample' | 'label' | 'agree' | 'gates';
+    readonly mode: 'sample' | 'label' | 'agree' | 'gates' | 'replay';
     /** runs to judge (`sample`) or items to label (`label`) */
     readonly count: number;
     readonly tab: string | null;
     /** only runs of the last this many days */
     readonly since: number | null;
     readonly json: boolean;
+    /** `--replay`: a stored transcript to run the extractor over; the other options here are then not allowed */
+    readonly replay: string | null;
+    readonly kind: string | null;
+    /** the tab whose imported facts are judged beside the replay */
+    readonly compareImported: string | null;
 }
 
 export type ParsedEval = { readonly kind: 'options'; readonly options: EvalOptions } | { readonly kind: 'usage'; readonly why: string };
 
-export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> | --agree | --gates [--since <days>]';
+export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>]';
 
 export const DEFAULT_SAMPLE = 20;
 
@@ -33,7 +38,7 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
     try {
         return parseArgs({
             args: [...argv], allowPositionals: false, strict: true,
-            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' } },
+            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' } },
         }).values;
     } catch (error) {
         return error instanceof Error ? error.message : String(error);
@@ -54,12 +59,31 @@ function modeOf(values: ReturnType<typeof parseArgs>['values'], label: number | 
 }
 
 const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode'], counts: { readonly label: number | null; readonly sample: number | null; readonly since: number | null }): EvalOptions =>
-    ({ mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true });
+    ({
+        mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true,
+        replay: textOf(values, 'replay') ?? null, kind: textOf(values, 'kind') ?? null, compareImported: textOf(values, 'compare-imported') ?? null,
+    });
+
+/** `--replay` stands alone (but for its own options); its options do not stand without it. */
+function replayProblem(values: ReturnType<typeof parseArgs>['values']): string | null {
+    const others = ['sample', 'label', 'since', 'agree', 'gates', 'json'].filter((name) => values[name] !== undefined);
+    if (values['replay'] === undefined) {
+        return values['kind'] === undefined && values['compare-imported'] === undefined ? null : '--kind and --compare-imported go with --replay';
+    }
+    return others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null;
+}
 
 export function parseEval(argv: readonly string[]): ParsedEval {
     const values = valuesOf(argv);
     if (typeof values === 'string') {
         return { kind: 'usage', why: values };
+    }
+    const replaying = replayProblem(values);
+    if (replaying !== null) {
+        return { kind: 'usage', why: replaying };
+    }
+    if (values['replay'] !== undefined) {
+        return { kind: 'options', options: optionsOf(values, 'replay', { label: null, sample: null, since: null }) };
     }
     const [sample, label, since] = [whole(textOf(values, 'sample'), 'sample'), whole(textOf(values, 'label'), 'label'), whole(textOf(values, 'since'), 'since')];
     const problem = [sample, label, since].flatMap((found) => found.bad ?? []).at(0);

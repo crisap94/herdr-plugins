@@ -1,6 +1,6 @@
-<!-- compaction_input: everything tab-recap gives the brief writer for one agent, one compaction. Version 1. -->
+<!-- compaction_input: everything tab-recap gives the brief writer for one agent, one compaction. Version 2. -->
 <!ELEMENT compaction_input (agent, note?, current_recap, session_history, recent)>
-<!ATTLIST compaction_input version CDATA #FIXED "1">
+<!ATTLIST compaction_input version CDATA #FIXED "2">
 
 <!-- The agent about to be compacted. -->
 <!ELEMENT agent EMPTY>
@@ -16,16 +16,18 @@
 <!-- The latest recap of the agent's task, as JSON: goal, now, needs, done, decisions, next, links, rules. -->
 <!ELEMENT current_recap (#PCDATA)>
 
-<!-- Every distinct line the recap carried over the whole session, newest first. first/last = when it first and last
-     appeared (local time, HH:MM or a date), seen = in how many recaps. Sections: goal, now, needs, done, decisions,
-     next, links, rules. -->
+<!-- Every fact of the agent's tasks, open and closed, newest last seen first. first/last = when the fact was first and last seen
+     (local time, HH:MM or a date); why = the reason a decision or a close carries; closed = why it closed (a closed fact is no longer
+     true or no longer needed, but it happened and may still matter). Sections: goal, now, needs, done, decisions, next, links, rules. -->
 <!ELEMENT session_history (item*)>
 <!ELEMENT item (#PCDATA)>
 <!ATTLIST item
   section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  state   (open|closed) "open"
   first   CDATA #REQUIRED
   last    CDATA #REQUIRED
-  seen    CDATA #REQUIRED>
+  why     CDATA #IMPLIED
+  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED>
 
 <!-- The agent's last turns, oldest first (the most recent ones that fit). omitted = turns left out before them. -->
 <!ELEMENT recent (turn|tools)*>

@@ -77,7 +77,7 @@ test('the real migrations: a fresh install is the 1.6.0 fixture upgraded (migrat
     }
 });
 
-test('migration 3 from the 1.7.0 schema (v2): fresh == upgraded, items and foreign keys kept, rules accepted', () => {
+test('migrations 3 to 6 from the 1.7.0 schema (v2): fresh == upgraded, items and foreign keys kept, rules accepted', () => {
     const dir = scratchDir('v2');
     try {
         const fresh = openDatabase(MEMORY);

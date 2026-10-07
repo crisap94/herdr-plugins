@@ -31,22 +31,17 @@ function tasksOf(input: RecapInput): string {
     return input.agents.length < 2 || tasks.length === 0 ? '' : `${NEST}${element('current_tasks', {}, `${tasks.join('')}${NEST}`)}`;
 }
 
-const parses = (body: string): boolean => {
-    try { JSON.parse(body); return true; } catch { return false; }
-};
+const clockOf = (input: RecapInput): ((at: number) => string) => (at) => localTime(at, input.tab.now, input.tab.zone);
 
-/** `json` when the writer's own JSON answer, `markdown` for a recap from before the fixed sections, `none` on the first run. */
-function formatOf(body: string): 'json' | 'markdown' | 'none' {
-    if (body === '') {
-        return 'none';
-    }
-    return body.startsWith('{') && parses(body) ? 'json' : 'markdown';
-}
-
-function previousOf(input: RecapInput, language: string, answerIn: string): string {
-    const body = input.previous.trim();
-    const format = formatOf(body);
-    return `${NEST}${leaf('previous_recap', { format, language: format === 'none' || language === answerIn ? null : language }, body)}`;
+function ledgersOf(input: RecapInput): string {
+    const at = clockOf(input);
+    return input.ledgers.map((ledger) => {
+        const facts = ledger.facts.map((fact) => {
+            const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(fact.first), last: at(fact.last), why: fact.why, ref: fact.ref, agent: fact.agent, closed: fact.closed };
+            return `\n ${leaf('fact', attrs, fact.text)}`;
+        }).join('');
+        return `${NEST}${element('ledger', { task: ledger.task }, facts === '' ? '' : `${facts}\n`)}`;
+    }).join('');
 }
 
 function notesOf(input: RecapRequest['input']): string {
@@ -69,6 +64,6 @@ export function writerContext(request: RecapRequest, budget = TRANSCRIPT_BUDGET)
     const { input } = request;
     const tab = element('tab', { id: input.tab.id, now: isoSecond(input.tab.now), zone: input.tab.zone }, `${input.agents.map(agentOf).join('')}${NEST}`);
     const correction = request.correction === undefined ? '' : `${NEST}${leaf('correction', {}, request.correction)}`;
-    const body = `${NEST}${tab}${tasksOf(input)}${previousOf(input, request.previousLanguage, request.language)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
-    return element('recap_input', { version: 1 }, body);
+    const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
+    return element('recap_input', { version: 2 }, body);
 }
