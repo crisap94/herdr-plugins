@@ -26,5 +26,7 @@ Status: **shipped** = released · *planned* = intended, not started.
 
 ### Later *(planned)*
 
+- A gate so that only a question can close as `answered` (a decision or a rule never does), and a per-chapter comparison in `eval --replay --compare-imported`.
+
 - Harness profiles for gemini, cursor-agent, qwen and copilot, once they can be tested: each is added after live probes show it can run without tools and without keeping a session.
 - More interface languages.
