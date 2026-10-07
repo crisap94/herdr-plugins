@@ -14,11 +14,24 @@ export interface EvalOptions {
     readonly kind: string | null;
     /** the tab whose imported facts are judged beside the replay */
     readonly compareImported: string | null;
+    /** `--replay --pipeline`: which steps of the extractor the replay runs; null: the build's default */
+    readonly pipeline: Pipeline | null;
+    /** `--label --check`: the one check the operator is asked about (`I5`, `S-done`); null: every check of an item */
+    readonly check: string | null;
 }
+
+/** The configurations of the extractor a replay can run, from the single call of 2.0 to every step. */
+export const PIPELINES = ['one', 'enumerate', 'enumerate+gates', 'full'] as const;
+export type Pipeline = (typeof PIPELINES)[number];
+
+const SECTIONS: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules']);
+
+/** Whether `check` names an item check (`I1`…`I7`) or a section's (`S-done`). */
+export const isItemCheck = (check: string): boolean => /^I[1-7]$/u.test(check) || (check.startsWith('S-') && SECTIONS.has(check.slice(2)));
 
 export type ParsedEval = { readonly kind: 'options'; readonly options: EvalOptions } | { readonly kind: 'usage'; readonly why: string };
 
-export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>]';
+export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> [--check <I1…I7|S-section>] | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full]';
 
 export const DEFAULT_SAMPLE = 20;
 
@@ -38,7 +51,7 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
     try {
         return parseArgs({
             args: [...argv], allowPositionals: false, strict: true,
-            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' } },
+            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' }, pipeline: { type: 'string' }, check: { type: 'string' } },
         }).values;
     } catch (error) {
         return error instanceof Error ? error.message : String(error);
@@ -62,15 +75,31 @@ const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOpt
     ({
         mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true,
         replay: textOf(values, 'replay') ?? null, kind: textOf(values, 'kind') ?? null, compareImported: textOf(values, 'compare-imported') ?? null,
+        pipeline: PIPELINES.find((each) => each === textOf(values, 'pipeline')) ?? null, check: textOf(values, 'check') ?? null,
     });
 
 /** `--replay` stands alone (but for its own options); its options do not stand without it. */
 function replayProblem(values: ReturnType<typeof parseArgs>['values']): string | null {
-    const others = ['sample', 'label', 'since', 'agree', 'gates', 'json'].filter((name) => values[name] !== undefined);
+    const others = ['sample', 'label', 'since', 'agree', 'gates', 'json', 'check'].filter((name) => values[name] !== undefined);
+    const pipeline = textOf(values, 'pipeline');
+    if (pipeline !== undefined && !PIPELINES.some((each) => each === pipeline)) {
+        return `--pipeline takes ${PIPELINES.join(', ')}`;
+    }
     if (values['replay'] === undefined) {
-        return values['kind'] === undefined && values['compare-imported'] === undefined ? null : '--kind and --compare-imported go with --replay';
+        return values['kind'] === undefined && values['compare-imported'] === undefined && pipeline === undefined ? null : '--kind, --compare-imported and --pipeline go with --replay';
     }
     return others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null;
+}
+
+/** `--check` goes with `--label` and names one check of an item. */
+function checkProblem(check: string | undefined, label: number | null): string | undefined {
+    if (check === undefined) {
+        return undefined;
+    }
+    if (label === null) {
+        return '--check goes with --label';
+    }
+    return isItemCheck(check) ? undefined : '--check takes I1…I7 or S-<section>, such as I5 or S-done';
 }
 
 export function parseEval(argv: readonly string[]): ParsedEval {
@@ -86,7 +115,7 @@ export function parseEval(argv: readonly string[]): ParsedEval {
         return { kind: 'options', options: optionsOf(values, 'replay', { label: null, sample: null, since: null }) };
     }
     const [sample, label, since] = [whole(textOf(values, 'sample'), 'sample'), whole(textOf(values, 'label'), 'label'), whole(textOf(values, 'since'), 'since')];
-    const problem = [sample, label, since].flatMap((found) => found.bad ?? []).at(0);
+    const problem = [sample, label, since].flatMap((found) => found.bad ?? []).at(0) ?? checkProblem(textOf(values, 'check'), label.value);
     const moded = modeOf(values, label.value, sample.value);
     if (problem !== undefined || 'why' in moded) {
         return { kind: 'usage', why: problem ?? ('why' in moded ? moded.why : '') };

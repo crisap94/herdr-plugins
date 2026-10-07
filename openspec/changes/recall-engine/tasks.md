@@ -6,16 +6,16 @@ pipeline, then reconciliation and calibration.
 
 ## 1. The ruler
 
-- [ ] 1.1 `CONTEXT.md`: **Anchor**, **Candidate**, **Enumeration**, **Reconciliation**, **State (judging)** — verify: glossary entries before code
-- [ ] 1.2 `RunInputs.itemsOf(run, 'state' | 'added')` (design decision 1); judge: item/section checks over `added`, coverage / no-filler / read-back over `state`; report with both columns; `verdict.item_key` prefixed `state/` — verify: repository test (a fact born earlier and still open is in `state`, a fact closed before the run is not), judge tests with a fake harness, report golden
-- [ ] 1.3 Re-measure 2.0 on the 40-prompt replay with the state ruler (`eval --replay --pipeline one`) — verify: the numbers in the MR as the new baseline
+- [x] 1.1 `CONTEXT.md`: **Anchor**, **Candidate**, **Enumeration**, **Reconciliation**, **State (judging)** — verify: glossary entries before code
+- [x] 1.2 `RunInputs.itemsOf(run, 'state' | 'added')` (design decision 1); judge: item/section checks over `added`, coverage / no-filler / read-back over `state`; report with both columns; `verdict.item_key` prefixed `state/` — verify: repository test (a fact born earlier and still open is in `state`, a fact closed before the run is not), judge tests with a fake harness, report golden
+- [x] 1.3 Re-measure 2.0 on the 40-prompt replay with the state ruler (`eval --replay --pipeline one`) — verify: the numbers in the MR as the new baseline
 
 ## 2. Anchors and recall-first gates
 
-- [ ] 2.1 Migration 009: `fact.anchor TEXT` (nullable) — verify: migration test from the oldest fixture through every registered migration
-- [ ] 2.2 `add.anchor` in `ops-answer.ts`, `recap-input.dtd` (`fact@anchor`), gate G11 (anchor verbatim in the input after whitespace folding), gate G12 (`answered` only on `needs`), G4 → flag, links without a hyperlink when flagged (design decisions 2 and 5) — verify: gate tests with the rubric's examples; DTD fixtures `xmllint`-validated; render test for a flagged link
-- [ ] 2.3 Targeted retry: `correction_input` + `schema/correction-input.dtd`, the writer's replacement answer applied to the refused operations only (design decision 5) — verify: extract-job tests (two refused → a two-op correction → replaced; still refused → dropped), fixtures validated
-- [ ] 2.4 Measure: `--pipeline enumerate+gates` is not yet available, so measure the gates alone on the replay (`--pipeline one` with the new gates) — verify: supported (anchor-verified) and dropped counts in the MR
+- [x] 2.1 Migration 009: `fact.anchor TEXT` (nullable) — verify: migration test from the oldest fixture through every registered migration
+- [x] 2.2 `add.anchor` in `ops-answer.ts`, `recap-input.dtd` (`fact@anchor`), gate G11 (anchor verbatim in the input after whitespace folding), gate G12 (`answered` only on `needs`), G4 → flag, links without a hyperlink when flagged (design decisions 2 and 5) — verify: gate tests with the rubric's examples; DTD fixtures `xmllint`-validated; render test for a flagged link
+- [x] 2.3 Targeted retry: `correction_input` + `schema/correction-input.dtd`, the writer's replacement answer applied to the refused operations only (design decision 5) — verify: extract-job tests (two refused → a two-op correction → replaced; still refused → dropped), fixtures validated
+- [x] 2.4 Measure: `--pipeline enumerate+gates` is not yet available, so measure the gates alone on the replay (`--pipeline one` with the new gates) — verify: supported (anchor-verified) and dropped counts in the MR
 
 ## 3. Enumerate, ask-back, reconcile
 
@@ -28,8 +28,8 @@ pipeline, then reconciliation and calibration.
 ## 4. Reconciliation and calibration
 
 - [ ] 4.1 Curator reconcile mode (update/close/merge, never add; the transcript tail as evidence), triggers every N turns (`TAB_RECAP_RECONCILE_EVERY`, 8), on open, first run after a boundary; a summary that omits a fact is not evidence (design decision 6) — verify: curate tests (adds refused, stale needs closed, the post-boundary case leaves the decision open), throttle test
-- [ ] 4.2 Judge anchors from operator corrections (≤ 5 per check, newest first) and Cohen's kappa in `--agree` with the three most disagreed items; `--label --check <id>` (design decision 7) — verify: tests with seeded verdicts (kappa values, anchors present in the instructions), cli-arguments test
-- [ ] 4.3 Fair 1.x comparison per chapter in `--compare-imported` (design decision 8) — verify: test over a tab with two chapters of `item` rows
+- [x] 4.2 Judge anchors from operator corrections (≤ 5 per check, newest first) and Cohen's kappa in `--agree` with the three most disagreed items; `--label --check <id>` (design decision 7) — verify: tests with seeded verdicts (kappa values, anchors present in the instructions), cli-arguments test
+- [x] 4.3 Fair 1.x comparison per chapter in `--compare-imported` (design decision 8) — verify: test over a tab with two chapters of `item` rows
 - [ ] 4.4 README (root and `tab-recap/README.md`): how a turn is read (enumerate → reconcile), anchors, what refuses and what flags, the reconciliation, `--pipeline`, kappa; `config.example.env` — verify: docs updated, no private names
 
 ## 5. Integration and archive (before merge)

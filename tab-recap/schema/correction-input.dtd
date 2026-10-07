@@ -1,0 +1,48 @@
+<!-- correction_input: what tab-recap gives the recap writer for the one retry after a gate refused some of its operations. Version 1.
+     No transcript: the refused operations with their reasons, and the facts they name. The writer answers replacement operations
+     for those only. -->
+<!ELEMENT correction_input (tab, ledger*, refused*, problem*)>
+<!ATTLIST correction_input version CDATA #FIXED "1">
+
+<!ELEMENT tab EMPTY>
+<!ATTLIST tab
+  id   CDATA #REQUIRED
+  now  CDATA #REQUIRED
+  zone CDATA #REQUIRED>
+
+<!-- The facts the refused operations name (by id), as the first document showed them. With several tasks there is one ledger per task. -->
+<!ELEMENT ledger (fact*)>
+<!ATTLIST ledger task CDATA #IMPLIED>
+<!ELEMENT fact (#PCDATA)>
+<!ATTLIST fact
+  id      ID    #REQUIRED
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  state   (open|closed) "open"
+  first   CDATA #IMPLIED
+  last    CDATA #IMPLIED
+  why     CDATA #IMPLIED
+  ref     CDATA #IMPLIED
+  anchor  CDATA #IMPLIED
+  agent   CDATA #IMPLIED
+  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED>
+
+<!-- One refused operation: the operation as the writer gave it, and each gate that refused it with the reason. task = the task it was for. -->
+<!ELEMENT refused (operation, reason+)>
+<!ATTLIST refused task CDATA #IMPLIED>
+<!-- op = add | update | close. An add has section / at / agent / ref / why / anchor; an update has id / why / anchor; a close has id and closed (its reason). -->
+<!ELEMENT operation (#PCDATA)>
+<!ATTLIST operation
+  op      (add|update|close) #REQUIRED
+  id      CDATA #IMPLIED
+  section (goal|now|needs|done|decisions|next|links|rules) #IMPLIED
+  at      CDATA #IMPLIED
+  agent   CDATA #IMPLIED
+  ref     CDATA #IMPLIED
+  why     CDATA #IMPLIED
+  anchor  CDATA #IMPLIED
+  closed  CDATA #IMPLIED>
+<!ELEMENT reason (#PCDATA)>
+<!ATTLIST reason gate CDATA #REQUIRED>
+
+<!-- Something wrong with the shape of the answer itself (an operation that could not be read). -->
+<!ELEMENT problem (#PCDATA)>

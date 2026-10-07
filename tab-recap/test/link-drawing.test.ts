@@ -115,3 +115,10 @@ test('a remote with a token: nothing stored and nothing drawn holds the secret (
     assert.ok(text.includes(open(`${BASE}/-/merge_requests/3`)));
     assert.ok(!text.includes('s3cr3t') && !text.includes('oauth2'));
 });
+
+test('a flagged link (a description where a reference belongs) is kept and drawn as plain text, with no hyperlink', () => {
+    const text = drawn(viewOf({ links: ['the release notes', 'ctx1', '!252'] }, [lane('w1:p1', web)])).join('\n');
+    assert.ok(text.includes('• the release notes') && text.includes('• ctx1'), 'the fact is still there');
+    assert.ok(text.includes(`• ${open(`${BASE}/-/merge_requests/252`)}!252${CLOSE}`), 'a real reference beside it is a link');
+    assert.equal((text.match(/\]8;;https?:/g) ?? []).length, 1, 'exactly one hyperlink: the description opens none');
+});

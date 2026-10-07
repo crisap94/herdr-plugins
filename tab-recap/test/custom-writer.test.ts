@@ -12,9 +12,9 @@ import { scratchDir } from '#test/db/support.ts';
 import { requestOf } from './support.ts';
 
 const ground: Ground = {
-    gates: LEDGER_GATES, now: 1,
+    gates: LEDGER_GATES, now: 1, facts: new Map(),
     resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], language: 'en', agents: [] }],
+    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], source: 'go', language: 'en', agents: [] }],
 };
 
 /** A command that reads the document on stdin and prints `answer(document)`. */
@@ -31,9 +31,16 @@ async function through(script: string): Promise<Extracted> {
 }
 
 test('a command that reads the version 2 document and prints operations is applied', async () => {
-    const done = await through(`console.log(JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: document.includes('<recap_input version="2">') && document.includes('<ledger/>') ? 'got the v2 document' : 'wrong document' }] }));`);
+    const done = await through(`console.log(JSON.stringify({ ops: [{ op: 'add', section: 'goal', anchor: 'go', text: document.includes('<recap_input version="2">') && document.includes('<ledger/>') ? 'got the v2 document' : 'wrong document' }] }));`);
     assert.ok(done.kind === 'ops');
     assert.deepEqual(done.tasks[0]?.ops.map((op) => (op.op === 'add' ? op.text : '')), ['got the v2 document']);
+});
+
+test('a command may leave the anchor out: its add is kept without one (G11 does not judge a custom command)', async () => {
+    const done = await through(`console.log(JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'no anchor here' }] }));`);
+    assert.ok(done.kind === 'ops');
+    assert.deepEqual(done.tasks[0]?.ops.map((op) => (op.op === 'add' ? [op.text, op.anchor ?? null] : [])), [['no anchor here', null]]);
+    assert.equal(done.stats.refused['G11'] ?? 0, 0);
 });
 
 test('a command that still prints the 1.x recap fails the run with the contract line, once, and stores nothing', async () => {

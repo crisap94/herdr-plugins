@@ -1,14 +1,18 @@
 // The judge's documents validated against schema/judge-input.dtd, and broken ones that must fail.
 import assert from 'node:assert/strict';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
-import { gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';
+import { coverDocument, gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 
-const ITEMS = [{ key: 't1/goal/0', section: 'goal', text: 'Ship retries for the upload client.' }, { key: 't1/done/0', section: 'done', text: 'Merged !256 & tagged <1.9.0> ]]> done.' }];
+const ITEMS = [{ key: 't1/goal/0', section: 'goal', text: 'Ship retries for the upload client.', fact: 'f1', born: true, anchor: null }, { key: 't1/done/0', section: 'done', text: 'Merged !256 & tagged <1.9.0> ]]> done.', fact: 'f2', born: true, anchor: null }];
 const INPUT = '<recap_input version="1"><tab id="w1:t1"/>hostile ]]> & </recap_input>';
 
 const FIXTURES: Readonly<Record<string, string>> = {
     'scoring: the rubric file, the saved input and the items with their keys': scoringDocument({ rubric: RUBRIC_TEXT, input: INPUT, items: ITEMS }),
+    'scoring: the added items and the ledger state after the run': scoringDocument({ rubric: RUBRIC_TEXT, input: INPUT, items: ITEMS, state: ITEMS.map((item) => ({ ...item, key: `state/${item.key}` })) }),
+    'scoring: an empty state': scoringDocument({ rubric: RUBRIC_TEXT, input: INPUT, items: ITEMS, state: [] }),
+    'cover: the key facts to use and a state': coverDocument({ input: INPUT, keyfacts: ['A <b> & c'], state: ITEMS.map((item) => ({ ...item, key: `state/${item.key}` })) }),
+    'cover: no key facts given': coverDocument({ input: INPUT, keyfacts: null, state: ITEMS }),
     'scoring: a run with no items': scoringDocument({ rubric: RUBRIC_TEXT, input: INPUT, items: [] }),
     'read-back: the recap items alone': readbackDocument(ITEMS),
     'grading: the input, key facts and six answers': gradingDocument({ input: INPUT, keyfacts: ['Tagged 1.9.0', 'A <b> & c'], answers: ['a', 'b', 'c', 'd', 'e', 'f'] }),

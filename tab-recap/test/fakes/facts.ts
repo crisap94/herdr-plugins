@@ -7,7 +7,7 @@ export const TASK: TaskId = { tab: 'w1:t1', key: 't1' };
 let counter = 0;
 
 export const factOf = (section: Section, text: string, over: Partial<Fact> = {}): Fact => ({
-    id: `fct_${(counter += 1)}` as FactId, task: TASK, section, text, why: section === 'decisions' ? 'because the plan says so' : null, ref: null, agent: null,
+    id: `fct_${(counter += 1)}` as FactId, task: TASK, section, text, why: section === 'decisions' ? 'because the plan says so' : null, ref: null, agent: null, anchor: null,
     firstAt: 1000, lastAt: 1000, state: 'open', closedWhy: null, closedAt: null, language: 'en', ...over,
 });
 

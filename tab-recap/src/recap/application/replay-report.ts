@@ -35,3 +35,9 @@ export function ledgerText(facts: readonly Fact[], zone: string): string {
     const at = (ms: number): string => localTime(ms, ms, zone);
     return facts.map((fact) => `  ${fact.section.padEnd(9)} ${fact.state === 'open' ? 'open  ' : (fact.closedWhy ?? 'closed').padEnd(6)} ${at(fact.firstAt)}–${at(fact.lastAt)}  ${fact.text}${fact.why === null ? '' : ` — ${fact.why}`}`).join('\n');
 }
+
+/** How many of the facts quote their input (G11 refuses an add whose quote is not in it, so every fact the gates let through does). */
+export const anchoredLine = (facts: readonly Fact[]): string => {
+    const anchored = facts.filter((fact) => fact.anchor !== null).length;
+    return `facts with an anchor found in the input: ${anchored} of ${facts.length} (${pct(anchored, facts.length)})`;
+};

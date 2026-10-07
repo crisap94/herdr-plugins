@@ -31,6 +31,8 @@ export interface Fact {
     readonly ref: string | null;
     /** the lane's label when the fact is one agent's */
     readonly agent: string | null;
+    /** a quote (at most 120 characters) from the writer's input that the fact comes from; null for a fact imported from 1.x or added before anchors */
+    readonly anchor: string | null;
     /** epoch ms */
     readonly firstAt: number;
     readonly lastAt: number;

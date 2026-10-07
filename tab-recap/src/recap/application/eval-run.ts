@@ -9,6 +9,7 @@ import type { Candidate } from './eval-label.ts';
 import type { EvalOptions } from './eval-options.ts';
 import { reportOf } from './eval-report.ts';
 import { agreementOf, gateReportOf } from './eval-stats.ts';
+import { withText } from './judge-anchors.ts';
 import { judgeRuns } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
 
@@ -50,17 +51,17 @@ async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 
-/** One item: shown, answered (asked again until it is understood), its verdicts stored at once. False: the operator quit. */
-async function labelOne(candidate: Candidate, position: string, deps: EvalDeps): Promise<boolean> {
+/** One item: shown, answered (asked again until it is understood), its verdicts stored at once. False: the operator quit. `check`: the one check asked about. */
+async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, check: string | null): Promise<boolean> {
     deps.out(candidateLines(candidate, position, deps.style).join('\n'));
     for (;;) {
-        const line = await deps.ask('ok / fail [I1…I7 S-section …] / skip / quit > ');
-        const answer = line === null ? { kind: 'quit' } as const : answerOf(line, candidate.section);
+        const line = await deps.ask(check === null ? 'ok / fail [I1…I7 S-section …] / skip / quit > ' : `${check}: ok / fail / skip / quit > `);
+        const answer = line === null ? { kind: 'quit' } as const : answerOf(line, candidate.section, check);
         if (answer.kind === 'again') {
             deps.err(answer.why);
         } else if (answer.kind === 'pass' || answer.kind === 'fail') {
             const reason = answer.kind === 'fail' ? ((await deps.ask('why? > ')) ?? '').trim() : '';
-            deps.verdicts.add(labelVerdicts(candidate, answer, reason, deps.now()));
+            deps.verdicts.add(labelVerdicts(candidate, answer, reason, deps.now(), check));
             return true;
         } else {
             return answer.kind === 'skip';
@@ -70,14 +71,14 @@ async function labelOne(candidate: Candidate, position: string, deps: EvalDeps):
 
 async function label(options: EvalOptions, deps: EvalDeps): Promise<number> {
     const runs = deps.inputs.runs(queryOf(options, deps, LABEL_RUNS, false));
-    const items = candidatesOf(runs, deps.inputs, deps.verdicts.labelled(), options.count);
+    const items = candidatesOf(runs, deps.inputs, deps.verdicts.labelled(options.check), options.count, options.check);
     if (items.length === 0) {
-        deps.out('no unlabelled items in the period');
+        deps.out(options.check === null ? 'no unlabelled items in the period' : `no items in the period that ${options.check} has not been asked about`);
         return 0;
     }
     let done = 0;
     for (const [at, item] of items.entries()) {
-        if (!(await labelOne(item, `${at + 1}/${items.length}`, deps))) {
+        if (!(await labelOne(item, `${at + 1}/${items.length}`, deps, options.check))) {
             break;
         }
         done += 1;
@@ -93,7 +94,7 @@ export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<num
         case 'label':
             return label(options, deps);
         case 'agree': {
-            const rows = agreementOf(deps.verdicts.pairs());
+            const rows = agreementOf(deps.verdicts.pairs(), withText(deps.verdicts.disagreements(), deps.inputs));
             deps.out(options.json ? JSON.stringify(rows) : agreeLines(rows, deps.style).join('\n'));
             return 0;
         }

@@ -22,6 +22,8 @@ import { factOf } from './fakes/facts.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
+/** The first prompt of each turn of the fixture: a writer that follows the contract quotes what is in the window it was shown. */
+const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
 
 /** A writer that answers one scripted list of operations per call, and remembers what it was shown. */
 function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { summarizer: Summarizer; shown: string[] } {
@@ -30,7 +32,9 @@ function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { s
         backend: 'fake',
         write: (request: RecapRequest): Promise<Written> => {
             shown.push(request.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => fact.text)).join('|'));
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: answers[Math.min(shown.length - 1, answers.length - 1)] ?? [] }), costUsd: 0 });
+            const given = answers[Math.min(shown.length - 1, answers.length - 1)] ?? [];
+            const quoted = given.map((each) => (each['op'] === 'add' && each['anchor'] === undefined ? Object.assign({}, each, { anchor: QUOTES[shown.length - 1] }) : each));
+            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: quoted }), costUsd: 0 });
         },
     };
     return { summarizer, shown };
@@ -115,24 +119,26 @@ const lenient: Judge = {
     ask: (task, document) => {
         const keys = [...document.matchAll(/<item key="([^"]+)" section="([^"]+)"/g)].map((found) => ({ key: found[1] ?? '', section: found[2] ?? '' }));
         const answers: Record<JudgeTask, unknown> = {
-            score: { verdicts: keys.flatMap(({ key, section }) => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', `S-${section}`].map((check) => ({ item: key, check, pass: true, critique: '' }))), keyfacts: ['the cart'], coverage: [{ keyfact: 0, item: keys[0]?.key ?? null }] },
+            score: { verdicts: keys.flatMap(({ key, section }) => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', `S-${section}`].map((check) => ({ item: key, check, pass: true, critique: '' }))), keyfacts: ['the cart'], coverage: [{ keyfact: 0, item: keys.find(({ key }) => key.startsWith('state/'))?.key ?? null }] },
             readback: { answers: ['a', 'b', 'c', 'd', 'e', 'f'] },
             grade: { grades: [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: true, critique: '' })) },
+            cover: { keyfacts: ['the cart'], coverage: [{ keyfact: 0, item: keys.find(({ key }) => key.startsWith('state/'))?.key ?? null }] },
         };
         return Promise.resolve({ kind: 'said', text: JSON.stringify(answers[task]), costUsd: 0 });
     },
 };
 
-test('the judge over a replay: every run of the replay is scored like a stored one, and the imported facts of a tab are scored beside it', async () => {
+test('the judge over a replay: every run of the replay is scored like a stored one, and the 1.x chapters of a tab are compared beside it', async () => {
     const { summarizer } = scripted([[add('goal', 'Add a cart to the shop')], [add('done', 'Added cart totals in src/totals.ts')], [], [], [], []]);
     const scratch = scratchStore();
     try {
         await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined }, FILE, 'replay:t1', statSync(FILE).size);
-        const imported = [factOf('goal', 'Shop with a cart'), factOf('done', 'Cart totals added in src/totals.ts')];
+        const imported = [{ n: 1, at: Date.parse('2026-10-07T09:20:00Z'), items: [{ key: 'state/t1/goal/0', section: 'goal', text: 'Shop with a cart', fact: 'state/t1/goal/0', born: false, anchor: null }, { key: 'state/t1/done/0', section: 'done', text: 'Cart totals added in src/totals.ts', fact: 'state/t1/done/0', born: false, anchor: null }] }];
         const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: 'rubric', label: 'replay:t1', imported, beside: 'w1:t9', style: styleFor(process.stdout), err: () => undefined });
         const text = lines.join('\n');
         assert.match(text, /the judge over the replay \(2 runs\)/);
-        assert.match(text, /the same judge over the facts imported for w1:t9 \(2 facts\)/);
+        assert.match(text, /the last good 1\.x recap of each chapter of w1:t9 against the replay's ledger state at the same time/);
+        assert.match(text, /chapter 1 \(2026-10-07 09:20, 1 key facts\)/);
         assert.match(text, /I1/);
         assert.equal(scratch.store.verdicts.ofRun(scratch.store.inputs.runs({ tab: 'replay:t1', since: null, limit: 5, withInput: true })[0]?.id ?? '').length > 0, true, 'the replay\'s verdicts are kept in the scratch store');
     } finally {
