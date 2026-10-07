@@ -1,52 +1,68 @@
-// The curator job: for each task of a tab whose ledger changed since its story was written, one model call that may close
-// duplicates as merged and writes the "session so far" paragraph. At most once per five minutes per task; never in the
-// view's way (the view asks through the request queue and redraws from the store).
-import type { Curators } from '#src/ports/curators.ts';
+// The curator job. For each task of a tab whose ledger changed since its story was written, one model call that may close
+// duplicates as merged and writes the "session so far" paragraph. And, every few turns, at an open of the expanded view and after a
+// boundary, one that reconciles the open facts with the newest turns (ledger-reconcile.ts). At most once per five minutes per task and
+// kind of call; never in the view's way (the view asks through the request queue and redraws from the store).
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
-import type { CurationRun, Stories } from '#src/ports/stories.ts';
+import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
+import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
 import { curatorInput } from './curator-input.ts';
 import { newestChange } from './expanded-view.ts';
+import { Reconciling } from './ledger-reconcile.ts';
+import type { CurateWhy, ReconcilingDeps, RunEvent } from './ledger-reconcile.ts';
+
+export type { CurateWhy, RunEvent };
 
 /** a task is curated at most this often */
 export const CURATE_GAP_MS = 5 * 60_000;
 
-export interface CurateDeps {
+export interface CurateDeps extends ReconcilingDeps {
     readonly records: RecapRecords;
-    readonly ledger: Ledger;
-    readonly stories: Stories;
-    /** the curator as the job is set now; null when it is off or no harness is there */
-    readonly writer: () => Curators | null;
-    readonly clock: () => number;
-    readonly zone: () => string;
-    /** the language the paragraph is written in */
-    readonly language: () => string;
-    /** the rubric's item checks the curator is shown */
-    readonly rubric: string;
-    log(line: string): void;
 }
 
 export class Curate {
     private readonly deps: CurateDeps;
     private readonly lastRun = new Map<string, number>();
     private readonly running = new Set<string>();
+    private readonly reconciling: Reconciling;
 
     constructor(deps: CurateDeps) {
         this.deps = deps;
+        this.reconciling = new Reconciling(deps);
+    }
+
+    /** A run of the tab's lanes was recorded: the ledger is reconciled when enough turns have passed or a lane was compacted. */
+    async afterRun(event: RunEvent): Promise<void> {
+        if (this.reconciling.due(event)) {
+            await this.run(event.tab, event.boundary ? 'boundary' : 'turns');
+        }
     }
 
     /** Every task of the tab, one after the other; a task that cannot be curated is logged and the next goes on. */
-    async run(tab: string): Promise<void> {
-        for (const task of this.deps.records.readRecap(tab)?.tasks ?? []) {
-            try {
+    async run(tab: string, why: CurateWhy = 'open'): Promise<void> {
+        const recap = this.deps.records.readRecap(tab);
+        const done: boolean[] = [];
+        for (const task of recap?.tasks ?? []) {
+            done.push(await this.one(tab, task, { lanes: recap?.lanes ?? [], why }));
+        }
+        if (done.some((each) => each)) {
+            this.reconciling.settle(tab);
+        }
+    }
+
+    /** One task: reconciled when it is time to, then its story as today; whether it was reconciled. A task that fails is logged and the next goes on. */
+    private async one(tab: string, task: { readonly id: string; readonly name: string; readonly lanes: readonly string[] }, how: { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }): Promise<boolean> {
+        try {
+            const reconciled = await this.reconciling.task(tab, task, how.lanes, how.why);
+            if (how.why === 'open') {
                 await this.curate(tab, task);
-            } catch (error) {
-                this.deps.log(`curator ${tab} ${task.id}: ${error instanceof Error ? error.message : String(error)}`);
             }
+            return reconciled;
+        } catch (error) {
+            this.deps.log(`curator ${tab} ${task.id}: ${error instanceof Error ? error.message : String(error)}`);
+            return false;
         }
     }
 

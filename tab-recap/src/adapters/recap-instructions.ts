@@ -4,6 +4,7 @@ import type { SectionId } from '#src/i18n/sections.ts';
 import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { WHY_WORDS } from '#src/recap/application/ops-answer.ts';
+import { RECONCILE_LINES } from './reconcile-instructions.ts';
 import { RUBRIC } from './rubric.ts';
 
 function languageLines(language: string, previous: string): string[] {
@@ -49,6 +50,7 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '<agent_note> = the agent\'s own summary: a hint, the transcript wins. Times are HH:MM: give each new fact the time it happened.',
         'Name agents by label.',
         '',
+        ...(request.input.candidates === undefined ? [] : [...RECONCILE_LINES, '']),
         'Answer with ONLY one JSON object: no other text, no code fence. Operations on the ledger:',
         ...SHAPE,
         '- add what is new. "at" is the time of the turn it came from, as written in the transcript; "agent" the agent\'s id, when it is one agent\'s work.',

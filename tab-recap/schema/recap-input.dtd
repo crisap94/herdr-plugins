@@ -1,5 +1,5 @@
 <!-- recap_input: everything tab-recap gives the recap writer for one tab, one run. Version 2. -->
-<!ELEMENT recap_input (tab, current_tasks?, ledger+, agent_note*, transcript+, correction?)>
+<!ELEMENT recap_input (tab, current_tasks?, ledger+, candidates?, agent_note*, transcript+, correction?)>
 <!ATTLIST recap_input version CDATA #FIXED "2">
 
 <!-- The tab and who works in it. now = UTC ISO 8601; zone = IANA name the HH:MM times below use. -->
@@ -88,3 +88,17 @@
 
 <!-- Only on the retry: the operations that were refused, one per line, each with the reason. -->
 <!ELEMENT correction (#PCDATA)>
+
+<!-- Only in the reconcile step of a run: what the enumeration found in the new turns. A new fact is added only from a candidate, copying
+     its anchor. anchor = a piece of the input, copied; flagged=yes = a commit, an edit, an error or a question the enumeration left
+     unfilled (add it when it is a fact); agent = the agent whose work it is; at = the time of the turn it came from. -->
+<!ELEMENT candidates (candidate*)>
+<!ELEMENT candidate (#PCDATA)>
+<!ATTLIST candidate
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  anchor  CDATA #REQUIRED
+  why     CDATA #IMPLIED
+  ref     CDATA #IMPLIED
+  agent   IDREF #IMPLIED
+  at      CDATA #IMPLIED
+  flagged (yes|no) "no">

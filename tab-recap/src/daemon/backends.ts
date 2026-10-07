@@ -7,9 +7,11 @@ import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
 import { HarnessBrief } from '#src/adapters/harness-brief.ts';
 import { HarnessJudge } from '#src/adapters/harness-judge.ts';
 import { HarnessCurator } from '#src/adapters/harness-curator.ts';
+import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Curators } from '#src/ports/curators.ts';
+import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
@@ -55,6 +57,12 @@ class Nothing implements Summarizer {
 export function summarizerFor(config: Config, available: readonly string[], work: string): Summarizer {
     const id = pick(config.backend, available);
     return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work), { model: config.models[id], effort: config.effort });
+}
+
+/** The enumeration: the recap writer's harness and model at low effort (it lists candidates, the writer decides); null when no harness is there or the writer is a custom command, whose contract is the single call. */
+export function enumeratorFor(config: Config, available: readonly string[], work: string): Enumerators | null {
+    const id = pick(config.backend, available);
+    return id === null || id === 'custom' ? null : new HarnessEnumerator(MAKERS[id](config, work), { model: config.models[id], effort: 'low' });
 }
 
 /** The compaction brief's writer: the job's placement on a harness; null when the job is off or no harness is there. */
@@ -124,5 +132,9 @@ export class Backends {
 
     summarizer(): Summarizer {
         return summarizerFor(loadConfig(), this.available, this.work);
+    }
+
+    enumerator(): Enumerators | null {
+        return enumeratorFor(loadConfig(), this.available, this.work);
     }
 }

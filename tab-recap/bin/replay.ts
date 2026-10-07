@@ -14,9 +14,11 @@ import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
-import { AUTO_ORDER, judgeFor, summarizerFor } from '#src/daemon/backends.ts';
+import { AUTO_ORDER, enumeratorFor, judgeFor, summarizerFor } from '#src/daemon/backends.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
+import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Judge } from '#src/ports/judge.ts';
+import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { EvalOptions } from '#src/recap/application/eval-options.ts';
@@ -40,13 +42,29 @@ const sizeOf = (file: string): number | null => {
     }
 };
 
+/** What ran: the pipeline and the jobs of the writer and the enumeration (the judge's is named in its own report), and what the calls cost. */
+function ranLine(done: Replayed, jobs: { readonly pipeline: string; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
+    const per = done.windows === 0 ? 0 : done.costUsd / done.windows;
+    return `pipeline ${jobs.pipeline} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.windows} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.windows)).toFixed(2)} per turn)`;
+}
+
 /** The mechanical checks (no judge), the ledger, and the imported facts beside them when asked. */
-function printMechanical(done: Replayed, file: string, beside: string | null): void {
-    console.log(`${reportOf(`replay of ${file}: ${done.windows} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
+function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
+    console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.windows} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
     if (beside !== null) {
         const imported = factsOfTab(databasePath(stateDir()), beside);
         console.log(`\n${imported === null ? `the imported facts of ${beside}: none (no ledger in the database yet)` : reportOf(`the imported facts of ${beside}`, imported)}`);
     }
+}
+
+/** The writer and the enumeration the config asks for, each counting its calls (a harness that reports no cost still shows how much was asked). */
+function counted(config: ReturnType<typeof loadConfig>, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
+    const calls = { writer: 0, enumeration: 0 };
+    const made = summarizerFor(config, available, join(dir, 'summarizer'));
+    const writer: Summarizer = { backend: made.backend, write: (request) => { calls.writer += 1; return made.write(request); } };
+    const own = enumeratorFor(config, available, join(dir, 'enumerator'));
+    const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
+    return { writer, enumerator, calls };
 }
 
 async function run(file: string, reader: Transcripts, options: EvalOptions, size: number): Promise<number> {
@@ -55,19 +73,17 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
     const available = isUnknown(found) ? [] : found.ids;
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const pipeline = options.pipeline ?? 'one';
-    const writer = summarizerFor(config, available, join(scratch.dir, 'summarizer'));
     const anchors = operatorAnchors(databasePath(stateDir()));
-    const judgeLabel = judgeFor(config, available, join(scratch.dir, 'judge'), anchors)?.label ?? 'none';
+    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), anchors);
     try {
+        const { writer, enumerator, calls } = counted(config, available, scratch.dir);
+        const pipeline = options.pipeline ?? config.pipeline;
         const done = await replay({
             reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
-            summarizer: () => writer,
+            summarizer: () => writer, pipeline, enumerator: () => enumerator,
         }, file, label, size);
-        console.log(`pipeline ${pipeline} · writer ${writer.backend} · judge ${judgeLabel}\n`);
-        printMechanical(done, file, options.compareImported);
+        printMechanical(done, file, options.compareImported, ranLine(done, { pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: judge?.label ?? 'none', calls }));
         console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
-        const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), anchors);
         if (judge === null) {
             console.log('\nmodel judging: off (no harness is available for the judge job); the checks above need no model');
             return 0;
@@ -85,10 +101,6 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
 
 export function replayCommand(options: EvalOptions): Promise<number> {
     const file = options.replay ?? '';
-    if (options.pipeline !== null && options.pipeline !== 'one') {
-        console.error(`tab-recap: 2 — --pipeline ${options.pipeline} needs the enumeration step, which this build does not have`);
-        return Promise.resolve(2);
-    }
     const make = readers[kindOf(options.kind, file)];
     if (make === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
