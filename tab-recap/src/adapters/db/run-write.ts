@@ -32,7 +32,7 @@ export class RunRows {
         this.transcripts = transcripts;
         this.inputs = new RunInputRows(db);
         this.chapterInsert = db.prepare('INSERT OR IGNORE INTO chapter (id, tab_id, n, started_at) VALUES (?, ?, 1, ?)');
-        this.chapterSelect = db.prepare('SELECT id FROM chapter WHERE tab_id = ? AND n = 1');
+        this.chapterSelect = db.prepare('SELECT id FROM chapter WHERE tab_id = ? ORDER BY n DESC LIMIT 1');
         this.runInsert = db.prepare('INSERT INTO run (id, chapter_id, at, cause, backend, language, cost_micro_usd, error, gate_stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.readInsert = db.prepare('INSERT OR REPLACE INTO run_read (run_id, transcript_id, from_cursor, to_cursor) VALUES (?, ?, ?, ?)');
         this.taskInsert = db.prepare('INSERT OR IGNORE INTO task (id, tab_id, key) VALUES (?, ?, ?)');
@@ -41,14 +41,14 @@ export class RunRows {
         this.laneInsert = db.prepare('INSERT INTO run_task_lane (run_id, task_id, transcript_id, position) VALUES (?, ?, ?, ?)');
     }
 
-    /** Until 1.7.0 a tab has one chapter. */
-    private firstChapter(tab: string, at: number): Uint8Array {
+    /** A run belongs to the tab's newest chapter (chapter 1 is made on first sight). */
+    private currentChapter(tab: string, at: number): Uint8Array {
         this.chapterInsert.run(ids.next(), tab, at);
         return blob(one(this.chapterSelect, tab) ?? {}, 'id');
     }
 
     insertRun(facts: RunFacts, error: string | null, gateStats: GateStats | null = null): Uint8Array {
-        const chapter = this.firstChapter(facts.tab, facts.at);
+        const chapter = this.currentChapter(facts.tab, facts.at);
         const id = ids.next();
         this.runInsert.run(id, chapter, facts.at, facts.cause, facts.backend, facts.language, microsOf(facts.costUsd), error, statsText(gateStats));
         return id;

@@ -10,11 +10,14 @@ export interface Moved {
     readonly pane: string;
     readonly from: number;
     readonly to: number;
+    /** the transcript this one stands in for: a new conversation in a pane that had another */
+    readonly replaces: Uint8Array | null;
 }
 
 export class TranscriptRows {
     private readonly detach: StatementSync;
     private readonly was: StatementSync;
+    private readonly priorStatement: StatementSync;
     private readonly upsert: StatementSync;
     private readonly ofPaneStatement: StatementSync;
     private readonly placeholder: StatementSync;
@@ -22,6 +25,7 @@ export class TranscriptRows {
     constructor(db: DatabaseSync) {
         this.detach = db.prepare('UPDATE transcript SET attached = 0 WHERE tab_id = ?');
         this.was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?');
+        this.priorStatement = db.prepare("SELECT id FROM transcript WHERE tab_id = ? AND pane = ? AND source <> '' ORDER BY first_seen DESC, id DESC LIMIT 1");
         this.upsert = db.prepare(`INSERT INTO transcript (id, tab_id, pane, agent, source, attached, position, cursor, tail, title, last_prompt, claude_note, first_seen)
           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT (tab_id, pane, source) DO UPDATE SET agent = excluded.agent, attached = 1, position = excluded.position, cursor = excluded.cursor,
@@ -36,8 +40,9 @@ export class TranscriptRows {
         this.detach.run(tab);
         return lanes.map((lane, position) => {
             const was = one(this.was, tab, lane.pane, lane.transcript);
+            const prior = was === null && lane.transcript !== '' ? one(this.priorStatement, tab, lane.pane) : null;
             const saved = this.upsert.get(ids.next(), tab, lane.pane, lane.agent, lane.transcript, position, lane.cursor, lane.tail, lane.title, lane.lastPrompt, lane.claudeRecap, at) as Row;
-            return { id: blob(saved, 'id'), pane: lane.pane, from: was === null ? lane.cursor : whole(was, 'cursor'), to: lane.cursor };
+            return { id: blob(saved, 'id'), pane: lane.pane, from: was === null ? lane.cursor : whole(was, 'cursor'), to: lane.cursor, replaces: prior === null ? null : blob(prior, 'id') };
         });
     }
 

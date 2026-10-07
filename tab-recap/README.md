@@ -1,7 +1,7 @@
 # Tab Recap
 
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps
-a rolling, structured recap of the conversation, so a long session never loses its thread:
+a ledger of **facts** about the conversation and shows the open ones, so a long session never loses its thread:
 
 ```text
  Payments API migration
@@ -18,13 +18,9 @@ a rolling, structured recap of the conversation, so a long session never loses i
  DONE · DECISIONS · NEXT · LINKS
 ```
 
-The recap always has the same seven sections in the same order (Goal, Now, Needs you, Done,
-Decisions, Next, Links), an empty one shows `—`, and each is capped (the goal is one line; 3 to 6
-bullets elsewhere, 16 words at most per line). The limits are enforced in code, not left to the model.
-
 - **On a phone, a bar.** A narrow tab gets a one-row bar along the bottom instead — a status dot
   per agent and one headline (what needs you, else what is happening now). **Tap it** (or tap the
-  column on a desktop) and the full recap opens as a modal over everything; `q` closes it.
+  column on a desktop) and the [expanded view](#the-expanded-view) opens as a modal over everything; `q` closes it.
 - **Know what is deployed.** The column's top line ends with the plugin version on disk (`· v1.8.0`); when the running daemon is another version, a yellow `daemon v1.7.0 — restart` says so.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
   `TAB_RECAP_AGENTS` (default `claude`, `codex` and `opencode`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
@@ -51,9 +47,10 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   the repository's `origin` remote (ssh made https, credentials never kept; github.com gets GitHub
   paths, other hosts GitLab paths); files open on the agent's current branch. When a task's agents work
   in different repositories, only full URLs are linked.
-- **What the writer sees.** One XML document per run, defined by
+- **What the writer sees.** One XML document (version 2) per run, defined by
   [`schema/recap-input.dtd`](schema/recap-input.dtd) and validated in tests: the tab's agents (folder,
-  repository, branch, recently edited files), the ledger of facts so far, the agents' own away and compaction
+  repository, branch, recently edited files), the **ledger** (open facts of every task, plus the ones closed
+  in the last two hours, newest last, each with an id the answer refers to), the agents' own away and compaction
   summaries as hints, and per agent the new prompts (including ones typed while it was busy), replies
   (beginning and end) and tool calls (Codex's decoded; plain reads only counted), each with its time.
   The writer runs at `TAB_RECAP_EFFORT` (`medium` by default) and closes any earlier fact the transcript
@@ -63,6 +60,79 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
 - **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is [compaction](#compaction), and only when you ask for it.
+
+## What the recap is
+
+The recap is a **ledger of facts**, each one line (16 words at most) in one of eight sections, always in the
+same order in the column: Goal, Now, Needs you, Done, Decisions, Next, Links and Rules. An empty section
+shows `—`. A fact keeps its identity: when it first appeared and was last confirmed, which turn it came
+from, and — for a decision — its **reason**. At the end of a turn the writer is shown the facts that are
+open (and the ones closed in the last two hours) and answers **operations**: `add` what is new, `update`
+what changed, `close` what finished (`done`), was wrong (`wrong`), was replaced (`superseded`) or was
+answered (`answered`). Nothing is regenerated, so nothing is rephrased turn after turn, and a closed fact
+stays in the story with its reason.
+
+- **The column and the bar** draw the open facts: the newest of each section, capped (the goal is one line;
+  now 3, needs 3, done 5, decisions 3, next 5, links 6, rules 5). The caps are a rule of the *view*, enforced
+  in code; the store keeps every fact.
+- **The expanded view** (Enter or a tap) draws all of it — see below.
+- **From 1.x:** migration 6 imports the lines your old recaps carried as facts (equal lines of a task across
+  runs become one fact; the last good run's are open, the rest closed as `rewritten`); every task's column
+  reads the same after the upgrade as before. The old `item` table stays, read-only, until 2.1.
+
+## The expanded view
+
+`tab-recap.show`, Enter in the column or a tap on the bar or the column opens the whole session from the
+ledger, at once and with no model call. In order: the curator's *session so far* paragraph (when there is one),
+**Goal**, **Now**, **Needs you** (oldest first, each with how long it has waited), **Timeline** (done facts
+and every closed fact, newest first, with the time and, for a closed fact, why it closed; a date line when the
+day changes), **Decisions** (the text, then its reason), **Next**, **Rules**, **Links** and **Session facts**:
+
+```text
+started 09:12 · 6 h 12 min          turns 41 (turn 36 · focus 3 · asked 2)
+compactions 2 (800k → 14k · 39k → 3k) · chapters 3
+claude · orchestrator  34 % of 1M   codex · host  12 % of 272k
+repo herdr-plugins · branch main
+files src/cart.ts (7), src/checkout.ts (5), …
+```
+
+The session facts are computed from the store and the agents' own records, never written by a model; a
+fact that is not known is left out. From 140 cells wide the view has two columns (story left, reference
+right); narrower, one column in that order. Scrolling and keys are the modal's: `j`/`k`, Space/`b`, `g`/`G`,
+`r`, `c`, `s`, `q`/Esc.
+
+**Breaks.** Where an agent compacted, the timeline draws a gray line across the column with the tokens
+before and after and how long it took when the agent's records say so (`── compacted 800k → 14k · 16 s ──`;
+`── compacted ──` when they do not, never a guess); where a new conversation began in the same pane it
+draws `── new session ──`. See [Chapters](#chapters-and-retention).
+
+**Session facts** are computed, never written by a model; the files edited most are counted from the agents' own
+records, read-only (the most recent 4 MB of each).
+
+![The expanded view](docs/screens/expanded-en.png)
+
+**The curator** is a job like the others (see [Models](#models)) that runs when the view opens and the facts changed
+since it last ran, at most once per five minutes per task. It may close facts as *merged* into another and writes the
+"session so far" paragraph shown at the top (at most 120 words); anything else it answers is refused and logged. The
+view shows the last paragraph with its time and `updating…` while the curator runs, and never waits for it.
+
+## Chapters and retention
+
+A session breaks when an agent compacts its context or a new conversation starts in the same pane. After
+each read of an agent's transcript the plugin records every compaction the agent's own records show that
+is newer than the lane's last break — Claude's `compact_boundary`, Codex's `compacted` row, opencode's
+compaction answer — as a **boundary** with the record's own time and tokens, and a new transcript in a pane that
+had one as a `switched` boundary naming the transcript it replaces. A compaction is **manual** when the
+plugin started one for that lane in the ten minutes before the record, else **auto**; a compaction the
+plugin drove points at its boundary (`compaction.boundary_id`). A boundary seals the tab's current **chapter**
+and opens the next in the same transaction; the run that follows belongs to it. A compaction the plugin did
+not drive is only known at the next read, but its boundary carries the record's own time, so the timeline is
+right even when it was recorded late. opencode's marks are tested on recorded fixtures only.
+
+**Retention.** `TAB_RECAP_KEEP_DAYS` (default 30; `0` keeps everything): the daily upkeep removes a tab last
+seen longer ago than that and with no column open, with its facts, runs, saved inputs, verdicts, chapters,
+boundaries and compaction records — one transaction per tab, logged with the counts. A tab seen within the
+period is never touched, whatever its size.
 
 ## How the recap is kept
 
@@ -108,25 +178,6 @@ database in a temporary directory (the real one is never written), judges the fa
 report as `eval --sample`, below), and prints the ledger it ends with; `--compare-imported` prints the judge's report over
 what the migration imported for a tab beside it, read-only. With the judge job off it prints the checks that need no model.
 
-## The expanded view
-
-Enter (or a tap) on the column opens the **expanded view** over the tab: Goal · Now · Needs you (each with how
-long it has waited) · Timeline (done and closed facts, newest first, with their times and why they closed) ·
-Decisions with their why · Next · Rules · Links · Session. It is drawn from the facts the store already holds, so it
-opens at once and calls no model. From 140 cells wide it is two columns (story left, reference right, scrolled
-together), narrower one column.
-
-**Session facts** are computed: when the tab started and for how long, turns per cause, compactions with their
-tokens, each agent's context share, repository and branch, the files edited most (counted from the agents' own
-records, read-only; the most recent 4 MB of each). Unknown data leaves its line out.
-
-<!-- screenshot: docs/screens/expanded-en.png (regenerated when the chapters change lands) -->
-
-**The curator** is a job that runs when the view opens and the facts changed since it last ran, at most once per
-five minutes per task. It may close facts as *merged* into another and writes the "session so far" paragraph shown
-at the top (at most 120 words); anything else it answers is refused and logged. The view shows the last paragraph
-with its time and `updating…` while the curator runs, and never waits for it.
-
 ## Compaction
 
 `tab-recap.compact` (bind it, e.g. `prefix+shift+c`; or `c` in the column or the modal):
@@ -135,12 +186,13 @@ with its time and `updating…` while the curator runs, and never waits for it.
 2. The recap is refreshed. Then each target agent (`TAB_RECAP_COMPACT_TARGET`: `focused` by default,
    `all`, or kinds like `claude,codex`) that is **idle or done** gets a message written as your own
    instruction, in English, never naming the plugin, at most 3 000 characters. A **brief** writer (a
-   model call, see [Models](#models)) reads the **whole session** — every distinct goal, decision, finished
-   item, question, next step, rule and reference of the agent's tasks from the database, with when each first
-   and last appeared, your note, the latest recap and the agent's last turns — and writes what the agent's own
+   model call, see [Models](#models)) reads the **whole session** — every fact of the agent's tasks, open and
+   closed, with its reason, why it closed and its times, your note, the latest recap and the agent's last turns — and writes what the agent's own
    summary must keep, recall first: your note, the goal, decisions **with their reasons**, questions waiting for
    you, unfinished work with errors and failing tests, the standing rules you gave, and exact references; and
-   to drop tool output, finished-step detail and resolved dead ends. A notification says it is being written.
+   to drop tool output, finished-step detail and resolved dead ends. Facts closed before the agent's last
+   compaction are marked `settled="yes"` in the brief's input and named in one line as settled, so the agent's
+   summary does not re-open them. A notification says it is being written.
    If the brief cannot be written (the job is `off`, no such CLI, a timeout, an answer that names the plugin),
    a template filled from the latest recap is used instead (references are trimmed first when it is too long;
    the note and the goal never), so compaction always happens. A word like `tab`, `recap` or `plugin` is
@@ -236,6 +288,29 @@ runs stay).
 the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job
 can run on another harness.
 
+### Your own command
+
+`TAB_RECAP_BACKEND=custom` with `TAB_RECAP_CUSTOM_CMD` (a command line, no shell) reads the prompt — the
+version 2 document, then the instructions — on stdin and prints the operations on stdout:
+
+```json
+{"ops": [
+  {"op": "add", "section": "decisions", "text": "Keep SQLite", "why": "it needs no server", "ref": null, "at": "16:41", "agent": "a1"},
+  {"op": "update", "id": "f12", "text": "Canary at 10% of traffic", "why": null},
+  {"op": "close", "id": "f3", "why": "done"}
+]}
+```
+
+`id` is the `f…` of a `<fact>` in the document's `<ledger>` (with several tasks an `add` may carry `"task": "t2"`; `{"ops": []}` means nothing changed); `close` takes `done`, `wrong`, `superseded` or
+`answered`. An answer the ledger cannot apply (an unknown id, an update of a closed fact, a second goal in one
+answer) is refused with its reason, and the refusals go back to the command once in `<correction>`.
+
+**Breaking in 2.0:** until 1.x a custom command received the previous recap and answered the whole recap
+as JSON. It now receives the version 2 document and **must answer operations**; a command that still answers
+the recap JSON (`{"goal": …}`) is refused: the run fails with `custom writer must answer operations (see README)` in
+`daemon.log` and nothing is stored. There is no compatibility shim — the recap JSON has no ids to operate on.
+Built-in harnesses are not affected.
+
 ## Install
 
 See the [quick start in the root README](../README.md#tab-recap): install, first run, everyday use
@@ -255,7 +330,7 @@ Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_CO
 | action | does |
 | --- | --- |
 | `tab-recap.start` / `stop` / `toggle` | daemon on/off; off closes every column and stays off |
-| `tab-recap.show` | the current tab's recap as a modal (what a tap on the bar does) |
+| `tab-recap.show` | the current tab's [expanded view](#the-expanded-view) as a modal (what a tap on the bar does) |
 | `tab-recap.refresh` | recap the current tab now |
 | `tab-recap.column` | hide this tab's column, or show it again (recaps keep being written; remembered across restarts) |
 | `tab-recap.columns` | hide every column, or show them all again |
@@ -322,6 +397,8 @@ herdr plugin log list --plugin tab-recap | tail -30
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
 
+Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
+
 ## State and rolling back
 
 The plugin keeps what it knows in one SQLite file, `tab-recap.db`, in its state directory (the path `tab-recap.status` prints;
@@ -338,8 +415,7 @@ directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; r
 back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
 
 Schema versions so far: **1** (1.6.0, the import), **2** (1.7.0, each lane's web address for links),
-**3** (1.8.0, standing rules, compaction requests and context use), **4** (2.0.0, compaction records), **5** (2.0.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`),
-**6** (2.0.0, the ledger of facts).
+**3** (1.8.0, standing rules, compaction requests and context use), **4** (2.0, compaction records), **5** (2.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`), **6** (2.0, the ledger of facts and the import of 1.x items), **7** (2.0, the curator's paragraph), **8** (2.0, boundaries keep their tokens; a compaction record points at its boundary).
 An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
 written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
 stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.

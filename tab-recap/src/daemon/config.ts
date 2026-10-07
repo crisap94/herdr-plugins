@@ -17,6 +17,7 @@ import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
+import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -47,6 +48,8 @@ export interface Config {
     readonly keepInputDays: number;
     /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
     readonly curator: Job;
+    /** `TAB_RECAP_KEEP_DAYS`: how long a closed tab's data is kept (30; 0 = for ever) */
+    readonly keepDays: number;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
 }
@@ -164,6 +167,7 @@ export function loadConfig(): Config {
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         curator: curateJobOf(get),
+        keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
     };

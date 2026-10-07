@@ -14,6 +14,8 @@ export interface HistoryFact {
     readonly why: string | null;
     readonly state: 'open' | 'closed';
     readonly closedWhy: string | null;
+    /** when it closed (epoch ms); null while open */
+    readonly closedAt: number | null;
     readonly firstAt: number;
     readonly lastAt: number;
 }

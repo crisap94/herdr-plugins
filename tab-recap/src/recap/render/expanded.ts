@@ -1,6 +1,7 @@
 // The expanded view: the whole ledger of a tab laid out for a wide terminal — two columns from 140 cells, one below. Pure.
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
 import type { Messages } from '#src/i18n/messages.ts';
+import type { Break } from '#src/ports/boundaries.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { regionsOf, session } from './expanded-regions.ts';
 import type { Draw, RegionId, TaskData } from './expanded-regions.ts';
@@ -27,6 +28,8 @@ export interface ExpandedView {
     /** the tab's time zone (IANA) */
     readonly zone: string;
     readonly webs: readonly (LaneWeb | null | undefined)[];
+    /** where the session broke, drawn in every task's timeline */
+    readonly breaks?: readonly Break[];
 }
 
 const ONE_COLUMN: readonly RegionId[] = ['head', 'goal', 'now', 'needs', 'decisions', 'timeline', 'next', 'rules', 'links'];
@@ -62,7 +65,7 @@ function taskLines(task: ExpandedTask, draw: Draw, wide: boolean, tail: readonly
 export function expanded(view: ExpandedView): readonly string[] {
     const style = view.style ?? coloured;
     const wide = view.width >= EXPANDED_TWO_COLUMNS;
-    const draw: Draw = { width: wide ? columnWidth(view.width) : view.width, style, messages: view.messages, now: view.now, zone: view.zone, webs: view.webs };
+    const draw: Draw = { width: wide ? columnWidth(view.width) : view.width, style, messages: view.messages, now: view.now, zone: view.zone, webs: view.webs, breaks: view.breaks ?? [] };
     const facts = session(view.session, draw);
     const lastAt = view.tasks.length - 1;
     const blocks = view.tasks.map((task, at) => {

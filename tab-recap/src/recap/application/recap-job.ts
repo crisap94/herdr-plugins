@@ -17,6 +17,7 @@ import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import type { TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import { extract } from './extract-job.ts';
+import { marksOf } from './boundaries.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
 
@@ -173,7 +174,7 @@ export class RecapJob {
         const parts = readings.filter((r) => r.chunk !== null && r.chunk.entries.length > 0);
         const { records, clock } = this.deps;
         if (parts.length === 0 && !language.switched) {
-            records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced });
+            records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced, marks: marksOf(readings, clock.now(), true) });
             return;
         }
         const summarizer = this.deps.summarizer();
@@ -186,10 +187,10 @@ export class RecapJob {
         const asked = await extract(summarizer, request, ground);
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
-            records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved });
+            records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
             return;
         }
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
-        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, ...input });
+        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, marks: marksOf(readings, facts.at, true), ...input });
     }
 }

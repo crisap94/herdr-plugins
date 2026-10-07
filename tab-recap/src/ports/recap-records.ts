@@ -1,3 +1,4 @@
+import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
@@ -57,6 +58,8 @@ export interface RunFacts {
  * cursor, advanced. `error` is the lane read errors, when some lane could not be read.
  */
 export interface RecordedRun extends RunFacts {
+    /** the compactions the lanes' records showed in this read: each becomes a boundary */
+    readonly marks?: readonly LaneMark[];
     readonly error: string | null;
     readonly lanes: readonly LaneCursor[];
     readonly tasks: readonly TaskShape[];
@@ -69,12 +72,14 @@ export interface RecordedRun extends RunFacts {
 
 /** A run that did not: the cursors stay where they were (only what the lanes say about themselves moves). */
 export interface FailedRun extends RunFacts {
+    readonly marks?: readonly LaneMark[];
     readonly error: string;
     readonly lanes: readonly LaneCursor[];
 }
 
 /** Nothing new to write: the lanes' cursors and notes move, no run is made. */
 export interface Advance {
+    readonly marks?: readonly LaneMark[];
     readonly tab: string;
     readonly at: number;
     readonly error: string | null;

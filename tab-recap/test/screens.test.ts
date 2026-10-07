@@ -6,7 +6,7 @@ const ESC = String.fromCodePoint(0x1b);
 
 test('the README screenshots: one page per screen, in both languages, with no escape left over', () => {
     const names = pages().map((page) => page.name).toSorted();
-    assert.deepEqual(names, ['bar-en', 'bar-es', 'column-en', 'column-es', 'setup-en', 'setup-es']);
+    assert.deepEqual(names, ['bar-en', 'bar-es', 'column-en', 'column-es', 'expanded-en', 'setup-en', 'setup-es']);
     for (const { name, html } of pages()) {
         assert.ok(!html.includes(ESC), `${name} still holds a terminal escape`);
         assert.ok(html.length > 1000, `${name} is empty`);
@@ -18,6 +18,7 @@ test('the screenshots show invented data in the language asked', () => {
     assert.match(byName.get('column-en') ?? '', /Checkout migration/);
     assert.match(byName.get('column-es') ?? '', /Migración del checkout/);
     assert.match(byName.get('setup-es') ?? '', /Idioma del resumen/);
+    assert.match(byName.get('expanded-en') ?? '', /compacted 812k → 14k · 16 s[^]*new session/);
 });
 
 test('styles and markup characters become spans and entities', () => {

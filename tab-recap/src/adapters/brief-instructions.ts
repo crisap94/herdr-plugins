@@ -12,6 +12,8 @@ export const BRIEF_INSTRUCTIONS = [
     '<current_recap> is the latest picture as JSON; <session_history> lists every fact of the whole session, newest first (first/last = when',
     'it was first and last seen; a closed one says why it closed: a decision that was replaced is still a decision we made); <recent> is the',
     'agent\'s last turns. The history is the record: an early decision missing from <current_recap> still counts.',
+    'Facts marked settled="yes" were already closed before the agent\'s last compaction, so its earlier summaries hold them: mention them',
+    'together in one line as settled, and do not ask it to keep them as open work or re-open them.',
     '',
     'Say what the summary must keep, most important first:',
     '- the note first, when there is one, in its own words;',

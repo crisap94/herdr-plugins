@@ -12,11 +12,17 @@ Status: **shipped** = released · *planned* = intended, not started.
 
 ### Shipped
 
+- **[2.0.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v2.0.0)** — the recap is a ledger of facts (add, update, close, each with its time and, for a decision, its reason) instead of a text rewritten every turn; recaps are checked against a rubric by gates and a judge (`tab-recap eval`, with `--replay` to measure a new engine on a stored transcript); the full-screen view is now the **expanded view** with the whole timeline, the decisions with their reasons and computed session facts; compactions are recorded and shown with their tokens, and the timeline marks where a session broke into chapters; the compaction brief names what was already settled; closed tabs are removed after `TAB_RECAP_KEEP_DAYS` days. **Breaking:** a custom writer command (`TAB_RECAP_CUSTOM_CMD`) must now answer operations on the ledger.
 - **[1.4.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.4.0)** — the phone bar sits along the bottom and no longer moves any agent pane (herdr cannot split upwards, so a top bar needed a swap); each agent's last prompt in its header is live.
 - **[1.3.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.3.0)** — a git note under each agent: branch, unpushed commits, dirty tree.
 - **[1.2.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.2.0)** — every agent gets a column (opencode by default, others read from the screen on request), and a tab can hold several tasks.
 - **[1.1.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.1.0)** — a key to hide and show columns, a fixed seven-section recap, and a checked release pipeline with CI and screenshots.
 - **[1.0.1](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.0.1)** — stability: quieter event subscriptions, safer process handling, no leftover opencode sessions.
+
+### 2.1 *(planned)*
+
+- Drop the 1.x `item` table, which 2.0 keeps read-only after importing it into facts.
+- Edit a fact by hand from the expanded view (correct it, close it, reopen it).
 
 ### Later *(planned)*
 

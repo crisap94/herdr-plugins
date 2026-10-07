@@ -30,9 +30,9 @@ test('migration 7 from the oldest fixture: every registered migration runs, a fr
         const old = new DatabaseSync(join(dir, 'old.db'));
         old.exec(readFileSync(FIXTURE, 'utf8'));
         assert.equal(versionOf(old), 1);
-        migrate(old, MIGRATIONS);
+        migrate(old, MIGRATIONS.slice(0, 7));
         assert.equal(versionOf(old), 7);
-        const fresh = openDatabase(MEMORY);
+        const fresh = openDatabase(MEMORY, MIGRATIONS.slice(0, 7));
         assert.equal(fresh.kind, 'ready');
         assert.deepEqual(shape(old), shape(fresh.db));
         assert.deepEqual(old.prepare('PRAGMA foreign_key_check').all(), []);
@@ -58,7 +58,7 @@ test('upgrading a database of version 6 backs it up as .v6.bak first', () => {
         const six = openDatabase(path, MIGRATIONS.slice(0, 6));
         assert.equal(six.kind, 'ready');
         six.db.close();
-        const seven = openDatabase(path, MIGRATIONS);
+        const seven = openDatabase(path, MIGRATIONS.slice(0, 7));
         assert.equal(seven.kind, 'ready');
         assert.ok(existsSync(backupPath(path, 6)));
         assert.equal(versionOf(seven.db), 7);
@@ -126,7 +126,7 @@ test('the real ledger stores what the view reads: a done fact is drawn when it h
     const closed = must(facts.find((each) => each.id === next.id));
     assert.deepEqual([closed.closedAt, closed.lastAt >= timeOf('14:02')], [timeOf('14:02'), true], 'a closed fact is a change: the newest change is its close');
     assert.equal(newestChange(facts), timeOf('14:02'));
-    const view = new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, requests: store.requests, edits: (): readonly FileCount[] => [] }).read('w1:t1', null, timeOf('15:00'));
+    const view = new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): readonly FileCount[] => [] }).read('w1:t1', null, timeOf('15:00'));
     assert.deepEqual(view.tasks[0]?.facts.map((each) => each.text).toSorted(), ['Add a retention sweep', 'Keep the guard out', 'Merged !34']);
 });
 

@@ -14,9 +14,12 @@ agents. One plugin per directory, each installable on its own.
 ## tab-recap
 
 A **recap column** pinned to the right of every herdr tab that has a coding agent in it. It keeps a
-rolling, structured recap of the conversation (goal, what is happening now, what needs you, what
-is done, decisions, next steps, links — always the same seven sections, kept short), so a long session never loses its thread. A coding agent of your
-choice writes it at the end of each turn. Every merge request, commit, branch, file and URL in it is a
+**ledger of facts** about the session — the goal, what is happening now, what needs you, what is done,
+decisions with their reasons, next steps, the rules you gave and links — and the column shows the
+open ones, in the same eight sections, kept short, so a long session never loses its thread. A fact that
+is finished is not thrown away: it is closed with a reason and stays in the story, which the
+[expanded view](#the-expanded-view) shows in full. A coding agent of your choice writes the facts at
+the end of each turn. Every merge request, commit, branch, file and URL in them is a
 link you can open with Ctrl-click. It only reads transcripts; it never types into an agent on its own —
 the one exception is the [compaction](#compact-an-agent) you ask for.
 
@@ -30,7 +33,7 @@ see [how recaps are checked](tab-recap/README.md#how-recaps-are-checked).
 </p>
 
 On a phone (a narrow tab) you get a one-row **bar** along the bottom instead: a status dot per agent
-and one headline. Tap it to open the full recap.
+and one headline. Tap it to open the [expanded view](#the-expanded-view).
 
 <p align="center">
   <img src="tab-recap/docs/screens/bar-en.png" alt="The one-row bar" width="460">
@@ -109,32 +112,55 @@ Use any free keys (`prefix+c` is herdr's own "new tab", so avoid it). Then run
   agent.
 - **Ctrl-click** a reference (`!252`, a commit, a branch, a file, a URL) to open it in your browser.
 - A lane that has used 40 % of its context shows **`compact? 45% of 1M`**: a hint, nothing more.
-- Recaps are written at the end of each turn, when you focus a tab whose recap is stale, and on
+- Facts are written at the end of each turn, when you focus a tab whose recap is stale, and on
   `r`.
-- One recap per tab, covering all its agents.
+- One ledger per task, covering all the agents that work on it; a tab whose agents work on unrelated
+  things gets one task each.
 
 The same views are available as actions: `tab-recap.show` (the modal), `tab-recap.refresh`
 (recap this tab now), `tab-recap.column` (hide or show this tab's column) and `tab-recap.columns`
 (all columns). Hiding is remembered across restarts and recaps keep being written.
 
+### What the recap is
+
+The recap is a ledger of **facts**, each one line (16 words at most) in one of eight sections: goal, now,
+needs you, done, decisions, next, links and rules. A fact has a time (when it first appeared and when it was
+last confirmed), and a **decision** always has its reason. At the end of a turn the writer is shown the
+facts that are still open and the new part of each agent's transcript, and answers with operations —
+*add* what is new, *update* what changed, *close* what finished, was wrong, was replaced or was answered —
+instead of writing the whole recap again. A closed fact keeps its reason and its time.
+
+- **The column and the bar** show the open facts: the newest of each section, with the same caps as ever
+  (now 3, needs 3, done 5, decisions 3, next 5, links 6, rules 5). The caps only decide what is *drawn*;
+  nothing is lost.
+- **The expanded view** shows all of it.
+- Upgrading from 1.x keeps what you had: the lines your recaps carried are imported as facts, and what the
+  column showed before is what it shows after.
+
 ### The expanded view
 
-Where the column is a short summary, the **expanded view** (Enter or a tap on the column, `tab-recap.show`)
+Where the column is a short summary, the **expanded view** (Enter or a tap on the bar or the column, `tab-recap.show`)
 shows everything that happened, with no model call to wait for — it is another way of drawing the same facts:
 
 - **Goal · Now · Needs you** — each question says how long it has waited (`waiting 25 min`), oldest first.
 - **Timeline** — what got done and what was closed, newest first, with the time of each (a date line when
-  the day changes) and, for a fact that closed without being done, why (`closed: wrong`).
+  the day changes) and, for a fact that closed without being done, why (`closed: wrong`). Where the session
+  broke it draws a gray line across the column: `── compacted 800k → 14k · 16 s ──` (the tokens and the time
+  when the agent's records say them, `── compacted ──` when they do not, never a guess) or
+  `── new session ──` when a new conversation began in the same pane.
 - **Decisions** with their why on the next line · **Next** · **Rules** · **Links**.
 - **Session** — computed from the store, never written by a model: when the tab started and for how long, the
-  turns by cause, the compactions with their tokens (`800k → 14k`), each agent's share of its context window, the
+  turns by cause, the compactions with their tokens (`800k → 14k`) and the **chapters**
+  (`compactions 2 (800k → 14k · 39k → 3k) · chapters 3`), each agent's share of its context window, the
   repository and branch, the files edited most. A line whose data is not known is left out.
 
 From 140 cells wide it is two columns (the story on the left, the reference on the right, scrolled
 together); narrower, one column in that order. The keys are the modal's: `j`/`k`, Space/`b`, `g`/`G`, `r`, `c`,
 `s`, `q`.
 
-<!-- screenshot: tab-recap/docs/screens/expanded-en.png (regenerated when the chapters change lands) -->
+<p align="center">
+  <img src="tab-recap/docs/screens/expanded-en.png" alt="The expanded view: goal, now, what needs you, the timeline with its breaks, decisions with their reasons and the session facts" width="760">
+</p>
 
 A **curator** also runs when the view opens and the facts changed since it last ran (at most once per five
 minutes per task): it closes leftover near-duplicates as *merged* into the fact that says it better, and writes
@@ -183,11 +209,28 @@ time are what the agent's own records say; a number they do not give is left out
 the agent's next turn. A word like "tab" or "recap" is only kept out of the message when the agent's own
 conversation never uses it.
 
+The brief is written from the agent's whole ledger — every fact, open and closed, with its reason and its
+times — not from the latest recap alone. Facts that were finished before the agent's last compaction (or
+before a new conversation began in its pane) are marked **settled**: the brief names them in one line, so the
+agent's new summary does not re-open them.
+
 A working or blocked agent is never typed into: it is skipped and you are told. A lane whose context
 passes 40 % of its window shows `compact? 45% of 1M`; the window is read from the agent itself where it
 says (Codex), from opencode's local model catalogue, or from a small table for Claude, and corrected
 by what has been seen. `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT` and
 `TAB_RECAP_CONTEXT_WINDOW` change who is compacted, the hint threshold and the window.
+
+### Chapters and how long things are kept
+
+A session breaks when an agent compacts its context (Claude's `compact_boundary`, Codex's `compacted` row,
+opencode's compaction answer) or when a new conversation starts in the same pane. The plugin records each
+**boundary** from the agent's own records, with the time the record carries; a compaction you asked for
+through the plugin is marked *manual* and linked to its record, the others *auto*. A boundary closes the
+current **chapter** and starts the next one.
+
+A tab you have not seen for `TAB_RECAP_KEEP_DAYS` days (default 30; `0` keeps everything) and that has no
+column open is removed by the daily upkeep, with its facts, runs, chapters and compaction records. A tab seen
+within that period is never touched.
 
 ### Who writes the recap
 
@@ -205,19 +248,48 @@ default (`TAB_RECAP_EFFORT`: `low`, `medium`, `high`, or `default` to leave it t
 choices as open questions instead of decisions, measured), and
 Codex without the agent features a recap never needs.
 
-The writer receives one XML document per run (version 2) — the tab's agents with their repository and branch,
-the ledger of facts so far, the agents' own summaries, and each new prompt, reply and tool call with its
-time — defined by [`tab-recap/schema/recap-input.dtd`](tab-recap/schema/recap-input.dtd). It answers
-**operations** on the ledger (`add`, `update`, `close`), not a whole new recap; see
+The writer receives one XML document (version 2) per run — the tab's agents with their repository and
+branch, the **ledger** (the open facts of each task and the ones closed in the last two hours, each with an
+id), the agents' own summaries, and each new prompt, reply and tool call with its time — defined by
+[`tab-recap/schema/recap-input.dtd`](tab-recap/schema/recap-input.dtd). It answers **operations** on the ledger (`add`, `update`, `close`), not a whole new recap; see
 [How the recap is kept](tab-recap/README.md#how-the-recap-is-kept).
 
 **Your own command:** set `TAB_RECAP_BACKEND=custom` and `TAB_RECAP_CUSTOM_CMD` to a command line
-(no shell) that reads the prompt (the version 2 document, then the instructions) on stdin and prints the JSON
-object of operations the instructions ask for on stdout:
-`{"ops": [{"op": "add", "section": "done", "text": "…"}, {"op": "close", "id": "f3", "why": "done"}]}`.
-Ids (`f1`, `f2`, …) are the ones of the `<ledger>` in the document; `{"ops": []}` means nothing changed.
-**Breaking since 2.0:** a command that still answers the old recap JSON (`{"goal": …}`) is refused — the run fails
-with `custom writer must answer operations (see README)` in the log and nothing is stored.
+(no shell) that reads the prompt (the document, then the instructions) on stdin and prints on stdout the
+JSON answer the instructions ask for:
+
+```json
+{"ops": [
+  {"op": "add", "section": "decisions", "text": "Keep SQLite", "why": "it needs no server", "ref": null, "at": "16:41", "agent": "a1"},
+  {"op": "update", "id": "f12", "text": "Canary at 10% of traffic", "why": null},
+  {"op": "close", "id": "f3", "why": "done"}
+]}
+```
+
+`close` takes `done`, `wrong`, `superseded` or `answered`; `id` is the `f…` of a `<fact>` in the `<ledger>` (`f1`, `f2`, …); `{"ops": []}` means nothing changed.
+
+> **Breaking change in 2.0 for custom commands.** Before 2.0 a custom command received the previous recap and
+> answered the whole recap as JSON. It now receives the version 2 document and **must answer operations**;
+> a command that still answers the old recap JSON (`{"goal": …}`) is refused: the run fails with
+> `custom writer must answer operations (see README)` in the daemon log and nothing is stored. There is no compatibility mode: the old JSON has no ids to operate on. The built-in
+> harnesses are not affected.
+
+### How recaps are checked
+
+Quality is measured, not assumed. A **rubric** ([`tab-recap/schema/recap-rubric.md`](tab-recap/schema/recap-rubric.md))
+lists yes/no checks for every fact — one thing, understood on its own, specific, supported by what the writer
+saw, about the work rather than the agent, new, still true — and for every section (a decision has its
+reason, a link resolves, a *needs* is something you can answer). The writer is asked for exactly what the
+rubric says, and plain-code **gates** enforce the mechanical parts on every answer, with no model call: a
+fact about the agent instead of the work, a decision without a reason, a link that does not resolve or a
+duplicate of a fact already in the ledger is sent back once, and what is still refused is dropped. A
+**judge** job (`tab-recap eval`) scores sampled runs against the rubric, one line of critique per failure,
+and tests whether the facts alone answer six questions (the goal, what finished, what waits on you, what
+must not be done, why a decision was made, what is next). `eval --label` and `eval --agree` check the judge
+against your own verdicts, and `eval --replay <transcript>` rebuilds a ledger from a stored transcript
+and judges it — the measure used for the 2.0 release. The input of each run is kept for
+`TAB_RECAP_KEEP_INPUT_DAYS` days (default 14) so a fact can be judged against exactly what the writer saw.
+
 
 ### Languages
 
@@ -250,6 +322,11 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_COMPACT_TARGET` | `focused` | who `compact` acts on: `focused`, `all`, or kinds like `claude,codex` |
 | `TAB_RECAP_COMPACT_HINT` | `40` | % of the context window that shows the hint (`off`, or 10–95) |
 | `TAB_RECAP_CONTEXT_WINDOW` | *(detected)* | force a context window in tokens |
+| `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |
+| `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job behind `tab-recap eval` |
+| `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job that tidies the ledger when the expanded view opens |
+| `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
+| `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daily upkeep removes it (`0` = keep everything) |
 
 ### Troubleshooting
 
@@ -269,6 +346,8 @@ daemon log is `daemon.log` in that state folder (by default
   `codex` and `opencode`), and the daemon must be on (`tab-recap.start`).
 - **A link does not open**: hold **Ctrl** while clicking (herdr's modifier on every platform); your
   terminal must pass the modified click to herdr.
+- **A tab's history is gone**: tabs not seen for `TAB_RECAP_KEEP_DAYS` days (30 by default) with no column
+  open are removed once a day. Set `TAB_RECAP_KEEP_DAYS=0` to keep everything.
 - **Compact did nothing**: the agent was busy or waiting on a dialog — you get a notification naming
   it. Try again when it is idle.
 - **The column keeps closing**: if you close it, the daemon reopens it, but at most 3 times in 2

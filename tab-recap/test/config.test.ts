@@ -69,6 +69,20 @@ test('TAB_RECAP_EFFORT: medium unless set to low, high or default; anything else
     }
 });
 
+test('TAB_RECAP_KEEP_DAYS: 30 unless set to whole days; 0 keeps everything', () => {
+    const saved = process.env['TAB_RECAP_KEEP_DAYS'];
+    try {
+        delete process.env['TAB_RECAP_KEEP_DAYS'];
+        assert.equal(loadConfig().keepDays, 30);
+        for (const [raw, days] of [['7', 7], ['0', 0], ['soon', 30], ['-2', 30]] as const) {
+            process.env['TAB_RECAP_KEEP_DAYS'] = raw;
+            assert.equal(loadConfig().keepDays, days, raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_KEEP_DAYS']; } else { process.env['TAB_RECAP_KEEP_DAYS'] = saved; }
+    }
+});
+
 test('loadConfig: the brief job is read from config.env — defaults, overrides, invalid values', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
     const before = process.env['HERDR_PLUGIN_CONFIG_DIR'];

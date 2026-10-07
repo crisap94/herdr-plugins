@@ -2,6 +2,7 @@
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
@@ -10,8 +11,10 @@ import type { RunInputs } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
+import type { Retention } from '#src/ports/retention.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { CompactionRecordsRepository } from './compaction-records.ts';
+import { BoundaryRepository } from './boundary-read.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
 import { LedgerRepository } from './ledger.ts';
 import { openDatabase } from './open.ts';
@@ -22,6 +25,7 @@ import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
 import { SessionSourceRepository } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';
+import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views.ts';
 
 export interface Store {
@@ -39,6 +43,8 @@ export interface Store {
     readonly stories: Stories;
     /** what the expanded view counts: when the tab began, its runs, its compactions */
     readonly session: SessionSource;
+    readonly boundaries: Boundaries;
+    readonly retention: Retention;
     /** the daemon's upkeep: fold the write-ahead log back into the file and truncate it */
     checkpoint(): void;
     /** the daemon, on shutdown */
@@ -58,6 +64,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
+        boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
         close: (): void => { db.close(); },
     };

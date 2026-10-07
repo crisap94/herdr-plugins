@@ -20,6 +20,8 @@ export interface SessionInputs {
     readonly webs: readonly ({ readonly base: string; readonly branch: string | null } | null)[];
     /** edit calls per file, most edited first */
     readonly edits: readonly { readonly path: string; readonly count: number }[];
+    /** how many chapters the tab has (a break opens each one after the first); absent when not known */
+    readonly chapters?: number;
 }
 
 export interface SessionFacts {
@@ -30,6 +32,8 @@ export interface SessionFacts {
     readonly agents: readonly { readonly label: string; readonly share: number; readonly window: number }[];
     readonly repo: { readonly name: string; readonly branch: string | null } | null;
     readonly files: readonly { readonly path: string; readonly count: number }[];
+    /** chapters, when the session broke at least once; null otherwise (one chapter is no news) */
+    readonly chapters: number | null;
 }
 
 /** How many files the session facts name. */
@@ -58,5 +62,6 @@ export function sessionFactsOf(input: SessionInputs): SessionFacts {
         agents: input.lanes.flatMap((lane) => (lane.context === null || lane.context.window <= 0 ? [] : [{ label: lane.label === null ? lane.agent : `${lane.agent} · ${lane.label}`, share: shareOf(lane.context), window: lane.context.window }])),
         repo: web === null ? null : { name: lastSegment(web.base), branch: web.branch },
         files: input.edits.slice(0, FILES_SHOWN),
+        chapters: input.chapters !== undefined && input.chapters > 1 ? input.chapters : null,
     };
 }

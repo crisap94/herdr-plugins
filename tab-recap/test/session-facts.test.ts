@@ -18,7 +18,7 @@ const lines = (input: SessionInputs, locale: Messages = en): string[] => session
 
 test('nothing known: no line at all, never a guess', () => {
     assert.deepEqual(lines(nothing), []);
-    assert.deepEqual(sessionFactsOf(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [] });
+    assert.deepEqual(sessionFactsOf(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [], chapters: null });
 });
 
 test('started: the first time the tab was seen and for how long; another day says the date', () => {

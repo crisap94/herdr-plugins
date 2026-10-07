@@ -207,3 +207,28 @@ test('rebuildTable: a table changed by create-new, copy, drop, rename — rows k
 test('migrations are numbered 1, 2, 3 …: a gap is refused', () => {
     assert.throws(() => { migrate(new DatabaseSync(MEMORY), [m1, { version: 3, name: 'gap', up: [] }]); }, MigrationFailed);
 });
+
+test('migration 8 from a v7 database with a compaction in it: the record is kept without a boundary, can point at one, and the views show it; the backup is v7', () => {
+    const dir = scratchDir('v7');
+    try {
+        const path = join(dir, 'tab-recap.db');
+        const old = openDatabase(path, MIGRATIONS.slice(0, 7));
+        assert.equal(old.kind, 'ready');
+        old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
+        old.db.exec("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, finished_at, tokens_before, tokens_after) VALUES (randomblob(16), 'w1:t1', 'w1:p1', 'claude', 'compacted', 10, 10, 30, 800000, 14000)");
+        old.db.close();
+        const opened = openDatabase(path);
+        assert.equal(opened.kind, 'ready');
+        assert.equal(versionOf(opened.db), 8);
+        assert.deepEqual(backupsOf(path).map((name) => name.slice(-7)), ['.v7.bak']);
+        assert.deepEqual(opened.db.prepare('SELECT stage, tokens_before, boundary_id FROM compaction').all().map((row) => Object.assign({}, row)), [{ stage: 'compacted', tokens_before: 800_000, boundary_id: null }]);
+        assert.deepEqual(opened.db.prepare('SELECT boundary_id FROM compaction_readable').all().map((row) => Object.assign({}, row)), [{ boundary_id: null }]);
+        assert.deepEqual(shape(opened.db), shape(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(opened.db.prepare('PRAGMA foreign_key_check').all(), []);
+        assert.throws(() => { opened.db.exec('UPDATE compaction SET boundary_id = x\'00\''); }, /CHECK/);
+        assert.throws(() => { opened.db.exec('UPDATE compaction SET boundary_id = randomblob(16)'); }, /FOREIGN KEY/);
+        assert.throws(() => { opened.db.exec('INSERT INTO boundary (id, chapter_id, transcript_id, kind, at, cursor, tokens_before) VALUES (randomblob(16), randomblob(16), randomblob(16), \'switched\', 1, 0, -1)'); }, /CHECK|FOREIGN/);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
