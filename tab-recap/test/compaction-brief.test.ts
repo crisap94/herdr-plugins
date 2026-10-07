@@ -80,6 +80,10 @@ test('where the brief runs: `recap` inherits the recap writer\'s harness and mod
     assert.equal(placementOf({ by: 'auto', model: '', effort: 'high' }, recap, []), null);
 });
 
+test('the instructions tell the writer what a settled line is and to name those lines in one line without re-opening them', () => {
+    assert.match(BRIEF_INSTRUCTIONS, /settled="yes"[^]*one line as settled[^]*not ask it to keep them as open work or re-open them/);
+});
+
 test('golden: the brief writer\'s instructions are exactly the reviewed text', () => {
     assert.equal(BRIEF_INSTRUCTIONS, readFileSync(new URL('fixtures/brief-instructions.txt', import.meta.url), 'utf8').trimEnd());
 });

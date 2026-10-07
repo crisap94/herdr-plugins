@@ -59,6 +59,6 @@ export class MemoryLedger implements Ledger {
             .filter((fact) => fact.task.tab === tab && this.holders.get(`${tab}\u001f${fact.task.key}`)?.has(pane) === true)
             .toSorted((a, b) => b.lastAt - a.lastAt)
             .slice(0, HISTORY_LIMIT)
-            .map((fact) => ({ section: fact.section, text: fact.text, why: fact.why, state: fact.state, closedWhy: fact.closedWhy, firstAt: fact.firstAt, lastAt: fact.lastAt }));
+            .map((fact) => ({ section: fact.section, text: fact.text, why: fact.why, state: fact.state, closedWhy: fact.closedWhy, closedAt: fact.closedAt, firstAt: fact.firstAt, lastAt: fact.lastAt }));
     }
 }

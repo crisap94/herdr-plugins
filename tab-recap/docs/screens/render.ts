@@ -16,6 +16,7 @@ import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { setupView } from '#src/recap/render/setup.ts';
+import { expandedLines } from './expanded-fixture.ts';
 
 export interface Page {
     /** file name without extension */
@@ -177,10 +178,11 @@ const noMarkdown = (): null => null;
 const COLUMN = 44;
 const BAR = 46;
 const SETUP = 66;
+const EXPANDED = 100;
 
 /** Every screenshot of the README, as HTML, from invented data. */
 export function pages(): readonly Page[] {
-    return (['en', 'es'] as const).flatMap((locale) => {
+    return [page('expanded-en', EXPANDED, expandedLines(EXPANDED)), ...(['en', 'es'] as const).flatMap((locale) => {
         const fixture = FIXTURES[locale];
         const view = columnView(fixture);
         return [
@@ -188,7 +190,7 @@ export function pages(): readonly Page[] {
             page(`bar-${locale}`, BAR, presentBar(view, BAR)),
             page(`setup-${locale}`, SETUP, setupView(setupState(locale), fixture.messages, SETUP)),
         ];
-    });
+    })];
 }
 
 if (import.meta.main) {

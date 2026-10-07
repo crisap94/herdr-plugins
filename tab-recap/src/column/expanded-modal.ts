@@ -13,7 +13,7 @@ import { coloured, wrap } from '#src/recap/render/wrap.ts';
 /** The expanded view as lines for `width` cells; `store` is null when the database is newer than the plugin (only its warning is drawn). */
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly string[] {
     const edits = new EditCache(new EditCounts([new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts()]));
-    const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, requests: store.requests, edits: (lanes, now): readonly FileCount[] => edits.of(lanes, now) });
+    const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (lanes, now): readonly FileCount[] => edits.of(lanes, now) });
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return (view, width) => {
         const style = view.style ?? coloured;

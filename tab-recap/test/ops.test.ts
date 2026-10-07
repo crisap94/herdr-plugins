@@ -4,7 +4,7 @@ import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { factOf, runAt } from './fakes/facts.ts';
 
-const add = (section: 'next' | 'goal' | 'decisions' | 'done', text: string, over: Partial<Operation & { op: 'add' }> = {}): Operation =>
+const add = (section: 'next' | 'goal' | 'decisions' | 'done' | 'now', text: string, over: Partial<Operation & { op: 'add' }> = {}): Operation =>
     ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, ...over });
 
 test('a fact over time: added at 10:00, updated at 11:00, closed as done at 12:00 — one fact, first 10:00, last 12:00', () => {
@@ -56,4 +56,36 @@ test('an update of a decision keeps its why unless a new one is given; the langu
     const decision = factOf('decisions', 'Keep SQLite', { why: 'one file to back up', language: 'en' });
     const kept = apply([decision], [{ op: 'update', id: decision.id, text: 'Keep SQLite for 2.0', why: null }], runAt(2000, { language: 'es' })).ledger[0];
     assert.deepEqual([kept?.why, kept?.language, kept?.lastAt, kept?.firstAt], ['one file to back up', 'es', 2000, 1000]);
+});
+
+test('a now fact the answer did not add, update or close is closed superseded at the run\'s time; the ones it updated or re-added stay; other sections are untouched', () => {
+    const [kept, updated, closed, stale] = ['Wiring the client', 'Running CI', 'Reviewing !34', 'Reading the logs'].map((text) => factOf('now', text, { firstAt: 1, lastAt: 1 }));
+    const other = factOf('next', 'Canary at 5%', { firstAt: 1, lastAt: 1 });
+    const ledger = [kept, updated, closed, stale, other].flatMap((fact) => (fact === undefined ? [] : [fact]));
+    const result = apply(ledger, [{ op: 'update', id: updated?.id ?? '', text: 'Running CI on !35', why: null }, { op: 'close', id: closed?.id ?? '', why: 'done' }, add('now', 'Writing the tests')], runAt(60), true);
+    const by = (text: string): string => { const fact = result.ledger.find((each) => each.text === text); return `${fact?.state}/${fact?.closedWhy}/${fact?.closedAt}`; };
+    assert.equal(by('Wiring the client'), 'closed/superseded/60', 'not carried forward');
+    assert.equal(by('Reading the logs'), 'closed/superseded/60');
+    assert.equal(by('Running CI on !35'), 'open/null/null', 'updated');
+    assert.equal(by('Reviewing !34'), 'closed/done/60', 'closed by the writer, not overwritten');
+    assert.equal(by('Writing the tests'), 'open/null/null', 'added by this answer');
+    assert.equal(by('Canary at 5%'), 'open/null/null', 'another section');
+    assert.ok(result.changed.some((fact) => fact.text === 'Wiring the client'), 'the sweep is a change the store writes');
+});
+
+test('an answer with no operations closes nothing, a now fact included', () => {
+    const now = factOf('now', 'Wiring the client', { firstAt: 1, lastAt: 1 });
+    const result = apply([now], [], runAt(60), true);
+    assert.deepEqual([result.ledger, result.changed], [[now], []]);
+});
+
+test('a now fact of the ledger is closed even when the only operation is an add in another section', () => {
+    const now = factOf('now', 'Wiring the client', { firstAt: 1, lastAt: 1 });
+    const result = apply([now], [add('next', 'Canary at 5%')], runAt(60), true);
+    assert.equal(result.ledger[0]?.closedWhy, 'superseded');
+});
+
+test('without the sweep (the curator\'s merges, the import) a now fact is never closed by an answer that does not name it', () => {
+    const now = factOf('now', 'Wiring the client', { firstAt: 1, lastAt: 1 });
+    assert.deepEqual(apply([now], [add('next', 'Canary at 5%')], runAt(60)).ledger.map((fact) => fact.state), ['open', 'open']);
 });

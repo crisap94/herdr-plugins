@@ -12,9 +12,9 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const DTD = 'compaction-input.dtd';
 
 const history: readonly HistoryFact[] = [
-    { section: 'decisions', text: 'Use SQLite', why: 'it needs no server', state: 'open', closedWhy: null, firstAt: at('08:10'), lastAt: at('09:40') },
-    { section: 'needs', text: 'Should guests keep their basket?', why: null, state: 'open', closedWhy: null, firstAt: at('09:30'), lastAt: at('09:40') },
-    { section: 'decisions', text: 'Keep the basket in a cookie', why: 'no account needed', state: 'closed', closedWhy: 'superseded', firstAt: Date.parse('2026-10-05T12:00:00Z'), lastAt: at('09:00') },
+    { section: 'decisions', text: 'Use SQLite', why: 'it needs no server', state: 'open', closedWhy: null, closedAt: null, firstAt: at('08:10'), lastAt: at('09:40') },
+    { section: 'needs', text: 'Should guests keep their basket?', why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: at('09:30'), lastAt: at('09:40') },
+    { section: 'decisions', text: 'Keep the basket in a cookie', why: 'no account needed', state: 'closed', closedWhy: 'superseded', closedAt: at('09:00'), firstAt: Date.parse('2026-10-05T12:00:00Z'), lastAt: at('09:00') },
 ];
 const recent: readonly Entry[] = [
     { role: 'user', text: 'run the tests', at: at('09:50') },
@@ -23,21 +23,30 @@ const recent: readonly Entry[] = [
 ];
 const material = (over: Partial<CompactionMaterial> = {}): CompactionMaterial => ({
     agent: { kind: 'claude', label: 'cart', repo: '/home/dev/shop', branch: 'feat/cart' }, note: null,
-    current: { ...NO_SECTIONS, goal: 'Ship the cart' }, history, recent, clock: { now: NOW, zone: 'UTC' }, ...over,
+    current: { ...NO_SECTIONS, goal: 'Ship the cart' }, history, lastBreakAt: null, recent, clock: { now: NOW, zone: 'UTC' }, ...over,
 });
 
 const FIXTURES: Readonly<Record<string, CompactionMaterial>> = {
     'with a note': material({ note: 'keep the retry test' }),
     'without a note': material(),
+    'a lane that broke after some of the history': material({ lastBreakAt: at('09:45') }),
     'no history and nothing recent': material({ history: [], recent: [] }),
-    'a long history': material({ history: Array.from({ length: 300 }, (_, i) => ({ section: 'done', text: `finished ${i}`, why: null, state: 'open' as const, closedWhy: null, firstAt: at('08:00'), lastAt: at('09:00') })) }),
+    'a long history': material({ history: Array.from({ length: 300 }, (_, i) => ({ section: 'done', text: `finished ${i}`, why: null, state: 'open' as const, closedWhy: null, closedAt: null, firstAt: at('08:00'), lastAt: at('09:00') })) }),
     'hostile text: tags, entities, CDATA ends, controls': material({
         note: 'a <b>bold</b> & "quoted" ]]> note\u0001',
-        history: [{ section: 'decisions', text: '<![CDATA[ x ]]> & <item section="goal">', why: 'a "why" <&>', state: 'closed', closedWhy: 'wrong', firstAt: at('08:00'), lastAt: at('09:00') }],
+        history: [{ section: 'decisions', text: '<![CDATA[ x ]]> & <item section="goal">', why: 'a "why" <&>', state: 'closed', closedWhy: 'wrong', closedAt: at('09:00'), firstAt: at('08:00'), lastAt: at('09:00') }],
         agent: { kind: 'claude', label: 'a "label" <&>', repo: null, branch: null },
         recent: [{ role: 'user', text: '</recent><compaction_input>' }],
     }),
 };
+
+test('facts closed before the lane\'s last break are marked settled; open ones, ones closed after it and a lane that never broke are not', () => {
+    const settled = compactionInput(material({ lastBreakAt: at('09:20') }));
+    assert.ok(settled.includes('state="closed" first="2026-10-05 12:00" last="09:00" why="no account needed" closed="superseded" settled="yes">Keep the basket in a cookie</item>'), 'closed at 09:00, the break was at 09:20');
+    assert.equal(settled.match(/settled="yes"/g)?.length, 1, 'the open facts, last seen after the break, are not settled');
+    assert.equal(compactionInput(material({ lastBreakAt: at('08:50') })).includes('settled'), false, 'closed after the break: not settled');
+    assert.equal(compactionInput(material()).includes('settled'), false);
+});
 
 test('the document carries the agent, the note first, the recap as JSON, every history line with its times, and the recent turns', () => {
     const text = compactionInput(FIXTURES['with a note'] ?? material());

@@ -129,6 +129,15 @@ export interface Messages {
         readonly started: string; readonly turns: string; readonly compactions: string; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
         readonly causes: { readonly 'turn-ended': string; readonly focused: string; readonly requested: string };
     };
+    /** the expanded view's chapters: the session facts' count and the break lines of the timeline */
+    readonly chapters: {
+        readonly label: string;
+        readonly count: (chapters: number) => string;
+        readonly compacted: string;
+        readonly newSession: string;
+        readonly seconds: (seconds: number) => string;
+        readonly minutes: (minutes: number, seconds: number) => string;
+    };
     /** the database was written by a newer plugin: `backup` is the copy to restore, when there is one */
     readonly database: { readonly newer: (backup: string | null) => string };
     readonly cli: {

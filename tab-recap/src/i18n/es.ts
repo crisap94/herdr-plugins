@@ -109,6 +109,14 @@ export const es: Messages = {
         started: 'inicio', turns: 'turnos', causes: { 'turn-ended': 'turno', focused: 'foco', requested: 'pedido' },
         compactions: 'compactaciones', of: 'de', repo: 'repo', branch: 'rama', files: 'archivos',
     },
+    chapters: {
+        label: 'capítulos',
+        count: (chapters) => `capítulos ${chapters}`,
+        compacted: 'compactado',
+        newSession: 'sesión nueva',
+        seconds: (seconds) => `${seconds} s`,
+        minutes: (minutes, seconds) => (seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`),
+    },
     database: { newer: (backup) => `la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza` },
     cli: {
         daemonRunning: (pid) => `el daemon ya está en marcha (pid ${pid})`,

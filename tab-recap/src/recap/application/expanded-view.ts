@@ -1,5 +1,6 @@
 // What the expanded view shows, gathered from the store: every task's facts and story, the session facts, and — when
 // the story is older than the ledger — the one request that asks the daemon's curator to write it again. No model call.
+import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
 import type { Requests } from '#src/ports/requests.ts';
@@ -20,12 +21,14 @@ export interface ExpandedDeps {
     readonly ledger: Ledger;
     readonly stories: Stories;
     readonly session: SessionSource;
+    /** where the session broke: the timeline's break lines and the chapter count */
+    readonly boundaries: Pick<Boundaries, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<Requests, 'requestCurate'>;
     /** the files most edited in these lanes, as far as they are known now */
     readonly edits: (lanes: readonly LaneCursor[], now: number) => readonly FileCount[];
 }
 
-export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs'>;
+export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs' | 'breaks'>;
 
 /** The newest change in a task's ledger: a fact added, confirmed or closed. */
 export const newestChange = (facts: readonly Fact[]): number | null =>
@@ -69,7 +72,8 @@ export class ExpandedModel {
             firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
+            chapters: this.deps.boundaries.chapterCount(tab),
         });
-        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web) };
+        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web), breaks: this.deps.boundaries.breaksOf(tab) };
     }
 }

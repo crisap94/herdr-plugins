@@ -46,7 +46,7 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     return { agents, typed, toasts, events, store, settling, settledAfter };
 }
 
-interface Briefing { readonly documents: string[]; readonly answer: string | null }
+interface Briefing { readonly documents: string[]; readonly answer: string | null; /** where the agent's session last broke, when it did */ readonly lastBreak?: number }
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
@@ -61,7 +61,8 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
-        ledger: { historyOf: () => [{ section: 'decisions', text: 'Keep SQLite', why: 'one file', state: 'open', closedWhy: null, firstAt: 1, lastAt: 2 }] },
+        ledger: { historyOf: () => [{ section: 'decisions', text: 'Keep SQLite', why: 'one file', state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 }, { section: 'decisions', text: 'Use JSON files', why: 'simple', state: 'closed', closedWhy: 'superseded', closedAt: 2, firstAt: 1, lastAt: 2 }] },
+        boundaries: { lastBreakAt: () => briefing?.lastBreak ?? null },
         compactions: store.compactions,
         settling: world.settling,
         brief: {
@@ -178,6 +179,19 @@ test('with a brief: claude gets `/compact ` then the brief as typed pieces; the 
     const [document] = briefing.documents;
     assert.ok(document?.includes('Keep SQLite') && document.includes('the retry test') && document.includes('run the tests'));
     assert.match(world.toasts.join('\n'), /Writing what claude should keep/);
+});
+
+const documentFor = async (lastBreak?: number): Promise<string> => {
+    const briefing: Briefing = { documents: [], answer: 'We kept SQLite.', ...(lastBreak === undefined ? {} : { lastBreak }) };
+    await flow(fleet({ 'w1:p1': 'idle' }), 'focused', 'w1:p1', briefing).run({ tab: 'w1:t1', pane: null, note: null });
+    return briefing.documents[0] ?? '';
+};
+
+test('with a brief: a decision closed before the lane\'s last break goes in as settled; an open one and one closed after it do not; with no break nothing is settled', async () => {
+    assert.match(await documentFor(5), /<item section="decisions" state="closed" first="[^"]+" last="[^"]+" why="simple" closed="superseded" settled="yes">Use JSON files<\/item>/);
+    assert.equal((await documentFor(5)).match(/settled="yes"/g)?.length, 1, 'the open decision is not settled');
+    assert.ok(!(await documentFor(2)).includes('settled='), 'closed at the break itself: not settled');
+    assert.ok(!(await documentFor()).includes('settled='));
 });
 
 test('with a brief: codex is compacted, then told where things stand with the brief inside', async () => {

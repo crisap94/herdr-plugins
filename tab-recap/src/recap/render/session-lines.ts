@@ -27,11 +27,22 @@ export interface SessionContext {
 
 const joined = (parts: readonly string[]): string => parts.join(' · ');
 
+/** `compactions 2 (800k → 14k · 39k → 3k) · chapters 3`; the chapter count alone when the session broke without a compaction. */
+function chapterLines(facts: SessionFacts, context: SessionContext): readonly { readonly label: string; readonly text: string }[] {
+    const { compactions, chapters } = facts;
+    const count = chapters === null ? [] : [context.messages.chapters.count(chapters)];
+    if (compactions === null) {
+        return chapters === null ? [] : [{ label: context.messages.chapters.label, text: String(chapters) }];
+    }
+    const pairs = joined(compactions.measured.map((pair) => `${sizeOf(pair.before)} → ${sizeOf(pair.after)}`));
+    return [{ label: context.messages.expanded.compactions, text: joined([pairs === '' ? String(compactions.count) : `${compactions.count} (${pairs})`, ...count]) }];
+}
+
 /** One unwrapped line per known fact; `label` is the caller's to style. */
 export function sessionLines(facts: SessionFacts, context: SessionContext): readonly { readonly label: string; readonly text: string }[] {
     const m = context.messages.expanded;
     const lines: { label: string; text: string }[] = [];
-    const { started, runs, compactions, repo } = facts;
+    const { started, runs, repo } = facts;
     if (started !== null) {
         const day = dayOf(started.at, context.zone) === dayOf(context.now, context.zone) ? '' : `${dayOf(started.at, context.zone)} `;
         lines.push({ label: m.started, text: joined([`${day}${clockOf(started.at, context.zone)}`, spanOf(started.forMs)]) });
@@ -39,10 +50,7 @@ export function sessionLines(facts: SessionFacts, context: SessionContext): read
     if (runs !== null) {
         lines.push({ label: m.turns, text: `${runs.total} (${joined(runs.byCause.map((entry) => `${m.causes[entry.cause]} ${entry.count}`))})` });
     }
-    if (compactions !== null) {
-        const pairs = joined(compactions.measured.map((pair) => `${sizeOf(pair.before)} → ${sizeOf(pair.after)}`));
-        lines.push({ label: m.compactions, text: pairs === '' ? String(compactions.count) : `${compactions.count} (${pairs})` });
-    }
+    lines.push(...chapterLines(facts, context));
     lines.push(...facts.agents.map((agent) => ({ label: agent.label, text: `${agent.share} % ${m.of} ${sizeOf(agent.window)}` })));
     if (repo !== null) {
         lines.push({ label: m.repo, text: joined([repo.name, ...(repo.branch === null ? [] : [`${m.branch} ${repo.branch}`])]) });

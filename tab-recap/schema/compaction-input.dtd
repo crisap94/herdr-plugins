@@ -18,7 +18,9 @@
 
 <!-- Every fact of the agent's tasks, open and closed, newest last seen first. first/last = when the fact was first and last seen
      (local time, HH:MM or a date); why = the reason a decision or a close carries; closed = why it closed (a closed fact is no longer
-     true or no longer needed, but it happened and may still matter). Sections: goal, now, needs, done, decisions, next, links, rules. -->
+     true or no longer needed, but it happened and may still matter). Sections: goal, now, needs, done, decisions, next, links, rules.
+     settled = yes: the fact was closed before the agent's last compaction (or the start of a new conversation in its pane), so its
+     own earlier summaries hold it already. -->
 <!ELEMENT session_history (item*)>
 <!ELEMENT item (#PCDATA)>
 <!ATTLIST item
@@ -27,7 +29,8 @@
   first   CDATA #REQUIRED
   last    CDATA #REQUIRED
   why     CDATA #IMPLIED
-  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED>
+  closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED
+  settled (yes|no) "no">
 
 <!-- The agent's last turns, oldest first (the most recent ones that fit). omitted = turns left out before them. -->
 <!ELEMENT recent (turn|tools)*>

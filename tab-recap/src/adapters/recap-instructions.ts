@@ -53,6 +53,7 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '- close what finished ("done"), turned out wrong ("wrong"), was replaced ("superseded") or was answered ("answered").',
         '- never add a fact that is in the ledger: update it. A fact closed less than two hours ago is not added again either.',
         '- a decision always has a "why": the reason, in your own words. On an add or an update of anything else "why" is null. On a close it is the reason code.',
+        '- a "now" fact you do not carry forward (update it, or add its next state) is closed for you: now is only what is under way at this moment.',
         '- when nothing changed, answer {"ops": []}.',
         ...(tasks ? ['- the ledger has one <ledger task="…"> per task: give an add the "task" it belongs to ("task": "t2"); an update or close goes to the fact\'s own task.'] : []),
         '',

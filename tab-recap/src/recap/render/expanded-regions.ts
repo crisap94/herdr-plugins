@@ -4,9 +4,11 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { SECTIONS } from '#src/i18n/sections.ts';
+import type { Break } from '#src/ports/boundaries.ts';
 import type { Story } from '#src/ports/stories.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { linked } from './linked.ts';
+import { breakLine } from './timeline-breaks.ts';
 import { sessionLines } from './session-lines.ts';
 import { clockOf, dateLines, dayOf, timelineOf } from './timeline.ts';
 import { elapsed, visibleLength, wrap } from './wrap.ts';
@@ -20,6 +22,8 @@ export interface Draw {
     readonly now: number;
     readonly zone: string;
     readonly webs: readonly (LaneWeb | null | undefined)[];
+    /** where the session broke: a gray line in the timeline at each */
+    readonly breaks: readonly Break[];
 }
 
 export interface TaskData {
@@ -64,24 +68,40 @@ function needs(facts: readonly Fact[], draw: Draw): readonly string[] {
     });
 }
 
+/** What the import wrote as the reason of a decision that never said why. */
+const NOT_RECORDED = '(not recorded)';
+
+/** Open decisions and those closed for a real reason: `rewritten` is the 1.x import's artificial close and stays out. */
+const inDecisions = (fact: Fact): boolean => fact.section === 'decisions' && fact.closedWhy !== 'rewritten';
+
 function decisions(facts: readonly Fact[], draw: Draw): readonly string[] {
-    return facts.filter((fact) => fact.section === 'decisions').toSorted((a, b) => b.firstAt - a.firstAt).flatMap((fact) => {
+    return facts.filter(inDecisions).toSorted((a, b) => b.firstAt - a.firstAt).flatMap((fact) => {
         const when = stamp(fact.firstAt, draw);
         const hang = ' '.repeat(when.length + 1);
-        const why = fact.why === null ? [] : wrap(fact.why, draw.width - hang.length).map((line) => draw.style.dim(`${hang}${line}`));
+        const why = fact.why === null || fact.why === NOT_RECORDED ? [] : wrap(fact.why, draw.width - hang.length).map((line) => draw.style.dim(`${hang}${line}`));
         const body = wrap(`${when} ${text(fact, draw)}`, draw.width, hang);
         return (fact.closedWhy === null ? body : tailed(body, draw.style.gray(draw.messages.expanded.closed(fact.closedWhy)), draw, hang)).concat(why);
     });
 }
 
+/** What the timeline draws, newest first: a fact's entry or a break; a break is drawn above the facts of its own minute. */
+type Row = { readonly at: number; readonly entry: ReturnType<typeof timelineOf>[number] } | { readonly at: number; readonly broke: Break };
+
 function timeline(facts: readonly Fact[], draw: Draw): readonly string[] {
-    const entries = timelineOf(facts);
-    const days = dateLines(entries.map((entry) => entry.drawnAt), draw.now, draw.zone);
-    return entries.flatMap((entry, at) => {
-        const clock = clockOf(entry.drawnAt, draw.zone);
-        const body = wrap(`${clock} ${text(entry.fact, draw)}`, draw.width, '      ');
+    const rows: readonly Row[] = [
+        ...timelineOf(facts).map((entry): Row => ({ at: entry.drawnAt, entry })),
+        ...draw.breaks.map((broke): Row => ({ at: broke.at, broke })),
+    ].toSorted((a, b) => b.at - a.at || ('broke' in a ? -1 : 1) - ('broke' in b ? -1 : 1));
+    const days = dateLines(rows.map((row) => row.at), draw.now, draw.zone);
+    return rows.flatMap((row, at) => {
         const day = days[at];
-        return (day === null || day === undefined ? [] : [draw.style.gray(day)]).concat(entry.closed === null ? body : tailed(body, draw.style.gray(draw.messages.expanded.closed(entry.closed)), draw, '      '));
+        const dated = day === null || day === undefined ? [] : [draw.style.gray(day)];
+        if ('broke' in row) {
+            return dated.concat(draw.style.gray(breakLine(row.broke, draw.messages.chapters, draw.width)));
+        }
+        const { entry } = row;
+        const body = wrap(`${clockOf(entry.drawnAt, draw.zone)} ${text(entry.fact, draw)}`, draw.width, '      ');
+        return dated.concat(entry.closed === null ? body : tailed(body, draw.style.gray(draw.messages.expanded.closed(entry.closed)), draw, '      '));
     });
 }
 

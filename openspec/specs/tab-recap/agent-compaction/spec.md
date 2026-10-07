@@ -55,8 +55,9 @@ present: the goal, decisions and why, questions waiting for the operator's answe
 unresolved errors and failing tests, standing rules and preferences, and exact references; and to drop tool
 output, finished-step details and resolved dead ends. The brief SHALL be written from the ledger of the
 agent's tasks — every fact, open and closed, with its why, its reason for closing and its times — not from
-the latest recap alone. It SHALL be at most 3 000 characters. When the brief cannot be written, a message
-built from the open facts in the same order SHALL be used instead, never trimming the note or the goal.
+the latest recap alone; facts settled before the lane's last boundary SHALL be named in one line and not
+re-opened. It SHALL be at most 3 000 characters. When the brief cannot be written, a message built from the
+open facts in the same order SHALL be used instead, never trimming the note or the goal.
 
 #### Scenario: Long recap
 
@@ -67,6 +68,11 @@ built from the open facts in the same order SHALL be used instead, never trimmin
 
 - **WHEN** a decision fact was closed as superseded hours ago
 - **THEN** it SHALL be part of the ledger the brief is written from, marked closed with its reason
+
+#### Scenario: A settled fact
+
+- **WHEN** a fact was closed before the agent's last compaction
+- **THEN** the brief SHALL mention it as settled and SHALL NOT ask the agent to keep it as open work
 
 #### Scenario: The brief fails
 

@@ -42,11 +42,14 @@ import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
+import { forgetClosedTabs } from './retention.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
 /** every this many resync ticks the write-ahead log is folded back into the database file (10 minutes) */
 const CHECKPOINT_EVERY = 10;
+/** every this many resync ticks (a day) the tabs nobody has seen for a while are forgotten; the first sweep is after the first tick */
+const RETENTION_EVERY = 1440;
 /** an intent is a handful of herdr requests of at most 10 s each */
 const INTENT_MS = 90_000;
 
@@ -116,7 +119,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
     });
     box.informer = informer;
-    const compaction = wireCompaction({ fleet, records: store.records, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
+    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
     const curate = wireCurate({ store, curator: () => backends.curator(), log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate };
@@ -187,6 +190,9 @@ async function start(): Promise<number> {
         ticks += 1;
         if (ticks % CHECKPOINT_EVERY === 0) {
             store.checkpoint();
+        }
+        if (ticks % RETENTION_EVERY === 1) {
+            forgetClosedTabs(store, log);
         }
         informer.tick();
         retention.tick();

@@ -123,6 +123,8 @@ test('history: every fact of the agent\'s tasks, open and closed, with why and d
     assert.deepEqual(items.map((item) => [item.text, item.state, item.closedWhy, item.why]), [
         ['Use SQLite', 'closed', 'superseded', 'one file to back up'], ['Use SQLite and WAL', 'open', null, 'readers never block'], ['a', 'open', null, null],
     ].toSorted((x, y) => (items.findIndex((item) => item.text === x[0]) - items.findIndex((item) => item.text === y[0]))));
+    assert.deepEqual(items.map((item) => [item.text, item.closedAt]).filter(([text]) => text === 'Use SQLite'), [['Use SQLite', 200]], 'a closed fact says when it closed; an open one has none');
+    assert.ok(items.filter((item) => item.state === 'open').every((item) => item.closedAt === null));
     assert.ok(!items.some((item) => item.text === 'Other pane decision'));
     assert.deepEqual(ledger.historyOf('w1:t1', 'w1:p9'), []);
     assert.deepEqual(items.map((item) => item.lastAt), items.map((item) => item.lastAt).toSorted((a, b) => b - a), 'newest first');

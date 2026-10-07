@@ -20,7 +20,7 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: NOW - 3 * 60 * MIN, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
     const asked: string[] = [];
-    const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: 'src/a.ts', count: 3 }] };
+    const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: 'src/a.ts', count: 3 }] };
     return { model: new ExpandedModel(deps), ledger, store, asked };
 }
 
