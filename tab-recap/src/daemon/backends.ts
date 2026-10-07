@@ -11,7 +11,7 @@ import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Harness } from '#src/ports/harness.ts';
-import type { Judge } from '#src/ports/judge.ts';
+import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -64,9 +64,9 @@ export function briefFor(config: Config, available: readonly string[], work: str
 }
 
 /** The judge's model: the job's placement on a harness; null when the job is off or no harness is there. */
-export function judgeFor(config: Config, available: readonly string[], work: string): Judge | null {
+export function judgeFor(config: Config, available: readonly string[], work: string, anchors?: CheckAnchors): Judge | null {
     const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort }, anchors);
 }
 
 /** The curator: the job's placement on a harness; null when the job is off or no harness is there. */

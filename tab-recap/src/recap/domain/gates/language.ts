@@ -1,4 +1,5 @@
-// G5 language: an item written in English where the recap is Spanish, or the other way round, is refused. Only en and es are told apart: another language is never refused.
+// G5 language: an item written in English where the recap is Spanish, or the other way round, is flagged and kept (refusing it deleted a fact for its wording).
+// Only en and es are told apart: another language is never flagged.
 import { LISTED, said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 import { wordsOf } from './words.ts';
@@ -32,6 +33,6 @@ export const wrongLanguage: Gate = {
         if ((wanted !== 'en' && wanted !== 'es') || found === null || found === wanted) {
             return null;
         }
-        return { kind: 'refuse', gate: 'G5', reason: said(wanted, `write this item in English, not ${found === 'es' ? 'Spanish' : 'another language'}`, 'escribe este elemento en español, no en inglés') };
+        return { kind: 'flag', gate: 'G5', reason: said(wanted, `write this item in English, not ${found === 'es' ? 'Spanish' : 'another language'}`, 'escribe este elemento en español, no en inglés') };
     },
 };

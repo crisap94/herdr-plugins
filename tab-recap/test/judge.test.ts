@@ -24,7 +24,7 @@ const SCORE = JSON.stringify({
         return { item, check, pass: !failing, critique: failing ? 'effort, not a result' : '' };
     })),
     keyfacts: ['!256 is merged', 'Retries stay at three: the API limits bursts', 'The release is tagged'],
-    coverage: [{ keyfact: 0, item: 't1/done/0' }, { keyfact: 1, item: 't1/decisions/0' }, { keyfact: 2, item: null }],
+    coverage: [{ keyfact: 0, item: 'state/t1/done/0' }, { keyfact: 1, item: 'state/t1/decisions/0' }, { keyfact: 2, item: null }],
 });
 const ANSWERS = JSON.stringify({ answers: ['Ship retries', '!256 merged', 'not stated', 'not stated', 'The API limits bursts', 'not stated'] });
 const GRADES = JSON.stringify({ grades: [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: question !== 6, critique: question === 6 ? 'the next action is in the input' : '' })) });
@@ -89,7 +89,7 @@ test('an unparsable answer is a run not judged, nothing stored, and the next run
     assert.deepEqual([result.kind, result.kind === 'not-judged' ? result.why : ''], ['not-judged', 'the answer holds no JSON object']);
     assert.deepEqual(store.verdicts.ofRun(run.id), []);
     const answers = ['nonsense', SCORE];
-    const text = (task: JudgeTask): string => ({ score: answers.shift() ?? SCORE, readback: ANSWERS, grade: GRADES })[task];
+    const text = (task: JudgeTask): string => ({ score: answers.shift() ?? SCORE, readback: ANSWERS, grade: GRADES, cover: '' })[task];
     const flaky: JudgeDeps = { ...deps, judge: { label: 'x', ask: (task) => Promise.resolve({ kind: 'said', text: text(task), costUsd: 0 }) } };
     const seen: string[] = [];
     const results = await judgeRuns(flaky, [run, run], (each) => { seen.push(each.kind); });

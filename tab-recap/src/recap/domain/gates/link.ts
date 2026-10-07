@@ -1,4 +1,5 @@
-// G4 link: a "links" item must be a reference that resolves — `!n`, `#n`, a hex SHA of 7+ digits, name/with-slash, a path, a file name with an extension or a URL.
+// G4 link: a "links" item should be a reference that resolves — `!n`, `#n`, a hex SHA of 7+ digits, name/with-slash, a path, a file name with an extension or a URL.
+// One that is not is flagged and kept (drawn as plain text, without a hyperlink): refusing it deleted a fact for a matter of form.
 import { said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 
@@ -19,7 +20,7 @@ export const hasReference = (text: string): boolean => text.split(/\s+/u).map(ba
 export const unresolved: Gate = {
     id: 'G4',
     check: (item, context) => (item.section !== 'links' || hasReference(item.text) ? null : {
-        kind: 'refuse', gate: 'G4',
-        reason: said(context.language, 'a link is a reference: !n, #n, a commit SHA, name/with-slash, a path, a file name or a URL', 'un enlace es una referencia: !n, #n, un SHA, nombre/con/barra, una ruta, un archivo o una URL'),
+        kind: 'flag', gate: 'G4',
+        reason: said(context.language, 'not a reference (!n, #n, a commit SHA, name/with-slash, a path, a file name or a URL): kept, drawn without a hyperlink', 'no es una referencia (!n, #n, un SHA, nombre/con/barra, una ruta, un archivo o una URL): se conserva, sin hipervínculo'),
     }),
 };

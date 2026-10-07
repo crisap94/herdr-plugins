@@ -35,7 +35,7 @@ test('`--label` with the input ended stops cleanly; `skip` stores nothing', asyn
     assert.equal(await runEval(optionsOf('--label', '2'), rig().deps), 0, 'nothing to label is not an error');
 });
 
-test('`--agree`: 50 items with both verdicts for I3 and 44 agreeing print 88 % beside the 85 % target, with false passes and false fails', async () => {
+test('`--agree`: 50 items with both verdicts for I3 and 44 agreeing print 88 % and kappa 0.76 beside the 0.6 bar, with false passes, false fails and the newest items they disagree on', async () => {
     const { store, deps, out } = rig();
     seed(store, 1);
     const [run] = store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
@@ -52,10 +52,12 @@ test('`--agree`: 50 items with both verdicts for I3 and 44 agreeing print 88 % b
     };
     store.verdicts.add(Array.from({ length: 50 }, (_, n) => judged(n)).flat());
     assert.equal(await runEval(optionsOf('--agree'), deps), 0);
-    assert.match(out.join('\n'), /I3 +88% +target 85% +44\/50 agree +3 false passes +3 false fails/);
+    assert.match(out.join('\n'), /I3 +88% +kappa 0\.76 +bar 0\.6 +44\/50 agree +3 false passes +3 false fails/);
+    assert.match(out.join('\n'), /I3: where they disagree \(newest first\)\n {2}"t1\/x\/49" — judge fail, operator pass\n {2}"t1\/x\/48" — judge fail, operator pass\n {2}"t1\/x\/47" — judge fail, operator pass/);
     out.length = 0;
     await runEval(optionsOf('--agree', '--json'), deps);
-    assert.deepEqual(JSON.parse(out.join('')), [{ check: 'I3', items: 50, agreed: 44, percent: 88, falsePasses: 3, falseFails: 3 }]);
+    const [row] = JSON.parse(out.join('')) as { worst: { item: string }[] }[];
+    assert.deepEqual({ ...row, worst: row?.worst.map((each) => each.item) }, { check: 'I3', items: 50, agreed: 44, percent: 88, falsePasses: 3, falseFails: 3, kappa: 0.76, worst: ['t1/x/49', 't1/x/48', 't1/x/47'] });
     const empty = rig();
     await runEval(optionsOf('--agree'), empty.deps);
     assert.match(empty.out.join('\n'), /no item has both/);

@@ -6,7 +6,8 @@ import { m005 } from './005-eval.ts';
 import { m006 } from './006-ledger.ts';
 import { m007 } from './007-curator.ts';
 import { m008 } from './008-boundary-link.ts';
+import { m009 } from './009-anchor.ts';
 import type { Migration } from './migration.ts';
 
 /** The only place a migration is registered, in order. */
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008];
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009];

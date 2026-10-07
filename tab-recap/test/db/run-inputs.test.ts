@@ -54,10 +54,10 @@ test('runs come newest first, by tab and by time, with a limit; the items carry 
     assert.deepEqual(store.inputs.runs({ ...QUERY, limit: 1 }).map((r) => r.at), [3000]);
     const [newest] = store.inputs.runs({ ...QUERY, tab: 'w1:t1' });
     assert.ok(newest !== undefined);
-    assert.deepEqual(store.inputs.itemsOf(newest.id).map((item) => [item.key, item.text]), [
+    assert.deepEqual(store.inputs.itemsOf(newest.id, 'added').map((item) => [item.key, item.text]), [
         ['t1/goal/0', 'Ship retries'], ['t1/now/0', 'Review !256.'], ['t1/done/0', 'Merged !250.'], ['t1/done/1', 'Tagged 1.9.0.'], ['t1/links/0', '!256'],
     ]);
-    assert.deepEqual(store.inputs.itemsOf('run_nonsense'), []);
+    assert.deepEqual(store.inputs.itemsOf('run_nonsense', 'added'), []);
     assert.equal(store.inputs.document('run_nonsense'), null);
 });
 

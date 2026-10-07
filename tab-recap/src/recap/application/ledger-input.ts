@@ -40,7 +40,7 @@ export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgen
             byId.set(id, fact);
             mine.set(id, fact);
             taskOf.set(id, task.key);
-            return { id, section: fact.section, text: fact.text, state: fact.state, first: fact.firstAt, last: fact.lastAt, why: fact.why, ref: fact.ref, agent: agentIdOf(fact, agents), closed: fact.closedWhy };
+            return { id, section: fact.section, text: fact.text, state: fact.state, first: fact.firstAt, last: fact.lastAt, why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: agentIdOf(fact, agents), closed: fact.closedWhy };
         });
         return { task: several ? task.key : null, facts };
     });

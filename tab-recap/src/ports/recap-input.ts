@@ -49,6 +49,8 @@ export interface InputFact {
     readonly last: number;
     readonly why: string | null;
     readonly ref: string | null;
+    /** the quote from an input that the fact was added with; null when it has none */
+    readonly anchor: string | null;
     /** the id of the agent (`a1`) whose work it is, when the tab lists that agent */
     readonly agent: string | null;
     readonly closed: ClosedWhy | null;

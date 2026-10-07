@@ -11,6 +11,8 @@ export interface AddOp {
     /** when the writer says it happened (epoch ms, already resolved); null: the run's time */
     readonly at: number | null;
     readonly agent: string | null;
+    /** a quote from the input the fact comes from (at most 120 characters); the writer's `add` carries one, gate G11 checks it */
+    readonly anchor?: string | null;
 }
 
 export interface UpdateOp {
@@ -18,6 +20,8 @@ export interface UpdateOp {
     readonly id: string;
     readonly text: string;
     readonly why: string | null;
+    /** an update may carry the quote that shows the change; a close never does */
+    readonly anchor?: string | null;
 }
 
 export interface CloseOp {
@@ -87,7 +91,7 @@ function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): { facts: 
     if (target.section === 'decisions' && why === null) {
         return { facts, refusal: { op, reason: 'no-why' } };
     }
-    return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, lastAt: Math.max(fact.lastAt, run.at), language: run.language } : fact)), refusal: null };
+    return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, anchor: op.anchor ?? fact.anchor, lastAt: Math.max(fact.lastAt, run.at), language: run.language } : fact)), refusal: null };
 }
 
 function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readonly Fact[]; refusal: Refusal | null } {
@@ -96,7 +100,7 @@ function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readon
     }
     const first = Math.min(op.at ?? run.at, run.at);
     const fact: Fact = {
-        id: run.mint(), task: run.task, section: op.section, text: op.text, why: op.why, ref: op.ref, agent: op.agent,
+        id: run.mint(), task: run.task, section: op.section, text: op.text, why: op.why, ref: op.ref, agent: op.agent, anchor: op.anchor ?? null,
         firstAt: first, lastAt: run.at, state: 'open', closedWhy: null, closedAt: null, language: run.language,
     };
     const replaced = op.section === 'goal' ? facts.map((each) => (each.section === 'goal' && each.state === 'open' && sameTask(each.task, run.task) ? closedBy(each, 'superseded', run.at) : each)) : facts;

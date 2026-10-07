@@ -281,13 +281,17 @@ lists yes/no checks for every fact — one thing, understood on its own, specifi
 saw, about the work rather than the agent, new, still true — and for every section (a decision has its
 reason, a link resolves, a *needs* is something you can answer). The writer is asked for exactly what the
 rubric says, and plain-code **gates** enforce the mechanical parts on every answer, with no model call: a
-fact about the agent instead of the work, a decision without a reason, a link that does not resolve or a
-duplicate of a fact already in the ledger is sent back once, and what is still refused is dropped. A
+fact about the agent instead of the work, a decision without a reason, a duplicate of a fact already in the
+ledger or a fact that does not quote its source (every new fact carries an *anchor*, a short quote from the turn
+it comes from) is sent back once, alone, and what is still refused is dropped; a link that does not resolve or
+a line in the wrong language is only flagged and kept. A
 **judge** job (`tab-recap eval`) scores sampled runs against the rubric, one line of critique per failure,
 and tests whether the facts alone answer six questions (the goal, what finished, what waits on you, what
 must not be done, why a decision was made, what is next). `eval --label` and `eval --agree` check the judge
-against your own verdicts, and `eval --replay <transcript>` rebuilds a ledger from a stored transcript
-and judges it — the measure used for the 2.0 release. The input of each run is kept for
+against your own verdicts (Cohen's kappa, 0.6 as the bar; where you overruled it, its next instructions carry your
+corrections), and `eval --replay <transcript>` rebuilds a ledger from a stored transcript and judges it — coverage
+and the read-back are measured on the ledger as it stood after the run, not on what the run added — and, with
+`--compare-imported`, sets the last good 1.x recap of each chapter beside it. The input of each run is kept for
 `TAB_RECAP_KEEP_INPUT_DAYS` days (default 14) so a fact can be judged against exactly what the writer saw.
 
 

@@ -1,0 +1,26 @@
+tab-recap eval — judge fake — 1 runs sampled, 1 judged
+
+pass rate by check
+I1          atomic                    100%  1/1
+coverage    key facts carried         67%   2/3
+filler      items tied to a key fact  67%   2/3
+readback-1  read-back question 1      100%  1/1
+readback-2  read-back question 2      100%  1/1
+readback-3  read-back question 3      100%  1/1
+readback-4  read-back question 4      100%  1/1
+readback-5  read-back question 5      0%    0/1
+readback-6  read-back question 6      0%    0/1
+
+failing items (0)
+none
+
+judge vs anchor (0): the fact quotes its input and the judge calls it unsupported
+none
+
+all judged runs (state after each run; the facts each run added in brackets)
+coverage 67% (2/3) [added 33% (1/3)]
+no-filler 67% (2/3) [added 100% (1/1)]
+read-back median 4/6
+
+runs
+run_…XXXXXX  w1:t1  1970-01-01 00:00  coverage 67% (2/3) [added 33% (1/3)] · no-filler 67% (2/3) [added 100% (1/1)] · read-back 4/6

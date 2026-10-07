@@ -7,6 +7,8 @@ import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';
+import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
+import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
@@ -21,7 +23,9 @@ import type { EvalOptions } from '#src/recap/application/eval-options.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay } from '#src/recap/application/replay.ts';
 import type { Replayed } from '#src/recap/application/replay.ts';
-import { ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
+import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
+import { gateReportOf } from '#src/recap/application/eval-stats.ts';
+import { gateLines } from '#src/recap/render/eval.ts';
 
 const readers: Readonly<Record<string, () => Transcripts>> = { claude: () => new ClaudeTranscripts(), codex: () => new CodexTranscripts() };
 
@@ -51,18 +55,24 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
     const available = isUnknown(found) ? [] : found.ids;
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
+    const pipeline = options.pipeline ?? 'one';
+    const writer = summarizerFor(config, available, join(scratch.dir, 'summarizer'));
+    const anchors = operatorAnchors(databasePath(stateDir()));
+    const judgeLabel = judgeFor(config, available, join(scratch.dir, 'judge'), anchors)?.label ?? 'none';
     try {
         const done = await replay({
             reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
-            summarizer: () => summarizerFor(config, available, join(scratch.dir, 'summarizer')),
+            summarizer: () => writer,
         }, file, label, size);
+        console.log(`pipeline ${pipeline} · writer ${writer.backend} · judge ${judgeLabel}\n`);
         printMechanical(done, file, options.compareImported);
-        const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'));
+        console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
+        const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), anchors);
         if (judge === null) {
             console.log('\nmodel judging: off (no harness is available for the judge job); the checks above need no model');
             return 0;
         }
-        const imported = options.compareImported === null ? null : factsOfTab(databasePath(stateDir()), options.compareImported);
+        const imported = options.compareImported === null ? null : importedChapters(databasePath(stateDir()), options.compareImported);
         console.log(`\n${(await judgedReport({ judge, store: scratch.store, rubric: RUBRIC_TEXT, label, imported, beside: options.compareImported, style: styleFor(process.stdout), err: (line) => { console.error(line); } })).join('\n')}`);
         return 0;
     } catch (error) {
@@ -75,6 +85,10 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
 
 export function replayCommand(options: EvalOptions): Promise<number> {
     const file = options.replay ?? '';
+    if (options.pipeline !== null && options.pipeline !== 'one') {
+        console.error(`tab-recap: 2 — --pipeline ${options.pipeline} needs the enumeration step, which this build does not have`);
+        return Promise.resolve(2);
+    }
     const make = readers[kindOf(options.kind, file)];
     if (make === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
