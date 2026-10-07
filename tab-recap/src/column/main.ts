@@ -14,9 +14,8 @@ import type { Locale } from '#src/i18n/index.ts';
 import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
+import { COMMAND_LAUNCHER } from './command.ts';
 import { spawn } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -168,9 +167,20 @@ function askToCompact(): void {
         void new HerdrFleet(stateDir()).agents().askNote(tab, null);
         return;
     }
-    const command = join(dirname(dirname(fileURLToPath(import.meta.url))), 'bin', 'tab-recap.ts');
-    spawn(process.execPath, [command, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();
+    spawn(process.execPath, [COMMAND_LAUNCHER, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();
     process.exit(0);
+}
+
+/**
+ * `s`: the settings modal. It is a popup, so from the modal this one closes first and a short-lived command opens
+ * the settings right after; from a column the command runs at once (it asks herdr for the popup itself).
+ */
+function openSettings(): void {
+    const delay = mode === 'modal' ? '400' : '0';
+    spawn(process.execPath, [COMMAND_LAUNCHER, 'configure'], { detached: true, stdio: 'ignore', env: { ...process.env, HERDR_PLUGIN_CONTEXT_JSON: '', HERDR_TAB_ID: tab, TAB_RECAP_OPEN_DELAY_MS: delay } }).unref();
+    if (mode === 'modal') {
+        process.exit(0);
+    }
 }
 
 /** SGR mouse report: ESC [ < button ; x ; y M — M is a press. Button 0 is a tap / left click. */
@@ -195,6 +205,7 @@ const KEYS: Readonly<Record<string, () => void>> = {
     G: () => { scroll = Number.MAX_SAFE_INTEGER; },
     r: () => { store?.requests.request(tab); },
     c: askToCompact,
+    s: openSettings,
     h: () => { store?.requests.requestVisibility({ target: tab, hidden: true }); },
     '\r': openModal,
 };

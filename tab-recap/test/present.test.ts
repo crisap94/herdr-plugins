@@ -129,6 +129,22 @@ test('English headings are read in a recap that was written in English while the
     assert.equal(firstItem('## Esperando tu respuesta\n- el OK', 'needs'), 'el OK');
 });
 
+test('the roomy footers name the settings key, and none overflows its width', async () => {
+    const { footer } = await import('#src/recap/render/present.ts');
+    for (const messages of [en, es]) {
+        for (const hint of [messages.hints.column[0] ?? '', messages.hints.modal[0] ?? '']) {
+            assert.match(hint, /\bs\b/, `"${hint}" names s`);
+        }
+        for (const width of [12, 20, 30, 44, 80]) {
+            for (const mode of ['column', 'modal'] as const) {
+                assert.ok(visibleLength(footer(width, mode, messages)) <= width);
+            }
+        }
+    }
+    assert.match(footer(100, 'column', en), /s settings/);
+    assert.match(footer(120, 'column', es), /s ajustes/);
+});
+
 test('the Spanish catalog keeps every hint within a phone column', () => {
     for (const hints of [es.hints.column, es.hints.modal]) {
         assert.ok(hints.some((hint) => visibleLength(hint) <= 12), 'a hint fits the narrowest column');

@@ -3,7 +3,7 @@ import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
-import type { Runner } from '#src/adapters/run.ts';
+import type { Runner } from '#src/adapters/process.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 const opencode = (runner: Runner): RecapWriter => new RecapWriter(new OpencodeHarness(process.cwd(), 100, { runner, relistMs: 1 }), { model: '', effort: 'default' });

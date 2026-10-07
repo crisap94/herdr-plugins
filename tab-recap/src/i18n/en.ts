@@ -1,4 +1,5 @@
 import type { Messages } from './messages.ts';
+import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
 import { agoIn } from './relative.ts';
 
 export const en: Messages = {
@@ -18,8 +19,8 @@ export const en: Messages = {
     needsYou: (what) => `needs you: ${what}`,
     ago: agoIn('en'),
     hints: {
-        column: ['tap: full screen · r recap now · c compact · h hide · j/k scroll', 'tap: full screen · r · c · h · j/k', 'r recap · h hide', 'r h'],
-        modal: ['q close · r recap now · c compact · h hide column · j/k scroll · g top', 'q close · r recap now · c compact · h hide · j/k', 'q close · r · h · j/k', 'q'],
+        column: ['tap: full screen · r recap · c compact · s settings · h hide · j/k scroll', 'tap: full screen · r · c · s · h · j/k', 'r recap · s settings · h hide', 'r s h'],
+        modal: ['q close · r recap now · c compact · s settings · h hide column · j/k scroll · g top', 'q close · r recap now · c compact · s settings · h hide · j/k', 'q close · r · h · j/k', 'q'],
     },
     setup: {
         title: 'TAB RECAP — settings',
@@ -100,7 +101,7 @@ export const en: Messages = {
         usage: (commands) => `USAGE: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `version  ${code ?? 'unknown'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
-        nodeTooOld: (version, minimum) => `warning  node ${version} is older than ${minimum}: the plugin needs Node >= ${minimum} on the PATH of herdr's server (see README, macOS)`,
+        hostRefusal: (refusal, path) => renderRefusal(refusal, path, ENGLISH),
         statusKeys: (bindings, configPath) => (bindings.length === 0 ? `keys     no key bound — see README (looked in ${configPath})` : `keys     ${bindings.map((b) => `${b.key} → ${b.action}`).join(', ')}`),
         statusDaemon: (pid, off, version) => `daemon   ${pid === null ? 'not running' : `pid ${pid} v${version ?? '?'}`}${off ? ' (switched off)' : ''}`,
         statusBackend: (what) => `backend  ${what}`,

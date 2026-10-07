@@ -1,5 +1,6 @@
 import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
+import { nodeHost } from '#src/host/node-host.mjs';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 
 export function onPath(command: string, path: string): boolean {
@@ -22,7 +23,7 @@ export class PathHarnesses implements Harnesses {
     }
 
     available(): Promise<HarnessesResult> {
-        const path = process.env['PATH'] ?? '';
+        const path = nodeHost().path;
         return Promise.resolve({ kind: 'available', ids: this.ids.filter((id) => onPath(id, path)) });
     }
 }

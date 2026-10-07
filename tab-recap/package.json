@@ -1,6 +1,6 @@
 {
   "name": "herdr-tab-recap",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "description": "herdr plugin: a recap column on the right of every tab with a coding agent",
@@ -15,7 +15,7 @@
     "typecheck": "tsgo --noEmit",
     "lint": "bash ci/lint.sh",
     "test": "node --test \"test/**/*.test.ts\"",
-    "daemon": "node src/daemon/main.ts"
+    "daemon": "node src/daemon/launch.mjs"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",

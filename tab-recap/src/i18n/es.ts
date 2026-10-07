@@ -1,4 +1,6 @@
 import type { Messages } from './messages.ts';
+import { renderRefusal } from '#src/host/policy.mjs';
+import { SPANISH_REFUSAL } from './refusal.ts';
 import { agoIn } from './relative.ts';
 
 /** Neutral Latin-American Spanish, informal «tú». Typed as `Messages`: a missing key fails the typecheck. */
@@ -19,8 +21,8 @@ export const es: Messages = {
     needsYou: (what) => `te necesita: ${what}`,
     ago: agoIn('es'),
     hints: {
-        column: ['toca: pantalla completa · r actualizar · c compactar · h ocultar · j/k desplazar', 'toca: pantalla completa · r · c · h · j/k', 'r actualizar · h ocultar', 'r h'],
-        modal: ['q cerrar · r actualizar ahora · c compactar · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · c compactar · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
+        column: ['toca: pantalla completa · r actualizar · c compactar · s ajustes · h ocultar · j/k desplazar', 'toca: pantalla completa · r · c · s · h · j/k', 'r actualizar · s ajustes · h ocultar', 'r s h'],
+        modal: ['q cerrar · r actualizar ahora · c compactar · s ajustes · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · c compactar · s ajustes · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
@@ -101,7 +103,7 @@ export const es: Messages = {
         usage: (commands) => `USO: tab-recap ${commands} [-h|--help]`,
         statusVersion: (code) => `versión  ${code ?? 'desconocida'}`,
         statusNode: (path, version) => `node     ${path} ${version}`,
-        nodeTooOld: (version, minimum) => `aviso    node ${version} es anterior a ${minimum}: el plugin necesita Node >= ${minimum} en el PATH del servidor de herdr (mira el README, macOS)`,
+        hostRefusal: (refusal, path) => renderRefusal(refusal, path, SPANISH_REFUSAL),
         statusKeys: (bindings, configPath) => (bindings.length === 0 ? `teclas   ninguna tecla asignada — mira el README (se buscó en ${configPath})` : `teclas   ${bindings.map((b) => `${b.key} → ${b.action}`).join(', ')}`),
         statusDaemon: (pid, off, version) => `daemon   ${pid === null ? 'detenido' : `pid ${pid} v${version ?? '?'}`}${off ? ' (apagado)' : ''}`,
         statusBackend: (what) => `motor    ${what}`,

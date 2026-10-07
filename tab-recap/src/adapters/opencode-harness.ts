@@ -6,8 +6,8 @@ import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
-import { run, scrubbedEnv } from './run.ts';
-import type { Runner } from './run.ts';
+import { run, scrubbedEnv } from './process.ts';
+import type { Runner } from './process.ts';
 
 /** No tool, no permission: measured, the request shrinks from ~9k to <1k tokens and no tool event appears. */
 /** how long after a killed run opencode gets to finish writing its session before we look once more */

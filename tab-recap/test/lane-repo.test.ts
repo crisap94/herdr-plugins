@@ -5,8 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BRANCH_ARGS, GitLaneRepo, ORIGIN_ARGS, ROOT_ARGS } from '#src/adapters/git-lane-repo.ts';
-import { run } from '#src/adapters/run.ts';
-import type { Runner, RunResult } from '#src/adapters/run.ts';
+import { run } from '#src/adapters/process.ts';
+import type { Runner, RunResult } from '#src/adapters/process.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 

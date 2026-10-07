@@ -14,7 +14,9 @@ failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
 
 echo "rules (ast-grep) — each must pass on the tree AND bite its bad probe:"
-mapfile -t RULES < <(find rules -maxdepth 1 -name '*.yml' | sort)
+# bash 3.2 (macOS' /bin/bash) has no mapfile: read the list line by line
+RULES=()
+while IFS= read -r rule; do RULES+=("$rule"); done < <(find rules -maxdepth 1 -name '*.yml' | sort)
 [ "${#RULES[@]}" -gt 0 ] || { echo "lint: 3 — NOT COVERED: zero rules" >&2; exit 3; }
 for rule in "${RULES[@]}"; do
     id="$(basename "$rule" .yml)"

@@ -11,7 +11,9 @@ import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
-import { MIN_NODE, boundKeys, herdrConfigPath, nodeAtLeast } from '#src/adapters/host-check.ts';
+import { boundKeys, herdrConfigPath } from '#src/adapters/host-check.ts';
+import { nodeHost } from '#src/host/node-host.mjs';
+import { supportOf } from '#src/host/policy.mjs';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
@@ -47,7 +49,7 @@ function launch(): number {
         return OK;
     }
     const out = openSync(pidfile.logPath, 'a');
-    const child = spawn(process.execPath, [join(root, 'src', 'daemon', 'main.ts')], {
+    const child = spawn(process.execPath, [join(root, 'src', 'daemon', 'launch.mjs')], {
         cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDir() },
     });
     child.unref();
@@ -105,10 +107,12 @@ function status(): number {
     const config = loadConfig();
     const t = m().cli;
     const running = pidfile.alive();
+    const host = nodeHost();
+    const support = supportOf(host);
     console.log([
         t.statusVersion(codeVersion()),
-        t.statusNode(process.execPath, process.version),
-        ...(nodeAtLeast(process.version) ? [] : [t.nodeTooOld(process.version, MIN_NODE)]),
+        t.statusNode(host.execPath, host.nodeVersion),
+        ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
@@ -122,13 +126,15 @@ function status(): number {
 /** The settings modal; when herdr already shows another modal, say how to do the same from the shell. */
 async function configure(): Promise<number> {
     const tab = currentTab();
+    // a modal that asked for this is closing: herdr shows one popup at a time
+    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0); });
     const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
     }
     if (opened.kind === 'busy') {
-        console.error(`tab-recap: ${m().cli.setupBusy(`${join(root, 'bin', 'tab-recap.ts')} backend`)}`);
+        console.error(`tab-recap: ${m().cli.setupBusy(`${join(root, 'bin', 'tab-recap.mjs')} backend`)}`);
         return FAILED;
     }
     return OK;

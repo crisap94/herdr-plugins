@@ -55,6 +55,9 @@ test('a failed import: logged, shown on screen, the daemon does not run, the fil
 
 test('a database newer than this plugin: the daemon says which backup to restore, shows it, and does not run', async () => {
     const dir = scratchDir('daemon-newer');
+    // the messages asserted below are English whatever the machine's locale
+    const locale = process.env['TAB_RECAP_LOCALE'];
+    process.env['TAB_RECAP_LOCALE'] = 'en';
     try {
         const db = new DatabaseSync(databasePath(dir));
         db.exec('PRAGMA user_version = 7');
@@ -65,6 +68,11 @@ test('a database newer than this plugin: the daemon says which backup to restore
         assert.match(told.join(), /database is newer than this plugin — restore a backup or upgrade/);
         assert.match(lines.join(), /newer than this plugin/);
     } finally {
+        if (locale === undefined) {
+            delete process.env['TAB_RECAP_LOCALE'];
+        } else {
+            process.env['TAB_RECAP_LOCALE'] = locale;
+        }
         rmSync(dir, { recursive: true, force: true });
     }
 });

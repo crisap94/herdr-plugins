@@ -3,6 +3,8 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { configPathsFor } from '#src/adapters/config-paths.ts';
+import { nodeHost } from '#src/host/node-host.mjs';
 import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -43,7 +45,8 @@ export interface Config {
     readonly timeoutMs: number;
 }
 
-const home = homedir();
+/** where the plugin keeps things when herdr does not say: by the OS family (the composition root picks the adapter) */
+const defaults = configPathsFor(nodeHost().platform, homedir(), process.env);
 
 function given(key: string): string | undefined {
     const value = process.env[key];
@@ -51,11 +54,11 @@ function given(key: string): string | undefined {
 }
 
 export function configDir(): string {
-    return given('HERDR_PLUGIN_CONFIG_DIR') ?? join(home, '.config', 'herdr', 'plugins', 'config', 'tab-recap');
+    return given('HERDR_PLUGIN_CONFIG_DIR') ?? defaults.configDir;
 }
 
 export function stateDir(): string {
-    return given('TAB_RECAP_STATE') ?? given('HERDR_PLUGIN_STATE_DIR') ?? join(home, '.local', 'state', 'herdr', 'plugins', 'tab-recap');
+    return given('TAB_RECAP_STATE') ?? given('HERDR_PLUGIN_STATE_DIR') ?? defaults.stateDir;
 }
 
 export function parseEnv(text: string): ReadonlyMap<string, string> {

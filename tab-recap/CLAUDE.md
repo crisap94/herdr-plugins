@@ -20,6 +20,8 @@ src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
 src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
 src/compact/             composition root of the compaction popup (a note, then a request); the reducer is `recap/application/compact-keys.ts`, the flow `compaction.ts`, the words `compaction-message.ts` (pure; never names the plugin)
+src/host/               PLAIN JAVASCRIPT (`.mjs` + `.d.mts`, no TypeScript syntax): the host policy (`policy.mjs`: `MIN_NODE`, `supportOf`, the refusal's steps and English text), the Host adapter (`node-host.mjs`) and `launch.mjs`, which every launcher calls
+src/*/launch.mjs        the launchers of the column, settings, compaction and daemon (what the manifest and the daemon spawn run, never `main.ts`); `bin/tab-recap.mjs` is the commands'
 bin/                    one-shot commands behind the plugin's actions: 0 · 1 · 2 usage · 3 not covered
 ```
 
@@ -45,6 +47,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`: the one prompt (codex, opencode) or typed line (claude) of a compaction the operator asked for (`recap/application/compaction.ts`, reached only from the request queue) |
 | `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
 | `recap-write-transactions` | no bare `BEGIN`: a transaction is `writeTx` (`BEGIN IMMEDIATE`, rollback on a throw), in `adapters/db/connection.ts` only |
+| `recap-host-probes-at-the-edge` | `process.platform`, `os.platform()`/`os.type()`, `process.env.PATH` only in `src/host/` and the `*-posix`/`*-windows`/`*-xdg` adapters: the rest asks the Host, ProcessControl or ConfigPaths port |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
 
 **A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts

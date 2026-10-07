@@ -144,7 +144,7 @@ Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_CO
 
 Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `node bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
 
-In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
+In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `s` opens the settings, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 
 Bind one in `~/.config/herdr/config.toml`, e.g.:
 
@@ -153,6 +153,11 @@ Bind one in `~/.config/herdr/config.toml`, e.g.:
 key = "prefix+r"
 type = "plugin_action"
 command = "tab-recap.column"      # hide / show this tab's column
+
+[[keys.command]]
+key = "prefix+shift+s"
+type = "plugin_action"
+command = "tab-recap.configure"   # the settings modal, from anywhere
 
 [[keys.command]]
 key = "prefix+shift+r"
@@ -176,6 +181,7 @@ If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node tha
 - **No key is bound out of the box.** Add the bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
 - **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
 - **Node ≥ 24.21.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.21+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.21, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
+  With an older Node the plugin says so instead of failing silently: the column, the settings and the compaction popup show the version found, the one required, the path of the `node` used and the steps **for your OS** (macOS: Homebrew and `launchctl`; Linux: nvm, mise or n); a command prints them and exits 1; the daemon writes one dated line to `daemon.log`. `tab-recap.status` reports it and goes on. A Node too old to run `.ts` prints the same message in English.
 - **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
 
 Read-only diagnosis (run the last two inside a herdr pane):

@@ -4,8 +4,10 @@ import { createServer } from 'node:net';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { run } from '#src/adapters/run.ts';
+import { posixProcess } from '#src/adapters/process-posix.ts';
 import { subscribe } from '#src/transport/herdr.ts';
+
+const { run } = posixProcess();
 
 const alive = (pid: number): boolean => {
     try {
