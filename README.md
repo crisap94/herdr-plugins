@@ -102,8 +102,8 @@ Use any free keys (`prefix+c` is herdr's own "new tab", so avoid it). Then run
 - **Column** (wide tabs): the recap, always visible. By default it appears for `claude`, `codex`
   and `opencode` agents.
 - **Bar** (tabs narrower than 110 cells, like a phone): one row along the bottom.
-- **Tap** the bar or the column, or press **Enter** in the column, to open the full recap as a
-  modal over everything. **`q`** or **Esc** closes it.
+- **Tap** the bar or the column, or press **Enter** in the column, to open the [expanded view](#the-expanded-view)
+  as a modal over everything. **`q`** or **Esc** closes it.
 - In the column or the modal: **`j`/`k`** or the arrow keys scroll, **Space**/**`b`** page down/up,
   **`g`**/**`G`** jump to top/bottom, **`r`** writes a new recap now, **`c`** compacts the focused
   agent.
@@ -116,6 +116,32 @@ Use any free keys (`prefix+c` is herdr's own "new tab", so avoid it). Then run
 The same views are available as actions: `tab-recap.show` (the modal), `tab-recap.refresh`
 (recap this tab now), `tab-recap.column` (hide or show this tab's column) and `tab-recap.columns`
 (all columns). Hiding is remembered across restarts and recaps keep being written.
+
+### The expanded view
+
+Where the column is a short summary, the **expanded view** (Enter or a tap on the column, `tab-recap.show`)
+shows everything that happened, with no model call to wait for — it is another way of drawing the same facts:
+
+- **Goal · Now · Needs you** — each question says how long it has waited (`waiting 25 min`), oldest first.
+- **Timeline** — what got done and what was closed, newest first, with the time of each (a date line when
+  the day changes) and, for a fact that closed without being done, why (`closed: wrong`).
+- **Decisions** with their why on the next line · **Next** · **Rules** · **Links**.
+- **Session** — computed from the store, never written by a model: when the tab started and for how long, the
+  turns by cause, the compactions with their tokens (`800k → 14k`), each agent's share of its context window, the
+  repository and branch, the files edited most. A line whose data is not known is left out.
+
+From 140 cells wide it is two columns (the story on the left, the reference on the right, scrolled
+together); narrower, one column in that order. The keys are the modal's: `j`/`k`, Space/`b`, `g`/`G`, `r`, `c`,
+`s`, `q`.
+
+<!-- screenshot: tab-recap/docs/screens/expanded-en.png (regenerated when the chapters change lands) -->
+
+A **curator** also runs when the view opens and the facts changed since it last ran (at most once per five
+minutes per task): it closes leftover near-duplicates as *merged* into the fact that says it better, and writes
+a short "session so far" paragraph (at most 120 words) shown at the top. The view never waits for it: it shows
+the last paragraph and `updating…`, and redraws when the new one is stored. The curator is a job in the
+settings' **Models** group (`TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT`; by default the recap writer's harness
+at medium effort; `off` turns it off).
 
 ### Clickable links
 

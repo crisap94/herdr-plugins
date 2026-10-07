@@ -10,7 +10,7 @@ import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import { compactJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
+import { compactJobOf, curateJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import type { Job } from '#src/recap/domain/job.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
@@ -45,6 +45,8 @@ export interface Config {
     readonly judge: Job;
     /** `TAB_RECAP_KEEP_INPUT_DAYS`: how long a run's input document is kept for judging (14; 0 = not kept) */
     readonly keepInputDays: number;
+    /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
+    readonly curator: Job;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
 }
@@ -161,6 +163,7 @@ export function loadConfig(): Config {
         brief: compactJobOf(get),
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
+        curator: curateJobOf(get),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
     };

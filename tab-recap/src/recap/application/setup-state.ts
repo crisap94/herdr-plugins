@@ -4,20 +4,21 @@ import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
 import { EFFORTS, effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
-import { compactJobOf, JOB_BY_CHOICES, judgeJobOf } from '#src/recap/domain/job.ts';
+import { compactJobOf, curateJobOf, JOB_BY_CHOICES, judgeJobOf } from '#src/recap/domain/job.ts';
 import type { Job, JobBy } from '#src/recap/domain/job.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
 /** The rows; a job row (`recapJob`, `compactJob`) holds three fields — harness · model · effort — and `part` says which one is focused. */
-export type RowId = 'recapJob' | 'compactJob' | 'judgeJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow';
-export const ROWS: readonly RowId[] = ['recapJob', 'compactJob', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'compactTarget', 'compactHint', 'contextWindow', 'judgeJob'];
+export type RowId = 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow';
+export const ROWS: readonly RowId[] = ['recapJob', 'compactJob', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'compactTarget', 'compactHint', 'contextWindow', 'judgeJob', 'curatorJob'];
 /** What can be edited and locked: every row that is not a job, and each part of a job. */
-export type FieldId = Exclude<RowId, 'recapJob' | 'compactJob' | 'judgeJob'> | 'harness' | 'model' | 'effort' | 'compactBy' | 'compactModel' | 'compactEffort' | 'judgeBy' | 'judgeModel' | 'judgeEffort';
+export type FieldId = Exclude<RowId, 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob'> | 'harness' | 'model' | 'effort' | 'compactBy' | 'compactModel' | 'compactEffort' | 'judgeBy' | 'judgeModel' | 'judgeEffort' | 'curateBy' | 'curateModel' | 'curateEffort';
 export const JOB_FIELDS: Readonly<Partial<Record<RowId, readonly FieldId[]>>> = {
     recapJob: ['harness', 'model', 'effort'],
     compactJob: ['compactBy', 'compactModel', 'compactEffort'],
     judgeJob: ['judgeBy', 'judgeModel', 'judgeEffort'],
+    curatorJob: ['curateBy', 'curateModel', 'curateEffort'],
 };
 export const FIELDS: readonly FieldId[] = ROWS.flatMap((row) => JOB_FIELDS[row] ?? [row as FieldId]);
 export const JOB_BY_OPTIONS: readonly JobBy[] = JOB_BY_CHOICES;
@@ -45,6 +46,8 @@ export interface Draft {
     readonly compact: Job;
     /** the judge's job (`TAB_RECAP_JUDGE_BY`, `_MODEL`, `_EFFORT`) */
     readonly judge: Job;
+    /** the curator's job (`TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT`) */
+    readonly curate: Job;
     /** which agents compaction reaches, as stored: `focused`, `all` or a comma list of kinds (`TAB_RECAP_COMPACT_TARGET`) */
     readonly compactTarget: string;
     /** the context share that shows the hint, as stored: `off` or 10–95 (`TAB_RECAP_COMPACT_HINT`) */
@@ -95,10 +98,10 @@ export interface Stepped {
 }
 
 /** The settings as they are now: the resolved configuration plus the raw locale settings. */
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined; readonly compactTarget?: string | undefined; readonly compactHint?: string | undefined; readonly contextWindow?: string | undefined; readonly compactBy?: string | undefined; readonly compactModel?: string | undefined; readonly compactEffort?: string | undefined; readonly judgeBy?: string | undefined; readonly judgeModel?: string | undefined; readonly judgeEffort?: string | undefined }): Draft {
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined; readonly compactTarget?: string | undefined; readonly compactHint?: string | undefined; readonly contextWindow?: string | undefined; readonly compactBy?: string | undefined; readonly compactModel?: string | undefined; readonly compactEffort?: string | undefined; readonly judgeBy?: string | undefined; readonly judgeModel?: string | undefined; readonly judgeEffort?: string | undefined; readonly curateBy?: string | undefined; readonly curateModel?: string | undefined; readonly curateEffort?: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]) };
+    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]), curate: curateJobOf((key) => ({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })[key]) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {

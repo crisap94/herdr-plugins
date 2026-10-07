@@ -37,6 +37,8 @@ import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
+import { wireCurate } from './curate.ts';
+import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
@@ -60,6 +62,7 @@ interface Wired {
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
+    readonly curate: Curate;
 }
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
@@ -115,18 +118,22 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     box.informer = informer;
     const compaction = wireCompaction({ fleet, records: store.records, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention };
+    const curate = wireCurate({ store, curator: () => backends.curator(), log });
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
-function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction'>): void {
-    const { store, informer, compaction } = wired;
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate'>): void {
+    const { store, informer, compaction, curate } = wired;
     pidfile.beat();
     for (const tab of store.requests.takeRequests()) {
         informer.push({ kind: 'requested', tab });
     }
     for (const asked of store.requests.takeCompactions()) {
         compaction.run(asked).catch((error: unknown) => { log(`compaction ${asked.tab}: ${error instanceof Error ? error.message : String(error)}`); });
+    }
+    for (const tab of store.requests.takeCurations()) {
+        curate.run(tab).catch((error: unknown) => { log(`curator ${tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
     for (const asked of store.requests.takeVisibility()) {
         informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });

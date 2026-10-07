@@ -24,7 +24,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -46,6 +46,8 @@ export const en: Messages = {
         jobBy: { recap: 'as the recap writer', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', off: 'off' },
         jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'your own command, TAB_RECAP_CUSTOM_CMD', off: 'off — compact with the template, no brief' },
         compactModelSame: "the recap writer's model",
+        curateJobHint: 'runs when the full-screen view opens: merges duplicate facts and writes the "session so far" paragraph; once per task at most every 5 minutes',
+        curateOff: 'off — no paragraph, no merges',
         compactJobHint: 'writes what the agent keeps when it is compacted; a high effort is worth it, it runs once per compaction',
         judgeOffChoice: 'off — no judge: eval says so and stops',
         judgeJobHint: 'scores stored recaps for `tab-recap eval`; it runs only when you run that command',
@@ -97,6 +99,13 @@ export const en: Messages = {
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
         nothing: 'No agent here can be compacted',
         failed: (agent, why) => `Could not compact ${agent}: ${why}`,
+    },
+    expanded: {
+        timeline: 'Timeline', rules: 'Rules', session: 'Session', story: 'Session so far', updatingStory: 'updating…',
+        waiting: (amount, unit) => `waiting ${amount} ${unit}`,
+        closed: (why) => `closed: ${why}`,
+        started: 'started', turns: 'turns', causes: { 'turn-ended': 'turn', focused: 'focus', requested: 'asked' },
+        compactions: 'compactions', of: 'of', repo: 'repo', branch: 'branch', files: 'files',
     },
     database: { newer: (backup) => `database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade` },
     cli: {

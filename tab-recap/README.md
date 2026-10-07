@@ -108,6 +108,25 @@ database in a temporary directory (the real one is never written), judges the fa
 report as `eval --sample`, below), and prints the ledger it ends with; `--compare-imported` prints the judge's report over
 what the migration imported for a tab beside it, read-only. With the judge job off it prints the checks that need no model.
 
+## The expanded view
+
+Enter (or a tap) on the column opens the **expanded view** over the tab: Goal · Now · Needs you (each with how
+long it has waited) · Timeline (done and closed facts, newest first, with their times and why they closed) ·
+Decisions with their why · Next · Rules · Links · Session. It is drawn from the facts the store already holds, so it
+opens at once and calls no model. From 140 cells wide it is two columns (story left, reference right, scrolled
+together), narrower one column.
+
+**Session facts** are computed: when the tab started and for how long, turns per cause, compactions with their
+tokens, each agent's context share, repository and branch, the files edited most (counted from the agents' own
+records, read-only; the most recent 4 MB of each). Unknown data leaves its line out.
+
+<!-- screenshot: docs/screens/expanded-en.png (regenerated when the chapters change lands) -->
+
+**The curator** is a job that runs when the view opens and the facts changed since it last ran, at most once per
+five minutes per task. It may close facts as *merged* into another and writes the "session so far" paragraph shown
+at the top (at most 120 words); anything else it answers is refused and logged. The view shows the last paragraph
+with its time and `updating…` while the curator runs, and never waits for it.
+
 ## Compaction
 
 `tab-recap.compact` (bind it, e.g. `prefix+shift+c`; or `c` in the column or the modal):
@@ -178,8 +197,8 @@ command) with a model and an effort. The settings modal lists them under **Model
 | --- | --- | --- | --- |
 | recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`medium`) |
 | compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
-
 | recap judge | `TAB_RECAP_JUDGE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off`) | `TAB_RECAP_JUDGE_MODEL` (empty = the recap writer's model for that harness) | `TAB_RECAP_JUDGE_EFFORT` (`medium`) |
+| curator | `TAB_RECAP_CURATE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = no paragraph, no merges) | `TAB_RECAP_CURATE_MODEL` (empty = the harness's configured model) | `TAB_RECAP_CURATE_EFFORT` (`medium`) |
 
 Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
 settings or MCP and no session left behind. The judge runs only when you run `tab-recap eval` (below).

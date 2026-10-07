@@ -19,7 +19,10 @@ export interface Requests {
     request(tab: string): void;
     requestVisibility(request: VisibilityRequest): void;
     requestCompact(request: CompactRequest): void;
+    /** The expanded view opened over a tab whose ledger changed since its story was written: the daemon curates the tab's tasks. */
+    requestCurate(tab: string): void;
     takeRequests(): readonly TabId[];
     takeVisibility(): readonly VisibilityRequest[];
     takeCompactions(): readonly CompactRequest[];
+    takeCurations(): readonly TabId[];
 }
