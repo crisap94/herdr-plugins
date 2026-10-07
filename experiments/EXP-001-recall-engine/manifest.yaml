@@ -1,5 +1,5 @@
 experiment: EXP-001-recall-engine
-status: measured (R05–R07, R09 valid; R08 invalid; R04 superseded); product decision pending
+status: concluded 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded)
 prereg: experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-engine at b56ce24, 2026-10-07)
 code:
   spec: b56ce24 (openspec/changes/recall-engine, main)

@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Status | **measured** (R05–R07, R09 valid; R08 invalid; R04 superseded) — the product decision on the pipeline steps is the operator's |
-| Decision | **Adopt** the state ruler and the anchors with the 2.1 gates (H1, H2). **By the frozen rule, enumeration and ask-back moved nothing**: no arm beats the gated single call on coverage (70–83 % against 78–85 %) or the read-back median (2/6 at best, the same as the gated control) beyond the noise floor, at 2.4–2.8× the calls (H3, H4 refuted). No arm reaches the 4/6 read-back bar or 98 % supported. Whether the pipeline code ships behind `--pipeline` with default `one`, or is dropped, is the operator's call (see Interpretation) |
+| Status | **concluded** 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded) |
+| Decision | **Adopt** the state ruler and the anchors with the 2.1 gates (H1, H2). **By the frozen rule, enumeration and ask-back moved nothing**: no arm beats the gated single call on coverage (70–83 % against 78–85 %) or the read-back median (2/6 at best, the same as the gated control) beyond the noise floor, at 2.4–2.8× the calls (H3, H4 refuted). No arm reaches the 4/6 read-back bar or 98 % supported. **Operator's decision (2026-10-07): the pipeline ships behind `--pipeline` with the default `one`**; the curator's reconcile mode ships; the experiment stays open for a re-measurement once the read-back ruler is calibrated |
 | Owner | the reviewer (main session); arms run by the coders recall-a and recall-b |
 | Dates | 2026-10-07 → |
 | Parent | OpenSpec change `recall-engine` (`b56ce24`, !41): design decisions 1, 3, 5, 9 and task 3.5 |
@@ -89,7 +89,7 @@ What the evidence supports:
 
 ## Next steps
 
-1. Apply task 3.5: the operator decides whether the enumerate, ask-back and reconcile steps stay behind `--pipeline` with the default `one` (no cost to a user, the experiment can continue) or are dropped from the release; the state ruler, the anchors, the gates, the short retry, the calibration and the per-chapter comparison ship either way.
+1. Done: `TAB_RECAP_PIPELINE` defaults to `one`; the piped variants stay for `eval --replay --pipeline` (the pipeline MR).
 2. The operator's 50 labels (`eval --label 50`, `--check I5`, `--check I7`, `--agree`) on the live database: kappa ≥ 0.6 before the judge's I4 and I7 are trusted for the acceptance.
 3. The live check as the daemon (task 5.1), then acceptance (5.2) against PREREG §6.
 
