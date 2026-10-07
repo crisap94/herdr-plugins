@@ -1,7 +1,7 @@
 # tab-recap/recap-quality Specification
 
 ## Purpose
-TBD - created by archiving change recap-rubric. Update Purpose after archive.
+How every recap item is held to one written rubric: the mechanical gates that refuse or flag items on every run, the stored inputs and verdicts, the judge job that scores stored recaps, the operator's calibration of that judge, and the `eval` command that runs them.
 
 ## Requirements
 
