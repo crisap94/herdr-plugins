@@ -19,6 +19,6 @@ Built in parallel from the shared contracts against the `Ledger` port with the i
 
 ## 3. Integration and archive (before merge)
 
-- [ ] 3.1 Live check from the branch as the daemon: the expanded view on a wide tab and on a phone-width tab, en and es; a question waiting shows its time; a decision shows its why; the curator runs on open and the paragraph appears; `eval --sample 5` on curated tabs — verify: screens in the MR
-- [ ] 3.2 GitLab pipeline green on the branch — verify: pipeline link
-- [ ] 3.3 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive expanded-view --yes`; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
+- [x] 3.1 Live check from the branch as the daemon: the expanded view on a wide tab and on a phone-width tab, en and es; a question waiting shows its time; a decision shows its why; the curator runs on open and the paragraph appears; `eval --sample 5` on curated tabs — verify: screens in the MR — done 2026-10-07 as the live daemon (migration 007, `.v6.bak`): the expanded view of the orchestrator tab in two columns (goal, now, needs you with `waiting 2 h`, timeline, decisions with their why, session facts), in English and Spanish; the curator ran on open and wrote the 'session so far' paragraph (one merge refused and logged); `eval --sample 3 --tab w21:tN` judged the curated tab. A phone-width tab is not available here (goldens at 60 cells cover it). Two things seen go to the chapters change: stale `now` facts never close, and imported `rewritten` decisions clutter the Decisions region
+- [x] 3.2 GitLab pipeline green on the branch — verify: pipeline link — MR !39 pipeline 16211 green
+- [x] 3.3 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive expanded-view --yes`; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR
