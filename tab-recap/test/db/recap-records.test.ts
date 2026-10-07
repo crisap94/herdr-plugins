@@ -114,3 +114,15 @@ test('the item rows are no longer written: a run adds facts and no items', () =>
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM item').get() as { n: number }).n, 0);
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM fact').get() as { n: number }).n, 5);
 });
+
+const nowAdd = (text: string): RecordedRun['ops'] => [{ task: 't1', ops: [{ op: 'add', section: 'now', text, why: null, ref: null, at: null, agent: null }] }];
+
+test('a writer\'s run closes the now facts it did not carry forward as superseded, in the same transaction; a run with no operations closes nothing', () => {
+    const { records, ledger } = memoryStore();
+    records.recordRun(run({ at: 100, ops: nowAdd('Reading the logs') }));
+    records.recordRun(run({ at: 200, ops: nowAdd('Wiring the client') }));
+    const states = (): string[] => ledger.allOf({ tab: 'w1:t1', key: 't1' }).map((fact) => `${fact.text}:${fact.state}:${fact.closedWhy}:${fact.closedAt}`);
+    assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);
+    records.recordRun(run({ at: 300, ops: [] }));
+    assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);
+});

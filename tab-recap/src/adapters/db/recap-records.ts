@@ -61,7 +61,7 @@ export class RecapRecordsRepository implements RecapRecords {
             this.runs.insertReads(id, moved);
             this.runs.writeTasks(id, run, run.tasks);
             for (const { task, ops } of run.ops) {
-                this.ledger.applyTo(id, { id: typeIdOf('run', id) as RunId, task: { tab: run.tab, key: task }, at: run.at, language: run.language, mint: () => typeIdOf('fact', ids.next()) as FactId }, ops);
+                this.ledger.applyTo(id, { id: typeIdOf('run', id) as RunId, task: { tab: run.tab, key: task }, at: run.at, language: run.language, mint: () => typeIdOf('fact', ids.next()) as FactId }, ops, true);
             }
             this.settleStatement.run(run.backend, run.error, run.tab);
         });

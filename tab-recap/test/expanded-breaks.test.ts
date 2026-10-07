@@ -9,6 +9,7 @@ import { expanded } from '#src/recap/render/expanded.ts';
 import type { ExpandedView } from '#src/recap/render/expanded.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { NOW, sampleView } from '#test/fakes/expanded-fixture.ts';
+import { fact } from '#test/fakes/fact-at.ts';
 
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
 const BREAKS: readonly Break[] = [
@@ -66,4 +67,18 @@ test('the session facts count the chapters on the compactions line; with no comp
 
 test('a view with no breaks draws exactly what it drew before', () => {
     assert.deepEqual(expanded(sampleView(60)), expanded(sampleView(60, 'en', { breaks: [] })));
+});
+
+test('the Decisions region hides the import\'s `rewritten` closes and a "(not recorded)" why, and shows a decision closed for a real reason; the timeline still shows every closed fact', () => {
+    const real = fact('d1', 'decisions', 'Retry three times, not five', at('10:00'), { why: 'the gateway rate-limits after four', state: 'closed', closedWhy: 'superseded', closedAt: at('11:00') });
+    const imported = fact('d2', 'decisions', 'Use the old cart endpoint', at('09:00'), { why: '(not recorded)', state: 'closed', closedWhy: 'rewritten', closedAt: at('09:30') });
+    const unrecorded = fact('d3', 'decisions', 'Keep SQLite', at('09:10'), { why: '(not recorded)' });
+    const lines = expanded(sampleView(60, 'en', { tasks: [{ name: '', facts: [real, imported, unrecorded], story: null, curating: false }], breaks: [] })).map((line) => stripVTControlCharacters(line));
+    const text = lines.join('\n');
+    const decisions = lines.slice(lines.indexOf('DECISIONS'), lines.indexOf('TIMELINE')).join('\n');
+    assert.ok(decisions.includes('Retry three times, not five · closed: superseded') && decisions.includes('the gateway rate-limits after four'));
+    assert.ok(!decisions.includes('old cart endpoint'), 'rewritten stays out of Decisions');
+    assert.ok(decisions.includes('Keep SQLite') && !decisions.includes('(not recorded)'), 'an open decision is shown, its placeholder why is not');
+    assert.ok(text.includes('09:30 Use the old cart endpoint · closed: rewritten'), 'the timeline keeps it');
+    golden('expanded-decisions-en-60.txt', lines);
 });

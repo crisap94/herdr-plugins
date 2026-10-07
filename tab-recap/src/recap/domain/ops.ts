@@ -104,10 +104,10 @@ function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readon
 }
 
 /**
- * Closes first, then updates, then adds (so a close and an add of the same line never read as a duplicate). A second `goal` add in one
+ * Closes first, then updates, then adds (so a close and an add of the same line never read as a duplicate); then, for a writer's run (`sweepNow`), the `now` facts it did not carry forward are closed. The curator's merges and the import never sweep. A second `goal` add in one
  * answer is refused; an add of a goal closes the open one as `superseded`.
  */
-export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow = false): Folded {
     let facts = ledger;
     const refused: Refusal[] = [];
     let goals = 0;
@@ -127,5 +127,14 @@ export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: R
         goals += op.section === 'goal' ? 1 : 0;
         step(op.section === 'goal' && goals > 1 ? { facts, refusal: { op, reason: 'second-goal' } } : addOne(facts, op, run));
     }
-    return { ledger: facts, refused, changed: facts.filter((fact, at) => ledger[at] !== fact) };
+    const swept = !sweepNow || ops.length === 0 ? facts : supersedeNow(facts, { before: ledger.length, named: new Set(ops.flatMap((op) => (op.op === 'add' ? [] : [op.id]))) }, run);
+    return { ledger: swept, refused, changed: swept.filter((fact, at) => ledger[at] !== fact) };
+}
+
+/**
+ * `now` is "in progress at recap time": an open `now` fact the answer did not add, update or close is over, so it is closed `superseded`.
+ * `before` is how many facts there were; the ones after are this answer's adds. An answer with no operations at all changes nothing (the caller skips this).
+ */
+function supersedeNow(facts: readonly Fact[], seen: { readonly before: number; readonly named: ReadonlySet<string> }, run: RunRef): readonly Fact[] {
+    return facts.map((fact, at) => (at < seen.before && fact.section === 'now' && fact.state === 'open' && !seen.named.has(fact.id) ? closedBy(fact, 'superseded', run.at) : fact));
 }

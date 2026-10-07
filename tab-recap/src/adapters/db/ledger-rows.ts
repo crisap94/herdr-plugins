@@ -89,10 +89,10 @@ export class LedgerRows {
         }
     }
 
-    /** Fold `ops` into the task's facts and write what changed; the run row must exist. A throw (a CHECK, say) is the caller's rollback. */
-    applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[]): Applied {
+    /** Fold `ops` into the task's facts and write what changed; the run row must exist. `sweepNow`: the writer's run, which also closes the `now` facts it did not carry forward. A throw (a CHECK, say) is the caller's rollback. */
+    applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow = false): Applied {
         const before = all(this.foldable, at.task.tab, at.task.key, at.at - FOLD_WINDOW_MS).map((row) => this.factOf(row, at.task));
-        const folded = apply(before, ops, at);
+        const folded = apply(before, ops, at, sweepNow);
         this.persist(run, at.task, before, folded.changed);
         return { changed: folded.changed, refused: folded.refused };
     }

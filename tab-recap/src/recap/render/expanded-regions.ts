@@ -68,11 +68,17 @@ function needs(facts: readonly Fact[], draw: Draw): readonly string[] {
     });
 }
 
+/** What the import wrote as the reason of a decision that never said why. */
+const NOT_RECORDED = '(not recorded)';
+
+/** Open decisions and those closed for a real reason: `rewritten` is the 1.x import's artificial close and stays out. */
+const inDecisions = (fact: Fact): boolean => fact.section === 'decisions' && fact.closedWhy !== 'rewritten';
+
 function decisions(facts: readonly Fact[], draw: Draw): readonly string[] {
-    return facts.filter((fact) => fact.section === 'decisions').toSorted((a, b) => b.firstAt - a.firstAt).flatMap((fact) => {
+    return facts.filter(inDecisions).toSorted((a, b) => b.firstAt - a.firstAt).flatMap((fact) => {
         const when = stamp(fact.firstAt, draw);
         const hang = ' '.repeat(when.length + 1);
-        const why = fact.why === null ? [] : wrap(fact.why, draw.width - hang.length).map((line) => draw.style.dim(`${hang}${line}`));
+        const why = fact.why === null || fact.why === NOT_RECORDED ? [] : wrap(fact.why, draw.width - hang.length).map((line) => draw.style.dim(`${hang}${line}`));
         const body = wrap(`${when} ${text(fact, draw)}`, draw.width, hang);
         return (fact.closedWhy === null ? body : tailed(body, draw.style.gray(draw.messages.expanded.closed(fact.closedWhy)), draw, hang)).concat(why);
     });

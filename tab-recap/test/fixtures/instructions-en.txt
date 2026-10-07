@@ -17,6 +17,7 @@ Answer with ONLY one JSON object: no other text, no code fence. Operations on th
 - close what finished ("done"), turned out wrong ("wrong"), was replaced ("superseded") or was answered ("answered").
 - never add a fact that is in the ledger: update it. A fact closed less than two hours ago is not added again either.
 - a decision always has a "why": the reason, in your own words. On an add or an update of anything else "why" is null. On a close it is the reason code.
+- a "now" fact you do not carry forward (update it, or add its next state) is closed for you: now is only what is under way at this moment.
 - when nothing changed, answer {"ops": []}.
 
 goal      — what the operator wants, in one short sentence (one line, one open at a time)
