@@ -1,0 +1,20 @@
+# Files of this experiment kept only on the private branch (raw replay outputs quote a real session; the corpus is the session)
+# path<TAB>bytes<TAB>reason<TAB>ref@commit
+corpus/replay-mine-40.jsonl	4493783	corpus (private session)	private branch, commit pending
+runs/R01-ruler-one/R01-ruler-one.txt	22813	raw output (quotes the session)	private branch, commit pending
+runs/R02-gates-one-a/R02-gates-one-a.txt	21148	raw output (quotes the session)	private branch, commit pending
+runs/R03-gates-one-b/R03-gates-one-b.txt	18834	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-enumerate-gates/R04-parallel-enumerate-gates.txt	26543	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-enumerate/R04-parallel-enumerate.txt	31877	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-full/R04-parallel-full.txt	32580	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-one/R04-parallel-one.txt	21600	raw output (quotes the session)	private branch, commit pending
+runs/R05-one/R05-one.txt	20509	raw output (quotes the session)	private branch, commit pending
+runs/R06-enumerate/R06-enumerate.txt	31031	raw output (quotes the session)	private branch, commit pending
+runs/R07-enumerate-gates/R07-enumerate-gates.txt	41144	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-enumerate-gates/R04-parallel-enumerate-gates.err	1986	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-enumerate/R04-parallel-enumerate.err	1987	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-full/R04-parallel-full.err	2450	raw output (quotes the session)	private branch, commit pending
+runs/R04-parallel-one/R04-parallel-one.err	225	raw output (quotes the session)	private branch, commit pending
+runs/R05-one/R05-one.err	238	raw output (quotes the session)	private branch, commit pending
+runs/R06-enumerate/R06-enumerate.err	1999	raw output (quotes the session)	private branch, commit pending
+runs/R07-enumerate-gates/R07-enumerate-gates.err	2013	raw output (quotes the session)	private branch, commit pending

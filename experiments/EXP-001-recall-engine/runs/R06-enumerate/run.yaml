@@ -1,0 +1,12 @@
+run: R06-enumerate
+experiment: EXP-001-recall-engine
+status: valid
+date: 2026-10-07
+code: as R05
+corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
+command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline enumerate
+writer: codex / gpt-6-luna / medium
+judge: codex / gpt-6-luna / medium
+ran_by: recall-b
+raw: R06-enumerate.txt (and .err when kept) on the private branch, listed in REMOVED-ON-MAIN.txt
+note: task 3.5, A→C with the 2.0 gate set

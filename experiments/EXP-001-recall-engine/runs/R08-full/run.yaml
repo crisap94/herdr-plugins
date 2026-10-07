@@ -1,0 +1,12 @@
+run: R08-full
+experiment: EXP-001-recall-engine
+status: running
+date: 2026-10-07
+code: as R05
+corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
+command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline full
+writer: codex / gpt-6-luna / medium
+judge: codex / gpt-6-luna / medium
+ran_by: recall-b
+raw: R08-full.txt (and .err when kept) on the private branch, listed in REMOVED-ON-MAIN.txt
+note: task 3.5, A→B→C with the 2.1 gate set; judging in progress
