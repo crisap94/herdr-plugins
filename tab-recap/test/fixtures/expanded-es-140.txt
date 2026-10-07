@@ -1,0 +1,22 @@
+LA SESIÓN HASTA AHORA · 16:10                                        │ DECISIONES
+The 2.0 engine is being built in four changes; the expanded view is  │ 11:30 Keep the guard out of sibling modules
+drawn from the ledger and waits on one answer.                       │       an import guard cannot stop sibling modules
+                                                                     │
+OBJETIVO                                                             │ SIGUIENTE
+Ship the expanded view in tab-recap 2.0                              │ • Draw the expanded view from the ledger
+                                                                     │
+AHORA                                                                │ REGLAS
+• host · Writing the timeline renderer                               │ • Never touch the live checkout
+                                                                     │
+TE NECESITA                                                          │ ENLACES
+• Approve the migration number 007 for the story columns             │ • compaction records !34
+  esperando 3 h                                                      │
+• Which effort should the curator default to: low or medium?         │ SESIÓN
+  esperando 25 min                                                   │ inicio 09:12 · 7 h 18 min
+                                                                     │ turnos 41 (turno 36 · foco 3 · pedido 2)
+CRONOLOGÍA                                                           │ compactaciones 2 (800k → 14k · 39k → 3k)
+14:02 Merged !34 adding the compaction records                       │ claude · orchestrator 34 % de 1M
+14:02 Add a retention sweep to this change · cerrado: erróneo        │ codex · host 12 % de 272k
+2026-10-06                                                           │ repo herdr-plugins · rama feat/expanded
+17:10 Fixed the context share in src/recap/render/present.ts         │ archivos src/recap/application/compaction.ts (7),
+                                                                     │   src/recap/render/present.ts (5)

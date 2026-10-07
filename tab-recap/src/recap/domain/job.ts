@@ -24,23 +24,17 @@ export const JOB_BY_CHOICES: readonly JobBy[] = ['recap', 'auto', 'claude', 'cod
 
 const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
 
-/** The compaction brief's job from `TAB_RECAP_COMPACT_BY`, `_MODEL` and `_EFFORT`; unknown values are the defaults. */
-export function compactJobOf(get: (key: string) => string | undefined): Job {
+/** A job's settings from `<prefix>_BY`, `_MODEL` and `_EFFORT`; unknown values are `fallback`'s. */
+function jobFrom(get: (key: string) => string | undefined, prefix: string, fallback: Job): Job {
     return {
-        by: JOB_BY_CHOICES.find((by) => by === word(get('TAB_RECAP_COMPACT_BY'))) ?? COMPACT_DEFAULT.by,
-        model: (get('TAB_RECAP_COMPACT_MODEL') ?? '').trim(),
-        effort: EFFORTS.find((effort) => effort === word(get('TAB_RECAP_COMPACT_EFFORT'))) ?? COMPACT_DEFAULT.effort,
+        by: JOB_BY_CHOICES.find((by) => by === word(get(`${prefix}_BY`))) ?? fallback.by,
+        model: (get(`${prefix}_MODEL`) ?? '').trim(),
+        effort: EFFORTS.find((effort) => effort === word(get(`${prefix}_EFFORT`))) ?? fallback.effort,
     };
 }
 
 /** The judge's job from `TAB_RECAP_JUDGE_BY`, `_MODEL` and `_EFFORT`; unknown values are the defaults. */
-export function judgeJobOf(get: (key: string) => string | undefined): Job {
-    return {
-        by: JOB_BY_CHOICES.find((by) => by === word(get('TAB_RECAP_JUDGE_BY'))) ?? JUDGE_DEFAULT.by,
-        model: (get('TAB_RECAP_JUDGE_MODEL') ?? '').trim(),
-        effort: EFFORTS.find((effort) => effort === word(get('TAB_RECAP_JUDGE_EFFORT'))) ?? JUDGE_DEFAULT.effort,
-    };
-}
+export const judgeJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_JUDGE', JUDGE_DEFAULT);
 
 export const KEEP_INPUT_DAYS = 14;
 
@@ -50,6 +44,15 @@ export function keepDaysOf(raw: string | undefined): number {
     return (raw ?? '').trim() !== '' && Number.isInteger(days) && days >= 0 ? days : KEEP_INPUT_DAYS;
 }
 
+
+/** The compaction brief's job from `TAB_RECAP_COMPACT_BY`, `_MODEL` and `_EFFORT`; unknown values are the defaults. */
+export const compactJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_COMPACT', COMPACT_DEFAULT);
+
+/** What the curator does until told otherwise: the recap writer's harness and model, at medium effort. */
+export const CURATE_DEFAULT: Job = { by: 'recap', model: '', effort: 'medium' };
+
+/** The curator's job from `TAB_RECAP_CURATE_BY`, `_MODEL` and `_EFFORT`; unknown values are the defaults. */
+export const curateJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_CURATE', CURATE_DEFAULT);
 
 /** Where a job runs: the harness and the model to give it. */
 export interface Placement {

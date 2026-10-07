@@ -14,6 +14,7 @@ import type { Locale } from '#src/i18n/index.ts';
 import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
 import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
+import { expandedScreen } from './expanded-modal.ts';
 import { COMMAND_LAUNCHER } from './command.ts';
 import { spawn } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
@@ -55,6 +56,8 @@ const glow = glowRenderer(config.glow);
 const style = styleFor(process.stdout);
 /** ends every row's styling before the erase; with no colour there is nothing to end */
 const RESET = style === coloured ? `${ESC}[0m` : '';
+
+const expandedLines = mode === 'modal' ? expandedScreen(store) : null;
 
 let scroll = 0;
 let lastFrame = '';
@@ -136,7 +139,7 @@ function draw(force = false): void {
         return;
     }
     const rows = Math.max(3, rows0);
-    const lines = present(view(), width, markdown);
+    const lines = expandedLines === null ? present(view(), width, markdown) : expandedLines(view(), width);
     const room = rows - 1;
     scroll = Math.max(0, Math.min(scroll, lines.length - room));
     const shown = lines.slice(scroll, scroll + room);

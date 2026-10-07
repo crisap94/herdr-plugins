@@ -31,6 +31,8 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     compactEffort: choice(EFFORT_CHOICES, (draft) => draft.compact.effort, (draft, effort) => ({ ...draft, compact: { ...draft.compact, effort } })),
     judgeBy: choice(JOB_BY_OPTIONS, (draft) => draft.judge.by, (draft, by) => ({ ...draft, judge: { ...draft.judge, by } })),
     judgeEffort: choice(EFFORT_CHOICES, (draft) => draft.judge.effort, (draft, effort) => ({ ...draft, judge: { ...draft.judge, effort } })),
+    curateBy: choice(JOB_BY_OPTIONS, (draft) => draft.curate.by, (draft, by) => ({ ...draft, curate: { ...draft.curate, by } })),
+    curateEffort: choice(EFFORT_CHOICES, (draft) => draft.curate.effort, (draft, effort) => ({ ...draft, curate: { ...draft.curate, effort } })),
 };
 
 /** The fields typed as text (other than the recap writer's model, which belongs to the harness in force). */
@@ -42,4 +44,5 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
     compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed) => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
     judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed) => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },
+    curateModel: { read: (draft) => draft.curate.model, keep: (draft, typed) => ({ ...draft, curate: { ...draft.curate, model: typed.trim() } }) },
 };

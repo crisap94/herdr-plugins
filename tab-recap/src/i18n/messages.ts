@@ -1,5 +1,6 @@
 import type { JobBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
+import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 
 /** The languages the UI speaks. The recap language is separate: any language, see `recapLanguageOf`. */
 export type Locale = 'en' | 'es';
@@ -37,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -61,6 +62,9 @@ export interface Messages {
         readonly compactJobHint: string;
         readonly judgeJobHint: string;
         readonly judgeOffChoice: string;
+        readonly curateJobHint: string;
+        /** the `off` choice of the curator's harness list */
+        readonly curateOff: string;
         readonly contextWindowHint: string;
         readonly contextWindowDetected: string;
         readonly screenNone: string;
@@ -116,6 +120,14 @@ export interface Messages {
         readonly skipped: (agent: string, status: string) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;
+    };
+    /** the expanded view: headings the column does not have (`story` heads the curator's paragraph), `waiting 25 min`, `closed: wrong`, the session facts' labels */
+    readonly expanded: {
+        readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
+        readonly waiting: (amount: number, unit: AgoUnit) => string;
+        readonly closed: (why: ClosedWhy) => string;
+        readonly started: string; readonly turns: string; readonly compactions: string; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
+        readonly causes: { readonly 'turn-ended': string; readonly focused: string; readonly requested: string };
     };
     /** the database was written by a newer plugin: `backup` is the copy to restore, when there is one */
     readonly database: { readonly newer: (backup: string | null) => string };

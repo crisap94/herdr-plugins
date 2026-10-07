@@ -18,6 +18,9 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     judgeBy: ['TAB_RECAP_JUDGE_BY'],
     judgeModel: ['TAB_RECAP_JUDGE_MODEL'],
     judgeEffort: ['TAB_RECAP_JUDGE_EFFORT'],
+    curateBy: ['TAB_RECAP_CURATE_BY'],
+    curateModel: ['TAB_RECAP_CURATE_MODEL'],
+    curateEffort: ['TAB_RECAP_CURATE_EFFORT'],
     compactTarget: ['TAB_RECAP_COMPACT_TARGET'],
     compactHint: ['TAB_RECAP_COMPACT_HINT'],
     contextWindow: ['TAB_RECAP_CONTEXT_WINDOW'],
@@ -61,6 +64,9 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
     set('judgeBy', 'TAB_RECAP_JUDGE_BY', draft.judge.by, stored.judge.by);
     set('judgeModel', 'TAB_RECAP_JUDGE_MODEL', draft.judge.model, stored.judge.model);
     set('judgeEffort', 'TAB_RECAP_JUDGE_EFFORT', draft.judge.effort, stored.judge.effort);
+    set('curateBy', 'TAB_RECAP_CURATE_BY', draft.curate.by, stored.curate.by);
+    set('curateModel', 'TAB_RECAP_CURATE_MODEL', draft.curate.model, stored.curate.model);
+    set('curateEffort', 'TAB_RECAP_CURATE_EFFORT', draft.curate.effort, stored.curate.effort);
     set('contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow, stored.contextWindow);
     return out;
 }
