@@ -56,7 +56,7 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
   repository, branch, recently edited files), the ledger of facts so far, the agents' own away and compaction
   summaries as hints, and per agent the new prompts (including ones typed while it was busy), replies
   (beginning and end) and tool calls (Codex's decoded; plain reads only counted), each with its time.
-  The writer runs at `TAB_RECAP_EFFORT` (`low` by default) and closes any earlier fact the transcript
+  The writer runs at `TAB_RECAP_EFFORT` (`medium` by default) and closes any earlier fact the transcript
   contradicts.
 - **Extensible.** An optional extension can add notes under a lane's header and do housekeeping
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
@@ -176,7 +176,7 @@ command) with a model and an effort. The settings modal lists them under **Model
 
 | job | harness | model | effort |
 | --- | --- | --- | --- |
-| recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`low`) |
+| recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`medium`) |
 | compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
 
 | recap judge | `TAB_RECAP_JUDGE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off`) | `TAB_RECAP_JUDGE_MODEL` (empty = the recap writer's model for that harness) | `TAB_RECAP_JUDGE_EFFORT` (`medium`) |

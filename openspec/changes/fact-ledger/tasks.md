@@ -30,5 +30,5 @@ Built in parallel with `recap-rubric`, `expanded-view` and `chapters` from the s
 ## 5. Integration and archive (before merge)
 
 - [ ] 5.1 Live check from the branch as the daemon on a copy of the live database: migration 006 with backup, every column equal to before; then twenty real turns on two tabs (claude and codex): facts added/updated/closed, the column changes as expected, `s`/`c`/`r` work, a compaction brief written from the ledger; `eval --replay` on three stored sessions with `--compare-imported`: 2.0 facts beat the imported facts on every check and I4 ≥ 98 % — verify: the reports in the MR
-- [ ] 5.2 GitLab pipeline green on the branch — verify: pipeline link
+- [x] 5.2 GitLab pipeline green on the branch — verify: pipeline link — MR !38 pipeline 16205 green
 - [ ] 5.3 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive fact-ledger --yes`; no TBD Purpose; `openspec validate --specs --strict` — verify: specs updated in this MR

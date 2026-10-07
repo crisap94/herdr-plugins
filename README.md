@@ -174,8 +174,9 @@ node bin/tab-recap.ts backend auto               # back to the default
 ```
 
 Each agent remembers its own model; leave it empty
-for the agent's default. `opencode` wants `provider/model`. The writer runs at **low effort** by
-default (`TAB_RECAP_EFFORT`: `low`, `medium`, `high`, or `default` to leave it to the agent), and
+for the agent's default. `opencode` wants `provider/model`. The writer runs at **medium effort** by
+default (`TAB_RECAP_EFFORT`: `low`, `medium`, `high`, or `default` to leave it to the agent; `low` records
+choices as open questions instead of decisions, measured), and
 Codex without the agent features a recap never needs.
 
 The writer receives one XML document per run (version 2) — the tab's agents with their repository and branch,
@@ -219,7 +220,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_AGENTS` | `claude,codex,opencode` | agent kinds that get a column (*restart*) |
 | `TAB_RECAP_LOCALE` | `auto` | interface language |
 | `TAB_RECAP_RECAP_LANG` | `ui` | recap language |
-| `TAB_RECAP_EFFORT` | `low` | how hard the writer thinks |
+| `TAB_RECAP_EFFORT` | `medium` | how hard the writer thinks |
 | `TAB_RECAP_COMPACT_TARGET` | `focused` | who `compact` acts on: `focused`, `all`, or kinds like `claude,codex` |
 | `TAB_RECAP_COMPACT_HINT` | `40` | % of the context window that shows the hint (`off`, or 10–95) |
 | `TAB_RECAP_CONTEXT_WINDOW` | *(detected)* | force a context window in tokens |

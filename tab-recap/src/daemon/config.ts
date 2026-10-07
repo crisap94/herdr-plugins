@@ -28,7 +28,7 @@ export interface Config {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
     readonly customCommand: string;
-    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`low` unless set) */
+    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`medium` unless set) */
     readonly effort: Effort;
     readonly locale: Locale;
     /** `en`, `es` or sanitised free text: what new recaps are written in */
