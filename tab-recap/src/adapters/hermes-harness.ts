@@ -1,13 +1,14 @@
 import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
-import { argvPrompt, unfenced } from './recap-prompt.ts';
+import { ARGV_BYTES } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './run.ts';
+import type { Runner } from './run.ts';
 
 /**
  * `--safe-mode` drops user config, rules, memory, plugins and MCP; `-t clarify` leaves the one
@@ -25,34 +26,36 @@ export function hermesUsage(json: string): { cost: number; session: string | nul
 }
 
 /**
- * `hermes -z`: it reads no stdin, so the prompt is an argument (its excerpt trimmed to fit).
+ * `hermes -z`: it reads no stdin, so the prompt is an argument (the caller keeps it within `limit`).
  * hermes keeps every run as a session, so the one this run made is deleted once it is read.
  */
-export class HermesSummarizer implements Summarizer {
-    readonly backend: string;
-    private readonly model: string;
+export class HermesHarness implements Harness {
+    readonly id = 'hermes';
+    readonly limit = ARGV_BYTES;
     private readonly workDir: string;
     private readonly timeoutMs: number;
-    private readonly effort: Effort;
+    private readonly runner: Runner;
 
-    constructor(model: string, workDir: string, timeoutMs: number, effort: Effort) {
-        this.effort = effort;
-        this.model = model;
-        this.backend = model === '' ? 'hermes' : `hermes/${model}`;
+    constructor(workDir: string, timeoutMs: number, runner: Runner = run) {
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
+        this.runner = runner;
     }
 
-    async write(request: RecapRequest): Promise<Written> {
+    label(settings: HarnessSettings): string {
+        return settings.model === '' ? 'hermes' : `hermes/${settings.model}`;
+    }
+
+    async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
         const usage = join(this.workDir, `hermes-${process.pid}-${Date.now()}.json`);
         const opts = { input: '', timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() };
-        const ran = await run('hermes', hermesArgs(this.model, argvPrompt(request), usage, this.effort), opts);
+        const ran = await this.runner('hermes', hermesArgs(settings.model, `${call.input}\n\n${call.instructions}`, usage, settings.effort), opts);
         let report = { cost: 0, session: null as string | null };
         try { report = hermesUsage(readFileSync(usage, 'utf8')); } catch { /* hermes wrote no report */ }
         rmSync(usage, { force: true });
         if (report.session !== null) {
-            await run('hermes', ['sessions', 'delete', '--yes', report.session], { ...opts, timeoutMs: 30_000 });
+            await this.runner('hermes', ['sessions', 'delete', '--yes', report.session], { ...opts, timeoutMs: 30_000 });
         }
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
@@ -60,6 +63,6 @@ export class HermesSummarizer implements Summarizer {
         if (ran.code !== 0 || ran.stdout.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
         }
-        return { kind: 'written', text: unfenced(ran.stdout), costUsd: report.cost };
+        return { kind: 'ran', text: ran.stdout, costUsd: report.cost };
     }
 }

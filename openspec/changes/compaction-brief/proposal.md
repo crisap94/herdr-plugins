@@ -21,8 +21,9 @@ to keep).
 - Claude receives the command in two pieces: `/compact ` typed first, then the guidance, then Enter, so it
   runs as a command at any length (verified live with 1 186 characters; sending the whole line twice
   duplicates short guidance, so it is not used).
-- Before compacting, a **brief** is written by a separate Claude call (`TAB_RECAP_COMPACT_MODEL`, default
-  `sonnet`, medium effort, no tools) from a `compaction_input` document defined by
+- Before compacting, a **brief** is written by a separate model call — a **job**, like the recap writer, whose
+  harness, model and effort the operator picks (default: the recap writer's harness and model, high effort). All
+  harnesses are one layer: any of them can run any job. It is written from a `compaction_input` document defined by
   `tab-recap/schema/compaction-input.dtd`: the target agent, the operator's note, the current recap, the
   **whole session's history** from the database (every distinct goal, decision, finished item, open
   question, next step, rule and reference of the agent's tasks, with first and last time seen), and the
@@ -51,4 +52,4 @@ _None._
 
 `src/recap/application/compaction*.ts`, new brief port + Claude adapter, a history query in the recap-records
 repository, `schema/compaction-input.dtd` + its writer, `src/adapters/herdr-agents.ts` (split send), config +
-setup row (`TAB_RECAP_COMPACT_MODEL`), en/es, tests, README.
+a **Models** group in the settings with harness · model · effort for every job (recap writer and both briefs), en/es, tests, README.

@@ -71,14 +71,26 @@ bullets elsewhere, 16 words at most per line). The limits are enforced in code, 
 1. A popup asks for an optional note (up to 280 characters). Enter on an empty note sends without it; Esc cancels.
 2. The recap is refreshed. Then each target agent (`TAB_RECAP_COMPACT_TARGET`: `focused` by default,
    `all`, or kinds like `claude,codex`) that is **idle or done** gets a message written as your own
-   instruction, in English, never naming the plugin, at most 1 500 characters. It asks to keep, in
-   order: your note, the goal, decisions and why, questions waiting for you, unfinished work and next
-   steps, the standing rules you gave (the writer keeps them as an internal list that is never drawn),
-   and exact references (as links); and to drop tool output, finished-step detail and resolved dead
-   ends. References are trimmed first when it is too long; the note and the goal never.
-3. **claude** gets `/compact <that guidance>` typed as one line (a pasted block would not run as a
-   command). **codex** and **opencode** run their own `/compact`, then get one short message with the
-   same points that asks only for "ok".
+   instruction, in English, never naming the plugin, at most 3 000 characters. A **brief** writer (a
+   model call, see [Models](#models)) reads the **whole session** — every distinct goal, decision, finished
+   item, question, next step, rule and reference of the agent's tasks from the database, with when each first
+   and last appeared, your note, the latest recap and the agent's last turns — and writes what the agent's own
+   summary must keep, recall first: your note, the goal, decisions **with their reasons**, questions waiting for
+   you, unfinished work with errors and failing tests, the standing rules you gave, and exact references; and
+   to drop tool output, finished-step detail and resolved dead ends. A notification says it is being written.
+   If the brief cannot be written (the job is `off`, no such CLI, a timeout, an answer that names the plugin),
+   a template filled from the latest recap is used instead (references are trimmed first when it is too long;
+   the note and the goal never), so compaction always happens.
+3. **claude** gets `/compact ` typed, then the guidance typed, then Enter — in pieces, so it runs as a command
+   at any length (a pasted block, or one long send, would be taken as a message and never compact).
+   **codex** and **opencode** run their own `/compact`, then get one short message with the same points that
+   asks only for "ok".
+
+After the command is sent the agent is waited for until it is idle or done again, and its own records
+(read-only) say what happened: Claude's `compact_boundary` row means it compacted; an `Error during
+compaction` row (its own summarizer failed) means the same guidance is typed once more; Codex's `compacted`
+row means it compacted, and only then does it get the restore message. A notification says the outcome:
+compacted (on the second try), could not compact even after trying again, or could not confirm.
 
 A working or blocked agent is skipped and a notification names it. Agents read from their screen and
 `hermes` are not offered compaction.
@@ -88,6 +100,20 @@ A working or blocked agent is skipped and a notification names it. Agents read f
 runtime: Codex's own `model_context_window`; opencode's and Claude's model looked up in opencode's local
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
 table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
+
+## Models
+
+Every model call is a **job** run on one harness (`claude`, `codex`, `opencode`, `hermes` or your own
+command) with a model and an effort. The settings modal lists them under **Models**, one row per job showing
+`harness · model · effort`; ←/→ pick a part, Enter edits it.
+
+| job | harness | model | effort |
+| --- | --- | --- | --- |
+| recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`low`) |
+| compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
+
+Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
+settings or MCP and no session left behind.
 
 ## Install
 

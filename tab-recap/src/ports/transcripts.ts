@@ -37,6 +37,13 @@ export interface Position {
 
 export const UNREAD: Position = { cursor: 0, tail: null };
 
+/** What a compaction left in the agent's own records: it ran (`compacted`) or its own summarizer failed (`compaction-failed`). */
+export interface Mark {
+    readonly kind: 'compacted' | 'compaction-failed';
+    /** epoch ms, when the record has one */
+    readonly at: number | null;
+}
+
 export interface Chunk {
     readonly kind: 'chunk';
     readonly entries: readonly Entry[];
@@ -45,6 +52,8 @@ export interface Chunk {
     readonly claudeRecap: string | null;
     /** the agent's own summaries found in what was read (oldest first) */
     readonly notes: readonly AgentNote[];
+    /** compactions found in what was read (oldest first); a reader that cannot tell leaves it out */
+    readonly marks?: readonly Mark[];
     /** where the next read starts */
     readonly position: Position;
     /** the source holds something past `was`, whether or not it made entries */

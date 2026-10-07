@@ -1,11 +1,9 @@
 // The settings modal as a pure reducer: (state, key) -> (state, effects). It never touches the
 // terminal, the config file or a harness; src/setup/main.ts performs the effects.
-import { languageSetting } from '#src/i18n/index.ts';
-import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
-import { screenSetting } from '#src/recap/domain/policy.ts';
 import { changes, dirty } from './setup-changes.ts';
-import { EFFORT_CHOICES, HARNESS_CHOICES, LOCALE_CHOICES, modelTarget, rowOf, ROWS, SWITCH_CHOICES } from './setup-state.ts';
-import type { Draft, Editing, RowId, Setup, Stepped, TestState } from './setup-state.ts';
+import { CHOICES, TEXTS } from './setup-fields.ts';
+import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
+import type { Editing, FieldId, Setup, Stepped, TestState } from './setup-state.ts';
 
 export { changes, dirty, locksOf } from './setup-changes.ts';
 export * from './setup-state.ts';
@@ -13,46 +11,31 @@ export * from './setup-state.ts';
 const ESC = String.fromCodePoint(0x1b);
 const UP = new Set(['k', `${ESC}[A`, `${ESC}OA`]);
 const DOWN = new Set(['j', `${ESC}[B`, `${ESC}OB`]);
-
-/** The rows edited as text (other than the model): what they show to edit, and how a typed value is kept. */
-const TEXT_ROWS: Readonly<Partial<Record<RowId, { readonly read: (draft: Draft) => string; readonly keep: (draft: Draft, typed: string) => Draft }>>> = {
-    recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed) => ({ ...draft, recapLanguage: languageSetting(typed) }) },
-    screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed) => ({ ...draft, screenAgents: screenSetting(typed) }) },
-    compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed) => ({ ...draft, compactTarget: targetSetting(typed) }) },
-    compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed) => ({ ...draft, compactHint: hintSetting(typed) }) },
-    contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
-};
+const LEFT = new Set(['h', `${ESC}[D`, `${ESC}OD`]);
+const RIGHT = new Set(['l', `${ESC}[C`, `${ESC}OC`]);
 
 function enter(state: Setup): Setup {
-    const row = rowOf(state);
-    if (state.locks[row] !== undefined) {
+    const field = fieldOf(state);
+    if (state.locks[field] !== undefined) {
         return { ...state, note: 'locked' };
     }
     const { draft } = state;
+    const choice = CHOICES[field];
+    if (choice !== undefined) {
+        return { ...state, note: null, editing: { kind: 'choice', at: choice.at(draft) } };
+    }
     const target = modelTarget(draft, state.available);
-    if (row === 'harness') {
-        return { ...state, note: null, editing: { kind: 'choice', at: HARNESS_CHOICES.indexOf(draft.backend) } };
-    }
-    if (row === 'locale') {
-        return { ...state, note: null, editing: { kind: 'choice', at: LOCALE_CHOICES.indexOf(draft.locale) } };
-    }
-    if (row === 'gitNote') {
-        return { ...state, note: null, editing: { kind: 'choice', at: SWITCH_CHOICES.indexOf(draft.gitNote) } };
-    }
-    if (row === 'effort') {
-        return { ...state, note: null, editing: { kind: 'choice', at: EFFORT_CHOICES.indexOf(draft.effort) } };
-    }
-    if (row === 'model') {
+    if (field === 'model') {
         return target === null ? { ...state, note: 'no-agent' } : { ...state, note: null, editing: { kind: 'text', buffer: draft.models[target] } };
     }
-    return { ...state, note: null, editing: { kind: 'text', buffer: TEXT_ROWS[row]?.read(draft) ?? draft.recapLanguage } };
+    return { ...state, note: null, editing: { kind: 'text', buffer: TEXTS[field]?.read(draft) ?? draft.recapLanguage } };
 }
 
 function confirmText(state: Setup, buffer: string): Setup {
     const { draft } = state;
-    const row = rowOf(state);
+    const row = fieldOf(state);
     const done = { ...state, editing: null, note: null };
-    const text = TEXT_ROWS[row];
+    const text = TEXTS[row];
     if (text !== undefined) {
         return { ...done, draft: text.keep(draft, buffer) };
     }
@@ -62,32 +45,19 @@ function confirmText(state: Setup, buffer: string): Setup {
 
 function confirmChoice(state: Setup, at: number): Setup {
     const done = { ...state, editing: null, note: null };
-    if (rowOf(state) === 'harness') {
-        const backend = HARNESS_CHOICES[at];
-        return backend === undefined ? done : { ...done, draft: { ...state.draft, backend } };
-    }
-    if (rowOf(state) === 'gitNote') {
-        const gitNote = SWITCH_CHOICES[at];
-        return gitNote === undefined ? done : { ...done, draft: { ...state.draft, gitNote } };
-    }
-    if (rowOf(state) === 'effort') {
-        const effort = EFFORT_CHOICES[at];
-        return effort === undefined ? done : { ...done, draft: { ...state.draft, effort } };
-    }
-    const locale = LOCALE_CHOICES[at];
-    return locale === undefined ? done : { ...done, draft: { ...state.draft, locale } };
+    const choice = CHOICES[fieldOf(state)];
+    return choice === undefined ? done : { ...done, draft: choice.keep(state.draft, at) };
 }
 
 const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
 
-const CHOICE_COUNTS: Readonly<Partial<Record<RowId, number>>> = { harness: HARNESS_CHOICES.length, locale: LOCALE_CHOICES.length, gitNote: SWITCH_CHOICES.length, effort: EFFORT_CHOICES.length };
-const choiceCount = (row: RowId): number => CHOICE_COUNTS[row] ?? 0;
+const choiceCount = (field: FieldId): number => CHOICES[field]?.size ?? 0;
 
 function editChoice(state: Setup, at: number, key: string): Setup {
     if (key === '\r') {
         return confirmChoice(state, at);
     }
-    const size = choiceCount(rowOf(state));
+    const size = choiceCount(fieldOf(state));
     const by = (UP.has(key) ? -1 : 0) + (DOWN.has(key) ? 1 : 0);
     return by === 0 ? state : { ...state, editing: { kind: 'choice', at: (at + by + size) % size } };
 }
@@ -142,12 +112,25 @@ function move(state: Setup, by: number): Setup {
     return { ...state, row: Math.min(ROWS.length - 1, Math.max(0, state.row + by)), note: null };
 }
 
+/** ←/→ walk the parts of a job row (harness · model · effort); on any other row they do nothing. */
+function across(state: Setup, by: number): Setup {
+    const parts = JOB_FIELDS[rowOf(state)]?.length ?? 0;
+    return parts === 0 ? state : { ...state, part: Math.min(parts - 1, Math.max(0, state.part + by)), note: null };
+}
+
 const QUIT = new Set(['q', ESC, '\u0003']);
 
+const stay = (state: Setup): Stepped => ({ state, effects: [] });
+
+/** Every key outside editing, by what it does; the movement keys are listed once for each of their spellings. */
 const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
     s: save,
     t: startTest,
-    '\r': (state) => ({ state: enter(state), effects: [] }),
+    '\r': (state) => stay(enter(state)),
+    ...Object.fromEntries([...UP].map((key) => [key, (state: Setup): Stepped => stay(move(state, -1))])),
+    ...Object.fromEntries([...DOWN].map((key) => [key, (state: Setup): Stepped => stay(move(state, 1))])),
+    ...Object.fromEntries([...LEFT].map((key) => [key, (state: Setup): Stepped => stay(across(state, -1))])),
+    ...Object.fromEntries([...RIGHT].map((key) => [key, (state: Setup): Stepped => stay(across(state, 1))])),
 };
 
 /** One key. `asked` lasts for exactly one key: anything but a second q/Esc takes the question back. */
@@ -158,11 +141,7 @@ export function step(state: Setup, key: string): Stepped {
     if (QUIT.has(key)) {
         return leave(state);
     }
-    const calm: Setup = { ...state, asked: false, note: state.asked ? null : state.note };
-    if (UP.has(key) || DOWN.has(key)) {
-        return { state: move(calm, UP.has(key) ? -1 : 1), effects: [] };
-    }
-    return (COMMANDS[key] ?? ((same) => ({ state: same, effects: [] })))(calm);
+    return (COMMANDS[key] ?? stay)({ ...state, asked: false, note: state.asked ? null : state.note });
 }
 
 /** herdr and the PATH have answered. */

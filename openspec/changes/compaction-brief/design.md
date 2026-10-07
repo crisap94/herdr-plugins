@@ -30,26 +30,33 @@ the agent never hears of the plugin; compaction never fails because the brief fa
    (version 1) = `agent` (kind, label, repo, branch), optional `note`, `current_recap` (JSON), `session_history`
    (`item` with `section`, `first`, `last`, `seen`), `recent` (the agent's last turns, reusing the transcript
    rendering and budget, 12 000 chars).
-4. **Brief writer** (new port `CompactionBriefs`, adapter `claude-brief.ts`): `claude -p --model
-   <TAB_RECAP_COMPACT_MODEL|sonnet> --effort medium --tools '' --setting-sources '' --strict-mcp-config
-   --no-session-persistence --output-format json --system-prompt <instructions>`, document on stdin, timeout
-   120 s. Instructions: write, in the operator's first person and in English, what the agent's own summary
-   must keep — goal; decisions **with their reasons**; open questions waiting for the operator; unfinished work,
-   unresolved errors and failing tests; standing rules and preferences; exact file paths, branches, merge
-   requests, commits and URLs; the note first when present — recall first, then merge repeats and drop
-   superseded items; drop tool output and finished-step detail; plain text, no headings, at most 3 000
-   characters; never mention a recap, tab, tool or plugin; do not call tools.
+4. **One harness layer for every model call** (operator, 2026-10-07: "we treat all the harnesses as a single
+   harness"). The recap-writer adapters (`claude`, `codex`, `opencode`, `hermes`, `custom`) become generic harness
+   adapters behind one port, `Harness.run({instructions, input}, {model, effort}) → text | Unknown`, keeping their
+   safe arguments (no tools, no settings/MCP, ephemeral sessions, unused Codex features off) and their effort
+   mapping. Recap-specific parsing stays in the application layer. There are no harness-specific brief writers and
+   no choice by the kind of agent being compacted: the brief is one job, run on whatever harness it is set to.
 5. **Validation and fallback:** the answer is trimmed, folded to one line, checked for the forbidden words and
    length (cut at the last sentence end before 3 000); on any failure the existing template (now capped at
    3 000) is used and a log line says why.
 6. **Use of the brief:** Claude — `/compact` + brief. Codex/opencode — their `/compact`, then "We just
    compacted this conversation. This is where things stand: <brief> Nothing needs doing yet: just answer
    \"ok\"."
-7. **Settings:** `TAB_RECAP_COMPACT_MODEL` (default `sonnet`; `off` = template only), setup row en/es.
+7. **Jobs: every model call has a harness, a model and an effort the operator picks.**
+   | job | harness | model | effort |
+   | --- | --- | --- | --- |
+   | recap writer | `TAB_RECAP_BACKEND` (existing) | `TAB_RECAP_MODEL_<HARNESS>` (existing) | `TAB_RECAP_EFFORT` (existing, `low`) |
+   | compaction brief | `TAB_RECAP_COMPACT_BY` (default `recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
+   Efforts: `low` | `medium` | `high` | `default` (pass nothing). A job is a small domain value
+   (`Job {harness, model, effort}`) produced by one config function; the settings modal groups the jobs under
+   **Models**, one row per job showing `harness · model · effort`, each part editable (harness and effort cycle,
+   model is typed), en/es. A future job adds one row and three keys. With the operator's current settings the brief
+   runs on `codex · gpt-6-luna · high`; `claude · sonnet · medium` is one setting away.
 
 ## Risks / Trade-offs
 
-- [Claude usage: one extra Sonnet call per compaction] → only on the operator's action; `off` disables it.
+- [Usage: one extra model call per compaction] → only on the operator's action, on the harness and model the
+  operator chose; `off` disables it.
 - [The brief invents or reorders facts] → its inputs are the database history and recent turns; the agent's
   own model still reads its full conversation while compacting; the note is passed verbatim.
 - [Slow brief] → 120 s timeout, notification "writing what to keep…", template fallback.

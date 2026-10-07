@@ -68,3 +68,21 @@ test('TAB_RECAP_EFFORT: low unless set to medium, high or default; anything else
         if (saved === undefined) { delete process.env['TAB_RECAP_EFFORT']; } else { process.env['TAB_RECAP_EFFORT'] = saved; }
     }
 });
+
+test('loadConfig: the brief job is read from config.env — defaults, overrides, invalid values', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
+    const before = process.env['HERDR_PLUGIN_CONFIG_DIR'];
+    process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
+    try {
+        assert.deepEqual(loadConfig().brief, { by: 'recap', model: '', effort: 'high' });
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_COMPACT_BY=codex\nTAB_RECAP_COMPACT_MODEL=gpt-6-luna\nTAB_RECAP_COMPACT_EFFORT=medium\n');
+        assert.deepEqual(loadConfig().brief, { by: 'codex', model: 'gpt-6-luna', effort: 'medium' });
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_COMPACT_BY=skynet\nTAB_RECAP_COMPACT_EFFORT=max\n');
+        assert.deepEqual(loadConfig().brief, { by: 'recap', model: '', effort: 'high' });
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_COMPACT_BY=off\n');
+        assert.equal(loadConfig().brief.by, 'off');
+    } finally {
+        if (before === undefined) { delete process.env['HERDR_PLUGIN_CONFIG_DIR']; } else { process.env['HERDR_PLUGIN_CONFIG_DIR'] = before; }
+        rmSync(dir, { recursive: true });
+    }
+});

@@ -41,3 +41,14 @@ for no work.
 
 - **WHEN** a Codex agent is compacted
 - **THEN** it SHALL receive `/compact`, and after it is idle, the restore message
+
+### Requirement: The agent never hears about the plugin
+
+The message SHALL read as the operator's own instruction in English and SHALL NOT contain the words
+recap, tab-recap, tab, plugin or herdr. ("tool" is allowed: "tool output" is ordinary wording an agent's
+summary must be told to drop.)
+
+#### Scenario: Any message
+
+- **WHEN** a compaction message is built, from the template or from a written brief, with any recap and note
+- **THEN** none of those words SHALL appear in it, and a brief that contains one SHALL be replaced by the template
