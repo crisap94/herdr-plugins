@@ -1,7 +1,8 @@
-# Files the atalaya branch may differ from main in (paths relative to the repository root).
+# Files the atalaya branch may differ from main in (paths relative to the repository root). A line ending in / allows a directory.
 tab-recap/src/extensions/index.ts
 tab-recap/src/extensions/atalaya-bridge.ts
 tab-recap/test/atalaya-bridge.test.ts
 tab-recap/docs/atalaya.md
 tab-recap/config.atalaya.example.env
 tab-recap/ci/atalaya-files.txt
+experiments/
