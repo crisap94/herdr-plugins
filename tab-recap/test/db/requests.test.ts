@@ -55,8 +55,11 @@ test('compact requests keep their pane and note, come out once in order, and do 
     const { requests } = memoryStore();
     requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p2', note: 'the retry test' });
     requests.requestCompact({ tab: 'w1:t1', pane: null, note: null });
+    requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p3', note: null, origin: 'auto' });
     requests.request('w1:t9');
-    assert.deepEqual(requests.takeCompactions(), [{ tab: 'w1:t1', pane: 'w1:p2', note: 'the retry test' }, { tab: 'w1:t1', pane: null, note: null }]);
+    assert.deepEqual(requests.takeCompactions(), [
+        { tab: 'w1:t1', pane: 'w1:p2', note: 'the retry test', origin: 'operator' }, { tab: 'w1:t1', pane: null, note: null, origin: 'operator' }, { tab: 'w1:t1', pane: 'w1:p3', note: null, origin: 'auto' },
+    ]);
     assert.deepEqual(requests.takeCompactions(), []);
     assert.deepEqual(requests.takeRequests().map(String), ['w1:t9']);
 });

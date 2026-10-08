@@ -29,7 +29,7 @@ export function sampleView(width: number, locale: 'en' | 'es' = 'en', over: Part
         tasks: [{ name: '', facts: FACTS, story: { text: 'The 2.0 engine is being built in four changes; the expanded view is drawn from the ledger and waits on one answer.', at: at('16:10') }, curating: false }],
         session: sessionFactsOf({
             firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
-            compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000 }, { tokensBefore: 39_000, tokensAfter: 3_000 }],
+            compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3_000, origin: 'operator' }],
             lanes: [{ agent: 'claude', label: 'orchestrator', context: { tokens: 340_000, window: 1_000_000, source: 'table' } }, { agent: 'codex', label: 'host', context: { tokens: 32_640, window: 272_000, source: 'agent' } }],
             webs: [{ base: 'https://git.example/group/herdr-plugins', branch: 'feat/expanded' }],
             edits: [{ path: 'src/recap/application/compaction.ts', count: 7 }, { path: 'src/recap/render/present.ts', count: 5 }],

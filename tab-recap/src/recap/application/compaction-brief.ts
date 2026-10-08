@@ -84,12 +84,12 @@ export class BriefDesk {
     }
 
     /** `own` is the agent's own text (its recent turns and the history items): a word it uses itself is not refused. */
-    async write(document: string, own = ''): Promise<Written> {
+    async write(document: string, own = '', correction?: string): Promise<Written> {
         const writer = this.deps.writer();
         if (writer === null) {
             return { text: null, why: null };
         }
-        const answered = await writer.write(document);
+        const answered = await writer.write(document, correction);
         const checked = isUnknown(answered) ? { kind: 'bad' as const, why: saying(answered.why) } : vetted(answered.text, own);
         if (checked.kind === 'ok') {
             return { text: checked.text, why: null };

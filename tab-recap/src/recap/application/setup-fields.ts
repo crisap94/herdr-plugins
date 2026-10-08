@@ -1,8 +1,9 @@
 // What each editable field of the settings modal is: a list to choose from, or text to type, and how its value is read from and kept in the draft. Pure.
 import { languageSetting } from '#src/i18n/index.ts';
+import { softOf } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
-import { EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, SWITCH_CHOICES } from './setup-state.ts';
+import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, SWITCH_CHOICES } from './setup-state.ts';
 import type { Draft, FieldId } from './setup-state.ts';
 
 export interface ChoiceField {
@@ -33,6 +34,9 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     judgeEffort: choice(EFFORT_CHOICES, (draft) => draft.judge.effort, (draft, effort) => ({ ...draft, judge: { ...draft.judge, effort } })),
     curateBy: choice(JOB_BY_OPTIONS, (draft) => draft.curate.by, (draft, by) => ({ ...draft, curate: { ...draft.curate, by } })),
     curateEffort: choice(EFFORT_CHOICES, (draft) => draft.curate.effort, (draft, effort) => ({ ...draft, curate: { ...draft.curate, effort } })),
+    autocompact: choice(MODE_CHOICES, (draft) => draft.autocompact, (draft, autocompact) => ({ ...draft, autocompact })),
+    decideBy: choice(DECIDER_BY_OPTIONS, (draft) => draft.decide.by, (draft, by) => ({ ...draft, decide: { ...draft.decide, by } })),
+    decideEffort: choice(EFFORT_CHOICES, (draft) => draft.decide.effort, (draft, effort) => ({ ...draft, decide: { ...draft.decide, effort } })),
 };
 
 /** The fields typed as text (other than the recap writer's model, which belongs to the harness in force). */
@@ -42,6 +46,8 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed) => ({ ...draft, compactTarget: targetSetting(typed) }) },
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed) => ({ ...draft, compactHint: hintSetting(typed) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
+    autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed) => ({ ...draft, autocompactAt: String(softOf(typed)) }) },
+    decideModel: { read: (draft) => draft.decide.model, keep: (draft, typed) => ({ ...draft, decide: { ...draft.decide, model: typed.trim() } }) },
     compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed) => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
     judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed) => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },
     curateModel: { read: (draft) => draft.curate.model, keep: (draft, typed) => ({ ...draft, curate: { ...draft.curate, model: typed.trim() } }) },

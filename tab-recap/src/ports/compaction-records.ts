@@ -26,6 +26,8 @@ export interface CompactionRecord {
     readonly tookMs: number | null;
     readonly retried: boolean;
     readonly why: string | null;
+    /** who started it: the operator, or autocompact */
+    readonly origin: 'operator' | 'auto';
 }
 
 export interface BeginCompaction {
@@ -37,6 +39,8 @@ export interface BeginCompaction {
     readonly writer?: string | null;
     /** a compaction that ends where it begins (skipped, failed) says why */
     readonly why?: string | null;
+    /** `operator` unless given */
+    readonly origin?: 'operator' | 'auto';
 }
 
 /** What a stage change adds: the brief's origin and writer are known once the brief job is done. */

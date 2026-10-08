@@ -16,7 +16,7 @@ test('claude: a compact_boundary row is a compaction; an `Error during compactio
         row({ type: 'assistant', message: { content: [{ type: 'text', text: 'Error during compaction would be a funny thing to say' }] } }),
         'not json',
     ]);
-    assert.deepEqual(marks, [{ kind: 'compacted', at: AT, tokensBefore: 100 }, { kind: 'compaction-failed', at: AT }, { kind: 'compaction-failed', at: AT }]);
+    assert.deepEqual(marks, [{ kind: 'compacted', at: AT, tokensBefore: 100, trigger: 'manual' }, { kind: 'compaction-failed', at: AT }, { kind: 'compaction-failed', at: AT }]);
 });
 
 test('codex: a `compacted` row is a compaction', () => {

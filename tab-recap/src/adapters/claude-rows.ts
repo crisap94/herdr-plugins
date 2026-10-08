@@ -69,9 +69,13 @@ function noteOf(row: Row): AgentNote | null {
 const figure = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined);
 
 /** What `compactMetadata` says (`preTokens`, `postTokens`, `durationMs`); a number it does not give is left out. */
-function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter' | 'tookMs'> {
+function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter' | 'tookMs' | 'trigger'> {
     const [before, after, took] = [figure(metadata['preTokens']), figure(metadata['postTokens']), figure(metadata['durationMs'])];
-    return { ...(before === undefined ? {} : { tokensBefore: before }), ...(after === undefined ? {} : { tokensAfter: after }), ...(took === undefined ? {} : { tookMs: took }) };
+    const trigger = metadata['trigger'];
+    return {
+        ...(before === undefined ? {} : { tokensBefore: before }), ...(after === undefined ? {} : { tokensAfter: after }), ...(took === undefined ? {} : { tookMs: took }),
+        ...(trigger === 'auto' || trigger === 'manual' ? { trigger } : {}),
+    };
 }
 
 /** Claude Code's record of a compaction: a `compact_boundary` row when it ran, a local-command error row when its own summarizer failed. */

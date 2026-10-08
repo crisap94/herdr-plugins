@@ -27,15 +27,19 @@ export interface SessionContext {
 
 const joined = (parts: readonly string[]): string => parts.join(' · ');
 
-/** `compactions 2 (800k → 14k · 39k → 3k) · chapters 3`; the chapter count alone when the session broke without a compaction. */
+/** `compactions 4 (3 by you · 1 auto) (800k → 14k · 39k → 3k) · chapters 3`; the chapter count alone when the session broke without a compaction. */
 function chapterLines(facts: SessionFacts, context: SessionContext): readonly { readonly label: string; readonly text: string }[] {
     const { compactions, chapters } = facts;
     const count = chapters === null ? [] : [context.messages.chapters.count(chapters)];
     if (compactions === null) {
         return chapters === null ? [] : [{ label: context.messages.chapters.label, text: String(chapters) }];
     }
+    const { byOrigin } = compactions;
+    const origin = context.messages.expanded.compactionOrigin;
+    const origins = joined([...(byOrigin.operator > 0 ? [origin.operator(byOrigin.operator)] : []), ...(byOrigin.auto > 0 ? [origin.auto(byOrigin.auto)] : [])]);
+    const counted = origins === '' ? String(compactions.count) : `${compactions.count} (${origins})`;
     const pairs = joined(compactions.measured.map((pair) => `${sizeOf(pair.before)} → ${sizeOf(pair.after)}`));
-    return [{ label: context.messages.expanded.compactions, text: joined([pairs === '' ? String(compactions.count) : `${compactions.count} (${pairs})`, ...count]) }];
+    return [{ label: context.messages.expanded.compactions, text: joined([pairs === '' ? counted : `${counted} (${pairs})`, ...count]) }];
 }
 
 /** One unwrapped line per known fact; `label` is the caller's to style. */
@@ -57,6 +61,9 @@ export function sessionLines(facts: SessionFacts, context: SessionContext): read
     }
     if (facts.files.length > 0) {
         lines.push({ label: m.files, text: facts.files.map((file) => `${file.path} (${file.count})`).join(', ') });
+    }
+    if (facts.autocompact !== null) {
+        lines.push({ label: m.autocompact.label, text: m.autocompact.text(facts.autocompact.decisions, facts.autocompact.compacted, facts.autocompact.waited) });
     }
     return lines;
 }

@@ -11,7 +11,7 @@ export class SessionSourceRepository implements SessionSource {
     constructor(db: DatabaseSync) {
         this.first = db.prepare('SELECT first_seen FROM tab WHERE id = ?');
         this.runs = db.prepare('SELECT run.cause AS cause, count(*) AS n FROM run JOIN chapter ON chapter.id = run.chapter_id WHERE chapter.tab_id = ? GROUP BY run.cause');
-        this.compacted = db.prepare("SELECT tokens_before, tokens_after FROM compaction WHERE tab_id = ? AND stage = 'compacted' ORDER BY started_at, id");
+        this.compacted = db.prepare("SELECT tokens_before, tokens_after, origin FROM compaction WHERE tab_id = ? AND stage = 'compacted' ORDER BY started_at, id");
     }
 
     firstSeen(tab: string): number | null {
@@ -25,7 +25,7 @@ export class SessionSourceRepository implements SessionSource {
         return guarded(() => Object.fromEntries(all(this.runs, tab).map((row) => [text(row, 'cause'), whole(row, 'n')])), {});
     }
 
-    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null }[] {
-        return guarded(() => all(this.compacted, tab).map((row) => ({ tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after') })), []);
+    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: 'operator' | 'auto' }[] {
+        return guarded(() => all(this.compacted, tab).map((row) => ({ tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator' })), []);
     }
 }

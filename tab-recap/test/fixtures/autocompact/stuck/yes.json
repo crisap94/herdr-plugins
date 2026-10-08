@@ -1,0 +1,33 @@
+{
+  "last_prompt": "Get the build to pass.",
+  "last_reply": "The build failed again with the same missing-module error.",
+  "recent_turns": [
+    {
+      "role": "user",
+      "text": "Get the build to pass."
+    },
+    {
+      "role": "tool",
+      "text": "shell: npm run build  # Cannot find module \"./gen.js\""
+    },
+    {
+      "role": "tool",
+      "text": "shell: npm run build  # Cannot find module \"./gen.js\""
+    },
+    {
+      "role": "tool",
+      "text": "shell: npm run build  # Cannot find module \"./gen.js\""
+    },
+    {
+      "role": "agent",
+      "text": "The build failed again with the same missing-module error."
+    }
+  ],
+  "goal": "Make the build pass",
+  "open_work": [
+    {
+      "section": "now",
+      "text": "Fix the missing module"
+    }
+  ]
+}

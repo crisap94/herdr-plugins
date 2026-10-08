@@ -1,6 +1,7 @@
 // The composition: one connection, the repositories. Each consumer takes the port it uses.
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
+import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
@@ -13,6 +14,7 @@ import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { Retention } from '#src/ports/retention.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import { AutocompactRecordsRepository } from './autocompact-records.ts';
 import { CompactionRecordsRepository } from './compaction-records.ts';
 import { BoundaryRepository } from './boundary-read.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
@@ -37,6 +39,8 @@ export interface Store {
     readonly visibility: ColumnVisibility;
     readonly requests: Requests;
     readonly compactions: CompactionRecords;
+    /** what autocompact decided, lane by lane */
+    readonly autocompact: AutocompactRecords;
     readonly inputs: RunInputs;
     readonly verdicts: Verdicts;
     /** the curator's paragraph per task; its merges go through `ledger` */
@@ -61,7 +65,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db), autocompact: new AutocompactRecordsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),

@@ -1,0 +1,25 @@
+{
+  "last_prompt": "Merge the fix and publish the release.",
+  "last_reply": "Merged !312. Now tagging the release; I will wait for the pipeline and then check the notes.",
+  "recent_turns": [
+    {
+      "role": "user",
+      "text": "Merge the fix and publish the release."
+    },
+    {
+      "role": "tool",
+      "text": "shell: glab mr merge 312"
+    },
+    {
+      "role": "agent",
+      "text": "Merged !312. Now tagging the release; I will wait for the pipeline and then check the notes."
+    }
+  ],
+  "goal": "Publish the 2.1.1 release of the plugin",
+  "open_work": [
+    {
+      "section": "next",
+      "text": "Announce the release in the changelog"
+    }
+  ]
+}

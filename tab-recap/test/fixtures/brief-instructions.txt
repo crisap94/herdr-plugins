@@ -7,6 +7,7 @@ it was first and last seen; a closed one says why it closed: a decision that was
 agent's last turns. The history is the record: an early decision missing from <current_recap> still counts.
 Facts marked settled="yes" were already closed before the agent's last compaction, so its earlier summaries hold them: mention them
 together in one line as settled, and do not ask it to keep them as open work or re-open them.
+<correction>, when present, lists facts that an earlier version of these instructions failed to keep: every one of them must now be kept, with its detail.
 
 Say what the summary must keep, most important first:
 - the note first, when there is one, in its own words;

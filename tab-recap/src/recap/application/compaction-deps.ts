@@ -9,7 +9,9 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Written } from './compaction-brief.ts';
+import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
 
 export interface CompactionDeps {
@@ -24,7 +26,11 @@ export interface CompactionDeps {
     /** herdr's push that a lane is free again (polling when the daemon is blind) */
     readonly settling: LaneSettling;
     /** writes the brief from a document; no text when it is off or gave none (the template is used, and `why` says why) */
-    readonly brief: { enabled(): boolean; job(): string | null; write(document: string, own: string): Promise<Written> };
+    readonly brief: { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> };
+    /** an automatic compaction checks its brief against the facts before anything is typed; null when there is no decider (it goes ahead unchecked) */
+    coverage(): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null;
+    /** the decisions an automatic compaction points back to */
+    readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend'> | null;
     /** the agent's last turns, read from its own records; empty when they cannot be read */
     recent(lane: Lane): Promise<readonly Entry[]>;
     /** the compactions the agent's own records show, newest last; empty when they cannot be read */

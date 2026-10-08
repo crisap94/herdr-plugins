@@ -14,7 +14,7 @@ TE NECESITA                                                                     
                                                                                          │ SESIÓN
 CRONOLOGÍA                                                                               │ inicio 09:12 · 7 h 18 min
 14:02 Merged !34 adding the compaction records                                           │ turnos 41 (turno 36 · foco 3 · pedido 2)
-14:02 Add a retention sweep to this change · cerrado: erróneo                            │ compactaciones 2 (800k → 14k · 39k → 3k)
+14:02 Add a retention sweep to this change · cerrado: erróneo                            │ compactaciones 2 (2 por ti) (800k → 14k · 39k → 3k)
 2026-10-06                                                                               │ claude · orchestrator 34 % de 1M
 17:10 Fixed the context share in src/recap/render/present.ts                             │ codex · host 12 % de 272k
                                                                                          │ repo herdr-plugins · rama feat/expanded

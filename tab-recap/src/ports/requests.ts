@@ -12,6 +12,8 @@ export interface CompactRequest {
     readonly tab: string;
     readonly pane: string | null;
     readonly note: string | null;
+    /** who asked: the operator (the default), or autocompact */
+    readonly origin?: 'operator' | 'auto';
 }
 
 /** What the columns and commands ask of the daemon: a queue the daemon empties. */

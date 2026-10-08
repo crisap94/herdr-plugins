@@ -1,0 +1,16 @@
+run: R02-haiku-low
+experiment: EXP-002-autocompact
+status: valid
+date: 2026-10-08
+code: tab-recap tools at 82f5e5d on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
+command: node bin/autocompact-probe.ts --dir <scratch>/exp002 --arm haiku-low --rep 1 ; ... --rep 2
+arm: claude / claude-haiku-5-5 / effort low (HarnessDecider)
+concurrency: 4
+files:
+  answers-haiku-low-1.jsonl: c3eaea0a9c37ce0e9811758f040fe11ad375c23f279880c04e7d4fed5bfb17b5
+  answers-haiku-low-2.jsonl: e6269a22dcd31db7145e9e832094e65ef98e5468855f25a8ae7b55f9220154e5
+wall_time: rep 1 3 min 34 s (2026-10-08T18:46:04Z); rep 2 3 min 44 s (2026-10-08T18:58:58Z)
+versions: Node v24.21.0, Claude Code 2.1.294, codex-cli 0.161.0
+ran_by: the coder (Sonnet 5.5), unattended
+raw: listed in REMOVED-ON-MAIN.txt (scratch only; quotes real sessions)

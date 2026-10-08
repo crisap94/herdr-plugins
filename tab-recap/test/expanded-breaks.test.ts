@@ -22,7 +22,7 @@ const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleV
     breaks: BREAKS,
     session: sessionFactsOf({
         firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
-        compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000 }, { tokensBefore: 39_000, tokensAfter: 3000 }],
+        compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3000, origin: 'auto' }],
         lanes: [{ agent: 'claude', label: 'orchestrator', context: { tokens: 340_000, window: 1_000_000, source: 'table' } }],
         webs: [{ base: 'https://git.example/group/herdr-plugins', branch: 'feat/expanded' }], edits: [], chapters: 4,
     }),
@@ -58,8 +58,8 @@ test('each break is a line between the facts around it, in time order; a day cha
 });
 
 test('the session facts count the chapters on the compactions line; with no compaction the count stands alone; one chapter says nothing', () => {
-    assert.ok(expanded(withBreaks(120, 'en')).some((line) => line.includes('compactions 2 (800k → 14k · 39k → 3k) · chapters 4')));
-    assert.ok(expanded(withBreaks(120, 'es')).some((line) => line.includes('compactaciones 2 (800k → 14k · 39k → 3k) · capítulos 4')));
+    assert.ok(expanded(withBreaks(120, 'en')).some((line) => line.includes('compactions 2 (1 by you · 1 auto) (800k → 14k · 39k → 3k) · chapters 4')));
+    assert.ok(expanded(withBreaks(120, 'es')).some((line) => line.includes('compactaciones 2 (1 por ti · 1 auto) (800k → 14k · 39k → 3k) · capítulos 4')));
     const alone = sessionFactsOf({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 2 });
     assert.deepEqual(expanded(sampleView(120, 'en', { session: alone })).filter((line) => line.includes('chapters')), ['chapters 2']);
     assert.equal(sessionFactsOf({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 1 }).chapters, null);

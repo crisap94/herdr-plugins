@@ -2,6 +2,7 @@ import type { CompactionBriefs, Briefed } from '#src/ports/compaction-briefs.ts'
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { BRIEF_INSTRUCTIONS } from './brief-instructions.ts';
+import { leaf } from '#src/recap/application/xml.ts';
 import { unfenced } from './recap-prompt.ts';
 
 /** The compaction brief: one job on a harness. */
@@ -18,7 +19,8 @@ export class HarnessBrief implements CompactionBriefs {
         this.job = [harness.id, settings.model, settings.effort === 'default' ? '' : settings.effort].filter((part) => part !== '').join(' · ');
     }
 
-    async write(document: string): Promise<Briefed> {
+    async write(source: string, correction?: string): Promise<Briefed> {
+        const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, correction)}`;
         const call = { instructions: BRIEF_INSTRUCTIONS, input: document };
         if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(BRIEF_INSTRUCTIONS) > this.harness.limit) {
             return unknown({ why: 'unreadable', detail: `the document is too long for ${this.harness.id}` });

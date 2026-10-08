@@ -1,0 +1,25 @@
+{
+  "last_prompt": "Unrelated: what is the time zone of Lisbon in October?",
+  "last_reply": "Lisbon is on WEST (UTC+1) until the last Sunday of October.",
+  "recent_turns": [
+    {
+      "role": "agent",
+      "text": "Docs updated."
+    },
+    {
+      "role": "user",
+      "text": "Unrelated: what is the time zone of Lisbon in October?"
+    },
+    {
+      "role": "agent",
+      "text": "Lisbon is on WEST (UTC+1) until the last Sunday of October."
+    }
+  ],
+  "goal": "Migrate the metrics dashboard to the new datasource",
+  "open_work": [
+    {
+      "section": "now",
+      "text": "Port the latency panel"
+    }
+  ]
+}
