@@ -1,10 +1,11 @@
 experiment: EXP-001-recall-engine
-status: concluded 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded)
+status: concluded 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded); writer comparison R10 added 2026-10-08 (valid)
 prereg: experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-engine at b56ce24, 2026-10-07)
 code:
   spec: b56ce24 (openspec/changes/recall-engine, main)
   recall-a: 9575e0f feat/tab-recap-recall-judge, merged to main as b0e31b9 (!42) — state ruler, anchors, G11/G12, short retry, kappa, per-chapter comparison
   recall-b: dadb961 + 376c3c9 feat/tab-recap-recall-pipeline (rebased on 9575e0f; !43) — chunking, triggers, enumerate, ask-back, reconcile, --pipeline (default one since 376c3c9), curator reconcile
+  release: f9f7f36 main, tab-recap 2.1.0 — R10 ran on this tree
   snapshots: R01 ran on recall-a's uncommitted tree after task group 1 (ruler only); R02/R03 on its tree after group 2 (ruler + gates), both before 9575e0f and reported in scratchpad/recall-a.md; R04 on recall-b's pre-rebase tree b0d6082 (old ruler)
 data:
   corpus: replay-mine-40.jsonl (private, never on main) — 40 prompts of one real session, 23 turns after grouping, 2248 lines, 4493783 bytes
@@ -15,9 +16,10 @@ models:
   enumeration: codex / gpt-6-luna, effort low (the writer's harness at low)
   judge: codex / gpt-6-luna, effort medium (TAB_RECAP_JUDGE_BY=recap, TAB_RECAP_JUDGE_EFFORT=medium)
   cost: the codex harness reports no price; cost is model calls per turn
+  writer_r10: claude / claude-haiku-5-5, effort medium (TAB_RECAP_BACKEND=claude TAB_RECAP_MODEL_CLAUDE=claude-haiku-5-5 TAB_RECAP_EFFORT=medium), judge pinned to codex / gpt-6-luna medium; the claude harness reports the price ($0.074 for the run)
 environment:
-  host: one Linux workstation (x86_64, Intel Xeon W-2135, 30 GB), Node v24.21.0, codex-cli 0.161.0
+  host: one Linux workstation (x86_64, Intel Xeon W-2135, 30 GB), Node v24.21.0, codex-cli 0.161.0, Claude Code 2.1.293 (R10)
   isolation: each coder in its own git worktree; the replay writes a fresh database per run under a scratch directory; the live daemon and database untouched
 limits:
   concurrency: R04 ran the four arms in parallel (noisy, superseded); R05–R08 one arm at a time, each arm's model calls in series
-  wall_time: R05 13 min 20 s (one), R06 ~20 min, R07 20 min 17 s, R08 29 min 5 s (claude judge), R09 20 min 50 s; the judge is more than half of each
+  wall_time: R05 13 min 20 s (one), R06 ~20 min, R07 20 min 17 s, R08 29 min 5 s (claude judge), R09 20 min 50 s, R10 20 min 4 s (Haiku 5.5 writer); the judge is more than half of each

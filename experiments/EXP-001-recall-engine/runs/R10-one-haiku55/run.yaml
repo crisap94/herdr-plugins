@@ -1,0 +1,13 @@
+run: R10-one-haiku55
+experiment: EXP-001-recall-engine
+status: valid
+date: 2026-10-08
+code: tab-recap 2.1.0 as released (main f9f7f36)
+corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
+command: TAB_RECAP_BACKEND=claude TAB_RECAP_MODEL_CLAUDE=claude-haiku-5-5 TAB_RECAP_EFFORT=medium TAB_RECAP_PIPELINE=one TAB_RECAP_JUDGE_BY=codex TAB_RECAP_JUDGE_MODEL=gpt-6-luna TAB_RECAP_JUDGE_EFFORT=medium node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline one
+writer: claude / claude-haiku-5-5 / medium (Claude Code 2.1.293; Haiku 5.5 released 2026-10-07)
+judge: codex / gpt-6-luna / medium (pinned in the environment, same judge as R05)
+ran_by: the reviewer (main session)
+wall_time: 20 min 4 s (14:28:40Z → 14:48:44Z), writer and judge in series
+raw: R10-one-haiku55.txt and .err on the private branch, listed in REMOVED-ON-MAIN.txt
+note: writer comparison against R05 (same arm, same corpus, same judge, same effort); the operator asked for it on 2026-10-08 after the Haiku 5.5 release; not part of the frozen PREREG arms
