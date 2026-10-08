@@ -204,17 +204,21 @@ export class RecapJob {
             return;
         }
         const summarizer = this.deps.summarizer();
-        records.beginRun(prior.tab, summarizer.backend, clock.now());
+        const began = clock.now();
+        records.beginRun(prior.tab, summarizer.backend, began);
         const { tasks, request, ground } = await this.prepared(prior, readings, { want: language.want, was });
         const asked = await this.piped(summarizer, request, ground);
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
+        const took = `${((facts.at - began) / 1000).toFixed(1)} s (${language.cause})`;
         if (asked.kind === 'failed') {
+            this.deps.log(`recap ${prior.tab}: failed in ${took}`);
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
             return;
         }
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
         const marks = marksOf(readings, facts.at, true);
         records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, marks, ...input });
+        this.deps.log(`recap ${prior.tab}: written in ${took}`);
         this.deps.ran?.({ tab: prior.tab, turns: parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0 });
     }
 }

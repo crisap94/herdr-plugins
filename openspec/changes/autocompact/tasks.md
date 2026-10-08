@@ -23,7 +23,7 @@ runs before the decider's default is fixed.
 - [x] 2.3 Boundary trigger `plugin | manual | auto` (Claude `compactMetadata.trigger`). Migration 010 part 1
   rebuilds `boundary` with the new CHECK and maps stored `manual` to `plugin`. Verify: migration test from the
   oldest fixture through every migration; `boundary.ts` goldens for each trigger. — test/db/migrate-autocompact.test.ts (v9 → latest), test/boundaries-marks.test.ts goldens per trigger, test/db/boundaries.test.ts.
-- [ ] 2.4 Log the recap run's duration and cause. Verify: dispatch test reads the log line.
+- [x] 2.4 Log the recap run's duration and cause. Verify: dispatch test reads the log line. — test/recap-job.test.ts 'a run logs how long it took and why it ran'.
 
 ## 3. EXP-002: corpus and experiment (design decision 9)
 
