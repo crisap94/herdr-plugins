@@ -6,10 +6,10 @@ runs before the decider's default is fixed.
 
 ## 1. Vocabulary
 
-- [ ] 1.1 `CONTEXT.md`: **Autocompact**, **Decision (autocompact)**, **Decider**, **Soft limit**,
+- [x] 1.1 `CONTEXT.md`: **Autocompact**, **Decision (autocompact)**, **Decider**, **Soft limit**,
   **Ceiling**, **In flight**, **Brief coverage**, **Origin**. Update the **Window** and **Compaction** rows (no
   longer "never automatic"). Update **Boundary** (trigger `plugin | manual | auto`). Verify: glossary entries
-  exist before any code; the `recap-vocabulary` lint passes.
+  exist before any code; the `recap-vocabulary` lint passes. — entries written, lint green.
 
 ## 2. Information gaps (design decision 8)
 
