@@ -13,9 +13,9 @@ runs before the decider's default is fixed.
 
 ## 2. Information gaps (design decision 8)
 
-- [ ] 2.1 `context-rows.ts`: a Claude compaction row with `postTokens` replaces the latest usage until a newer
+- [x] 2.1 `context-rows.ts`: a Claude compaction row with `postTokens` replaces the latest usage until a newer
   usage row; the Codex and opencode equivalents are pinned by tests. Verify: a golden from recorded rows
-  (431 387 → compaction 12 332 → share 1 %); readers tests.
+  (431 387 → compaction 12 332 → share 1 %); readers tests. — claudeObserved golden 431 387 → 12 332; codex/opencode pinned in test/context-readers.test.ts.
 - [ ] 2.2 `Transcripts.inFlight?` and the Claude implementation: background shells, Agent/Task launches and
   Monitor starts without a matching `<task-notification>` end; other readers `unknown`. Verify: tests for a
   launch without an end (in flight), with a completed end, with a killed end, and a tail that cuts the

@@ -25,6 +25,36 @@ test('claude: the newest assistant usage is input + cache read + cache creation;
     assert.equal(claudeObserved([line({ type: 'user', message: { content: 'hi' } })]), null);
 });
 
+test('claude: a compaction row\'s postTokens is the use until a newer usage row (431 387 → compaction 12 332 → 1 %)', () => {
+    const before = assistant('claude-opus-5-5', { input_tokens: 3, cache_read_input_tokens: 431_384 });
+    const compaction = line({ type: 'system', subtype: 'compact_boundary', compactMetadata: { trigger: 'manual', preTokens: 431_635, postTokens: 12_332 } });
+    assert.deepEqual(claudeObserved([before, compaction]), { tokens: 12_332, peak: 431_635, window: null, model: 'claude-opus-5-5' });
+    assert.deepEqual(claudeObserved([compaction]), { tokens: 12_332, peak: 431_635, window: null, model: null });
+    assert.equal(claudeObserved([before, line({ type: 'system', subtype: 'compact_boundary', compactMetadata: { trigger: 'auto', preTokens: 5 } })])?.tokens, 431_387);
+    assert.equal(claudeObserved([before, compaction, assistant('claude-opus-5-5', { input_tokens: 1, cache_read_input_tokens: 20_000 })])?.tokens, 20_001);
+});
+
+test('codex: a compacted row changes nothing by itself; the token_count after it is the use (pinned)', () => {
+    const count = (total: number): string => line({ type: 'event_msg', payload: { type: 'token_count', info: { last_token_usage: { total_tokens: total }, model_context_window: 258_400 } } });
+    const compacted = line({ type: 'compacted', payload: { message: '' } });
+    assert.equal(codexObserved([count(200_000), compacted])?.tokens, 200_000);
+    assert.equal(codexObserved([count(200_000), compacted, count(14_000)])?.tokens, 14_000);
+});
+
+test('opencode: the compaction answer is the newest assistant message, so its tokens are the use (pinned)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-context-'));
+    try {
+        const fixture = opencodeFixture(dir);
+        const tokens = (read: number): object => ({ providerID: 'acme', modelID: 'big-1', tokens: { input: 5, output: 5, cache: { read, write: 0 } } });
+        fixture.add({ id: 'm1', session: 'ses_c', role: 'assistant', updated: 1, parts: [], data: tokens(90_000) });
+        fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: { ...tokens(8_000), summary: true } });
+        assert.equal(((await new OpencodeTranscripts(fixture.db).observed(`${fixture.db}#ses_c`)) as { observed: { tokens: number } }).observed.tokens, 8_005);
+        fixture.close();
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
 test('codex: the newest token_count (last request total, the model window) and the model of the newest turn', () => {
     const count = (total: number, window: number): string => line({ type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { total_tokens: total * 3 }, last_token_usage: { total_tokens: total }, model_context_window: window }, rate_limits: {} } });
     assert.deepEqual(codexObserved([line({ type: 'turn_context', payload: { model: 'gpt-6-luna' } }), count(13_932, 258_400), count(116_000, 258_400)]), { tokens: 116_000, peak: 116_000, window: 258_400, model: 'gpt-6-luna' });

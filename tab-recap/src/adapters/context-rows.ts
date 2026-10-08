@@ -7,12 +7,14 @@ const rowsOf = (lines: readonly string[]): readonly Row[] => lines.map((line) =>
 
 const count = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0);
 
-/** Claude: the newest assistant row's usage is what the last request sent (input + cache); `preTokens` of a compaction is the most seen before it. */
+/** Claude: the newest assistant row's usage is what the last request sent (input + cache); `preTokens` of a compaction is the most seen before it, and its `postTokens` is the use until a newer usage row. */
 export function claudeObserved(lines: readonly string[]): Observed | null {
     let latest: { tokens: number; model: string | null } | null = null;
     let peak = 0;
     for (const row of rowsOf(lines)) {
-        peak = Math.max(peak, count(obj(row['compactMetadata'])['preTokens']));
+        const compaction = obj(row['compactMetadata']);
+        peak = Math.max(peak, count(compaction['preTokens']));
+        if (count(compaction['postTokens']) > 0) latest = { tokens: count(compaction['postTokens']), model: latest?.model ?? null };
         const message = obj(row['message']);
         const usage = obj(message['usage']);
         const model = str(message['model']);
