@@ -1,6 +1,6 @@
 import { added, lanesOf, put, removed, tabsWithLanes, without } from './board.ts';
-import type { Board, Shape } from './board.ts';
-import type { TabId } from './ids.ts';
+import type { Board, Placement, Shape } from './board.ts';
+import type { PaneId, TabId } from './ids.ts';
 import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
 import { duration, elapsed, instant } from './time.ts';
@@ -17,6 +17,8 @@ export interface Policy {
     readonly reopenLimit: number;
     readonly reopenWindow: Duration;
     readonly giveUpFor: Duration;
+    /** a close that has not taken effect after this long is asked for again, and counts against the tab's reopen budget */
+    readonly closeGrace: Duration;
     /** when non-empty, only these tabs get a column (a staged rollout) */
     readonly onlyTabs: readonly string[];
 }
@@ -27,6 +29,7 @@ export const DEFAULT_POLICY: Policy = {
     reopenLimit: 3,
     reopenWindow: duration(120_000),
     giveUpFor: duration(600_000),
+    closeGrace: duration(30_000),
     onlyTabs: [],
 };
 
@@ -72,17 +75,44 @@ function opened(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
     return [{ ...board, opening }, wanting.map((tab) => ({ kind: 'open-column', tab, shape: shapeFor(board, tab, policy) }))];
 }
 
-/** Close what the board no longer wants — and a column of the wrong shape, so `opened` docks the right one. */
-function closed(board: Board, policy: Policy): [Board, Intent[]] {
-    const unwanted = [...board.columns].filter(([tab, placed]) =>
-        !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0 || placed.shape !== shapeFor(board, tab, policy));
-    const columns = unwanted.reduce((map, [tab]) => without(map, tab), board.columns);
-    return [{ ...board, columns }, unwanted.map(([tab, placed]) => ({ kind: 'close-column', tab, column: placed.pane }))];
+/** Asked to close, and not long enough ago to ask again. */
+export function lingering(board: Board, pane: PaneId, now: Instant, policy: Policy): boolean {
+    const since = board.closing.get(pane);
+    return since !== undefined && elapsed(since, now) < policy.closeGrace;
+}
+
+/** Close what the board no longer wants — and a column of the wrong shape, so `opened` docks the right one once it is gone. */
+function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
+    const flips = (tab: TabId, placed: Placement): boolean => placed.shape !== shapeFor(board, tab, policy) && !isGivenUp(board, tab, now);
+    const gone = (tab: TabId, placed: Placement): boolean => !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0 || flips(tab, placed);
+    const closing = new Map(board.closing);
+    const intents: Intent[] = [];
+    let next = board;
+    for (const [tab, placed] of board.columns) {
+        if (!gone(tab, placed) && isGivenUp(board, tab, now)) {
+            closing.delete(placed.pane);
+        }
+        if (!gone(tab, placed) || lingering(board, placed.pane, now, policy)) {
+            continue;
+        }
+        if (board.closing.has(placed.pane) && flips(tab, placed)) {
+            const [spent, given] = spend(next, tab, now, policy);
+            next = spent;
+            intents.push(...given);
+            if (next.givenUp.has(tab)) {
+                closing.delete(placed.pane);
+                continue;
+            }
+        }
+        closing.set(placed.pane, now);
+        intents.push({ kind: 'close-column', tab, column: placed.pane });
+    }
+    return [{ ...next, closing }, intents];
 }
 
 /** After every observation: open the columns the board lacks, close the ones it no longer wants. */
 export function settle(board: Board, now: Instant, policy: Policy): [Board, readonly Intent[]] {
-    const [afterClose, closing] = closed(board, policy);
+    const [afterClose, closing] = closed(board, now, policy);
     const [afterOpen, opening] = opened(afterClose, now, policy);
     return [afterOpen, [...closing, ...opening]];
 }
