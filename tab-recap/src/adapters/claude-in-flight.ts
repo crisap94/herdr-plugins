@@ -33,13 +33,22 @@ function launched(row: Row, launches: Map<string, Launch>): void {
     }
 }
 
-/** A task notification that ends something; true when the row was a notification at all. */
-function notified(text: string, launches: Map<string, Launch>): boolean {
-    if (!text.trimStart().startsWith('<task-notification>')) return false;
+/** `none`: not a notification; `seen`: a notification that ends nothing, or ends a launch seen; `unseen`: it ends a launch the scan never saw. */
+type Notice = 'none' | 'seen' | 'unseen';
+
+/** A task notification that ends something. */
+function notified(text: string, launches: Map<string, Launch>): Notice {
+    if (!text.trimStart().startsWith('<task-notification>')) return 'none';
     const [task, tool, status] = [tagged(text, 'task-id'), tagged(text, 'tool-use-id'), tagged(text, 'status')];
-    if (status === null || !ENDED.has(status)) return true;
-    for (const [id, launch] of launches) if (id === tool || (task !== null && launch.tasks.has(task))) launches.delete(id);
-    return true;
+    if (status === null || !ENDED.has(status)) return 'seen';
+    let ended = false;
+    for (const [id, launch] of launches) {
+        if (id === tool || (task !== null && launch.tasks.has(task))) {
+            launches.delete(id);
+            ended = true;
+        }
+    }
+    return ended ? 'seen' : 'unseen';
 }
 
 /** A launch's own result: it names the task id, and an agent that did not go to the background has ended with it. */
@@ -55,14 +64,20 @@ function answered(row: Row, launches: Map<string, Launch>): void {
     }
 }
 
-/** Launches with no ending notification after them. A launch the tail cuts off is not seen; a tail with no parsable line is `Unknown`. */
-export function claudeInFlight(lines: readonly string[]): InFlightResult {
+/** Launches with no ending notification after them. A launch the tail cuts off is not seen (the count is what shows), except when
+ * the tail was truncated and ends a launch it never saw: that launch may have begun before the tail, so the answer is unknown. A tail with no parsable line is `Unknown`. */
+export function claudeInFlight(lines: readonly string[], truncated = false): InFlightResult {
     const rows = lines.map((line) => parse(line)).filter((row): row is Row => row !== null);
     if (rows.length === 0 && lines.some((line) => line.trim() !== '')) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
     const launches = new Map<string, Launch>();
+    let unseen = false;
     for (const row of rows) {
         launched(row, launches);
-        if (row['type'] === 'user' && !notified(textOf(obj(row['message'])['content']), launches)) answered(row, launches);
+        if (row['type'] !== 'user') continue;
+        const notice = notified(textOf(obj(row['message'])['content']), launches);
+        if (notice === 'unseen') unseen = true;
+        if (notice === 'none') answered(row, launches);
     }
+    if (truncated && unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
     return { kind: 'in-flight', count: launches.size };
 }

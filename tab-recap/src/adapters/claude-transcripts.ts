@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { readJsonl, tailLines } from './jsonl.ts';
+import { readJsonl, tailLines, tailOf } from './jsonl.ts';
 import { claudeObserved } from './context-rows.ts';
 import { extractClaude } from './claude-rows.ts';
 import { claudeInFlight } from './claude-in-flight.ts';
@@ -60,7 +60,8 @@ export class ClaudeTranscripts implements Transcripts {
 
     inFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
-            return Promise.resolve(claudeInFlight(tailLines(source, budget)));
+            const tail = tailOf(source, budget);
+            return Promise.resolve(claudeInFlight(tail.lines, tail.truncated));
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }

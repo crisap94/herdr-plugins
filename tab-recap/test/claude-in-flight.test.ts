@@ -32,10 +32,22 @@ test('in flight: an async agent is in flight until its notice; a foreground agen
     assert.deepEqual(claudeInFlight([launch('g2', 'Task', {}), done]), { kind: 'in-flight', count: 0 });
 });
 
-test('in flight: a launch the tail cuts is not seen (the count is what shows); a tail that does not parse is unknown', () => {
+test('in flight: a launch the tail cuts is not seen (the count is what shows) when the tail is whole; a tail that does not parse is unknown', () => {
     assert.deepEqual(claudeInFlight(['{"type":"assistant","mes', notice('b0', 'gone', 'completed'), shell('t3'), started('t3', 'b3')]), { kind: 'in-flight', count: 1 });
     assert.deepEqual(claudeInFlight([]), { kind: 'in-flight', count: 0 });
     assert.equal(claudeInFlight(['not json', '{broken']).kind, 'unknown');
+});
+
+test('in flight: a truncated tail whose notice ends a launch it never saw is unknown (the launch may lie before the tail); the same tail untruncated counts', () => {
+    const cut = ['{"type":"assistant","mes', notice('b0', 'gone', 'completed'), shell('t3'), started('t3', 'b3')];
+    assert.deepEqual(claudeInFlight(cut, false), { kind: 'in-flight', count: 1 });
+    assert.equal(claudeInFlight(cut, true).kind, 'unknown');
+    assert.deepEqual(claudeInFlight([notice('b0', null, 'completed')], true).kind, 'unknown', 'a notice with no launch at all');
+});
+
+test('in flight: a truncated tail whose notices all end launches it saw, or end nothing, is still counted', () => {
+    assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), notice('b1', 't1', 'completed'), shell('t2'), started('t2', 'b2')], true), { kind: 'in-flight', count: 1 });
+    assert.deepEqual(claudeInFlight([launch('t2', 'Monitor', {}), started('t2', 'm1'), line({ type: 'user', message: { content: '<task-notification>\n<task-id>m1</task-id>\n<summary>event</summary>\n</task-notification>' } })], true), { kind: 'in-flight', count: 1 });
 });
 
 test('in flight: a sidechain launch and a quoted notice in an assistant row do not count', () => {
