@@ -43,12 +43,12 @@ test('the run that follows a boundary belongs to the new chapter; the one before
     assert.deepEqual(rows(store.db, 'SELECT c.n FROM run r JOIN chapter c ON c.id = r.chapter_id ORDER BY r.id'), [{ n: 1 }, { n: 2 }]);
 });
 
-test('the plugin compacted: the boundary is manual and the record points at it; one confirmed after the boundary was recorded is linked at the next read', () => {
+test('the plugin compacted: the boundary is plugin and the record points at it; one confirmed after the boundary was recorded is linked at the next read', () => {
     const store = memoryStore();
     seedTab(store);
     compaction(store.db, T0 + 1 * MIN);
     store.records.recordRun(run({ at: T0 + 3 * MIN, marks: [claude(T0 + 2 * MIN)] }));
-    assert.deepEqual(rows(store.db, 'SELECT b.trigger, c.stage, c.boundary_id = b.id AS linked FROM boundary b JOIN compaction c ON c.boundary_id = b.id'), [{ trigger: 'manual', stage: 'compacted', linked: 1 }]);
+    assert.deepEqual(rows(store.db, 'SELECT b.trigger, c.stage, c.boundary_id = b.id AS linked FROM boundary b JOIN compaction c ON c.boundary_id = b.id'), [{ trigger: 'plugin', stage: 'compacted', linked: 1 }]);
     const late = memoryStore();
     seedTab(late);
     compaction(late.db, T0 + 1 * MIN, 'compacting');
@@ -59,9 +59,9 @@ test('the plugin compacted: the boundary is manual and the record points at it; 
     assert.equal(rows(late.db, 'SELECT boundary_id FROM compaction')[0]?.['boundary_id'] !== null, true, 'linked once confirmed');
 });
 
-test('the trigger rule: a compaction started within ten minutes before the mark makes it manual; later, longer ago or skipped makes it auto', () => {
+test('the trigger rule: a compaction started within ten minutes before the mark makes it plugin; later, longer ago or skipped makes it auto', () => {
     const cases: readonly [string, number, string, string][] = [
-        ['9 minutes before', -9 * MIN, 'compacted', 'manual'], ['11 minutes before', -11 * MIN, 'compacted', 'auto'],
+        ['9 minutes before', -9 * MIN, 'compacted', 'plugin'], ['11 minutes before', -11 * MIN, 'compacted', 'auto'],
         ['after the mark', MIN, 'compacted', 'auto'], ['skipped (the agent was busy)', -1 * MIN, 'skipped', 'auto'],
     ];
     for (const [name, delta, stage, want] of cases) {
@@ -74,7 +74,18 @@ test('the trigger rule: a compaction started within ten minutes before the mark 
     }
 });
 
-test('a compaction of another pane never makes a boundary manual', () => {
+test('with no compaction of the plugin\'s, the boundary takes the agent\'s own word (manual or auto), else auto; the plugin\'s beats it', () => {
+    for (const [own, asked, want] of [['manual', false, 'manual'], ['auto', false, 'auto'], [undefined, false, 'auto'], ['manual', true, 'plugin']] as const) {
+        const store = memoryStore();
+        seedTab(store);
+        const at = T0 + 30 * MIN;
+        if (asked) compaction(store.db, at - MIN, 'compacted');
+        store.records.recordRun(run({ at: at + 1000, marks: [claude(at, own === undefined ? {} : { trigger: own })] }));
+        assert.equal(must(rows(store.db, 'SELECT trigger FROM boundary')[0])['trigger'], want, `${own} ${asked}`);
+    }
+});
+
+test('a compaction of another pane never makes a boundary plugin', () => {
     const store = memoryStore();
     seedTab(store);
     compaction(store.db, T0 + MIN, 'compacted', 'w1:p9');
@@ -132,7 +143,7 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     compaction(store.db, T0 + MIN);
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
     store.records.recordRun(run({ at: T0 + 3 * MIN, marks: [{ pane: 'w1:p1', at: T0 + 2 * MIN, cursor: 200 }] }));
-    assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'manual', tokensBefore: 39_000, tokensAfter: 3000, tookMs: 16_000 }]);
+    assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: 3000, tookMs: 16_000 }]);
     assert.equal(store.boundaries.lastBreakAt('w1:t1', 'w1:p1'), T0 + 2 * MIN);
     assert.equal(store.boundaries.lastBreakAt('w1:t1', 'w1:p2'), null);
     assert.deepEqual([memoryStore().boundaries.breaksOf('w9:t9'), memoryStore().boundaries.chapterCount('w9:t9')], [[], 0]);

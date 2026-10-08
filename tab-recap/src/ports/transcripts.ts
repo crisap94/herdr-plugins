@@ -46,6 +46,8 @@ export interface Mark {
     readonly tokensBefore?: number;
     readonly tokensAfter?: number;
     readonly tookMs?: number;
+    /** the agent's own word for what started it, when the record says one (Claude's `compactMetadata.trigger`) */
+    readonly trigger?: 'auto' | 'manual';
 }
 
 export interface Chunk {

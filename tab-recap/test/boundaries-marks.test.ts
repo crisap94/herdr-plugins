@@ -13,14 +13,14 @@ const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
 });
 
 // the marks as the readers return them (recorded from real sessions; the readers' own tests assert these exact values)
-const CLAUDE: Mark = { kind: 'compacted', at: AT, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588 };
+const CLAUDE: Mark = { kind: 'compacted', at: AT, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' };
 const CODEX: Mark = { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17_133, tokensAfter: 4617 };
 const OPENCODE: Mark = { kind: 'compacted', at: 1_790_000_009_000, tokensBefore: 1020, tookMs: 7000 };
 
 test('each agent\'s own mark becomes one candidate with its time, tokens and the read\'s end cursor; a failed summarizer is none', () => {
     const found = marksOf([read([CLAUDE, { kind: 'compaction-failed', at: AT }]), read([CODEX], 'w1:p2'), read([OPENCODE], 'w1:p3')], 5, true);
     assert.deepEqual(found, [
-        { pane: 'w1:p1', at: AT, cursor: 900, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588 },
+        { pane: 'w1:p1', at: AT, cursor: 900, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' },
         { pane: 'w1:p2', at: CODEX.at, cursor: 900, tokensBefore: 17_133, tokensAfter: 4617 },
         { pane: 'w1:p3', at: OPENCODE.at, cursor: 900, tokensBefore: 1020, tookMs: 7000 },
     ]);
@@ -36,12 +36,21 @@ test('a record without a time is dated by the read, but only when the read moves
     assert.deepEqual(marksOf([undated], 777, false), []);
 });
 
-test('triggerOf: manual from the start of the plugin\'s compaction up to ten minutes after it', () => {
+test('triggerOf: plugin from the start of the plugin\'s compaction up to ten minutes after it; else the agent\'s word; else auto', () => {
     const asked = [AT - 600_000];
-    assert.equal(triggerOf(AT, asked), 'manual');
-    assert.equal(triggerOf(AT + 1, asked), 'auto');
-    assert.equal(triggerOf(AT, [AT + 1]), 'auto');
-    assert.equal(triggerOf(AT, []), 'auto');
+    assert.equal(triggerOf(AT, asked, null), 'plugin');
+    assert.equal(triggerOf(AT, asked, 'manual'), 'plugin', 'the plugin\'s own beats the agent\'s word');
+    assert.equal(triggerOf(AT + 1, asked, null), 'auto');
+    assert.equal(triggerOf(AT, [AT + 1], null), 'auto');
+    assert.equal(triggerOf(AT, [], null), 'auto');
+    assert.equal(triggerOf(AT, [], 'manual'), 'manual', 'the operator typed /compact in the agent');
+    assert.equal(triggerOf(AT, [], 'auto'), 'auto');
+});
+
+test('compactedFrom plans each mark with its trigger: plugin, the agent\'s own word, or auto', () => {
+    const marks = [{ pane: 'p', at: AT, cursor: 1, trigger: 'manual' as const }, { pane: 'p', at: AT + 5, cursor: 1 }, { pane: 'p', at: AT + 10, cursor: 1, trigger: 'auto' as const }];
+    assert.deepEqual(compactedFrom(marks, null, []).map((each) => each.trigger), ['manual', 'auto', 'auto']);
+    assert.deepEqual(compactedFrom(marks, null, [AT - 1]).map((each) => each.trigger), ['plugin', 'plugin', 'plugin']);
 });
 
 test('compactedFrom keeps the marks newer than the last boundary, oldest first', () => {

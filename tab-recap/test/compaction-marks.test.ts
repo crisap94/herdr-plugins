@@ -13,7 +13,11 @@ import { opencodeFixture } from '#test/opencode-fixture.ts';
 const linesOf = (name: string): string[] => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8').split('\n').filter((line) => line !== '');
 
 test('claude: compact_boundary carries what compactMetadata says (rows recorded from a real /compact, private text replaced)', () => {
-    assert.deepEqual(extractClaude(linesOf('claude-compact-boundary.jsonl')).marks, [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]);
+    assert.deepEqual(extractClaude(linesOf('claude-compact-boundary.jsonl')).marks, [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, trigger: 'manual' }]);
+});
+
+test('claude: compactMetadata.trigger is the agent\'s own word; anything but manual or auto is left out', () => {
+    assert.deepEqual(extractClaude([boundary({ trigger: 'auto' }), boundary({ trigger: 'scheduled' })]).marks?.map((mark) => mark.trigger), ['auto', undefined]);
 });
 
 const boundary = (metadata: object | undefined): string => JSON.stringify({ type: 'system', subtype: 'compact_boundary', timestamp: '2026-10-07T16:38:09.490Z', ...(metadata === undefined ? {} : { compactMetadata: metadata }) });

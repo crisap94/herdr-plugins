@@ -20,9 +20,9 @@ runs before the decider's default is fixed.
   Monitor starts without a matching `<task-notification>` end; other readers `unknown`. Verify: tests for a
   launch without an end (in flight), with a completed end, with a killed end, and a tail that cuts the
   launch (unknown). — test/claude-in-flight.test.ts: none ended (1), completed/failed/killed/stopped (0), two launches one ended (1), cut tail, unparsable → unknown.
-- [ ] 2.3 Boundary trigger `plugin | manual | auto` (Claude `compactMetadata.trigger`). Migration 010 part 1
+- [x] 2.3 Boundary trigger `plugin | manual | auto` (Claude `compactMetadata.trigger`). Migration 010 part 1
   rebuilds `boundary` with the new CHECK and maps stored `manual` to `plugin`. Verify: migration test from the
-  oldest fixture through every migration; `boundary.ts` goldens for each trigger.
+  oldest fixture through every migration; `boundary.ts` goldens for each trigger. — test/db/migrate-autocompact.test.ts (v9 → latest), test/boundaries-marks.test.ts goldens per trigger, test/db/boundaries.test.ts.
 - [ ] 2.4 Log the recap run's duration and cause. Verify: dispatch test reads the log line.
 
 ## 3. EXP-002: corpus and experiment (design decision 9)
@@ -62,6 +62,7 @@ runs before the decider's default is fixed.
   Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds).
 - [ ] 5.4 Migration 010 part 2: `autocompact_decision`, `compaction.origin`; `ports/autocompact-records.ts`
   and the db adapter. Verify: repository round-trip; migration test.
+  Schema part done in migration 010 (2.3): `autocompact_decision`, `compaction.origin`, the views and the migration test; the port, adapter and repository round-trip remain.
 - [ ] 5.5 `application/autocompact.ts` (one consideration per pane at a time; recap first for a lane with no
   ledger; shadow and on; outage logged once), wired in `dispatch.ts` and `daemon/main.ts`; `origin` through
   `requests` and `compaction.ts`. Verify: service tests with fakes for shadow (records, no request), on (one
