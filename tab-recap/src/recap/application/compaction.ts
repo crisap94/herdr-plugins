@@ -91,11 +91,12 @@ export class Compaction {
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
-    /** The brief, and for an automatic compaction its check against the facts (`decision` is told the coverage, and that it waits when the brief still misses). */
-    private async verified(lane: Lane, tab: string, material: Material, decision: string | null): Promise<Checked> {
+    /** The brief, and for an automatic compaction its check against the facts; the decision it answers is told the coverage, and that it waits (with why) when the brief cannot go ahead. The operator's is not checked. */
+    private async verified(lane: Lane, tab: string, material: Material, auto: boolean, decision: string | null): Promise<Checked> {
         const first = await this.briefOf(lane, tab, material);
-        const checked = decision === null ? { brief: first, coverage: null, waited: false } : await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction));
-        if (checked.coverage !== null) this.deps.decisions?.amend(decision ?? '', checked.coverage, checked.waited);
+        if (!auto) return { brief: first, coverage: null, waited: false, why: null };
+        const checked = await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction));
+        if (decision !== null) this.deps.decisions?.amend(decision, checked.coverage, checked.waited, checked.why);
         return checked;
     }
 
@@ -115,7 +116,7 @@ export class Compaction {
         const beginning = writing ? compaction.writing(agent) : compaction.started(agent);
         await this.tell(said(compaction.title(agent)), said(beginning));
         const material = this.materialOf(tab, pane, request.note);
-        const checked = await this.verified(lane, tab, material, this.decisionFor(auto, tab, pane, id));
+        const checked = await this.verified(lane, tab, material, auto, this.decisionFor(auto, tab, pane, id));
         if (checked.waited) {
             trail.end('skipped', { why: 'coverage' });
             await this.tell(said(compaction.title(agent)), compaction.coverageMissed(agent));

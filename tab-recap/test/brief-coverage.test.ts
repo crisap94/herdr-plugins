@@ -60,7 +60,8 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 
 interface World { readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
-function flow(checks: readonly Coverage[], withCoverage = true): { world: World; compaction: Compaction } {
+/** `template` makes the brief job give no text (the template is used, and `why` says why). */
+function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null): { world: World; compaction: Compaction } {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const world: World = { typed: [], briefs: [], toasts: [], store };
@@ -71,7 +72,7 @@ function flow(checks: readonly Coverage[], withCoverage = true): { world: World;
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => HISTORY }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
-        brief: { enabled: () => true, job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve({ text: correction === undefined ? 'first brief' : 'second brief', why: null }); } },
+        brief: { enabled: () => true, job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: correction === undefined ? 'first brief' : 'second brief', why: null } : { text: null, why: template.why }); } },
         coverage: () => (withCoverage ? { check: () => Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])) } : null),
         decisions: store.autocompact,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => NOW,
@@ -120,7 +121,7 @@ test('still missing after the rewrite: nothing is typed, the record is skipped w
     assert.deepEqual([record?.stage, record?.why, record?.origin], ['skipped', 'coverage', 'auto']);
     const [row] = world.store.autocompact.newest(1);
     assert.deepEqual([row?.verdict, row?.gate, row?.compactionId], ['wait', 'coverage', record?.id]);
-    assert.equal(world.store.autocompact.lastWaitAt('w1:t1', 'w1:p1'), NOW - 1000);
+    assert.equal(world.store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), NOW - 1000);
 });
 
 test('a decider that cannot be reached leaves the brief unchecked: no rewrite, no typing, a coverage wait', async () => {
@@ -137,8 +138,27 @@ test('the operator\'s compaction runs no coverage and records the operator as it
     assert.deepEqual([operator.world.typed.length, operator.world.briefs.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 1, 'operator']);
 });
 
-test('an automatic compaction with no decider goes ahead unchecked', async () => {
+test('an automatic compaction with no decider fails closed: nothing typed, the decision waits for coverage with the reason', async () => {
     const unchecked = flow([MISSING], false);
+    decided(unchecked.world);
     await unchecked.compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
-    assert.deepEqual([unchecked.world.typed.length, unchecked.world.briefs.length], [1, 1]);
+    assert.deepEqual([unchecked.world.typed.length, unchecked.world.briefs.length], [0, 1]);
+    assert.equal(unchecked.world.store.compactions.shownFor('w1:t1')[0]?.stage, 'skipped');
+    const [row] = unchecked.world.store.autocompact.newest(1);
+    assert.deepEqual([row?.verdict, row?.gate, row?.why, row?.coverage], ['wait', 'coverage', 'no decider is set up', null]);
+});
+
+test('an automatic compaction whose brief is the template (no brief written) fails closed: nothing typed, the decision waits with the brief\'s reason', async () => {
+    const template = flow([OK], true, { why: 'the brief job is off' });
+    decided(template.world);
+    await template.compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.deepEqual([template.world.typed.length, template.world.briefs.length], [0, 1], 'the template is not typed for an automatic compaction');
+    const [row] = template.world.store.autocompact.newest(1);
+    assert.deepEqual([row?.verdict, row?.gate, row?.why], ['wait', 'coverage', 'the brief job is off']);
+});
+
+test('the operator\'s template compaction is typed as before, unchecked, with the operator as origin', async () => {
+    const operator = flow([MISSING], true, { why: 'the brief job is off' });
+    await operator.compaction.run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual([operator.world.typed.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 'operator']);
 });
