@@ -19,7 +19,7 @@ runs before the decider's default is fixed.
 - [x] 2.2 `Transcripts.inFlight?` and the Claude implementation: background shells, Agent/Task launches and
   Monitor starts without a matching `<task-notification>` end; other readers `unknown`. Verify: tests for a
   launch without an end (in flight), with a completed end, with a killed end, and a tail that cuts the
-  launch (unknown). — test/claude-in-flight.test.ts: none ended (1), completed/failed/killed/stopped (0), two launches one ended (1), cut tail, unparsable → unknown.
+  launch (unknown). — test/claude-in-flight.test.ts: none ended (1), completed/failed/killed/stopped (0), two launches one ended (1), cut tail, unparsable → unknown. (review fixes: a truncated tail whose notice ends an unseen launch is unknown, untruncated still counts — test/claude-in-flight.test.ts "truncated tail".)
 - [x] 2.3 Boundary trigger `plugin | manual | auto` (Claude `compactMetadata.trigger`). Migration 010 part 1
   rebuilds `boundary` with the new CHECK and maps stored `manual` to `plugin`. Verify: migration test from the
   oldest fixture through every migration; `boundary.ts` goldens for each trigger. — test/db/migrate-autocompact.test.ts (v9 → latest), test/boundaries-marks.test.ts goldens per trigger, test/db/boundaries.test.ts.
@@ -49,7 +49,7 @@ runs before the decider's default is fixed.
   harness: valid, a missing id, out of range, prose, fenced JSON. — test/harness-decider.test.ts: valid, fenced, missing id, out of range, prose, array, null.
 - [x] 4.4 Config: `TAB_RECAP_AUTOCOMPACT`, `_AT`, `_CEILING`, `_COOLDOWN_MS`, `_KINDS`, `_BY`, `_MODEL`,
   `_EFFORT`, `TAB_RECAP_JEV_URL`, `TAB_RECAP_JEV_MODEL`. Verify: config tests for defaults, bounds and a
-  ceiling not above the soft limit. — test/autocompact-config.test.ts: defaults, bounds, ceiling not above soft, Jev settings, deciderFor.
+  ceiling not above the soft limit. — test/autocompact-config.test.ts: defaults, bounds, ceiling not above soft, Jev settings, deciderFor. (review fixes: Jev URL https or loopback http only — "the Jev URL" test.)
 
 ## 5. Gates, questions, coverage, records (design decisions 1–4, 6, 7, 10)
 
@@ -59,7 +59,7 @@ runs before the decider's default is fixed.
   question) plus `test/fixtures/autocompact/<question>/{yes,no}.json` from the corpus. Verify: the state
   holds no field that no question names; every question has both fixtures. — test/autocompact-state.test.ts: state fields, six questions, a yes/no fixture each, every field named.
 - [x] 5.3 `application/brief-coverage.ts`: fact enumeration, per-fact questions, one rewrite, then `wait`.
-  Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds). — test/brief-coverage.test.ts: missing decision reason (rewrite, then wait), next missing proceeds, operator unchanged, auto record origin, decision linked.
+  Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds). — test/brief-coverage.test.ts: missing decision reason (rewrite, then wait), next missing proceeds, operator unchanged, auto record origin, decision linked. (review fixes: auto fails closed with no decider, the template, or an unanswering decider — "fails closed" tests; the operator's stays unchecked.)
 - [x] 5.4 Migration 010 part 2: `autocompact_decision`, `compaction.origin`; `ports/autocompact-records.ts`
   and the db adapter. Verify: repository round-trip; migration test.
   Schema part done in migration 010 (2.3): `autocompact_decision`, `compaction.origin`, the views and the migration test; the port, adapter and repository round-trip remain. — test/db/autocompact-records.test.ts round-trip, newest, link, lastWaitAt, countsFor, costSince, cascade; migration test from part 1.
@@ -67,16 +67,16 @@ runs before the decider's default is fixed.
   ledger; shadow and on; outage logged once), wired in `dispatch.ts` and `daemon/main.ts`; `origin` through
   `requests` and `compaction.ts`. Verify: service tests with fakes for shadow (records, no request), on (one
   request), cooldown, ceiling (no decider call), in flight (no decision), outage (one log line); the
-  `recap-prompt-boundary` lint still passes. — test/autocompact.test.ts (shadow, on, cooldown, ceiling, in flight, outage x3 = one line, record-only, recap first, dispatch hook) + test/brief-coverage.test.ts (rewrite then skipped); recap-prompt-boundary lint green.
+  `recap-prompt-boundary` lint still passes. — test/autocompact.test.ts (shadow, on, cooldown, ceiling, in flight, outage x3 = one line, record-only, recap first, dispatch hook) + test/brief-coverage.test.ts (rewrite then skipped); recap-prompt-boundary lint green. (review fixes: a request still unbegun at 70 s keeps the lane busy, shadow's cooldown after any decision, in-flight read only when asked — test/autocompact.test.ts.)
 
 ## 6. Settings, listing, docs
 
 - [x] 6.1 Settings modal rows for the autocompact mode and the soft limit, with en and es hints; the decider
   as a job row. Verify: setup-view and setup-keys tests save the right keys; the key is never a row. — test/setup-keys.test.ts + test/setup-view.test.ts: three new rows (after the curator), saved keys, locks, hints en/es, jev among the choices, no JEV/TYPESAFE key ever written.
 - [x] 6.2 `tab-recap autocompact [--all]` (read-only listing, 24 h cost) and the session facts line;
-  `(auto)` in the toast. Verify: cli-arguments and render goldens. — test/cli-arguments.test.ts (3 rows newest first, usage error, empty), test/autocompact-listing.test.ts, test/session-facts.test.ts (en/es line).
+  `(auto)` in the toast. Verify: cli-arguments and render goldens. — test/cli-arguments.test.ts (3 rows newest first, usage error, empty), test/autocompact-listing.test.ts, test/session-facts.test.ts (en/es line). (review fixes: compactions counted by origin — "compactions by origin" test.)
 - [x] 6.3 README (root and `tab-recap/README.md`) and `config.example.env`: what autocompact does, shadow
-  first, the decider choices, where the key is read from, cost. Verify: docs updated, no private names. — Autocompact sections in both READMEs, config rows and settings table, config.example.env keys; no private names (grep clean).
+  first, the decider choices, where the key is read from, cost. Verify: docs updated, no private names. — Autocompact sections in both READMEs, config rows and settings table, config.example.env keys; no private names (grep clean). (review fixes: the jev data-sharing sentence in both READMEs and config.example.env.)
 
 ## 7. Integration (before merge)
 
