@@ -75,6 +75,9 @@ export type PromptResult = { readonly kind: 'prompt'; readonly text: string | nu
 /** How full the agent's context is, from its own records; `observed` is null when they say nothing yet. */
 export type ObservedResult = { readonly kind: 'observed'; readonly observed: Observed | null } | Unknown;
 
+/** Work a free agent started and has not ended (background shells, launched agents, monitors); `count` is what the records show. */
+export type InFlightResult = { readonly kind: 'in-flight'; readonly count: number } | Unknown;
+
 /** One adapter per kind of agent (`*`: any agent without a store of its own); each knows where its history lives and how to read it. */
 export interface Transcripts {
     readonly agent: string;
@@ -85,4 +88,6 @@ export interface Transcripts {
     latestPrompt(source: string, budget: number): Promise<PromptResult>;
     /** Tokens in use now and what the records say about the window, from at most `budget` bytes at the end of `source`. Moves no position. */
     observed?(source: string, budget: number): Promise<ObservedResult>;
+    /** Work started and not ended, from at most `budget` bytes at the end of `source`. A reader that cannot tell leaves it out. Moves no position. */
+    inFlight?(source: string, budget: number): Promise<InFlightResult>;
 }
