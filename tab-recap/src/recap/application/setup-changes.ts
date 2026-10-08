@@ -1,7 +1,7 @@
 // What the modal writes: the lock table (row -> environment variables) and the config.env entries a draft changes.
 // A new setup row adds its lock keys and its entry here.
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
-import type { FieldId, Locks, Setup } from './setup-state.ts';
+import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
@@ -24,6 +24,11 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     compactTarget: ['TAB_RECAP_COMPACT_TARGET'],
     compactHint: ['TAB_RECAP_COMPACT_HINT'],
     contextWindow: ['TAB_RECAP_CONTEXT_WINDOW'],
+    autocompact: ['TAB_RECAP_AUTOCOMPACT'],
+    autocompactAt: ['TAB_RECAP_AUTOCOMPACT_AT'],
+    decideBy: ['TAB_RECAP_AUTOCOMPACT_BY'],
+    decideModel: ['TAB_RECAP_AUTOCOMPACT_MODEL'],
+    decideEffort: ['TAB_RECAP_AUTOCOMPACT_EFFORT'],
 };
 
 /** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
@@ -38,37 +43,32 @@ export function locksOf(env: Readonly<Record<string, string | undefined>>): Lock
     return locks;
 }
 
+type Entry = readonly [FieldId, string, string];
+
+/** A job's three entries. */
+const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: string }): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
+
+
+/** Every config.env entry a draft holds, by the row it belongs to (the recap writer's models, one per harness). */
+function entriesOf(draft: Draft): readonly Entry[] {
+    return [
+        ['harness', 'TAB_RECAP_BACKEND', draft.backend],
+        ...BACKEND_IDS.map((id): readonly [FieldId, string, string] => ['model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id]]),
+        ['locale', 'TAB_RECAP_LOCALE', draft.locale], ['recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage], ['screenAgents', 'TAB_RECAP_SCREEN_AGENTS', draft.screenAgents],
+        ['gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote], ['effort', 'TAB_RECAP_EFFORT', draft.effort], ['compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget],
+        ['compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint], ['contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow],
+        ['autocompact', 'TAB_RECAP_AUTOCOMPACT', draft.autocompact], ['autocompactAt', 'TAB_RECAP_AUTOCOMPACT_AT', draft.autocompactAt],
+        ...jobs('compactBy', 'compactModel', 'compactEffort', 'TAB_RECAP_COMPACT', draft.compact),
+        ...jobs('judgeBy', 'judgeModel', 'judgeEffort', 'TAB_RECAP_JUDGE', draft.judge),
+        ...jobs('curateBy', 'curateModel', 'curateEffort', 'TAB_RECAP_CURATE', draft.curate),
+        ...jobs('decideBy', 'decideModel', 'decideEffort', 'TAB_RECAP_AUTOCOMPACT', draft.decide),
+    ];
+}
+
 /** The config.env entries that differ from what is stored; a locked row is never written. */
 export function changes(state: Setup): ReadonlyMap<string, string> {
-    const { draft, stored, locks } = state;
-    const out = new Map<string, string>();
-    const set = (row: FieldId, key: string, now: string, was: string): void => {
-        if (now !== was && locks[row] === undefined) {
-            out.set(key, now);
-        }
-    };
-    set('harness', 'TAB_RECAP_BACKEND', draft.backend, stored.backend);
-    for (const id of BACKEND_IDS) {
-        set('model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id], stored.models[id]);
-    }
-    set('locale', 'TAB_RECAP_LOCALE', draft.locale, stored.locale);
-    set('recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage, stored.recapLanguage);
-    set('screenAgents', 'TAB_RECAP_SCREEN_AGENTS', draft.screenAgents, stored.screenAgents);
-    set('gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote, stored.gitNote);
-    set('effort', 'TAB_RECAP_EFFORT', draft.effort, stored.effort);
-    set('compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget, stored.compactTarget);
-    set('compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint, stored.compactHint);
-    set('compactBy', 'TAB_RECAP_COMPACT_BY', draft.compact.by, stored.compact.by);
-    set('compactModel', 'TAB_RECAP_COMPACT_MODEL', draft.compact.model, stored.compact.model);
-    set('compactEffort', 'TAB_RECAP_COMPACT_EFFORT', draft.compact.effort, stored.compact.effort);
-    set('judgeBy', 'TAB_RECAP_JUDGE_BY', draft.judge.by, stored.judge.by);
-    set('judgeModel', 'TAB_RECAP_JUDGE_MODEL', draft.judge.model, stored.judge.model);
-    set('judgeEffort', 'TAB_RECAP_JUDGE_EFFORT', draft.judge.effort, stored.judge.effort);
-    set('curateBy', 'TAB_RECAP_CURATE_BY', draft.curate.by, stored.curate.by);
-    set('curateModel', 'TAB_RECAP_CURATE_MODEL', draft.curate.model, stored.curate.model);
-    set('curateEffort', 'TAB_RECAP_CURATE_EFFORT', draft.curate.effort, stored.curate.effort);
-    set('contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow, stored.contextWindow);
-    return out;
+    const was = new Map(entriesOf(state.stored).map(([, key, value]) => [key, value]));
+    return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [string, string][] => (now !== was.get(key) && state.locks[row] === undefined ? [[key, now]] : [])));
 }
 
 export const dirty = (state: Setup): boolean => changes(state).size > 0;

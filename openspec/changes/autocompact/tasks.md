@@ -71,8 +71,8 @@ runs before the decider's default is fixed.
 
 ## 6. Settings, listing, docs
 
-- [ ] 6.1 Settings modal rows for the autocompact mode and the soft limit, with en and es hints; the decider
-  as a job row. Verify: setup-view and setup-keys tests save the right keys; the key is never a row.
+- [x] 6.1 Settings modal rows for the autocompact mode and the soft limit, with en and es hints; the decider
+  as a job row. Verify: setup-view and setup-keys tests save the right keys; the key is never a row. — test/setup-keys.test.ts + test/setup-view.test.ts: three new rows (after the curator), saved keys, locks, hints en/es, jev among the choices, no JEV/TYPESAFE key ever written.
 - [ ] 6.2 `tab-recap autocompact [--all]` (read-only listing, 24 h cost) and the session facts line;
   `(auto)` in the toast. Verify: cli-arguments and render goldens.
 - [ ] 6.3 README (root and `tab-recap/README.md`) and `config.example.env`: what autocompact does, shadow

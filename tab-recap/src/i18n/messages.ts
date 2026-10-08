@@ -1,4 +1,4 @@
-import type { JobBy } from '#src/recap/domain/job.ts';
+import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 
@@ -38,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -56,10 +56,17 @@ export interface Messages {
         readonly compactHintOff: string;
         /** the heading over the job rows */
         readonly modelsHeading: string;
-        readonly jobBy: Readonly<Record<JobBy, string>>;
-        readonly jobByChoices: Readonly<Record<JobBy, string>>;
+        readonly jobBy: Readonly<Record<DeciderBy, string>>;
+        readonly jobByChoices: Readonly<Record<DeciderBy, string>>;
         readonly compactModelSame: string;
         readonly compactJobHint: string;
+        /** autocompact: the mode's words, and the hints of its three rows */
+        readonly autocompactChoices: { readonly off: string; readonly shadow: string; readonly on: string };
+        readonly autocompactHint: string;
+        readonly autocompactAtHint: string;
+        readonly autocompactJobHint: string;
+        /** the `off` choice of the decider's harness list */
+        readonly deciderOff: string;
         readonly judgeJobHint: string;
         readonly judgeOffChoice: string;
         readonly curateJobHint: string;

@@ -31,6 +31,7 @@ const states: readonly [string, Setup][] = [
     ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
     ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
     ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
+    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 13 }, () => 'j'), '\r'])],
     ['save failed', { ...withAvailable(base, ['claude']), note: { failed: 'EACCES: permission denied, open config.env' } }],
 ];
 
@@ -155,4 +156,17 @@ test('the judge row closes the Models group: harness · model · effort in both 
         assert.ok(setupView(typed(at, ['\r']), messages, 100, plain).join('\n').includes(off));
     }
     assert.doesNotMatch(setupView(withAvailable(base, ['claude']), en, 100, plain).join('\n'), /scores stored recaps/, 'the hint shows only while the row is focused');
+});
+
+test('the autocompact rows show their value, the focused one its hint, and the decider offers jev without a key', () => {
+    const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 11 }, () => 'j'));
+    const text = setupView(rows, en, 120).join('\n');
+    assert.match(text, /Autocompact\s+shadow — decides and records, never compacts/);
+    assert.match(text, /Autocompact at\s+40%/);
+    assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
+    assert.match(text, /compacts an idle agent by itself/);
+    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 13 }, () => 'j'), '\r']), en, 140).join('\n');
+    assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
+    assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
+    assert.match(setupView(rows, es, 120).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);
 });
