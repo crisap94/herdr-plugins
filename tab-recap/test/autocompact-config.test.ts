@@ -8,7 +8,7 @@ import { HarnessDecider } from '#src/adapters/harness-decider.ts';
 import { JevDecider } from '#src/adapters/jev-decider.ts';
 import { ceilingOf, cooldownOf, jevOf, kindsOf, modeOf, policyOf, softOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
-import { deciderFor } from '#src/daemon/backends.ts';
+import { deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];

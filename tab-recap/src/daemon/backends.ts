@@ -1,46 +1,26 @@
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
-import { CodexHarness } from '#src/adapters/codex-harness.ts';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
-import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
 import { HarnessBrief } from '#src/adapters/harness-brief.ts';
 import { HarnessJudge } from '#src/adapters/harness-judge.ts';
 import { HarnessCurator } from '#src/adapters/harness-curator.ts';
 import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
-import { HarnessDecider } from '#src/adapters/harness-decider.ts';
-import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { jevKey } from '#src/adapters/jev-key.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Harness } from '#src/ports/harness.ts';
 import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
-import { configGetter, loadConfig } from './config.ts';
+import { deciderFor } from './deciders.ts';
+import { loadConfig } from './config.ts';
+import { MAKERS } from './harness-makers.ts';
 import { pick } from '#src/recap/domain/backend.ts';
-import type { BackendId } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import type { Config } from './config.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
-
-type Make = (config: Config, work: string) => Harness;
-
-const MAKERS: Readonly<Record<BackendId, Make>> = {
-    claude: (config, work) => new ClaudeHarness(work, config.timeoutMs),
-    codex: (config, work) => new CodexHarness(work, config.timeoutMs),
-    opencode: (config, work) => new OpencodeHarness(work, config.timeoutMs),
-    hermes: (config, work) => new HermesHarness(work, config.timeoutMs),
-    custom: (config, work) => new CustomHarness(config.customCommand, work, config.timeoutMs),
-};
 
 /** Herdr's list and the PATH must both say yes; when herdr cannot be asked, the PATH alone decides. */
 export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
@@ -87,20 +67,6 @@ export function judgeFor(config: Config, available: readonly string[], work: str
 export function curatorFor(config: Config, available: readonly string[], work: string): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
-}
-
-const readKeyFile = (path: string): string | null => {
-    try { return readFileSync(path, 'utf8'); } catch { return null; }
-};
-
-/** The decider: the TypeSafe API for `jev`, else the job's placement on a harness; null when the job is off or no harness is there. */
-export function deciderFor(config: Config, available: readonly string[], work: string): Decider | null {
-    const { by } = config.decider;
-    if (by === 'jev') {
-        return new JevDecider({ url: config.jev.url, model: config.jev.model, key: () => jevKey(configGetter(), readKeyFile, homedir()) });
-    }
-    const placed = placementOf({ ...config.decider, by }, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessDecider(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
 }
 
 /**
