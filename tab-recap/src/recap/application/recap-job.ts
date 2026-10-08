@@ -6,7 +6,7 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
-import type { LaneCursor, RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
+import type { LaneCursor, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
@@ -215,10 +215,15 @@ export class RecapJob {
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
             return;
         }
-        const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
-        const marks = marksOf(readings, facts.at, true);
-        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, marks, ...input });
         this.deps.log(`recap ${prior.tab}: written in ${took}`);
-        this.deps.ran?.({ tab: prior.tab, turns: parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0 });
+        this.written({ ...facts, language: language.want, error: note, lanes: advanced }, { tasks, request, asked, readings, parts });
+    }
+
+    /** The run's recap is stored and the curator told. */
+    private written(base: Omit<RecordedRun, 'tasks' | 'ops' | 'marks' | 'input' | 'gateStats'>, run: { tasks: readonly TaskShape[]; request: RecapRequest; asked: Extract<Extracted, { kind: 'ops' }>; readings: readonly Reading[]; parts: readonly Reading[] }): void {
+        const input = this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {};
+        const marks = marksOf(run.readings, base.at, true);
+        this.deps.records.recordRun({ ...base, tasks: run.tasks, ops: run.asked.tasks, gateStats: run.asked.stats, marks, ...input });
+        this.deps.ran?.({ tab: base.tab, turns: run.parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0 });
     }
 }
