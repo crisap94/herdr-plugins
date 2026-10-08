@@ -302,7 +302,7 @@ marked `(auto)` in its notification, and the expanded view's session facts count
 default, at `low` effort), `auto`, a harness name, `jev` (the TypeSafe System One API) or `off`; `_MODEL` and `_EFFORT`
 as for the other jobs. The brief check has its own choice, `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when
 a key is found by the key chain below, else the moment decider), `jev` (always; with no key the check cannot run, so the
-compaction waits) or `decider` (the moment decider). With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
+compaction waits) or `decider` (the moment decider). `auto` (the default) sends the brief and its facts to the remote Jev service as soon as a TypeSafe key is found, whatever `TAB_RECAP_AUTOCOMPACT_BY` says; set `decider` to keep the check on your own harness. With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
 brief and its facts too when the brief is checked. `jev` posts to `TAB_RECAP_JEV_URL` (`https://`, or `http://` to
 loopback only; any compatible gateway) with the model `TAB_RECAP_JEV_MODEL` and a bearer key, read each time from `TAB_RECAP_JEV_KEY` (the environment or `config.env`), else `TYPESAFE_API_KEY`,
 else the file `~/.config/typesafe-api-key`. The key is never logged, stored, shown in the settings modal or put in an
