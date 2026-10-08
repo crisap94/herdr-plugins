@@ -75,9 +75,9 @@ test('off decides nothing; a lane that is working, or an unknown context, is not
     assert.deepEqual([off.asked.length, off.store.autocompact.newest(5).length, working.asked.length, working.store.autocompact.newest(5).length], [0, 0, 0, 0]);
 });
 
-test('below the soft limit (31 %): no model, nothing recorded', async () => {
+test('below the minimum (8 %): no model, nothing recorded', async () => {
     const w = world();
-    w.share = 31;
+    w.share = 8;
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, rows(w).length, w.requests.length, w.logs.length], [0, 0, 0, 0]);
 });
@@ -144,9 +144,9 @@ test('shadow: a second idle within the cooldown after a decision asks no decider
     assert.deepEqual([w.asked.length, rows(w).length, w.requests.length], [1, 1, 0]);
 });
 
-test('a lane below the soft limit, or within the cooldown, never reads the in-flight count', async () => {
+test('a lane below the minimum (8 %), or within the cooldown, never reads the in-flight count', async () => {
     const below = world();
-    below.share = 31;
+    below.share = 8;
     await below.service.consider(lane());
     const cooling = world();
     cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });

@@ -4,7 +4,7 @@ import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
 import { EFFORTS, effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
-import { modeOf, softOf } from '#src/recap/domain/autocompact.ts';
+import { modeOf, minimumOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode } from '#src/recap/domain/autocompact.ts';
 import { compactJobOf, curateJobOf, DECIDER_BY_CHOICES, deciderJobOf, JOB_BY_CHOICES, judgeJobOf } from '#src/recap/domain/job.ts';
 import type { DeciderBy, DeciderJob, Job, JobBy } from '#src/recap/domain/job.ts';
@@ -56,7 +56,7 @@ export interface Draft {
     readonly curate: Job;
     /** autocompact: `off`, `shadow` or `on` (`TAB_RECAP_AUTOCOMPACT`) */
     readonly autocompact: AutocompactMode;
-    /** autocompact's soft limit, as stored: 10–95 (`TAB_RECAP_AUTOCOMPACT_AT`) */
+    /** autocompact's minimum, as stored: 10–95 (`TAB_RECAP_AUTOCOMPACT_AT`) */
     readonly autocompactAt: string;
     /** the decider's job (`TAB_RECAP_AUTOCOMPACT_BY`, `_MODEL`, `_EFFORT`); the Jev URL, model and key are never rows */
     readonly decide: DeciderJob;
@@ -113,7 +113,7 @@ export interface Stepped {
 export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly effort?: string | undefined; readonly compactTarget?: string | undefined; readonly compactHint?: string | undefined; readonly contextWindow?: string | undefined; readonly compactBy?: string | undefined; readonly compactModel?: string | undefined; readonly compactEffort?: string | undefined; readonly judgeBy?: string | undefined; readonly judgeModel?: string | undefined; readonly judgeEffort?: string | undefined; readonly curateBy?: string | undefined; readonly curateModel?: string | undefined; readonly curateEffort?: string | undefined; readonly autocompact?: string | undefined; readonly autocompactAt?: string | undefined; readonly decideBy?: string | undefined; readonly decideModel?: string | undefined; readonly decideEffort?: string | undefined }): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
-    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]), curate: curateJobOf((key) => ({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })[key]), autocompact: modeOf(raw.autocompact), autocompactAt: String(softOf(raw.autocompactAt)), decide: deciderJobOf((key) => ({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })[key]) };
+    return { ...config, locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]), curate: curateJobOf((key) => ({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })[key]), autocompact: modeOf(raw.autocompact), autocompactAt: String(minimumOf(raw.autocompactAt)), decide: deciderJobOf((key) => ({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })[key]) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {

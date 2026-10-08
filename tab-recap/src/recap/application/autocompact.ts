@@ -94,7 +94,7 @@ export class Autocompact {
         const { deps } = this;
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
         const facts = {
-            kind: String(lane.agent), kinds: policy.kinds, busy: this.busy(tab, pane), share: shareOf(use), soft: policy.soft, ceiling: policy.ceiling,
+            kind: String(lane.agent), kinds: policy.kinds, busy: this.busy(tab, pane), share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now: deps.now(), lastBreakAt: deps.boundaries.lastBreakAt(tab, pane), lastDecisionAt: deps.decisions.lastDecisionAt(tab, pane), cooldownMs: policy.cooldownMs,
         };
         const cheap = gateOf({ ...facts, inFlight: null });

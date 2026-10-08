@@ -233,7 +233,7 @@ you say so**: the default, `TAB_RECAP_AUTOCOMPACT=shadow`, records and logs ever
 decisions with `tab-recap autocompact` (newest twenty, with the last day's cost), then set `on` — or use the settings
 modal's Autocompact rows.
 
-When an agent is idle and its context is past `TAB_RECAP_AUTOCOMPACT_AT` (40 %), and it has no background work
+When an agent is idle and its context is past `TAB_RECAP_AUTOCOMPACT_AT` (10 %), and it has no background work
 running and no compaction under way, a small **decider** answers a few yes/no questions about the last turns: did the
 reply finish the request, is the agent about to continue, is it waiting for you to choose, would the next steps need
 exact output only the last turns hold. Only a safe moment compacts; at `TAB_RECAP_AUTOCOMPACT_CEILING` (80 %) it
@@ -354,7 +354,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_COMPACT_HINT` | `40` | % of the context window that shows the hint (`off`, or 10–95) |
 | `TAB_RECAP_CONTEXT_WINDOW` | *(detected)* | force a context window in tokens |
 | `TAB_RECAP_AUTOCOMPACT` | `shadow` | `off`, `shadow` (record only) or `on` (compact at a safe moment) |
-| `TAB_RECAP_AUTOCOMPACT_AT` / `_CEILING` | `40` · `80` | the context % from which a safe moment compacts, and the % that compacts without asking |
+| `TAB_RECAP_AUTOCOMPACT_AT` / `_CEILING` | `10` · `80` | the context % from which an idle agent is evaluated (the minimum) and a safe moment compacts, and the % that compacts without asking |
 | `TAB_RECAP_AUTOCOMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `low` | the decider (also `jev`, the TypeSafe API) |
 | `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY` | `auto` | the brief check's decider: `auto` (Jev when a key is found, else the decider above), `jev` or `decider` |
 | `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |

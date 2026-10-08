@@ -1,6 +1,6 @@
 // What each editable field of the settings modal is: a list to choose from, or text to type, and how its value is read from and kept in the draft. Pure.
 import { languageSetting } from '#src/i18n/index.ts';
-import { softOf } from '#src/recap/domain/autocompact.ts';
+import { minimumOf } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, SWITCH_CHOICES } from './setup-state.ts';
@@ -46,7 +46,7 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed) => ({ ...draft, compactTarget: targetSetting(typed) }) },
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed) => ({ ...draft, compactHint: hintSetting(typed) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed) => ({ ...draft, contextWindow: windowSetting(typed) }) },
-    autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed) => ({ ...draft, autocompactAt: String(softOf(typed)) }) },
+    autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed) => ({ ...draft, autocompactAt: String(minimumOf(typed)) }) },
     decideModel: { read: (draft) => draft.decide.model, keep: (draft, typed) => ({ ...draft, decide: { ...draft.decide, model: typed.trim() } }) },
     compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed) => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
     judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed) => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },

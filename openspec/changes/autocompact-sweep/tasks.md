@@ -4,17 +4,17 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 1. Vocabulary
 
-- [ ] 1.1 `CONTEXT.md`: rename **Soft limit** to **Minimum** (default 10; "from this context share a lane is
+- [x] 1.1 `CONTEXT.md`: rename **Soft limit** to **Minimum** (default 10; "from this context share a lane is
   evaluated"); add **Sweep** and **Skip (autocompact)**; update **Ceiling** and **In flight** (read past the
-  tail). Verify: the `recap-vocabulary` lint passes.
+  tail). Verify: the `recap-vocabulary` lint passes (`bash ci/lint.sh`).
 
 ## 2. The minimum (design decision 7)
 
-- [ ] 2.1 `domain/autocompact.ts` and every user: `soft` → `minimum`, `SOFT_*` → `MINIMUM_*`,
+- [x] 2.1 `domain/autocompact.ts` and every user: `soft` → `minimum`, `SOFT_*` → `MINIMUM_*`,
   `MINIMUM_DEFAULT = 10`, gate `below-soft` → `below-minimum`. `TAB_RECAP_AUTOCOMPACT_AT` and the 10–95 range
-  are unchanged. Verify: config tests for the default 10, the bounds and a ceiling not above the minimum.
-- [ ] 2.2 Settings rows and hints in en and es ("Autocompact from"; "the context share from which an idle
-  agent is evaluated"), both READMEs, `config.example.env`. Verify: setup tests; no "soft limit" left
+  are unchanged. Verify: `the policy defaults: shadow, minimum 10, …`, `the minimum is 10–95 …`, `the ceiling is above the minimum …` (test/autocompact-config.test.ts).
+- [x] 2.2 Settings rows and hints in en and es ("Autocompact from"; "the context share from which an idle
+  agent is evaluated"), both READMEs, `config.example.env`. Verify: `the autocompact rows: …` (test/setup-keys.test.ts), `the autocompact…` setup view ('Autocompact from 10%', test/setup-view.test.ts); no "soft limit" left
   (`grep -ri 'soft limit'` outside `openspec/changes/archive` and `experiments/`).
 
 ## 3. In flight past the tail (design decision 4)

@@ -5,7 +5,7 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState } from '#src/recap/application/autocompact-state.ts';
 import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
 import { contextOf, shareOf } from '#src/recap/domain/compaction.ts';
-import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, SOFT_DEFAULT, gateOf } from '#src/recap/domain/autocompact.ts';
+import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateOf } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
@@ -17,6 +17,8 @@ import type { ExperimentStore, StoredPoint } from './experiment-store.ts';
 
 /** The tail of a transcript every live reader looks through. */
 const TAIL_BYTES = 256 * 1024;
+/** the minimum EXP-002 was measured with (the default was 40 then; the replay keeps it) */
+const EXPERIMENT_MINIMUM = 40;
 /** Characters of recent entries kept in a point (the brief job clips them again to its own budget). */
 const RECENT_KEPT = 60_000;
 
@@ -57,7 +59,7 @@ export function shareAt(source: string, cursor: number, catalogue: ModelCatalogu
 function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
-    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share, soft: SOFT_DEFAULT, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
+    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
     return { inFlight, gate };
 }
 
