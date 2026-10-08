@@ -19,7 +19,7 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 3. In flight past the tail (design decision 4)
 
-- [ ] 3.1 The Claude reader re-reads with a doubled budget, up to 16 MB or the whole file, while the tail holds
+- [x] 3.1 The Claude reader re-reads with a doubled budget, up to 16 MB or the whole file, while the tail holds
   an end notice with no launch; `unknown` only when the bound is reached and that is still so. Verify: tests
   for the two spec scenarios built on a generated 3 MB transcript, a file under the budget, and a file over
   16 MB whose open question stays `unknown`.

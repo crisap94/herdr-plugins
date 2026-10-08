@@ -105,13 +105,13 @@ function newestOf(rows: readonly Row[]): number | null {
     }, null);
 }
 
-/** Launches with no ending notification after them. A launch the tail cuts off is not seen (the count is what shows), except when
- * the tail was truncated and ends a launch it never saw: that launch may have begun before the tail, so the answer is unknown. A tail with no parsable line is `Unknown`.
- * A task notification is read where it is queued (a `queue-operation` enqueue) and where it is delivered (a user row): the same notice, so either ends the work.
- * A Monitor past its own timeout (against the newest row of the tail) has ended. */
-export function claudeInFlight(lines: readonly string[], truncated = false): InFlightResult {
+/** What a tail says: the launches with no ending after them (`count`), and whether a notice in it ends a launch the tail never showed (`unseen`). */
+export interface TailScan { readonly count: number; readonly unseen: boolean }
+
+/** The scan of a tail, or null when no line of it parses (a tail that is only blank lines scans as nothing). */
+export function scanFlight(lines: readonly string[]): TailScan | null {
     const rows = lines.map((line) => parse(line)).filter((row): row is Row => row !== null);
-    if (rows.length === 0 && lines.some((line) => line.trim() !== '')) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
+    if (rows.length === 0 && lines.some((line) => line.trim() !== '')) return null;
     const launches = new Map<string, Launch>();
     const closed = new Set<string>();
     let unseen = false;
@@ -121,7 +121,24 @@ export function claudeInFlight(lines: readonly string[], truncated = false): InF
         if (notice === 'unseen') unseen = true;
         if (notice === 'none' && row['type'] === 'user') answered(row, launches);
     }
-    if (truncated && unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
     const newest = newestOf(rows);
-    return { kind: 'in-flight', count: [...launches.values()].filter((launch) => !expired(launch, newest)).length };
+    return { count: [...launches.values()].filter((launch) => !expired(launch, newest)).length, unseen };
 }
+
+/** Launches with no ending notification after them. A launch the tail cuts off is not seen (the count is what shows), except when
+ * the tail was truncated and ends a launch it never saw: that launch may have begun before the tail, so the answer is unknown. A tail with no parsable line is `Unknown`.
+ * A task notification is read where it is queued (a `queue-operation` enqueue) and where it is delivered (a user row): the same notice, so either ends the work.
+ * A Monitor past its own timeout (against the newest row of the tail) has ended. */
+export function claudeInFlight(lines: readonly string[], truncated = false): InFlightResult {
+    return answerOf(scanFlight(lines), truncated);
+}
+
+/** The answer a scan gives, for a tail that is truncated or not. */
+export function answerOf(scan: TailScan | null, truncated: boolean): InFlightResult {
+    if (scan === null) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
+    if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
+    return { kind: 'in-flight', count: scan.count };
+}
+
+/** The most bytes the in-flight reader reads back for one question: 16 MB, past which the answer is unknown. */
+export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;

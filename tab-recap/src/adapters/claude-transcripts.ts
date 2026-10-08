@@ -7,7 +7,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
 import { claudeObserved } from './context-rows.ts';
 import { extractClaude } from './claude-rows.ts';
-import { claudeInFlight } from './claude-in-flight.ts';
+import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts';
 
 export { extractClaude };
 
@@ -58,10 +58,16 @@ export class ClaudeTranscripts implements Transcripts {
         }
     }
 
+    /** Reads the tail; while it ends work it never saw launched, reads back with a doubled budget, up to `IN_FLIGHT_MAX_BYTES` or the whole file. */
     inFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
-            const tail = tailOf(source, budget);
-            return Promise.resolve(claudeInFlight(tail.lines, tail.truncated));
+            let bytes = budget;
+            for (;;) {
+                const tail = tailOf(source, bytes);
+                const scan = scanFlight(tail.lines);
+                if (!tail.truncated || scan?.unseen !== true || bytes >= IN_FLIGHT_MAX_BYTES) return Promise.resolve(answerOf(scan, tail.truncated));
+                bytes = Math.min(bytes * 2, IN_FLIGHT_MAX_BYTES);
+            }
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }
