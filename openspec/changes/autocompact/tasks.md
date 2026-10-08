@@ -27,15 +27,15 @@ runs before the decider's default is fixed.
 
 ## 3. EXP-002: corpus and experiment (design decision 9)
 
-- [ ] 3.1 `experiments/EXP-002-autocompact/`: README from `_template`, `PREREG.md` (decision 9 copied
+- [x] 3.1 `experiments/EXP-002-autocompact/`: README from `_template`, `PREREG.md` (decision 9 copied — done: `experiments/EXP-002-autocompact/` README (decision-first), PREREG (design decision 9 at 83fa1c7), runs R00–R03 with run.yaml + numbers-only summaries
   verbatim before any run), `manifest.yaml`. Verify: the files exist and the README is decision-first.
-- [ ] 3.2 The corpus builder (`bin/autocompact-corpus.ts`, reusing the replay and eval rig): 240 points
+- [x] 3.2 The corpus builder (`bin/autocompact-corpus.ts`, reusing the replay and eval rig): 240 points — done: `bin/autocompact-corpus.ts`; frame 306 runs, sample 198 (boundary stratum 18 of 60, all there are), outcome set 233 boundaries (11 comparable); sha256 in R00
   stratified from stored `turn-ended` runs; the state document per point; the hindsight bundle (next prompt,
   next turns); the outcome counts for every compaction boundary. Raw items stay off the public branch.
   Verify: the counts per stratum printed and recorded in the manifest.
-- [ ] 3.3 Labels: the pinned labeller per question, the deterministic `needs_verbatim` cross-check, and 60
+- [x] 3.3 Labels: the pinned labeller per question, the deterministic `needs_verbatim` cross-check, and 60 — done except the operator: labeller gpt-6.1-sol high 198/198; `needs_verbatim` code cross-check (labeller 0 positives, code 12; kappa 0); 30 briefs, 485 fact pairs; `--operator 60` / `--kappa` implemented, the operator's labels are pending (not blocking the release, recorded in the README)
   operator labels by scripted stdin; kappa per question. Verify: the kappa table in `runs/R00-labels/summary.md`.
-- [ ] 3.4 The probe: every arm twice over the corpus and the brief pairs, with metrics per question and per
+- [x] 3.4 The probe: every arm twice over the corpus and the brief pairs, with metrics per question and per — done: four arms × 2 reps; rule gives default `haiku-low` (the `recap` decider at low effort; precision 0.981, drift 0.039) and the brief check `jev` (AUC 0.912), shipped as `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY=auto`; R03-report
   policy, and the outcome gap. Verify: `runs/R01-…/summary.md` per arm; the README states the default decider
   by the pre-registered rule; the operator confirms it.
 

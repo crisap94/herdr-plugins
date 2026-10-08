@@ -94,8 +94,13 @@ Files were re-read after 0 compactions on either side.
   These AUCs say nothing. `needs_verbatim` protects against losing exact output, so it is the first thing
   to check by hand.
 - **No human check.** Operator labels are pending, so no question is checked against a human (kappa).
-- **The in-flight gate blocked 118 of 198 points.** This is examined after the experiment: some launches
-  never end in the transcript.
+- **The in-flight gate blocked 118 of 198 points.** A diagnosis after the experiment found two scanner
+  faults, both fixed on the branch:
+  - 45 launches had ended through a notice the scanner did not read (the queued form);
+  - 12 were monitors past their own timeout.
+
+  With the fix, 109 points stay blocked. At 87 of them, every open launch really ends later. The policy
+  numbers above do not depend on this gate.
 - **Tail, not whole session.** Share and recent turns come from the transcript tail the live readers read,
   not the whole session.
 
