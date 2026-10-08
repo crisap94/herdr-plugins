@@ -6,11 +6,12 @@ When a lane's agent becomes idle or done, autocompact SHALL apply these checks i
 asking any model:
 - the agent's kind is among the autocompact kinds (Claude by default); other compactable kinds are decided
   and recorded but never compacted automatically;
-- no compaction of the lane is in progress or requested;
+- no compaction of the lane is in progress, and no automatic one was requested for it in the last five minutes
+  without beginning;
 - nothing is in flight inside the agent, and a reader that cannot tell counts as in flight;
 - the lane's context share is at least the soft limit (`TAB_RECAP_AUTOCOMPACT_AT`, 40 by default, 10–95);
 - the cooldown (`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, ten minutes by default) has passed since the lane's last
-  boundary and since its last `wait`.
+  boundary and since its last recorded decision, whatever its verdict.
 
 A share at or above the ceiling (`TAB_RECAP_AUTOCOMPACT_CEILING`, 80 by default and always above the soft
 limit) SHALL give the verdict `compact` without a model call. A lane with no recap yet SHALL have one written
@@ -79,7 +80,10 @@ When a `goal`, `needs`, `decisions` or `rules` fact scores below 0.70:
 - if one still scores below 0.70, the automatic compaction SHALL not be typed and the decision SHALL be
   recorded as `wait` with gate `coverage`.
 
-An operator's compaction SHALL proceed and record the coverage.
+When the brief cannot be checked (no decider, the decider cannot answer, or no brief was written and the
+template would be used), an automatic compaction SHALL not be typed and the decision SHALL be recorded as
+`wait` with gate `coverage` and the reason. An operator's compaction is not checked in this release: its flow
+is unchanged.
 
 #### Scenario: A decision without its reason
 
@@ -117,7 +121,9 @@ The decider SHALL be chosen by `TAB_RECAP_AUTOCOMPACT_BY`: `recap`, `auto`, a ha
 The default is `recap` at low effort, with `TAB_RECAP_AUTOCOMPACT_MODEL` and `_EFFORT` as for the other
 jobs.
 
-The `jev` decider SHALL post to `TAB_RECAP_JEV_URL` (by default the TypeSafe System One endpoint) with the
+The `jev` decider SHALL send the state document and, for coverage, the brief and the facts to a remote
+service; the documentation SHALL say so next to the choice. It SHALL post to `TAB_RECAP_JEV_URL`, which SHALL
+be `https://` (or `http://` to a loopback address; anything else falls back to the default) (by default the TypeSafe System One endpoint) with the
 model `TAB_RECAP_JEV_MODEL` (by default a pinned version) and a bearer key. The key SHALL be read at call
 time from:
 1. `TAB_RECAP_JEV_KEY` in the environment or the configuration file;
@@ -134,7 +140,7 @@ The key SHALL never appear in a log line, a stored row, the settings modal or an
 #### Scenario: A refused key
 
 - **WHEN** the endpoint answers 401
-- **THEN** the decision SHALL be `unknown` with the reason `refused`, the verdict SHALL act as `wait`, and no
+- **THEN** the decision SHALL be `unknown` with the reason `failed` and the code 401, the verdict SHALL act as `wait`, and no
   log line SHALL contain the key
 
 #### Scenario: A harness that answers prose
@@ -145,7 +151,8 @@ The key SHALL never appear in a log line, a stored row, the settings modal or an
 
 ### Requirement: An unreachable decider means wait
 
-When the decider cannot answer (timeout, refused, busy, unreadable), the verdict SHALL be `unknown`, acting
+When the decider cannot answer (a timeout, an unreachable endpoint, a refusal or a busy service as `failed`
+with its HTTP code, or an unreadable reply), the verdict SHALL be `unknown`, acting
 as `wait`. The daemon SHALL log one line per outage rather than one per lane. The ceiling SHALL still
 compact.
 
