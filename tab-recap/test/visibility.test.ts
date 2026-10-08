@@ -21,6 +21,7 @@ const seen = (lanes: readonly SeenLane[], columns: { tab: string; pane: string }
     },
 });
 const opened = (tab: string, pane: string): Observation => ({ kind: 'column-opened', tab: tabId(tab), pane: paneId(pane), shape: 'side' });
+const gone = (pane: string): Observation => ({ kind: 'closed', pane: paneId(pane) });
 const hide = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: true });
 const show = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: false });
 const toggle = (tab: string): Observation => ({ kind: 'visibility', target: { tab: tabId(tab) }, hidden: 'toggle' });
@@ -60,9 +61,10 @@ function label(intent: Intent): string {
 }
 
 test('hide closes the column and remembers it; show brings it back', () => {
-    const { steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), hide('w1:t1'), show('w1:t1')]);
+    const { steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), hide('w1:t1'), show('w1:t1'), gone('w1:p9')]);
     assert.deepEqual(steps[2], ['save-hidden all=false hidden=[w1:t1] shown=[]', 'close-column w1:t1']);
-    assert.deepEqual(steps[3], ['save-hidden all=false hidden=[] shown=[]', 'open-column w1:t1']);
+    assert.deepEqual(steps[3], ['save-hidden all=false hidden=[] shown=[]'], 'the old column is still there: no second one');
+    assert.deepEqual(steps[4], ['open-column w1:t1']);
 });
 
 test('a hidden tab does not spend the reopen budget: the column we closed going away is not "someone closed it"', () => {
@@ -91,15 +93,15 @@ test('recaps keep being asked for while the column is hidden', () => {
 test('all hidden, then show one: only that tab gets its column; a tab that appears later stays hidden', () => {
     const { board, steps } = play([
         seen([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')]), opened('w1:t1', 'w1:p8'), opened('w1:t2', 'w1:p9'),
-        hideAll,
+        hideAll, gone('w1:p8'), gone('w1:p9'),
         { kind: 'detected', lane: lane('w1:p3', 'w1:t3') },
         show('w1:t2'),
         showAll,
     ]);
     assert.deepEqual(steps[3], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t1', 'close-column w1:t2']);
-    assert.ok(steps[4]?.every((entry) => !entry.startsWith('open-column')), 'a new tab under the blanket stays hidden');
-    assert.deepEqual(steps[5], ['save-hidden all=true hidden=[] shown=[w1:t2]', 'open-column w1:t2']);
-    assert.deepEqual(steps[6]?.filter((entry) => entry.startsWith('open-column')).toSorted(), ['open-column w1:t1', 'open-column w1:t3']);
+    assert.ok(steps[6]?.every((entry) => !entry.startsWith('open-column')), 'a new tab under the blanket stays hidden');
+    assert.deepEqual(steps[7], ['save-hidden all=true hidden=[] shown=[w1:t2]', 'open-column w1:t2']);
+    assert.deepEqual(steps[8]?.filter((entry) => entry.startsWith('open-column')).toSorted(), ['open-column w1:t1', 'open-column w1:t3']);
     assert.equal(board.allHidden, false);
 });
 
@@ -131,9 +133,10 @@ test('hiddenState / restoreHidden round-trip', () => {
 });
 
 test('toggle: two in a row return to the start — the daemon flips what the board holds, however fast they come', () => {
-    const { board, steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), toggle('w1:t1'), toggle('w1:t1')]);
+    const { board, steps } = play([seen([lane('w1:p1', 'w1:t1')]), opened('w1:t1', 'w1:p9'), toggle('w1:t1'), toggle('w1:t1'), gone('w1:p9')]);
     assert.deepEqual(steps[2], ['save-hidden all=false hidden=[w1:t1] shown=[]', 'close-column w1:t1']);
-    assert.deepEqual(steps[3], ['save-hidden all=false hidden=[] shown=[]', 'open-column w1:t1']);
+    assert.deepEqual(steps[3], ['save-hidden all=false hidden=[] shown=[]']);
+    assert.deepEqual(steps[4], ['open-column w1:t1']);
     assert.equal(board.hidden.size, 0);
     const odd = play([seen([lane('w1:p1', 'w1:t1')]), toggle('w1:t1'), toggle('w1:t1'), toggle('w1:t1')]);
     assert.deepEqual([...odd.board.hidden], ['w1:t1'], 'three toggles = hidden');
@@ -150,12 +153,12 @@ test('toggle: a toggle after an explicit hide shows, after an explicit show hide
 test('toggle all, then toggle a tab: everything hides, then that one tab comes back; toggle all again shows everything', () => {
     const { board, steps } = play([
         seen([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')]), opened('w1:t1', 'w1:p8'), opened('w1:t2', 'w1:p9'),
-        toggleAll, toggle('w1:t2'), opened('w1:t2', 'w1:p7'), toggle('w1:t2'), toggleAll,
+        toggleAll, gone('w1:p8'), gone('w1:p9'), toggle('w1:t2'), opened('w1:t2', 'w1:p7'), toggle('w1:t2'), gone('w1:p7'), toggleAll,
     ]);
     assert.deepEqual(steps[3], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t1', 'close-column w1:t2']);
-    assert.deepEqual(steps[4], ['save-hidden all=true hidden=[] shown=[w1:t2]', 'open-column w1:t2']);
-    assert.deepEqual(steps[6], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t2'], 'toggled again: hidden under the blanket');
-    assert.deepEqual(steps[7]?.filter((entry) => entry.startsWith('open-column')).toSorted(), ['open-column w1:t1', 'open-column w1:t2']);
+    assert.deepEqual(steps[6], ['save-hidden all=true hidden=[] shown=[w1:t2]', 'open-column w1:t2']);
+    assert.deepEqual(steps[8], ['save-hidden all=true hidden=[] shown=[]', 'close-column w1:t2'], 'toggled again: hidden under the blanket');
+    assert.deepEqual(steps[10]?.filter((entry) => entry.startsWith('open-column')).toSorted(), ['open-column w1:t1', 'open-column w1:t2']);
     assert.equal(board.allHidden, false);
     const twice = play([seen([lane('w1:p1', 'w1:t1')]), toggleAll, toggleAll]);
     assert.equal(twice.board.allHidden, false, 'two toggle-alls return to the start');

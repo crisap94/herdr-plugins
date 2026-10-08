@@ -4,7 +4,7 @@ import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { laneFrom, withStatus } from './lane.ts';
 import type { Lane, SeenLane } from './lane.ts';
-import { settle, spend, wantsKind } from './policy.ts';
+import { lingering, settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
 import type { Instant } from './time.ts';
@@ -91,6 +91,9 @@ function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Ste
     if (tab === null) {
         return step(board);
     }
+    if (board.closing.has(pane)) {
+        return step({ ...board, columns: without(board.columns, tab), closing: without(board.closing, pane) });
+    }
     const [spent, intents] = spend({ ...board, columns: without(board.columns, tab) }, tab, now, policy);
     return step(spent, intents);
 }
@@ -145,26 +148,32 @@ function newerThan(placed: Placement, seen: Reconciliation): boolean {
     return seen.at !== undefined && placed.since !== undefined && seen.at < placed.since;
 }
 
-function onReconciled(board: Board, seen: Reconciliation, policy: Policy): Step {
+function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
     const lanes = new Map<PaneId, Lane>();
     for (const raw of seen.lanes.filter((lane) => wanted(lane, policy))) {
         const lane = laneFrom(raw);
         lanes.set(lane.pane, lane);
     }
-    const { columns, extras } = columnsAfter(board, seen);
+    const { columns, extras: found } = columnsAfter(board, seen);
+    const extras = found.filter((extra) => !lingering(board, extra.paneId as PaneId, now, policy));
+    const alive = new Set(seen.panes);
+    let closing = new Map([...board.closing].filter(([pane]) => alive.has(pane)));
+    for (const extra of extras) {
+        closing = new Map(closing).set(extra.paneId as PaneId, now);
+    }
     let opening = board.opening;
     for (const tab of columns.keys()) {
         opening = removed(opening, tab);
     }
     const widths = new Map([...seen.widths].map(([tab, width]) => [tab as TabId, width]));
     const focused = seen.focusedTab === undefined || seen.focusedTab === null ? board.focused : (seen.focusedTab as TabId);
-    const next: Board = { ...board, lanes, columns, opening, widths, focused, seeded: true };
+    const next: Board = { ...board, lanes, columns, closing, opening, widths, focused, seeded: true };
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
     const published: Intent[] = tabsWithLanes(next).map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
     /** two of our columns in one tab (a leftover of a race, or of a close that did not happen): keep one, close the rest */
-    const closing: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
-    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads, ...closing], !sameSet);
+    const closes: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
+    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
 }
 
 function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
@@ -205,7 +214,7 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
         case 'status':
             return onStatus(board, observation.pane, observation.status);
         case 'reconciled':
-            return onReconciled(board, observation.seen, policy);
+            return onReconciled(board, observation.seen, now, policy);
         case 'column-opened':
             return onColumnOpened(board, observation.tab, { pane: observation.pane, shape: observation.shape, ...(observation.at === undefined ? {} : { since: observation.at }) });
         case 'column-failed': {

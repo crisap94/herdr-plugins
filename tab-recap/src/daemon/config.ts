@@ -168,6 +168,7 @@ export function loadConfig(): Config {
             kinds: [...new Set([...(kinds === undefined ? DEFAULT_POLICY.kinds : kinds.split(',').map((kind) => kind.trim()).filter((kind) => kind !== '')), ...screenAgents])],
             minTabCols: number(get('TAB_RECAP_MIN_TAB_COLS'), DEFAULT_POLICY.minTabCols),
             giveUpFor: duration(number(get('TAB_RECAP_GIVE_UP_MS'), DEFAULT_POLICY.giveUpFor)),
+            closeGrace: duration(number(get('TAB_RECAP_CLOSE_GRACE_MS'), DEFAULT_POLICY.closeGrace)),
             onlyTabs: only === undefined ? [] : only.split(',').map((tab) => tab.trim()).filter((tab) => tab !== ''),
         },
         screenAgents,

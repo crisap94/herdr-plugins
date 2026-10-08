@@ -84,7 +84,7 @@ export class Dispatch {
                 return;
             case 'close-column':
                 this.deps.log(`tab ${intent.tab}: closing column ${intent.column}`);
-                await this.deps.columns.close(intent.column);
+                await this.shut(intent.tab, intent.column);
                 return;
             case 'publish':
                 this.publish(intent.tab);
@@ -123,6 +123,14 @@ export class Dispatch {
     private failed(tab: TabId, why: string): void {
         this.deps.log(`tab ${tab}: column not opened (${why})`);
         this.deps.feedback({ kind: 'column-failed', tab });
+    }
+
+    private async shut(tab: TabId, pane: PaneId): Promise<void> {
+        const done = await this.deps.columns.close(pane);
+        if (isUnknown(done)) {
+            this.deps.log(`tab ${tab}: column not closed (${pane}, ${saying(done.why)})`);
+            this.deps.feedback({ kind: 'column-failed', tab });
+        }
     }
 
     private async open(tab: TabId, shape: Shape): Promise<void> {

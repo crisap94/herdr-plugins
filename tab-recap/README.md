@@ -24,7 +24,7 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
 - **Know what is deployed.** The column's top line ends with the plugin version on disk (`· v1.8.0`); when the running daemon is another version, a yellow `daemon v1.7.0 — restart` says so.
 - **Per tab, by default.** A daemon opens the column in every tab with an agent of a kind in
   `TAB_RECAP_AGENTS` (default `claude`, `codex` and `opencode`), the moment the agent appears, keeps it narrow, and reopens it if it is closed (up to
-  3 times in 2 minutes — then it respects you for 10 minutes, `TAB_RECAP_GIVE_UP_MS`).
+  3 times in 2 minutes — then it respects you for 10 minutes, `TAB_RECAP_GIVE_UP_MS`). A close herdr has not done after 30 s (`TAB_RECAP_CLOSE_GRACE_MS`) is asked again and counts against the same budget.
 - **One recap per piece of work, from all its panes.** Every agent in the tab gets a short header (title,
   status, extension notes, last prompt); below them, ONE recap covers the tab's work as a whole. A tab
   is not assumed to be one task: when its agents work on unrelated things (different repositories, say),
