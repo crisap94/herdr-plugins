@@ -103,7 +103,7 @@ test('switching off closes every column and opens none', () => {
         { kind: 'switched', enabled: false },
     ]);
     assert.deepEqual(intents.at(-1), { kind: 'close-column', tab: 'w1:t1', column: 'w1:p9' });
-    assert.equal(board.columns.size, 0);
+    assert.ok(board.closing.has(paneId('w1:p9')), 'asked, and not forgotten until herdr lets go of the pane');
 });
 
 test('a restarted daemon adopts the columns it finds instead of opening new ones', () => {
@@ -162,7 +162,7 @@ const at = (width: number): Observation =>
     ({ kind: 'reconciled', seen: { focusedTab: 'w1:t1', lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1', 'w1:p9'], widths: new Map([['w1:t1', width]]) } });
 
 test('a phone attaching swaps the side column for a bar, and back when the desktop returns', () => {
-    const { intents } = run([at(189), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }, at(55), at(189)]);
+    const { intents } = run([at(189), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }, at(55), closed('w1:p9')]);
     const docking = intents.flatMap((intent) => {
         if (intent.kind === 'open-column') {
             return [`open ${intent.shape}`];
@@ -170,4 +170,70 @@ test('a phone attaching swaps the side column for a bar, and back when the deskt
         return intent.kind === 'close-column' ? [`close ${intent.column}`] : [];
     });
     assert.deepEqual(docking, ['open side', 'close w1:p9', 'open bar']);
+});
+
+/** The 2026-10-08 14:56Z storm: a client change flips 28 tabs from bar to side. */
+const tabs = Array.from({ length: 28 }, (_, i) => i + 1);
+const bars = (width: number): Observation => ({
+    kind: 'reconciled',
+    seen: {
+        focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, width])),
+        lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)),
+        columns: tabs.map((n) => ({ tabId: `w1:t${n}`, paneId: `w1:b${n}`, shape: 'bar' as const })),
+        panes: tabs.flatMap((n) => [`w1:p${n}`, `w1:b${n}`]),
+    },
+});
+const barsOpened = tabs.map((n): Observation => ({ kind: 'column-opened', tab: tabId(`w1:t${n}`), pane: paneId(`w1:b${n}`), shape: 'bar' }));
+
+function playAt(steps: readonly (readonly [number, Observation])[], start: Board): { board: Board; closes: Intent[]; opens: Intent[]; gaveUp: Intent[]; each: Intent[][] } {
+    let board = start;
+    const each: Intent[][] = [];
+    for (const [seconds, observation] of steps) {
+        const outcome = observe(board, observation, instant(seconds * 1000), DEFAULT_POLICY);
+        board = outcome.board;
+        each.push([...outcome.intents]);
+    }
+    const all = each.flat();
+    return { board, each, closes: all.filter((i) => i.kind === 'close-column'), opens: all.filter((i) => i.kind === 'open-column'), gaveUp: all.filter((i) => i.kind === 'give-up') };
+}
+
+test('a close that does not take effect is asked once, opens no second column, and ends in a give-up', () => {
+    const ready = run([bars(60), ...barsOpened]).board;
+    const flip = playAt([[100, bars(164)], [105, bars(164)], [110, bars(164)]], ready);
+    assert.equal(flip.closes.length, 28, 'exactly one close per bar');
+    assert.equal(flip.opens.length, 0, 'the bars are still there: no side column beside them');
+    assert.equal(flip.board.closing.size, 28);
+    const stuck = playAt([[125, bars(164)], [131, bars(164)], [140, bars(164)], [162, bars(164)], [193, bars(164)]], flip.board);
+    assert.equal(stuck.each[0]?.filter((i) => i.kind !== 'publish').length, 0, 'inside closeGrace nothing is repeated');
+    assert.equal(stuck.opens.length, 0, 'never a second column');
+    assert.equal(stuck.gaveUp.length, 28, 'after reopenLimit tries every tab is given up');
+    assert.equal(stuck.closes.length, 28 * 2, 'two retries per bar, one per grace period; the third try is the give-up');
+    assert.equal(stuck.board.closing.size, 0);
+    assert.equal(stuck.board.columns.size, 28, 'each tab keeps its old-shape column');
+    const after = playAt([[221, bars(164)], [300, bars(164)]], stuck.board);
+    assert.equal(after.each.flat().filter((i) => i.kind !== 'publish').length, 0, 'given up: quiet');
+});
+
+test('a close that takes effect: one close and one open per tab, nothing else', () => {
+    const ready = run([bars(60), ...barsOpened]).board;
+    const flip = playAt([[100, bars(164)]], ready);
+    const gone = tabs.map((n): [number, Observation] => [101, { kind: 'closed', pane: paneId(`w1:b${n}`) }]);
+    const done = playAt(gone, flip.board);
+    assert.equal(flip.closes.length, 28);
+    assert.equal(done.closes.length, 0);
+    assert.deepEqual(done.opens.map((i) => i.kind === 'open-column' ? i.shape : null), Array.from({ length: 28 }, () => 'side'));
+    const settled = playAt([[102, { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, 164])), lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)), columns: [], panes: tabs.map((n) => `w1:p${n}`) } }]], done.board);
+    assert.equal(settled.each.flat().filter((i) => i.kind === 'close-column' || i.kind === 'open-column').length, 0, 'the open is still on its way: not asked twice');
+});
+
+test('a hidden tab whose close never takes effect: 1 + 2 closes, then a give-up, then silence', () => {
+    const column = { tabId: 'w1:t1', paneId: 'w1:p9', shape: 'side' as const };
+    const snapshot: Observation = { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(), lanes: [lane('w1:p1', 'w1:t1')], columns: [column], panes: ['w1:p1', 'w1:p9'] } };
+    const ready = run([seen([lane('w1:p1', 'w1:t1')]), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }]).board;
+    const hidden = playAt([[100, { kind: 'visibility', target: { tab: tabId('w1:t1') }, hidden: true }], [110, snapshot], [131, snapshot], [162, snapshot], [193, snapshot], [230, snapshot], [400, snapshot]], ready);
+    const quiet = (n: number): number | undefined => hidden.each[n]?.filter((i) => i.kind === 'close-column' || i.kind === 'open-column' || i.kind === 'give-up').length;
+    assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(quiet), [1, 0, 1, 1, 1, 0, 0]);
+    assert.equal(hidden.closes.length, 3);
+    assert.equal(hidden.gaveUp.length, 1);
+    assert.equal(hidden.opens.length, 0);
 });

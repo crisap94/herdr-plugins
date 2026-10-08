@@ -29,6 +29,8 @@ export interface Board {
     readonly lanes: ReadonlyMap<PaneId, Lane>;
     /** tab → where its column is */
     readonly columns: ReadonlyMap<TabId, Placement>;
+    /** pane → when we asked herdr to close it: until it leaves herdr's list the old column is still there */
+    readonly closing: ReadonlyMap<PaneId, Instant>;
     /** tabs whose column has been asked for and not yet reported */
     readonly opening: ReadonlySet<TabId>;
     /** tab → when its column was closed by someone else, most recent last */
@@ -52,6 +54,7 @@ export function emptyBoard(): Board {
     return {
         lanes: new Map(),
         columns: new Map(),
+        closing: new Map(),
         opening: new Set(),
         reopens: new Map(),
         givenUp: new Map(),
