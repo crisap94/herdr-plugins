@@ -18,7 +18,7 @@ const lines = (input: SessionInputs, locale: Messages = en): string[] => session
 
 test('nothing known: no line at all, never a guess', () => {
     assert.deepEqual(lines(nothing), []);
-    assert.deepEqual(sessionFactsOf(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [], chapters: null });
+    assert.deepEqual(sessionFactsOf(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [], chapters: null, autocompact: null });
 });
 
 test('started: the first time the tab was seen and for how long; another day says the date', () => {
@@ -95,4 +95,11 @@ test('the cache answers at once with what it has and refreshes in the background
     assert.equal(reads, 1, 'not again within a minute');
     cache.of([cursor('w1:p1')], 60_000);
     assert.equal(reads, 2);
+});
+
+test('autocompact: decisions, compactions and waits once the tab has any; none, no line', () => {
+    assert.deepEqual(lines({ ...nothing, autocompact: { decisions: 12, compacted: 3, waited: 9 } }), ['autocompact 12 decisions · 3 compacted · 9 waited']);
+    assert.deepEqual(lines({ ...nothing, autocompact: { decisions: 1, compacted: 0, waited: 1 } }), ['autocompact 1 decision · 0 compacted · 1 waited']);
+    assert.deepEqual(lines({ ...nothing, autocompact: { decisions: 1, compacted: 1, waited: 0 } }, es), ['autocompactar 1 decisión · 1 compactada · 0 en espera']);
+    assert.deepEqual(lines({ ...nothing, autocompact: { decisions: 0, compacted: 0, waited: 0 } }), []);
 });

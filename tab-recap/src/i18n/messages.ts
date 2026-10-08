@@ -139,6 +139,8 @@ export interface Messages {
         readonly closed: (why: ClosedWhy) => string;
         readonly started: string; readonly turns: string; readonly compactions: string; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
         readonly causes: { readonly 'turn-ended': string; readonly focused: string; readonly requested: string };
+        /** the session facts' autocompact line: `autocompact: 12 decisions · 3 compacted · 9 waited` */
+        readonly autocompact: { readonly label: string; readonly text: (decisions: number, compacted: number, waited: number) => string };
     };
     /** the expanded view's chapters: the session facts' count and the break lines of the timeline */
     readonly chapters: {

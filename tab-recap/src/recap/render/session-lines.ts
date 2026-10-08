@@ -58,5 +58,8 @@ export function sessionLines(facts: SessionFacts, context: SessionContext): read
     if (facts.files.length > 0) {
         lines.push({ label: m.files, text: facts.files.map((file) => `${file.path} (${file.count})`).join(', ') });
     }
+    if (facts.autocompact !== null) {
+        lines.push({ label: m.autocompact.label, text: m.autocompact.text(facts.autocompact.decisions, facts.autocompact.compacted, facts.autocompact.waited) });
+    }
     return lines;
 }

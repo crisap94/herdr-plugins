@@ -22,6 +22,8 @@ export interface SessionInputs {
     readonly edits: readonly { readonly path: string; readonly count: number }[];
     /** how many chapters the tab has (a break opens each one after the first); absent when not known */
     readonly chapters?: number;
+    /** what autocompact decided for the tab; absent or none: no line */
+    readonly autocompact?: { readonly decisions: number; readonly compacted: number; readonly waited: number };
 }
 
 export interface SessionFacts {
@@ -34,6 +36,8 @@ export interface SessionFacts {
     readonly files: readonly { readonly path: string; readonly count: number }[];
     /** chapters, when the session broke at least once; null otherwise (one chapter is no news) */
     readonly chapters: number | null;
+    /** autocompact's decisions, those that led to a compaction and those that waited; null when it decided nothing */
+    readonly autocompact: { readonly decisions: number; readonly compacted: number; readonly waited: number } | null;
 }
 
 /** How many files the session facts name. */
@@ -63,5 +67,6 @@ export function sessionFactsOf(input: SessionInputs): SessionFacts {
         repo: web === null ? null : { name: lastSegment(web.base), branch: web.branch },
         files: input.edits.slice(0, FILES_SHOWN),
         chapters: input.chapters !== undefined && input.chapters > 1 ? input.chapters : null,
+        autocompact: input.autocompact === undefined || input.autocompact.decisions === 0 ? null : input.autocompact,
     };
 }

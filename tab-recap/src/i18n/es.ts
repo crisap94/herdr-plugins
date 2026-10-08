@@ -115,6 +115,7 @@ export const es: Messages = {
         closed: (why) => `cerrado: ${{ done: 'hecho', wrong: 'erróneo', superseded: 'reemplazado', answered: 'respondido', merged: 'fusionado', rewritten: 'reescrito' }[why]}`,
         started: 'inicio', turns: 'turnos', causes: { 'turn-ended': 'turno', focused: 'foco', requested: 'pedido' },
         compactions: 'compactaciones', of: 'de', repo: 'repo', branch: 'rama', files: 'archivos',
+        autocompact: { label: 'autocompactar', text: (decisions, compacted, waited) => `${decisions} decisi${decisions === 1 ? 'ón' : 'ones'} · ${compacted} compactada${compacted === 1 ? '' : 's'} · ${waited} en espera` },
     },
     chapters: {
         label: 'capítulos',
