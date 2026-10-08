@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/claude-transcripts.ts';
 
 const TAIL = 512 * 1024;
 const MB = 1024 * 1024;
@@ -74,4 +74,19 @@ test('an unknown answer is kept with the file size: the same size is not read ag
     assert.deepEqual(await reader.inFlight(path, TAIL), first, 'same size: answered from the kept answer, not read again');
     writeFileSync(path, `${notice('b1', 't1')}\n`);
     assert.deepEqual(await reader.inFlight(path, TAIL), { kind: 'in-flight', count: 0 }, 'a new size is read');
+});
+
+test('the kept unknown answers are capped at KEPT_UNKNOWN_MAX: the oldest is forgotten (read again), the newest is still kept', async () => {
+    const reader = new ClaudeTranscripts(dir);
+    const oldest = write('cap-0.jsonl', ['not json!']);
+    assert.equal((await reader.inFlight(oldest, TAIL)).kind, 'unknown');
+    let newest = oldest;
+    for (let at = 1; at <= KEPT_UNKNOWN_MAX; at += 1) {
+        newest = write(`cap-${at}.jsonl`, ['not json!']);
+        assert.equal((await reader.inFlight(newest, TAIL)).kind, 'unknown');
+    }
+    writeFileSync(oldest, '{"a":"b"}\n');
+    assert.deepEqual(await reader.inFlight(oldest, TAIL), { kind: 'in-flight', count: 0 }, 'forgotten: the same size is read again');
+    writeFileSync(newest, '{"a":"b"}\n');
+    assert.equal((await reader.inFlight(newest, TAIL)).kind, 'unknown', 'kept: the same size is not read again');
 });

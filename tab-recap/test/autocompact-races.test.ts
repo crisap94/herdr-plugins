@@ -40,8 +40,9 @@ test('two lanes considered at once, the decider held: both are asked, one reques
     held.release();
     await Promise.all([first, second]);
     assert.deepEqual(w.requests.map((request) => request.pane), ['w1:p1']);
-    assert.deepEqual(w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane']]);
+    assert.deepEqual(w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane; decider $0.00003 discarded']]);
     assert.deepEqual(rows(w).map((row) => row.pane), ['w1:p1'], 'the second lane records no decision');
+    assert.ok(w.logs.includes('autocompact w1:p2: 62 % → skip busy (another lane; decider $0.00003 discarded)'), 'the log shows what the dropped decision cost');
 });
 
 test('a record-only compact (a kind outside the list) requests nothing and holds no other lane: a claude lane over the ceiling is requested', async () => {

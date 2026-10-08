@@ -18,7 +18,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, unchangedOf } from './autocompact-gates.ts';
-import { lineOf } from './autocompact-line.ts';
+import { lineOf, moneyOf } from './autocompact-line.ts';
 import type { FlightAnswer } from './autocompact-gates.ts';
 
 export type { FlightAnswer } from './autocompact-gates.ts';
@@ -68,7 +68,6 @@ const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, reco
 /** Over the ceiling no model is asked. */
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
-
 
 export class Autocompact {
     private readonly deps: AutocompactDeps;
@@ -144,7 +143,12 @@ export class Autocompact {
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane);
         // the decider may have taken a while: another lane may have been requested meanwhile, so the busy check is made again, synchronously, before the record
         const again = busyOf(deps, this.asked, tab, pane, deps.now());
-        if (again.busy) { this.skip(lane, 'busy', shareOf(use), again.detail); return; }
+        if (again.busy) {
+            // the decider was paid for: the skip keeps what its answer cost, so the log and the listing say where the money went
+            const paid = judged.costUsd > 0 ? `; decider ${moneyOf(judged.costUsd)} discarded` : '';
+            this.skip(lane, 'busy', shareOf(use), `${again.detail}${paid}`);
+            return;
+        }
         const made: Decision = {
             tab, pane, agent: String(lane.agent), at: deps.now(), mode: policy.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate, verdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why,

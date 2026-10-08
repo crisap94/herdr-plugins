@@ -24,6 +24,9 @@ function answerAt(source: string, budget: number): InFlightResult {
     return answerOf(scan, tail.truncated);
 }
 
+/** How many transcripts' unknown answers are kept (the oldest is forgotten first). */
+export const KEPT_UNKNOWN_MAX = 256;
+
 /** Claude Code transcripts. Never derive the project slug: sessions move with /cd. */
 export class ClaudeTranscripts implements Transcripts {
     readonly agent = 'claude';
@@ -75,13 +78,23 @@ export class ClaudeTranscripts implements Transcripts {
 
     /** The answer from the tail; while it ends work it never saw launched, it reads back with a doubled budget, up to the bound.
      * An unknown answer is kept with the file's size: while the size is the same, it is answered without a read. */
+    /** Keeps an unknown answer as the newest entry, and forgets the oldest entries beyond `KEPT_UNKNOWN_MAX`. */
+    private keep(source: string, kept: { readonly size: number; readonly answer: InFlightResult }): void {
+        this.unknownAt.delete(source);
+        this.unknownAt.set(source, kept);
+        for (const oldest of this.unknownAt.keys()) {
+            if (this.unknownAt.size <= KEPT_UNKNOWN_MAX) break;
+            this.unknownAt.delete(oldest);
+        }
+    }
+
     inFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
             const size = statSync(source).size;
             const kept = this.unknownAt.get(source);
             if (kept !== undefined && kept.size === size) return Promise.resolve(kept.answer);
             const answer = answerAt(source, budget);
-            if (isUnknown(answer)) this.unknownAt.set(source, { size, answer });
+            if (isUnknown(answer)) this.keep(source, { size, answer });
             else this.unknownAt.delete(source);
             return Promise.resolve(answer);
         } catch (error) {
