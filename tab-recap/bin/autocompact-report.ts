@@ -78,8 +78,9 @@ export function main(dir: string): string {
     return sections.join('\n\n');
 }
 
-const dir = process.argv[process.argv.indexOf('--dir') + 1];
-if (dir === undefined || process.argv.indexOf('--dir') < 0) {
+const at = process.argv.indexOf('--dir');
+const dir = at < 0 ? undefined : process.argv[at + 1];
+if (dir === undefined) {
     console.error('usage: autocompact-report.ts --dir <exp002 dir>');
     process.exitCode = 2;
 } else {

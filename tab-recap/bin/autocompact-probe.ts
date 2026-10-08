@@ -13,7 +13,10 @@ import { pooled, retried } from '#src/experiment/pool.ts';
 
 const CONCURRENCY = 4;
 
-const at = (name: string): string | undefined => process.argv[process.argv.indexOf(`--${name}`) + 1];
+const value = (name: string): string | null => {
+    const at = process.argv.indexOf(`--${name}`);
+    return at < 0 ? null : (process.argv[at + 1] ?? null);
+};
 
 interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: object; readonly questions: Readonly<Record<string, Noul>> }
 
@@ -37,9 +40,15 @@ async function ask(decider: Decider, job: Job, log: (line: string) => void): Pro
     return { answer, attempts };
 }
 
+const USAGE = 'usage: autocompact-probe.ts --dir <exp002 dir> --arm jev|haiku-low|haiku-medium|luna-low --rep 1|2';
+
 async function main(): Promise<void> {
-    const [dir, arm, rep] = [at('dir'), at('arm'), at('rep')];
-    if (dir === undefined || arm === undefined || !isArm(arm) || (rep !== '1' && rep !== '2')) throw new Error('usage: autocompact-probe.ts --dir <exp002 dir> --arm jev|haiku-low|haiku-medium|luna-low --rep 1|2');
+    const [dir, arm, rep] = [value('dir'), value('arm'), value('rep')];
+    if (dir === null || arm === null || !isArm(arm) || (rep !== '1' && rep !== '2')) {
+        console.error(USAGE);
+        process.exitCode = 2;
+        return;
+    }
     const [file, log] = [join(dir, `answers-${arm}-${rep}.jsonl`), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(file, 'key');
     const todo = jobsOf(dir).filter((job) => !done.has(job.key));
