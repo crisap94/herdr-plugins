@@ -48,3 +48,12 @@ test('rule: with no harness near the best, the most precise steady arm; with non
     assert.equal(decide([arm('jev', 0.95, 0.02, false), arm('haiku-low', 0.8, 0.1, true)]).defaultArm, 'jev');
     assert.equal(decide([arm('jev', 0.95, 0.3, false), arm('haiku-low', 0.9, 0.4, true)]).defaultArm, null);
 });
+
+import { expandBriefs } from '#src/experiment/report-metrics.ts';
+
+test('a brief answer row becomes one row per fact, the call on the first', () => {
+    const expanded = expandBriefs([{ key: 'p', kind: 'brief', answers: { keeps_0: 0.9, keeps_1: 0.2, reason_1: 0.6 }, tokens: 100, costUsd: 0.5, tookMs: 700 }]);
+    assert.deepEqual(expanded.map((item) => item.key), ['p#0', 'p#1']);
+    assert.deepEqual(expanded[1]?.answers, { brief_keeps_fact: 0.2, brief_keeps_reason: 0.6 });
+    assert.deepEqual(expanded.map((item) => item.tookMs), [700, undefined]);
+});

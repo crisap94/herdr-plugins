@@ -73,20 +73,18 @@ test('verbatim: a path, error line or hash only in the recent turns that the age
     assert.ok(onlyInRecent(recent, '').includes('3f9a2bc1d'));
 });
 
-import { COVERAGE_QUESTIONS, factsToCheck, questionsFor, sectionsOf } from '#src/experiment/coverage.ts';
+import { sectionsOf } from '#src/experiment/coverage.ts';
 import { coverageLabelsOf, labelsOf } from '#src/experiment/label-prompt.ts';
 import { pooled, retried } from '#src/experiment/pool.ts';
 
 const fact = (section: string, text: string, state: 'open' | 'closed' = 'open', why: string | null = null): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
 
-test('coverage: open goal, now, needs, decisions, next and rules facts; a decision with a why also gets its reason', () => {
+test('coverage: the recap sections the brief job is given, from the open facts', () => {
     const history = [fact('goal', 'g'), fact('done', 'd'), fact('now', 'n', 'closed'), fact('decisions', 'x', 'open', 'because'), fact('links', 'l'), fact('rules', 'r')];
-    assert.deepEqual(factsToCheck(history).map((f) => f.text), ['g', 'x', 'r']);
-    assert.deepEqual(questionsFor(history[3] as HistoryFact), ['brief_keeps_fact', 'brief_keeps_reason']);
-    assert.deepEqual(questionsFor(history[0] as HistoryFact), ['brief_keeps_fact']);
-    assert.deepEqual(Object.keys(COVERAGE_QUESTIONS), ['brief_keeps_fact', 'brief_keeps_reason']);
     assert.equal(sectionsOf(history).goal, 'g');
     assert.deepEqual(sectionsOf(history).rules, ['r']);
+    assert.deepEqual(sectionsOf(history).now, []);
+    assert.deepEqual(sectionsOf(history).decisions, ['x']);
 });
 
 test('labels: only 0 or 1 for every id; coverage labels need a reason for a decision', () => {

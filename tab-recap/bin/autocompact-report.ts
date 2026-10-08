@@ -7,7 +7,7 @@ import { readLabelled, readPoints } from '#src/adapters/experiment-data.ts';
 import { readJsonl } from '#src/adapters/experiment-io.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { kappaRows } from '#src/experiment/kappa-report.ts';
-import { coverageAuc, drift, policyMetrics, questionMetrics } from '#src/experiment/report-metrics.ts';
+import { coverageAuc, drift, expandBriefs, policyMetrics, questionMetrics } from '#src/experiment/report-metrics.ts';
 import type { Answer, Reps } from '#src/experiment/report-metrics.ts';
 import { outcomeGap } from '#src/experiment/report-outcome.ts';
 import type { BoundaryRow } from '#src/experiment/report-outcome.ts';
@@ -23,7 +23,7 @@ interface BriefRow { readonly id: string; readonly facts: readonly { readonly n:
 
 const repsOf = (dir: string, arm: string): Reps => [1, 2].map((rep) => {
     const file = join(dir, `answers-${arm}-${rep}.jsonl`);
-    return existsSync(file) ? (readJsonl(file) as readonly Answer[]) : [];
+    return existsSync(file) ? expandBriefs(readJsonl(file) as readonly Answer[]) : [];
 }).filter((rows) => rows.length > 0);
 
 const coverageLabel = (label: { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }): Readonly<Record<string, 0 | 1>> => (label.reason === undefined ? { brief_keeps_fact: label.keeps } : { brief_keeps_fact: label.keeps, brief_keeps_reason: label.reason });

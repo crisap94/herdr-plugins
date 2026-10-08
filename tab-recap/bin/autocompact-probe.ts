@@ -4,36 +4,36 @@ import { join } from 'node:path';
 import { deciderOf, isArm } from '#src/adapters/experiment-arms.ts';
 import { readPoints } from '#src/adapters/experiment-data.ts';
 import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment-io.ts';
-import type { Decider, DecidedResult } from '#src/ports/decider.ts';
+import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
-import { COVERAGE_QUESTIONS, questionsFor } from '#src/experiment/coverage.ts';
+import { questionsFor } from '#src/recap/application/brief-coverage.ts';
+import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import { pooled, retried } from '#src/experiment/pool.ts';
 
 const CONCURRENCY = 4;
 
 const at = (name: string): string | undefined => process.argv[process.argv.indexOf(`--${name}`) + 1];
 
-interface Job { readonly key: string; readonly kind: 'point' | 'fact'; readonly state: object; readonly ids: readonly string[] }
+interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: object; readonly questions: Readonly<Record<string, Noul>> }
 
-interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly { readonly n: number; readonly section: string; readonly text: string; readonly why: string | null }[] }
+interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly CoverageFact[] }
 
-/** Every point of the corpus (and of the outcome set), then every fact of every brief. */
+/** Every point of the corpus (and of the outcome set), then every brief: one ask over all its facts, as the live flow makes it. */
 export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(join(dir, 'corpus.jsonl')), ...readPoints(join(dir, 'outcome-points.jsonl'))];
     const briefs = readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[];
     return [
-        ...points.map((point): Job => ({ key: point.id, kind: 'point', state: point.state, ids: Object.keys(QUESTIONS) })),
-        ...briefs.flatMap((row) => row.facts.map((fact): Job => ({ key: `${row.id}#${fact.n}`, kind: 'fact', state: { brief: row.brief, fact: { section: fact.section, text: fact.text, why: fact.why } }, ids: questionsFor(fact) }))),
+        ...points.map((point): Job => ({ key: point.id, kind: 'point', state: point.state, questions: QUESTIONS })),
+        ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: { brief: row.brief, facts: row.facts }, questions: questionsFor(row.facts) })),
     ];
 }
 
 const usable = (answer: DecidedResult): boolean => answer.kind === 'decided';
 
 async function ask(decider: Decider, job: Job, log: (line: string) => void): Promise<{ answer: DecidedResult; attempts: number }> {
-    const questions = Object.fromEntries(job.ids.map((id) => [id, job.kind === 'point' ? QUESTIONS[id] : COVERAGE_QUESTIONS[id]]).filter((pair) => pair[1] !== undefined));
     let attempts = 0;
-    const answer = await retried(() => { attempts += 1; return decider.ask(job.state, questions as Parameters<Decider['ask']>[1]); }, usable, { attempts: 3, baseMs: 10_000, onRetry: (n, wait) => { log(`${job.key.slice(0, 12)}: attempt ${n} failed; waiting ${wait / 1000} s`); } });
+    const answer = await retried(() => { attempts += 1; return decider.ask(job.state, job.questions); }, usable, { attempts: 3, baseMs: 10_000, onRetry: (n, wait) => { log(`${job.key.slice(0, 12)}: attempt ${n} failed; waiting ${wait / 1000} s`); } });
     return { answer, attempts };
 }
 

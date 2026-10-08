@@ -5,7 +5,7 @@ import type { Scored } from './stats.ts';
 
 export interface Answer {
     readonly key: string;
-    readonly kind: 'point' | 'fact';
+    readonly kind: 'point' | 'fact' | 'brief';
     readonly answers?: Readonly<Record<string, number>>;
     readonly tokens?: number;
     readonly costUsd?: number;
@@ -84,4 +84,24 @@ export function policyMetrics(rep: readonly Answer[], labels: Labels, keep: (key
 /** Coverage: AUC of the `keeps` and `reason` answers against the brief labels (`<point>#<n>` keys). */
 export function coverageAuc(reps: Reps, labels: Labels, question: 'brief_keeps_fact' | 'brief_keeps_reason'): number {
     return mean(reps.map((rep) => auc(scoredOf(rep, question, labels))).filter((v) => !Number.isNaN(v)));
+}
+
+/**
+ * A brief's one answer row (`keeps_<i>`, `reason_<i>`) as one row per fact keyed `<brief>#<i>`, answering `brief_keeps_fact` and `brief_keeps_reason`.
+ * The call's tokens, money and time stay on the brief's first fact. Rows of points pass through unchanged.
+ */
+export function expandBriefs(rows: readonly Answer[]): readonly Answer[] {
+    return rows.flatMap((row) => {
+        if (row.kind !== 'brief') return [row];
+        const found = new Map<number, Record<string, number>>();
+        for (const [name, value] of Object.entries(row.answers ?? {})) {
+            const match = /^(keeps|reason)_(\d+)$/.exec(name);
+            if (match === null) continue;
+            const at = Number(match[2]);
+            found.set(at, Object.assign(found.get(at) ?? {}, { [match[1] === 'keeps' ? 'brief_keeps_fact' : 'brief_keeps_reason']: value }));
+        }
+        const facts = [...found].toSorted((a, b) => a[0] - b[0]).map(([at, answers]): Answer => ({ key: `${row.key}#${at}`, kind: 'fact', answers }));
+        const call = { tokens: row.tokens ?? 0, costUsd: row.costUsd ?? 0, tookMs: row.tookMs ?? 0 };
+        return facts.map((fact, position) => (position === 0 ? Object.assign({}, fact, call) : fact));
+    });
 }
