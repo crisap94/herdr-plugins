@@ -48,9 +48,9 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
   board for the restart scenario and a lane that stays idle. — evidence: `the first tick sweeps every idle and done lane …`, `a sweep still running when the next is due is skipped …` (test/autocompact-sweep.test.ts)
 ## 7. The offer (design decision 6)
 
-- [ ] 7.1 `autocompact-questions.ts`: the criteria of `closes_request` and `announces_continuation` as in
+- [x] 7.1 `autocompact-questions.ts`: the criteria of `closes_request` and `announces_continuation` as in
   the spec; fixtures `test/fixtures/autocompact/closes_request/offer.json` and
-  `announces_continuation/offer.json` (generic text). Verify: the fixtures test reads them.
+  `announces_continuation/offer.json` (generic text). Verify: the fixtures test reads them. — evidence: `an offer to the operator closes the request and is not a continuation …` (test/autocompact-state.test.ts)
 
 ## 8. Live check
 
