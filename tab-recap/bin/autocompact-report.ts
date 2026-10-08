@@ -59,17 +59,17 @@ export function main(dir: string): string {
         const [all, above] = [reps.map((rep) => policyMetrics(rep, labels, () => true)), reps.map((rep) => policyMetrics(rep, labels, (key) => high.has(key)))];
         return { arm, all: { precision: mean(all.map((m) => m.precision)), recall: mean(all.map((m) => m.recall)), compact: mean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => m.precision)), recall: mean(above.map((m) => m.recall)) } };
     });
-    const summaries = policy.map(({ arm, all }) => ({
+    const scores = policy.map(({ arm, all }) => ({
         arm, precision: all.precision, drift: mean(IDS.map((id) => drift(arms[arm] ?? [], id))), needsOnlyRecapHarness: arm !== 'jev',
         coverageAuc: mean(COVERAGE.map((id) => coverageAuc(arms[arm] ?? [], briefs, id)).filter((v) => !Number.isNaN(v))),
     }));
-    const decision = decide(summaries);
+    const decision = decide(scores);
     const operator = existsSync(join(dir, 'operator-labels.jsonl')) ? readLabelled(join(dir, 'operator-labels.jsonl')) : [];
     const sections = [
         `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the soft limit; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l[id] === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
         `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaRows(operator, readLabelled(join(dir, 'labels.jsonl')), IDS).map((row) => [row.question, row.n, row.kappa, row.usable ? 'yes' : 'no']))}`,
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
-        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [arm, all.precision, all.recall, all.compact, above.precision, above.recall, summaries[i]?.drift ?? Number.NaN, summaries[i]?.coverageAuc ?? Number.NaN]))}`,
+        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [arm, all.precision, all.recall, all.compact, above.precision, above.recall, scores[i]?.drift ?? Number.NaN, scores[i]?.coverageAuc ?? Number.NaN]))}`,
         `## Outcome set (${boundaries.filter((row) => row.point_id !== null).length} compactions with a stored run before them)\n\n${table(['arm', 'allowed n', 'allowed re-reads', 'allowed restated', 'blocked n', 'blocked re-reads', 'blocked restated'], Object.entries(arms).map(([arm, reps]) => { const gap = outcomeGap(boundaries, reps); return [arm, gap.allowed.n, gap.allowed.reReads, gap.allowed.restated, gap.blocked.n, gap.blocked.reReads, gap.blocked.restated]; }))}`,
         `## Rule\n\nDefault decider: **${decision.defaultArm ?? 'none (stay on `recap`)'}**. Coverage decider: **${decision.coverageArm ?? 'none'}**.\n\n${decision.why}`,
     ];

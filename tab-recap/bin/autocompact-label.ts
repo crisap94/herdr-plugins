@@ -38,16 +38,16 @@ async function labelPoints(dir: string, limit: number | null): Promise<void> {
     });
 }
 
-function summarise(dir: string): void {
+function tally(dir: string): void {
     const [points, labels] = [readPoints(join(dir, 'corpus.jsonl')), readLabelled(join(dir, 'labels.jsonl'))];
     const byId = new Map(points.map((point) => [point.id, point]));
     const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels['needs_verbatim'] ?? 0, code: crossCheck(point) }]; });
-    const summary = {
+    const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
         crossCheck: { n: rows.length, agreement: agreement(rows.map((r) => r.model), rows.map((r) => r.code)), kappa: kappa(rows.map((r) => r.model), rows.map((r) => r.code)), labellerPositives: rows.filter((r) => r.model === 1).length, codePositives: rows.filter((r) => r.code === 1).length },
         codex: spawnSync('codex', ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
     };
-    console.log(JSON.stringify(summary, null, 2));
+    console.log(JSON.stringify(result, null, 2));
 }
 
 function kappas(dir: string): void {
@@ -60,10 +60,10 @@ async function main(): Promise<void> {
     if (dir === null) throw new Error('usage: autocompact-label.ts --dir <exp002 dir> [--briefs] [--crosscheck] [--kappa] [--limit n]');
     if (value('operator') !== null) return operatorLabels(dir, Number(value('operator')));
     if (flag('kappa')) return kappas(dir);
-    if (flag('crosscheck')) return summarise(dir);
+    if (flag('crosscheck')) return tally(dir);
     if (flag('briefs')) return labelBriefs(dir);
     await labelPoints(dir, value('limit') === null ? null : Number(value('limit')));
-    summarise(dir);
+    tally(dir);
 }
 
 main().catch((error: unknown) => { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; });

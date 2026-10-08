@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { coverageAuc, drift, policyMetrics, questionMetrics } from '#src/experiment/report-metrics.ts';
 import type { Answer } from '#src/experiment/report-metrics.ts';
 import { decide } from '#src/experiment/report-rule.ts';
-import type { ArmSummary } from '#src/experiment/report-rule.ts';
+import type { ArmScore } from '#src/experiment/report-rule.ts';
 
 const SAFE = { closes_request: 1, announces_continuation: 0, asks_detailed_choice: 0, needs_verbatim: 0, changes_subject: 0, stuck: 0 } as const;
 const UNSAFE = { ...SAFE, needs_verbatim: 1 } as const;
@@ -36,7 +36,7 @@ test('coverage AUC reads the brief labels', () => {
     assert.equal(coverageAuc([rep, rep], briefLabels, 'brief_keeps_fact'), 1);
 });
 
-const arm = (name: string, precision: number, spread: number, harness: boolean, coverage = 0.8): ArmSummary => ({ arm: name, precision, drift: spread, coverageAuc: coverage, needsOnlyRecapHarness: harness });
+const arm = (name: string, precision: number, spread: number, harness: boolean, coverage = 0.8): ArmScore => ({ arm: name, precision, drift: spread, coverageAuc: coverage, needsOnlyRecapHarness: harness });
 
 test('rule: a harness within 3 points of the best with low drift wins over a better Jev', () => {
     const decision = decide([arm('jev', 0.95, 0.02, false, 0.9), arm('haiku-low', 0.93, 0.1, true), arm('haiku-medium', 0.94, 0.2, true), arm('luna-low', 0.8, 0.05, true)]);
