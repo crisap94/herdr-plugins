@@ -1,0 +1,12 @@
+run: R04-parallel-full
+experiment: EXP-001-recall-engine
+status: superseded
+date: 2026-10-07
+code: recall-b's tree b0d6082 before the rebase on recall-a: old ruler (coverage over a run's additions), no G11/G12, so enumerate and enumerate+gates ran the same code
+corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
+command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline full
+writer: codex / gpt-6-luna / medium
+judge: codex / gpt-6-luna / medium
+ran_by: recall-b
+raw: R04-parallel-full.txt (and .err when kept) on the private branch, listed in REMOVED-ON-MAIN.txt
+note: task 3.5 first attempt: the four arms ran in parallel and share one rate limit; superseded by R05–R08 (state ruler, sequential)

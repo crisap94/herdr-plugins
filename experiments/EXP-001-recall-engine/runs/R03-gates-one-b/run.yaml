@@ -1,0 +1,12 @@
+run: R03-gates-one-b
+experiment: EXP-001-recall-engine
+status: valid
+date: 2026-10-07
+code: recall-a's tree after task group 2, before 9575e0f; gate counts printed
+corpus: replay-mine-40.jsonl (sha256 b773d3d8…, see manifest.yaml)
+command: node bin/tab-recap.mjs eval --replay replay-mine-40.jsonl --pipeline one
+writer: codex / gpt-6-luna / medium
+judge: codex / gpt-6-luna / medium
+ran_by: recall-a
+raw: R03-gates-one-b.txt (and .err when kept) on the private branch, listed in REMOVED-ON-MAIN.txt
+note: task 2.4, second run of the same configuration: with R02 it sets the noise floor (PREREG §7)
