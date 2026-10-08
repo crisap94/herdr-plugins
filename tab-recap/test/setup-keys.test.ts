@@ -226,16 +226,16 @@ test('the judge job: as the recap writer, no model of its own and medium effort 
     assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });
 
-test('the autocompact rows: mode (shadow by default), the soft limit (40, 10–95) and the decider job (as the recap writer, low; jev among the choices), saved under their variables and read-only when set', () => {
+test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) and the decider job (as the recap writer, low; jev among the choices), saved under their variables and read-only when set', () => {
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual([draft.autocompact, draft.autocompactAt, draft.decide], ['shadow', '40', { by: 'recap', model: '', effort: 'low' }]);
+    assert.deepEqual([draft.autocompact, draft.autocompactAt, draft.decide], ['shadow', '10', { by: 'recap', model: '', effort: 'low' }]);
     assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'ON', autocompactAt: '55%', decideBy: 'jev', decideModel: ' x ', decideEffort: 'high' }).decide, { by: 'jev', model: 'x', effort: 'high' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'maybe', autocompactAt: '5' }).autocompactAt, '40');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'maybe', autocompactAt: '5' }).autocompactAt, '10');
     const mode = typed(start(), [...down(11), '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(mode)], [['TAB_RECAP_AUTOCOMPACT', 'on']]);
     const at = typed(start(), [...down(12), '\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
-    assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '40', 'out of range is the default');
+    assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
     const by = typed(start(), [...down(13), '\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
     const model = typed(start(), [...down(13), 'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;

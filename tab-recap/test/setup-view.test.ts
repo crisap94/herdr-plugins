@@ -162,7 +162,7 @@ test('the autocompact rows show their value, the focused one its hint, and the d
     const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 11 }, () => 'j'));
     const text = setupView(rows, en, 120).join('\n');
     assert.match(text, /Autocompact\s+shadow — decides and records, never compacts/);
-    assert.match(text, /Autocompact at\s+40%/);
+    assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
     const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 13 }, () => 'j'), '\r']), en, 140).join('\n');

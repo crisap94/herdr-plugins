@@ -1,7 +1,7 @@
 // The CompactionRecords repository: one row per compaction of a lane; every write is one transaction, every read answers [] when it cannot.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
-import { all, BadRow, blob, flag, guarded, maybeText, maybeWhole, text, whole } from './rows.ts';
+import { all, BadRow, blob, flag, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
 import { idOf, typeIdOf } from './typeid.ts';
@@ -45,6 +45,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     private readonly dismiss: StatementSync;
     private readonly interrupt: StatementSync;
     private readonly shown: StatementSync;
+    private readonly autoRunning: StatementSync;
 
     constructor(db: DatabaseSync) {
         this.db = db;
@@ -54,6 +55,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
         this.dismiss = db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL');
         this.interrupt = db.prepare("UPDATE compaction SET stage = 'unconfirmed', stage_at = ?, finished_at = ?, why = ? WHERE finished_at IS NULL");
         this.shown = db.prepare(SHOWN);
+        this.autoRunning = db.prepare("SELECT 1 AS found FROM compaction WHERE origin = 'auto' AND finished_at IS NULL LIMIT 1");
     }
 
     begin(start: BeginCompaction): string {
@@ -83,6 +85,10 @@ export class CompactionRecordsRepository implements CompactionRecords {
 
     interrupted(at: number, why: string): number {
         return writeTx(this.db, () => Number(this.interrupt.run(at, at, why).changes));
+    }
+
+    autoInProgress(): boolean {
+        return guarded(() => one(this.autoRunning) !== null, false);
     }
 
     shownFor(tab: string): readonly CompactionRecord[] {

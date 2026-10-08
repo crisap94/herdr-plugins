@@ -67,7 +67,7 @@ export function main(dir: string): string {
     const decision = decide(scores);
     const operator = existsSync(join(dir, 'operator-labels.jsonl')) ? readLabelled(join(dir, 'operator-labels.jsonl')) : [];
     const sections = [
-        `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the soft limit; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l[id] === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
+        `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the minimum; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l[id] === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
         `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaRows(operator, readLabelled(join(dir, 'labels.jsonl')), IDS).map((row) => [row.question, row.n, row.kappa, row.usable ? 'yes' : 'no']))}`,
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
         `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [arm, all.precision, all.recall, all.compact, above.precision, above.recall, scores[i]?.drift ?? Number.NaN, scores[i]?.coverageAuc ?? Number.NaN]))}`,

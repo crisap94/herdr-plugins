@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/harness-decider.ts';
 import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, softOf } from '#src/recap/domain/autocompact.ts';
+import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, minimumOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -15,20 +15,20 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
-test('the policy defaults: shadow, soft 40, ceiling 80, ten minutes, claude only', () => {
-    assert.deepEqual(policyOf(config({})), { mode: 'shadow', soft: 40, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'] });
+test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude only', () => {
+    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'] });
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {
     assert.deepEqual([' ON ', 'Off', 'shadow', 'yes', '', undefined].map(modeOf), ['on', 'off', 'shadow', 'shadow', 'shadow', 'shadow']);
 });
 
-test('the soft limit is 10–95 (a % is allowed); outside it, or not a whole number, is 40', () => {
-    assert.deepEqual(['10', '95', '55%', ' 70 '].map(softOf), [10, 95, 55, 70]);
-    assert.deepEqual(['9', '96', '0', '-5', '40.5', 'x', '', undefined].map(softOf), Array.from({ length: 8 }, () => 40));
+test('the minimum is 10–95 (a % is allowed); outside it, or not a whole number, is 10', () => {
+    assert.deepEqual(['10', '95', '55%', ' 70 '].map(minimumOf), [10, 95, 55, 70]);
+    assert.deepEqual(['9', '96', '0', '-5', '40.5', 'x', '', undefined].map(minimumOf), Array.from({ length: 8 }, () => 10));
 });
 
-test('the ceiling is above the soft limit: 80 by default; one that is not becomes soft + 10, at most 95', () => {
+test('the ceiling is above the minimum: 80 by default; one that is not becomes minimum + 10, at most 95', () => {
     assert.deepEqual([ceilingOf(undefined, 40), ceilingOf('90', 40), ceilingOf('x', 40)], [80, 90, 80]);
     assert.deepEqual([ceilingOf('40', 40), ceilingOf('30', 40), ceilingOf(undefined, 85), ceilingOf('85', 90), ceilingOf('95', 95)], [50, 50, 95, 95, 95]);
     assert.equal(policyOf(config({ TAB_RECAP_AUTOCOMPACT_AT: '60', TAB_RECAP_AUTOCOMPACT_CEILING: '50' })).ceiling, 70);
@@ -112,7 +112,7 @@ test('deciderFor: jev builds the Jev decider, a harness job a harness decider, o
 test('the loaded configuration carries the policy, the job and the Jev settings', () => {
     withEnv({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '55', TAB_RECAP_JEV_MODEL: 'jev-9' }, () => {
         const loaded = loadConfig();
-        assert.deepEqual([loaded.autocompact.mode, loaded.autocompact.soft, loaded.autocompact.ceiling, loaded.decider, loaded.jev.model], ['on', 55, 80, { by: 'recap', model: '', effort: 'low' }, 'jev-9']);
+        assert.deepEqual([loaded.autocompact.mode, loaded.autocompact.minimum, loaded.autocompact.ceiling, loaded.decider, loaded.jev.model], ['on', 55, 80, { by: 'recap', model: '', effort: 'low' }, 'jev-9']);
     });
 });
 

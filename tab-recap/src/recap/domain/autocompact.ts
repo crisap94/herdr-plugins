@@ -5,20 +5,22 @@ export type AutocompactMode = 'off' | 'shadow' | 'on';
 export interface AutocompactPolicy {
     readonly mode: AutocompactMode;
     /** the context share (percent) from which every safe moment compacts */
-    readonly soft: number;
-    /** the share (percent) at which the verdict is `compact` with no model call; above the soft limit */
+    readonly minimum: number;
+    /** the share (percent) at which the verdict is `compact` with no model call; above the minimum */
     readonly ceiling: number;
     readonly cooldownMs: number;
     /** the kinds whose lanes are compacted; any other compactable kind is decided and recorded only */
     readonly kinds: readonly string[];
 }
 
-export const SOFT_DEFAULT = 40;
-export const SOFT_MIN = 10;
-export const SOFT_MAX = 95;
+export const MINIMUM_DEFAULT = 10;
+export const MINIMUM_MIN = 10;
+export const MINIMUM_MAX = 95;
 export const CEILING_DEFAULT = 80;
 export const COOLDOWN_DEFAULT_MS = 10 * 60_000;
 export const KINDS_DEFAULT: readonly string[] = ['claude'];
+/** the agent statuses a lane is considered in: its agent is free (a sweep and a settled lane take these only) */
+export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 
@@ -27,19 +29,19 @@ const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase
 /** `TAB_RECAP_AUTOCOMPACT`: `off`, `shadow` or `on`; anything else is `shadow`. */
 export const modeOf = (raw: string | undefined): AutocompactMode => MODES.find((mode) => mode === word(raw)) ?? 'shadow';
 
-/** A whole percent in `[SOFT_MIN, SOFT_MAX]`, else null (`40` or `40%`). */
+/** A whole percent in `[MINIMUM_MIN, MINIMUM_MAX]`, else null (`10` or `10%`). */
 function percentOf(raw: string | undefined): number | null {
     const percent = Number(word(raw).replace(/%$/, ''));
-    return word(raw) !== '' && Number.isInteger(percent) && percent >= SOFT_MIN && percent <= SOFT_MAX ? percent : null;
+    return word(raw) !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : null;
 }
 
-/** `TAB_RECAP_AUTOCOMPACT_AT`: 10–95, else 40. */
-export const softOf = (raw: string | undefined): number => percentOf(raw) ?? SOFT_DEFAULT;
+/** `TAB_RECAP_AUTOCOMPACT_AT`: 10–95, else 10. */
+export const minimumOf = (raw: string | undefined): number => percentOf(raw) ?? MINIMUM_DEFAULT;
 
-/** `TAB_RECAP_AUTOCOMPACT_CEILING`: 10–95, else 80; and above `soft` always — a ceiling that is not becomes `soft` + 10, at most 95. */
-export function ceilingOf(raw: string | undefined, soft: number): number {
+/** `TAB_RECAP_AUTOCOMPACT_CEILING`: 10–95, else 80; and above `minimum` always — a ceiling that is not becomes `minimum` + 10, at most 95. */
+export function ceilingOf(raw: string | undefined, minimum: number): number {
     const ceiling = percentOf(raw) ?? CEILING_DEFAULT;
-    return ceiling > soft ? ceiling : Math.min(SOFT_MAX, soft + 10);
+    return ceiling > minimum ? ceiling : Math.min(MINIMUM_MAX, minimum + 10);
 }
 
 /** `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`: a whole number of milliseconds, 0 or more, else ten minutes. */
@@ -56,8 +58,8 @@ export function kindsOf(raw: string | undefined): readonly string[] {
 
 /** The whole policy from the configuration. */
 export function policyOf(get: (key: string) => string | undefined): AutocompactPolicy {
-    const soft = softOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
-    return { mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), soft, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), soft), cooldownMs: cooldownOf(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS')), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')) };
+    const minimum = minimumOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
+    return { mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum), cooldownMs: cooldownOf(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS')), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')) };
 }
 
 /** Who checks a brief's coverage: `auto` (Jev when a key is found, else the moment decider), `jev`, or `decider` (the moment decider). */
@@ -91,26 +93,28 @@ export function jevOf(get: (key: string) => string | undefined): JevSettings {
     return { url: usable ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
 }
 
-/** Where a consideration stops: busy · in-flight · below-soft · cooldown stop it before a model is asked; `ceiling` is `compact` with no model; `ask` goes on.
+/** Where a consideration stops: busy · below-minimum · cooldown · unchanged · in-flight stop it before a model is asked; `ceiling` is `compact` with no model; `ask` goes on.
  * With `inFlight` null the in-flight gate is passed over: the answer is `ask` or `ceiling` only if the lane would otherwise be asked. */
-export type Gate = 'busy' | 'in-flight' | 'below-soft' | 'cooldown' | 'ceiling' | 'ask';
+export type Gate = 'busy' | 'below-minimum' | 'cooldown' | 'unchanged' | 'in-flight' | 'ceiling' | 'ask';
 
 /** What the gates look at: all facts of the lane at this instant. */
 export interface GateInput {
     readonly kind: string;
     readonly kinds: readonly string[];
-    /** a compaction of the lane is in progress or requested */
+    /** a compaction of the lane is in progress or requested, or one of another lane is */
     readonly busy: boolean;
     /** the count of work in flight, or `unknown` for a reader that cannot tell (it counts as in flight); null when it was not read: the gates before it decided, and the lane would be asked */
     readonly inFlight: number | 'unknown' | null;
     readonly share: number;
-    readonly soft: number;
+    readonly minimum: number;
     readonly ceiling: number;
     readonly now: number;
     readonly lastBreakAt: number | null;
     /** when the lane last got a decision of any verdict */
     readonly lastDecisionAt: number | null;
     readonly cooldownMs: number;
+    /** the last decision was made at the same tokens and mode, by this daemon process: nothing changed since */
+    readonly unchanged: boolean;
 }
 
 /** The gates in order. A kind outside `kinds` is `recordOnly`: still asked and recorded, its verdict never requests. */
@@ -119,9 +123,10 @@ export function gateOf(input: GateInput): { readonly gate: Gate; readonly record
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
         if (input.busy) return 'busy';
-        if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
-        if (input.share < input.soft) return 'below-soft';
+        if (input.share < input.minimum) return 'below-minimum';
         if (input.now - since < input.cooldownMs) return 'cooldown';
+        if (input.unchanged) return 'unchanged';
+        if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
         return input.share >= input.ceiling ? 'ceiling' : 'ask';
     })();
     return { gate, recordOnly };

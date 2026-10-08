@@ -11,6 +11,8 @@ import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-ver
 const fact = (section: string, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text, why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2, ...over });
 const FIELDS = ['last_prompt', 'last_reply', 'recent_turns', 'goal', 'open_work'];
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'autocompact');
+/** the questions with an offer fixture: an offer to the operator is a yes for `closes_request` and a no for `announces_continuation` */
+const OFFERS: Readonly<Record<string, true>> = { closes_request: true, announces_continuation: true };
 
 test('the six questions are the ones the verdict uses; each has instructions and both criteria, and names a field in backticks', () => {
     assert.deepEqual(Object.keys(QUESTIONS).toSorted(), [...MUST_BE_LOW, ...ONE_MUST_BE_HIGH].toSorted());
@@ -23,8 +25,8 @@ test('the six questions are the ones the verdict uses; each has instructions and
 test('every question has a yes and a no fixture holding exactly the state fields, and every field is named by a question', () => {
     assert.deepEqual(readdirSync(FIXTURES).toSorted(), Object.keys(QUESTIONS).toSorted());
     for (const id of Object.keys(QUESTIONS)) {
-        assert.deepEqual(readdirSync(join(FIXTURES, id)).toSorted(), ['no.json', 'yes.json'], id);
-        for (const name of ['yes', 'no']) {
+        assert.deepEqual(readdirSync(join(FIXTURES, id)).toSorted(), ['no.json', 'yes.json', ...(id in OFFERS ? ['offer.json'] : [])].toSorted(), id);
+        for (const name of ['yes', 'no', ...(id in OFFERS ? ['offer'] : [])]) {
             assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(FIXTURES, id, `${name}.json`), 'utf8')) as object), FIELDS, `${id}/${name}`);
         }
     }
@@ -56,4 +58,13 @@ test('a long reply keeps its first 600 and last 1 200 characters around […]', 
     const long = `${'a'.repeat(600)}${'m'.repeat(500)}${'z'.repeat(1200)}`;
     assert.equal(replyOf(long), `${'a'.repeat(600)}[…]${'z'.repeat(1200)}`);
     assert.equal(replyOf('short'), 'short');
+});
+
+test('an offer to the operator closes the request and is not a continuation: the criteria say so, and both offer fixtures end with the offer', () => {
+    assert.match(JSON.stringify(QUESTIONS['closes_request']?.criteria.true), /offer/);
+    assert.match(JSON.stringify(QUESTIONS['announces_continuation']?.instructions), /waits for the operator/);
+    for (const id of Object.keys(OFFERS)) {
+        const offer = JSON.parse(readFileSync(join(FIXTURES, id, 'offer.json'), 'utf8')) as { last_reply: string };
+        assert.match(offer.last_reply, /\?$/, id);
+    }
 });

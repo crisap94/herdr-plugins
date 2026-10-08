@@ -57,7 +57,7 @@ export interface Config {
     readonly keepInputDays: number;
     /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
     readonly curator: Job;
-    /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the soft limit), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
+    /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the minimum), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
     readonly autocompact: AutocompactPolicy;
     /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
     readonly decider: DeciderJob;

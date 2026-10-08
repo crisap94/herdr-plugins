@@ -65,6 +65,8 @@ export interface CompactionEnd {
 export interface CompactionView {
     /** the newest record of each lane of the tab that the agent's next turn has not dismissed yet */
     shownFor(tab: string): readonly CompactionRecord[];
+    /** an automatic compaction of any lane of any tab is in progress (not yet finished) */
+    autoInProgress(): boolean;
 }
 
 /** The compaction records: the daemon writes them (every write is one transaction), everything else reads. */

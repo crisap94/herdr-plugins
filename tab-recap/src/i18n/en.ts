@@ -24,7 +24,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window', autocompact: 'Autocompact', autocompactAt: 'Autocompact at', autocompactJob: 'Autocompact decider' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window', autocompact: 'Autocompact', autocompactAt: 'Autocompact from', autocompactJob: 'Autocompact decider' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -50,7 +50,7 @@ export const en: Messages = {
         curateOff: 'off — no paragraph, no merges',
         autocompactChoices: { off: 'off — never decides', shadow: 'shadow — decides and records, never compacts', on: 'on — compacts at a safe moment above the limit' },
         autocompactHint: 'compacts an idle agent by itself when its context is full and nothing is half done; start with shadow and read `tab-recap autocompact`',
-        autocompactAtHint: 'the context share from which a safe moment compacts: 10 to 95',
+        autocompactAtHint: 'the context share from which an idle agent is evaluated: 10 to 95',
         autocompactJobHint: 'answers a few yes/no questions about the last turns; a short call, a fraction of a cent',
         deciderOff: 'off — autocompact asks no one, and decides nothing but the ceiling',
         compactJobHint: 'writes what the agent keeps when it is compacted; a high effort is worth it, it runs once per compaction',

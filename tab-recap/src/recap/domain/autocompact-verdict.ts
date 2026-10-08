@@ -1,4 +1,4 @@
-// The verdict of autocompact's questions, in code: every safe moment above the soft limit compacts. Pure.
+// The verdict of autocompact's questions, in code: every safe moment above the minimum compacts. Pure.
 
 /** The numbers the verdict is made of. An answer between `undecidedFrom` and `undecidedTo` is neither yes nor no. */
 export const THRESHOLDS = { safe: 0.30, closes: 0.70, undecidedFrom: 0.35, undecidedTo: 0.65 } as const;
