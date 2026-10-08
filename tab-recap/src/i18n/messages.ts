@@ -117,6 +117,10 @@ export interface Messages {
             readonly took: (seconds: number) => string;
         };
         readonly started: (agent: string) => string;
+        /** a toast of a compaction autocompact started says so: `Compacting claude (auto)` */
+        readonly auto: (text: string) => string;
+        /** an automatic compaction whose brief still misses a fact that matters is not typed */
+        readonly coverageMissed: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;

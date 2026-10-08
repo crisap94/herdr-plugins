@@ -37,6 +37,8 @@ import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
+import type { Autocompact } from '#src/recap/application/autocompact.ts';
+import { wireAutocompact } from './autocompact.ts';
 import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
 import { wireCurate } from './curate.ts';
@@ -93,7 +95,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { curate.afterRun(event).catch((error: unknown) => { log(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); }); },
     });
-    const box: { informer: Informer | null } = { informer: null };
+    const box: { informer: Informer | null; autocompact: Autocompact | null } = { informer: null, autocompact: null };
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
@@ -107,6 +109,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
             return box.informer.current;
         },
         feedback: (observation: Observation): void => { box.informer?.push(observation); },
+        settled: (lane): void => { void box.autocompact?.consider(lane); },
     });
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
@@ -125,7 +128,9 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
     });
     box.informer = informer;
-    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
+    const recent = new LaneRecent(transcripts);
+    box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log });
+    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, decider: () => backends.decider(), decisions: store.autocompact });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate };
 }

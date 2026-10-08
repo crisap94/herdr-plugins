@@ -16,7 +16,7 @@ const CHAPTER_SPAN = `CREATE VIEW chapter_span AS
 
 /**
  * Migration 10, autocompact: a boundary's trigger is `plugin | manual | auto` (every stored `manual` was plugin-driven by the old rule, so it
- * becomes `plugin`; the table is rebuilt for the new CHECK), a compaction says who started it (`origin`), and every autocompact consideration
+ * becomes `plugin`; the table is rebuilt for the new CHECK), a compaction and a request for one say who started them (`origin`), and every autocompact consideration
  * that passed the soft limit is a row of `autocompact_decision`.
  */
 export const m010: Migration = {
@@ -51,6 +51,9 @@ export const m010: Migration = {
         "ALTER TABLE compaction ADD COLUMN origin TEXT NOT NULL DEFAULT 'operator' CHECK (origin IN ('operator','auto'))",
         'DROP VIEW compaction_readable',
         `CREATE VIEW compaction_readable AS SELECT ${uuid('id')} AS id, ${COMPACTION_COLUMNS}, CASE WHEN boundary_id IS NULL THEN NULL ELSE ${uuid('boundary_id')} END AS boundary_id, origin FROM compaction`,
+        "ALTER TABLE request ADD COLUMN origin TEXT NOT NULL DEFAULT 'operator' CHECK (origin IN ('operator','auto'))",
+        'DROP VIEW request_readable',
+        `CREATE VIEW request_readable AS SELECT ${uuid('id')} AS id, at, kind, target, hidden, pane, note, origin FROM request`,
         `CREATE TABLE autocompact_decision (
   id            BLOB    NOT NULL PRIMARY KEY CHECK (length(id) = 16),
   tab_id        TEXT    NOT NULL REFERENCES tab(id) ON DELETE CASCADE,

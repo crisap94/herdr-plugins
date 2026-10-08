@@ -78,6 +78,8 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
         refresh: () => { world.events.push('refresh'); return Promise.resolve(); },
+        coverage: () => null,
+        decisions: null,
         target: () => targetOf(setting),
         messages: () => en,
         log: () => undefined,

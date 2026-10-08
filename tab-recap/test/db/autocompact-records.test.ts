@@ -73,3 +73,19 @@ test('forgetting a tab takes its decisions', () => {
     store.db.exec("PRAGMA foreign_keys = ON; DELETE FROM tab WHERE id = 'w1:t1'");
     assert.deepEqual(store.autocompact.newest(5), []);
 });
+
+test('linkLatest points the newest unlinked compact decision of the lane at the compaction; amend stores the coverage and a wait turns it into the coverage gate', () => {
+    const store = seeded();
+    store.autocompact.record(decision({ at: 100 }));
+    const newer = store.autocompact.record(decision({ at: 200 }));
+    store.autocompact.record(decision({ at: 300, verdict: 'wait' }));
+    const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
+    assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), newer);
+    assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p2', cmp), null);
+    store.autocompact.amend(newer, { keeps_0: 0.2 }, true);
+    const row = store.autocompact.newest(5).find((each) => each.id === newer);
+    assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
+    assert.equal(store.compactions.shownFor('w1:t1')[0]?.origin, 'auto');
+    store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { keeps_0: 0.9 }, false);
+    assert.equal(store.autocompact.newest(1)[0]?.verdict, 'compact');
+});

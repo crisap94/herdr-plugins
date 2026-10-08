@@ -46,6 +46,10 @@ export interface AutocompactRecords {
     record(decision: Decision): string;
     /** the decision points at the compaction it led to */
     link(id: string, compactionId: string): void;
+    /** the lane's newest `compact` decision that led to no compaction yet points at `compactionId`; its id, or null when there is none */
+    linkLatest(tab: string, pane: string, compactionId: string): string | null;
+    /** brief coverage ran for the decision: it is stored, and `waited` turns the verdict into `wait` with the gate `coverage` */
+    amend(id: string, coverage: Readonly<Record<string, number>>, waited: boolean): void;
     /** when the lane last got a verdict that was not `compact` (epoch ms); null when never */
     lastWaitAt(tab: string, pane: string): number | null;
     /** newest first; of one tab when given */

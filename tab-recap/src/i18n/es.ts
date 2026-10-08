@@ -98,6 +98,8 @@ export const es: Messages = {
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compactando ${agent}`,
+        auto: (text) => `${text} (automática)`,
+        coverageMissed: (agent) => `${agent} no se compactó: el resumen perdería algo que el trabajo necesita`,
         skipped: (agent, status) => `${agent} está ${status}: no se compactó — inténtalo cuando esté libre`,
         nothing: 'Ningún agente de aquí se puede compactar',
         failed: (agent, why) => `No se pudo compactar ${agent}: ${why}`,
