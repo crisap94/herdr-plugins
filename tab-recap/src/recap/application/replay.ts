@@ -1,5 +1,6 @@
 // Replaying a stored transcript: the extractor is run for every turn of it, from an empty ledger, as it would have been live.
 // Everything goes into the store it is given (a scratch one); the live state is never named here.
+import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
@@ -10,9 +11,11 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { RecapJob } from './recap-job.ts';
+import type { RecapJobDeps } from './recap-job.ts';
 
 /** One turn: a prompt of the operator and everything up to the next one (the first window also holds what came before the first prompt). */
 export function windowsOf(entries: readonly Entry[]): readonly (readonly Entry[])[] {
@@ -38,11 +41,16 @@ export interface ReplayDeps {
     readonly repos: LaneRepo;
     readonly language: string;
     readonly log: (line: string) => void;
+    /** the steps each turn's run takes (the job's default when not given) and the enumeration's model for the steps that need one */
+    readonly pipeline?: Pipeline;
+    readonly enumerator?: () => Enumerators | null;
 }
 
 export interface Replayed {
     readonly windows: number;
     readonly facts: readonly Fact[];
+    /** what every model call of the replay's runs cost, in US dollars */
+    readonly costUsd: number;
 }
 
 /** Where the replay stands: the turn being run and the instant it is at. */
@@ -65,6 +73,12 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
     return { agent: base.agent, locate, latestPrompt: noPrompt, read };
 }
 
+/** The job's pipeline and enumeration, when the replay names them. */
+function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator'> {
+    const chosen = deps.pipeline;
+    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }) };
+}
+
 /** Read `file` from the start, then one extractor run per turn, then the facts that are left. Throws a sentence when the file cannot be read. */
 export async function replay(deps: ReplayDeps, file: string, label: string, size: number): Promise<Replayed> {
     const whole = await deps.reader.read(file, UNREAD, size);
@@ -76,6 +90,7 @@ export async function replay(deps: ReplayDeps, file: string, label: string, size
     const job = new RecapJob({
         transcripts: [windowed(deps.reader, file, windows, at)], records: deps.records, ledger: deps.ledger, repos: deps.repos, summarizer: deps.summarizer,
         language: (): string => deps.language, log: deps.log, clock: { now: (): Instant => instant(at.now) },
+        ...pipelineOf(deps),
     });
     const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
     for (; at.turn < windows.length; at.turn += 1) {
@@ -83,5 +98,5 @@ export async function replay(deps: ReplayDeps, file: string, label: string, size
         await job.refreshNow(tabId(label), [lane]);
     }
     const tasks = deps.records.readRecap(label)?.tasks ?? [];
-    return { windows: windows.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })) };
+    return { windows: windows.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })), costUsd: deps.records.readRecap(label)?.costUsd ?? 0 };
 }

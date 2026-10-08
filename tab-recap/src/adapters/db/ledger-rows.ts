@@ -10,7 +10,7 @@ import type { Row } from './rows.ts';
 import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-const SELECT = 'SELECT f.id, f.section, f.text, f.why, f.ref, f.agent, f.first_at, f.last_at, f.state, f.closed_why, f.closed_at, f.language FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ?1 AND k.key = ?2';
+const SELECT = 'SELECT f.id, f.section, f.text, f.why, f.ref, f.agent, f.anchor, f.first_at, f.last_at, f.state, f.closed_why, f.closed_at, f.language FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ?1 AND k.key = ?2';
 /** A fact closed longer ago than this is not loaded to be folded: an operation on it reads as an unknown id. */
 const FOLD_WINDOW_MS = 24 * 3_600_000;
 
@@ -40,9 +40,9 @@ export class LedgerRows {
         this.keys = db.prepare('SELECT DISTINCT k.key FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ? ORDER BY k.key');
         this.taskInsert = db.prepare('INSERT OR IGNORE INTO task (id, tab_id, key) VALUES (?, ?, ?)');
         this.taskSelect = db.prepare('SELECT id FROM task WHERE tab_id = ? AND key = ?');
-        this.insert = db.prepare(`INSERT INTO fact (id, tab_id, task_id, section, text, why, ref, agent, first_at, last_at, state, closed_why, closed_at, born_run, last_run, language)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-        this.update = db.prepare('UPDATE fact SET text = ?, why = ?, ref = ?, agent = ?, last_at = ?, state = ?, closed_why = ?, closed_at = ?, last_run = ?, language = ? WHERE id = ?');
+        this.insert = db.prepare(`INSERT INTO fact (id, tab_id, task_id, section, text, why, ref, agent, anchor, first_at, last_at, state, closed_why, closed_at, born_run, last_run, language)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        this.update = db.prepare('UPDATE fact SET text = ?, why = ?, ref = ?, agent = ?, anchor = ?, last_at = ?, state = ?, closed_why = ?, closed_at = ?, last_run = ?, language = ? WHERE id = ?');
     }
 
     private factOf(row: Row, task: TaskId): Fact {
@@ -51,7 +51,7 @@ export class LedgerRows {
             throw new BadRow('a fact is not what the schema promises');
         }
         return {
-            id: typeIdOf('fact', blob(row, 'id')) as FactId, task, section, text: text(row, 'text'), why: maybeText(row, 'why'), ref: maybeText(row, 'ref'), agent: maybeText(row, 'agent'),
+            id: typeIdOf('fact', blob(row, 'id')) as FactId, task, section, text: text(row, 'text'), why: maybeText(row, 'why'), ref: maybeText(row, 'ref'), agent: maybeText(row, 'agent'), anchor: maybeText(row, 'anchor'),
             firstAt: whole(row, 'first_at'), lastAt: whole(row, 'last_at'), state, closedWhy: closedOf(closedWhy), closedAt: maybeWhole(row, 'closed_at'), language: text(row, 'language'),
         };
     }
@@ -82,9 +82,9 @@ export class LedgerRows {
         for (const fact of changed) {
             const id = idOf('fact', fact.id) ?? ids.next();
             if (before.some((was) => was.id === fact.id)) {
-                this.update.run(fact.text, fact.why, fact.ref, fact.agent, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, fact.language, id);
+                this.update.run(fact.text, fact.why, fact.ref, fact.agent, fact.anchor, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, fact.language, id);
             } else {
-                this.insert.run(id, task.tab, owner, fact.section, fact.text, fact.why, fact.ref, fact.agent, fact.firstAt, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, run, fact.language);
+                this.insert.run(id, task.tab, owner, fact.section, fact.text, fact.why, fact.ref, fact.agent, fact.anchor, fact.firstAt, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, run, fact.language);
             }
         }
     }

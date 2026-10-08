@@ -13,8 +13,8 @@ const NOW = 10 * 3_600_000;
 const f4 = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const f5 = factOf('next', 'Review the migration test');
 const shut = factOf('done', 'Fixed the flaky lint job on main', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3 * 3_600_000 });
-const context: GateContext = { now: NOW, language: 'en', agents: [], shown: new Map([['f4', f4], ['f5', f5]]), closedLately: [shut] };
-const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
+const context: GateContext = { now: NOW, language: 'en', agents: [], shown: new Map([['f4', f4], ['f5', f5]]), closedLately: [shut], source: 'the pipeline went green and the release was tagged' };
+const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, anchor: 'the pipeline went green' });
 const gates = [duplicateGate, unknownIdGate, closeWhyGate];
 
 test('jaccard counts words of three letters or more, lower-cased', () => {

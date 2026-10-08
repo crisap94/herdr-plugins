@@ -75,8 +75,8 @@ function carriedBy(raw: unknown, count: number, sections: ReadonlyMap<string, st
     return carried;
 }
 
-/** Score answer: verdicts for known items and checks, the key facts, and which item carries which. `sections` maps each item key to its section. */
-export function parseScore(text: string, sections: ReadonlyMap<string, string>): Parsed<Scored> {
+/** Score answer: verdicts for known items and checks, the key facts, and which item carries which. `sections` maps each added item's key to its section; `carriers` the keys of the items that may carry a key fact (the state's; the added items when not given). */
+export function parseScore(text: string, sections: ReadonlyMap<string, string>, carriers: ReadonlyMap<string, string> = sections): Parsed<Scored> {
     const fields = fieldsOf(text);
     if (typeof fields === 'string') {
         return unusable(fields);
@@ -86,7 +86,27 @@ export function parseScore(text: string, sections: ReadonlyMap<string, string>):
     if (verdicts.length === 0 || !Array.isArray(fields['keyfacts']) || !Array.isArray(fields['coverage'])) {
         return unusable('the answer has no usable verdicts, key facts and coverage');
     }
-    return { kind: 'ok', value: { verdicts, keyfacts, carried: carriedBy(fields['coverage'], keyfacts.length, sections) } };
+    return { kind: 'ok', value: { verdicts, keyfacts, carried: carriedBy(fields['coverage'], keyfacts.length, carriers) } };
+}
+
+/** What a cover call settles: the key facts and which state item carries each. */
+export interface Covered {
+    readonly keyfacts: readonly string[];
+    readonly carried: ReadonlyMap<number, string | null>;
+}
+
+/** Cover answer: the key facts (those given, when the call was handed some) and the item of `carriers` that carries each. */
+export function parseCover(text: string, carriers: ReadonlyMap<string, string>, given: readonly string[] | null): Parsed<Covered> {
+    const fields = fieldsOf(text);
+    if (typeof fields === 'string') {
+        return unusable(fields);
+    }
+    const listed = (Array.isArray(fields['keyfacts']) ? fields['keyfacts'] : []).map(lineOf).filter((fact) => fact !== '');
+    const keyfacts = given ?? listed;
+    if (!Array.isArray(fields['coverage']) || keyfacts.length === 0) {
+        return unusable('the answer has no key facts and coverage');
+    }
+    return { kind: 'ok', value: { keyfacts, carried: carriedBy(fields['coverage'], keyfacts.length, carriers) } };
 }
 
 /** Read-back answer: exactly six strings. */

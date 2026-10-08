@@ -16,8 +16,8 @@ const opsOf = (answer: ReturnType<typeof parseAnswer>): readonly unknown[] => (a
 test('the three operations, with their fields tidied; a fenced answer or one wrapped in a sentence is found', () => {
     const answer = parse('Here you go:\n```json\n{"ops":[{"op":"add","section":"done","text":"- **Merged** !34","why":null,"ref":"!34","at":"16:41","agent":"a1"},{"op":"update","id":"f1","text":"Merge !34 today"},{"op":"close","id":"f7","why":"superseded"}]}\n```');
     assert.deepEqual(opsOf(answer), [
-        { task: 't1', op: { op: 'add', section: 'done', text: 'Merged !34', why: null, ref: '!34', at: at('16:41'), agent: 'orchestrator' } },
-        { task: 't1', op: { op: 'update', id: 'f1', text: 'Merge !34 today', why: null } },
+        { task: 't1', op: { op: 'add', section: 'done', text: 'Merged !34', why: null, ref: '!34', at: at('16:41'), agent: 'orchestrator', anchor: null } },
+        { task: 't1', op: { op: 'update', id: 'f1', text: 'Merge !34 today', why: null, anchor: null } },
         { task: 't2', op: { op: 'close', id: 'f7', why: 'superseded' } },
     ]);
 });
@@ -68,4 +68,22 @@ test('an empty list is a valid answer; the old recap shape is told apart from a 
     assert.deepEqual(parse('I could not do that'), { kind: 'invalid', why: 'the answer holds no JSON object' });
     assert.deepEqual(parse('{"ops": [}'), { kind: 'invalid', why: 'the answer is not valid JSON' });
     assert.deepEqual(parse('[1,2]'), { kind: 'invalid', why: 'the answer holds no JSON object' });
+});
+
+test('an anchor is tidied to one line and cut to 120 characters at a word; an update may carry one, a close never does', () => {
+    const long = Array.from({ length: 40 }, (_, index) => `word${index}`).join(' ');
+    const answer = parse({ ops: [
+        { op: 'add', section: 'done', text: 'x', anchor: '  Merged !34\n  after green  ' },
+        { op: 'add', section: 'done', text: 'y', anchor: long },
+        { op: 'add', section: 'done', text: 'z', anchor: 'a'.repeat(300) },
+        { op: 'add', section: 'done', text: 'no anchor' },
+        { op: 'add', section: 'done', text: 'blank', anchor: '   ' },
+        { op: 'update', id: 'f1', text: 'u', anchor: 'the change' },
+        { op: 'close', id: 'f7', why: 'done', anchor: 'ignored' },
+    ] });
+    const anchors = opsOf(answer).map((each) => (each as { op: { anchor?: string | null } }).op.anchor);
+    assert.equal(anchors[0], 'Merged !34 after green');
+    assert.ok(typeof anchors[1] === 'string' && anchors[1].length <= 120 && long.startsWith(anchors[1]) && /word\d+$/.test(anchors[1]), 'cut back to a whole word');
+    assert.equal(anchors[2], 'a'.repeat(120), 'a single long word is cut where it is');
+    assert.deepEqual([anchors[3], anchors[4], anchors[5], anchors[6]], [null, null, 'the change', undefined]);
 });

@@ -14,7 +14,7 @@ export const SECTIONS = { goal: 'Ship retries', now: [], needs: [], done: ['Merg
 export const KEYS = ['t1/goal/0', 't1/done/0', 't1/done/1'];
 export const SCORE = JSON.stringify({
     verdicts: KEYS.flatMap((item) => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', item.includes('goal') ? 'S-goal' : 'S-done'].map((check) => ({ item, check, pass: !(item === 't1/done/1' && check === 'I3'), critique: item === 't1/done/1' && check === 'I3' ? 'names nothing concrete' : '' }))),
-    keyfacts: ['!256 is merged'], coverage: [{ keyfact: 0, item: 't1/done/0' }],
+    keyfacts: ['!256 is merged'], coverage: [{ keyfact: 0, item: 'state/t1/done/0' }],
 });
 export const ANSWERS = JSON.stringify({ answers: ['a', 'b', 'c', 'd', 'e', 'f'] });
 export const GRADES = JSON.stringify({ grades: [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: true, critique: '' })) });
@@ -40,8 +40,8 @@ export function rig(parts: { readonly judge?: Judge | null; readonly lines?: rea
     return { store, deps, out, err, asked };
 }
 
-export function scripted(answers: Readonly<Record<JudgeTask, string>>): Judge {
-    return { label: 'claude · sonnet · medium', ask: (task) => Promise.resolve({ kind: 'said', text: answers[task], costUsd: 0 }) };
+export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>): Judge {
+    return { label: 'claude · sonnet · medium', ask: (task) => Promise.resolve({ kind: 'said', text: answers[task] ?? '', costUsd: 0 }) };
 }
 
 export function seed(store: Rig['store'], count: number, over: { readonly input?: boolean; readonly gate?: boolean; readonly tab?: string; readonly first?: number } = {}): void {

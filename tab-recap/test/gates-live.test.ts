@@ -19,9 +19,13 @@ const REFUSED: readonly (readonly [GatedSection, string, string])[] = [
     ['decisions', 'Leave the unrelated db-1 tab alone.', 'refuse:G3'],
     ['decisions', 'Keep Zigbee-style retries at three; consider five if errors persist.', 'refuse:G3'],
     ['decisions', 'Bring PR #1 in as one merge request; close the old PR after it lands.', 'refuse:G3'],
-    ['links', 'New tab db-1 is unrelated.', 'refuse:G4'],
-    ['links', 'Herdr tab w17; claude agent review-sources.', 'refuse:G4'],
-    ['links', 'ctx1', 'refuse:G4'],
+];
+
+/** A description where a reference belongs is kept, drawn without a hyperlink, and counted. */
+const FLAGGED: readonly (readonly [GatedSection, string, string])[] = [
+    ['links', 'New tab db-1 is unrelated.', 'flag:G4'],
+    ['links', 'Herdr tab w17; claude agent review-sources.', 'flag:G4'],
+    ['links', 'ctx1', 'flag:G4'],
 ];
 
 const PASSED: readonly (readonly [GatedSection, string])[] = [
@@ -43,9 +47,16 @@ const PASSED: readonly (readonly [GatedSection, string])[] = [
     ['links', 'https://docs.example.org/compaction-on-demand'],
 ];
 
-test('what a real writer wrote and the gates must refuse: the narrator, a decision with no reason, a link that is a description', () => {
+test('what a real writer wrote and the gates must refuse: the narrator and a decision with no reason', () => {
     for (const [section, text, expected] of REFUSED) {
         assert.ok(verdictOf(section, text).includes(expected), `${section}: ${text} → ${verdictOf(section, text).join(', ')}`);
+    }
+});
+
+test('a link that is a description is flagged, never refused: the fact is kept without a hyperlink', () => {
+    for (const [section, text, expected] of FLAGGED) {
+        assert.ok(verdictOf(section, text).includes(expected), `${section}: ${text} → ${verdictOf(section, text).join(', ')}`);
+        assert.deepEqual(verdictOf(section, text).filter((outcome) => outcome.startsWith('refuse')), [], `${section}: ${text}`);
     }
 });
 

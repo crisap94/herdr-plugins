@@ -1,0 +1,86 @@
+// `eval --replay --pipeline`: the same transcript through each pipeline; the replay says what ran and what it cost.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { scratchStore } from '#src/adapters/db/scratch.ts';
+import { parseEval } from '#src/recap/application/eval-options.ts';
+import { replay } from '#src/recap/application/replay.ts';
+import type { Replayed, ReplayDeps } from '#src/recap/application/replay.ts';
+import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { NO_REPOS } from '#test/support.ts';
+import { answer, scripted } from '#test/fakes/enumerator.ts';
+
+const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
+
+const NUMBERS = ['one', 'two', 'three', 'four', 'five', 'six'];
+const candidateFor = (document: string, call: number): string => answer([{ section: 'done', text: `Candidate number ${NUMBERS[call - 1] ?? 'more'}`, anchor: /<turn[^>]*>([^<.]{8,60})/.exec(document)?.[1] ?? '' }]);
+
+/** A writer that adds one fact per call from the first candidate it is given (or a plain one with none), and remembers its requests. */
+function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
+    const seen: RecapRequest[] = [];
+    const summarizer: Summarizer = {
+        backend: 'fake',
+        write: (request): Promise<Written> => {
+            seen.push(request);
+            const picked = request.input.candidates?.[0];
+            const first = request.input.transcripts[0]?.entries[0]?.text.split(/\s+/).slice(0, 5).join(' ') ?? '';
+            const op = picked === undefined ? { op: 'add', anchor: first, section: 'done', text: ['Wrote the cart schema', 'Opened the checkout flow', 'Tested guests baskets', 'Shipped the invoice export', 'Reviewed pricing rules', 'Merged the tax fix'][seen.length - 1] ?? 'More work' } : { op: 'add', anchor: picked.anchor, section: picked.section, text: picked.text };
+            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [op] }), costUsd: 0.25 });
+        },
+    };
+    return { summarizer, seen };
+}
+
+interface Ran {
+    readonly done: Replayed;
+    readonly seen: RecapRequest[];
+    readonly documents: string[];
+}
+
+async function run(pipeline: Pipeline | undefined): Promise<Ran> {
+    const { summarizer, seen } = adding();
+    const enumerating = scripted([candidateFor]);
+    const scratch = scratchStore();
+    try {
+        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }) };
+        const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size);
+        return { done, seen, documents: enumerating.documents };
+    } finally {
+        scratch.dispose();
+    }
+}
+
+test('--pipeline is parsed, checked, and goes with --replay only', () => {
+    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', check: null } });
+    for (const name of ['one', 'enumerate', 'enumerate+gates', 'full']) {
+        const parsed = parseEval(['--replay', 'x.jsonl', '--pipeline', name]);
+        assert.ok(parsed.kind === 'options' && parsed.options.pipeline === name, name);
+    }
+    const bad = parseEval(['--replay', 'x.jsonl', '--pipeline', 'fast']);
+    assert.ok(bad.kind === 'usage' && /--pipeline takes one, enumerate, enumerate\+gates, full/.test(bad.why));
+    const alone = parseEval(['--pipeline', 'one']);
+    assert.ok(alone.kind === 'usage' && /go with --replay/.test(alone.why));
+    const without = parseEval(['--replay', 'x.jsonl']);
+    assert.ok(without.kind === 'options' && without.options.pipeline === null);
+});
+
+test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, the writer reconciles the candidates, the cost is summed', async () => {
+    const { done, seen, documents } = await run('full');
+    assert.equal(done.windows, 6);
+    assert.equal(documents.length, 6, 'one enumeration call per turn (each turn is one short chunk with enough candidates)');
+    assert.ok(seen.every((request) => request.input.candidates?.length === 1));
+    assert.deepEqual(done.facts.map((fact) => fact.text), ['Candidate number one', 'Candidate number two', 'Candidate number three', 'Candidate number four', 'Candidate number five', 'Candidate number six']);
+    assert.ok(Math.abs(done.costUsd - (6 * 0.25 + 6 * 0.01)) < 1e-9, `${done.costUsd}`);
+});
+
+test('replay with --pipeline one, or none named: the single call, the enumeration is never asked', async () => {
+    for (const pipeline of ['one', undefined] as const) {
+        const { done, seen, documents } = await run(pipeline);
+        assert.equal(documents.length, 0, pipeline ?? 'the job\'s default is one: nothing is enumerated');
+        assert.equal(seen.length, 6);
+        assert.ok(done.costUsd > 0);
+    }
+});

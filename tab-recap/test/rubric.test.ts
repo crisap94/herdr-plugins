@@ -22,7 +22,7 @@ test('the writer\'s instructions carry every check line of the rubric verbatim',
         assert.ok(rules.includes(line), line);
     }
     assert.ok(!rules.includes('Whole recap'), 'the judge-only part is not the writer\'s');
-    assert.match(rules, /comes back in <correction>/);
+    assert.match(rules, /sent back once, alone, in a <correction_input>/);
 });
 
 test('a check edited in the file reaches the instructions with no other edit (the parts are cut from the file text)', () => {

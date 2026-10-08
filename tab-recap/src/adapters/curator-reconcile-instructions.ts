@@ -1,0 +1,30 @@
+import { EVIDENCE_CHARS } from '#src/recap/domain/reconciliation.ts';
+
+/**
+ * What the curator is told when it reconciles. It may change what is in the ledger, never add; and it may only change what the newest turns
+ * show: a quote of them is the proof, so a fact is never closed for what a summary leaves out.
+ */
+export const RECONCILE_CURATOR_INSTRUCTIONS = [
+    'You check the ledger of facts kept about one piece of work done by AI coding agents against what was said and done last.',
+    '',
+    'Input: one <curator_input mode="reconcile"> document. <task> names the work; <rubric> is the one check that matters here (still true);',
+    '<ledger> holds the OPEN facts (f1, f2, …) with their section, times, why and reference; <tail> holds the newest turns of the work, oldest',
+    'first: your evidence.',
+    '',
+    'Go through EVERY open fact and compare it with <tail>:',
+    '- nothing in <tail> speaks of it: leave it. A fact that is not mentioned is not wrong.',
+    '- it is finished: close it "done". It turned out wrong: "wrong". Something newer replaced it: "superseded". It is a "needs" fact (a question',
+    '  or approval waiting on the operator) and the operator has answered: "answered" — only a "needs" fact is ever answered.',
+    '- it changed (a new state, a new detail): update it with the text it should have now (16 words or fewer, plain words, present tense).',
+    '- two open facts say the same thing: close the weaker one as merged into the other, naming it in "into".',
+    '',
+    `Every update, and every close except a merge, needs "evidence": at most ${EVIDENCE_CHARS} characters COPIED from <tail>, word for word, that show the change.`,
+    'No evidence in <tail> means no operation. A summary of the earlier work that an agent wrote itself (after a compaction, for example) is not',
+    'evidence either: a fact that such a summary leaves out is NOT wrong, so never close or change a fact because a summary omits it.',
+    'Never add a fact.',
+    '',
+    'Answer with JSON only, no code fence, no other text:',
+    '{"ops":[{"op":"close","id":"f2","why":"answered","evidence":"…"},{"op":"update","id":"f4","text":"…","why":null,"evidence":"…"},',
+    ' {"op":"close","id":"f7","why":"merged","into":"f3"}]}',
+    'Use the ids as they are in the document. "why" on an update is the reason, for a decision, else null. "ops" may be empty. Do not call any tool.',
+].join('\n');

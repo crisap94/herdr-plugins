@@ -10,7 +10,7 @@ test('`eval` with no option judges the newest 20 runs that have a stored input, 
     const { store, deps, out } = rig();
     seed(store, 3, { input: false, first: 0 });
     seed(store, 25);
-    assert.deepEqual(optionsOf(), { mode: 'sample', count: DEFAULT_SAMPLE, tab: null, since: null, json: false, replay: null, kind: null, compareImported: null });
+    assert.deepEqual(optionsOf(), { mode: 'sample', count: DEFAULT_SAMPLE, tab: null, since: null, json: false, replay: null, kind: null, compareImported: null, pipeline: null, check: null });
     assert.equal(await runEval(optionsOf(), deps), 0);
     const report = out.join('\n');
     assert.match(report, /judge claude · sonnet · medium — 20 runs sampled, 20 judged/);
@@ -20,7 +20,9 @@ test('`eval` with no option judges the newest 20 runs that have a stored input, 
     assert.match(report, /I1 +atomic +100% +60\/60/);
     assert.match(report, /coverage +key facts carried +100% +20\/20/);
     assert.match(report, /I3 {2}t1\/done\/1 {2}"Worked on it\." — names nothing concrete/);
-    assert.equal((report.match(/coverage 100% \(1\/1\) · no-filler 33% \(1\/3\) · read-back 6\/6/g) ?? []).length, 20, 'every run reports coverage, no-filler and read-back');
+    assert.equal((report.match(/coverage 100% \(1\/1\) \[added 0% \(0\/1\)\] · no-filler \d+% \(1\/\d+\) \[added 0% \(0\/3\)\] · read-back 6\/6/g) ?? []).length, 20, 'every run reports its state numbers with the added ones beside them');
+    assert.match(report, /coverage 100% \(20\/20\) \[added 0% \(0\/20\)\]/, 'and the totals line adds them up');
+    assert.match(report, /judge vs anchor \(0\)/);
     assert.equal(store.inputs.runs({ tab: null, since: null, limit: 100, withInput: true }).filter((run) => store.verdicts.ofRun(run.id).length > 0).length, 20);
 });
 
@@ -47,7 +49,7 @@ test('no judge: eval says so, exits 1 and stores nothing', async () => {
 test('an unparsable answer is a run reported as not judged and the eval goes on; when every run fails the exit is 1', async () => {
     const answers = ['garbage', SCORE];
     const text = (task: JudgeTask): string => {
-        const rest: Readonly<Record<JudgeTask, string>> = { score: '', readback: ANSWERS, grade: GRADES };
+        const rest: Readonly<Record<JudgeTask, string>> = { score: '', readback: ANSWERS, grade: GRADES, cover: '' };
         return task === 'score' ? (answers.shift() ?? SCORE) : rest[task];
     };
     const flaky: Judge = { label: 'x', ask: (task) => Promise.resolve({ kind: 'said', text: text(task), costUsd: 0 }) };

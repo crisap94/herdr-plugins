@@ -49,6 +49,8 @@ export interface InputFact {
     readonly last: number;
     readonly why: string | null;
     readonly ref: string | null;
+    /** the quote from an input that the fact was added with; null when it has none */
+    readonly anchor: string | null;
     /** the id of the agent (`a1`) whose work it is, when the tab lists that agent */
     readonly agent: string | null;
     readonly closed: ClosedWhy | null;
@@ -58,6 +60,21 @@ export interface InputFact {
 export interface InputLedger {
     readonly task: string | null;
     readonly facts: readonly InputFact[];
+}
+
+/** A fact the first pass found in the new turns, for the writer to reconcile with the ledger. `anchor` is a piece of the input, copied. */
+export interface InputCandidate {
+    readonly section: Section;
+    readonly text: string;
+    readonly why: string | null;
+    readonly ref: string | null;
+    /** epoch ms of the turn it came from */
+    readonly at: number | null;
+    readonly anchor: string;
+    /** the id of the agent (`a1`) whose work it is */
+    readonly agent: string | null;
+    /** a mandatory candidate (a commit, an edit, an error, a question) that the first pass left unfilled */
+    readonly flagged: boolean;
 }
 
 /** Everything the writer is given for one tab and one run (rendered as the `recap_input` document). */
@@ -70,4 +87,6 @@ export interface RecapInput {
     readonly ledgers: readonly InputLedger[];
     readonly notes: readonly InputNote[];
     readonly transcripts: readonly InputTranscript[];
+    /** only in the reconcile step of the pipeline: what the new turns hold, to reconcile with the ledger; the writer adds only from these */
+    readonly candidates?: readonly InputCandidate[];
 }

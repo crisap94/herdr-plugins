@@ -1,6 +1,7 @@
 // The writer's answer, `{"ops":[…]}`, as operations. Tolerant of a fence or a sentence around the JSON; strict about what an operation is.
 import type { InputAgent } from '#src/ports/recap-input.ts';
 import { WRITER_CLOSES, isSection } from '#src/recap/domain/fact.ts';
+import { ANCHOR_CHARS } from '#src/recap/domain/gates/g11-anchor.ts';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { localTime } from './local-time.ts';
@@ -49,6 +50,17 @@ function resolveAt(label: unknown, resolving: Resolving): number | null {
     return resolving.turns.findLast((at) => localTime(at, now, zone) === label.trim()) ?? null;
 }
 
+/** A quote from the input, at most `ANCHOR_CHARS` characters: cut back to the last whole word when it is longer, so it still matches its source. */
+function anchorOf(value: unknown): string | null {
+    const line = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+    if (line.length <= ANCHOR_CHARS) {
+        return line === '' ? null : line;
+    }
+    const cut = line.slice(0, ANCHOR_CHARS);
+    const space = cut.lastIndexOf(' ');
+    return (line.charAt(ANCHOR_CHARS) === ' ' || space <= 0 ? cut : cut.slice(0, space)).trim();
+}
+
 function taskFor(fields: Fields, resolving: Resolving): string {
     const id = typeof fields['id'] === 'string' ? resolving.taskOf.get(fields['id']) : undefined;
     const named = typeof fields['task'] === 'string' ? fields['task'] : id;
@@ -65,12 +77,12 @@ function addOf(fields: Fields, resolving: Resolving): Operation | string {
         return 'an add needs a section (goal, now, needs, done, decisions, next, links or rules) and a text';
     }
     const label = resolving.agents.find((each) => each.id === fields['agent'])?.label;
-    return { op: 'add', section, text: text(fields['text']), why: maybe(fields['why'], WHY_WORDS), ref: maybe(fields['ref'], 8), at: resolveAt(fields['at'], resolving), agent: label === undefined || label === '' ? null : label };
+    return { op: 'add', section, text: text(fields['text']), why: maybe(fields['why'], WHY_WORDS), ref: maybe(fields['ref'], 8), at: resolveAt(fields['at'], resolving), agent: label === undefined || label === '' ? null : label, anchor: anchorOf(fields['anchor']) };
 }
 
 function updateOf(fields: Fields): Operation | string {
     const [id, line] = [idOf(fields), text(fields['text'])];
-    return id === '' || line === '' ? 'an update needs an id and a text' : { op: 'update', id, text: line, why: maybe(fields['why'], WHY_WORDS) };
+    return id === '' || line === '' ? 'an update needs an id and a text' : { op: 'update', id, text: line, why: maybe(fields['why'], WHY_WORDS), anchor: anchorOf(fields['anchor']) };
 }
 
 function closeOf(fields: Fields): Operation | string {

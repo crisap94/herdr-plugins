@@ -12,6 +12,8 @@ export interface GateContext {
     readonly shown: ReadonlyMap<string, Fact>;
     /** the task's facts closed in the last day, whether the document showed them or not */
     readonly closedLately: readonly Fact[];
+    /** what an anchor is looked for in: the turns, tool calls and agent notes of the input, words folded by `foldedOf` */
+    readonly source: string;
 }
 
 export interface Finding {

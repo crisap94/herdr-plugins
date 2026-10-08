@@ -12,7 +12,7 @@ import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 
-const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text });
+const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
 
 const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'run the tests' };
@@ -69,13 +69,13 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
-        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answer(add('goal', 'hecho')), costUsd: 0 }); },
+        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answer({ op: 'update', id: 'f1', text: 'hecho' }), costUsd: 0 }); },
     };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     const base = blankRecap('w1:t1');
     seed(store, {
-        ...base, tasks: oneTask('## Goal\n- migrate'), at: 1,
+        ...base, tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1,
         lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         ...(stored === undefined ? {} : { language: stored }),
     });
@@ -214,7 +214,7 @@ test('a harness that fails outright is not retried', async () => {
 test('refreshNow resolves only once the recap of the tab has been written', async () => {
     const summarizer: Summarizer = {
         backend: 'fake',
-        write: (): Promise<Written> => new Promise((resolve) => { setTimeout(() => { resolve({ kind: 'written', text: answer(add('goal', 'written late')), costUsd: 0 }); }, 30); }),
+        write: (): Promise<Written> => new Promise((resolve) => { setTimeout(() => { resolve({ kind: 'written', text: answer({ ...add('goal', 'written late'), anchor: 'go' }), costUsd: 0 }); }, 30); }),
     };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });

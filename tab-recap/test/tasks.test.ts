@@ -125,7 +125,7 @@ async function run(answers: readonly string[], lanes: readonly string[], store =
     return { store, requests };
 }
 
-const op = (section: string, text: string, task?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(task === undefined ? {} : { task }) });
+const op = (section: string, text: string, task?: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'work in', ...(task === undefined ? {} : { task }) });
 
 test('a tab with two lanes in two places: the request carries each lane\'s hints; the operations are stored per task, each task\'s facts drawn as its Markdown', async () => {
     const answer = JSON.stringify({ ops: [op('goal', 'pay v2'), op('now', 'wiring'), op('goal', 'docs', 't2')] });

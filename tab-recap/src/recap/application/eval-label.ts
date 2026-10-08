@@ -11,12 +11,12 @@ export interface Candidate {
     readonly text: string;
 }
 
-/** The newest `count` items no operator verdict names yet, from the newest runs first. `labelled` is `<run>|<item>` of the items already done. */
-export function candidatesOf(runs: readonly StoredRun[], inputs: Pick<RunInputs, 'itemsOf'>, labelled: ReadonlySet<string>, count: number): readonly Candidate[] {
+/** The newest `count` items no operator verdict names yet (for `check`: none that answers that check, and only items the check applies to), from the newest runs first. `labelled` is `<run>|<item>` of the items already done. */
+export function candidatesOf(runs: readonly StoredRun[], inputs: Pick<RunInputs, 'itemsOf'>, labelled: ReadonlySet<string>, count: number, check: string | null = null): readonly Candidate[] {
     const found: Candidate[] = [];
     for (const run of runs) {
-        for (const item of inputs.itemsOf(run.id)) {
-            if (found.length < count && !labelled.has(`${run.id}|${item.key}`)) {
+        for (const item of inputs.itemsOf(run.id, 'added')) {
+            if (found.length < count && !labelled.has(`${run.id}|${item.key}`) && (check === null || checksFor(item.section).includes(check))) {
                 found.push({ run, key: item.key, section: item.section, text: item.text });
             }
         }
@@ -41,11 +41,12 @@ const WORDS: Readonly<Record<string, Answer>> = { ok: { kind: 'pass' }, skip: { 
 
 /**
  * `ok` · `fail` (every check fails) · `fail I3 S-done` (those fail, the rest pass; a bare section name works) · `skip` · `quit`.
+ * With `only` (a single check being labelled), `fail` is that check failing and naming another is asked again.
  * Whatever else is asked again, saying why.
  */
-export function answerOf(line: string, section: string): Answer {
+export function answerOf(line: string, section: string, only: string | null = null): Answer {
     const [word = '', ...rest] = line.trim().toLowerCase().split(/[\s,]+/u).filter((part) => part !== '');
-    const valid = checksFor(section);
+    const valid = only === null ? checksFor(section) : [only];
     const simple = WORDS[word];
     if (simple !== undefined && (rest.length === 0 || simple.kind === 'skip' || simple.kind === 'quit')) {
         return simple;
@@ -53,7 +54,11 @@ export function answerOf(line: string, section: string): Answer {
     if (word !== 'fail' && word !== 'f') {
         return { kind: 'again', why: 'answer ok, fail [checks], skip or quit' };
     }
-    const named = rest.map(checkNamed);
+    return failedChecks(rest.map(checkNamed), valid);
+}
+
+/** The checks a `fail` names (all of `valid` when it names none), or why it is asked again. */
+function failedChecks(named: readonly string[], valid: readonly string[]): Answer {
     const wrong = named.find((check) => !valid.includes(check));
     return wrong === undefined ? { kind: 'fail', checks: named.length === 0 ? valid : named } : { kind: 'again', why: `${wrong} is not a check of this item (${valid.join(' ')})` };
 }
@@ -61,9 +66,9 @@ export function answerOf(line: string, section: string): Answer {
 const reasonOr = (reason: string): string => (reason === '' ? '(no reason given)' : reason);
 
 /** One operator verdict per check of the item: the named ones fail with the reason, the others pass. */
-export function labelVerdicts(candidate: Candidate, answer: Extract<Answer, { kind: 'pass' | 'fail' }>, reason: string, at: number): readonly Verdict[] {
+export function labelVerdicts(candidate: Candidate, answer: Extract<Answer, { kind: 'pass' | 'fail' }>, reason: string, at: number, only: string | null = null): readonly Verdict[] {
     const failing = answer.kind === 'fail' ? answer.checks : [];
-    return checksFor(candidate.section).map((check): Verdict => ({
+    return (only === null ? checksFor(candidate.section) : [only]).map((check): Verdict => ({
         run: candidate.run.id, item: candidate.key, check, pass: !failing.includes(check), critique: failing.includes(check) ? reasonOr(reason) : null,
         judge: 'operator', at, source: 'operator',
     }));

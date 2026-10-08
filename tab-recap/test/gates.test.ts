@@ -59,23 +59,23 @@ test('G3 decision without why: the rubric\'s S-decisions fail is refused, its pa
     assert.equal(run(withoutWhy, 'done', fail), 'pass', 'only decisions need a why');
 });
 
-test('G4 link: the rubric\'s S-links fail is refused, its pass accepted; each reference form resolves', () => {
+test('G4 link: the rubric\'s S-links fail is flagged (kept, drawn without a hyperlink), its pass accepted; each reference form resolves', () => {
     const { pass, fail } = examplesOf('S-links');
-    assert.equal(run(unresolved, 'links', fail), 'refuse');
+    assert.equal(run(unresolved, 'links', fail), 'flag');
     assert.equal(run(unresolved, 'links', pass), 'pass');
     for (const text of ['!252', '#12', 'fd8db19', 'feat/tab-recap-judge', '`src/a.ts`', 'README.md', 'https://example.org/docs', 'MR !252 at fd8db19']) {
         assert.equal(run(unresolved, 'links', text), 'pass', text);
     }
     for (const text of ['ctx1', 'staging', 'the merge request', 'abc']) {
-        assert.equal(run(unresolved, 'links', text), 'refuse', text);
+        assert.equal(run(unresolved, 'links', text), 'flag', text);
     }
 });
 
-test('G5 language: a clear English line in a Spanish recap (and the reverse) is refused; short, mixed and other languages pass', () => {
+test('G5 language: a clear English line in a Spanish recap (and the reverse) is flagged and kept; short, mixed and other languages pass', () => {
     const english = 'The tests are failing after the merge.';
     const spanish = 'Las pruebas fallan después de la fusión.';
-    assert.equal(run(wrongLanguage, 'done', english, { language: 'es' }), 'refuse');
-    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'en' }), 'refuse');
+    assert.equal(run(wrongLanguage, 'done', english, { language: 'es' }), 'flag');
+    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'en' }), 'flag');
     assert.equal(run(wrongLanguage, 'done', english), 'pass');
     assert.equal(run(wrongLanguage, 'done', spanish, { language: 'es' }), 'pass');
     assert.equal(run(wrongLanguage, 'done', 'Merged !256', { language: 'es' }), 'pass', 'too short to tell');

@@ -1,7 +1,7 @@
 <!-- The documents tab-recap gives the judge, one per call. Version 1. All three are plain text in, JSON out. -->
 
 <!-- 1. Scoring: the rubric, the document the recap writer was given for one run (as it was saved), and the items it wrote. -->
-<!ELEMENT judge_input (rubric, writer_input, recap)>
+<!ELEMENT judge_input (rubric, writer_input, recap, state?)>
 <!ATTLIST judge_input version CDATA #FIXED "1">
 
 <!-- The rubric file, verbatim (schema/recap-rubric.md). -->
@@ -17,7 +17,10 @@
   key     CDATA #REQUIRED
   section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED>
 
-<!-- 2. Read-back: the recap items alone. A fresh call answers the six fixed questions from them. -->
+<!-- The task's facts that were open right after the run (the state coverage is measured on). key = state/<task>/<section>/<position>. -->
+<!ELEMENT state (item*)>
+
+<!-- 2. Read-back: the recap items alone (the state's items, for a run). A fresh call answers the six fixed questions from them. -->
 <!ELEMENT readback_input (recap)>
 <!ATTLIST readback_input version CDATA #FIXED "1">
 
@@ -30,3 +33,8 @@
 <!ELEMENT answer (#PCDATA)>
 <!ATTLIST answer
   question CDATA #REQUIRED>
+
+<!-- 4. Covering: which of the state's facts carry the key facts. With keyfacts the judge uses those; without them it lists its own. The
+     1.x comparison hands the same key facts to two states. -->
+<!ELEMENT cover_input (writer_input, keyfacts?, state)>
+<!ATTLIST cover_input version CDATA #FIXED "1">

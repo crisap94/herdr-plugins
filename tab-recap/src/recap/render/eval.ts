@@ -1,8 +1,8 @@
 // What `tab-recap eval` prints. Pure: lines of text, styled by the Style the composition root chose (plain when the terminal wants none).
-import { AGREEMENT_TARGET } from '#src/recap/application/eval-stats.ts';
+import { KAPPA_BAR, trusted } from '#src/recap/application/eval-stats.ts';
 import type { Agreement, GateReport } from '#src/recap/application/eval-stats.ts';
 import { percent } from '#src/recap/application/eval-report.ts';
-import type { EvalReport, RunLine } from '#src/recap/application/eval-report.ts';
+import type { EvalReport, RunLine, Totals } from '#src/recap/application/eval-report.ts';
 import type { Candidate } from '#src/recap/application/eval-label.ts';
 import type { Style } from './wrap.ts';
 
@@ -22,7 +22,9 @@ const when = (at: number): string => new Date(at).toISOString().slice(0, 16).rep
 const short = (id: string): string => `${id.slice(0, 4)}…${id.slice(-6)}`;
 const row = (cells: readonly string[], widths: readonly number[]): string => cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd();
 
-const share = (label: string, part: { readonly passed: number; readonly total: number }): string => `${label} ${part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`}`;
+const figure = (part: { readonly passed: number; readonly total: number }): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
+/** A state number with the same number over what the run added beside it. */
+const share = (label: string, part: { readonly passed: number; readonly total: number }, added: { readonly passed: number; readonly total: number }): string => `${label} ${figure(part)} [added ${figure(added)}]`;
 
 function runLine(line: RunLine, style: Style): string {
     const head = `${short(line.run.id)}  ${line.run.tab}  ${when(line.run.at)}`;
@@ -30,8 +32,16 @@ function runLine(line: RunLine, style: Style): string {
         return `${head}  ${style.red('not judged')}: ${line.why}`;
     }
     const back = line.readback === null ? 'read-back n/a' : `read-back ${line.readback.filter((grade) => grade.pass).length}/6`;
-    return `${head}  ${share('coverage', line.coverage)} · ${share('no-filler', line.filler)} · ${back}${line.note === null ? '' : style.yellow(` — ${line.note}`)}`;
+    return `${head}  ${share('coverage', line.coverage, line.added.coverage)} · ${share('no-filler', line.filler, line.added.filler)} · ${back}${line.note === null ? '' : style.yellow(` — ${line.note}`)}`;
 }
+
+/** The sampled runs added up: the state numbers are the ruler, the added numbers the second column. */
+export const totalsLines = (totals: Totals, style: Style): readonly string[] => [
+    style.bold('all judged runs (state after each run; the facts each run added in brackets)'),
+    `coverage ${figure(totals.coverage)} [added ${figure(totals.added.coverage)}]`,
+    `no-filler ${figure(totals.filler)} [added ${figure(totals.added.filler)}]`,
+    `read-back median ${totals.readback === null ? 'n/a' : `${totals.readback}/6`}`,
+];
 
 /** The report of a sample: pass rates, failing items with their critique, then each run's coverage, no-filler and read-back. */
 export function reportLines(report: EvalReport, style: Style, missing: number): readonly string[] {
@@ -48,23 +58,35 @@ export function reportLines(report: EvalReport, style: Style, missing: number): 
         style.bold(`failing items (${report.failures.length})`),
         ...(report.failures.length === 0 ? ['none'] : report.failures.map((fail) => `${style.red(fail.check)}  ${fail.key}  "${fail.text}" — ${fail.critique}`)),
         '',
+        style.bold(`judge vs anchor (${report.judgeVsAnchor.length}): the fact quotes its input and the judge calls it unsupported`),
+        ...(report.judgeVsAnchor.length === 0 ? ['none'] : report.judgeVsAnchor.map((fail) => `${style.red(fail.check)}  ${fail.key}  "${fail.text}" — ${fail.critique}`)),
+        '',
+        ...totalsLines(report.totals, style),
+        '',
         style.bold('runs'),
         ...report.runs.map((line) => runLine(line, style)),
         ...(report.costUsd > 0 ? ['', style.dim(`judge cost $${report.costUsd.toFixed(4)}`)] : []),
     ];
 }
 
-/** Per check: how often the judge and the operator agree, and in which direction they differ. */
+const kappaText = (agreement: Agreement): string => (agreement.kappa === null ? 'kappa n/a' : `kappa ${agreement.kappa.toFixed(2)}`);
+
+/** Per check: how often the judge and the operator agree, Cohen's kappa against the trust bar, in which direction they differ, and the items they disagree on. */
 export function agreeLines(rows: readonly Agreement[], style: Style): readonly string[] {
     if (rows.length === 0) {
         return ['no item has both a judge and an operator verdict yet: run `tab-recap eval --label <n>` after `eval`'];
     }
-    const table = rows.map((agreement) => [agreement.check, `${agreement.percent}%`, `target ${AGREEMENT_TARGET}%`, `${agreement.agreed}/${agreement.items} agree`, `${agreement.falsePasses} false passes`, `${agreement.falseFails} false fails`]);
-    const widths = [0, 1, 2, 3, 4, 5].map((column) => Math.max(...table.map((cells) => (cells[column] ?? '').length)));
-    return [style.bold('judge against operator'), ...table.map((cells, at) => {
+    const table = rows.map((agreement) => [agreement.check, `${agreement.percent}%`, kappaText(agreement), `bar ${KAPPA_BAR}`, `${agreement.agreed}/${agreement.items} agree`, `${agreement.falsePasses} false passes`, `${agreement.falseFails} false fails`]);
+    const widths = [0, 1, 2, 3, 4, 5, 6].map((column) => Math.max(...table.map((cells) => (cells[column] ?? '').length)));
+    const lines = table.map((cells, at) => {
         const line = row(cells, widths);
-        return (rows[at]?.percent ?? 0) >= AGREEMENT_TARGET ? style.green(line) : style.yellow(line);
-    })];
+        return trusted(rows[at] ?? { kappa: null }) ? style.green(line) : style.yellow(line);
+    });
+    const worst = rows.flatMap((agreement) => (agreement.worst.length === 0 ? [] : [
+        '', style.bold(`${agreement.check}: where they disagree (newest first)`),
+        ...agreement.worst.map((one) => `  "${one.text}" — judge ${one.judge ? 'pass' : 'fail'}${one.judgeCritique === null ? '' : ` (${one.judgeCritique})`}, operator ${one.operator ? 'pass' : 'fail'}${one.reason === null ? '' : ` (${one.reason})`}`),
+    ]));
+    return [style.bold("judge against operator (Cohen's kappa; a check under the bar is yellow)"), ...lines, ...worst];
 }
 
 /** The gates' counts over the runs that have them. */

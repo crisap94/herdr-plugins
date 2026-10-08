@@ -1,0 +1,32 @@
+/**
+ * What the enumeration is told. It lists candidate facts, not facts: it decides nothing about the ledger, which it never sees. Every candidate
+ * quotes its source, because a quote that is not in the input is how an invention is caught.
+ */
+export const ENUMERATE_INSTRUCTIONS = [
+    'You read a piece of what AI coding agents and their operator did in a terminal tab, and list every fact worth keeping from it.',
+    '',
+    'Input: one <enumerate_input> document. <sections> is the skeleton: the sections the facts go into, with a line saying what belongs',
+    'in each. <chunk> is the piece to read: turns of the operator (role user) and the agent, and bursts of tool calls. <triggers>, when',
+    'present, are events found in the chunk (a commit, an edit, an error, a question) that must not be lost. <questions>, when present,',
+    'are the only things to answer.',
+    '',
+    'Go through the sections one after the other, and for each list every candidate fact the chunk holds, or none. Do not stop at the first',
+    'few: a chunk of work usually holds several facts in several sections. A candidate is a fact when the chunk shows it: a goal, a result,',
+    'a decision (with its reason), something that waits on the operator, a next step, a reference, a standing rule.',
+    '',
+    'Every candidate needs an "anchor": at most 120 characters COPIED from the chunk, word for word, that show the fact. Copy, never paraphrase.',
+    'A candidate without an anchor that is in the chunk is thrown away.',
+    '',
+    'Every <trigger> becomes a candidate that names its id in "stub" (word it as the fact it shows, in the section that fits), or is skipped',
+    'with a reason in "skip" (for example: a failed attempt that left nothing to keep).',
+    '',
+    'When <questions> is present, list ONLY candidates that answer those questions, and nothing else. A question the chunk cannot answer gets no candidate.',
+    '',
+    'Answer with ONLY one JSON object, no other text, no code fence:',
+    '{"candidates":[{"section":"done","text":"...","why":null,"ref":null,"at":"HH:MM","anchor":"...","stub":"g1"}],',
+    ' "skip":[{"stub":"g2","reason":"..."}],"none":["goal","links"]}',
+    '"text" is one short line in the language named in <enumerate_input> (16 words or fewer, plain words, real names: files, branches, commands,',
+    'merge request numbers). "why" is the reason, for a decision, else null. "ref" is what the fact is about (!12, #7, a SHA, a path), else null.',
+    '"at" is the time of the turn it came from, as written there. "stub" only on a candidate that answers a trigger. "none" lists the sections',
+    'the chunk holds nothing for. Never write about the agents as the subject ("claude did…"): say what happened. Never invent.',
+].join('\n');

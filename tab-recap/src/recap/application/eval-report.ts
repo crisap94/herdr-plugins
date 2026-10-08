@@ -1,6 +1,8 @@
 // The eval's report on a sample of judged runs: pass rate per check, the failing items, coverage, no-filler and read-back per run. Pure.
 import type { StoredRun } from '#src/ports/run-inputs.ts';
 import type { Grade } from './judge-answer.ts';
+import { plus } from './judge-coverage.ts';
+import type { Measured } from './judge-coverage.ts';
 import type { RunResult, Share } from './judge.ts';
 
 export interface Rate {
@@ -19,13 +21,28 @@ export interface Failure {
 
 /** What the report says of one sampled run. */
 export type RunLine =
-    | { readonly kind: 'judged'; readonly run: StoredRun; readonly coverage: Share; readonly filler: Share; readonly readback: readonly Grade[] | null; readonly note: string | null }
+    | {
+        readonly kind: 'judged'; readonly run: StoredRun; readonly coverage: Share; readonly filler: Share; readonly added: Measured['added']; readonly stateSize: number
+        readonly readback: readonly Grade[] | null; readonly note: string | null;
+    }
     | { readonly kind: 'not-judged'; readonly run: StoredRun; readonly why: string };
+
+/** The sampled runs together: the state numbers, the numbers over what the runs added, and the middle read-back. */
+export interface Totals {
+    readonly coverage: Share;
+    readonly filler: Share;
+    readonly added: Measured['added'];
+    /** the median of the runs' read-back passes out of six; null when no run has one */
+    readonly readback: number | null;
+}
 
 export interface EvalReport {
     readonly judge: string;
     readonly rates: readonly Rate[];
     readonly failures: readonly Failure[];
+    /** facts whose anchor was found in the input and that the judge called unsupported (I4): either the judge or the rubric is wrong there */
+    readonly judgeVsAnchor: readonly Failure[];
+    readonly totals: Totals;
     readonly runs: readonly RunLine[];
     readonly costUsd: number;
 }
@@ -70,8 +87,40 @@ function failuresOf(results: readonly RunResult[]): readonly Failure[] {
 
 const lineOf = (result: RunResult): RunLine =>
     result.kind === 'judged'
-        ? { kind: 'judged', run: result.run, coverage: result.coverage, filler: result.filler, readback: result.readback, note: result.note }
+        ? { kind: 'judged', run: result.run, coverage: result.coverage, filler: result.filler, added: result.added, stateSize: result.stateSize, readback: result.readback, note: result.note }
         : { kind: 'not-judged', run: result.run, why: result.why };
+
+const NONE: Share = { passed: 0, total: 0 };
+
+const medianOf = (numbers: readonly number[]): number | null => {
+    const sorted = numbers.toSorted((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    if (sorted.length === 0) {
+        return null;
+    }
+    return sorted.length % 2 === 1 ? (sorted[middle] ?? null) : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+};
+
+export function totalsOf(results: readonly RunResult[]): Totals {
+    const judged = results.flatMap((result) => (result.kind === 'judged' ? [result] : []));
+    return {
+        coverage: judged.reduce((sum, run) => plus(sum, run.coverage), NONE), filler: judged.reduce((sum, run) => plus(sum, run.filler), NONE),
+        added: { coverage: judged.reduce((sum, run) => plus(sum, run.added.coverage), NONE), filler: judged.reduce((sum, run) => plus(sum, run.added.filler), NONE) },
+        readback: medianOf(judged.flatMap((run) => (run.readback === null ? [] : [run.readback.filter((grade) => grade.pass).length]))),
+    };
+}
+
+function anchoredFailures(results: readonly RunResult[]): readonly Failure[] {
+    return results.flatMap((result) => {
+        if (result.kind !== 'judged') {
+            return [];
+        }
+        const anchored = new Map(result.items.filter((item) => item.anchor !== null).map((item) => [item.key, item.text]));
+        return result.verdicts.flatMap((verdict) => (verdict.check === 'I4' && !verdict.pass && verdict.item !== null && anchored.has(verdict.item)
+            ? [{ run: result.run.id, key: verdict.item, text: anchored.get(verdict.item) ?? '', check: 'I4', critique: verdict.critique ?? '' }]
+            : []));
+    });
+}
 
 /** The report for the results of one eval, by the judge named `judge`. */
 export function reportOf(judge: string, results: readonly RunResult[]): EvalReport {
@@ -79,6 +128,8 @@ export function reportOf(judge: string, results: readonly RunResult[]): EvalRepo
         judge,
         rates: ratesOf(results.flatMap((result) => (result.kind === 'judged' ? result.verdicts : []))),
         failures: failuresOf(results),
+        judgeVsAnchor: anchoredFailures(results),
+        totals: totalsOf(results),
         runs: results.map(lineOf),
         costUsd: results.reduce((sum, result) => sum + result.costUsd, 0),
     };

@@ -158,6 +158,11 @@ changing a closed fact, closing without a reason, adding a second goal, or addin
 **refused**, sent back to the writer once with the reason, and dropped if it is still refused. `goal` is one open fact
 per task: adding one closes the previous as `superseded`.
 
+**Anchors.** Every `add` carries an `"anchor"`: at most 120 characters copied word for word from the turn, tool call or agent
+note the fact comes from. A gate checks that the quote is in the input (whitespace and punctuation are folded, case is kept), so
+"supported" is checked by code before the judge looks at it; the quote is stored with the fact and shown to the writer in the
+ledger. An `update` may carry an anchor too; a `close` never does. A fact imported from 1.x has none.
+
 The column, the bar and the modal draw, per task and section, the **newest open facts** under the same caps as always
 (now 3, needs 3, done 5, decisions 3, next 5, links 6, rules 5, one goal). The caps only decide what is *shown*: the
 database keeps every fact, and the compaction brief is written from all of them, closed ones with their reasons.
@@ -173,10 +178,44 @@ prints the old recap JSON makes the run fail with `custom writer must answer ope
 nothing is stored: the old shape has no ids to operate on.
 
 **Measure it:** `node bin/tab-recap.ts eval --replay <transcript.jsonl> [--kind claude|codex] [--tab <label>]
-[--compare-imported <tab>]` reads a stored transcript from the start, runs the writer once per turn against a scratch
-database in a temporary directory (the real one is never written), judges the facts it leaves with the judge job (the same
-report as `eval --sample`, below), and prints the ledger it ends with; `--compare-imported` prints the judge's report over
-what the migration imported for a tab beside it, read-only. With the judge job off it prints the checks that need no model.
+[--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full]` reads a stored transcript from the start, runs the writer once per turn against a
+scratch database in a temporary directory (the real one is never written), judges the facts it leaves with the judge job (the same
+report as `eval --sample`, below), and prints the ledger it ends with. `--compare-imported` reads the tab's 1.x recaps from the
+real database (read-only) and judges, **per chapter**, the last good 1.x recap of the chapter as one state against the replay's
+ledger state at the same time — the same key facts, the same read-back questions, the same evidence (the chapter's turns, without
+the ledgers the replay's own writer was shown) — and prints them side by side per chapter and summed. The report names the
+pipeline, the writer job and the judge job, so two reports can be compared. With the judge job off it prints the checks that
+need no model.
+
+**How a turn is read.** The new turns of a run are not summarised in one call. They go through a *pipeline*
+(`TAB_RECAP_PIPELINE`, default `one`):
+
+1. **Enumerate.** A long turn is cut into chunks of at most 6 000 characters (between turns; inside a turn, between bursts of
+   tool calls) and each chunk is read by one call at *low* effort that goes through every section and lists the facts it
+   holds, each with a quote copied from the chunk (the *anchor*) — or none. Events a session is made of are never left to the
+   model's attention: a `git commit`/`merge`/`push`/`tag`, `gh pr`/`release`, `glab mr`, an edit, an error (`Error`, `FAIL`, `✖`,
+   `Traceback`) and a question found by plain code become *triggers* the call must either turn into a candidate or skip with a
+   reason; a trigger it ignores still reaches the writer, flagged.
+2. **Ask back** (`full` only). When the turn was long (more than one chunk) or the candidates are few (fewer than one per 2 000
+   characters), the six read-back questions no candidate answers, and what changed about the open facts the turn mentions,
+   drive one more enumeration restricted to those questions. Never a third.
+3. **Reconcile.** The writer — the recap writer job, at its own effort — is given the candidates, the open facts and the
+   newest turns for context, and answers the usual operations; a new fact is added only from a candidate, copying its anchor.
+   The gates and the one correction retry work as before.
+
+`TAB_RECAP_PIPELINE` takes `one` (the single call of 2.0 with the 2.1 gates, the default), `enumerate`, `enumerate+gates` or `full`; on
+the 40-prompt replay of `experiments/EXP-001` the piped ones did not raise coverage or the read-back beyond `one` and cost 2.4–2.8× the
+model calls, so they are off unless set; `tab-recap eval --replay
+<file> --pipeline <name>` runs the same transcript through any of them, and its report names the pipeline, the writer, the
+enumeration and the cost per turn, so two reports can be compared. A writer that is a custom command (`TAB_RECAP_CUSTOM_CMD`)
+always takes the single call. When the enumeration fails the run takes the single call, so a turn is never lost.
+
+**The ledger is reconciled.** Every `TAB_RECAP_RECONCILE_EVERY` turns (default 8), on the first run after a compaction and when
+the expanded view opens after new turns, the curator job (see [Models](#models)) reads the open facts beside the newest turns
+and may update a fact, close it (`done`, `wrong`, `superseded`, or `answered` — only for a *needs* fact) or merge it into another;
+it never adds. Each update and close carries a quote of the turns that shows the change; one without a quote in the turns is
+refused, so a fact is never closed because a summary the agent wrote after a compaction leaves it out. At most one such call per
+task every five minutes.
 
 ## Compaction
 
@@ -250,7 +289,9 @@ command) with a model and an effort. The settings modal lists them under **Model
 | recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`medium`) |
 | compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
 | recap judge | `TAB_RECAP_JUDGE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off`) | `TAB_RECAP_JUDGE_MODEL` (empty = the recap writer's model for that harness) | `TAB_RECAP_JUDGE_EFFORT` (`medium`) |
-| curator | `TAB_RECAP_CURATE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = no paragraph, no merges) | `TAB_RECAP_CURATE_MODEL` (empty = the harness's configured model) | `TAB_RECAP_CURATE_EFFORT` (`medium`) |
+| curator (the story, and the reconciliation of the ledger) | `TAB_RECAP_CURATE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = no paragraph, no merges, no reconciliation) | `TAB_RECAP_CURATE_MODEL` (empty = the harness's configured model) | `TAB_RECAP_CURATE_EFFORT` (`medium`) |
+
+The enumeration of a run (see [How a turn is read](#how-the-recap-is-kept)) is not a job of its own: it runs on the recap writer's harness and model at `low` effort.
 
 Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
 settings or MCP and no session left behind. The judge runs only when you run `tab-recap eval` (below).
@@ -265,12 +306,17 @@ section (a goal is an outcome, a decision carries its reason, a link resolves, �
 The writer's instructions and the judge's instructions quote it verbatim, so the writer is asked for exactly what the judge checks;
 edit a check in the file and both carry the new wording.
 
-**Gates.** Before a recap is stored every item passes plain-code rules, no model involved. An item is **refused** when its subject
-is an agent (`claude completed the research…`), when a decision gives no reason, when a link does not resolve (`!n`, `#n`, a SHA, a
-path, a URL, `name/with-slash`), when it repeats another item of the same task (word overlap of 0.6 or more), or when it is in
-the wrong language. An item that names nothing concrete or opens with a pronoun is only **flagged** and kept. Refused items go back
-to the writer once, in a `<correction>` that quotes each one with the rule it broke; what is still refused after that is dropped and
-the rest of the recap is kept. The counts per gate are stored with the run: `tab-recap eval --gates [--since <days>]` prints them.
+**Gates.** Before a recap is stored every operation passes plain-code rules, no model involved. Only what would corrupt the ledger is
+**refused**: a fact whose subject is an agent (`claude completed the research…`), a decision that gives no reason, an add that repeats
+another fact of the task (word overlap of 0.6 or more), an operation on an id the ledger does not hold, a close without a reason,
+an add whose anchor is missing or not in the input, and a close as `answered` of anything that is not a question (a *needs* fact).
+Facts that only look wrong are **flagged** and kept, so recall is not lost to a matter of form: a link that is not a reference
+(`!n`, `#n`, a SHA, a path, a URL, `name/with-slash`; it is drawn without a hyperlink), a fact in the wrong language, one that names
+nothing concrete and one that opens with a pronoun. The refused operations go back to the writer **once**, alone: a short
+`<correction_input>` (see [`schema/correction-input.dtd`](schema/correction-input.dtd)) holds each of them with the rule that
+refused it and the facts it names — not the transcript — and the writer answers replacements for those only; what is still refused
+after that is dropped, the rest is applied. The counts per gate are stored with the run: `tab-recap eval --gates [--since <days>]`
+prints them.
 
 **The judge.** `tab-recap eval` scores stored recaps against the rubric using the judge job (above). It needs each run's input, which
 the plugin keeps, compressed, for `TAB_RECAP_KEEP_INPUT_DAYS` days (default 14; `0` keeps none; older ones are deleted once a day, the
@@ -278,15 +324,16 @@ runs stay).
 
 | command | does |
 | --- | --- |
-| `tab-recap eval [--sample <n>] [--tab <id>] [--since <days>]` | judges the newest `n` runs (default 20) with a stored input: pass rate per check, every failing item with a one-line critique, the share of the input's key facts the recap carries (coverage), the share of items tied to a key fact (no-filler), and a read-back — a fresh call answers six fixed questions (goal, what finished, what waits on you, what must not be done, why a decision was taken, next action) from the recap alone, and its answers are graded against the input. Verdicts are stored. Exit 1 when no harness is available for the judge, or every run failed to be judged |
-| `tab-recap eval --label <n>` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work |
-| `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, beside the 85 % target |
+| `tab-recap eval [--sample <n>] [--tab <id>] [--since <days>]` | judges the newest `n` runs (default 20) with a stored input. The item checks (I1–I7 and the section's) are scored on the facts the run **added**, each with a one-line critique when it fails. Coverage (the share of the input's key facts the recap carries), no-filler (the share of facts tied to a key fact) and a read-back — a fresh call answers six fixed questions (goal, what finished, what waits on you, what must not be done, why a decision was taken, next action) from the recap alone, and its answers are graded against the input — are measured on the **ledger's state** after the run (everything open then, what earlier runs added too), with the numbers over the run's own additions in brackets beside them. Facts whose anchor is in the input but that the judge calls unsupported are listed under "judge vs anchor". Verdicts are stored. Exit 1 when no harness is available for the judge, or every run failed to be judged |
+| `tab-recap eval --label <n> [--check <I1…I7\|S-section>]` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work. With `--check I5` only that check is asked (the fastest way to fix a weak one), including for items you labelled on other checks |
+| `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, Cohen's kappa beside the 0.6 bar (a check under it is yellow) and the three newest items they disagree on |
 | `tab-recap eval --gates [--since <days>]` | the gates' counts per gate, with no model call |
-| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
+| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one\|enumerate\|enumerate+gates\|full]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
 
 `--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`; `--replay` excludes all of them. A judge on the same model as
 the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job
-can run on another harness.
+can run on another harness. **Calibration:** where you overruled the judge, its next scoring instructions carry up to five of your
+corrections for that check (the item, your verdict, your reason, newest first) as anchors — "when in doubt, the operator decided like this".
 
 ### Your own command
 
@@ -295,7 +342,7 @@ version 2 document, then the instructions — on stdin and prints the operations
 
 ```json
 {"ops": [
-  {"op": "add", "section": "decisions", "text": "Keep SQLite", "why": "it needs no server", "ref": null, "at": "16:41", "agent": "a1"},
+  {"op": "add", "section": "decisions", "text": "Keep SQLite", "why": "it needs no server", "ref": null, "at": "16:41", "agent": "a1", "anchor": "no server, SQLite is fine"},
   {"op": "update", "id": "f12", "text": "Canary at 10% of traffic", "why": null},
   {"op": "close", "id": "f3", "why": "done"}
 ]}
@@ -303,7 +350,11 @@ version 2 document, then the instructions — on stdin and prints the operations
 
 `id` is the `f…` of a `<fact>` in the document's `<ledger>` (with several tasks an `add` may carry `"task": "t2"`; `{"ops": []}` means nothing changed); `close` takes `done`, `wrong`, `superseded` or
 `answered`. An answer the ledger cannot apply (an unknown id, an update of a closed fact, a second goal in one
-answer) is refused with its reason, and the refusals go back to the command once in `<correction>`.
+answer) is refused with its reason, and the refusals go back to the command once: it is run again with a `<correction_input>` document
+(not the transcript) holding each refused operation with its reasons, and must print `{"ops": [...]}` with the replacements only.
+**New in 2.1:** an `add` may carry an `"anchor"` — a quote of at most 120 characters copied word for word from a turn, tool call or note of
+the document. For a custom command it is optional: an add without one is kept (the built-in harnesses must quote, and an add whose
+quote is not in the document is refused); a fact without an anchor is just not counted under "judge vs anchor" by `tab-recap eval`.
 
 **Breaking in 2.0:** until 1.x a custom command received the previous recap and answered the whole recap
 as JSON. It now receives the version 2 document and **must answer operations**; a command that still answers
@@ -397,6 +448,8 @@ herdr plugin log list --plugin tab-recap | tail -30
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
 
+Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
+
 Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
 
 ## State and rolling back
@@ -415,7 +468,7 @@ directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; r
 back. Upgrading to 1.6.0 again later starts from the database as it was: delete `tab-recap.db*` first to import the files again.
 
 Schema versions so far: **1** (1.6.0, the import), **2** (1.7.0, each lane's web address for links),
-**3** (1.8.0, standing rules, compaction requests and context use), **4** (2.0, compaction records), **5** (2.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`), **6** (2.0, the ledger of facts and the import of 1.x items), **7** (2.0, the curator's paragraph), **8** (2.0, boundaries keep their tokens; a compaction record points at its boundary).
+**3** (1.8.0, standing rules, compaction requests and context use), **4** (2.0, compaction records), **5** (2.0, each run's input, the gates' counts and the verdicts of `tab-recap eval`), **6** (2.0, the ledger of facts and the import of 1.x items), **7** (2.0, the curator's paragraph), **8** (2.0, boundaries keep their tokens; a compaction record points at its boundary), **9** (2.1, a fact keeps its anchor).
 An upgrade of the database itself first copies it to `tab-recap.db.v<n>.bak` (the newest three are kept). If a database was
 written by a **newer** plugin than the one running, it is opened read-only and left alone: the daemon shows a notification and
 stops, the columns say so instead of a recap — upgrade the plugin, or restore the backup the message names.

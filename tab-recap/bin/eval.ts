@@ -9,6 +9,7 @@ import { AUTO_ORDER, judgeFor } from '#src/daemon/backends.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { EVAL_USAGE, parseEval } from '#src/recap/application/eval-options.ts';
+import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';
 import { replayCommand } from './replay.ts';
 
@@ -53,7 +54,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
         const available = isUnknown(found) ? [] : found.ids;
         return await runEval(parsed.options, {
             inputs: store.inputs, verdicts: store.verdicts, now: Date.now, rubric: RUBRIC_TEXT, style: styleFor(process.stdout),
-            judge: () => judgeFor(loadConfig(), available, join(stateDir(), 'summarizer')),
+            judge: () => judgeFor(loadConfig(), available, join(stateDir(), 'summarizer'), anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
             out: (line) => { console.log(line); },
             err: (line) => { console.error(line); },
             ask: (prompt) => operator.ask(prompt),

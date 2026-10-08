@@ -174,7 +174,7 @@ test('a database newer than the code opens read-only, is not written, and says w
     try {
         const path = join(dir, 'tab-recap.db');
         const db = fromFixture(path);
-        db.exec('PRAGMA user_version = 9');
+        db.exec(`PRAGMA user_version = ${MIGRATIONS.length + 1}`);
         db.close();
         rmSync(`${path}-wal`, { force: true });
         writeFileSync(`${path}.v1.bak`, 'a copy');
@@ -182,9 +182,9 @@ test('a database newer than the code opens read-only, is not written, and says w
         if (opened.kind !== 'newer-db') {
             assert.fail('a database written by a newer plugin opens as newer-db');
         }
-        assert.deepEqual([opened.found, opened.known], [9, MIGRATIONS.length]);
+        assert.deepEqual([opened.found, opened.known], [MIGRATIONS.length + 1, MIGRATIONS.length]);
         assert.throws(() => { opened.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('x', 1, 1)"); }, /readonly/i);
-        assert.equal(versionOf(opened.db), 9);
+        assert.equal(versionOf(opened.db), MIGRATIONS.length + 1);
         assert.equal(opened.backup, `${path}.v1.bak`, 'the newest copy is the one to restore');
     } finally {
         rmSync(dir, { recursive: true, force: true });
@@ -219,7 +219,7 @@ test('migration 8 from a v7 database with a compaction in it: the record is kept
         old.db.close();
         const opened = openDatabase(path);
         assert.equal(opened.kind, 'ready');
-        assert.equal(versionOf(opened.db), 8);
+        assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((name) => name.slice(-7)), ['.v7.bak']);
         assert.deepEqual(opened.db.prepare('SELECT stage, tokens_before, boundary_id FROM compaction').all().map((row) => Object.assign({}, row)), [{ stage: 'compacted', tokens_before: 800_000, boundary_id: null }]);
         assert.deepEqual(opened.db.prepare('SELECT boundary_id FROM compaction_readable').all().map((row) => Object.assign({}, row)), [{ boundary_id: null }]);

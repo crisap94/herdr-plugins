@@ -1,8 +1,10 @@
 // The writer's input: one `recap_input` document (schema/recap-input.dtd), data only. The instructions come separately.
 import type { InputAgent, RecapInput } from '#src/ports/recap-input.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
+import { correctionDocument } from './correction-input.ts';
 import { clipHead } from './writer-clip.ts';
 import { localTime, isoSecond } from './local-time.ts';
+import { candidatesOf } from './writer-candidates.ts';
 import { transcriptOf } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
 
@@ -37,7 +39,7 @@ function ledgersOf(input: RecapInput): string {
     const at = clockOf(input);
     return input.ledgers.map((ledger) => {
         const facts = ledger.facts.map((fact) => {
-            const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(fact.first), last: at(fact.last), why: fact.why, ref: fact.ref, agent: fact.agent, closed: fact.closed };
+            const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(fact.first), last: at(fact.last), why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: fact.agent, closed: fact.closed };
             return `\n ${leaf('fact', attrs, fact.text)}`;
         }).join('');
         return `${NEST}${element('ledger', { task: ledger.task }, facts === '' ? '' : `${facts}\n`)}`;
@@ -61,9 +63,12 @@ function transcriptsOf(input: RecapInput, budget: number): string {
 
 /** The document for `request`; `budget` is the characters of transcript markup shared out among the agents. */
 export function writerContext(request: RecapRequest, budget = TRANSCRIPT_BUDGET): string {
+    if (request.retry !== undefined) {
+        return correctionDocument({ ...request, retry: request.retry });
+    }
     const { input } = request;
     const tab = element('tab', { id: input.tab.id, now: isoSecond(input.tab.now), zone: input.tab.zone }, `${input.agents.map(agentOf).join('')}${NEST}`);
     const correction = request.correction === undefined ? '' : `${NEST}${leaf('correction', {}, request.correction)}`;
-    const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
+    const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${candidatesOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
     return element('recap_input', { version: 2 }, body);
 }

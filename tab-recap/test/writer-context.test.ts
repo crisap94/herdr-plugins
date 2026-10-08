@@ -14,7 +14,7 @@ const agent = (text: string, when: string): Entry => ({ role: 'agent', text, at:
 const tool = (kind: NonNullable<Entry['kind']>, text: string, when: string, what?: string): Entry => ({ role: 'tool', kind, text, at: at(when), ...(what === undefined ? {} : { what }) });
 
 const fact = (id: string, section: InputFact['section'], text: string, over: Partial<InputFact> = {}): InputFact =>
-    ({ id, section, text, state: 'open', first: at('02:40'), last: at('02:55'), why: null, ref: null, agent: null, closed: null, ...over });
+    ({ id, section, text, state: 'open', first: at('02:40'), last: at('02:55'), why: null, ref: null, anchor: null, agent: null, closed: null, ...over });
 const CART = [
     fact('f1', 'goal', 'Add a cart to the shop'), fact('f2', 'now', 'Writing the cart tests', { agent: 'a1', ref: 'src/cart.ts' }),
     fact('f3', 'decisions', 'Keep carts in SQLite', { why: 'one file to back up' }),
@@ -170,4 +170,16 @@ test('a task with no facts has an empty ledger; with several tasks each ledger n
 test('a time on another day carries its date', () => {
     const old = { ...CART[0] as InputFact, first: Date.parse('2026-10-04T14:10:00Z') };
     assert.match(writerContext(requestOf({ ledgers: [{ task: null, facts: [old] }] })), /first="2026-10-04 14:10"/);
+});
+
+test('a fact carries the anchor it was added with, escaped like any attribute, and the document is valid with it', () => {
+    const request = requestOf({ ledgers: [{ task: null, facts: [fact('f1', 'done', 'Merged !256', { anchor: 'merge !256 after "green" <pipelines> & tests' }), fact('f2', 'next', 'Tag it')] }], entries: [user('go', '03:01')] });
+    const document = writerContext(request);
+    assert.match(document, /<fact id="f1" section="done" first="[^"]+" last="[^"]+" anchor="merge !256 after &quot;green&quot; &lt;pipelines&gt; &amp; tests">Merged !256<\/fact>/);
+    assert.match(document, /<fact id="f2" section="next" first="[^"]+" last="[^"]+">Tag it<\/fact>/, 'a fact without one has no attribute');
+});
+
+dtdTest('DTD: a fact with an anchor is valid', () => {
+    const verdict = validate(writerContext(requestOf({ ledgers: [{ task: null, facts: [fact('f1', 'done', 'Merged !256', { anchor: 'merge !256 after "green" <pipelines> & tests' })] }], entries: [user('go', '03:01')] })));
+    assert.ok(verdict.valid, verdict.output);
 });

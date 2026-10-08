@@ -19,6 +19,9 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
+import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
+import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
@@ -31,6 +34,10 @@ export interface Config {
     readonly customCommand: string;
     /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`medium` unless set) */
     readonly effort: Effort;
+    /** `TAB_RECAP_PIPELINE`: the steps a run's new turns go through (`one` unless set) */
+    readonly pipeline: Pipeline;
+    /** `TAB_RECAP_RECONCILE_EVERY`: the turns between two reconciliations of a tab's ledger by the curator (8 unless set) */
+    readonly reconcileEvery: number;
     readonly locale: Locale;
     /** `en`, `es` or sanitised free text: what new recaps are written in */
     readonly recapLanguage: string;
@@ -149,6 +156,8 @@ export function loadConfig(): Config {
         models: modelsOf(get, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
         effort: effortOf(get('TAB_RECAP_EFFORT')),
+        pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE,
+        reconcileEvery: Math.max(1, Math.floor(number(get('TAB_RECAP_RECONCILE_EVERY'), RECONCILE_EVERY))),
         sizing: {
             fraction: Math.min(0.6, number(get('TAB_RECAP_WIDTH'), 0.3)),
             minCols: number(get('TAB_RECAP_MIN_COLS'), 36),
