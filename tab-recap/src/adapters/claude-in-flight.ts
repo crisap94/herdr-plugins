@@ -1,5 +1,8 @@
 // Work a Claude agent started and has not ended, read from the tail of its transcript. Pure over lines.
 import type { InFlightResult } from '#src/ports/transcripts.ts';
+
+/** The most bytes the in-flight reader reads back for one question: 16 MB, past which the answer is unknown. */
+export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 import { unknown } from '#src/ports/unknowable.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
@@ -139,6 +142,3 @@ export function answerOf(scan: TailScan | null, truncated: boolean): InFlightRes
     if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
     return { kind: 'in-flight', count: scan.count };
 }
-
-/** The most bytes the in-flight reader reads back for one question: 16 MB, past which the answer is unknown. */
-export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;

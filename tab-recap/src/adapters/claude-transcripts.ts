@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
 import { claudeObserved } from './context-rows.ts';
 import { extractClaude } from './claude-rows.ts';
@@ -11,10 +11,25 @@ import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts
 
 export { extractClaude };
 
+/** The in-flight answer of a transcript's tail: read back (doubling the budget) while the tail ends work it never saw launched, up to the bound. */
+function answerAt(source: string, budget: number): InFlightResult {
+    let bytes = budget;
+    let tail = tailOf(source, bytes);
+    let scan = scanFlight(tail.lines);
+    while (tail.truncated && scan?.unseen === true && bytes < IN_FLIGHT_MAX_BYTES) {
+        bytes = Math.min(bytes * 2, IN_FLIGHT_MAX_BYTES);
+        tail = tailOf(source, bytes);
+        scan = scanFlight(tail.lines);
+    }
+    return answerOf(scan, tail.truncated);
+}
+
 /** Claude Code transcripts. Never derive the project slug: sessions move with /cd. */
 export class ClaudeTranscripts implements Transcripts {
     readonly agent = 'claude';
     private readonly root: string;
+    /** the unknown answer each transcript gave at its size: an unchanged size gives the same answer, so it is not read again */
+    private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
 
     constructor(root = join(homedir(), '.claude', 'projects')) {
         this.root = root;
@@ -58,16 +73,17 @@ export class ClaudeTranscripts implements Transcripts {
         }
     }
 
-    /** Reads the tail; while it ends work it never saw launched, reads back with a doubled budget, up to `IN_FLIGHT_MAX_BYTES` or the whole file. */
+    /** The answer from the tail; while it ends work it never saw launched, it reads back with a doubled budget, up to the bound.
+     * An unknown answer is kept with the file's size: while the size is the same, it is answered without a read. */
     inFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
-            let bytes = budget;
-            for (;;) {
-                const tail = tailOf(source, bytes);
-                const scan = scanFlight(tail.lines);
-                if (!tail.truncated || scan?.unseen !== true || bytes >= IN_FLIGHT_MAX_BYTES) return Promise.resolve(answerOf(scan, tail.truncated));
-                bytes = Math.min(bytes * 2, IN_FLIGHT_MAX_BYTES);
-            }
+            const size = statSync(source).size;
+            const kept = this.unknownAt.get(source);
+            if (kept !== undefined && kept.size === size) return Promise.resolve(kept.answer);
+            const answer = answerAt(source, budget);
+            if (isUnknown(answer)) this.unknownAt.set(source, { size, answer });
+            else this.unknownAt.delete(source);
+            return Promise.resolve(answer);
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
         }

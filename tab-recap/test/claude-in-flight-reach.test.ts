@@ -63,3 +63,15 @@ test('over 16 MB: the launch lies before the bound, so the answer stays unknown'
 });
 
 after(() => { rmSync(dir, { recursive: true, force: true }); });
+
+test('an unknown answer is kept with the file size: the same size is not read again (the same tail, changed, still gives the first answer); a new size is read', async () => {
+    const path = write('kept.jsonl', transcript(0, pair, 17 * MB, 0.1 * MB));
+    const reader = new ClaudeTranscripts(dir);
+    const first = await reader.inFlight(path, TAIL);
+    assert.equal(first.kind, 'unknown');
+    const size = statSync(path).size;
+    writeFileSync(path, `${'x'.repeat(size - 1)}\n`);
+    assert.deepEqual(await reader.inFlight(path, TAIL), first, 'same size: answered from the kept answer, not read again');
+    writeFileSync(path, `${notice('b1', 't1')}\n`);
+    assert.deepEqual(await reader.inFlight(path, TAIL), { kind: 'in-flight', count: 0 }, 'a new size is read');
+});
