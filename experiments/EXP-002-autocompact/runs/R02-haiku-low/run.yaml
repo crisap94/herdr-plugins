@@ -2,7 +2,7 @@ run: R02-haiku-low
 experiment: EXP-002-autocompact
 status: valid
 date: 2026-10-08
-code: tab-recap tools at 6a2a48a on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+code: tab-recap tools at 82f5e5d on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
 corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
 command: node bin/autocompact-probe.ts --dir <scratch>/exp002 --arm haiku-low --rep 1 ; ... --rep 2
 arm: claude / claude-haiku-5-5 / effort low (HarnessDecider)

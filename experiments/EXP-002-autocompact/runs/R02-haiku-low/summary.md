@@ -24,7 +24,7 @@
 | haiku-low | 0.981 | 0.529 | 27.500 | 1 | 0.304 | 0.039 | 0.693 |
 
 
-## Outcome set (16 compactions with a stored run before them)
+## Outcome set (16 compactions with a stored run before them, 11 with something after)
 
 | arm | allowed n | allowed re-reads | allowed restated | blocked n | blocked re-reads | blocked restated |
 |---|---|---|---|---|---|---|

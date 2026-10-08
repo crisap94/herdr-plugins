@@ -24,7 +24,7 @@
 | jev | 0.957 | 0.431 | 23 | 1 | 0.304 | 0.007 | 0.912 |
 
 
-## Outcome set (16 compactions with a stored run before them)
+## Outcome set (16 compactions with a stored run before them, 11 with something after)
 
 | arm | allowed n | allowed re-reads | allowed restated | blocked n | blocked re-reads | blocked restated |
 |---|---|---|---|---|---|---|

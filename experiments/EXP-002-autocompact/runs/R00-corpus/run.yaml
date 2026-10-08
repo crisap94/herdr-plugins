@@ -2,7 +2,7 @@ run: R00-corpus
 experiment: EXP-002-autocompact
 status: valid
 date: 2026-10-08
-code: tab-recap tools at 6a2a48a on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+code: tab-recap tools at 82f5e5d on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
 corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
 command: node bin/autocompact-corpus.ts --db <copy of tab-recap.db> --out <scratch>/exp002
 db_copy: VACUUM INTO from a read-only connection; sha256 b03e1c467ee9290f4ed93c90e9da775d8cbf886e9cd6ac7feb32701f12cd1af6

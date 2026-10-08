@@ -24,7 +24,7 @@
 | luna-low | 0.902 | 0.569 | 32 | 0.902 | 0.435 | 0.070 | 0.821 |
 
 
-## Outcome set (16 compactions with a stored run before them)
+## Outcome set (16 compactions with a stored run before them, 11 with something after)
 
 | arm | allowed n | allowed re-reads | allowed restated | blocked n | blocked re-reads | blocked restated |
 |---|---|---|---|---|---|---|

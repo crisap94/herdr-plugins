@@ -54,7 +54,7 @@ Operator labels are pending: no question is gated by kappa yet.
 | haiku-medium | 0.905 | 0.647 | 36.500 | 0.933 | 0.522 | 0.032 | 0.777 |
 | luna-low | 0.902 | 0.569 | 32 | 0.902 | 0.435 | 0.070 | 0.821 |
 
-## Outcome set (16 compactions with a stored run before them)
+## Outcome set (16 compactions with a stored run before them, 11 with something after)
 
 | arm | allowed n | allowed re-reads | allowed restated | blocked n | blocked re-reads | blocked restated |
 |---|---|---|---|---|---|---|
