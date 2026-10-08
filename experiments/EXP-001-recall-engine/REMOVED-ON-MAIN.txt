@@ -22,3 +22,5 @@ runs/R08-full/R08-full.txt	53021	raw output (quotes the session)	private@8fd048b
 runs/R08-full/R08-full.err	2484	raw output (quotes the session)	private@8fd048b
 runs/R09-full/R09-full.txt	37992	raw output (quotes the session)	private@8fd048b
 runs/R09-full/R09-full.err	2472	raw output (quotes the session)	private@8fd048b
+runs/R10-one-haiku55/R10-one-haiku55.txt	28485	raw output (quotes the session)	private@75ed4f7
+runs/R10-one-haiku55/R10-one-haiku55.err	277	raw output (quotes the session)	private@75ed4f7
