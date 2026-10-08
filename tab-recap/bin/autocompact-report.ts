@@ -12,6 +12,7 @@ import type { Answer, Reps } from '#src/experiment/report-metrics.ts';
 import { outcomeGap } from '#src/experiment/report-outcome.ts';
 import type { BoundaryRow } from '#src/experiment/report-outcome.ts';
 import { table } from '#src/experiment/report-render.ts';
+import { verbatimAgainstCode } from '#src/experiment/report-code.ts';
 import { decide } from '#src/experiment/report-rule.ts';
 import { mean } from '#src/experiment/stats.ts';
 
@@ -39,14 +40,14 @@ function questionRows(arm: string, reps: Reps, labels: Labels, briefs: Labels): 
     for (const [ids, source, inBriefs] of [[IDS, labels, false], [COVERAGE, briefs, true]] as const) {
         for (const id of ids) {
             const m = questionMetrics(reps, id, source, (key) => key.includes('#') === inBriefs);
-            rows.push([arm, m.question, m.n, m.auc, m.brier, m.undecided, m.drift, m.medianMs, m.p95Ms, m.tokens, m.usd]);
+            rows.push([arm, m.question, m.n, [...source.values()].filter((label) => label[id] === 1).length, m.auc, m.brier, m.undecided, m.drift, m.medianMs, m.p95Ms, m.tokens, m.usd]);
         }
     }
     return rows;
 }
 
 const questionTable = (arms: Readonly<Record<string, Reps>>, labels: Labels, briefs: Labels): string =>
-    table(['arm', 'question', 'n', 'AUC', 'Brier', 'undecided', 'drift', 'median ms', 'p95 ms', 'tokens', 'usd'], Object.entries(arms).flatMap(([arm, reps]) => questionRows(arm, reps, labels, briefs)));
+    table(['arm', 'question', 'n', 'labelled 1', 'AUC', 'Brier', 'undecided', 'drift', 'median ms', 'p95 ms', 'tokens', 'usd'], Object.entries(arms).flatMap(([arm, reps]) => questionRows(arm, reps, labels, briefs)));
 
 export function main(dir: string): string {
     const points = readPoints(join(dir, 'corpus.jsonl'));
@@ -71,6 +72,7 @@ export function main(dir: string): string {
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
         `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [arm, all.precision, all.recall, all.compact, above.precision, above.recall, scores[i]?.drift ?? Number.NaN, scores[i]?.coverageAuc ?? Number.NaN]))}`,
         `## Outcome set (${boundaries.filter((row) => row.point_id !== null).length} compactions with a stored run before them)\n\n${table(['arm', 'allowed n', 'allowed re-reads', 'allowed restated', 'blocked n', 'blocked re-reads', 'blocked restated'], Object.entries(arms).map(([arm, reps]) => { const gap = outcomeGap(boundaries, reps); return [arm, gap.allowed.n, gap.allowed.reReads, gap.allowed.restated, gap.blocked.n, gap.blocked.reReads, gap.blocked.restated]; }))}`,
+        `## needs_verbatim against the code cross-check as labels\n\n${table(['arm', 'positives', 'AUC', 'Brier'], Object.entries(arms).map(([arm, reps]) => { const m = verbatimAgainstCode(points, reps); return [arm, m.positives, m.auc, m.brier]; }))}`,
         `## Rule\n\nDefault decider: **${decision.defaultArm ?? 'none (stay on `recap`)'}**. Coverage decider: **${decision.coverageArm ?? 'none'}**.\n\n${decision.why}`,
     ];
     return sections.join('\n\n');
