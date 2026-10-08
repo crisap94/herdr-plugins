@@ -6,7 +6,7 @@ import type { GateInput } from '#src/recap/domain/autocompact.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 
 const NOW = 10_000_000;
-const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], busy: false, inFlight: 0, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, ...over });
+const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], busy: false, inFlight: 0, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
 
 test('gates: below the minimum (31 % with minimum 40) stops before any model', () => {
     assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-minimum', recordOnly: false });

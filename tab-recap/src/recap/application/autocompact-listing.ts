@@ -1,6 +1,6 @@
 // `tab-recap autocompact`: the newest decisions as a table, read-only. Pure: decisions in, lines out.
 import { parseArgs } from 'node:util';
-import type { StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
 
 export const AUTOCOMPACT_USAGE = 'USAGE: tab-recap autocompact [--all]';
 export const LISTED = 20;
@@ -30,13 +30,24 @@ const rowOf = (found: StoredDecision, zone: string): readonly string[] => [
 ];
 
 const HEAD = ['time', 'tab', 'pane', 'share', 'verdict', 'gate', 'decider', 'cost'] as const;
+const SKIPPED = ['time', 'tab', 'pane', 'share', 'gate', 'detail'] as const;
 
-/** The table (columns padded to their widest cell), then `last 24 h: N decisions, $X`. Nothing to list says so. */
-export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string): readonly string[] {
+const skippedRow = (found: Skip, zone: string): readonly string[] => [
+    stamp(found.at, zone), found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—',
+];
+
+/** The rows under their head, each column padded to its widest cell. */
+function table(head: readonly string[], rows: readonly (readonly string[])[]): readonly string[] {
+    const all = [head, ...rows];
+    const widths = head.map((_, at) => Math.max(...all.map((row) => (row[at] ?? '').length)));
+    return all.map((row) => row.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd());
+}
+
+/** The decisions as a table, then `last 24 h: N decisions, $X`; then, when a lane is stopped, `not decided now` and the stopped lanes (newest first, their gate and detail). Nothing to list says so. */
+export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly string[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
     const total = `last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${money(spent.costUsd)}`;
-    if (decisions.length === 0) return ['no autocompact decisions yet', total];
-    const rows = [HEAD, ...decisions.map((found) => rowOf(found, zone))];
-    const widths = HEAD.map((_, at) => Math.max(...rows.map((row) => (row[at] ?? '').length)));
-    return [...rows.map((row) => row.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd()), '', total];
+    const decided = decisions.length === 0 ? ['no autocompact decisions yet', total] : [...table(HEAD, decisions.map((found) => rowOf(found, zone))), '', total];
+    const stopped = skips.length === 0 ? [] : ['', 'not decided now', ...table(SKIPPED, skips.map((found) => skippedRow(found, zone)))];
+    return [...decided, ...stopped];
 }

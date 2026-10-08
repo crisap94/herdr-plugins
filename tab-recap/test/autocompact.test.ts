@@ -1,8 +1,6 @@
 // The autocompact service with fakes: shadow records and never requests, on requests once, and the gates stop what they must before any model.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Autocompact } from '#src/recap/application/autocompact.ts';
-import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
@@ -15,39 +13,10 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
-import type { Decider, DecidedResult } from '#src/ports/decider.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { DecidedResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { memoryStore, must } from './db/support.ts';
-
-const NOW = 10_000_000;
-const lane = (agent = 'claude', status = 'idle'): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status });
-const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
-
-interface World { readonly service: Autocompact; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
-
-function world(over: Partial<AutocompactPolicy> = {}, recap = true): World {
-    const store = memoryStore();
-    store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const [requests, logs, asked, refreshed, reads] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[]];
-    const clock = { at: NOW };
-    const state = { policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, inFlight: 0 as number | 'unknown', share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
-    const decider: Decider = { label: 'fake · m', ask: (_state, questions) => { asked.push(Object.keys(questions).length); return Promise.resolve(state.decide()); } };
-    const deps: AutocompactDeps = {
-        policy: () => state.policy, decider: () => decider, contexts: { of: () => ({ tokens: state.share * 10_000, window: 1_000_000, source: 'observed' }) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight); },
-        recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact,
-        requests: { requestCompact: (request) => { requests.push(request); } }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve(); },
-        lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); },
-    };
-    const self: World = { service: new Autocompact(deps), store, requests, logs, asked, refreshed, reads, clock, get policy() { return state.policy; }, set policy(value) { state.policy = value; }, get inFlight() { return state.inFlight; }, set inFlight(value) { state.inFlight = value; }, get share() { return state.share; }, set share(value) { state.share = value; }, get decide() { return state.decide; }, set decide(value) { state.decide = value; } };
-    return self;
-}
-
-const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(20);
+import { must } from './db/support.ts';
+import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 
 test('on: a safe moment between the limits is recorded, logged with its figures and requested once with origin auto', async () => {
     const w = world();
@@ -75,11 +44,13 @@ test('off decides nothing; a lane that is working, or an unknown context, is not
     assert.deepEqual([off.asked.length, off.store.autocompact.newest(5).length, working.asked.length, working.store.autocompact.newest(5).length], [0, 0, 0, 0]);
 });
 
-test('below the minimum (8 %): no model, nothing recorded', async () => {
+test('below the minimum (8 %): no model, no decision; the lane keeps one skip, logged once', async () => {
     const w = world();
     w.share = 8;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, rows(w).length, w.requests.length, w.logs.length], [0, 0, 0, 0]);
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked.length, rows(w).length, w.requests.length, w.store.autocompact.skips().map((skip) => [skip.gate, skip.share, skip.detail])], [0, 0, 0, [['below-minimum', 8, 'below 10 %']]]);
+    assert.deepEqual(w.logs, ['autocompact w1:p1: 8 % → skip below-minimum (below 10 %)']);
 });
 
 test('something in flight (or a reader that cannot tell): no model, no decision, no request', async () => {
@@ -133,7 +104,10 @@ test('a request still waiting to begin after 70 s (no compaction record yet) sto
     assert.deepEqual([w.requests.length, w.asked.length, rows(w).length], [1, 1, 1], 'the unlinked compact decision keeps the lane busy');
     w.clock.at += 6 * 60_000;
     await w.service.consider(lane());
-    assert.deepEqual([w.requests.length, w.asked.length], [2, 2], 'after the five-minute window a request may be made again');
+    assert.deepEqual([w.requests.length, w.asked.length], [1, 1], 'the same tokens: unchanged, nothing is asked again');
+    w.share = 63;
+    await w.service.consider(lane());
+    assert.deepEqual([w.requests.length, w.asked.length], [2, 2], 'changed tokens, and the five-minute window has passed: a request may be made again');
 });
 
 test('shadow: a second idle within the cooldown after a decision asks no decider and records no second row', async () => {
@@ -176,13 +150,18 @@ test('a kind outside the list is decided and recorded but never requested', asyn
 test('three lanes in a row with the decider down: three unknown decisions and one log line about the outage; it logs again after an answer', async () => {
     const w = world({ cooldownMs: 0 });
     w.decide = (): DecidedResult => unknown({ why: 'timeout', after: 10_000 as never });
-    for (let i = 0; i < 3; i += 1) await w.service.consider(lane());
+    for (let i = 0; i < 3; i += 1) {
+        w.share = 62 + i;
+        await w.service.consider(lane());
+    }
     assert.deepEqual(rows(w).map((row) => row.verdict), ['unknown', 'unknown', 'unknown']);
     assert.equal(w.logs.filter((line) => line.includes('the decider is unreachable')).length, 1);
     assert.equal(w.requests.length, 0);
     w.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, stuck: 0.9 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
+    w.share = 63;
     await w.service.consider(lane());
     w.decide = (): DecidedResult => unknown({ why: 'unreachable', detail: 'x' });
+    w.share = 64;
     await w.service.consider(lane());
     assert.equal(w.logs.filter((line) => line.includes('the decider is unreachable')).length, 2);
 });

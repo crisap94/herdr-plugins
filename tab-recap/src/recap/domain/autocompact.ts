@@ -91,15 +91,15 @@ export function jevOf(get: (key: string) => string | undefined): JevSettings {
     return { url: usable ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
 }
 
-/** Where a consideration stops: busy · in-flight · below-minimum · cooldown stop it before a model is asked; `ceiling` is `compact` with no model; `ask` goes on.
+/** Where a consideration stops: busy · below-minimum · cooldown · unchanged · in-flight stop it before a model is asked; `ceiling` is `compact` with no model; `ask` goes on.
  * With `inFlight` null the in-flight gate is passed over: the answer is `ask` or `ceiling` only if the lane would otherwise be asked. */
-export type Gate = 'busy' | 'in-flight' | 'below-minimum' | 'cooldown' | 'ceiling' | 'ask';
+export type Gate = 'busy' | 'below-minimum' | 'cooldown' | 'unchanged' | 'in-flight' | 'ceiling' | 'ask';
 
 /** What the gates look at: all facts of the lane at this instant. */
 export interface GateInput {
     readonly kind: string;
     readonly kinds: readonly string[];
-    /** a compaction of the lane is in progress or requested */
+    /** a compaction of the lane is in progress or requested, or one of another lane is */
     readonly busy: boolean;
     /** the count of work in flight, or `unknown` for a reader that cannot tell (it counts as in flight); null when it was not read: the gates before it decided, and the lane would be asked */
     readonly inFlight: number | 'unknown' | null;
@@ -111,6 +111,8 @@ export interface GateInput {
     /** when the lane last got a decision of any verdict */
     readonly lastDecisionAt: number | null;
     readonly cooldownMs: number;
+    /** the last decision was made at the same tokens and mode, by this daemon process: nothing changed since */
+    readonly unchanged: boolean;
 }
 
 /** The gates in order. A kind outside `kinds` is `recordOnly`: still asked and recorded, its verdict never requests. */
@@ -119,9 +121,10 @@ export function gateOf(input: GateInput): { readonly gate: Gate; readonly record
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
         if (input.busy) return 'busy';
-        if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
         if (input.share < input.minimum) return 'below-minimum';
         if (input.now - since < input.cooldownMs) return 'cooldown';
+        if (input.unchanged) return 'unchanged';
+        if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
         return input.share >= input.ceiling ? 'ceiling' : 'ask';
     })();
     return { gate, recordOnly };
