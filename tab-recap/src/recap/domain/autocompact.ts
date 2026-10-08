@@ -75,3 +75,37 @@ export function jevOf(get: (key: string) => string | undefined): JevSettings {
     const model = (get('TAB_RECAP_JEV_MODEL') ?? '').trim();
     return { url: /^https?:\/\/\S+$/.test(url) ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
 }
+
+/** Where a consideration stops: busy · in-flight · below-soft · cooldown stop it before a model is asked; `ceiling` is `compact` with no model; `ask` goes on. */
+export type Gate = 'busy' | 'in-flight' | 'below-soft' | 'cooldown' | 'ceiling' | 'ask';
+
+/** What the gates look at: all facts of the lane at this instant. */
+export interface GateInput {
+    readonly kind: string;
+    readonly kinds: readonly string[];
+    /** a compaction of the lane is in progress or requested */
+    readonly busy: boolean;
+    /** the count of work in flight, or `unknown` for a reader that cannot tell (it counts as in flight) */
+    readonly inFlight: number | 'unknown';
+    readonly share: number;
+    readonly soft: number;
+    readonly ceiling: number;
+    readonly now: number;
+    readonly lastBreakAt: number | null;
+    readonly lastWaitAt: number | null;
+    readonly cooldownMs: number;
+}
+
+/** The gates in order. A kind outside `kinds` is `recordOnly`: still asked and recorded, its verdict never requests. */
+export function gateOf(input: GateInput): { readonly gate: Gate; readonly recordOnly: boolean } {
+    const recordOnly = !input.kinds.includes(input.kind);
+    const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastWaitAt ?? -Infinity);
+    const gate = ((): Gate => {
+        if (input.busy) return 'busy';
+        if (input.inFlight === 'unknown' || input.inFlight > 0) return 'in-flight';
+        if (input.share < input.soft) return 'below-soft';
+        if (input.now - since < input.cooldownMs) return 'cooldown';
+        return input.share >= input.ceiling ? 'ceiling' : 'ask';
+    })();
+    return { gate, recordOnly };
+}
