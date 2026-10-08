@@ -39,6 +39,7 @@ LINKS
 SESSION
 started 09:12 · 7 h 18 min
 turns 41 (turn 36 · focus 3 · asked 2)
-compactions 2 (800k → 14k · 39k → 3k) · chapters 4
+compactions 2 (1 by you · 1 auto) (800k → 14k · 39k → 3k) ·
+  chapters 4
 claude · orchestrator 34 % of 1M
 repo herdr-plugins · branch feat/expanded

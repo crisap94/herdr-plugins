@@ -4,6 +4,6 @@ export interface SessionSource {
     firstSeen(tab: string): number | null;
     /** the writer's runs for the tab by cause (`turn-ended`, `focused`, `requested`, `imported`) */
     runsByCause(tab: string): Readonly<Record<string, number>>;
-    /** the compactions of the tab that finished, oldest first; the tokens are null when the agent did not say */
-    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null }[];
+    /** the compactions of the tab that finished, oldest first; the tokens are null when the agent did not say; the origin says who started each */
+    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: 'operator' | 'auto' }[];
 }

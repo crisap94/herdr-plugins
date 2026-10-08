@@ -33,7 +33,7 @@ LINKS
 SESSION
 started 09:12 · 7 h 18 min
 turns 41 (turn 36 · focus 3 · asked 2)
-compactions 2 (800k → 14k · 39k → 3k)
+compactions 2 (2 by you) (800k → 14k · 39k → 3k)
 claude · orchestrator 34 % of 1M
 codex · host 12 % of 272k
 repo herdr-plugins · branch feat/expanded

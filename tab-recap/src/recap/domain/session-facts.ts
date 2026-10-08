@@ -14,7 +14,7 @@ export interface SessionInputs {
     /** runs per cause, as the store counts them */
     readonly runs: Readonly<Record<string, number>>;
     /** the compactions that finished, in the order they happened */
-    readonly compactions: readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null }[];
+    readonly compactions: readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: 'operator' | 'auto' }[];
     readonly lanes: readonly { readonly agent: string; readonly label: string | null; readonly context: ContextUse | null }[];
     /** the lanes' repositories on the web, `https://host/group/repo`, and the branch each lane is on */
     readonly webs: readonly ({ readonly base: string; readonly branch: string | null } | null)[];
@@ -30,7 +30,7 @@ export interface SessionFacts {
     readonly started: { readonly at: number; readonly forMs: number } | null;
     readonly runs: { readonly total: number; readonly byCause: readonly { readonly cause: RunCause; readonly count: number }[] } | null;
     /** how many compactions finished, and the tokens before → after of those that say */
-    readonly compactions: { readonly count: number; readonly measured: readonly { readonly before: number; readonly after: number }[] } | null;
+    readonly compactions: { readonly count: number; readonly byOrigin: { readonly operator: number; readonly auto: number }; readonly measured: readonly { readonly before: number; readonly after: number }[] } | null;
     readonly agents: readonly { readonly label: string; readonly share: number; readonly window: number }[];
     readonly repo: { readonly name: string; readonly branch: string | null } | null;
     readonly files: readonly { readonly path: string; readonly count: number }[];
@@ -54,7 +54,8 @@ function runsOf(counts: Readonly<Record<string, number>>): SessionFacts['runs'] 
 /** Null when there is none; a record that lacks either number is counted but its tokens are not drawn. */
 function compactionsOf(found: SessionInputs['compactions']): SessionFacts['compactions'] {
     const measured = found.flatMap((record) => (record.tokensBefore === null || record.tokensAfter === null ? [] : [{ before: record.tokensBefore, after: record.tokensAfter }]));
-    return found.length === 0 ? null : { count: found.length, measured };
+    const auto = found.filter((record) => record.origin === 'auto').length;
+    return found.length === 0 ? null : { count: found.length, byOrigin: { operator: found.length - auto, auto }, measured };
 }
 
 export function sessionFactsOf(input: SessionInputs): SessionFacts {

@@ -37,9 +37,17 @@ test('turns: the runs by cause, the causes with none left out, imported runs not
 });
 
 test('compactions: how many, with the tokens of those that say; a count alone when none says', () => {
-    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000 }, { tokensBefore: 39_000, tokensAfter: 3_000 }] }), ['compactions 2 (800k → 14k · 39k → 3k)']);
-    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 1_200_000, tokensAfter: 20_000 }, { tokensBefore: null, tokensAfter: null }] }), ['compactions 2 (1.2M → 20k)']);
-    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: 3000 }] }), ['compactions 1']);
+    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3_000, origin: 'operator' }] }), ['compactions 2 (2 by you) (800k → 14k · 39k → 3k)']);
+    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 1_200_000, tokensAfter: 20_000, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }] }), ['compactions 2 (2 by you) (1.2M → 20k)']);
+    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: 3000, origin: 'operator' }] }), ['compactions 1 (1 by you)']);
+});
+
+test('compactions by origin: the operator\'s and autocompact\'s counted apart, zeros left out, in both languages', () => {
+    const mixed: SessionInputs = { ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 600_000, tokensAfter: 9_000, origin: 'auto' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }] };
+    assert.deepEqual(lines(mixed), ['compactions 4 (3 by you · 1 auto) (800k → 14k · 600k → 9k)']);
+    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: null, origin: 'auto' }] }), ['compactions 1 (1 auto)']);
+    assert.deepEqual(lines(mixed, es), ['compactaciones 4 (3 por ti · 1 auto) (800k → 14k · 600k → 9k)']);
+    assert.deepEqual(sessionFactsOf(mixed).compactions?.byOrigin, { operator: 3, auto: 1 });
 });
 
 test('each agent\'s context share; an agent whose context is unknown has no line', () => {

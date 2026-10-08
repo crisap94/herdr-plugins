@@ -112,7 +112,7 @@ export const en: Messages = {
         waiting: (amount, unit) => `waiting ${amount} ${unit}`,
         closed: (why) => `closed: ${why}`,
         started: 'started', turns: 'turns', causes: { 'turn-ended': 'turn', focused: 'focus', requested: 'asked' },
-        compactions: 'compactions', of: 'of', repo: 'repo', branch: 'branch', files: 'files',
+        compactions: 'compactions', compactionOrigin: { operator: (count) => `${count} by you`, auto: (count) => `${count} auto` }, of: 'of', repo: 'repo', branch: 'branch', files: 'files',
         autocompact: { label: 'autocompact', text: (decisions, compacted, waited) => `${decisions} decision${decisions === 1 ? '' : 's'} · ${compacted} compacted · ${waited} waited` },
     },
     chapters: {

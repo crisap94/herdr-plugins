@@ -137,7 +137,7 @@ export interface Messages {
         readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
         readonly waiting: (amount: number, unit: AgoUnit) => string;
         readonly closed: (why: ClosedWhy) => string;
-        readonly started: string; readonly turns: string; readonly compactions: string; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
+        readonly started: string; readonly turns: string; readonly compactions: string; readonly compactionOrigin: { readonly operator: (count: number) => string; readonly auto: (count: number) => string }; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
         readonly causes: { readonly 'turn-ended': string; readonly focused: string; readonly requested: string };
         /** the session facts' autocompact line: `autocompact: 12 decisions · 3 compacted · 9 waited` */
         readonly autocompact: { readonly label: string; readonly text: (decisions: number, compacted: number, waited: number) => string };

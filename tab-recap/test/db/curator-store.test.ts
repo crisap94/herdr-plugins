@@ -155,5 +155,5 @@ test('session source: first seen, runs by cause (imported apart), and the finish
     add.run(ids.next(), 'compacted', 10, 10, 20, 800_000, 14_000);
     add.run(ids.next(), 'failed', 30, 30, 40, null, null);
     add.run(ids.next(), 'compacted', 50, 50, 60, null, null);
-    assert.deepEqual(store.session.compactions('w1:t1'), [{ tokensBefore: 800_000, tokensAfter: 14_000 }, { tokensBefore: null, tokensAfter: null }]);
+    assert.deepEqual(store.session.compactions('w1:t1'), [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }]);
 });
