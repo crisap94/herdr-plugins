@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hindsightOf, agentTextOf } from '#src/experiment/hindsight.ts';
 import { outcomesOf } from '#src/experiment/outcomes.ts';
-import type { Event } from '#src/experiment/outcomes.ts';
+import type { Event, Outcome } from '#src/experiment/outcomes.ts';
 import { readsOf, shellReads } from '#src/experiment/read-paths.ts';
 import { seeded, shuffled } from '#src/experiment/seeded.ts';
 import { stratify } from '#src/experiment/stratify.ts';
@@ -42,17 +42,17 @@ const boundary: Extract<Event, { kind: 'boundary' }> = { kind: 'boundary', pos: 
 test('outcomes: re-reads inside 50 before and 10 after, restated prompt by Jaccard', () => {
     const before: Event[] = [{ kind: 'prompt', text: 'please fix the login bug in auth' }, tool('/a.ts', '/b.ts'), tool('/c.ts')];
     const after: Event[] = [{ kind: 'prompt', text: 'fix the login bug in auth please' }, tool('/b.ts'), tool('/zzz.ts')];
-    const [outcome] = outcomesOf([...before, boundary, ...after]);
-    assert.equal(outcome?.reReads, 1);
-    assert.equal(outcome?.restated, true);
-    assert.equal(outcome?.preTokens, 900);
+    const outcome = outcomesOf([...before, boundary, ...after])[0] as Outcome;
+    assert.equal(outcome.reReads, 1);
+    assert.equal(outcome.restated, true);
+    assert.equal(outcome.preTokens, 900);
 });
 
 test('outcomes: only the 10 calls after count, and a different prompt is not a restatement', () => {
     const after: Event[] = [...Array.from({ length: 10 }, () => tool('/n.ts')), tool('/a.ts'), { kind: 'prompt', text: 'completely different words entirely' }];
-    const [outcome] = outcomesOf([{ kind: 'prompt', text: 'fix the login bug' }, tool('/a.ts'), boundary, ...after]);
-    assert.equal(outcome?.reReads, 0);
-    assert.equal(outcome?.restated, false);
+    const outcome = outcomesOf([{ kind: 'prompt', text: 'fix the login bug' }, tool('/a.ts'), boundary, ...after])[0] as Outcome;
+    assert.equal(outcome.reReads, 0);
+    assert.equal(outcome.restated, false);
 });
 
 test('hindsight: six entries or the character budget, and the next operator prompt', () => {
@@ -71,4 +71,55 @@ test('verbatim: a path, error line or hash only in the recent turns that the age
     assert.equal(verbatimLabel(recent, 'goal: ship the thing', 'moving on to a new topic'), 0);
     assert.equal(verbatimLabel(recent, 'see /srv/app/config.yaml and 3f9a2bc1d and Error: ENOENT no such file /srv/app/config.yaml', 'now editing /srv/app/config.yaml'), 0);
     assert.ok(onlyInRecent(recent, '').includes('3f9a2bc1d'));
+});
+
+import { COVERAGE_QUESTIONS, factsToCheck, questionsFor, sectionsOf } from '#src/experiment/coverage.ts';
+import { coverageLabelsOf, labelsOf } from '#src/experiment/label-prompt.ts';
+import { pooled, retried } from '#src/experiment/pool.ts';
+
+const fact = (section: string, text: string, state: 'open' | 'closed' = 'open', why: string | null = null): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
+
+test('coverage: open goal, now, needs, decisions, next and rules facts; a decision with a why also gets its reason', () => {
+    const history = [fact('goal', 'g'), fact('done', 'd'), fact('now', 'n', 'closed'), fact('decisions', 'x', 'open', 'because'), fact('links', 'l'), fact('rules', 'r')];
+    assert.deepEqual(factsToCheck(history).map((f) => f.text), ['g', 'x', 'r']);
+    assert.deepEqual(questionsFor(history[3] as HistoryFact), ['brief_keeps_fact', 'brief_keeps_reason']);
+    assert.deepEqual(questionsFor(history[0] as HistoryFact), ['brief_keeps_fact']);
+    assert.deepEqual(Object.keys(COVERAGE_QUESTIONS), ['brief_keeps_fact', 'brief_keeps_reason']);
+    assert.equal(sectionsOf(history).goal, 'g');
+    assert.deepEqual(sectionsOf(history).rules, ['r']);
+});
+
+test('labels: only 0 or 1 for every id; coverage labels need a reason for a decision', () => {
+    assert.deepEqual(labelsOf('```json\n{"a":1,"b":0}\n```', ['a', 'b']), { a: 1, b: 0 });
+    assert.equal(labelsOf('{"a":0.5,"b":0}', ['a', 'b']), null);
+    assert.equal(labelsOf('{"a":1}', ['a', 'b']), null);
+    assert.equal(labelsOf('nope', ['a']), null);
+    assert.deepEqual(coverageLabelsOf('{"1":{"keeps":1},"2":{"keeps":0,"reason":1}}', [{ n: 1, reason: false }, { n: 2, reason: true }]), { 1: { keeps: 1 }, 2: { keeps: 0, reason: 1 } });
+    assert.equal(coverageLabelsOf('{"2":{"keeps":0}}', [{ n: 2, reason: true }]), null);
+});
+
+test('pool: limit respected, order kept; retried: waits grow and the last answer returns', async () => {
+    let live = 0;
+    let peak = 0;
+    const out = await pooled([1, 2, 3, 4, 5, 6], 2, async (n) => { live += 1; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 5)); live -= 1; return n * 2; });
+    assert.deepEqual(out, [2, 4, 6, 8, 10, 12]);
+    assert.equal(peak, 2);
+    const waits: number[] = [];
+    let calls = 0;
+    const last = await retried(() => { calls += 1; return Promise.resolve(calls); }, (n) => n >= 3, { baseMs: 10, sleep: (ms) => { waits.push(ms); return Promise.resolve(); } });
+    assert.equal(last, 3);
+    assert.deepEqual(waits, [10, 20]);
+});
+
+import type { HistoryFact } from '#src/ports/ledger.ts';
+import type { Labelled } from '#src/experiment/kappa-report.ts';
+import { kappaRows } from '#src/experiment/kappa-report.ts';
+
+test('kappa rows: usable at 0.6 and enough points', () => {
+    const ids = Array.from({ length: 12 }, (_, i) => `p${i}`);
+    const labeller: Labelled[] = ids.map((id, i) => ({ id, labels: { a: i % 2 === 0 ? 0 : 1, b: i % 3 === 0 ? 1 : 0 } }));
+    const operator: Labelled[] = ids.map((id, i) => ({ id, labels: { a: i % 2 === 0 ? 0 : 1, b: i % 2 === 0 ? 0 : 1 } }));
+    const rows = kappaRows(operator, labeller, ['a', 'b', 'c']);
+    assert.deepEqual(rows.map((row) => row.usable), [true, false, false]);
+    assert.deepEqual(rows.map((row) => row.n), [12, 12, 0]);
 });

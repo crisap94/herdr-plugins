@@ -21,17 +21,9 @@ export interface Scored {
 export function auc(points: readonly Scored[]): number {
     const [positive, negative] = [points.filter((point) => point.label === 1), points.filter((point) => point.label === 0)];
     if (positive.length === 0 || negative.length === 0) return Number.NaN;
-    const ranked = points.map((point, index) => ({ ...point, index })).toSorted((a, b) => a.score - b.score);
-    const ranks = new Map<number, number>();
-    let from = 0;
-    while (from < ranked.length) {
-        let to = from;
-        while (to + 1 < ranked.length && ranked[to + 1]?.score === ranked[from]?.score) to += 1;
-        for (let k = from; k <= to; k += 1) ranks.set(ranked[k]?.index ?? 0, (from + to) / 2 + 1);
-        from = to + 1;
-    }
-    const sum = ranked.filter((point) => point.label === 1).reduce((total, point) => total + (ranks.get(point.index) ?? 0), 0);
-    return (sum - (positive.length * (positive.length + 1)) / 2) / (positive.length * negative.length);
+    let wins = 0;
+    for (const high of positive) for (const low of negative) wins += high.score > low.score ? 1 : Number(high.score === low.score) / 2;
+    return wins / (positive.length * negative.length);
 }
 
 /** Mean squared distance of the score from the label; NaN for no points. */

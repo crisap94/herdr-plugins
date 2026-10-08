@@ -53,6 +53,14 @@ export function shareAt(source: string, cursor: number, catalogue: ModelCatalogu
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
+/** The gate this point would get, with the live defaults: in flight from the scanner over the same lines. */
+function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
+    const flight = claudeInFlight(lines);
+    const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
+    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share, soft: SOFT_DEFAULT, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastWaitAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
+    return { inFlight, gate };
+}
+
 /** A point, or null when its transcript cannot be read. */
 export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: StoredPoint & { readonly blob: Uint8Array }, stratum: string): Point | null {
     try {
@@ -60,13 +68,13 @@ export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, store
         const recent = trimmed(extractClaude(lines).entries);
         const history = store.factsAt(stored);
         const used = shareAt(stored.source, stored.cursor, catalogue);
-        const flight = claudeInFlight(lines);
-        const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
         const lastBreakAt = store.lastBreakAt(stored.tab, stored.at);
-        const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share: used?.share ?? 0, soft: SOFT_DEFAULT, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastWaitAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
         const after = extractClaude(linesAfter(stored.source, stored.cursor, TAIL_BYTES)).entries;
         const { blob: _blob, ...plain } = stored;
-        return { ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, inFlight, lastBreakAt, gate, state: autocompactState(recent, history), recent, history, hindsight: hindsightOf(after) };
+        return {
+            ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, lastBreakAt, ...gateAt(stored, lines, lastBreakAt, used?.share ?? 0),
+            state: autocompactState(recent, history), recent, history, hindsight: hindsightOf(after),
+        };
     } catch {
         return null;
     }

@@ -6,6 +6,8 @@ import type { Event } from '#src/experiment/outcomes.ts';
 import { extractClaude } from './claude-rows.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 
+const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
+
 /** A row's tool calls (the main conversation's only). */
 function toolEvents(line: string): readonly Event[] {
     const row = parse(line);
@@ -18,7 +20,6 @@ function entryEvents(line: string, pos: number): readonly Event[] {
     const found = extractClaude([line]);
     const prompts: Event[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
     const metadata = obj(obj(parse(line) ?? {})['compactMetadata']);
-    const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
     const marks: Event[] = (found.marks ?? []).filter((mark) => mark.kind === 'compacted').map((mark) => ({
         kind: 'boundary', pos, at: mark.at, trigger: mark.trigger ?? str(metadata['trigger']), pre: number(metadata['preTokens']), post: number(metadata['postTokens']),
     }));

@@ -28,7 +28,10 @@ const FACTS = `SELECT f.section, f.text, f.why, f.closed_why, f.closed_at, f.fir
 
 const BREAK = "SELECT max(b.at) AS at FROM boundary b JOIN chapter c ON c.id = b.chapter_id WHERE c.tab_id = ? AND b.kind = 'compacted' AND b.at <= ?";
 
-const num = (value: unknown): number | null => (typeof value === 'number' ? value : typeof value === 'bigint' ? Number(value) : null);
+function num(value: unknown): number | null {
+    if (typeof value === 'bigint') return Number(value);
+    return typeof value === 'number' ? value : null;
+}
 const word = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 
 export class ExperimentStore {
