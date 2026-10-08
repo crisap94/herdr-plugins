@@ -80,12 +80,12 @@ runs before the decider's default is fixed.
 
 ## 7. Integration (before merge)
 
-- [ ] 7.1 Live shadow check from the branch as the daemon: decisions appear in the log and the listing, the
-  context share of a lane that compacted itself drops, and nothing is typed. Verify: excerpts in the MR.
-- [ ] 7.2 The GitLab pipeline is green (lint, test, test:floor). Verify: pipeline link.
+- [x] 7.1 Live shadow check from the branch as the daemon: decisions appear in the log and the listing, the
+  context share of a lane that compacted itself drops, and nothing is typed. Verify: excerpts in the MR. — done on 2026-10-08 after the 2.2.0 release, from the atalaya checkout (the column panes and the daemon must share schema 10, so the check ran after merge as for 2.1): restart 19:53Z, migration 010 applied (`user_version` 10, backup `.v9.bak`), 28 columns opened; the first seconds logged seven shadow decisions (e.g. `autocompact w17:p7A: 45 % · closes 0.90 · continues 0.30 · choice 0.20 · verbatim 0.10 · subject 0.10 · stuck 0.05 → compact (shadow)`, one `ceiling` at 84 %, three `wait`, two `undecided`), `tab-recap autocompact` listed them with `last 24 h: 7 decisions, $0.00260`; zero compaction records with origin `auto` and zero compact requests (nothing typed); the lane that compacted itself at 17:31 now reads 12 332 tokens (1 %) instead of 431 387
+- [x] 7.2 The GitLab pipeline is green (lint, test, test:floor). Verify: pipeline link. — done: !51 pipelines 16299/16300 green (lint, test, test:floor, merge-request-notes); tag pipeline 16303 green; GitLab and GitHub releases `tab-recap-v2.2.0`
 
 ## 8. Archive
 
-- [ ] 8.1 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive autocompact --yes`; the new
+- [x] 8.1 `grep -c '\- \[ \]' tasks.md` is 0 first; `openspec archive autocompact --yes`; the new
   `autocompact` spec has a written Purpose; `openspec validate --specs --strict`. Verify: the specs are updated
   in the change's merge request.
