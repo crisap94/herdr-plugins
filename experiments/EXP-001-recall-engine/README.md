@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **concluded** 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded) |
-| Decision | **Adopt** the state ruler and the anchors with the 2.1 gates (H1, H2). **By the frozen rule, enumeration and ask-back moved nothing**: no arm beats the gated single call on coverage (70–83 % against 78–85 %) or the read-back median (2/6 at best, the same as the gated control) beyond the noise floor, at 2.4–2.8× the calls (H3, H4 refuted). No arm reaches the 4/6 read-back bar or 98 % supported. **Operator's decision (2026-10-07): the pipeline ships behind `--pipeline` with the default `one`**; the curator's reconcile mode ships; the experiment stays open for a re-measurement once the read-back ruler is calibrated |
+| Status | **concluded** 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded); **writer comparison added** 2026-10-08 (R10 valid) |
+| Decision | **Adopt** the state ruler and the anchors with the 2.1 gates (H1, H2). **By the frozen rule, enumeration and ask-back moved nothing**: no arm beats the gated single call on coverage (70–83 % against 78–85 %) or the read-back median (2/6 at best, the same as the gated control) beyond the noise floor, at 2.4–2.8× the calls (H3, H4 refuted). No arm reaches the 4/6 read-back bar or 98 % supported. **Operator's decision (2026-10-07): the pipeline ships behind `--pipeline` with the default `one`**; the curator's reconcile mode ships; the experiment stays open for a re-measurement once the read-back ruler is calibrated. **Writer comparison (R10, 2026-10-08):** on the same single-call arm, corpus and judge, Claude Haiku 5.5 at medium effort reaches coverage 83 %, read-back median 3/6 and I4 93 % at 1.13 calls per turn ($0.0032 per turn), against gpt-6-luna's 78 %, 1/6 and 87 %; it writes far more decisions, most without a reason the judge accepts (S-decisions 11 %). One run each; the choice of default writer is the operator's |
 | Owner | the reviewer (main session); arms run by the coders recall-a and recall-b |
-| Dates | 2026-10-07 → |
+| Dates | 2026-10-07 → 2026-10-08 |
 | Parent | OpenSpec change `recall-engine` (`b56ce24`, !41): design decisions 1, 3, 5, 9 and task 3.5 |
 | Pre-registration | [`PREREG.md`](PREREG.md), frozen as the OpenSpec design before any run |
 | Manifest | [`manifest.yaml`](manifest.yaml) |
@@ -42,6 +42,7 @@ tab-recap 2.0 measured its recaps and found recall weak: key-fact coverage 33 %,
 | [R07](runs/R07-enumerate-gates/run.yaml) | valid | `enumerate+gates` (2.1 set, retry) | coverage 83 %, I4 89 %, read-back 2/6, 2.39 calls/turn |
 | [R08](runs/R08-full/run.yaml) | invalid | `full` (+ ask-back) | judged by **claude**, not codex: the live config's judge changed at 17:44 while it ran; numbers kept (coverage 86 %, read-back 1/6, 2.91 calls/turn) but not comparable |
 | [R09](runs/R09-full/run.yaml) | valid | `full`, judge pinned to codex in the environment | coverage 72 %, I4 95 %, read-back 2/6, 2.78 calls/turn, 1 dropped |
+| [R10](runs/R10-one-haiku55/run.yaml) | valid | `one` on the 2.1.0 release, writer **claude / Haiku 5.5** at medium, judge pinned to codex (writer comparison, outside the PREREG arms) | coverage 83 %, I4 93 %, read-back 3/6, 1.13 calls/turn, $0.0032/turn, 123/123 anchored |
 
 ## Results
 
@@ -65,6 +66,29 @@ State ruler, 40-prompt replay, 23 turns, one run per arm (R05–R08). Secondary 
 
 The ruler alone (R01 vs the 2.0 number): 33 % → 75 % on the same pipeline; the gates (R02, R03): 84–85 % and I4 84 → 89–90 %.
 
+### Writer comparison (R10, added 2026-10-08)
+
+Same arm (`one`), corpus and judge (`codex · gpt-6-luna · medium`, pinned); only the writer differs. R10 ran on the 2.1.0 release, R05 on the pre-release tree; the single-call path is the same code.
+
+| | gpt-6-luna, medium (R05) | Claude Haiku 5.5, medium (R10) |
+|---|---|---|
+| facts stored (open) | 70 (49) | 123 (84) |
+| state coverage | 78 % (177/227) | 83 % (264/318) |
+| no-filler (state) | 34 % | 28 % |
+| read-back median | 1/6 | 3/6 |
+| read-back per question 1–6 | 41·35·24·0·0·18 | 67·29·33·62·5·33 |
+| I1 atomic / I4 supported / I7 still true | 83 / 87 / 95 % | 96 / 93 / 92 % |
+| S-decisions (a decision with a reason) | 0 % (0/4) | 11 % (2/19) |
+| anchors found in the input | 70/70 | 123/123 |
+| gates | G11 2 refused → 0 dropped | G2 3 refused, G8 11 flagged, 0 dropped |
+| judge vs anchor | 8 | 8 |
+| runs judged | 17/19 | 21/22 |
+| model calls per turn | 1.17 | 1.13 |
+| cost per turn | not reported by the codex harness | $0.0032 ($0.074 for 23 turns) |
+| wall time (writer + judge) | 13 min 20 s | 20 min 4 s |
+
+Haiku 5.5 writes almost twice the facts, every one anchored, and carries more of the key facts; the read-back median rises to 3/6, with question 4 (what must not be done) at 62 % where every codex arm sat near zero. The price is a ledger with more filler and 19 decisions of which the judge accepts 2 as carrying a reason. The denominators differ (the judge lists key facts per run, and R10 judged four more runs), and this is one run per writer, so the coverage difference sits near the noise floor; the median and I4 are above it.
+
 ## Anomalies and threats to validity
 
 - **One run per arm.** The floor from R02/R03 is coverage ±1, read-back median 0, I4 ±1, single read-back questions up to ±60 points. Only coverage, the median and I4 are read as signal.
@@ -86,16 +110,18 @@ What the evidence supports:
 - H4 refuted: ask-back (R09) leaves the median at 2/6, lowers coverage to 72 % and raises the cost to 2.78 calls per turn, above the 2.5× bar. It lifts question 1 (the goal: 41 → 90 %) and question 5 (why: 0 → 38 %), and nothing else.
 - **The read-back bar looks structural.** Questions 4 (what must not be done) and 6 (the next action) stay near zero in every arm because the session seldom states a rule, and "next" changes every turn; the grading also fails an answer the ledger carries in other words. Before 4/6 is used as a bar again, the read-back's own agreement with the operator must be measured, as the I-checks' is with the 50 labels.
 - **The acceptance rule of PREREG §6 is not met by any arm**: coverage ≥ 70 % yes, duplicates 0 yes, read-back ≥ 4/6 no, supported ≥ 98 % no (95 % at best), cost ≤ 2.5× no for `full`.
+- **The writer matters more than the pipeline steps (R10).** Swapping the single-call writer to Haiku 5.5 moves the read-back median from 1/6 to 3/6 and I4 from 87 % to 93 % at the same call count, which is more than any pipeline step moved; it still misses the 4/6 and 98 % bars. The read-back question 4 result (62 %) also weakens the "structural" reading above: the session does state rules, and this writer finds them.
 
 ## Next steps
 
 1. Done: `TAB_RECAP_PIPELINE` defaults to `one`; the piped variants stay for `eval --replay --pipeline` (the pipeline MR).
-2. The operator's 50 labels (`eval --label 50`, `--check I5`, `--check I7`, `--agree`) on the live database: kappa ≥ 0.6 before the judge's I4 and I7 are trusted for the acceptance.
-3. The live check as the daemon (task 5.1), then acceptance (5.2) against PREREG §6.
+2. Done: the operator's labels on the live database (57 items plus I5/I7 passes of 50, `--agree`): I1 0.76, I2 0.65, I4 0.57, I7 0.51, I5 without variance after the rubric fix; I4 and I7 stay under 0.6, so the judge's supported and still-true rates are read with that in mind.
+3. Done: the live check (task 5.1) and the acceptance (5.2) are recorded in the archived change `2026-10-08-recall-engine`; 2.1.0 shipped with the default `one`.
+4. Writer choice: a second Haiku 5.5 run (noise floor) and the same comparison on `enumerate+gates`; a decision-quality pass on why Haiku's decisions carry no accepted reason before it becomes the suggested claude writer.
 
 ## Reproducibility checklist
 
-- [ ] Code commit recorded for every run — R01–R03 ran on uncommitted snapshots of recall-a's tree (described, not hashed); R05–R09 on `dadb961` plus the reconciliation fixes committed as `376c3c9`
+- [ ] Code commit recorded for every run — R01–R03 ran on uncommitted snapshots of recall-a's tree (described, not hashed); R05–R09 on `dadb961` plus the reconciliation fixes committed as `376c3c9`; R10 on the 2.1.0 release (`f9f7f36`)
 - [x] Corpus versioned and hashed (`manifest.yaml`; private)
 - [ ] Container images pinned by digest or checksum — none: Node v24.21.0 and codex-cli 0.161.0 on the host
 - [x] Exact commands in every `run.yaml`
