@@ -1,0 +1,12 @@
+run: R03-report
+experiment: EXP-002-autocompact
+status: valid
+date: 2026-10-08
+code: tab-recap tools at 6a2a48a on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
+command: node bin/autocompact-report.ts --dir <scratch>/exp002
+files:
+  report.md: 739845209be413bea9771327810ab2d9ed57506d5e80ecebbc4aafdc5f912bb7
+rule: design decision 9 (design.md)
+ran_by: the coder (Sonnet 5.5), unattended
+raw: listed in REMOVED-ON-MAIN.txt (scratch only; quotes real sessions)

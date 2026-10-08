@@ -1,0 +1,16 @@
+run: R02-jev
+experiment: EXP-002-autocompact
+status: valid
+date: 2026-10-08
+code: tab-recap tools at 6a2a48a on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
+command: node bin/autocompact-probe.ts --dir <scratch>/exp002 --arm jev --rep 1 ; ... --rep 2
+arm: jev-1.13.0 via JevDecider
+concurrency: 4
+files:
+  answers-jev-1.jsonl: 2ade5a44a31bfff066ec4492b5ba6a1bdf9c9aa447378295c7dea8d309aa8c1e
+  answers-jev-2.jsonl: fb217af420943dcc7eb904f2b384c1268f026efb2f1e376ad0de098f148ee2f4
+wall_time: rep 1 0 min 15 s (2026-10-08T18:45:49Z); rep 2 0 min 16 s (2026-10-08T18:58:42Z)
+versions: Node v24.21.0, Claude Code 2.1.294, codex-cli 0.161.0
+ran_by: the coder (Sonnet 5.5), unattended
+raw: listed in REMOVED-ON-MAIN.txt (scratch only; quotes real sessions)

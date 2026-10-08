@@ -1,0 +1,16 @@
+# Files of this experiment kept only in the scratch directory of the run (corpus items quote real sessions; labels and answers are about them)
+# path<TAB>bytes<TAB>reason<TAB>ref@commit
+tab-recap.db	3809280	copy of the live store (private sessions)	scratch:exp002@6a2a48a
+corpus.jsonl	9446154	corpus (private sessions)	scratch:exp002@6a2a48a
+outcomes.jsonl	71608	corpus (private sessions)	scratch:exp002@6a2a48a
+outcome-points.jsonl	1	corpus (private sessions)	scratch:exp002@6a2a48a
+labels.jsonl	47516	labels and briefs (quote private sessions)	scratch:exp002@6a2a48a
+briefs.jsonl	167040	labels and briefs (quote private sessions)	scratch:exp002@6a2a48a
+answers-jev-1.jsonl	74765	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-jev-2.jsonl	74768	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-haiku-low-1.jsonl	76005	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-haiku-low-2.jsonl	76096	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-haiku-medium-1.jsonl	76169	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-haiku-medium-2.jsonl	76166	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-luna-low-1.jsonl	67360	model answers (about private sessions)	scratch:exp002@6a2a48a
+answers-luna-low-2.jsonl	67378	model answers (about private sessions)	scratch:exp002@6a2a48a
