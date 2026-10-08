@@ -1,0 +1,21 @@
+{
+  "last_prompt": "Now port the error-rate panel too.",
+  "last_reply": "On it.",
+  "recent_turns": [
+    {
+      "role": "user",
+      "text": "Now port the error-rate panel too."
+    },
+    {
+      "role": "agent",
+      "text": "On it."
+    }
+  ],
+  "goal": "Migrate the metrics dashboard to the new datasource",
+  "open_work": [
+    {
+      "section": "now",
+      "text": "Port the error-rate panel"
+    }
+  ]
+}

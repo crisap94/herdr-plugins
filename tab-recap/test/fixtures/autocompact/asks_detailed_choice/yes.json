@@ -1,0 +1,21 @@
+{
+  "last_prompt": "How should the cache be keyed?",
+  "last_reply": "Two options. A: key by tab id and pane, which survives a restart but grows with every pane. B: key by transcript path, which stays small but is lost when the file moves. Which do you prefer?",
+  "recent_turns": [
+    {
+      "role": "user",
+      "text": "How should the cache be keyed?"
+    },
+    {
+      "role": "agent",
+      "text": "Two options. A: key by tab id and pane, which survives a restart but grows with every pane. B: key by transcript path, which stays small but is lost when the file moves. Which do you prefer?"
+    }
+  ],
+  "goal": "Design the transcript cache",
+  "open_work": [
+    {
+      "section": "needs",
+      "text": "Decide the cache key"
+    }
+  ]
+}

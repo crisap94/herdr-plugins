@@ -1,0 +1,25 @@
+{
+  "last_prompt": "Update the README for the new flag.",
+  "last_reply": "README updated with the `--all` flag.",
+  "recent_turns": [
+    {
+      "role": "user",
+      "text": "Update the README for the new flag."
+    },
+    {
+      "role": "tool",
+      "text": "edit: README.md"
+    },
+    {
+      "role": "agent",
+      "text": "README updated with the `--all` flag."
+    }
+  ],
+  "goal": "Document the new command",
+  "open_work": [
+    {
+      "section": "next",
+      "text": "Add the flag to config.example.env"
+    }
+  ]
+}
