@@ -17,7 +17,10 @@ import { operatorLabels } from './autocompact-operator.ts';
 
 const IDS = Object.keys(QUESTIONS);
 const flag = (name: string): boolean => process.argv.includes(`--${name}`);
-const value = (name: string): string | null => process.argv[process.argv.indexOf(`--${name}`) + 1] ?? null;
+const value = (name: string): string | null => {
+    const at = process.argv.indexOf(`--${name}`);
+    return at < 0 ? null : (process.argv[at + 1] ?? null);
+};
 
 async function labelPoints(dir: string, limit: number | null): Promise<void> {
     const [file, log] = [join(dir, 'labels.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
