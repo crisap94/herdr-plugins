@@ -54,3 +54,31 @@ test('in flight: a sidechain launch and a quoted notice in an assistant row do n
     assert.deepEqual(claudeInFlight([line({ type: 'assistant', isSidechain: true, message: { content: [{ type: 'tool_use', id: 's', name: 'Monitor', input: {} }] } })]), { kind: 'in-flight', count: 0 });
     assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), line({ type: 'assistant', message: { content: [{ type: 'text', text: '<task-notification><task-id>b1</task-id><status>completed</status></task-notification>' }] } })]), { kind: 'in-flight', count: 1 });
 });
+
+/** A notice as the transcript queues it: a `queue-operation` enqueue whose content is the notice (the user row that delivers it comes later). */
+const queued = (task: string, tool: string | null, status: string): string => line({ type: 'queue-operation', operation: 'enqueue', timestamp: '2026-10-08T10:05:00.000Z', sessionId: 's', content: `<task-notification>\n<task-id>${task}</task-id>\n${tool === null ? '' : `<tool-use-id>${tool}</tool-use-id>\n`}<status>${status}</status>\n<summary>x</summary>\n</task-notification>` });
+
+test('in flight: a notice queued as a queue-operation ends the launch it names, as a delivered user row does', () => {
+    assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), queued('b1', 't1', 'completed')]), { kind: 'in-flight', count: 0 });
+    assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), queued('b1', null, 'failed')]), { kind: 'in-flight', count: 0 }, 'by the task id alone');
+    assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), queued('b1', 't1', 'Goal check-in')]), { kind: 'in-flight', count: 1 }, 'a queued notice with no ending status ends nothing');
+});
+
+test('in flight: a notice queued and then delivered is one end: the delivery is seen, also in a truncated tail', () => {
+    const cut = [shell('t1'), started('t1', 'b1'), queued('b1', 't1', 'completed'), notice('b1', 't1', 'completed')];
+    assert.deepEqual(claudeInFlight(cut, true), { kind: 'in-flight', count: 0 });
+});
+
+/** A row written at `iso`: a Monitor launch, or any other row (here, the agent's own words) that tells the time. */
+const monitorAt = (id: string, iso: string, input: object): string => line({ type: 'assistant', isSidechain: false, timestamp: iso, message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'Monitor', input }] } });
+const wordsAt = (iso: string): string => line({ type: 'assistant', isSidechain: false, timestamp: iso, message: { role: 'assistant', content: [{ type: 'text', text: 'Still watching.' }] } });
+
+test('in flight: a Monitor past its own timeout_ms (against the newest row of the tail) has ended; within it, it is in flight', () => {
+    assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', timeout_ms: 3_600_000 }), wordsAt('2026-10-08T11:00:30.000Z')]), { kind: 'in-flight', count: 0 });
+    assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', timeout_ms: 3_600_000 }), wordsAt('2026-10-08T10:59:00.000Z')]), { kind: 'in-flight', count: 1 });
+});
+
+test('in flight: a Monitor without a timeout_ms (persistent) does not expire by time; an expired Monitor is dropped and a live shell in the same tail still counts', () => {
+    assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', persistent: true }), wordsAt('2026-10-09T10:00:00.000Z')]), { kind: 'in-flight', count: 1 });
+    assert.deepEqual(claudeInFlight([monitorAt('m2', '2026-10-08T10:00:00.000Z', { command: 'x', timeout_ms: 60_000 }), shell('t1'), wordsAt('2026-10-08T12:00:00.000Z')]), { kind: 'in-flight', count: 1 });
+});
