@@ -1,0 +1,17 @@
+run: R00-corpus
+experiment: EXP-002-autocompact
+status: valid
+date: 2026-10-08
+code: tab-recap tools at 82f5e5d on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
+command: node bin/autocompact-corpus.ts --db <copy of tab-recap.db> --out <scratch>/exp002
+db_copy: VACUUM INTO from a read-only connection; sha256 b03e1c467ee9290f4ed93c90e9da775d8cbf886e9cd6ac7feb32701f12cd1af6
+files:
+  corpus.jsonl: 93d56f63bd3736cea07b32cde01c718737c408679a510e7af00488c6563c97d7
+  outcomes.jsonl: 4f28f7adeae537dd775b35af63ebca7563a70e12f676d6281fb755c0f50385fc
+  outcome-points.jsonl: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+seed: 42
+wall_time: 29 s
+versions: Node v24.21.0
+ran_by: the coder (Sonnet 5.5), unattended
+raw: listed in REMOVED-ON-MAIN.txt (scratch only; quotes real sessions)
