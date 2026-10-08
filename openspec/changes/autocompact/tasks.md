@@ -53,8 +53,8 @@ runs before the decider's default is fixed.
 
 ## 5. Gates, questions, coverage, records (design decisions 1–4, 6, 7, 10)
 
-- [ ] 5.1 `domain/autocompact.ts`: gates, verdict and the undecided band, with thresholds as named
-  constants. Verify: table tests for every gate and verdict row of the spec scenarios.
+- [x] 5.1 `domain/autocompact.ts`: gates, verdict and the undecided band, with thresholds as named
+  constants. Verify: table tests for every gate and verdict row of the spec scenarios. — test/autocompact-verdict.test.ts: every gate and verdict scenario of the spec; verdict in domain/autocompact-verdict.ts (file size).
 - [ ] 5.2 `application/autocompact-state.ts` and `autocompact-questions.ts` (named fields only; criteria per
   question) plus `test/fixtures/autocompact/<question>/{yes,no}.json` from the corpus. Verify: the state
   holds no field that no question names; every question has both fixtures.
