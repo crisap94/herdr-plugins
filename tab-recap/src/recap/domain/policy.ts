@@ -82,7 +82,7 @@ export function lingering(board: Board, pane: PaneId, now: Instant, policy: Poli
 }
 
 /** A close that did not take effect within the grace: it counts against the tab's budget; a tab given up keeps the column. */
-function retried(board: Board, tab: TabId, pane: PaneId, now: Instant, policy: Policy): { board: Board; again: boolean; intents: readonly Intent[] } {
+function retried(board: Board, tab: TabId, now: Instant, policy: Policy): { board: Board; again: boolean; intents: readonly Intent[] } {
     if (isGivenUp(board, tab, now)) {
         return { board, again: false, intents: [] };
     }
@@ -105,7 +105,7 @@ function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
         if (!gone || lingering(board, placed.pane, now, policy)) {
             continue;
         }
-        const retry = board.closing.has(placed.pane) ? retried(next, tab, placed.pane, now, policy) : { board: next, again: true, intents: [] };
+        const retry = board.closing.has(placed.pane) ? retried(next, tab, now, policy) : { board: next, again: true, intents: [] };
         next = retry.board;
         intents.push(...retry.intents);
         if (!retry.again) {
