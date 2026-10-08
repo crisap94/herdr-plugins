@@ -61,7 +61,7 @@ test('the Jev settings: the TypeSafe endpoint and the pinned model unless set', 
 
 test('the Jev URL: https to any host, http only to loopback; anything else (clear-text http, other schemes, look-alike hosts) is the default', () => {
     for (const good of ['http://localhost:8080/v1', 'http://127.0.0.1/x', 'http://[::1]:9/v1', 'https://gateway.example:8443/v1']) assert.equal(jevUrl(good), good, good);
-    for (const bad of ['http://gateway.local/v1/systemone', 'http://localhost.evil.example/v1', 'http://localhost@evil.example/', 'https://', 'ftp://x', 'typesafe.ai']) {
+    for (const bad of ['http://gateway.local/v1/systemone', 'http://localhost.evil.example/v1', 'http://localhost@evil.example/', 'http://user@localhost', 'http://localhost:80@evil.example', 'https://','ftp://x', 'typesafe.ai']) {
         assert.equal(jevUrl(bad), 'https://api.typesafe.ai/v1/systemone', bad);
     }
 });
