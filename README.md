@@ -242,7 +242,8 @@ rules first, and a brief that loses one is written again once, then not used. Cl
 
 The decider is the recap writer's harness at low effort, or the TypeSafe `jev` API
 (`TAB_RECAP_AUTOCOMPACT_BY=jev`). With `jev`, the last prompt and reply, the recent turns, the goal and the open work go to
-that service, and the brief and its facts too when the brief is checked. The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
+that service, and the brief and its facts too when the brief is checked. The brief check has its own decider,
+`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when a key is found, else the moment decider), `jev` or `decider`. The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
 `~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
 key: [tab-recap/README.md](tab-recap/README.md#autocompact).
 
@@ -355,6 +356,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_AUTOCOMPACT` | `shadow` | `off`, `shadow` (record only) or `on` (compact at a safe moment) |
 | `TAB_RECAP_AUTOCOMPACT_AT` / `_CEILING` | `40` · `80` | the context % from which a safe moment compacts, and the % that compacts without asking |
 | `TAB_RECAP_AUTOCOMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `low` | the decider (also `jev`, the TypeSafe API) |
+| `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY` | `auto` | the brief check's decider: `auto` (Jev when a key is found, else the decider above), `jev` or `decider` |
 | `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |
 | `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job behind `tab-recap eval` |
 | `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job that tidies the ledger when the expanded view opens |

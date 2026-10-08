@@ -119,7 +119,8 @@ every decision, so a change applies without a restart.
 
 The decider SHALL be chosen by `TAB_RECAP_AUTOCOMPACT_BY`: `recap`, `auto`, a harness name, `jev` or `off`.
 The default is `recap` at low effort, with `TAB_RECAP_AUTOCOMPACT_MODEL` and `_EFFORT` as for the other
-jobs.
+jobs. `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY` chooses the brief check's decider, `auto` by default (Jev when a key is
+found, else the moment decider).
 
 The `jev` decider SHALL send the state document and, for coverage, the brief and the facts to a remote
 service; the documentation SHALL say so next to the choice. It SHALL post to `TAB_RECAP_JEV_URL`, which SHALL

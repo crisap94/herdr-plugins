@@ -300,7 +300,9 @@ marked `(auto)` in its notification, and the expanded view's session facts count
 
 **The decider** is a job like the others: `TAB_RECAP_AUTOCOMPACT_BY` is `recap` (the recap writer's harness, the
 default, at `low` effort), `auto`, a harness name, `jev` (the TypeSafe System One API) or `off`; `_MODEL` and `_EFFORT`
-as for the other jobs. With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
+as for the other jobs. The brief check has its own choice, `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when
+a key is found by the key chain below, else the moment decider), `jev` (always; with no key the check cannot run, so the
+compaction waits) or `decider` (the moment decider). With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
 brief and its facts too when the brief is checked. `jev` posts to `TAB_RECAP_JEV_URL` (`https://`, or `http://` to
 loopback only; any compatible gateway) with the model `TAB_RECAP_JEV_MODEL` and a bearer key, read each time from `TAB_RECAP_JEV_KEY` (the environment or `config.env`), else `TYPESAFE_API_KEY`,
 else the file `~/.config/typesafe-api-key`. The key is never logged, stored, shown in the settings modal or put in an

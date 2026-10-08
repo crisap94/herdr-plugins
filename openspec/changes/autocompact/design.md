@@ -163,8 +163,12 @@ the choice is about quality and friction:
   data processor.
 - **A harness** needs nothing new, but gives coarse, verbalised probabilities.
 
-EXP-002 (decision 9) picks the default. Until it reports, the default is `recap`: the recap writer's harness
-at low effort.
+**EXP-002 result.** The rule of decision 9 picks `recap` (the recap writer's harness at low effort, `haiku-low`) as the
+moment decider: its policy precision is within 3 points of the best (0.981) and its drift is 0.039. The brief check
+uses Jev, whose mean `brief_keeps_*` AUC is 0.912 against 0.693 for `haiku-low`. `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`
+chooses that check's decider: `auto` (the default: Jev when a key is found by the key chain, else the moment
+decider), `jev`, or `decider`. Two limits travel with the result: the labels come from one model, and `needs_verbatim`
+has no labelled positive, so its AUC is not measured; the operator's labels are still pending.
 
 Why hand-written: no Node built-in speaks this API. The global `fetch` and `AbortSignal.timeout` are the
 built-ins used, and no package is added.
