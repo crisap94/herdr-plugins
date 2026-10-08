@@ -225,3 +225,15 @@ test('a close that takes effect: one close and one open per tab, nothing else', 
     const settled = playAt([[102, { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, 164])), lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)), columns: [], panes: tabs.map((n) => `w1:p${n}`) } }]], done.board);
     assert.equal(settled.each.flat().filter((i) => i.kind === 'close-column' || i.kind === 'open-column').length, 0, 'the open is still on its way: not asked twice');
 });
+
+test('a hidden tab whose close never takes effect: 1 + 2 closes, then a give-up, then silence', () => {
+    const column = { tabId: 'w1:t1', paneId: 'w1:p9', shape: 'side' as const };
+    const snapshot: Observation = { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(), lanes: [lane('w1:p1', 'w1:t1')], columns: [column], panes: ['w1:p1', 'w1:p9'] } };
+    const ready = run([seen([lane('w1:p1', 'w1:t1')]), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }]).board;
+    const hidden = playAt([[100, { kind: 'visibility', target: { tab: tabId('w1:t1') }, hidden: true }], [110, snapshot], [131, snapshot], [162, snapshot], [193, snapshot], [230, snapshot], [400, snapshot]], ready);
+    const quiet = (n: number): number | undefined => hidden.each[n]?.filter((i) => i.kind === 'close-column' || i.kind === 'open-column' || i.kind === 'give-up').length;
+    assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(quiet), [1, 0, 1, 1, 1, 0, 0]);
+    assert.equal(hidden.closes.length, 3);
+    assert.equal(hidden.gaveUp.length, 1);
+    assert.equal(hidden.opens.length, 0);
+});

@@ -81,28 +81,38 @@ export function lingering(board: Board, pane: PaneId, now: Instant, policy: Poli
     return since !== undefined && elapsed(since, now) < policy.closeGrace;
 }
 
+/** A close that did not take effect within the grace: it counts against the tab's budget; a tab given up keeps the column. */
+function retried(board: Board, tab: TabId, pane: PaneId, now: Instant, policy: Policy): { board: Board; again: boolean; intents: readonly Intent[] } {
+    if (isGivenUp(board, tab, now)) {
+        return { board, again: false, intents: [] };
+    }
+    const [spent, intents] = spend(board, tab, now, policy);
+    return { board: spent, again: !spent.givenUp.has(tab), intents };
+}
+
 /** Close what the board no longer wants — and a column of the wrong shape, so `opened` docks the right one once it is gone. */
 function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
     const flips = (tab: TabId, placed: Placement): boolean => placed.shape !== shapeFor(board, tab, policy) && !isGivenUp(board, tab, now);
-    const gone = (tab: TabId, placed: Placement): boolean => !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0 || flips(tab, placed);
+    const unwanted = (tab: TabId): boolean => !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0;
     const closing = new Map(board.closing);
     const intents: Intent[] = [];
     let next = board;
     for (const [tab, placed] of board.columns) {
-        if (!gone(tab, placed) && isGivenUp(board, tab, now)) {
+        const gone = unwanted(tab) || flips(tab, placed);
+        if (!gone && isGivenUp(board, tab, now)) {
             closing.delete(placed.pane);
         }
-        if (!gone(tab, placed) || lingering(board, placed.pane, now, policy)) {
+        if (!gone || lingering(board, placed.pane, now, policy)) {
             continue;
         }
-        if (board.closing.has(placed.pane) && flips(tab, placed)) {
-            const [spent, given] = spend(next, tab, now, policy);
-            next = spent;
-            intents.push(...given);
-            if (next.givenUp.has(tab)) {
+        const retry = board.closing.has(placed.pane) ? retried(next, tab, placed.pane, now, policy) : { board: next, again: true, intents: [] };
+        next = retry.board;
+        intents.push(...retry.intents);
+        if (!retry.again) {
+            if (!unwanted(tab)) {
                 closing.delete(placed.pane);
-                continue;
             }
+            continue;
         }
         closing.set(placed.pane, now);
         intents.push({ kind: 'close-column', tab, column: placed.pane });
