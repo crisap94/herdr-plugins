@@ -19,8 +19,8 @@ import { QUESTIONS } from './autocompact-questions.ts';
 
 const READY = new Set(['idle', 'done']);
 const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
-/** A compaction asked for and not yet begun counts as in progress this long. */
-const ASKED_FOR_MS = 60_000;
+/** A compaction asked for and not yet begun counts as in progress this long: longer than the worst gap (the recap wait, the queue poll). */
+const ASKED_FOR_MS = 5 * 60_000;
 
 export interface AutocompactDeps {
     /** read on every consideration, so a change applies without a restart */
@@ -33,7 +33,7 @@ export interface AutocompactDeps {
     readonly ledger: Pick<Ledger, 'historyOf'>;
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
     readonly compactions: Pick<CompactionView, 'shownFor'>;
-    readonly decisions: Pick<AutocompactRecords, 'record' | 'lastWaitAt'>;
+    readonly decisions: Pick<AutocompactRecords, 'record' | 'lastDecisionAt' | 'unlinkedCompactSince'>;
     readonly requests: Pick<Requests, 'requestCompact'>;
     /** the tab has a recap written (a lane with none gets one first) */
     hasRecap(tab: string): boolean;
@@ -82,19 +82,24 @@ export class Autocompact {
         }
     }
 
+    /** A compaction is in progress, or was asked for and has not begun (in this process, or as a decision not yet linked to one). */
     private busy(tab: string, pane: string): boolean {
         const since = this.asked.get(pane);
-        return this.deps.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && this.deps.now() - since < ASKED_FOR_MS);
+        const now = this.deps.now();
+        return this.deps.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || this.deps.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS);
     }
 
-    /** Where the gates stop this lane: `ask` or `ceiling` go on, anything else is no decision. */
+    /** Where the gates stop this lane: `ask` or `ceiling` go on, anything else is no decision. The in-flight reader runs only when the lane would otherwise be asked. */
     private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse): Promise<{ gate: Gate; recordOnly: boolean }> {
         const { deps } = this;
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
-        return gateOf({
-            kind: String(lane.agent), kinds: policy.kinds, busy: this.busy(tab, pane), inFlight: await deps.inFlight(lane), share: shareOf(use), soft: policy.soft, ceiling: policy.ceiling,
-            now: deps.now(), lastBreakAt: deps.boundaries.lastBreakAt(tab, pane), lastWaitAt: deps.decisions.lastWaitAt(tab, pane), cooldownMs: policy.cooldownMs,
-        });
+        const facts = {
+            kind: String(lane.agent), kinds: policy.kinds, busy: this.busy(tab, pane), share: shareOf(use), soft: policy.soft, ceiling: policy.ceiling,
+            now: deps.now(), lastBreakAt: deps.boundaries.lastBreakAt(tab, pane), lastDecisionAt: deps.decisions.lastDecisionAt(tab, pane), cooldownMs: policy.cooldownMs,
+        };
+        const cheap = gateOf({ ...facts, inFlight: null });
+        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return cheap;
+        return gateOf({ ...facts, inFlight: await deps.inFlight(lane) });
     }
 
     private async run(lane: Lane): Promise<void> {

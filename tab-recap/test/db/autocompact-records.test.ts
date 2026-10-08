@@ -43,15 +43,31 @@ test('link points a decision at its compaction; a deleted compaction leaves the 
     store.autocompact.link('nope', cmp);
 });
 
-test('lastWaitAt: the newest decision of the lane that was not compact; null when there is none', () => {
+test('lastDecisionAt: the newest decision of the lane, of any verdict; null when there is none', () => {
     const store = seeded();
-    assert.equal(store.autocompact.lastWaitAt('w1:t1', 'w1:p1'), null);
+    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), null);
     store.autocompact.record(decision({ at: 100, verdict: 'wait' }));
     store.autocompact.record(decision({ at: 300, verdict: 'unknown' }));
     store.autocompact.record(decision({ at: 400, verdict: 'compact' }));
     store.autocompact.record(decision({ at: 500, verdict: 'wait', pane: 'w1:p2' }));
-    assert.equal(store.autocompact.lastWaitAt('w1:t1', 'w1:p1'), 300);
-    assert.equal(store.autocompact.lastWaitAt('w1:t1', 'w1:p2'), 500);
+    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), 400);
+    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p2'), 500);
+});
+
+test('unlinkedCompactSince: an on-mode compact of the lane, not yet begun, at or after the instant; a shadow one, a linked one or an old one does not count', () => {
+    const store = seeded();
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false);
+    store.autocompact.record(decision({ at: 100, mode: 'shadow' }));
+    store.autocompact.record(decision({ at: 200, mode: 'on', verdict: 'wait' }));
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false);
+    const old = store.autocompact.record(decision({ at: 150, mode: 'on' }));
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), false, 'older than the instant');
+    store.autocompact.record(decision({ at: 300, mode: 'on' }));
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), true);
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p2', 0), false, 'another lane');
+    store.autocompact.link(old, store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' }));
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), true, 'the newer one is still unlinked');
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 301), false);
 });
 
 test('countsFor: decisions, those that led to a compaction, those that waited; costSince sums the money from an instant', () => {
@@ -82,10 +98,18 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
     assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), newer);
     assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p2', cmp), null);
-    store.autocompact.amend(newer, { keeps_0: 0.2 }, true);
+    store.autocompact.amend(newer, { keeps_0: 0.2 }, true, 'the brief still misses 1 fact(s)');
     const row = store.autocompact.newest(5).find((each) => each.id === newer);
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
     assert.equal(store.compactions.shownFor('w1:t1')[0]?.origin, 'auto');
-    store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { keeps_0: 0.9 }, false);
+    store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { keeps_0: 0.9 }, false, null);
     assert.equal(store.autocompact.newest(1)[0]?.verdict, 'compact');
+});
+
+test('amend with no coverage (the decider could not answer, or none is set up) waits for coverage and keeps the reason', () => {
+    const store = seeded();
+    const unchecked = store.autocompact.record(decision({ at: 500 }));
+    store.autocompact.amend(unchecked, null, true, 'no decider is set up');
+    const waited = store.autocompact.newest(5).find((each) => each.id === unchecked);
+    assert.deepEqual([waited?.verdict, waited?.gate, waited?.coverage, waited?.why], ['wait', 'coverage', null, 'no decider is set up']);
 });

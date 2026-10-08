@@ -6,7 +6,7 @@ import type { GateInput } from '#src/recap/domain/autocompact.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 
 const NOW = 10_000_000;
-const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], busy: false, inFlight: 0, share: 62, soft: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastWaitAt: null, cooldownMs: 600_000, ...over });
+const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], busy: false, inFlight: 0, share: 62, soft: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, ...over });
 
 test('gates: below the soft limit (31 % with soft 40) stops before any model', () => {
     assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-soft', recordOnly: false });
@@ -28,11 +28,20 @@ test('gates: over the ceiling (81 %) with nothing in flight is the ceiling; at t
     assert.equal(gateOf(lane()).gate, 'ask');
 });
 
-test('gates: within the cooldown since the last wait (four minutes) or the last boundary; after it, ask', () => {
-    assert.equal(gateOf(lane({ lastWaitAt: NOW - 4 * 60_000 })).gate, 'cooldown');
+test('gates: within the cooldown since the last decision of any verdict (four minutes) or the last boundary; after it, ask', () => {
+    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 4 * 60_000 })).gate, 'cooldown');
+    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 4 * 60_000, share: 90 })).gate, 'cooldown', 'a compact decision starts the cooldown too');
     assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000 })).gate, 'cooldown');
     assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000, share: 90 })).gate, 'cooldown', 'the ceiling waits for the cooldown too');
-    assert.equal(gateOf(lane({ lastWaitAt: NOW - 600_000, lastBreakAt: NOW - 9 * 3_600_000 })).gate, 'ask');
+    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 600_000, lastBreakAt: NOW - 9 * 3_600_000 })).gate, 'ask');
+});
+
+test('gates: an in-flight count not read yet (null) is passed over; the lane is asked, or below the soft limit and no read is needed', () => {
+    assert.equal(gateOf(lane({ inFlight: null })).gate, 'ask');
+    assert.equal(gateOf(lane({ inFlight: null, share: 81 })).gate, 'ceiling');
+    assert.equal(gateOf(lane({ inFlight: null, share: 31 })).gate, 'below-soft');
+    assert.equal(gateOf(lane({ inFlight: null, busy: true })).gate, 'busy');
+    assert.equal(gateOf(lane({ inFlight: null, lastDecisionAt: NOW - 60_000 })).gate, 'cooldown');
 });
 
 test('gates: a kind outside the list is still gated and asked, but record-only', () => {

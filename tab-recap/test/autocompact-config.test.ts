@@ -12,6 +12,7 @@ import { deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
+const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
 test('the policy defaults: shadow, soft 40, ceiling 80, ten minutes, claude only', () => {
     assert.deepEqual(policyOf(config({})), { mode: 'shadow', soft: 40, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'] });
@@ -52,10 +53,16 @@ test('the decider job: the recap writer\'s harness at low effort; it also takes 
     assert.deepEqual(DECIDER_BY_CHOICES, [...JOB_BY_CHOICES.slice(0, -1), 'jev', 'off']);
 });
 
-test('the Jev settings: the TypeSafe endpoint and the pinned model unless set; a URL that is not http(s) is the default', () => {
+test('the Jev settings: the TypeSafe endpoint and the pinned model unless set', () => {
     assert.deepEqual(jevOf(config({})), { url: 'https://api.typesafe.ai/v1/systemone', model: 'jev-1.13.0' });
-    assert.deepEqual(jevOf(config({ TAB_RECAP_JEV_URL: 'http://gateway.local/v1/systemone', TAB_RECAP_JEV_MODEL: 'jev-2' })), { url: 'http://gateway.local/v1/systemone', model: 'jev-2' });
-    assert.equal(jevOf(config({ TAB_RECAP_JEV_URL: 'ftp://x' })).url, 'https://api.typesafe.ai/v1/systemone');
+    assert.deepEqual(jevOf(config({ TAB_RECAP_JEV_URL: 'https://gateway.example/v1/systemone', TAB_RECAP_JEV_MODEL: 'jev-2' })), { url: 'https://gateway.example/v1/systemone', model: 'jev-2' });
+});
+
+test('the Jev URL: https to any host, http only to loopback; anything else (clear-text http, other schemes, look-alike hosts) is the default', () => {
+    for (const good of ['http://localhost:8080/v1', 'http://127.0.0.1/x', 'http://[::1]:9/v1', 'https://gateway.example:8443/v1']) assert.equal(jevUrl(good), good, good);
+    for (const bad of ['http://gateway.local/v1/systemone', 'http://localhost.evil.example/v1', 'http://localhost@evil.example/', 'https://', 'ftp://x', 'typesafe.ai']) {
+        assert.equal(jevUrl(bad), 'https://api.typesafe.ai/v1/systemone', bad);
+    }
 });
 
 /** Runs `body` with these environment variables set (and an empty config folder), then puts everything back. */

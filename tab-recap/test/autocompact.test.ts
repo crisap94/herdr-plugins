@@ -28,21 +28,22 @@ const NOW = 10_000_000;
 const lane = (agent = 'claude', status = 'idle'): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
-interface World { readonly service: Autocompact; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
+interface World { readonly service: Autocompact; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
 
 function world(over: Partial<AutocompactPolicy> = {}, recap = true): World {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const [requests, logs, asked, refreshed] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[]];
+    const [requests, logs, asked, refreshed, reads] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[]];
+    const clock = { at: NOW };
     const state = { policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, inFlight: 0 as number | 'unknown', share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
     const decider: Decider = { label: 'fake · m', ask: (_state, questions) => { asked.push(Object.keys(questions).length); return Promise.resolve(state.decide()); } };
     const deps: AutocompactDeps = {
-        policy: () => state.policy, decider: () => decider, contexts: { of: () => ({ tokens: state.share * 10_000, window: 1_000_000, source: 'observed' }) }, inFlight: () => Promise.resolve(state.inFlight),
+        policy: () => state.policy, decider: () => decider, contexts: { of: () => ({ tokens: state.share * 10_000, window: 1_000_000, source: 'observed' }) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight); },
         recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact,
         requests: { requestCompact: (request) => { requests.push(request); } }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve(); },
-        lanes: () => [lane()], now: () => NOW, log: (line) => { logs.push(line); },
+        lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); },
     };
-    const self: World = { service: new Autocompact(deps), store, requests, logs, asked, refreshed, get policy() { return state.policy; }, set policy(value) { state.policy = value; }, get inFlight() { return state.inFlight; }, set inFlight(value) { state.inFlight = value; }, get share() { return state.share; }, set share(value) { state.share = value; }, get decide() { return state.decide; }, set decide(value) { state.decide = value; } };
+    const self: World = { service: new Autocompact(deps), store, requests, logs, asked, refreshed, reads, clock, get policy() { return state.policy; }, set policy(value) { state.policy = value; }, get inFlight() { return state.inFlight; }, set inFlight(value) { state.inFlight = value; }, get share() { return state.share; }, set share(value) { state.share = value; }, get decide() { return state.decide; }, set decide(value) { state.decide = value; } };
     return self;
 }
 
@@ -122,6 +123,37 @@ test('a compaction in progress, or one just requested, stops a second request', 
     going.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW });
     await going.service.consider(lane());
     assert.equal(going.asked.length, 0);
+});
+
+test('a request still waiting to begin after 70 s (no compaction record yet) stops the second idle: no second request, and no second decision', async () => {
+    const w = world({ cooldownMs: 0 });
+    await w.service.consider(lane());
+    w.clock.at += 70_000;
+    await w.service.consider(lane());
+    assert.deepEqual([w.requests.length, w.asked.length, rows(w).length], [1, 1, 1], 'the unlinked compact decision keeps the lane busy');
+    w.clock.at += 6 * 60_000;
+    await w.service.consider(lane());
+    assert.deepEqual([w.requests.length, w.asked.length], [2, 2], 'after the five-minute window a request may be made again');
+});
+
+test('shadow: a second idle within the cooldown after a decision asks no decider and records no second row', async () => {
+    const w = world({ mode: 'shadow' });
+    await w.service.consider(lane());
+    w.clock.at += 70_000;
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked.length, rows(w).length, w.requests.length], [1, 1, 0]);
+});
+
+test('a lane below the soft limit, or within the cooldown, never reads the in-flight count', async () => {
+    const below = world();
+    below.share = 31;
+    await below.service.consider(lane());
+    const cooling = world();
+    cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    await cooling.service.consider(lane());
+    const asking = world();
+    await asking.service.consider(lane());
+    assert.deepEqual([below.reads.length, cooling.reads.length, asking.reads.length], [0, 0, 1], 'the reader runs only when the lane would otherwise be asked');
 });
 
 test('a wait: not safe means wait, an undecided answer is recorded as undecided, and neither requests', async () => {

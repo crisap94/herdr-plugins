@@ -241,7 +241,8 @@ compacts without asking. The brief is checked against your goal, open questions,
 rules first, and a brief that loses one is written again once, then not used. Claude agents only, by default.
 
 The decider is the recap writer's harness at low effort, or the TypeSafe `jev` API
-(`TAB_RECAP_AUTOCOMPACT_BY=jev`). The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
+(`TAB_RECAP_AUTOCOMPACT_BY=jev`). With `jev`, the last prompt and reply, the recent turns, the goal and the open work go to
+that service, and the brief and its facts too when the brief is checked. The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
 `~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
 key: [tab-recap/README.md](tab-recap/README.md#autocompact).
 

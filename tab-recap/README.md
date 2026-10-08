@@ -295,12 +295,14 @@ a brief that still loses one is not typed.
 ever typed. Read what it would have done with `tab-recap autocompact` (the newest twenty decisions, with the last
 day's cost), then set `on`. `off` decides nothing. Only Claude agents are compacted (`TAB_RECAP_AUTOCOMPACT_KINDS`);
 other kinds are decided and recorded, never compacted. An automatic compaction goes through the same path as yours and is
-marked `(auto)` in its notification and in the expanded view's session facts.
+marked `(auto)` in its notification, and the expanded view's session facts count the tab's compactions by origin
+(`compactions 4 (3 by you · 1 auto)`).
 
 **The decider** is a job like the others: `TAB_RECAP_AUTOCOMPACT_BY` is `recap` (the recap writer's harness, the
 default, at `low` effort), `auto`, a harness name, `jev` (the TypeSafe System One API) or `off`; `_MODEL` and `_EFFORT`
-as for the other jobs. `jev` posts to `TAB_RECAP_JEV_URL` (any compatible gateway) with the model `TAB_RECAP_JEV_MODEL`
-and a bearer key, read each time from `TAB_RECAP_JEV_KEY` (the environment or `config.env`), else `TYPESAFE_API_KEY`,
+as for the other jobs. With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
+brief and its facts too when the brief is checked. `jev` posts to `TAB_RECAP_JEV_URL` (`https://`, or `http://` to
+loopback only; any compatible gateway) with the model `TAB_RECAP_JEV_MODEL` and a bearer key, read each time from `TAB_RECAP_JEV_KEY` (the environment or `config.env`), else `TYPESAFE_API_KEY`,
 else the file `~/.config/typesafe-api-key`. The key is never logged, stored, shown in the settings modal or put in an
 error. If the decider cannot answer, the decision is recorded as unknown and acts as a wait; one log line says so per
 outage, and the ceiling still compacts.

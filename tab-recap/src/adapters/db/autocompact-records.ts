@@ -33,7 +33,8 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     private readonly attach: StatementSync;
     private readonly latest: StatementSync;
     private readonly cover: StatementSync;
-    private readonly waited: StatementSync;
+    private readonly last: StatementSync;
+    private readonly asked: StatementSync;
     private readonly newestAll: StatementSync;
     private readonly newestOf: StatementSync;
     private readonly counts: StatementSync;
@@ -44,8 +45,9 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         this.insert = db.prepare(`INSERT INTO autocompact_decision (${COLUMNS.replace(', compaction_id', '')}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');
         this.latest = db.prepare("SELECT id FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
-        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END WHERE id = ?");
-        this.waited = db.prepare("SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict <> 'compact'");
+        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = CASE WHEN ? = 1 THEN ? ELSE why END WHERE id = ?");
+        this.last = db.prepare('SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ?');
+        this.asked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND mode = 'on' AND verdict = 'compact' AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.newestAll = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision ORDER BY at DESC, id DESC LIMIT ?`);
         this.newestOf = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision WHERE tab_id = ? ORDER BY at DESC, id DESC LIMIT ?`);
         this.counts = db.prepare("SELECT COUNT(*) AS decisions, COUNT(compaction_id) AS compacted, COALESCE(SUM(verdict <> 'compact'), 0) AS waited FROM autocompact_decision WHERE tab_id = ?");
@@ -72,13 +74,18 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         return typeIdOf('decision', blob(row, 'id'));
     }
 
-    amend(id: string, coverage: Readonly<Record<string, number>>, waited: boolean): void {
+    amend(id: string, coverage: Readonly<Record<string, number>> | null, waited: boolean, why: string | null): void {
         const key = idOf('decision', id);
-        if (key !== null) writeTx(this.db, () => { this.cover.run(JSON.stringify(coverage), waited ? 1 : 0, waited ? 1 : 0, key); });
+        const flag = waited ? 1 : 0;
+        if (key !== null) writeTx(this.db, () => { this.cover.run(coverage === null ? null : JSON.stringify(coverage), flag, flag, flag, why, key); });
     }
 
-    lastWaitAt(tab: string, pane: string): number | null {
-        return guarded(() => maybeWhole(one(this.waited, tab, pane) ?? { at: null }, 'at'), null);
+    lastDecisionAt(tab: string, pane: string): number | null {
+        return guarded(() => maybeWhole(one(this.last, tab, pane) ?? { at: null }, 'at'), null);
+    }
+
+    unlinkedCompactSince(tab: string, pane: string, at: number): boolean {
+        return guarded(() => one(this.asked, tab, pane, at) !== null, false);
     }
 
     newest(limit: number, tab?: string): readonly StoredDecision[] {
