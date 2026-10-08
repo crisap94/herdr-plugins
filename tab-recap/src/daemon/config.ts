@@ -12,8 +12,8 @@ import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
-import { jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactPolicy, JevSettings } from '#src/recap/domain/autocompact.ts';
+import { coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactPolicy, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -61,6 +61,8 @@ export interface Config {
     readonly autocompact: AutocompactPolicy;
     /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
     readonly decider: DeciderJob;
+    /** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: who checks the brief's coverage before an automatic compaction (`auto` by default) */
+    readonly coverage: CoverageBy;
     /** `TAB_RECAP_JEV_URL` and `TAB_RECAP_JEV_MODEL`; the key is never config the plugin shows (see `adapters/jev-key.ts`) */
     readonly jev: JevSettings;
     /** `TAB_RECAP_KEEP_DAYS`: how long a closed tab's data is kept (30; 0 = for ever) */
@@ -187,6 +189,7 @@ export function loadConfig(): Config {
         curator: curateJobOf(get),
         autocompact: policyOf(get),
         decider: deciderJobOf(get),
+        coverage: coverageByOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         jev: jevOf(get),
         keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',

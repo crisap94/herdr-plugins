@@ -36,7 +36,8 @@ export function wireCompaction(parts: {
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;
-    readonly decider: () => Decider | null;
+    /** the decider that checks the brief's coverage (`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`) */
+    readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
     log(line: string): void;
 }): Compaction {
@@ -54,7 +55,7 @@ export function wireCompaction(parts: {
             await bounded(recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS);
         },
         coverage: () => {
-            const decider = parts.decider();
+            const decider = parts.coverageDecider();
             return decider === null ? null : { check: (text, facts) => covered(text, facts, decider) };
         },
         decisions: parts.decisions,

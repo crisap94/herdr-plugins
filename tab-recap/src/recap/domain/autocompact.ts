@@ -60,6 +60,16 @@ export function policyOf(get: (key: string) => string | undefined): AutocompactP
     return { mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), soft, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), soft), cooldownMs: cooldownOf(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS')), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')) };
 }
 
+/** Who checks a brief's coverage: `auto` (Jev when a key is found, else the moment decider), `jev`, or `decider` (the moment decider). */
+export type CoverageBy = 'auto' | 'jev' | 'decider';
+
+export const COVERAGE_BY_DEFAULT: CoverageBy = 'auto';
+
+const COVERAGE_BY: readonly CoverageBy[] = ['auto', 'jev', 'decider'];
+
+/** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto`, `jev` or `decider`; anything else is `auto`. */
+export const coverageByOf = (raw: string | undefined): CoverageBy => COVERAGE_BY.find((by) => by === word(raw)) ?? COVERAGE_BY_DEFAULT;
+
 /** Where the `jev` decider lives: any compatible pass-through URL, and the pinned model id (opaque to the plugin). */
 export interface JevSettings {
     readonly url: string;

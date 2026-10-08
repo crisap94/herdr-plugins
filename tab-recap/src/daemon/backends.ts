@@ -13,7 +13,7 @@ import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
-import { deciderFor } from './deciders.ts';
+import { coverageDeciderFor, deciderFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
 import { pick } from '#src/recap/domain/backend.ts';
@@ -114,6 +114,10 @@ export class Backends {
 
     decider(): Decider | null {
         return deciderFor(loadConfig(), this.available, this.work);
+    }
+
+    coverageDecider(): Decider | null {
+        return coverageDeciderFor(loadConfig(), this.available, this.work);
     }
 
     curator(): Curators | null {

@@ -6,10 +6,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/harness-decider.ts';
 import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { ceilingOf, cooldownOf, jevOf, kindsOf, modeOf, policyOf, softOf } from '#src/recap/domain/autocompact.ts';
+import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, softOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
-import { deciderFor } from '#src/daemon/deciders.ts';
+import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
+import { isUnknown } from '#src/ports/unknowable.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
@@ -79,6 +80,20 @@ function withEnv(values: Readonly<Record<string, string>>, body: () => void): vo
     }
 }
 
+/** `withEnv` for a body that awaits: the variables stay set until it settles. */
+async function withEnvAsync(values: Readonly<Record<string, string>>, body: () => Promise<void>): Promise<void> {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-autocompact-'));
+    const keys = ['HERDR_PLUGIN_CONFIG_DIR', ...Object.keys(values)];
+    const was = keys.map((key) => process.env[key]);
+    Object.assign(process.env, { HERDR_PLUGIN_CONFIG_DIR: dir, ...values });
+    try {
+        await body();
+    } finally {
+        keys.forEach((key, at) => { const before = was[at]; if (before === undefined) { delete process.env[key]; } else { process.env[key] = before; } });
+        rmSync(dir, { recursive: true, force: true });
+    }
+}
+
 test('deciderFor: jev builds the Jev decider, a harness job a harness decider, off or nothing installed none', () => {
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }, () => {
         const jev = deciderFor(loadConfig(), [], '/work');
@@ -99,4 +114,58 @@ test('the loaded configuration carries the policy, the job and the Jev settings'
         const loaded = loadConfig();
         assert.deepEqual([loaded.autocompact.mode, loaded.autocompact.soft, loaded.autocompact.ceiling, loaded.decider, loaded.jev.model], ['on', 55, 80, { by: 'recap', model: '', effort: 'low' }, 'jev-9']);
     });
+});
+
+test('the brief coverage decider: auto (the default), jev or decider; anything else is auto', () => {
+    assert.equal(COVERAGE_BY_DEFAULT, 'auto');
+    assert.deepEqual([' JEV ', 'Decider', 'auto', 'nonsense', '', undefined].map(coverageByOf), ['jev', 'decider', 'auto', 'auto', 'auto', 'auto']);
+    assert.equal(loadConfig().coverage, 'auto');
+});
+
+/** Runs `body` with a home folder of its own (so no `~/.config/typesafe-api-key` is read), then removes it. */
+function withHome(body: () => void): void {
+    const home = mkdtempSync(join(tmpdir(), 'recap-home-'));
+    const was = process.env['HOME'];
+    process.env['HOME'] = home;
+    try {
+        body();
+    } finally {
+        if (was === undefined) { delete process.env['HOME']; } else { process.env['HOME'] = was; }
+        rmSync(home, { recursive: true, force: true });
+    }
+}
+
+test('coverageDeciderFor: auto picks Jev when a key is found, else the moment decider', () => {
+    withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage' }, () => {
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof JevDecider);
+    }));
+    withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto' }, () => {
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof HarnessDecider);
+        assert.equal(coverageDeciderFor(loadConfig(), [], '/work'), null, 'no key and no harness: no decider, so the check does not run');
+    }));
+});
+
+test('coverageDeciderFor: decider is the moment decider even with a key; jev is Jev always', () => {
+    withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'decider' }, () => {
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof HarnessDecider);
+    }));
+    withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, () => {
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof JevDecider);
+    }));
+});
+
+test('coverageDeciderFor: jev with no key cannot answer, so the check fails closed', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'recap-home-'));
+    const was = process.env['HOME'];
+    process.env['HOME'] = home;
+    try {
+        await withEnvAsync({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, async () => {
+            const decider = coverageDeciderFor(loadConfig(), ['claude'], '/work');
+            assert.ok(decider instanceof JevDecider);
+            assert.ok(isUnknown(await decider.ask({}, {})), 'an unknown answer, never a probability');
+        });
+    } finally {
+        if (was === undefined) { delete process.env['HOME']; } else { process.env['HOME'] = was; }
+        rmSync(home, { recursive: true, force: true });
+    }
 });
