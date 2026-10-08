@@ -16,7 +16,7 @@ export function autocompactCommand(argv: readonly string[]): number {
     }
     try {
         const now = Date.now();
-        const lines = listing(store.autocompact.newest(LISTED), { since: now - 86_400_000, costUsd: store.autocompact.costSince(now - 86_400_000) }, now, Intl.DateTimeFormat().resolvedOptions().timeZone);
+        const lines = listing(store.autocompact.newest(LISTED), { since: now - 86_400_000, costUsd: store.autocompact.costSince(now - 86_400_000) }, now, Intl.DateTimeFormat().resolvedOptions().timeZone, store.autocompact.skips());
         console.log(lines.join('\n'));
         return 0;
     } finally {

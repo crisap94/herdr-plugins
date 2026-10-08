@@ -1,4 +1,4 @@
-// EXP-002's sample: 120 above the soft limit, 60 just before an agent's own compaction, 60 at random from the rest. Pure.
+// EXP-002's sample: 120 above the minimum, 60 just before an agent's own compaction, 60 at random from the rest. Pure.
 import { seeded, shuffled } from './seeded.ts';
 
 export interface Candidate {
@@ -15,7 +15,7 @@ export interface Quota { readonly high: number; readonly boundary: number; reado
 
 export const QUOTA: Quota = { high: 120, boundary: 60, random: 60 };
 export const SEED = 42;
-export const SOFT_LIMIT = 40;
+export const MINIMUM_LIMIT = 40;
 
 export interface Sampled {
     readonly picked: readonly { readonly id: string; readonly stratum: Stratum }[];
@@ -25,7 +25,7 @@ export interface Sampled {
 
 /**
  * Take the quotas in the order boundary, high, random, each from what the earlier strata left (the turn ends before a compaction are mostly
- * above the soft limit, so they go first or the high stratum would use them up); a short stratum gives all it has.
+ * above the minimum, so they go first or the high stratum would use them up); a short stratum gives all it has.
  */
 export function stratify(candidates: readonly Candidate[], quota: Quota = QUOTA, seed = SEED): Sampled {
     const random = seeded(seed);
@@ -34,7 +34,7 @@ export function stratify(candidates: readonly Candidate[], quota: Quota = QUOTA,
     const counts = {} as Record<Stratum, { asked: number; got: number }>;
     const rules: readonly [Stratum, (candidate: Candidate) => boolean][] = [
         ['boundary', (c) => c.beforeBoundary],
-        ['high', (c) => c.share !== null && c.share >= SOFT_LIMIT],
+        ['high', (c) => c.share !== null && c.share >= MINIMUM_LIMIT],
         ['random', () => true],
     ];
     for (const [stratum, fits] of rules) {

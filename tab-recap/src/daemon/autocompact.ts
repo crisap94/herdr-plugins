@@ -1,6 +1,7 @@
 // The composition of autocompact: the daemon's parts, handed to the one service that decides (it never types: the compaction flow does).
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
+import type { FlightAnswer } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
@@ -9,7 +10,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { bounded } from './bounded.ts';
@@ -20,14 +21,15 @@ const RECAP_WAIT_MS = 90_000;
 /** the end of a transcript looked through for work still running */
 const TAIL_BYTES = 512 * 1024;
 
-/** The work the lane's agent started and has not ended; `unknown` when its reader cannot tell (that counts as in flight). */
-async function inFlightOf(transcripts: readonly Transcripts[], lane: Lane): Promise<number | 'unknown'> {
+/** The work the lane's agent started and has not ended; `unknown` when its reader cannot tell (that counts as in flight), with the reason. */
+async function inFlightOf(transcripts: readonly Transcripts[], lane: Lane): Promise<FlightAnswer> {
     const agent = String(lane.agent);
     const reader = transcripts.find((candidate) => candidate.agent === agent);
     const located = reader === undefined ? null : await reader.locate(lane);
-    if (reader?.inFlight === undefined || located === null || isUnknown(located)) return 'unknown';
+    if (reader?.inFlight === undefined) return { count: 'unknown', why: `no reader for ${agent}` };
+    if (located === null || isUnknown(located)) return { count: 'unknown', why: located === null ? 'no transcript' : saying(located.why) };
     const found = await reader.inFlight(located.source, TAIL_BYTES);
-    return isUnknown(found) ? 'unknown' : found.count;
+    return isUnknown(found) ? { count: 'unknown', why: saying(found.why) } : { count: found.count, why: `${found.count} running` };
 }
 
 export function wireAutocompact(parts: {
@@ -42,7 +44,7 @@ export function wireAutocompact(parts: {
 }): Autocompact {
     const { store } = parts;
     return new Autocompact({
-        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), recent: (lane) => parts.recent.of(lane),
+        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },

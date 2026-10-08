@@ -54,15 +54,17 @@ test('lastDecisionAt: the newest decision of the lane, of any verdict; null when
     assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p2'), 500);
 });
 
-test('unlinkedCompactSince: an on-mode compact of the lane, not yet begun, at or after the instant; a shadow one, a linked one or an old one does not count', () => {
+test('unlinkedCompactSince: a requested on-mode compact of the lane, not yet begun, at or after the instant; a shadow one, a record-only one, a linked one or an old one does not count', () => {
     const store = seeded();
     assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false);
-    store.autocompact.record(decision({ at: 100, mode: 'shadow' }));
-    store.autocompact.record(decision({ at: 200, mode: 'on', verdict: 'wait' }));
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false);
+    store.autocompact.markRequested(store.autocompact.record(decision({ at: 100, mode: 'shadow' })));
+    store.autocompact.markRequested(store.autocompact.record(decision({ at: 200, mode: 'on', verdict: 'wait' })));
+    store.autocompact.record(decision({ at: 250, mode: 'on' }));
+    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false, 'not requested');
     const old = store.autocompact.record(decision({ at: 150, mode: 'on' }));
+    store.autocompact.markRequested(old);
     assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), false, 'older than the instant');
-    store.autocompact.record(decision({ at: 300, mode: 'on' }));
+    store.autocompact.markRequested(store.autocompact.record(decision({ at: 300, mode: 'on' })));
     assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), true);
     assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p2', 0), false, 'another lane');
     store.autocompact.link(old, store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' }));

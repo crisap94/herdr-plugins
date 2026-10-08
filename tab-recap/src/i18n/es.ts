@@ -52,7 +52,7 @@ export const es: Messages = {
         curateOff: 'apagado — sin párrafo ni fusiones',
         autocompactChoices: { off: 'off — nunca decide', shadow: 'shadow — decide y registra, nunca compacta', on: 'on — compacta en un buen momento por encima del límite' },
         autocompactHint: 'compacta solo a un agente libre cuando su contexto está lleno y no hay nada a medias; empieza con shadow y mira `tab-recap autocompact`',
-        autocompactAtHint: 'la parte del contexto desde la que un buen momento compacta: de 10 a 95',
+        autocompactAtHint: 'la parte del contexto desde la que se evalúa un agente libre: de 10 a 95',
         autocompactJobHint: 'responde unas preguntas de sí o no sobre los últimos turnos; una llamada corta, una fracción de centavo',
         deciderOff: 'off — autocompactar no consulta a nadie y solo decide por el techo',
         compactJobHint: 'escribe qué conserva el agente al compactar; vale la pena un esfuerzo alto, corre una vez por compactación',

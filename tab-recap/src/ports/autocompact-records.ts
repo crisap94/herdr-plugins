@@ -1,6 +1,29 @@
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
 export type DecisionVerdict = 'compact' | 'wait' | 'undecided' | 'unknown';
+/** The gates that stop a lane before a decision: a skip keeps one of these. */
+export type SkipGate = 'below-minimum' | 'busy' | 'in-flight' | 'cooldown' | 'unchanged' | 'no-context';
+
+/** What stopped a lane's consideration, as it is written: replaced at each skip, removed by a decision. */
+export interface Skip {
+    readonly tab: string;
+    readonly pane: string;
+    readonly agent: string;
+    readonly at: number;
+    readonly gate: SkipGate;
+    /** the context share in percent; null when it is not known */
+    readonly share: number | null;
+    readonly detail: string | null;
+}
+
+/** The lane's last decision, as the `unchanged` gate reads it: the tokens and mode it was made at. */
+export interface LastDecision {
+    readonly at: number;
+    readonly tokens: number;
+    readonly mode: DecisionMode;
+    /** `unknown` does not count as unchanged: the decider is asked again */
+    readonly verdict: DecisionVerdict;
+}
 
 /** What one consideration of a lane decided, as it is written. */
 export interface Decision {
@@ -52,8 +75,20 @@ export interface AutocompactRecords {
     amend(id: string, coverage: Readonly<Record<string, number>> | null, waited: boolean, why: string | null): void;
     /** when the lane last got a decision of any verdict (epoch ms); null when never */
     lastDecisionAt(tab: string, pane: string): number | null;
-    /** whether the lane has a `compact` decision of mode `on` at or after `at` that led to no compaction yet: asked for, not begun */
+    /** the lane's newest decision of any verdict (its time, tokens and mode); null when there is none */
+    lastDecision(tab: string, pane: string): LastDecision | null;
+    /** the decision's request was made: `requested` is set, and only requested decisions count as asked for */
+    markRequested(id: string): void;
+    /** whether the lane has a requested `compact` decision of mode `on` at or after `at` that led to no compaction yet: asked for, not begun */
     unlinkedCompactSince(tab: string, pane: string, at: number): boolean;
+    /** the same for any lane of any tab */
+    unlinkedCompactAny(at: number): boolean;
+    /** deletes the skips of every lane not in `keep` (all of them when `keep` is empty) */
+    pruneSkips(keep: readonly { readonly tab: string; readonly pane: string }[]): void;
+    /** the lane's latest skip is replaced by this one */
+    skip(skip: Skip): void;
+    /** every lane's latest skip, newest first */
+    skips(): readonly Skip[];
     /** newest first; of one tab when given */
     newest(limit: number, tab?: string): readonly StoredDecision[];
     countsFor(tab: string): DecisionCounts;

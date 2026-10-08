@@ -281,7 +281,7 @@ table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_
 ## Autocompact
 
 **What it does.** When an agent becomes idle or done and its context is at least `TAB_RECAP_AUTOCOMPACT_AT` percent
-full (40 by default), autocompact decides in code whether anything stops it — a compaction already under way, work the
+full (10 by default), autocompact decides in code whether anything stops it — a compaction already under way, work the
 agent started and has not finished (a background shell, a launched agent or monitor), the cooldown
 (`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, ten minutes) — and only then asks a **decider** six yes/no questions about the
 last turns (does the reply close the request, does it announce more work, does it ask you to choose between options only

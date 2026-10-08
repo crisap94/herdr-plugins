@@ -1,6 +1,6 @@
 // Autocompact: when a lane's agent is free and its context is full enough, ask the decider whether this is a safe moment, record the
 // decision, and (when `on`) ask for a compaction through the operator's own request path. Typing stays in the compaction flow.
-import type { AutocompactRecords, Decision, DecisionVerdict } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, Decision, DecisionVerdict, SkipGate } from '#src/ports/autocompact-records.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
@@ -8,19 +8,27 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { gateOf } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactPolicy, Gate } from '#src/recap/domain/autocompact.ts';
+import { gateOf, READY } from '#src/recap/domain/autocompact.ts';
+import type { Gate } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
+import { busyOf, detailOf, unchangedOf } from './autocompact-gates.ts';
+import { lineOf, moneyOf } from './autocompact-line.ts';
+import type { FlightAnswer } from './autocompact-gates.ts';
 
-const READY = new Set(['idle', 'done']);
-const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
-/** A compaction asked for and not yet begun counts as in progress this long: longer than the worst gap (the recap wait, the queue poll). */
-const ASKED_FOR_MS = 5 * 60_000;
+export type { FlightAnswer } from './autocompact-gates.ts';
+
+/** Where a consideration stopped: the gate, whether the kind is record-only, and the detail a skip keeps. */
+interface Stop {
+    readonly gate: Gate;
+    readonly recordOnly: boolean;
+    readonly detail: string | null;
+}
 
 export interface AutocompactDeps {
     /** read on every consideration, so a change applies without a restart */
@@ -28,12 +36,14 @@ export interface AutocompactDeps {
     decider(): Decider | null;
     readonly contexts: { of(pane: string): ContextUse | null };
     /** work the lane's agent started and has not ended; `unknown` for a reader that cannot tell */
-    inFlight(lane: Lane): Promise<number | 'unknown'>;
+    inFlight(lane: Lane): Promise<FlightAnswer>;
     recent(lane: Lane): Promise<readonly Entry[]>;
     readonly ledger: Pick<Ledger, 'historyOf'>;
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
-    readonly compactions: Pick<CompactionView, 'shownFor'>;
-    readonly decisions: Pick<AutocompactRecords, 'record' | 'lastDecisionAt' | 'unlinkedCompactSince'>;
+    readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
+    readonly decisions: Pick<AutocompactRecords, 'record' | 'skip' | 'markRequested' | 'pruneSkips' | 'lastDecisionAt' | 'lastDecision' | 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
+    /** when this daemon process started (epoch ms): a decision made before it is a change */
+    readonly startedAt: number;
     readonly requests: Pick<Requests, 'requestCompact'>;
     /** the tab has a recap written (a lane with none gets one first) */
     hasRecap(tab: string): boolean;
@@ -52,20 +62,29 @@ interface Judged {
     readonly tookMs: number | null;
 }
 
+/** A compact verdict of a lane whose kind is compacted, in mode `on`, is requested; a record-only or shadow one never is. */
+const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, recordOnly: boolean): boolean => mode === 'on' && verdict === 'compact' && !recordOnly;
+
 /** Over the ceiling no model is asked. */
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
-
-const WORDS: Readonly<Record<string, string>> = { closes_request: 'closes', announces_continuation: 'continues', asks_detailed_choice: 'choice', needs_verbatim: 'verbatim', changes_subject: 'subject', stuck: 'stuck' };
 
 export class Autocompact {
     private readonly deps: AutocompactDeps;
     private readonly considering = new Set<string>();
     private readonly asked = new Map<string, number>();
+    /** the gate of each lane's last logged skip: a skip is logged again only when its gate changed */
+    private readonly skipped = new Map<string, SkipGate>();
     private outage = false;
 
     constructor(deps: AutocompactDeps) {
         this.deps = deps;
+    }
+
+    /** Forgets the skips of every lane that is not idle or done in `board` (all of them while autocompact is off). */
+    prune(board: readonly Lane[]): void {
+        const keep = this.deps.policy().mode === 'off' ? [] : board.filter((lane) => READY.has(lane.status)).map((lane) => ({ tab: String(lane.tab), pane: String(lane.pane) }));
+        this.deps.decisions.pruneSkips(keep);
     }
 
     /** A lane's agent became idle or done and its context was looked at again. Never throws; one consideration per pane at a time. */
@@ -82,45 +101,69 @@ export class Autocompact {
         }
     }
 
-    /** A compaction is in progress, or was asked for and has not begun (in this process, or as a decision not yet linked to one). */
-    private busy(tab: string, pane: string): boolean {
-        const since = this.asked.get(pane);
-        const now = this.deps.now();
-        return this.deps.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || this.deps.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS);
-    }
-
-    /** Where the gates stop this lane: `ask` or `ceiling` go on, anything else is no decision. The in-flight reader runs only when the lane would otherwise be asked. */
-    private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse): Promise<{ gate: Gate; recordOnly: boolean }> {
+    /** Where the gates stop this lane: `ask` or `ceiling` go on, anything else is a skip. The in-flight reader runs only when the lane would otherwise be asked. */
+    private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse): Promise<Stop> {
         const { deps } = this;
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
+        const now = deps.now();
+        const busy = busyOf(deps, this.asked, tab, pane, now);
+        const lastBreakAt = deps.boundaries.lastBreakAt(tab, pane);
+        const lastDecisionAt = deps.decisions.lastDecisionAt(tab, pane);
         const facts = {
-            kind: String(lane.agent), kinds: policy.kinds, busy: this.busy(tab, pane), share: shareOf(use), soft: policy.soft, ceiling: policy.ceiling,
-            now: deps.now(), lastBreakAt: deps.boundaries.lastBreakAt(tab, pane), lastDecisionAt: deps.decisions.lastDecisionAt(tab, pane), cooldownMs: policy.cooldownMs,
+            kind: String(lane.agent), kinds: policy.kinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
+            now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,
+            unchanged: unchangedOf(deps.decisions.lastDecision(tab, pane), deps.startedAt, use.tokens, policy.mode),
         };
         const cheap = gateOf({ ...facts, inFlight: null });
-        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return cheap;
-        return gateOf({ ...facts, inFlight: await deps.inFlight(lane) });
+        const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
+        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }) };
+        const flight = await deps.inFlight(lane);
+        const full = gateOf({ ...facts, inFlight: flight.count });
+        return { ...full, detail: detailOf(full.gate, { ...context, flight }) };
+    }
+
+    /** Records the lane's latest skip, and logs it only when its gate differs from the lane's last logged skip. */
+    private skip(lane: Lane, gate: SkipGate, share: number | null, detail: string | null): void {
+        const pane = String(lane.pane);
+        this.deps.decisions.skip({ tab: String(lane.tab), pane, agent: String(lane.agent), at: this.deps.now(), gate, share, detail });
+        if (this.skipped.get(pane) === gate) return;
+        this.skipped.set(pane, gate);
+        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`);
     }
 
     private async run(lane: Lane): Promise<void> {
         const { deps } = this;
         const policy = deps.policy();
         const [tab, pane, use] = [String(lane.tab), String(lane.pane), deps.contexts.of(String(lane.pane))];
-        if (policy.mode === 'off' || use === null) return;
-        const { gate, recordOnly } = await this.gated(lane, policy, use);
-        if (gate !== 'ask' && gate !== 'ceiling') return;
+        if (policy.mode === 'off') return;
+        if (use === null) { this.skip(lane, 'no-context', null, 'the context share is not known yet'); return; }
+        const { gate, recordOnly, detail } = await this.gated(lane, policy, use);
+        if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
         if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane);
+        // the decider may have taken a while: another lane may have been requested meanwhile, so the busy check is made again, synchronously, before the record
+        const again = busyOf(deps, this.asked, tab, pane, deps.now());
+        if (again.busy) {
+            // the decider was paid for: the skip keeps what its answer cost, so the log and the listing say where the money went
+            const paid = judged.costUsd > 0 ? `; decider ${moneyOf(judged.costUsd)} discarded` : '';
+            this.skip(lane, 'busy', shareOf(use), `${again.detail}${paid}`);
+            return;
+        }
         const made: Decision = {
             tab, pane, agent: String(lane.agent), at: deps.now(), mode: policy.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate, verdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why,
         };
-        deps.decisions.record(made);
-        deps.log(this.line(made, recordOnly));
-        if (policy.mode === 'on' && judged.verdict === 'compact' && !recordOnly) {
-            this.asked.set(pane, deps.now());
-            deps.requests.requestCompact({ tab, pane, note: null, origin: 'auto' });
-        }
+        const id = deps.decisions.record(made);
+        this.skipped.delete(pane);
+        deps.log(lineOf(made, recordOnly));
+        if (asksForCompaction(policy.mode, judged.verdict, recordOnly)) this.request(tab, pane, id);
+    }
+
+    /** The compaction is asked for through the operator's request path, and the decision says so. */
+    private request(tab: string, pane: string, id: string): void {
+        this.asked.set(pane, this.deps.now());
+        this.deps.requests.requestCompact({ tab, pane, note: null, origin: 'auto' });
+        this.deps.decisions.markRequested(id);
     }
 
     /** The decider's answers about the moment, and the verdict made from them in code; one log line per outage. */
@@ -136,12 +179,5 @@ export class Autocompact {
         }
         this.outage = false;
         return { verdict: verdictOf(answered.answers), answers: answered.answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: answered.tookMs };
-    }
-
-    /** `autocompact w1:p2: 61 % · closes 0.91 · … → compact (shadow)` */
-    private line(made: Decision, recordOnly: boolean): string {
-        const figures = Object.entries(made.answers).map(([id, value]) => `${WORDS[id] ?? id} ${value.toFixed(2)}`);
-        const tag = [made.gate === 'ceiling' ? 'ceiling' : null, made.mode, recordOnly ? 'record-only' : null].filter((part) => part !== null).join(', ');
-        return `autocompact ${made.pane}: ${[`${made.share} %`, ...figures].join(' · ')} → ${made.verdict} (${tag})${made.why === null ? '' : `: ${made.why}`}`;
     }
 }

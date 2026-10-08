@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { listing, parseListing } from '#src/recap/application/autocompact-listing.ts';
 
 const NOW = Date.parse('2026-10-08T12:00:00Z');
@@ -31,4 +31,15 @@ test('the options: none or --all; anything else is a usage error that names it',
     assert.deepEqual(parseListing(['--all']), { kind: 'options', all: true });
     assert.match(JSON.stringify(parseListing(['--nope'])), /"usage".*--nope/);
     assert.match(JSON.stringify(parseListing(['w1:t1'])), /"usage".*w1:t1/);
+});
+
+test('the listing: the lanes not decided now follow the decisions, newest first, with their gate and detail; a share not known is a dash', () => {
+    const stopped = (over: Partial<Skip>): Skip => ({ tab: 'w1:t1', pane: 'w1:p9', agent: 'claude', at: NOW - 60_000, gate: 'in-flight', share: 62, detail: '2 running', ...over });
+    const lines = listing([found({})], { since: NOW - 86_400_000, costUsd: 0 }, NOW, 'UTC', [stopped({}), stopped({ pane: 'w2:p1', tab: 'w2:t2', at: NOW - 120_000, gate: 'no-context', share: null, detail: 'the context share is not known yet' })]);
+    assert.deepEqual(lines.slice(5), [
+        'not decided now',
+        'time         tab    pane   share  gate        detail',
+        '10-08 11:59  w1:t1  w1:p9  62 %   in-flight   2 running',
+        '10-08 11:58  w2:t2  w2:p1  —      no-context  the context share is not known yet',
+    ]);
 });
