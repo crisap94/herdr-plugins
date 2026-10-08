@@ -35,16 +35,18 @@ test('lastDecision: the lane\'s newest decision with its tokens and mode; null w
     assert.equal(store.autocompact.lastDecision('w1:t1', 'w1:p1'), null);
     store.autocompact.record(decision({ at: 100, tokens: 1, mode: 'shadow' }));
     store.autocompact.record(decision({ at: 400, tokens: 120_000, mode: 'on', verdict: 'wait' }));
-    assert.deepEqual(store.autocompact.lastDecision('w1:t1', 'w1:p1'), { at: 400, tokens: 120_000, mode: 'on' });
+    assert.deepEqual(store.autocompact.lastDecision('w1:t1', 'w1:p1'), { at: 400, tokens: 120_000, mode: 'on', verdict: 'wait' });
 });
 
 test('unlinkedCompactAny: an on-mode compact of any lane, not yet begun, at or after the instant', () => {
     const store = memoryStore();
     store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     assert.equal(store.autocompact.unlinkedCompactAny(0), false);
-    store.autocompact.record(decision({ mode: 'shadow', at: 100 }));
+    store.autocompact.markRequested(store.autocompact.record(decision({ mode: 'shadow', at: 100 })));
     assert.equal(store.autocompact.unlinkedCompactAny(0), false, 'a shadow compact is never requested');
     store.autocompact.record(decision({ pane: 'w1:p2', at: 200 }));
+    assert.equal(store.autocompact.unlinkedCompactAny(150), false, 'a record-only one (not requested) does not hold the other lanes');
+    store.autocompact.markRequested(store.autocompact.record(decision({ pane: 'w1:p3', at: 200 })));
     assert.equal(store.autocompact.unlinkedCompactAny(150), true);
     assert.equal(store.autocompact.unlinkedCompactAny(250), false, 'older than the instant');
 });

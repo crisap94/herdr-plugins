@@ -1,9 +1,12 @@
 // Every gate that stops a lane leaves its latest skip: the gate, the share when known and a detail; a decision removes it; `off` records nothing.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { laneFrom } from '#src/recap/domain/lane.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
 import { NOW, lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 
+const at = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
 const skipsOf = (w: World): unknown[] => w.store.autocompact.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
 
 test('a stop by the minimum, the cooldown, in flight, busy or an unknown share keeps its skip with the share and the detail', async () => {
@@ -55,4 +58,17 @@ test('the log names a skip only when its gate changed; a decision removes the la
     w.share = 8;
     await w.service.consider(lane());
     assert.deepEqual(w.logs.filter((line) => line.includes('skip')), ['autocompact w1:p1: 8 % → skip below-minimum (below 10 %)', 'autocompact w1:p1: 8 % → skip below-minimum (below 10 %)']);
+});
+
+test('prune: the skips of lanes that are not idle or done are forgotten; with autocompact off, every skip is', async () => {
+    const w = world({ mode: 'shadow' });
+    w.share = 8;
+    await w.service.consider(at('w1:p1', 'idle'));
+    w.store.autocompact.skip({ tab: 'w1:t1', pane: 'w1:p2', agent: 'claude', at: NOW, gate: 'busy', share: 62, detail: 'another lane' });
+    w.store.autocompact.skip({ tab: 'w1:t1', pane: 'w1:p9', agent: 'claude', at: NOW, gate: 'cooldown', share: 62, detail: '5 s left' });
+    w.service.prune([at('w1:p1', 'idle'), at('w1:p2', 'working')]);
+    assert.deepEqual(w.store.autocompact.skips().map((skip) => skip.pane), ['w1:p1'], 'p2 is working and p9 is not in the board');
+    w.policy = { ...w.policy, mode: 'off' };
+    w.service.prune([at('w1:p1', 'idle')]);
+    assert.deepEqual(w.store.autocompact.skips(), [], 'off: every skip goes');
 });

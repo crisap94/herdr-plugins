@@ -8,7 +8,7 @@
     },
     {
       "role": "tool",
-      "text": "shell: glab mr merge 312"
+      "text": "shell: git merge feature/fix"
     },
     {
       "role": "tool",

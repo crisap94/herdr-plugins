@@ -44,6 +44,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     private readonly counts: StatementSync;
     private readonly spent: StatementSync;
     private readonly lastOne: StatementSync;
+    private readonly requested: StatementSync;
     private readonly anyAsked: StatementSync;
     private readonly putSkip: StatementSync;
     private readonly dropSkip: StatementSync;
@@ -56,13 +57,14 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         this.latest = db.prepare("SELECT id FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
         this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = CASE WHEN ? = 1 THEN ? ELSE why END WHERE id = ?");
         this.last = db.prepare('SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ?');
-        this.asked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND mode = 'on' AND verdict = 'compact' AND compaction_id IS NULL AND at >= ? LIMIT 1");
+        this.asked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND mode = 'on' AND verdict = 'compact' AND requested = 1 AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.newestAll = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision ORDER BY at DESC, id DESC LIMIT ?`);
         this.newestOf = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision WHERE tab_id = ? ORDER BY at DESC, id DESC LIMIT ?`);
         this.counts = db.prepare("SELECT COUNT(*) AS decisions, COUNT(compaction_id) AS compacted, COALESCE(SUM(verdict <> 'compact'), 0) AS waited FROM autocompact_decision WHERE tab_id = ?");
         this.spent = db.prepare('SELECT COALESCE(SUM(cost_micro_usd), 0) AS micro FROM autocompact_decision WHERE at >= ?');
-        this.lastOne = db.prepare('SELECT at, tokens, mode FROM autocompact_decision WHERE tab_id = ? AND pane = ? ORDER BY at DESC, id DESC LIMIT 1');
-        this.anyAsked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE mode = 'on' AND verdict = 'compact' AND compaction_id IS NULL AND at >= ? LIMIT 1");
+        this.lastOne = db.prepare('SELECT at, tokens, mode, verdict FROM autocompact_decision WHERE tab_id = ? AND pane = ? ORDER BY at DESC, id DESC LIMIT 1');
+        this.requested = db.prepare('UPDATE autocompact_decision SET requested = 1 WHERE id = ?');
+        this.anyAsked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE mode = 'on' AND verdict = 'compact' AND requested = 1 AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.putSkip = db.prepare('INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share, detail) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (tab_id, pane) DO UPDATE SET agent = excluded.agent, at = excluded.at, gate = excluded.gate, share = excluded.share, detail = excluded.detail');
         this.dropSkip = db.prepare('DELETE FROM autocompact_skip WHERE tab_id = ? AND pane = ?');
         this.allSkips = db.prepare('SELECT tab_id, pane, agent, at, gate, share, detail FROM autocompact_skip ORDER BY at DESC, tab_id, pane');
@@ -102,7 +104,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     lastDecision(tab: string, pane: string): LastDecision | null {
         return guarded(() => {
             const row = one(this.lastOne, tab, pane);
-            return row === null ? null : { at: whole(row, 'at'), tokens: whole(row, 'tokens'), mode: text(row, 'mode') as DecisionMode };
+            return row === null ? null : { at: whole(row, 'at'), tokens: whole(row, 'tokens'), mode: text(row, 'mode') as DecisionMode, verdict: text(row, 'verdict') as DecisionVerdict };
         }, null);
     }
 
@@ -112,6 +114,20 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
 
     unlinkedCompactAny(at: number): boolean {
         return guarded(() => one(this.anyAsked, at) !== null, false);
+    }
+
+    markRequested(id: string): void {
+        const key = idOf('decision', id);
+        if (key !== null) writeTx(this.db, () => { this.requested.run(key); });
+    }
+
+    pruneSkips(keep: readonly { readonly tab: string; readonly pane: string }[]): void {
+        const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
+        writeTx(this.db, () => {
+            for (const skip of this.skips()) {
+                if (!kept.has(`${skip.tab}\u0000${skip.pane}`)) this.dropSkip.run(skip.tab, skip.pane);
+            }
+        });
     }
 
     skip(skip: Skip): void {

@@ -21,6 +21,8 @@ export interface LastDecision {
     readonly at: number;
     readonly tokens: number;
     readonly mode: DecisionMode;
+    /** `unknown` does not count as unchanged: the decider is asked again */
+    readonly verdict: DecisionVerdict;
 }
 
 /** What one consideration of a lane decided, as it is written. */
@@ -75,10 +77,14 @@ export interface AutocompactRecords {
     lastDecisionAt(tab: string, pane: string): number | null;
     /** the lane's newest decision of any verdict (its time, tokens and mode); null when there is none */
     lastDecision(tab: string, pane: string): LastDecision | null;
-    /** whether the lane has a `compact` decision of mode `on` at or after `at` that led to no compaction yet: asked for, not begun */
+    /** the decision's request was made: `requested` is set, and only requested decisions count as asked for */
+    markRequested(id: string): void;
+    /** whether the lane has a requested `compact` decision of mode `on` at or after `at` that led to no compaction yet: asked for, not begun */
     unlinkedCompactSince(tab: string, pane: string, at: number): boolean;
     /** the same for any lane of any tab */
     unlinkedCompactAny(at: number): boolean;
+    /** deletes the skips of every lane not in `keep` (all of them when `keep` is empty) */
+    pruneSkips(keep: readonly { readonly tab: string; readonly pane: string }[]): void;
     /** the lane's latest skip is replaced by this one */
     skip(skip: Skip): void;
     /** every lane's latest skip, newest first */

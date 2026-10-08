@@ -19,6 +19,8 @@ export const MINIMUM_MAX = 95;
 export const CEILING_DEFAULT = 80;
 export const COOLDOWN_DEFAULT_MS = 10 * 60_000;
 export const KINDS_DEFAULT: readonly string[] = ['claude'];
+/** the agent statuses a lane is considered in: its agent is free (a sweep and a settled lane take these only) */
+export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 
@@ -27,13 +29,13 @@ const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase
 /** `TAB_RECAP_AUTOCOMPACT`: `off`, `shadow` or `on`; anything else is `shadow`. */
 export const modeOf = (raw: string | undefined): AutocompactMode => MODES.find((mode) => mode === word(raw)) ?? 'shadow';
 
-/** A whole percent in `[MINIMUM_MIN, MINIMUM_MAX]`, else null (`40` or `40%`). */
+/** A whole percent in `[MINIMUM_MIN, MINIMUM_MAX]`, else null (`10` or `10%`). */
 function percentOf(raw: string | undefined): number | null {
     const percent = Number(word(raw).replace(/%$/, ''));
     return word(raw) !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : null;
 }
 
-/** `TAB_RECAP_AUTOCOMPACT_AT`: 10–95, else 40. */
+/** `TAB_RECAP_AUTOCOMPACT_AT`: 10–95, else 10. */
 export const minimumOf = (raw: string | undefined): number => percentOf(raw) ?? MINIMUM_DEFAULT;
 
 /** `TAB_RECAP_AUTOCOMPACT_CEILING`: 10–95, else 80; and above `minimum` always — a ceiling that is not becomes `minimum` + 10, at most 95. */
