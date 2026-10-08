@@ -21,7 +21,8 @@ is finished is not thrown away: it is closed with a reason and stays in the stor
 [expanded view](#the-expanded-view) shows in full. A coding agent of your choice writes the facts at
 the end of each turn. Every merge request, commit, branch, file and URL in them is a
 link you can open with Ctrl-click. It only reads transcripts; it never types into an agent on its own —
-the one exception is the [compaction](#compact-an-agent) you ask for.
+the exceptions are the [compaction](#compact-an-agent) you ask for and, only when you set it to `on`,
+[autocompact](#autocompact).
 
 Every item is held to one [rubric](tab-recap/schema/recap-rubric.md) (atomic, specific, about the work, with the reason for a
 decision, …). Plain-code gates refuse what fails it before the recap is stored, and `tab-recap eval` scores stored recaps against it —
@@ -225,6 +226,25 @@ says (Codex), from opencode's local model catalogue, or from a small table for C
 by what has been seen. `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT` and
 `TAB_RECAP_CONTEXT_WINDOW` change who is compacted, the hint threshold and the window.
 
+### Autocompact
+
+tab-recap can also compact an agent by itself, at a moment when nothing is half done. It is **off the leash only if
+you say so**: the default, `TAB_RECAP_AUTOCOMPACT=shadow`, records and logs every decision and never types. Read the
+decisions with `tab-recap autocompact` (newest twenty, with the last day's cost), then set `on` — or use the settings
+modal's Autocompact rows.
+
+When an agent is idle and its context is past `TAB_RECAP_AUTOCOMPACT_AT` (40 %), and it has no background work
+running and no compaction under way, a small **decider** answers a few yes/no questions about the last turns: did the
+reply finish the request, is the agent about to continue, is it waiting for you to choose, would the next steps need
+exact output only the last turns hold. Only a safe moment compacts; at `TAB_RECAP_AUTOCOMPACT_CEILING` (80 %) it
+compacts without asking. The brief is checked against your goal, open questions, decisions (with their reasons) and
+rules first, and a brief that loses one is written again once, then not used. Claude agents only, by default.
+
+The decider is the recap writer's harness at low effort, or the TypeSafe `jev` API
+(`TAB_RECAP_AUTOCOMPACT_BY=jev`). The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
+`~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
+key: [tab-recap/README.md](tab-recap/README.md#autocompact).
+
 ### Chapters and how long things are kept
 
 A session breaks when an agent compacts its context (Claude's `compact_boundary`, Codex's `compacted` row,
@@ -331,6 +351,9 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_COMPACT_TARGET` | `focused` | who `compact` acts on: `focused`, `all`, or kinds like `claude,codex` |
 | `TAB_RECAP_COMPACT_HINT` | `40` | % of the context window that shows the hint (`off`, or 10–95) |
 | `TAB_RECAP_CONTEXT_WINDOW` | *(detected)* | force a context window in tokens |
+| `TAB_RECAP_AUTOCOMPACT` | `shadow` | `off`, `shadow` (record only) or `on` (compact at a safe moment) |
+| `TAB_RECAP_AUTOCOMPACT_AT` / `_CEILING` | `40` · `80` | the context % from which a safe moment compacts, and the % that compacts without asking |
+| `TAB_RECAP_AUTOCOMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `low` | the decider (also `jev`, the TypeSafe API) |
 | `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |
 | `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job behind `tab-recap eval` |
 | `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job that tidies the ledger when the expanded view opens |

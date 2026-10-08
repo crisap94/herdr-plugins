@@ -75,8 +75,8 @@ runs before the decider's default is fixed.
   as a job row. Verify: setup-view and setup-keys tests save the right keys; the key is never a row. — test/setup-keys.test.ts + test/setup-view.test.ts: three new rows (after the curator), saved keys, locks, hints en/es, jev among the choices, no JEV/TYPESAFE key ever written.
 - [x] 6.2 `tab-recap autocompact [--all]` (read-only listing, 24 h cost) and the session facts line;
   `(auto)` in the toast. Verify: cli-arguments and render goldens. — test/cli-arguments.test.ts (3 rows newest first, usage error, empty), test/autocompact-listing.test.ts, test/session-facts.test.ts (en/es line).
-- [ ] 6.3 README (root and `tab-recap/README.md`) and `config.example.env`: what autocompact does, shadow
-  first, the decider choices, where the key is read from, cost. Verify: docs updated, no private names.
+- [x] 6.3 README (root and `tab-recap/README.md`) and `config.example.env`: what autocompact does, shadow
+  first, the decider choices, where the key is read from, cost. Verify: docs updated, no private names. — Autocompact sections in both READMEs, config rows and settings table, config.example.env keys; no private names (grep clean).
 
 ## 7. Integration (before merge)
 
