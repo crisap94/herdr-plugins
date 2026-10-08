@@ -10,8 +10,10 @@ import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import { compactJobOf, curateJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
-import type { Job } from '#src/recap/domain/job.ts';
+import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
+import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
+import { jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactPolicy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -55,6 +57,12 @@ export interface Config {
     readonly keepInputDays: number;
     /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
     readonly curator: Job;
+    /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the soft limit), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
+    readonly autocompact: AutocompactPolicy;
+    /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
+    readonly decider: DeciderJob;
+    /** `TAB_RECAP_JEV_URL` and `TAB_RECAP_JEV_MODEL`; the key is never config the plugin shows (see `adapters/jev-key.ts`) */
+    readonly jev: JevSettings;
     /** `TAB_RECAP_KEEP_DAYS`: how long a closed tab's data is kept (30; 0 = for ever) */
     readonly keepDays: number;
     readonly glow: 'auto' | 'on' | 'off';
@@ -177,6 +185,9 @@ export function loadConfig(): Config {
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         curator: curateJobOf(get),
+        autocompact: policyOf(get),
+        decider: deciderJobOf(get),
+        jev: jevOf(get),
         keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),

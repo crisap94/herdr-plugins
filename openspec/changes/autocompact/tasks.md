@@ -47,9 +47,9 @@ runs before the decider's default is fixed.
   missing answer; a sentinel-key test over every path that greps logs and errors. — test/jev-decider.test.ts: ok, 401, 403, 429, 529, 500, timeout, network, non-JSON, missing/out-of-range answers; sentinel key greped in every result. Statuses are Unknown{failed, code} (no new kinds).
 - [x] 4.3 `adapters/harness-decider.ts` (one `Harness.run`, strict JSON parser). Verify: tests with a fake
   harness: valid, a missing id, out of range, prose, fenced JSON. — test/harness-decider.test.ts: valid, fenced, missing id, out of range, prose, array, null.
-- [ ] 4.4 Config: `TAB_RECAP_AUTOCOMPACT`, `_AT`, `_CEILING`, `_COOLDOWN_MS`, `_KINDS`, `_BY`, `_MODEL`,
+- [x] 4.4 Config: `TAB_RECAP_AUTOCOMPACT`, `_AT`, `_CEILING`, `_COOLDOWN_MS`, `_KINDS`, `_BY`, `_MODEL`,
   `_EFFORT`, `TAB_RECAP_JEV_URL`, `TAB_RECAP_JEV_MODEL`. Verify: config tests for defaults, bounds and a
-  ceiling not above the soft limit.
+  ceiling not above the soft limit. — test/autocompact-config.test.ts: defaults, bounds, ceiling not above soft, Jev settings, deciderFor.
 
 ## 5. Gates, questions, coverage, records (design decisions 1–4, 6, 7, 10)
 

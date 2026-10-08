@@ -48,7 +48,7 @@ test('opencode: the compaction answer is the newest assistant message, so its to
     try {
         const fixture = opencodeFixture(dir);
         fixture.add({ id: 'm1', session: 'ses_c', role: 'assistant', updated: 1, parts: [], data: used(90_000) });
-        fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: { ...used(8_000), summary: true } });
+        fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: used(8_000) });
         assert.equal(((await new OpencodeTranscripts(fixture.db).observed(`${fixture.db}#ses_c`)) as { observed: { tokens: number } }).observed.tokens, 8_005);
         fixture.close();
     } finally {
