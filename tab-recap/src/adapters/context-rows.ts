@@ -9,7 +9,7 @@ const count = (value: unknown): number => (typeof value === 'number' && Number.i
 
 /** Claude: the newest assistant row's usage is what the last request sent (input + cache); `preTokens` of a compaction is the most seen before it, and its `postTokens` is the use until a newer usage row. */
 export function claudeObserved(lines: readonly string[]): Observed | null {
-    let latest: { tokens: number; model: string | null } | null = null;
+    let latest: { tokens: number; model: string | null } | null = null as { tokens: number; model: string | null } | null;
     let peak = 0;
     for (const row of rowsOf(lines)) {
         const compaction = obj(row['compactMetadata']);

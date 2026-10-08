@@ -25,6 +25,8 @@ test('claude: the newest assistant usage is input + cache read + cache creation;
     assert.equal(claudeObserved([line({ type: 'user', message: { content: 'hi' } })]), null);
 });
 
+const used = (read: number): object => ({ providerID: 'acme', modelID: 'big-1', tokens: { input: 5, output: 5, cache: { read, write: 0 } } });
+
 test('claude: a compaction row\'s postTokens is the use until a newer usage row (431 387 → compaction 12 332 → 1 %)', () => {
     const before = assistant('claude-opus-5-5', { input_tokens: 3, cache_read_input_tokens: 431_384 });
     const compaction = line({ type: 'system', subtype: 'compact_boundary', compactMetadata: { trigger: 'manual', preTokens: 431_635, postTokens: 12_332 } });
@@ -45,9 +47,8 @@ test('opencode: the compaction answer is the newest assistant message, so its to
     const dir = mkdtempSync(join(tmpdir(), 'recap-context-'));
     try {
         const fixture = opencodeFixture(dir);
-        const tokens = (read: number): object => ({ providerID: 'acme', modelID: 'big-1', tokens: { input: 5, output: 5, cache: { read, write: 0 } } });
-        fixture.add({ id: 'm1', session: 'ses_c', role: 'assistant', updated: 1, parts: [], data: tokens(90_000) });
-        fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: { ...tokens(8_000), summary: true } });
+        fixture.add({ id: 'm1', session: 'ses_c', role: 'assistant', updated: 1, parts: [], data: used(90_000) });
+        fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: { ...used(8_000), summary: true } });
         assert.equal(((await new OpencodeTranscripts(fixture.db).observed(`${fixture.db}#ses_c`)) as { observed: { tokens: number } }).observed.tokens, 8_005);
         fixture.close();
     } finally {

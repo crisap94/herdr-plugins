@@ -16,10 +16,10 @@ runs before the decider's default is fixed.
 - [x] 2.1 `context-rows.ts`: a Claude compaction row with `postTokens` replaces the latest usage until a newer
   usage row; the Codex and opencode equivalents are pinned by tests. Verify: a golden from recorded rows
   (431 387 → compaction 12 332 → share 1 %); readers tests. — claudeObserved golden 431 387 → 12 332; codex/opencode pinned in test/context-readers.test.ts.
-- [ ] 2.2 `Transcripts.inFlight?` and the Claude implementation: background shells, Agent/Task launches and
+- [x] 2.2 `Transcripts.inFlight?` and the Claude implementation: background shells, Agent/Task launches and
   Monitor starts without a matching `<task-notification>` end; other readers `unknown`. Verify: tests for a
   launch without an end (in flight), with a completed end, with a killed end, and a tail that cuts the
-  launch (unknown).
+  launch (unknown). — test/claude-in-flight.test.ts: none ended (1), completed/failed/killed/stopped (0), two launches one ended (1), cut tail, unparsable → unknown.
 - [ ] 2.3 Boundary trigger `plugin | manual | auto` (Claude `compactMetadata.trigger`). Migration 010 part 1
   rebuilds `boundary` with the new CHECK and maps stored `manual` to `plugin`. Verify: migration test from the
   oldest fixture through every migration; `boundary.ts` goldens for each trigger.
