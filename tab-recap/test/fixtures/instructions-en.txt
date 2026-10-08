@@ -52,7 +52,7 @@ Every fact you add or update must pass these checks, each with a pass and a fail
 - **I4 supported** — the run's input contains what the item says.
   - pass: "Pipeline for !256 is green." (the input shows it)
   - fail: "Deployed to production." (the input never mentions a deploy)
-- **I5 about the work** — the subject is the work, never the agent or the plugin.
+- **I5 about the work** — the subject is the work, never the agent or the plugin. In `now`, a lane label before a colon (`a1: waiting for the pipeline`) only says whose lane it is and is not the subject; `a1 is waiting` is.
   - pass: "The research report is written to docs/report.md."
   - fail: "claude completed the research and wrote its report."
 - **I6 new** — the item is not a rewording of another item kept in the same recap.
