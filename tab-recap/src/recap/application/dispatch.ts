@@ -23,6 +23,8 @@ export interface DispatchDeps {
     readonly webs: LaneWebSource;
     /** how full each lane's context is; left out, no lane has a hint */
     readonly contexts?: LaneContextSource;
+    /** told, without being awaited, that a lane's agent is idle or done and its context was looked at again (autocompact handles its own errors) */
+    settled?(lane: Lane): void;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
@@ -113,6 +115,9 @@ export class Dispatch {
         const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? false]);
         if (changed.includes(true)) {
             this.publish(lane.tab);
+        }
+        if (lane.status === 'idle' || lane.status === 'done') {
+            this.deps.settled?.(lane);
         }
     }
 

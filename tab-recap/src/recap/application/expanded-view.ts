@@ -8,6 +8,7 @@ import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
+import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import type { FileCount } from './edit-counts.ts';
@@ -21,6 +22,8 @@ export interface ExpandedDeps {
     readonly ledger: Ledger;
     readonly stories: Stories;
     readonly session: SessionSource;
+    /** what autocompact decided for the tab; left out, no line */
+    readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
     /** where the session broke: the timeline's break lines and the chapter count */
     readonly boundaries: Pick<Boundaries, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<Requests, 'requestCurate'>;
@@ -73,6 +76,7 @@ export class ExpandedModel {
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
             chapters: this.deps.boundaries.chapterCount(tab),
+            ...(this.deps.autocompact === undefined ? {} : { autocompact: this.deps.autocompact.countsFor(tab) }),
         });
         return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web), breaks: this.deps.boundaries.breaksOf(tab) };
     }

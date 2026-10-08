@@ -1,7 +1,8 @@
 // The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
-import { EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
+import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
+import type { DeciderJob } from '#src/recap/domain/job.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import { coloured, visibleLength, wrap } from './wrap.ts';
@@ -46,8 +47,8 @@ function jobText(row: RowId, state: Setup, m: Messages): string {
     const typing = focused === 1 && state.editing?.kind === 'text' ? state.editing.buffer : null;
     const { draft } = state;
     const target = modelTarget(draft, state.available);
-    const others = { judgeJob: draft.judge, curatorJob: draft.curate } as const;
-    const other = row === 'judgeJob' || row === 'curatorJob' ? others[row] : draft.compact;
+    const others: Readonly<Partial<Record<RowId, DeciderJob>>> = { judgeJob: draft.judge, curatorJob: draft.curate, autocompactJob: draft.decide };
+    const other = others[row] ?? draft.compact;
     const parts = row === 'recapJob'
         ? [draft.backend, target === null ? m.setup.modelNoAgent : modelText(draft.models[target], target, m), draft.effort]
         : [m.setup.jobBy[other.by], other.model === '' ? m.setup.compactModelSame : other.model, other.effort];
@@ -66,6 +67,9 @@ const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     compactJob: (state, m) => jobText('compactJob', state, m),
     judgeJob: (state, m) => jobText('judgeJob', state, m),
     curatorJob: (state, m) => jobText('curatorJob', state, m),
+    autocompactJob: (state, m) => jobText('autocompactJob', state, m),
+    autocompact: (state, m) => m.setup.autocompactChoices[state.draft.autocompact],
+    autocompactAt: (state) => `${state.draft.autocompactAt}%`,
     locale: (state, m) => m.setup.uiChoices[state.draft.locale],
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
@@ -106,7 +110,7 @@ function pickList(state: Setup, labels: readonly string[], width: number, style:
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
@@ -134,6 +138,9 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
         judgeBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.judgeOffChoice : m.setup.jobByChoices[choice])), width, style),
         judgeEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         curateBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.curateOff : m.setup.jobByChoices[choice])), width, style),
+        autocompact: () => pickList(state, MODE_CHOICES.map((choice) => m.setup.autocompactChoices[choice]), width, style),
+        decideBy: () => pickList(state, DECIDER_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.deciderOff : m.setup.jobByChoices[choice])), width, style),
+        decideEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         curateEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
     };
     const field = fieldOf(state);

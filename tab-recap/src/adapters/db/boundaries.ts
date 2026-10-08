@@ -37,10 +37,10 @@ export class BoundaryRows {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this.lastCompacted = db.prepare("SELECT MAX(b.at) AS at FROM boundary b JOIN transcript t ON t.id = b.transcript_id WHERE b.kind = 'compacted' AND t.tab_id = ? AND t.pane = ?");
         this.askedAt = db.prepare("SELECT started_at FROM compaction WHERE tab_id = ? AND pane = ? AND stage <> 'skipped'");
-        // a compaction the plugin drove points at the nearest manual boundary that followed it by at most ten minutes, once it is under way or confirmed
+        // a compaction the plugin drove points at the nearest plugin boundary that followed it by at most ten minutes, once it is under way or confirmed
         this.link = db.prepare(`UPDATE compaction SET boundary_id = (
             SELECT b.id FROM boundary b JOIN transcript t ON t.id = b.transcript_id
-            WHERE b.kind = 'compacted' AND b.trigger = 'manual' AND t.tab_id = compaction.tab_id AND t.pane = compaction.pane
+            WHERE b.kind = 'compacted' AND b.trigger = 'plugin' AND t.tab_id = compaction.tab_id AND t.pane = compaction.pane
               AND b.at >= compaction.started_at AND b.at - compaction.started_at <= 600000
               AND NOT EXISTS (SELECT 1 FROM compaction other WHERE other.boundary_id = b.id)
             ORDER BY b.at LIMIT 1)

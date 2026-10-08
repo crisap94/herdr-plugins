@@ -278,6 +278,40 @@ runtime: Codex's own `model_context_window`; opencode's and Claude's model looke
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
 table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
 
+## Autocompact
+
+**What it does.** When an agent becomes idle or done and its context is at least `TAB_RECAP_AUTOCOMPACT_AT` percent
+full (40 by default), autocompact decides in code whether anything stops it — a compaction already under way, work the
+agent started and has not finished (a background shell, a launched agent or monitor), the cooldown
+(`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, ten minutes) — and only then asks a **decider** six yes/no questions about the
+last turns (does the reply close the request, does it announce more work, does it ask you to choose between options only
+it describes, would the next steps need exact output only the last turns hold, did the subject change, is it stuck).
+Every safe moment above the limit compacts; anything else waits and is asked again after the cooldown. At
+`TAB_RECAP_AUTOCOMPACT_CEILING` (80) the answer is yes without asking anyone. Before an automatic compaction types
+anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite, and
+a brief that still loses one is not typed.
+
+**Shadow first.** `TAB_RECAP_AUTOCOMPACT` is `shadow` by default: every decision is recorded and logged, nothing is
+ever typed. Read what it would have done with `tab-recap autocompact` (the newest twenty decisions, with the last
+day's cost), then set `on`. `off` decides nothing. Only Claude agents are compacted (`TAB_RECAP_AUTOCOMPACT_KINDS`);
+other kinds are decided and recorded, never compacted. An automatic compaction goes through the same path as yours and is
+marked `(auto)` in its notification, and the expanded view's session facts count the tab's compactions by origin
+(`compactions 4 (3 by you · 1 auto)`).
+
+**The decider** is a job like the others: `TAB_RECAP_AUTOCOMPACT_BY` is `recap` (the recap writer's harness, the
+default, at `low` effort), `auto`, a harness name, `jev` (the TypeSafe System One API) or `off`; `_MODEL` and `_EFFORT`
+as for the other jobs. The brief check has its own choice, `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when
+a key is found by the key chain below, else the moment decider), `jev` (always; with no key the check cannot run, so the
+compaction waits) or `decider` (the moment decider). `auto` (the default) sends the brief and its facts to the remote Jev service as soon as a TypeSafe key is found, whatever `TAB_RECAP_AUTOCOMPACT_BY` says; set `decider` to keep the check on your own harness. With `jev`, the last prompt and reply, the recent turns, the goal and the open work are sent to that service, and the
+brief and its facts too when the brief is checked. `jev` posts to `TAB_RECAP_JEV_URL` (`https://`, or `http://` to
+loopback only; any compatible gateway) with the model `TAB_RECAP_JEV_MODEL` and a bearer key, read each time from `TAB_RECAP_JEV_KEY` (the environment or `config.env`), else `TYPESAFE_API_KEY`,
+else the file `~/.config/typesafe-api-key`. The key is never logged, stored, shown in the settings modal or put in an
+error. If the decider cannot answer, the decision is recorded as unknown and acts as a wait; one log line says so per
+outage, and the ceiling still compacts.
+
+**Cost.** A decision is one short call, about a thousand input tokens: a fraction of a cent with `jev`, plan usage with
+a harness. Each decision stores its cost, and `tab-recap autocompact` sums the last 24 hours.
+
 ## Models
 
 Every model call is a **job** run on one harness (`claude`, `codex`, `opencode`, `hermes` or your own

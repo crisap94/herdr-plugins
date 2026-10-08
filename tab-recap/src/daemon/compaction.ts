@@ -1,7 +1,10 @@
 // The composition of compaction: the daemon's parts, handed to the one service that types into an agent.
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { covered } from '#src/recap/application/brief-coverage.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
+import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
+import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
@@ -33,6 +36,9 @@ export function wireCompaction(parts: {
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;
+    /** the decider that checks the brief's coverage (`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`) */
+    readonly coverageDecider: () => Decider | null;
+    readonly decisions: AutocompactRecords;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -48,6 +54,11 @@ export function wireCompaction(parts: {
         refresh: async (tab, lanes) => {
             await bounded(recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS);
         },
+        coverage: () => {
+            const decider = parts.coverageDecider();
+            return decider === null ? null : { check: (text, facts) => covered(text, facts, decider) };
+        },
+        decisions: parts.decisions,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

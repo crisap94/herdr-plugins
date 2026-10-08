@@ -31,11 +31,12 @@ these pure gates in `domain/autocompact.ts`, in this order:
 
 1. The kind is in `TAB_RECAP_AUTOCOMPACT_KINDS` (default `claude`). Any other compactable kind is still
    decided and recorded, but marked `record-only`.
-2. No compaction of the lane is in progress, and the request path holds none for it.
+2. No compaction of the lane is in progress, and no automatic request for it is younger than five minutes without
+   a compaction record (the recap refresh before a compaction can take 90 s).
 3. Nothing is in flight (decision 8). A reader that cannot tell counts as in flight.
 4. The share is at least the soft limit (`TAB_RECAP_AUTOCOMPACT_AT`, 40; 10–95).
 5. The cooldown has passed (`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, 10 min). It counts since the lane's last
-   boundary and since its last `wait` decision.
+   boundary and since its last recorded decision of any verdict, so shadow mode does not re-ask on every idle.
 6. A share at or above the ceiling (`TAB_RECAP_AUTOCOMPACT_CEILING`, 80; above the soft limit) gives the
    verdict `compact`, `gate: ceiling`, with no model call. The plugin's brief then always beats the agent's
    own late compaction.
@@ -103,8 +104,10 @@ After the brief job writes the brief and before anything is typed:
 The outcome depends on what is missing:
 - **A `goal`, `needs`, `decisions` or `rules` fact missing** (< 0.70): the brief is rewritten once, with a
   correction naming the missing facts.
-- **Still missing after the rewrite:** an autocompact gets `wait` (`gate: coverage`) and nothing is typed. An
-  operator's compaction proceeds and records the coverage.
+- **Still missing after the rewrite:** an autocompact gets `wait` (`gate: coverage`) and nothing is typed.
+- **The brief cannot be checked** (no decider, the decider fails, or only the template exists): an autocompact
+  waits too. The check fails closed.
+- **An operator's compaction** is not checked in this release; its flow stays as it is.
 - **Only `now` or `next` facts missing:** recorded, and the compaction goes ahead.
 
 Why: one question per fact is the only way to get a per-fact answer. A question over the whole list returns
@@ -121,8 +124,12 @@ The two adapters:
 - **`jev-decider.ts`**: `POST TAB_RECAP_JEV_URL` (default `https://api.typesafe.ai/v1/systemone`) with
   `{model, state, questions}`, where `model` is `TAB_RECAP_JEV_MODEL` (default `jev-1.13.0`, pinned).
   - Auth is `Authorization: Bearer <key>`, and the timeout is `AbortSignal.timeout(10 s)`.
-  - Errors map to `Unknown`: 401/403 → `refused`, 429/529 → `busy`, a timeout → `timeout`, a non-JSON body or
-    a missing `noul` → `unreadable`.
+  - Errors map to the existing `Unknown` kinds: an HTTP refusal → `failed` with its code (401/403 said as
+    refused, 429/529 as busy), a timeout → `timeout`, a network error → `unreachable`, a non-JSON body or a
+    missing `noul` → `unreadable`.
+  - The URL must be `https://`, or `http://` to a loopback address, so the bearer key never travels in clear text.
+  - With `jev`, the state document (the last prompt and reply, recent turns, goal and open work) and, for
+    coverage, the brief and the facts go to that service. The documentation says so.
   - Cost is `usage.input_tokens × 0.042 / 10⁶` (output is free).
   - The URL may be any compatible pass-through; the model id is opaque.
 - **`harness-decider.ts`**: one `Harness.run` call. The instructions list the questions and ask for one JSON
@@ -156,8 +163,12 @@ the choice is about quality and friction:
   data processor.
 - **A harness** needs nothing new, but gives coarse, verbalised probabilities.
 
-EXP-002 (decision 9) picks the default. Until it reports, the default is `recap`: the recap writer's harness
-at low effort.
+**EXP-002 result.** The rule of decision 9 picks `recap` (the recap writer's harness at low effort, `haiku-low`) as the
+moment decider: its policy precision is within 3 points of the best (0.981) and its drift is 0.039. The brief check
+uses Jev, whose mean `brief_keeps_*` AUC is 0.912 against 0.693 for `haiku-low`. `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`
+chooses that check's decider: `auto` (the default: Jev when a key is found by the key chain, else the moment
+decider), `jev`, or `decider`. Two limits travel with the result: the labels come from one model, and `needs_verbatim`
+has no labelled positive, so its AUC is not measured; the operator's labels are still pending.
 
 Why hand-written: no Node built-in speaks this API. The global `fetch` and `AbortSignal.timeout` are the
 built-ins used, and no package is added.

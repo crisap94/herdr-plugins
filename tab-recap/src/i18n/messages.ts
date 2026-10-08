@@ -1,4 +1,4 @@
-import type { JobBy } from '#src/recap/domain/job.ts';
+import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 
@@ -38,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -56,10 +56,17 @@ export interface Messages {
         readonly compactHintOff: string;
         /** the heading over the job rows */
         readonly modelsHeading: string;
-        readonly jobBy: Readonly<Record<JobBy, string>>;
-        readonly jobByChoices: Readonly<Record<JobBy, string>>;
+        readonly jobBy: Readonly<Record<DeciderBy, string>>;
+        readonly jobByChoices: Readonly<Record<DeciderBy, string>>;
         readonly compactModelSame: string;
         readonly compactJobHint: string;
+        /** autocompact: the mode's words, and the hints of its three rows */
+        readonly autocompactChoices: { readonly off: string; readonly shadow: string; readonly on: string };
+        readonly autocompactHint: string;
+        readonly autocompactAtHint: string;
+        readonly autocompactJobHint: string;
+        /** the `off` choice of the decider's harness list */
+        readonly deciderOff: string;
         readonly judgeJobHint: string;
         readonly judgeOffChoice: string;
         readonly curateJobHint: string;
@@ -117,6 +124,10 @@ export interface Messages {
             readonly took: (seconds: number) => string;
         };
         readonly started: (agent: string) => string;
+        /** a toast of a compaction autocompact started says so: `Compacting claude (auto)` */
+        readonly auto: (text: string) => string;
+        /** an automatic compaction whose brief still misses a fact that matters is not typed */
+        readonly coverageMissed: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;
@@ -126,8 +137,10 @@ export interface Messages {
         readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
         readonly waiting: (amount: number, unit: AgoUnit) => string;
         readonly closed: (why: ClosedWhy) => string;
-        readonly started: string; readonly turns: string; readonly compactions: string; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
+        readonly started: string; readonly turns: string; readonly compactions: string; readonly compactionOrigin: { readonly operator: (count: number) => string; readonly auto: (count: number) => string }; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
         readonly causes: { readonly 'turn-ended': string; readonly focused: string; readonly requested: string };
+        /** the session facts' autocompact line: `autocompact: 12 decisions · 3 compacted · 9 waited` */
+        readonly autocompact: { readonly label: string; readonly text: (decisions: number, compacted: number, waited: number) => string };
     };
     /** the expanded view's chapters: the session facts' count and the break lines of the timeline */
     readonly chapters: {

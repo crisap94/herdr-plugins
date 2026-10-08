@@ -37,7 +37,7 @@ ENLACES
 SESIÓN
 inicio 09:12 · 7 h 18 min
 turnos 41 (turno 36 · foco 3 · pedido 2)
-compactaciones 2 (800k → 14k · 39k → 3k)
+compactaciones 2 (2 por ti) (800k → 14k · 39k → 3k)
 claude · orchestrator 34 % de 1M
 codex · host 12 % de 272k
 repo herdr-plugins · rama feat/expanded

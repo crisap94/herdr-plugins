@@ -1,40 +1,26 @@
 import { join } from 'node:path';
-import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
-import { CodexHarness } from '#src/adapters/codex-harness.ts';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
-import { OpencodeHarness } from '#src/adapters/opencode-harness.ts';
 import { HarnessBrief } from '#src/adapters/harness-brief.ts';
 import { HarnessJudge } from '#src/adapters/harness-judge.ts';
 import { HarnessCurator } from '#src/adapters/harness-curator.ts';
 import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { Decider } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Harness } from '#src/ports/harness.ts';
 import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
+import { coverageDeciderFor, deciderFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
+import { MAKERS } from './harness-makers.ts';
 import { pick } from '#src/recap/domain/backend.ts';
-import type { BackendId } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import type { Config } from './config.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
-
-type Make = (config: Config, work: string) => Harness;
-
-const MAKERS: Readonly<Record<BackendId, Make>> = {
-    claude: (config, work) => new ClaudeHarness(work, config.timeoutMs),
-    codex: (config, work) => new CodexHarness(work, config.timeoutMs),
-    opencode: (config, work) => new OpencodeHarness(work, config.timeoutMs),
-    hermes: (config, work) => new HermesHarness(work, config.timeoutMs),
-    custom: (config, work) => new CustomHarness(config.customCommand, work, config.timeoutMs),
-};
 
 /** Herdr's list and the PATH must both say yes; when herdr cannot be asked, the PATH alone decides. */
 export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
@@ -124,6 +110,14 @@ export class Backends {
 
     brief(): CompactionBriefs | null {
         return briefFor(loadConfig(), this.available, this.work);
+    }
+
+    decider(): Decider | null {
+        return deciderFor(loadConfig(), this.available, this.work);
+    }
+
+    coverageDecider(): Decider | null {
+        return coverageDeciderFor(loadConfig(), this.available, this.work);
     }
 
     curator(): Curators | null {

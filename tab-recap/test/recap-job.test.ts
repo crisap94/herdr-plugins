@@ -223,3 +223,17 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
     await job.refreshNow(tabId('w1:t1'), [lane]);
     assert.equal(firstTask(store.records.readRecap('w1:t1') ?? blankRecap('w1:t1')).sections?.goal, 'written late');
 });
+
+test('a run logs how long it took and why it ran, written or failed', async () => {
+    for (const [reply, want] of [[{ kind: 'written', text: answer({ ...add('goal', 'x'), anchor: 'go' }), costUsd: 0 }, 'recap w1:t1: written in 12.4 s (turn-ended)'], [{ kind: 'unknown', why: { why: 'unreadable', detail: 'x' } }, 'recap w1:t1: failed in 12.4 s (turn-ended)']] as const) {
+        const summarizer: Summarizer = { backend: 'fake', write: (): Promise<Written> => Promise.resolve(reply) };
+        const [store, lines] = [memoryStore(), [] as string[]];
+        let ticks = -1;
+        const clock = { now: (): ReturnType<typeof instant> => { ticks += 1; return instant(1_000 + (ticks < 2 ? 0 : 12_400)); } };
+        const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
+        const job = new RecapJob({ repos: NO_REPOS, transcripts: [reader], records: store.records, ledger: store.ledger, clock, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (line): void => { lines.push(line); } });
+        job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'turn-ended');
+        await new Promise((resolve) => { setTimeout(resolve, 2700); });
+        assert.ok(lines.includes(want), `${want} in ${JSON.stringify(lines)}`);
+    }
+});

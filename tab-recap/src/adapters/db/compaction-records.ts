@@ -29,7 +29,7 @@ function recordOf(row: Row): CompactionRecord {
         stage: stageOf(row), brief: briefOf(row), writer: maybeText(row, 'writer'), templateWhy: maybeText(row, 'template_why'),
         startedAt: whole(row, 'started_at'), stageAt: whole(row, 'stage_at'), finishedAt: maybeWhole(row, 'finished_at'),
         tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), tookMs: maybeWhole(row, 'took_ms'),
-        retried: flag(row, 'retried'), why: maybeText(row, 'why'),
+        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator',
     };
 }
 
@@ -48,7 +48,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why) WHERE id = ? AND finished_at IS NULL');
         this.finishStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, finished_at = ?, tokens_before = ?, tokens_after = ?, took_ms = ?, retried = ?, why = ? WHERE id = ? AND finished_at IS NULL');
         this.dismiss = db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL');
@@ -59,7 +59,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     begin(start: BeginCompaction): string {
         const id = ids.next();
         const finished = ENDED.has(start.stage) ? start.at : null;
-        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null); });
+        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null, start.origin ?? 'operator'); });
         return typeIdOf('compaction', id);
     }
 

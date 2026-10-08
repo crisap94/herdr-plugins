@@ -23,6 +23,7 @@ export function marksOf(reads: readonly Read[], now: number, advanced: boolean):
             ...(mark.tokensBefore === undefined ? {} : { tokensBefore: mark.tokensBefore }),
             ...(mark.tokensAfter === undefined ? {} : { tokensAfter: mark.tokensAfter }),
             ...(mark.tookMs === undefined ? {} : { tookMs: mark.tookMs }),
+            ...(mark.trigger === undefined ? {} : { trigger: mark.trigger }),
         }];
     }));
 }

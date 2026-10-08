@@ -19,7 +19,7 @@ function run(...args: string[]): { status: number | null; stdout: string; stderr
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, config, state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }
 
-const COMMANDS = ['show', 'configure', 'start', 'startup', 'ensure', 'stop', 'toggle', 'status', 'column', 'columns', 'refresh', 'compact', 'backend'];
+const COMMANDS = ['show', 'configure', 'start', 'startup', 'ensure', 'stop', 'toggle', 'status', 'column', 'columns', 'refresh', 'compact', 'backend', 'autocompact'];
 
 test('`backend codex gpt-5-mini` still sets the backend and its model', () => {
     const ran = run('backend', 'codex', 'gpt-5-mini');
@@ -89,5 +89,44 @@ test('`eval --replay`: a missing transcript is a could-not-look error, an unknow
         } finally {
             ran.done();
         }
+    }
+});
+
+test('`autocompact`: three decisions print three rows newest first with share, verdict, decider and cost and the last day\'s total; an option other than --all is a usage error; no column is touched', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'tab-recap-autocompact-'));
+    const state = join(root, 'state');
+    try {
+        const { stateStore } = await import('#src/adapters/db/database.ts');
+        const store = stateStore(state);
+        assert.equal(store.kind, 'ready');
+        store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
+        const now = Date.now();
+        for (const [age, verdict, share, cost] of [[3, 'compact', 71, 0.00003], [2, 'wait', 55, 0.00004], [1, 'unknown', 44, 0]] as const) {
+            store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - age * 60_000, mode: 'shadow', share, tokens: 1, window: 2, gate: 'ask', verdict, answers: {}, coverage: null, decider: 'jev · jev-1.13.0', costUsd: cost, tookMs: 5, why: null });
+        }
+        store.close();
+        const env = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' };
+        const ran = spawnSync(process.execPath, [entry, 'autocompact', '--all'], { encoding: 'utf8', env });
+        assert.equal(ran.status, 0, ran.stderr);
+        const rows = ran.stdout.split('\n').filter((line) => line.includes('w1:t1'));
+        assert.deepEqual(rows.map((line) => line.split(/\s{2,}/)[3]), ['44 %', '55 %', '71 %']);
+        assert.match(ran.stdout, /time\s+tab\s+pane\s+share\s+verdict\s+gate\s+decider\s+cost/);
+        assert.match(ran.stdout, /jev · jev-1\.13\.0\s+\$0\.00003/);
+        assert.match(ran.stdout, /last 24 h: 3 decisions, \$0\.00007$/m);
+        const bad = spawnSync(process.execPath, [entry, 'autocompact', '--nope'], { encoding: 'utf8', env });
+        assert.deepEqual([bad.status, bad.stdout], [2, '']);
+        assert.match(bad.stderr, /USAGE: tab-recap autocompact \[--all\]/);
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('`autocompact` with nothing decided says so and still prints the total', () => {
+    const ran = run('autocompact');
+    try {
+        assert.equal(ran.status, 0, ran.stderr);
+        assert.match(ran.stdout, /no autocompact decisions yet\nlast 24 h: 0 decisions, \$0/);
+    } finally {
+        ran.done();
     }
 });

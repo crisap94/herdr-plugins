@@ -47,7 +47,7 @@ use until a newer usage record arrives.
 
 Every compaction record SHALL store its origin, `operator` or `auto`. The notification that a compaction
 started SHALL name the agent and, for an automatic one, say `(auto)`. The expanded view's session facts
-SHALL count compactions by origin.
+SHALL count the tab's compactions by origin.
 
 #### Scenario: An automatic compaction
 

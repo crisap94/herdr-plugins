@@ -1,0 +1,16 @@
+run: R01-labels
+experiment: EXP-002-autocompact
+status: valid
+date: 2026-10-08
+code: tab-recap tools at 82f5e5d on exp/tab-recap-autocompact-002 (merge of feat/tab-recap-autocompact through 5.5)
+corpus: corpus.jsonl (sha256 93d56f63…, see R00-corpus)
+command: node bin/autocompact-label.ts --dir <scratch>/exp002 ; node bin/autocompact-label.ts --dir <scratch>/exp002 --briefs
+labeller: codex 0.161.0 / gpt-6.1-sol / effort high (CodexHarness), concurrency 6
+brief writer: HarnessBrief on codex / gpt-6.1-sol / high
+files:
+  labels.jsonl: edaa190609e78423f2d67cfcbd4e98c39f908313366d41b6321fa58dade803c4
+  briefs.jsonl: 482761bced0f7dd94893572b1a15fab71cb34c9e61a7182c09364507b23eb331
+wall_time: points 4 min 56 s (2-point trial before: 14 s); briefs 5 min 50 s
+operator_labels: pending (the operator runs: node bin/autocompact-label.ts --dir <scratch>/exp002 --operator 60, then --kappa)
+ran_by: the coder (Sonnet 5.5), unattended
+raw: listed in REMOVED-ON-MAIN.txt (scratch only; quotes real sessions)
