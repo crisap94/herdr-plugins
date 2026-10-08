@@ -60,9 +60,9 @@ runs before the decider's default is fixed.
   holds no field that no question names; every question has both fixtures. — test/autocompact-state.test.ts: state fields, six questions, a yes/no fixture each, every field named.
 - [ ] 5.3 `application/brief-coverage.ts`: fact enumeration, per-fact questions, one rewrite, then `wait`.
   Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds).
-- [ ] 5.4 Migration 010 part 2: `autocompact_decision`, `compaction.origin`; `ports/autocompact-records.ts`
+- [x] 5.4 Migration 010 part 2: `autocompact_decision`, `compaction.origin`; `ports/autocompact-records.ts`
   and the db adapter. Verify: repository round-trip; migration test.
-  Schema part done in migration 010 (2.3): `autocompact_decision`, `compaction.origin`, the views and the migration test; the port, adapter and repository round-trip remain.
+  Schema part done in migration 010 (2.3): `autocompact_decision`, `compaction.origin`, the views and the migration test; the port, adapter and repository round-trip remain. — test/db/autocompact-records.test.ts round-trip, newest, link, lastWaitAt, countsFor, costSince, cascade; migration test from part 1.
 - [ ] 5.5 `application/autocompact.ts` (one consideration per pane at a time; recap first for a lane with no
   ledger; shadow and on; outage logged once), wired in `dispatch.ts` and `daemon/main.ts`; `origin` through
   `requests` and `compaction.ts`. Verify: service tests with fakes for shadow (records, no request), on (one
