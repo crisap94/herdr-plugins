@@ -4,6 +4,7 @@ import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { correctionDocument } from './correction-input.ts';
 import { clipHead } from './writer-clip.ts';
 import { localTime, isoSecond } from './local-time.ts';
+import { candidatesOf } from './writer-candidates.ts';
 import { transcriptOf } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
 
@@ -68,6 +69,6 @@ export function writerContext(request: RecapRequest, budget = TRANSCRIPT_BUDGET)
     const { input } = request;
     const tab = element('tab', { id: input.tab.id, now: isoSecond(input.tab.now), zone: input.tab.zone }, `${input.agents.map(agentOf).join('')}${NEST}`);
     const correction = request.correction === undefined ? '' : `${NEST}${leaf('correction', {}, request.correction)}`;
-    const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
+    const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${candidatesOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
     return element('recap_input', { version: 2 }, body);
 }

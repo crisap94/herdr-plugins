@@ -7,16 +7,21 @@ import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { LaneCursor, RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import type { Enumerators } from '#src/ports/enumerators.ts';
+import { DEFAULT_PIPELINE } from '#src/recap/domain/pipeline.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { keptGrouping } from '#src/recap/domain/grouping.ts';
 import type { PlacedLane, TaskShape } from '#src/recap/domain/grouping.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import type { TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
-import { extract } from './extract-job.ts';
+import type { Extracted, Ground } from './extract-job.ts';
+import { extractPiped } from './extract-pipeline.ts';
+import type { RunEvent } from './ledger-reconcile.ts';
 import { marksOf } from './boundaries.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
@@ -33,6 +38,12 @@ export interface RecapJobDeps {
     language(): string;
     /** whether each run's input document is kept for judging (`TAB_RECAP_KEEP_INPUT_DAYS` above 0); kept when not given */
     keepInput?(): boolean;
+    /** the steps a run's new turns go through (`full` when not given) */
+    pipeline?(): Pipeline;
+    /** the enumeration's model, as the job is set now; null (or not given): no enumeration, the single call */
+    enumerator?(): Enumerators | null;
+    /** told of every run that wrote to the ledger: the curator reconciles it from time to time */
+    ran?(event: RunEvent): void;
     log(line: string): void;
 }
 
@@ -164,6 +175,21 @@ export class RecapJob {
         return tasks.map((task) => ({ key: task.id, open: ledger.openOf({ tab, key: task.id }), closed: ledger.recentlyClosed({ tab, key: task.id }, now - CLOSED_SHOWN_MS) }));
     }
 
+    /** The run's operations by the pipeline as it is set now. */
+    private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
+        const { deps } = this;
+        return extractPiped(summarizer, request, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, log: (line) => { deps.log(line); } });
+    }
+
+    /** What the writer is asked about this run: the tasks the lanes group into, the document, and what its answer is judged against. */
+    private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
+        const now = this.deps.clock.now();
+        const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
+        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now) });
+        const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
+        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
+    }
+
     /** `switched`: the recap exists in another language than wanted — rewrite it now, new excerpt or not. */
     private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
@@ -179,18 +205,16 @@ export class RecapJob {
         }
         const summarizer = this.deps.summarizer();
         records.beginRun(prior.tab, summarizer.backend, clock.now());
-        const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
-        const now = clock.now();
-        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now) });
-        const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
-        const request = { input: built.input, language: language.want, previousLanguage: was };
-        const asked = await extract(summarizer, request, ground);
+        const { tasks, request, ground } = await this.prepared(prior, readings, { want: language.want, was });
+        const asked = await this.piped(summarizer, request, ground);
         const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
         if (asked.kind === 'failed') {
             records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
             return;
         }
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(request) } : {};
-        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, marks: marksOf(readings, facts.at, true), ...input });
+        const marks = marksOf(readings, facts.at, true);
+        records.recordRun({ ...facts, language: language.want, error: note, lanes: advanced, tasks, ops: asked.tasks, gateStats: asked.stats, marks, ...input });
+        this.deps.ran?.({ tab: prior.tab, turns: parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0 });
     }
 }

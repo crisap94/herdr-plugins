@@ -19,15 +19,15 @@ pipeline, then reconciliation and calibration.
 
 ## 3. Enumerate, ask-back, reconcile
 
-- [ ] 3.1 Chunking (≤ 6 000 chars of markup, turn boundaries then tool bursts) and triggers (design decision 4), pure — verify: tests on a recorded 300-row turn (chunks, every trigger kind found, en/es question detection)
-- [ ] 3.2 `schema/enumerate-input.dtd` + renderer; `enumerate.ts` (low effort, per chunk, skeleton, `none` allowed, mandatory stubs filled or skipped with a reason); candidate dedup — verify: fixtures validated; tests with a fake harness (stubs ignored → flagged candidates; `none` per section)
-- [ ] 3.3 `ask-back.ts`: the six questions + per-fact "what changed", one extra enumeration at most, only when the turn is long or thin (design decision 3) — verify: tests for the triggers of an ask-back and the bound of one
-- [ ] 3.4 `reconcile.ts`: `recap_input` with `<candidates>`, adds only from candidates, ids only from the ledger; `extract-job.ts` runs A → B → C → D → E; `--pipeline` switch in `eval --replay` (design decision 8) — verify: extract-job tests per pipeline; replay test with `--pipeline full` on the 6-turn fixture
-- [ ] 3.5 Measure on the 40-prompt replay: `one`, `enumerate`, `enumerate+gates`, `full` — state coverage, read-back, supported, duplicates, cost per turn (design decision 9) — verify: the four reports in the MR; a step that moves nothing is removed before 4
+- [x] 3.1 Chunking (≤ 6 000 chars of markup, turn boundaries then tool bursts) and triggers (design decision 4), pure — verify: tests on a recorded 300-row turn (chunks, every trigger kind found, en/es question detection)
+- [x] 3.2 `schema/enumerate-input.dtd` + renderer; `enumerate.ts` (low effort, per chunk, skeleton, `none` allowed, mandatory stubs filled or skipped with a reason); candidate dedup — verify: fixtures validated; tests with a fake harness (stubs ignored → flagged candidates; `none` per section)
+- [x] 3.3 `ask-back.ts`: the six questions + per-fact "what changed", one extra enumeration at most, only when the turn is long or thin (design decision 3) — verify: tests for the triggers of an ask-back and the bound of one
+- [x] 3.4 `reconcile.ts`: `recap_input` with `<candidates>`, adds only from candidates, ids only from the ledger; `extract-job.ts` runs A → B → C → D → E; `--pipeline` switch in `eval --replay` (design decision 8) — verify: extract-job tests per pipeline; replay test with `--pipeline full` on the 6-turn fixture
+- [x] 3.5 Measure on the 40-prompt replay: `one`, `enumerate`, `enumerate+gates`, `full` — state coverage, read-back, supported, duplicates, cost per turn (design decision 9) — verify: the four reports in the MR; a step that moves nothing is removed before 4
 
 ## 4. Reconciliation and calibration
 
-- [ ] 4.1 Curator reconcile mode (update/close/merge, never add; the transcript tail as evidence), triggers every N turns (`TAB_RECAP_RECONCILE_EVERY`, 8), on open, first run after a boundary; a summary that omits a fact is not evidence (design decision 6) — verify: curate tests (adds refused, stale needs closed, the post-boundary case leaves the decision open), throttle test
+- [x] 4.1 Curator reconcile mode (update/close/merge, never add; the transcript tail as evidence), triggers every N turns (`TAB_RECAP_RECONCILE_EVERY`, 8), on open, first run after a boundary; a summary that omits a fact is not evidence (design decision 6) — verify: curate tests (adds refused, stale needs closed, the post-boundary case leaves the decision open), throttle test
 - [x] 4.2 Judge anchors from operator corrections (≤ 5 per check, newest first) and Cohen's kappa in `--agree` with the three most disagreed items; `--label --check <id>` (design decision 7) — verify: tests with seeded verdicts (kappa values, anchors present in the instructions), cli-arguments test
 - [x] 4.3 Fair 1.x comparison per chapter in `--compare-imported` (design decision 8) — verify: test over a tab with two chapters of `item` rows
 - [ ] 4.4 README (root and `tab-recap/README.md`): how a turn is read (enumerate → reconcile), anchors, what refuses and what flags, the reconciliation, `--pipeline`, kappa; `config.example.env` — verify: docs updated, no private names

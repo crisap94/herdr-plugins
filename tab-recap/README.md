@@ -178,7 +178,7 @@ prints the old recap JSON makes the run fail with `custom writer must answer ope
 nothing is stored: the old shape has no ids to operate on.
 
 **Measure it:** `node bin/tab-recap.ts eval --replay <transcript.jsonl> [--kind claude|codex] [--tab <label>]
-[--compare-imported <tab>] [--pipeline one]` reads a stored transcript from the start, runs the writer once per turn against a
+[--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full]` reads a stored transcript from the start, runs the writer once per turn against a
 scratch database in a temporary directory (the real one is never written), judges the facts it leaves with the judge job (the same
 report as `eval --sample`, below), and prints the ledger it ends with. `--compare-imported` reads the tab's 1.x recaps from the
 real database (read-only) and judges, **per chapter**, the last good 1.x recap of the chapter as one state against the replay's
@@ -186,6 +186,36 @@ ledger state at the same time — the same key facts, the same read-back questio
 the ledgers the replay's own writer was shown) — and prints them side by side per chapter and summed. The report names the
 pipeline, the writer job and the judge job, so two reports can be compared. With the judge job off it prints the checks that
 need no model.
+
+**How a turn is read.** The new turns of a run are not summarised in one call. They go through a *pipeline*
+(`TAB_RECAP_PIPELINE`, default `one`):
+
+1. **Enumerate.** A long turn is cut into chunks of at most 6 000 characters (between turns; inside a turn, between bursts of
+   tool calls) and each chunk is read by one call at *low* effort that goes through every section and lists the facts it
+   holds, each with a quote copied from the chunk (the *anchor*) — or none. Events a session is made of are never left to the
+   model's attention: a `git commit`/`merge`/`push`/`tag`, `gh pr`/`release`, `glab mr`, an edit, an error (`Error`, `FAIL`, `✖`,
+   `Traceback`) and a question found by plain code become *triggers* the call must either turn into a candidate or skip with a
+   reason; a trigger it ignores still reaches the writer, flagged.
+2. **Ask back** (`full` only). When the turn was long (more than one chunk) or the candidates are few (fewer than one per 2 000
+   characters), the six read-back questions no candidate answers, and what changed about the open facts the turn mentions,
+   drive one more enumeration restricted to those questions. Never a third.
+3. **Reconcile.** The writer — the recap writer job, at its own effort — is given the candidates, the open facts and the
+   newest turns for context, and answers the usual operations; a new fact is added only from a candidate, copying its anchor.
+   The gates and the one correction retry work as before.
+
+`TAB_RECAP_PIPELINE` takes `one` (the single call of 2.0 with the 2.1 gates, the default), `enumerate`, `enumerate+gates` or `full`; on
+the 40-prompt replay of `experiments/EXP-001` the piped ones did not raise coverage or the read-back beyond `one` and cost 2.4–2.8× the
+model calls, so they are off unless set; `tab-recap eval --replay
+<file> --pipeline <name>` runs the same transcript through any of them, and its report names the pipeline, the writer, the
+enumeration and the cost per turn, so two reports can be compared. A writer that is a custom command (`TAB_RECAP_CUSTOM_CMD`)
+always takes the single call. When the enumeration fails the run takes the single call, so a turn is never lost.
+
+**The ledger is reconciled.** Every `TAB_RECAP_RECONCILE_EVERY` turns (default 8), on the first run after a compaction and when
+the expanded view opens after new turns, the curator job (see [Models](#models)) reads the open facts beside the newest turns
+and may update a fact, close it (`done`, `wrong`, `superseded`, or `answered` — only for a *needs* fact) or merge it into another;
+it never adds. Each update and close carries a quote of the turns that shows the change; one without a quote in the turns is
+refused, so a fact is never closed because a summary the agent wrote after a compaction leaves it out. At most one such call per
+task every five minutes.
 
 ## Compaction
 
@@ -259,7 +289,9 @@ command) with a model and an effort. The settings modal lists them under **Model
 | recap writer | `TAB_RECAP_BACKEND` (`auto`) | `TAB_RECAP_MODEL_<HARNESS>` | `TAB_RECAP_EFFORT` (`medium`) |
 | compaction brief | `TAB_RECAP_COMPACT_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = template only) | `TAB_RECAP_COMPACT_MODEL` (empty = the harness's configured model) | `TAB_RECAP_COMPACT_EFFORT` (`high`) |
 | recap judge | `TAB_RECAP_JUDGE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off`) | `TAB_RECAP_JUDGE_MODEL` (empty = the recap writer's model for that harness) | `TAB_RECAP_JUDGE_EFFORT` (`medium`) |
-| curator | `TAB_RECAP_CURATE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = no paragraph, no merges) | `TAB_RECAP_CURATE_MODEL` (empty = the harness's configured model) | `TAB_RECAP_CURATE_EFFORT` (`medium`) |
+| curator (the story, and the reconciliation of the ledger) | `TAB_RECAP_CURATE_BY` (`recap` = the recap writer's harness; or `auto`, a harness, `off` = no paragraph, no merges, no reconciliation) | `TAB_RECAP_CURATE_MODEL` (empty = the harness's configured model) | `TAB_RECAP_CURATE_EFFORT` (`medium`) |
+
+The enumeration of a run (see [How a turn is read](#how-the-recap-is-kept)) is not a job of its own: it runs on the recap writer's harness and model at `low` effort.
 
 Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
 settings or MCP and no session left behind. The judge runs only when you run `tab-recap eval` (below).
@@ -296,7 +328,7 @@ runs stay).
 | `tab-recap eval --label <n> [--check <I1…I7\|S-section>]` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work. With `--check I5` only that check is asked (the fastest way to fix a weak one), including for items you labelled on other checks |
 | `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, Cohen's kappa beside the 0.6 bar (a check under it is yellow) and the three newest items they disagree on |
 | `tab-recap eval --gates [--since <days>]` | the gates' counts per gate, with no model call |
-| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
+| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one\|enumerate\|enumerate+gates\|full]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
 
 `--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`; `--replay` excludes all of them. A judge on the same model as
 the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job
@@ -415,6 +447,8 @@ herdr plugin log list --plugin tab-recap | tail -30
 
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
+
+Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
 
 Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
 

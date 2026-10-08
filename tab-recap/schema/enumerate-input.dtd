@@ -1,0 +1,57 @@
+<!-- enumerate_input: everything tab-recap gives the enumeration for one chunk of the new turns. Version 1. -->
+<!ELEMENT enumerate_input (tab, sections, triggers?, questions?, chunk)>
+<!ATTLIST enumerate_input
+  version  CDATA #FIXED "1"
+  language CDATA #REQUIRED>
+
+<!-- The tab; now = UTC ISO 8601, zone = the IANA name the HH:MM times below use. -->
+<!ELEMENT tab EMPTY>
+<!ATTLIST tab
+  id   CDATA #REQUIRED
+  now  CDATA #REQUIRED
+  zone CDATA #REQUIRED>
+
+<!-- The skeleton: every section the facts go into, with one line saying what belongs there. The answer goes through all of them. -->
+<!ELEMENT sections (section+)>
+<!ELEMENT section (#PCDATA)>
+<!ATTLIST section id (goal|now|needs|done|decisions|next|links|rules) #REQUIRED>
+
+<!-- Events found in the chunk without a model; each must become a candidate (naming its id in "stub") or be skipped with a reason.
+     section = where it likely belongs; ref = what it is about; at = the time of the turn. The text is a piece of the chunk. -->
+<!ELEMENT triggers (trigger+)>
+<!ELEMENT trigger (#PCDATA)>
+<!ATTLIST trigger
+  id      ID #REQUIRED
+  kind    (commit|edit|error|question) #REQUIRED
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  ref     CDATA #IMPLIED
+  at      CDATA #IMPLIED>
+
+<!-- Only in an ask-back: the questions the first pass could not answer. When present, answer ONLY these. -->
+<!ELEMENT questions (question+)>
+<!ELEMENT question (#PCDATA)>
+<!ATTLIST question id ID #REQUIRED>
+
+<!-- The turns and the tool calls to read. index of of = which chunk of the run this is; agent = the id of the agent they come from. -->
+<!ELEMENT chunk (turn|tools)*>
+<!ATTLIST chunk
+  agent CDATA #REQUIRED
+  index CDATA #REQUIRED
+  of    CDATA #REQUIRED>
+
+<!-- A prompt or a reply. queued = typed while the agent was busy. clipped=middle keeps the head and the tail. -->
+<!ELEMENT turn (#PCDATA)>
+<!ATTLIST turn
+  role    (user|agent) #REQUIRED
+  at      CDATA #IMPLIED
+  queued  (yes|no) "no"
+  clipped (no|middle) "no">
+
+<!-- One burst of tool use between two turns. reads = plain reads left out. -->
+<!ELEMENT tools (call*)>
+<!ATTLIST tools reads CDATA "0">
+<!-- shell: the command (what = the agent's own description); edit: a path; web: a query or URL. -->
+<!ELEMENT call (#PCDATA)>
+<!ATTLIST call
+  kind (shell|edit|web|agent|other) #REQUIRED
+  what CDATA #IMPLIED>

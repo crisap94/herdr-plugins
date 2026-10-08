@@ -169,6 +169,11 @@ the last paragraph and `updating…`, and redraws when the new one is stored. Th
 settings' **Models** group (`TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT`; by default the recap writer's harness
 at medium effort; `off` turns it off).
 
+The curator also **reconciles** the open facts with the newest turns every `TAB_RECAP_RECONCILE_EVERY` turns (default 8), after
+a compaction and when the view opens after new turns: it may update a fact, close it as done, wrong, superseded or (for a question
+waiting on you) answered, or merge duplicates — never add one — and only on a quote of the turns that shows the change, so a
+summary that leaves a fact out never closes it.
+
 ### Clickable links
 
 References in the recap are real links (OSC 8 hyperlinks, which herdr opens on Ctrl-click, also when
@@ -289,7 +294,7 @@ a line in the wrong language is only flagged and kept. A
 and tests whether the facts alone answer six questions (the goal, what finished, what waits on you, what
 must not be done, why a decision was made, what is next). `eval --label` and `eval --agree` check the judge
 against your own verdicts (Cohen's kappa, 0.6 as the bar; where you overruled it, its next instructions carry your
-corrections), and `eval --replay <transcript>` rebuilds a ledger from a stored transcript and judges it — coverage
+corrections), and `eval --replay <transcript> [--pipeline one|enumerate|enumerate+gates|full]` rebuilds a ledger from a stored transcript and judges it — coverage
 and the read-back are measured on the ledger as it stood after the run, not on what the run added — and, with
 `--compare-imported`, sets the last good 1.x recap of each chapter beside it. The input of each run is kept for
 `TAB_RECAP_KEEP_INPUT_DAYS` days (default 14) so a fact can be judged against exactly what the writer saw.
@@ -329,6 +334,8 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_COMPACT_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `high` | the job that writes what a compacting agent must keep |
 | `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job behind `tab-recap eval` |
 | `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` | `recap` · *(writer's)* · `medium` | the job that tidies the ledger when the expanded view opens |
+| `TAB_RECAP_PIPELINE` | `one` | how a run reads its new turns: `one` (a single call), `enumerate`, `enumerate+gates`, or `full` (list the facts of every chunk with a quote, take one second look when the turn was long or the list short, then reconcile with the ledger) |
+| `TAB_RECAP_RECONCILE_EVERY` | `8` | turns between two reconciliations of the open facts by the curator |
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daily upkeep removes it (`0` = keep everything) |
 

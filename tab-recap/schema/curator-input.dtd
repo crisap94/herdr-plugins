@@ -1,6 +1,8 @@
 <!-- curator_input: everything tab-recap gives the curator for one task. Version 1. -->
-<!ELEMENT curator_input (task, rubric, ledger)>
-<!ATTLIST curator_input version CDATA #FIXED "1">
+<!ELEMENT curator_input (task, rubric, ledger, tail?)>
+<!ATTLIST curator_input
+  version CDATA #FIXED "1"
+  mode    (story|reconcile) "story">
 
 <!-- The task the ledger belongs to. name is blank when the tab has one task; language is what the paragraph is written in. -->
 <!ELEMENT task EMPTY>
@@ -27,3 +29,25 @@
   agent   CDATA #IMPLIED
   closed  (done|wrong|superseded|answered|merged|rewritten) #IMPLIED
   closedat CDATA #IMPLIED>
+
+<!-- Only in mode="reconcile": the newest turns of the work, oldest first: the evidence. In that mode the ledger holds the open facts only and
+     the rubric only its "still true" check. since = the time of the first turn shown; omitted = turns before it that are left out. -->
+<!ELEMENT tail (turn|tools)*>
+<!ATTLIST tail
+  since   CDATA #IMPLIED
+  omitted CDATA "0">
+<!ELEMENT turn (#PCDATA)>
+<!ATTLIST turn
+  role    (user|agent) #REQUIRED
+  at      CDATA #IMPLIED
+  queued  (yes|no) "no"
+  clipped (no|middle) "no">
+<!ELEMENT tools (call*)>
+<!ATTLIST tools
+  at    CDATA #IMPLIED
+  reads CDATA "0"
+  more  CDATA "0">
+<!ELEMENT call (#PCDATA)>
+<!ATTLIST call
+  kind (shell|edit|web|agent|other) #REQUIRED
+  what CDATA #IMPLIED>

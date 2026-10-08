@@ -1,5 +1,10 @@
 // The options of `tab-recap eval`, read with util.parseArgs. A usage error is a value.
 import { parseArgs } from 'node:util';
+import { PIPELINES } from '#src/recap/domain/pipeline.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+
+export { PIPELINES };
+export type { Pipeline };
 
 export interface EvalOptions {
     readonly mode: 'sample' | 'label' | 'agree' | 'gates' | 'replay';
@@ -19,10 +24,6 @@ export interface EvalOptions {
     /** `--label --check`: the one check the operator is asked about (`I5`, `S-done`); null: every check of an item */
     readonly check: string | null;
 }
-
-/** The configurations of the extractor a replay can run, from the single call of 2.0 to every step. */
-export const PIPELINES = ['one', 'enumerate', 'enumerate+gates', 'full'] as const;
-export type Pipeline = (typeof PIPELINES)[number];
 
 const SECTIONS: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules']);
 

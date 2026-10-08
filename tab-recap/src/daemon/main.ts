@@ -10,7 +10,9 @@ import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
+import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
+import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
@@ -80,12 +82,16 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
     const repos = new GitLaneRepo(clock);
+    const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
     const recaps = new RecapJob({
         transcripts,
         records: store.records, ledger: store.ledger, clock, log, repos,
         summarizer: (): Summarizer => backends.summarizer(),
         language: (): string => loadConfig().recapLanguage,
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
+        pipeline: (): Pipeline => loadConfig().pipeline,
+        enumerator: (): Enumerators | null => backends.enumerator(),
+        ran: (event): void => { curate.afterRun(event).catch((error: unknown) => { log(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); }); },
     });
     const box: { informer: Informer | null } = { informer: null };
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
@@ -121,7 +127,6 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     box.informer = informer;
     const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent: new LaneRecent(transcripts) });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
-    const curate = wireCurate({ store, curator: () => backends.curator(), log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate };
 }
 

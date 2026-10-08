@@ -3,7 +3,7 @@
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Correction, RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
-import { addStats, NO_STATS } from '#src/recap/domain/gates/gatekeeper.ts';
+import { addStats, correctionOf, NO_STATS } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { Gate } from '#src/recap/domain/gates/gate.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
@@ -30,6 +30,8 @@ export interface Ground {
     readonly now: number;
     /** the facts of the document by document id, as it showed them: what a retry quotes of the facts a refusal names */
     readonly facts: ReadonlyMap<string, InputFact>;
+    /** the retry sends only the refused operations (the default), or, when false, the whole document with a line on what was refused (2.0) */
+    readonly targeted?: boolean;
 }
 
 const OLD_HINT = 'you answered a recap; answer operations on the ledger only: {"ops":[{"op":"add",…},{"op":"update",…},{"op":"close",…}]}';
@@ -64,6 +66,15 @@ interface Turn {
     readonly keep: readonly Tasked[];
 }
 
+/** The second try after refusals: the refused operations alone, or (2.0) the whole document again with one line per refusal. */
+function followOf(each: readonly Judged[], ground: Ground, problems: readonly string[]): Follow {
+    if (ground.targeted === false) {
+        const lines = each.map((one) => correctionOf(one.given, one.refused)).filter((line) => line !== '');
+        return { correction: [...lines, ...problems.map((problem) => `shape: ${problem}`)].join('\n') };
+    }
+    return { retry: retryFor(each, { tasks: ground.grounds, facts: ground.facts }, problems), keep: keptOf(each, ground.grounds) };
+}
+
 function round(text: string, ground: Ground, turn: Turn): Round {
     const answer = parseAnswer(text, ground.resolving);
     if (answer.kind === 'old-shape' && turn.custom) {
@@ -79,7 +90,7 @@ function round(text: string, ground: Ground, turn: Turn): Round {
     };
     if (turn.retryLeft && (refusedIn(each) > 0 || answer.problems.length > 0)) {
         const counted = each.reduce((all, one) => addStats(all, one.gated), turn.stats);
-        return { kind: 'retry', follow: { retry: retryFor(each, { tasks: ground.grounds, facts: ground.facts }, answer.problems), keep: keptOf(each, ground.grounds) }, stats: counted, fallback: final };
+        return { kind: 'retry', follow: followOf(each, ground, answer.problems), stats: counted, fallback: final };
     }
     return { kind: 'done', ...final };
 }
