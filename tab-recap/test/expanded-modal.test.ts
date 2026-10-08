@@ -53,7 +53,7 @@ test('the modal draws the expanded view; r asks for a recap, q and Esc close it'
         const first = open();
         assert.ok(await until(() => first.output().includes('SESSION')), 'the session facts are drawn at once');
         const drawn = stripVTControlCharacters(first.output());
-        assert.match(drawn, /started \d\d:\d\d · 1 h( \d+ min)?/u);
+        assert.match(drawn, /started (\d{4}-\d\d-\d\d )?\d\d:\d\d · 1 h( \d+ min)?/u); // the date shows when the hour before now was yesterday
         assert.match(drawn, /turns 1 \(turn 1\)/u);
         assert.match(drawn, /repo shop · branch main/u);
         first.send('r');
