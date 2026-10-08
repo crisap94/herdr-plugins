@@ -39,6 +39,7 @@ import { openState } from './state.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { wireAutocompact } from './autocompact.ts';
+import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
 import { wireCurate } from './curate.ts';
@@ -70,6 +71,7 @@ interface Wired {
     readonly compaction: Compaction;
     readonly retention: InputRetention;
     readonly curate: Curate;
+    readonly sweep: AutocompactSweep;
 }
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
@@ -130,9 +132,10 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     box.informer = informer;
     const recent = new LaneRecent(transcripts);
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log });
+    const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
@@ -178,7 +181,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention } = booted;
+    const { informer, fleet, backends, extensions, store, retention, sweep } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -205,6 +208,7 @@ async function start(): Promise<number> {
             forgetClosedTabs(store, log);
         }
         informer.tick();
+        sweep.tick();
         retention.tick();
         void backends.refresh();
         void upkeep(extensions, log);
