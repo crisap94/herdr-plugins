@@ -57,7 +57,7 @@ export function shareAt(source: string, cursor: number, catalogue: ModelCatalogu
 function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
-    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share, soft: SOFT_DEFAULT, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastWaitAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
+    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, busy: false, inFlight, share, soft: SOFT_DEFAULT, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS }).gate;
     return { inFlight, gate };
 }
 
