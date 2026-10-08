@@ -31,6 +31,8 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     private readonly db: DatabaseSync;
     private readonly insert: StatementSync;
     private readonly attach: StatementSync;
+    private readonly latest: StatementSync;
+    private readonly cover: StatementSync;
     private readonly waited: StatementSync;
     private readonly newestAll: StatementSync;
     private readonly newestOf: StatementSync;
@@ -41,6 +43,8 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         this.db = db;
         this.insert = db.prepare(`INSERT INTO autocompact_decision (${COLUMNS.replace(', compaction_id', '')}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');
+        this.latest = db.prepare("SELECT id FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
+        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END WHERE id = ?");
         this.waited = db.prepare("SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict <> 'compact'");
         this.newestAll = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision ORDER BY at DESC, id DESC LIMIT ?`);
         this.newestOf = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision WHERE tab_id = ? ORDER BY at DESC, id DESC LIMIT ?`);
@@ -59,6 +63,18 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     link(id: string, compactionId: string): void {
         const [key, target] = [idOf('decision', id), idOf('compaction', compactionId)];
         if (key !== null && target !== null) writeTx(this.db, () => { this.attach.run(target, key); });
+    }
+
+    linkLatest(tab: string, pane: string, compactionId: string): string | null {
+        const [row, target] = [guarded(() => one(this.latest, tab, pane), null), idOf('compaction', compactionId)];
+        if (row === null || target === null) return null;
+        writeTx(this.db, () => { this.attach.run(target, blob(row, 'id')); });
+        return typeIdOf('decision', blob(row, 'id'));
+    }
+
+    amend(id: string, coverage: Readonly<Record<string, number>>, waited: boolean): void {
+        const key = idOf('decision', id);
+        if (key !== null) writeTx(this.db, () => { this.cover.run(JSON.stringify(coverage), waited ? 1 : 0, waited ? 1 : 0, key); });
     }
 
     lastWaitAt(tab: string, pane: string): number | null {

@@ -58,8 +58,8 @@ runs before the decider's default is fixed.
 - [x] 5.2 `application/autocompact-state.ts` and `autocompact-questions.ts` (named fields only; criteria per
   question) plus `test/fixtures/autocompact/<question>/{yes,no}.json` from the corpus. Verify: the state
   holds no field that no question names; every question has both fixtures. — test/autocompact-state.test.ts: state fields, six questions, a yes/no fixture each, every field named.
-- [ ] 5.3 `application/brief-coverage.ts`: fact enumeration, per-fact questions, one rewrite, then `wait`.
-  Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds).
+- [x] 5.3 `application/brief-coverage.ts`: fact enumeration, per-fact questions, one rewrite, then `wait`.
+  Verify: tests for a missing decision reason (rewrite, then wait) and a missing next (proceeds). — test/brief-coverage.test.ts: missing decision reason (rewrite, then wait), next missing proceeds, operator unchanged, auto record origin, decision linked.
 - [x] 5.4 Migration 010 part 2: `autocompact_decision`, `compaction.origin`; `ports/autocompact-records.ts`
   and the db adapter. Verify: repository round-trip; migration test.
   Schema part done in migration 010 (2.3): `autocompact_decision`, `compaction.origin`, the views and the migration test; the port, adapter and repository round-trip remain. — test/db/autocompact-records.test.ts round-trip, newest, link, lastWaitAt, countsFor, costSince, cascade; migration test from part 1.

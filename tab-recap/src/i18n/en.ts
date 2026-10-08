@@ -96,6 +96,8 @@ export const en: Messages = {
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compacting ${agent}`,
+        auto: (text) => `${text} (auto)`,
+        coverageMissed: (agent) => `${agent} not compacted: the brief would lose something the work needs`,
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
         nothing: 'No agent here can be compacted',
         failed: (agent, why) => `Could not compact ${agent}: ${why}`,
