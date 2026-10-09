@@ -78,6 +78,8 @@ export interface RunEvent {
     readonly tab: string;
     readonly turns: number;
     readonly boundary: boolean;
+    /** why the run was made: `turn-ended`, `focused`, `requested` (or `imported`) */
+    readonly cause?: string;
 }
 
 /** What the curator is given, reconciling or telling the story. */

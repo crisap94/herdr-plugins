@@ -71,7 +71,8 @@ export class Compaction {
             return false;
         }
         if (trail === null) {
-            this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin });
+            const id = this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
+            this.deps.events?.lane(String(lane.pane), 'compact-failed', `${id}:${refusal.why}`);
             this.answer(request, String(lane.pane), refusalAnswerOf(refusal.why));
         } else {
             trail.end(refusal.stage, { why: refusal.why });
@@ -115,14 +116,28 @@ export class Compaction {
         return auto ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
     }
 
+    /** The compaction's record begins, and the event says it is queued with its id. */
+    private begun(request: CompactRequest, start: { readonly tab: string; readonly pane: string; readonly agent: string; readonly stage: 'briefing' | 'compacting'; readonly writer: string | null }): string {
+        const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
+        this.deps.events?.lane(start.pane, 'compact-queued', id);
+        return id;
+    }
+
+    /** How a compaction ended, as the request's answer and as the event stream. */
+    private ended(request: CompactRequest, pane: string, id: string, end: { readonly stage: string; readonly why?: string | null }): void {
+        this.answer(request, pane, endAnswerOf(end.stage, end.why ?? null));
+        this.deps.events?.lane(pane, end.stage === 'compacted' ? 'compact-done' : 'compact-failed', end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
+    }
+
     /** One free agent, from the first stage to the last. */
     private async compact(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const writing = this.deps.brief.enabled();
-        const id = this.deps.compactions.begin({ tab, pane, agent, stage: writing ? 'briefing' : 'compacting', at: this.deps.now(), writer: this.deps.brief.job(), origin: request.origin ?? 'operator' });
+        const id = this.begun(request, { tab, pane, agent, stage: writing ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, 'running');
-        const trail = new Trail(this.deps.compactions, id, () => this.deps.now(), (end) => { this.answer(request, pane, endAnswerOf(end.stage, end.why ?? null)); });
+        this.deps.events?.lane(pane, 'compact-running', id);
+        const trail = new Trail(this.deps.compactions, id, () => this.deps.now(), (end) => { this.ended(request, pane, id, end); });
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
         const beginning = writing ? compaction.writing(agent) : compaction.started(agent);
         await this.tell(said(compaction.title(agent)), said(beginning));

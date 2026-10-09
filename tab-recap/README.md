@@ -477,6 +477,53 @@ herdr plugin action invoke tab-recap.status
 herdr plugin log list --plugin tab-recap | tail -30
 ```
 
+## For other tools
+
+tab-recap talks to other tools through herdr's pane tokens and events alone: no command, no file, no socket of its own. Sharing is
+off unless `TAB_RECAP_HERDR_EVENTS=on`; with it off, nothing below is written and no request is answered. The typing lease and the
+`awaiting` and `note` tokens of other tools are honoured either way.
+
+**Tokens tab-recap writes** (`tab-recap-*` and `typing-tab-recap` only, and nothing else):
+
+| token | value | when |
+| --- | --- | --- |
+| `tab-recap-api` | `1`, the protocol version | with the lane's other lane tokens |
+| `tab-recap-share` | the context share, in percent | when it changes |
+| `tab-recap-recap` | epoch ms of the tab's last recap | when a recap is written |
+| `tab-recap-needs` | the number of open needs of the tab | when it changes |
+| `tab-recap-compact` | `<id>:<stage>`, the answer to a request | as the compaction goes |
+| `tab-recap-event` | `<seq>:<kind>[:<detail>]`, one event | for each event of the lane |
+| `typing-tab-recap` | epoch ms of tab-recap's typing lease | while it types into the pane, whatever the setting |
+
+Lane tokens live two minutes and are rewritten when they change or half their life has passed; an answer or an event lives an hour;
+the lease lives a minute. A lane that leaves the board has its lane tokens cleared.
+
+**Requests another tool may write** on a lane's pane: `compact-req-<tool>` = `<id>` or `<id>:<note>` (the note is the focus of the
+brief, cut to fit). tab-recap answers in `tab-recap-compact`: `<id>:queued`, then `running`, then `done` or `failed-<reason>`;
+`failed-not-a-lane` when the pane is not a lane; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
+restarts: the same id written again asks for nothing.
+
+**Coordination tokens another tool may write:** `typing-<tool>` = its epoch ms while it types into the pane (tab-recap waits for an
+earlier one); `awaiting` or `awaiting-<tool>` = what the pane waits for (autocompact counts the lane as in flight, and says why); and
+`note` or `note-<tool>` = a line shown under the lane's header, labelled with the tool's name.
+
+**Events** are the same token, `tab-recap-event`, on the lane's pane; the daemon's start and stop are the workspace's, on every
+workspace. Kinds: `recap-written` (the trigger), `needs-raised` and `needs-cleared` (the count), `compact-queued`, `compact-running`,
+`compact-done` and `compact-failed` (the compaction's id, and the reason when failed), `autocompact-decided` (the verdict and the share,
+e.g. `compact-24`), `autocompact-skipped` (the gate, written only when it changes), `lane-closed`, and `daemon-started` and
+`daemon-stopping` (the version). `<seq>` is base 36, starts at the daemon's start and rises by one per pane or workspace: a gap is a
+missed event, and the state tokens are always the current truth.
+
+**One writer per name.** A token name is written by one tool only, and the writer's name is part of it. herdr keeps one flat map per
+pane, merged from every source, so the last write of a name wins and a `null` removes it whoever wrote it. Never write a name that is
+not yours.
+
+**The lease.** Before typing into a pane, write `typing-<tool>` = epoch ms with a time to live of a minute, then read the pane's
+tokens. An earlier live lease of another tool (or the same stamp with a smaller name) comes first: clear yours and wait. Clear yours
+when you have finished typing. A lease a crashed writer left expires by itself.
+
+**The version.** `tab-recap-api` is the protocol version. A breaking change to a token's name or value format raises it.
+
 ## Configure
 
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).

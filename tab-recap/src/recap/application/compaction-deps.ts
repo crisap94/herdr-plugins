@@ -13,6 +13,7 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Written } from './compaction-brief.ts';
 import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
+import type { LaneEvents } from './lane-events.ts';
 
 export interface CompactionDeps {
     readonly agents: Agents;
@@ -33,6 +34,10 @@ export interface CompactionDeps {
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend'> | null;
     /** answers another tool's compaction request on its pane (`tab-recap-compact` = `<id>:<stage>`); absent when herdr events are off */
     answer?(id: string, pane: string, stage: string): void;
+    /** the typing lease, taken around every line typed into a pane (absent: nothing is held back) */
+    readonly typing?: { acquire(pane: string): Promise<boolean>; release(pane: string): Promise<void> };
+    /** the plugin's events on herdr's stream: the compaction's stages (its id is the detail) */
+    readonly events?: LaneEvents;
     /** the agent's last turns, read from its own records; empty when they cannot be read */
     recent(lane: Lane): Promise<readonly Entry[]>;
     /** the compactions the agent's own records show, newest last; empty when they cannot be read */

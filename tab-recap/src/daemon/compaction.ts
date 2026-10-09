@@ -17,6 +17,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { bounded } from './bounded.ts';
 import { loadConfig, messagesOf } from './config.ts';
@@ -41,6 +42,9 @@ export function wireCompaction(parts: {
     readonly decisions: AutocompactRecords;
     /** answers another tool's compaction request on its pane */
     readonly answers: { answer(id: string, pane: string, stage: string): void };
+    /** the typing lease, taken around each line typed */
+    readonly typing: { acquire(pane: string): Promise<boolean>; release(pane: string): Promise<void> };
+    readonly events: LaneEvents;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -62,6 +66,8 @@ export function wireCompaction(parts: {
         },
         decisions: parts.decisions,
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
+        typing: parts.typing,
+        events: parts.events,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

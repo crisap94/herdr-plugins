@@ -132,3 +132,26 @@ test('a lane\'s facts: its share from its context, the tab\'s last recap, and th
     const unknownLane = factsOf(lane, { contexts: { of: () => null }, records: { readRecap: () => null }, ledger: { openOf: () => [] } });
     assert.deepEqual(unknownLane, { share: null, recapAt: null, needs: 0 });
 });
+
+test('a change of needs is an event on the lane: raised when it grows, cleared when it shrinks; a lane that leaves the board is closed first', async () => {
+    const board = { current: boardOf(laneOf('w1:p1')) };
+    const recap = { value: facts({ needs: 0 }) };
+    const events: string[] = [];
+    const tokens = new RecordingTokens();
+    let now = 0;
+    const lane = new LaneTokenPublisher({
+        tokens, enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneFacts => recap.value, now: (): number => now, log: (): void => undefined,
+        events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); } },
+    });
+    lane.tick();
+    recap.value = facts({ needs: 2 });
+    now = TICK_MS;
+    lane.tick();
+    recap.value = facts({ needs: 1 });
+    now = 2 * TICK_MS;
+    lane.tick();
+    board.current = emptyBoard();
+    now = 3 * TICK_MS;
+    lane.tick();
+    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1', 'w1:p1 lane-closed']);
+});

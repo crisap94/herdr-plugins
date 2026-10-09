@@ -14,6 +14,9 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { bounded } from './bounded.ts';
+import type { LaneEvents } from '#src/recap/application/lane-events.ts';
+import { awaitingOf } from '#src/recap/domain/coordination.ts';
+import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import { loadConfig } from './config.ts';
 
 /** a lane's recap is given up on after this long (the decision goes on without) */
@@ -40,11 +43,12 @@ export function wireAutocompact(parts: {
     readonly recaps: RecapJob;
     readonly informer: Informer;
     readonly decider: () => Decider | null;
+    readonly events: LaneEvents;
     log(line: string): void;
 }): Autocompact {
     const { store } = parts;
     return new Autocompact({
-        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
+        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: async (pane) => { const found = await readPaneTokens(pane); return found.kind === 'tokens' ? awaitingOf(found.tokens) : null; }, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },

@@ -1,0 +1,48 @@
+// Autocompact against other tools' waits and the event stream: an `awaiting` token is in flight whatever the setting; a skip is logged, recorded and
+// written as an event only when its gate changes; a decision is an event with its verdict and share.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { detailOf } from '#src/recap/application/autocompact-gates.ts';
+import { lane, rows, world } from './autocompact-world.ts';
+
+test('an `awaiting` token makes the lane in flight, with the detail `awaiting <value>`: no decider is asked, nothing is requested, and the in-flight reader is not read', async () => {
+    const w = world();
+    w.awaiting = 'reviewer';
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked, w.requests, w.reads], [[], [], []]);
+    const skip = w.store.autocompact.skips().find((each) => each.pane === 'w1:p1');
+    assert.deepEqual([skip?.gate, skip?.detail], ['in-flight', 'awaiting reviewer']);
+});
+
+test('the wait answered, the lane goes through the remaining gates again', async () => {
+    const w = world();
+    w.awaiting = 'reviewer';
+    await w.service.consider(lane());
+    w.awaiting = null;
+    await w.service.consider(lane());
+    assert.equal(w.requests.length, 1);
+    assert.equal(rows(w).length, 1);
+});
+
+test('the in-flight count still applies when nothing awaits: the same detail as before', () => {
+    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: { count: 2, why: '2 running' } }), '2 running');
+    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: { count: 1, why: 'awaiting', detail: 'awaiting reviewer' } }), 'awaiting reviewer');
+});
+
+test('events: a skip is written when its gate changes, not on each sweep; a decision is written with its verdict and share', async () => {
+    const w = world();
+    w.awaiting = 'reviewer';
+    await w.service.consider(lane());
+    await w.service.consider(lane());
+    assert.deepEqual(w.events, ['w1:p1 autocompact-skipped in-flight']);
+    w.awaiting = null;
+    await w.service.consider(lane());
+    assert.deepEqual(w.events, ['w1:p1 autocompact-skipped in-flight', 'w1:p1 autocompact-decided compact-62']);
+});
+
+test('shadow mode decides and writes the decision event too, but asks for nothing', async () => {
+    const w = world({ mode: 'shadow' });
+    await w.service.consider(lane());
+    assert.deepEqual(w.events, ['w1:p1 autocompact-decided compact-62']);
+    assert.equal(w.requests.length, 0);
+});

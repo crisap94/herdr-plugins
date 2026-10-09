@@ -10,6 +10,7 @@ import type { CompactRequest } from '#src/ports/requests.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
+import { MemoryAsks } from './fakes/ask-records.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) });
@@ -19,17 +20,18 @@ const frame = (pane: string, tokens: Record<string, string>): { readonly pane: {
 
 interface Harness {
     readonly asked: CompactRequest[];
+    readonly asks?: MemoryAsks;
     readonly tokens: RecordingTokens;
     readonly compact: CompactRequests;
     flush(): Promise<void>;
 }
 
-function setup(on = true): Harness {
+function setup(on = true, asks = new MemoryAsks()): Harness {
     const asked: CompactRequest[] = [];
     const tokens = new RecordingTokens();
     const requests = { requestCompact: (request: CompactRequest): void => { asked.push(request); } };
-    const compact = new CompactRequests({ enabled: (): boolean => on, board, requests, tokens, log: (): void => undefined });
-    return { asked, tokens, compact, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
+    const compact = new CompactRequests({ enabled: (): boolean => on, board, requests, asks, tokens, log: (): void => undefined });
+    return { asked, asks, tokens, compact, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
 
 test('askedOf: `<id>` or `<id>:<note>`; the note is everything after the first colon; an empty or long id is refused', () => {
@@ -96,4 +98,42 @@ test('a compaction ends with its answer: the trail hears how it ended, and the a
     const failed = new Trail(records, 'cmp', () => 0, (end) => { answered.push(endAnswerOf(end.stage, end.why ?? null)); });
     failed.end('failed', { why: 'unreachable' });
     assert.deepEqual(answered, ['done', 'failed-unreachable']);
+});
+
+test('the same id again, after a daemon restart: a new handler over the same stored asks requests nothing', async () => {
+    const asks = new MemoryAsks();
+    const before = setup(true, asks);
+    before.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    await before.flush();
+    const after = setup(true, asks);
+    after.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    after.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7:another note' }));
+    await after.flush();
+    assert.deepEqual(before.asked.map((request) => request.answer), ['r7']);
+    assert.deepEqual(after.asked, [], 'the id is known to the store: not acted on again');
+});
+
+test('the id is per requester: another tool may use the same id', async () => {
+    const run = setup(true);
+    run.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    run.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-reviewer': 'r7' }));
+    assert.deepEqual(run.asked.map((request) => request.answer), ['r7', 'r7']);
+});
+
+test('a restart interrupts what was asked: each unfinished or queued request is answered failed-interrupted, and none is run', async () => {
+    const run = setup(true);
+    run.compact.answerInterrupted([{ pane: 'w1:p1', answer: 'r7' }, { pane: 'w1:p2', answer: 'r8' }]);
+    await run.flush();
+    assert.deepEqual(run.tokens.reports.map((report) => [report.pane, report.tokens]), [
+        ['w1:p1', { 'tab-recap-compact': 'r7:failed-interrupted' }],
+        ['w1:p2', { 'tab-recap-compact': 'r8:failed-interrupted' }],
+    ]);
+    assert.deepEqual(run.asked, []);
+});
+
+test('off: an interrupted request is not answered either', async () => {
+    const run = setup(false);
+    run.compact.answerInterrupted([{ pane: 'w1:p1', answer: 'r7' }]);
+    await run.flush();
+    assert.deepEqual(run.tokens.reports, []);
 });

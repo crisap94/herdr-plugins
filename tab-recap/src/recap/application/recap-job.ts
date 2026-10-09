@@ -224,6 +224,6 @@ export class RecapJob {
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {};
         const marks = marksOf(run.readings, base.at, true);
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ops: run.asked.tasks, gateStats: run.asked.stats, marks, ...input });
-        this.deps.ran?.({ tab: base.tab, turns: run.parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0 });
+        this.deps.ran?.({ tab: base.tab, turns: run.parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0, cause: base.cause });
     }
 }

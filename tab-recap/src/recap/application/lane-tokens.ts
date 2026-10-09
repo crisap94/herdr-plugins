@@ -2,9 +2,10 @@
 // A lane that leaves the board, or the setting turning off, has the names tab-recap owns cleared. Runs at most every TICK_MS.
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { OWNED_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
+import { NEEDS_TOKEN, OWNED_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
 import type { LaneFacts, Written } from '#src/recap/domain/lane-tokens.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneEvents } from './lane-events.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 
 export const TICK_MS = 2_000;
@@ -18,6 +19,8 @@ export interface LaneTokenDeps {
     readonly facts: (lane: Lane) => LaneFacts;
     readonly now: () => number;
     readonly log: (line: string) => void;
+    /** the lane's events: needs raised or cleared, and the lane closed */
+    readonly events?: LaneEvents;
 }
 
 export class LaneTokenPublisher {
@@ -40,6 +43,7 @@ export class LaneTokenPublisher {
         const live = new Set(lanes.map((lane) => String(lane.pane)));
         for (const pane of this.written.keys()) {
             if (!live.has(pane)) {
+                this.deps.events?.lane(pane, 'lane-closed');
                 this.clear(pane);
             }
         }
@@ -54,6 +58,11 @@ export class LaneTokenPublisher {
         const due = writeDue(this.written.get(pane) ?? null, values, now, TTL_MS);
         if (due === null) {
             return;
+        }
+        const needs = this.written.get(pane)?.values[NEEDS_TOKEN];
+        const count = values[NEEDS_TOKEN];
+        if (needs !== undefined && count !== undefined && needs !== count) {
+            this.deps.events?.lane(pane, Number(count) > Number(needs) ? 'needs-raised' : 'needs-cleared', count);
         }
         this.written.set(pane, { values: due, at: now });
         void this.send(pane, due, () => { this.written.delete(pane); });

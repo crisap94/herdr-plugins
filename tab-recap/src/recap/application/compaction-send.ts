@@ -1,7 +1,9 @@
 // The part of a compaction that types into the agent and waits for it: the command, the confirmation from its records, the restore message.
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Prompted } from '#src/ports/agents.ts';
-import { saying } from '#src/ports/unknowable.ts';
+import { saying, unknown } from '#src/ports/unknowable.ts';
+import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { outcomeOf } from './compaction-outcome.ts';
 import type { OutcomeDeps, Verdict } from './compaction-outcome.ts';
@@ -36,10 +38,26 @@ export class Sender {
         this.deps = deps;
     }
 
+    /** Typed into the pane under the typing lease: held back while an earlier lease of another tool is live, and cleared once typed. */
+    private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
+        const typing = this.deps.typing;
+        if (typing === undefined) {
+            return type();
+        }
+        if (!(await typing.acquire(pane))) {
+            return unknown({ why: 'timeout', after: duration(LEASE_TTL_MS) });
+        }
+        try {
+            return await type();
+        } finally {
+            await typing.release(pane);
+        }
+    }
+
     /** One go at the compaction command: typed, then confirmed on herdr's push from the agent's own records. */
     private async attempt(lane: Lane, command: () => Promise<Prompted>): Promise<Tried> {
         const since = this.deps.now();
-        const sent = await command();
+        const sent = await this.typed(String(lane.pane), command);
         if (sent.kind !== 'sent') {
             return { sent, verdict: null };
         }
@@ -89,7 +107,7 @@ export class Sender {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const since = this.deps.now();
-        const sent = await this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS });
+        const sent = await this.typed(String(lane.pane), () => this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS }));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(String(lane.pane), since, RESTORE_SETTLE_MS);
         }
