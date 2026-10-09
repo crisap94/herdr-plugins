@@ -34,7 +34,7 @@ export function saying(unknowable: Unknowable): string {
         case 'failed':
             return `exited ${unknowable.code}: ${unknowable.detail}`;
         case 'lease':
-            return `another tool is typing into the pane (its lease held ${unknowable.after} ms)`;
+            return `another tool is typing into the pane (waited ${unknowable.after} ms for its lease)`;
         default: {
             const exhaustive: never = unknowable;
             return String(exhaustive);

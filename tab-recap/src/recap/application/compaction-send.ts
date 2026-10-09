@@ -109,10 +109,13 @@ export class Sender {
     private async restore(lane: Lane, text: Text, trail: Trail): Promise<void> {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
+        const pane = String(lane.pane);
         const since = this.deps.now();
-        const sent = await this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS });
+        // the message is typed under the typing lease; the wait for the agent to answer is outside it
+        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message));
         if (sent.kind === 'sent') {
-            await this.deps.settling.settled(String(lane.pane), since, RESTORE_SETTLE_MS);
+            await this.deps.settling.settled(pane, since, RESTORING_MS);
+            await this.deps.settling.settled(pane, since, RESTORE_SETTLE_MS);
         }
     }
 

@@ -118,7 +118,7 @@ test('codex: its own /compact typed with Enter (a prompt reaches it as a message
     assert.deepEqual(world.typed.map((each) => each.text.split('\n')[0]), ['/compact', 'We just compacted this conversation. This is where things stand:']);
     assert.deepEqual([world.typed[0]?.typed, world.typed[0]?.pieces], [true, ['/compact']], 'typed as a command, in one piece');
     assert.ok(world.typed[1]?.text.includes('keep the schema'));
-    assert.deepEqual(world.typed[1]?.wait, { until: ['idle', 'done'], timeoutMs: 120_000 }, 'the restore message is waited for, up to two minutes');
+    assert.equal(world.typed[1]?.wait, undefined, 'the restore message is typed without a wait: the wait follows, outside the lease');
 });
 
 test('a working agent is left alone and the operator is told; so is a blocked one', async () => {
@@ -256,7 +256,8 @@ test('the outcome is awaited on herdr\'s push for the lane, after the command is
     assert.deepEqual(world.settledAfter, ['w1:p1: after refresh,type w1:p1']);
     const codex = fleet({ 'w1:p2': 'idle' });
     await flow(codex, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
-    assert.deepEqual(codex.settledAfter, ['w1:p2: after refresh,type w1:p2,prompt w1:p2'], 'the restore answer\'s working → done must not pass for the operator\'s next turn');
+    const afterRestore = 'w1:p2: after refresh,type w1:p2,prompt w1:p2';
+    assert.deepEqual(codex.settledAfter, [afterRestore, afterRestore], 'both waits follow the restore message: its answer\'s working → done must not pass for the operator\'s next turn');
 });
 
 const records = (world: ReturnType<typeof fleet>): ReturnType<typeof world.store.compactions.shownFor> => world.store.compactions.shownFor('w1:t1');
@@ -364,13 +365,16 @@ test('a request from another tool is answered on its pane as the compaction goes
     assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 done']);
 });
 
-test('the lease is held around the command only: a codex restore message is typed after it is released, and the agent\'s answer is not waited under it', async () => {
+test('the restore message is typed under the lease, and the wait for the agent to answer is outside it', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
-    const calls: string[] = [];
-    world.lease = { acquire: (pane: string): Promise<'taken' | 'busy' | 'unavailable'> => { calls.push(`acquire ${pane}`); return Promise.resolve('taken'); }, release: (pane: string): Promise<void> => { calls.push(`release ${pane}`); return Promise.resolve(); } };
+    world.lease = {
+        acquire: (pane: string): Promise<'taken' | 'busy' | 'unavailable'> => { world.events.push(`acquire ${pane}`); return Promise.resolve('taken'); },
+        release: (pane: string): Promise<void> => { world.events.push(`release ${pane}`); return Promise.resolve(); },
+    };
     await flow(world, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p2', note: null });
-    assert.deepEqual(calls, ['acquire w1:p2', 'release w1:p2'], 'the lease covers the /compact line');
-    assert.ok(world.events.includes('prompt w1:p2'), 'the restore message is still sent');
+    const leased = world.events.filter((line) => /^(acquire|release|type|prompt) /u.test(line));
+    assert.deepEqual(leased, ['acquire w1:p2', 'type w1:p2', 'release w1:p2', 'acquire w1:p2', 'prompt w1:p2', 'release w1:p2'], 'each line typed under its own lease');
+    assert.ok(world.settledAfter.some((line) => line.includes('prompt w1:p2')), 'the wait for the answer starts after the restore was typed');
 });
 
 test('herdr cannot take the lease: the brief is typed all the same', async () => {

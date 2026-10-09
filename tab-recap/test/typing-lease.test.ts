@@ -81,5 +81,5 @@ test('herdr cannot take or read tokens: the lease is unavailable at once, typing
 });
 
 test('a lease held by another tool, past the wait, says so as its own reason', () => {
-    assert.equal(saying({ why: 'lease', after: 60_000 as never }), 'another tool is typing into the pane (its lease held 60000 ms)');
+    assert.equal(saying({ why: 'lease', after: 60_000 as never }), 'another tool is typing into the pane (waited 60000 ms for its lease)');
 });

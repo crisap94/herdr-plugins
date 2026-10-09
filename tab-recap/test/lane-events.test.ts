@@ -31,6 +31,8 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
     };
     const ws: WorkspaceTokens = {
         reportWorkspace: async (workspace, values): Promise<Done> => {
+            // a write takes a moment: it is recorded only once it has landed, so a caller that does not wait for it sees nothing
+            await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
             rig.spaces.push({ target: workspace, value: values[EVENT_TOKEN] ?? null });
             return rig.failing ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'done' };
         },
@@ -40,7 +42,7 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
     return rig;
 }
 
-const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
+const flush = (): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, 20); });
 const base36 = (n: number): string => n.toString(36);
 
 test('each lane event is written once on the lane\'s pane, as `<seq>:<kind>[:<detail>]`; the sequence rises by one per pane', async () => {
@@ -91,7 +93,7 @@ test('the daemon\'s start and stop go to every workspace, as the workspace token
     const rig = rigAt(36 ** 3, ['w1', 'w2']);
     await rig.stream.daemon('daemon-started', '2.2.1');
     await rig.stream.daemon('daemon-stopping', '2.2.1');
-    assert.deepEqual(rig.spaces.map((sent) => sent.target), ['w1', 'w2', 'w1', 'w2'], 'written before the call returns');
+    assert.deepEqual(rig.spaces.map((sent) => sent.target), ['w1', 'w2', 'w1', 'w2'], 'every write has landed by the time the call returns');
     assert.equal(rig.spaces[0]?.value, `${base36(36 ** 3)}:daemon-started:2.2.1`);
     assert.equal(rig.spaces[2]?.value, `${base36(36 ** 3 + 1)}:daemon-stopping:2.2.1`);
 });
