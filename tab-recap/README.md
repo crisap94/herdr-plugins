@@ -492,16 +492,22 @@ off unless `TAB_RECAP_HERDR_EVENTS=on`; with it off, nothing below is written an
 | `tab-recap-recap` | epoch ms of the tab's last recap | when a recap is written |
 | `tab-recap-needs` | the number of open needs of the tab | when it changes |
 | `tab-recap-compact` | `<id>:<stage>`, the answer to a request | as the compaction goes |
-| `tab-recap-event` | `<seq>:<kind>[:<detail>]`, one event | for each event of the lane |
+| `tab-recap-event` | `<seq>:<kind>[:<detail>]`, one event | for each event of the lane (`lane-closed` goes to the workspace) |
 | `typing-tab-recap` | epoch ms of tab-recap's typing lease | while it types into the pane, whatever the setting |
 
 Lane tokens live two minutes and are rewritten when they change or half their life has passed; an answer or an event lives an hour;
-the lease lives a minute. A lane that leaves the board has its lane tokens cleared.
+the lease lives a minute. A lane that leaves the board has its lane tokens cleared. Turning the setting off clears `tab-recap-event` on
+every pane and workspace that carried one, and the lane tokens on every lane.
 
 **Requests another tool may write** on a lane's pane: `compact-req-<tool>` = `<id>` or `<id>:<note>` (the note is the focus of the
 brief, cut to fit). tab-recap answers in `tab-recap-compact`: `<id>:queued`, then `running`, then `done` or `failed-<reason>`;
 `failed-not-a-lane` when the pane is not a lane; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
-restarts: the same id written again asks for nothing.
+restarts: the same id written again asks for nothing. A request seen while the setting is off is remembered and never acted on, even
+after it goes on. A request a restart interrupts while the setting is on is answered `failed-interrupted`; one interrupted while it is
+off is not answered.
+
+**Limits.** An id is 1 to 16 characters; `compact-req-<tool>` is at most 32 characters, so `<tool>` is at most 20. An empty id or a longer
+one is answered `failed-bad-id` with its first 16 characters. A note is plain text: control characters become spaces and it is cut to fit.
 
 **Coordination tokens another tool may write:** `typing-<tool>` = its epoch ms while it types into the pane (tab-recap waits for an
 earlier one); `awaiting` or `awaiting-<tool>` = what the pane waits for (autocompact counts the lane as in flight, and says why); and
@@ -511,8 +517,9 @@ earlier one); `awaiting` or `awaiting-<tool>` = what the pane waits for (autocom
 workspace. Kinds: `recap-written` (the trigger), `needs-raised` and `needs-cleared` (the count), `compact-queued`, `compact-running`,
 `compact-done` and `compact-failed` (the compaction's id, and the reason when failed), `autocompact-decided` (the verdict and the share,
 e.g. `compact-24`), `autocompact-skipped` (the gate, written only when it changes), `lane-closed`, and `daemon-started` and
-`daemon-stopping` (the version). `<seq>` is base 36, starts at the daemon's start and rises by one per pane or workspace: a gap is a
-missed event, and the state tokens are always the current truth.
+`daemon-stopping` (the version). `<seq>` is a whole number in base 36, starts at the daemon's start and rises by one per pane or
+workspace: a gap is a missed event, and the state tokens are always the current truth. A workspace created after the daemon started hears
+the daemon's start only at its next start or stop.
 
 **One writer per name.** A token name is written by one tool only, and the writer's name is part of it. herdr keeps one flat map per
 pane, merged from every source, so the last write of a name wins and a `null` removes it whoever wrote it. Never write a name that is
@@ -520,7 +527,11 @@ not yours.
 
 **The lease.** Before typing into a pane, write `typing-<tool>` = epoch ms with a time to live of a minute, then read the pane's
 tokens. An earlier live lease of another tool (or the same stamp with a smaller name) comes first: clear yours and wait. Clear yours
-when you have finished typing. A lease a crashed writer left expires by itself.
+when you have finished typing. A lease a crashed writer left expires by itself. The lease is held around the send only, not while the agent answers.
+
+**The lease is not a lock.** Its stamp is taken before the write, so a tool whose earlier stamp lands after tab-recap has read the pane can
+still overlap it. When herdr cannot take or read tokens (no such method, or unreachable), typing goes on without a lease, and the log says so once
+per outage.
 
 **The version.** `tab-recap-api` is the protocol version. A breaking change to a token's name or value format raises it.
 
