@@ -38,6 +38,7 @@ export class RequestsRepository implements Requests {
     private readonly takeCurate: StatementSync;
     private readonly takeRefresh: StatementSync;
     private readonly takeHidden: StatementSync;
+    private readonly takeAnsweredRows: StatementSync;
 
     constructor(db: DatabaseSync, now: () => number = Date.now) {
         this.now = now;
@@ -49,6 +50,7 @@ export class RequestsRepository implements Requests {
         this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note, origin, answer");
         this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
+        this.takeAnsweredRows = db.prepare("DELETE FROM request WHERE kind = 'compact' AND answer IS NOT NULL RETURNING id, pane, answer");
     }
 
     request(tab: string): void {
@@ -65,6 +67,11 @@ export class RequestsRepository implements Requests {
 
     requestCurate(tab: string): void {
         this.curate.run(ids.next(), this.now(), tab);
+    }
+
+    /** Queued requests from other tools, taken away: the daemon answers each one, since it will not run them. */
+    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[] {
+        return guarded(() => all(this.takeAnsweredRows).flatMap((row) => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
     }
 
     /** One tab asked twice is one request. */

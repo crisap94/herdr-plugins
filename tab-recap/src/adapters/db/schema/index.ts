@@ -10,7 +10,8 @@ import { m009 } from './009-anchor.ts';
 import { m010 } from './010-autocompact.ts';
 import { m011 } from './011-autocompact-skip.ts';
 import { m012 } from './012-herdr-events.ts';
+import { m013 } from './013-herdr-asks.ts';
 import type { Migration } from './migration.ts';
 
 /** The only place a migration is registered, in order. */
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011, m012];
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011, m012, m013];

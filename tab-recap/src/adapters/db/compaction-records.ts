@@ -47,10 +47,12 @@ export class CompactionRecordsRepository implements CompactionRecords {
     private readonly interrupt: StatementSync;
     private readonly shown: StatementSync;
     private readonly autoRunning: StatementSync;
+    private readonly asks: StatementSync;
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.asks = db.prepare("SELECT pane, answer FROM compaction WHERE origin = 'request' AND answer IS NOT NULL AND finished_at IS NULL");
         this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why) WHERE id = ? AND finished_at IS NULL');
         this.finishStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, finished_at = ?, tokens_before = ?, tokens_after = ?, took_ms = ?, retried = ?, why = ? WHERE id = ? AND finished_at IS NULL');
         this.dismiss = db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL');
@@ -62,7 +64,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     begin(start: BeginCompaction): string {
         const id = ids.next();
         const finished = ENDED.has(start.stage) ? start.at : null;
-        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null, start.origin ?? 'operator'); });
+        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null, start.origin ?? 'operator', start.answer ?? null); });
         return typeIdOf('compaction', id);
     }
 
@@ -82,6 +84,10 @@ export class CompactionRecordsRepository implements CompactionRecords {
 
     dismissTurn(tab: string, pane: string, at: number): void {
         writeTx(this.db, () => { this.dismiss.run(at, tab, pane, at); });
+    }
+
+    unfinishedAsks(): readonly { readonly pane: string; readonly answer: string }[] {
+        return guarded(() => all(this.asks).map((row) => ({ pane: text(row, 'pane'), answer: text(row, 'answer') })), []);
     }
 
     interrupted(at: number, why: string): number {

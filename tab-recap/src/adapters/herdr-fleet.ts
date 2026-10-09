@@ -19,6 +19,8 @@ import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
+import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
 export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
 export const PLUGIN_ID = 'tab-recap';
@@ -65,7 +67,21 @@ function layoutOf(layout: Json): LayoutResult {
 /** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens {
+/** `pane.get`: the pane's tokens as herdr holds them now (a name whose time to live passed is not there). Stand-alone, for readers that hold no fleet. */
+export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
+    try {
+        const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
+        const tokens = typeof info === 'object' && info !== null ? (info as Json)['tokens'] : undefined;
+        if (typeof tokens !== 'object' || tokens === null) {
+            return { kind: 'tokens', tokens: {} };
+        }
+        return { kind: 'tokens', tokens: Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
+    } catch (error) {
+        return unknown({ why: 'unreachable', detail: detail(error) });
+    }
+}
+
+export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens, PaneTokens, WorkspaceTokens {
     private readonly stateDir: string;
 
     constructor(stateDir: string) {
@@ -189,6 +205,24 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     /** `pane.report_metadata` under the plugin's source: the names are the application's to choose, and a null value removes a name. A token is not typing, so an agent's pane may carry one. */
     async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
         return this.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+    }
+
+    async read(pane: string): Promise<PaneTokensResult> {
+        return readPaneTokens(pane);
+    }
+
+    /** `workspace.report_metadata` under the plugin's source: the daemon's own events, on every workspace. */
+    async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
+        return this.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+    }
+
+    async workspaces(): Promise<WorkspacesResult> {
+        try {
+            const found = list((await rpc('workspace.list', {}))['workspaces']);
+            return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
     }
 
     async notify(title: string, body: string): Promise<Notified> {

@@ -30,4 +30,6 @@ export interface Requests {
     takeVisibility(): readonly VisibilityRequest[];
     takeCompactions(): readonly CompactRequest[];
     takeCurations(): readonly TabId[];
+    /** the compaction requests from other tools still queued (not yet taken): removed, each with its pane and answer id */
+    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[];
 }

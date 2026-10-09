@@ -23,6 +23,8 @@ import { openDatabase } from './open.ts';
 import type { NewerDatabase } from './open.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
 import { RequestsRepository } from './requests.ts';
+import { AskRepository } from './ask-records.ts';
+import type { AskRecords } from '#src/ports/ask-records.ts';
 import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
 import { SessionSourceRepository } from './session-source.ts';
@@ -39,6 +41,8 @@ export interface Store {
     readonly visibility: ColumnVisibility;
     readonly requests: Requests;
     readonly compactions: CompactionRecords;
+    /** the compaction requests other tools made, accepted once per (tool, id) */
+    readonly asks: AskRecords;
     /** what autocompact decided, lane by lane */
     readonly autocompact: AutocompactRecords;
     readonly inputs: RunInputs;
@@ -65,7 +69,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db), autocompact: new AutocompactRecordsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskRepository(db, options.now), autocompact: new AutocompactRecordsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),

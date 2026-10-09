@@ -42,6 +42,8 @@ export interface BeginCompaction {
     readonly why?: string | null;
     /** `operator` unless given */
     readonly origin?: Origin;
+    /** a request from another tool: its id, which the restart answers if it interrupts the compaction */
+    readonly answer?: string | null;
 }
 
 /** What a stage change adds: the brief's origin and writer are known once the brief job is done. */
@@ -80,4 +82,6 @@ export interface CompactionRecords extends CompactionView {
     dismissTurn(tab: string, pane: string, at: number): void;
     /** the daemon started: whatever was still in progress becomes `unconfirmed`, so no lane spins forever; how many */
     interrupted(at: number, why: string): number;
+    /** the requests from other tools whose compaction is not finished: call before `interrupted`, to answer each one */
+    unfinishedAsks(): readonly { readonly pane: string; readonly answer: string }[];
 }
