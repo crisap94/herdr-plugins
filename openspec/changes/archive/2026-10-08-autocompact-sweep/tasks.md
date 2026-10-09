@@ -53,11 +53,15 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 8. Live check
 
-- [ ] 8.1 After merge into the operator's branch and a daemon restart in `on`: a decision or a skip for
+- [x] 8.1 After merge into the operator's branch and a daemon restart in `on`: a decision or a skip for
   every lane of the board within two minutes (`tab-recap autocompact`); at most one automatic compaction in
-  progress at a time; the log holds no repeated skip lines.
+  progress at a time; the log holds no repeated skip lines. — 2026-10-08 23:53Z restart on 2.2.1 in `on` (schema 11,
+  backup `.v10.bak`, 29 columns): within 1 s every one of the 29 idle lanes had a decision or a skip; `wP:p1`
+  compacted at the ceiling (origin auto, brief written, 842 342 → 23 732 tokens, 72 s) while the 27 others were
+  `busy` ("another lane"); the next sweep (23:59:37Z) logged only changed gates (`below-minimum` for `wP:p1`,
+  `in-flight` for one lane) and decided the next lane (`wait`) one at a time.
 
 ## 9. Archive
 
-- [ ] 9.1 `openspec archive autocompact-sweep --yes`, then `openspec validate --specs --strict`, in this
+- [x] 9.1 `openspec archive autocompact-sweep --yes`, then `openspec validate --specs --strict`, in this
   merge request once every other task is checked.
