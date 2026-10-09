@@ -12,7 +12,7 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 ## 2. The setting (design decision 8)
 
 - [ ] `TAB_RECAP_HERDR_EVENTS` (`off` | `on`, default `off`) in the config reader, `config.example.env`, the
-      settings modal row "Herdr events" (English and Spanish) and both READMEs.
+      settings modal row "Herdr events" (English and Spanish) and the README.
 - [ ] Tests: off by default; `off` writes no lane or event token and ignores requests; `on` → `off` clears
       what was written; leases and `awaiting` are honoured either way.
 
@@ -53,7 +53,7 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 
 ## 8. Docs
 
-- [ ] README (English and Spanish): a "For other tools" section with the token table, the event kinds, the
+- [ ] README: a "For other tools" section with the token table, the event kinds, the
       one-writer rule, the lease and the version rule.
 
 ## 9. Live check
