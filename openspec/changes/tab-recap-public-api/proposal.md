@@ -42,8 +42,9 @@ Two collisions become measurable once a second tool types into panes:
 - **The plugin's own events on herdr's stream.** Every event the daemon logs about a lane (recap written,
   needs raised or cleared, compaction queued, running, done or failed, an autocompact decision or skip, the
   lane closed) is also written as `tab-recap-event` = `<seq>:<kind>[:<detail>]` on the lane's pane. Each write
-  reaches every subscriber as `pane.updated`. Daemon start and stop go to each workspace the same way. A
-  sequence number shows a missed event; the state tokens stay the current truth.
+  reaches every subscriber as `pane.updated`. A lane closed goes to its workspace instead, since its pane is
+  gone, and daemon start and stop go to each workspace the same way. A sequence number shows a missed event;
+  the state tokens stay the current truth.
 - **Compaction by request token.** Any tool can ask for a compaction by writing `compact-req-<tool>` on a
   lane's pane. tab-recap answers with its own token, `tab-recap-compact` (queued, running, done or failed,
   with the request id); progress therefore arrives as events. A compaction asked this way is recorded with
