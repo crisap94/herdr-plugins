@@ -39,6 +39,8 @@ export function wireCompaction(parts: {
     /** the decider that checks the brief's coverage (`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`) */
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
+    /** answers another tool's compaction request on its pane */
+    readonly answers: { answer(id: string, pane: string, stage: string): void };
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -59,6 +61,7 @@ export function wireCompaction(parts: {
             return decider === null ? null : { check: (text, facts) => covered(text, facts, decider) };
         },
         decisions: parts.decisions,
+        answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

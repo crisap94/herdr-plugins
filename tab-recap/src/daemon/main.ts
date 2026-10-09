@@ -48,6 +48,10 @@ import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
+import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
+import { factsOf } from '#src/recap/application/lane-facts.ts';
+import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
@@ -72,7 +76,11 @@ interface Wired {
     readonly retention: InputRetention;
     readonly curate: Curate;
     readonly sweep: AutocompactSweep;
+    readonly laneTokens: LaneTokenPublisher;
 }
+
+/** `TAB_RECAP_HERDR_EVENTS` is on: read on every use, so the setting applies without a restart. */
+const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
 function wantsScreen(agent: string): boolean {
@@ -98,9 +106,13 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         ran: (event): void => { curate.afterRun(event).catch((error: unknown) => { log(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); }); },
     });
     const box: { informer: Informer | null; autocompact: Autocompact | null } = { informer: null, autocompact: null };
+    const board = (): Board => box.informer?.current ?? emptyBoard();
+    const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, tokens: fleet, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
+    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), now: (): number => Date.now(), log });
+
     const dispatch = new Dispatch({
         columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs, contexts,
         sizing: (): Sizing => loadConfig().sizing,
@@ -128,20 +140,22 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onUnknownKind: (): void => { /* herdr has more events than we map; that is expected */ },
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
+        onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts);
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
-    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact });
+    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
-function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate'>): void {
-    const { store, informer, compaction, curate } = wired;
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens'>): void {
+    const { store, informer, compaction, curate, laneTokens } = wired;
     pidfile.beat();
+    laneTokens.tick();
     for (const tab of store.requests.takeRequests()) {
         informer.push({ kind: 'requested', tab });
     }

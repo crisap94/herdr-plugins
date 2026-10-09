@@ -5,6 +5,8 @@ import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
+import { endAnswerOf, refusalAnswerOf } from '#src/recap/domain/compact-request.ts';
+import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
 import { checkedBrief } from './compaction-coverage.ts';
@@ -55,14 +57,22 @@ export class Compaction {
         return READY.has(state.status) ? null : { stage: 'skipped', why: badge[state.status], toast: compaction.skipped(agent, state.status) };
     }
 
+    /** The request's answer on its pane, when it came from another tool. */
+    private answer(request: CompactRequest | null, pane: string, stage: string): void {
+        if (request?.answer !== undefined) {
+            this.deps.answer?.(request.answer, pane, stage);
+        }
+    }
+
     /** A lane that is not free is recorded and said, once, and left alone. */
-    private async refused(lane: Lane, tab: string, trail: Trail | null, origin: 'operator' | 'auto' = 'operator'): Promise<boolean> {
+    private async refused(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<boolean> {
         const refusal = await this.refusalOf(lane);
         if (refusal === null) {
             return false;
         }
         if (trail === null) {
             this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin });
+            this.answer(request, String(lane.pane), refusalAnswerOf(refusal.why));
         } else {
             trail.end(refusal.stage, { why: refusal.why });
         }
@@ -110,8 +120,9 @@ export class Compaction {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const writing = this.deps.brief.enabled();
-        const id = this.deps.compactions.begin({ tab, pane, agent, stage: writing ? 'briefing' : 'compacting', at: this.deps.now(), writer: this.deps.brief.job(), origin: auto ? 'auto' : 'operator' });
-        const trail = new Trail(this.deps.compactions, id, () => this.deps.now());
+        const id = this.deps.compactions.begin({ tab, pane, agent, stage: writing ? 'briefing' : 'compacting', at: this.deps.now(), writer: this.deps.brief.job(), origin: request.origin ?? 'operator' });
+        this.answer(request, pane, 'running');
+        const trail = new Trail(this.deps.compactions, id, () => this.deps.now(), (end) => { this.answer(request, pane, endAnswerOf(end.stage, end.why ?? null)); });
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
         const beginning = writing ? compaction.writing(agent) : compaction.started(agent);
         await this.tell(said(compaction.title(agent)), said(beginning));
@@ -134,10 +145,11 @@ export class Compaction {
         const lanes = this.deps.lanes(tab);
         const targets = targetsOf(lanes, this.deps.target(), { pane: request.pane, focused: await this.deps.focused(tab) });
         if (targets.length === 0) {
+            this.answer(request, request.pane ?? '', 'failed-no-target');
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        const ready = (await Promise.all(targets.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator')) ? [] : [lane])))).flat();
+        const ready = (await Promise.all(targets.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator', request)) ? [] : [lane])))).flat();
         if (ready.length === 0) {
             return;
         }

@@ -31,6 +31,8 @@ export interface CompactionDeps {
     coverage(): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null;
     /** the decisions an automatic compaction points back to */
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend'> | null;
+    /** answers another tool's compaction request on its pane (`tab-recap-compact` = `<id>:<stage>`); absent when herdr events are off */
+    answer?(id: string, pane: string, stage: string): void;
     /** the agent's last turns, read from its own records; empty when they cannot be read */
     recent(lane: Lane): Promise<readonly Entry[]>;
     /** the compactions the agent's own records show, newest last; empty when they cannot be read */

@@ -18,6 +18,7 @@ import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 
 export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
 export const PLUGIN_ID = 'tab-recap';
@@ -64,7 +65,7 @@ function layoutOf(layout: Json): LayoutResult {
 /** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens {
+export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens {
     private readonly stateDir: string;
 
     constructor(stateDir: string) {
@@ -183,6 +184,11 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
         }
+    }
+
+    /** `pane.report_metadata` under the plugin's source: the names are the application's to choose, and a null value removes a name. A token is not typing, so an agent's pane may carry one. */
+    async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
+        return this.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
     }
 
     async notify(title: string, body: string): Promise<Notified> {

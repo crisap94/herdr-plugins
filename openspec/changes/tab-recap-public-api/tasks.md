@@ -4,28 +4,28 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 
 ## 1. Vocabulary
 
-- [ ] Add to `tab-recap/CONTEXT.md`: Lane token, Token owner, Compaction request, Typing lease, Note (from
+- [x] Add to `tab-recap/CONTEXT.md`: Lane token, Token owner, Compaction request, Typing lease, Note (from
       another tool), Protocol version.
-- [ ] A test that pins the measured herdr behaviour the design relies on, against a fake host: merged map,
+- [x] A test that pins the measured herdr behaviour the design relies on, against a fake host: merged map,
       last write wins, `null` removes, 80-character values.
 
 ## 2. The setting (design decision 8)
 
-- [ ] `TAB_RECAP_HERDR_EVENTS` (`off` | `on`, default `off`) in the config reader, `config.example.env`, the
+- [x] `TAB_RECAP_HERDR_EVENTS` (`off` | `on`, default `off`) in the config reader, `config.example.env`, the
       settings modal row "Herdr events" (English and Spanish) and both READMEs.
 - [ ] Tests: off by default; `off` writes no lane or event token and ignores requests; `on` → `off` clears
       what was written; leases and `awaiting` are honoured either way.
 
 ## 3. Lane tokens (design decisions 1 and 2)
 
-- [ ] Write `tab-recap-api`, `tab-recap-share`, `tab-recap-recap` and `tab-recap-needs` through the host port,
+- [x] Write `tab-recap-api`, `tab-recap-share`, `tab-recap-recap` and `tab-recap-needs` through the host port,
       only on change or at half the time to live; clear them when a lane leaves the board.
-- [ ] Tests: a recap changes `tab-recap-recap` once; no change writes nothing; a closed lane is cleared; no
+- [x] Tests: a recap changes `tab-recap-recap` once; no change writes nothing; a closed lane is cleared; no
       name outside `tab-recap-*` and `typing-tab-recap` is ever written.
 
 ## 4. Compaction by request token (design decision 3)
 
-- [ ] Read `compact-req-<tool>` from `pane.updated`; parse `<id>[:<note>]`; call `requestCompact` with origin
+- [x] Read `compact-req-<tool>` from `pane.updated`; parse `<id>[:<note>]`; call `requestCompact` with origin
       `request`; answer through `tab-recap-compact`; never act on an id twice.
 - [ ] Store and list the origin `request` like `operator` and `auto`.
 - [ ] Tests for every scenario of the requirement.
