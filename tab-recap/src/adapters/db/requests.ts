@@ -3,6 +3,7 @@ import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { CompactRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
+import { originOf } from '#src/recap/domain/origin.ts';
 import { all, blob, guarded, maybeText, text } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
 import type { Row } from './rows.ts';
@@ -15,7 +16,8 @@ function visibilityOf(row: Row): VisibilityRequest | null {
 
 function compactionOf(row: Row): CompactRequest | null {
     const tab = text(row, 'target');
-    return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator' };
+    const answer = maybeText(row, 'answer');
+    return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note'), origin: originOf(text(row, 'origin')), ...(answer === null ? {} : { answer }) };
 }
 
 /** The word the table keeps for a visibility request. */
@@ -41,10 +43,10 @@ export class RequestsRepository implements Requests {
         this.now = now;
         this.refresh = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'refresh', ?)");
         this.visibility = db.prepare("INSERT INTO request (id, at, kind, target, hidden) VALUES (?, ?, 'visibility', ?, ?)");
-        this.compact = db.prepare("INSERT INTO request (id, at, kind, target, pane, note, origin) VALUES (?, ?, 'compact', ?, ?, ?, ?)");
+        this.compact = db.prepare("INSERT INTO request (id, at, kind, target, pane, note, origin, answer) VALUES (?, ?, 'compact', ?, ?, ?, ?, ?)");
         this.curate = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'curate', ?)");
         this.takeCurate = db.prepare("DELETE FROM request WHERE kind = 'curate' RETURNING id, target");
-        this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note, origin");
+        this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note, origin, answer");
         this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
     }
@@ -58,7 +60,7 @@ export class RequestsRepository implements Requests {
     }
 
     requestCompact(request: CompactRequest): void {
-        this.compact.run(ids.next(), this.now(), request.tab, request.pane, request.note, request.origin ?? 'operator');
+        this.compact.run(ids.next(), this.now(), request.tab, request.pane, request.note, request.origin ?? 'operator', request.answer ?? null);
     }
 
     requestCurate(tab: string): void {

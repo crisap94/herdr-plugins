@@ -1,3 +1,4 @@
+import type { Origin } from '#src/recap/domain/origin.ts';
 export type ActiveStage = 'briefing' | 'compacting' | 'restoring';
 export type EndStage = 'compacted' | 'failed' | 'unconfirmed' | 'skipped';
 export type Stage = ActiveStage | EndStage;
@@ -27,7 +28,7 @@ export interface CompactionRecord {
     readonly retried: boolean;
     readonly why: string | null;
     /** who started it: the operator, or autocompact */
-    readonly origin: 'operator' | 'auto';
+    readonly origin: Origin;
 }
 
 export interface BeginCompaction {
@@ -40,7 +41,7 @@ export interface BeginCompaction {
     /** a compaction that ends where it begins (skipped, failed) says why */
     readonly why?: string | null;
     /** `operator` unless given */
-    readonly origin?: 'operator' | 'auto';
+    readonly origin?: Origin;
 }
 
 /** What a stage change adds: the brief's origin and writer are known once the brief job is done. */

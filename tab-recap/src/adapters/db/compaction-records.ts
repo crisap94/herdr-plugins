@@ -1,3 +1,4 @@
+import { originOf } from '#src/recap/domain/origin.ts';
 // The CompactionRecords repository: one row per compaction of a lane; every write is one transaction, every read answers [] when it cannot.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
@@ -29,7 +30,7 @@ function recordOf(row: Row): CompactionRecord {
         stage: stageOf(row), brief: briefOf(row), writer: maybeText(row, 'writer'), templateWhy: maybeText(row, 'template_why'),
         startedAt: whole(row, 'started_at'), stageAt: whole(row, 'stage_at'), finishedAt: maybeWhole(row, 'finished_at'),
         tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), tookMs: maybeWhole(row, 'took_ms'),
-        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator',
+        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: originOf(text(row, 'origin')),
     };
 }
 
