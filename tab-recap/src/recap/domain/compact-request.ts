@@ -10,20 +10,25 @@ export const VALUE_MAX = 80;
 export const ANSWER_TTL_MS = 3_600_000;
 
 export interface Asked {
+    /** the requester's id, as written (an empty or overlong one is not `valid`) */
     readonly id: string;
     readonly note: string | null;
+    readonly valid: boolean;
 }
 
-/** `<id>` or `<id>:<note>`; null when the id is empty or too long. The note is everything after the first colon, cut to fit. */
+/** `<id>` or `<id>:<note>`; null for an empty value. The note is everything after the first colon, cut to fit; an id is valid when it is 1 to 16 characters. */
 export function askedOf(value: string): Asked | null {
+    if (value === '') {
+        return null;
+    }
     const cut = value.indexOf(':');
     const id = cut < 0 ? value : value.slice(0, cut);
     const note = cut < 0 ? '' : value.slice(cut + 1);
-    if (id === '' || id.length > ID_MAX) {
-        return null;
-    }
-    return { id, note: note.trim() === '' ? null : note.slice(0, VALUE_MAX - id.length - 1) };
+    return { id, note: note.trim() === '' ? null : note.slice(0, VALUE_MAX - id.length - 1), valid: id !== '' && id.length <= ID_MAX };
 }
+
+/** The answer to a request whose id is empty or overlong: the first 16 characters of the id, and `failed-bad-id`. */
+export const badIdAnswer = (id: string): string => answerValue(id.slice(0, ID_MAX), 'failed-bad-id');
 
 /** A stage word as a token stage: lower case, dashes for anything else. */
 const slug = (word: string): string => word.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unknown';

@@ -141,7 +141,7 @@ test('a change of needs is an event on the lane: raised when it grows, cleared w
     let now = 0;
     const lane = new LaneTokenPublisher({
         tokens, enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneFacts => recap.value, now: (): number => now, log: (): void => undefined,
-        events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); } },
+        events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); }, inWorkspace: (workspace: string, kind: string, detail?: string | null): void => { events.push(`${workspace} ${kind} ${detail ?? ''}`.trim()); } },
     });
     lane.tick();
     recap.value = facts({ needs: 2 });
@@ -153,5 +153,41 @@ test('a change of needs is an event on the lane: raised when it grows, cleared w
     board.current = emptyBoard();
     now = 3 * TICK_MS;
     lane.tick();
-    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1', 'w1:p1 lane-closed']);
+    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1', 'w1 lane-closed w1:p1'], 'a lane closes on its workspace, its pane being gone');
+});
+
+test('a failing pane waits (doubling from 2 s, up to a minute) and is logged once per outage; it is written again when herdr answers', async () => {
+    const board = { current: boardOf(laneOf('w1:p1')) };
+    const run = publisher(board, { value: facts() });
+    run.tokens.failing = true;
+    const attempts = (): number => run.tokens.reports.length;
+    run.at(0);
+    await run.flush();
+    assert.equal(attempts(), 1);
+    run.at(2_000);
+    await run.flush();
+    assert.equal(attempts(), 2, 'the first back-off is 2 s: the retry is the next tick after it');
+    run.at(4_000);
+    await run.flush();
+    assert.equal(attempts(), 2, 'the second back-off is 4 s: still waiting');
+    run.at(6_000);
+    await run.flush();
+    assert.equal(attempts(), 3);
+    assert.equal(run.logged.length, 1, 'one line for the whole outage');
+    run.tokens.failing = false;
+    run.at(14_000);
+    await run.flush();
+    assert.equal(attempts(), 4, 'herdr answers: written');
+});
+
+test('a lane fact that became unknown is written as null for its name, so the old value is not shown until the time to live ends', async () => {
+    const board = { current: boardOf(laneOf('w1:p1')) };
+    const recap = { value: facts() };
+    const run = publisher(board, recap);
+    run.at(0);
+    recap.value = facts({ share: null });
+    run.at(TICK_MS);
+    await run.flush();
+    assert.equal(reportAt(run.tokens.reports, 1).tokens['tab-recap-share'], null);
+    assert.equal(reportAt(run.tokens.reports, 1).tokens['tab-recap-api'], '1');
 });

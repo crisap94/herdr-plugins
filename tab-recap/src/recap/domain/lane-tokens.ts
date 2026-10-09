@@ -1,5 +1,7 @@
 // The lane tokens tab-recap publishes on a lane's pane: the protocol version, the context share, when the last recap was written and how many needs are open.
 // Pure: the application reads the facts, this decides what to write and what to clear.
+import { EVENT_TOKEN } from './event-token.ts';
+import { LEASE } from './typing-lease.ts';
 
 /** The protocol version. A breaking change to a token's name or value format raises it. */
 export const PROTOCOL_VERSION = '1';
@@ -10,8 +12,19 @@ export const NEEDS_TOKEN = 'tab-recap-needs';
 /** the answer to a `compact-req-<tool>` request: `<id>:<stage>` */
 export const COMPACT_TOKEN = 'tab-recap-compact';
 
-/** Every name tab-recap may write or clear: its own, and nothing else. */
+/** The names of a lane's own state, which the publisher writes and clears. */
 export const OWNED_TOKENS: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN, COMPACT_TOKEN];
+
+/** The lane's state names: what the publisher writes, and writes `null` for when the fact is no longer known. */
+export const STATE_TOKENS: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
+
+/** Every name tab-recap may write on a pane: its state, its events and its typing lease. Anything else is refused at the adapter's edge. */
+export const PANE_WRITABLE: readonly string[] = [...OWNED_TOKENS, EVENT_TOKEN, LEASE];
+/** Every name tab-recap may write on a workspace: its events. */
+export const WORKSPACE_WRITABLE: readonly string[] = [EVENT_TOKEN];
+
+/** The first name of `names` that is not in `allowed`; null when all are tab-recap's. */
+export const unownedName = (names: readonly string[], allowed: readonly string[]): string | null => names.find((name) => !allowed.includes(name)) ?? null;
 
 /** What a lane's pane carries, as the application read it; a fact that is unknown is left out of the tokens. */
 export interface LaneFacts {

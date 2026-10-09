@@ -6,6 +6,7 @@ import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
+import { backoffMs } from '#src/recap/domain/backoff.ts';
 
 /** an answer is trusted this long: a note a tool writes shows within this time */
 export const TTL_MS = 3000;
@@ -28,6 +29,8 @@ export class TokenNotes implements Extension {
     private readonly deps: TokenNotesDeps;
     private readonly cache = new Map<string, Entry>();
     private readonly reading = new Set<string>();
+    /** pane → consecutive failed reads and the time before which none is tried (a failing herdr is not asked every render) */
+    private readonly failing = new Map<string, { readonly count: number; readonly until: number }>();
 
     constructor(deps: TokenNotesDeps) {
         this.deps = deps;
@@ -52,7 +55,7 @@ export class TokenNotes implements Extension {
         if (entry !== undefined) {
             entry.seen = now;
         }
-        if ((entry === undefined || now - entry.at >= TTL_MS) && !this.reading.has(pane)) {
+        if ((entry === undefined || now - entry.at >= TTL_MS) && !this.reading.has(pane) && (this.failing.get(pane)?.until ?? 0) <= now) {
             this.reading.add(pane);
             void this.read(pane);
         }
@@ -63,8 +66,12 @@ export class TokenNotes implements Extension {
     private async read(pane: string): Promise<void> {
         try {
             const found = await this.deps.panes.read(pane);
-            if (!isUnknown(found)) {
-                const now = this.deps.now();
+            const now = this.deps.now();
+            if (isUnknown(found)) {
+                const count = (this.failing.get(pane)?.count ?? 0) + 1;
+                this.failing.set(pane, { count, until: now + backoffMs(count) });
+            } else {
+                this.failing.delete(pane);
                 this.cache.set(pane, { tokens: found.tokens, at: now, seen: now });
             }
         } finally {

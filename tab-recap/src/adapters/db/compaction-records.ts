@@ -1,5 +1,5 @@
-import { originOf } from '#src/recap/domain/origin.ts';
 // The CompactionRecords repository: one row per compaction of a lane; every write is one transaction, every read answers [] when it cannot.
+import { originOf } from '#src/recap/domain/origin.ts';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
 import { all, BadRow, blob, flag, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';

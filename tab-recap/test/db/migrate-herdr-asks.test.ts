@@ -56,3 +56,15 @@ test('the asks repository reads a store it cannot read as seen: nothing is acted
     opened.db.close();
     assert.equal(asks.seen('coordinator', 'r7'), true);
 });
+
+test('the asks older than the keep are pruned; the newer ones are still remembered', () => {
+    const opened = openDatabase(MEMORY);
+    assert.equal(opened.kind, 'ready');
+    const asks = new AskRepository(opened.db, () => 100);
+    asks.remember('coordinator', 'old', 'w1:p1');
+    const later = new AskRepository(opened.db, () => 900);
+    later.remember('coordinator', 'new', 'w1:p1');
+    later.prune(500);
+    assert.equal(later.seen('coordinator', 'old'), false, 'pruned');
+    assert.equal(later.seen('coordinator', 'new'), true, 'kept');
+});

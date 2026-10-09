@@ -38,19 +38,22 @@ export class Sender {
         this.deps = deps;
     }
 
-    /** Typed into the pane under the typing lease: held back while an earlier lease of another tool is live, and cleared once typed. */
+    /** Typed into the pane under the typing lease, around the send only: held back while another tool's lease is live, and cleared once typed. Without herdr's tokens the line is typed anyway. */
     private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
         const typing = this.deps.typing;
         if (typing === undefined) {
             return type();
         }
-        if (!(await typing.acquire(pane))) {
-            return unknown({ why: 'timeout', after: duration(LEASE_TTL_MS) });
+        const acquired = await typing.acquire(pane);
+        if (acquired === 'busy') {
+            return unknown({ why: 'lease', after: duration(LEASE_TTL_MS) });
         }
         try {
             return await type();
         } finally {
-            await typing.release(pane);
+            if (acquired === 'taken') {
+                await typing.release(pane);
+            }
         }
     }
 
@@ -107,7 +110,7 @@ export class Sender {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const since = this.deps.now();
-        const sent = await this.typed(String(lane.pane), () => this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS }));
+        const sent = await this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS });
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(String(lane.pane), since, RESTORE_SETTLE_MS);
         }

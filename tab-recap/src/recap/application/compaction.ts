@@ -59,7 +59,7 @@ export class Compaction {
 
     /** The request's answer on its pane, when it came from another tool. */
     private answer(request: CompactRequest | null, pane: string, stage: string): void {
-        if (request?.answer !== undefined) {
+        if (request?.answer !== undefined && pane !== '') {
             this.deps.answer?.(request.answer, pane, stage);
         }
     }

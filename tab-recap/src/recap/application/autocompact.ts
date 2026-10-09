@@ -8,6 +8,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 import { gateOf, READY } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
@@ -24,6 +25,9 @@ import type { LaneEvents } from './lane-events.ts';
 
 export type { FlightAnswer } from './autocompact-gates.ts';
 
+/** What the pane's `awaiting` tokens say now: clear, waiting (for what), or unreadable (which counts as in flight). */
+export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
+
 /** Where a consideration stopped: the gate, whether the kind is record-only, and the detail a skip keeps. */
 interface Stop {
     readonly gate: Gate;
@@ -38,8 +42,8 @@ export interface AutocompactDeps {
     readonly contexts: { of(pane: string): ContextUse | null };
     /** work the lane's agent started and has not ended; `unknown` for a reader that cannot tell */
     inFlight(lane: Lane): Promise<FlightAnswer>;
-    /** the value of the pane's `awaiting` / `awaiting-<tool>` token, when another tool set one (it counts as in flight, whatever the setting) */
-    awaiting?(pane: string): Promise<string | null>;
+    /** the pane's `awaiting` / `awaiting-<tool>` tokens (a wait counts as in flight, whatever the setting; unreadable counts as in flight too) */
+    awaiting?(pane: string): Promise<Waiting>;
     /** the plugin's events on herdr's stream */
     readonly events?: LaneEvents;
     recent(lane: Lane): Promise<readonly Entry[]>;
@@ -122,8 +126,7 @@ export class Autocompact {
         const cheap = gateOf({ ...facts, inFlight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
         if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }) };
-        const waiting = deps.awaiting === undefined ? null : await deps.awaiting(pane);
-        const flight: FlightAnswer = waiting === null ? await deps.inFlight(lane) : { count: 1, why: 'awaiting', detail: `awaiting ${waiting}` };
+        const flight = await this.flightOf(lane, pane);
         const full = gateOf({ ...facts, inFlight: flight.count });
         return { ...full, detail: detailOf(full.gate, { ...context, flight }) };
     }
@@ -148,6 +151,8 @@ export class Autocompact {
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
         if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane);
+        // a wait that began while the decider answered is read here, before the busy check that is made synchronously with the record
+        if (await this.waitSkipped(lane, use)) return;
         // the decider may have taken a while: another lane may have been requested meanwhile, so the busy check is made again, synchronously, before the record
         const again = busyOf(deps, this.asked, tab, pane, deps.now());
         if (again.busy) {
@@ -157,6 +162,26 @@ export class Autocompact {
             return;
         }
         this.record(lane, use, { mode: policy.mode, gate, recordOnly, judged });
+    }
+
+    /** The decider was paid for; a wait that began while it answered stops the request, as one that began before would have. True when skipped. */
+    private async waitSkipped(lane: Lane, use: ContextUse): Promise<boolean> {
+        const late = await this.waitingOf(String(lane.pane));
+        if (late.kind === 'clear') return false;
+        this.skip(lane, 'in-flight', shareOf(use), late.kind === 'waiting' ? `awaiting ${late.value}` : saying(late.why));
+        return true;
+    }
+
+    /** The pane's wait as the in-flight gate counts it: an `awaiting` token, or the reader's count (an unreadable token is in flight). */
+    private async flightOf(lane: Lane, pane: string): Promise<FlightAnswer> {
+        const waiting = await this.waitingOf(pane);
+        if (waiting.kind === 'clear') return this.deps.inFlight(lane);
+        if (waiting.kind === 'waiting') return { count: 1, why: 'awaiting', detail: `awaiting ${waiting.value}` };
+        return { count: 'unknown', why: saying(waiting.why) };
+    }
+
+    private async waitingOf(pane: string): Promise<Waiting> {
+        return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(pane);
     }
 
     /** The decision is recorded, logged and said as an event; a compact one of mode `on` is requested. */

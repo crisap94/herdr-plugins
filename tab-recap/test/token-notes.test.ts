@@ -36,7 +36,7 @@ test('the plugin\'s own tokens are no note; a bare `note` is labelled `note`', a
     assert.deepEqual(found.byPane.get('w1:p1'), [{ label: 'note', at: null, details: ['hold'] }]);
 });
 
-test('a lane whose read failed keeps what it had, and is read again on the next render', async () => {
+test('a lane whose read failed keeps what it had, and is read again once its back-off has passed', async () => {
     let fail = false;
     const { notes, reads, clock } = notesWith(() => (fail ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'tokens', tokens: { 'note-x': 'kept' } }));
     notes.notes([lane('w1:p1')]);
@@ -48,8 +48,8 @@ test('a lane whose read failed keeps what it had, and is read again on the next 
     const kept = notes.notes([lane('w1:p1')]);
     assert.ok(kept.kind === 'notes');
     assert.equal(kept.byPane.get('w1:p1')?.[0]?.details[0], 'kept');
-    // the entry is still stale after the failed read, so the render that follows asks again: a failing herdr is retried, one read at a time
-    assert.deepEqual(reads, ['w1:p1', 'w1:p1', 'w1:p1']);
+    // the failed read backs off: the render that follows waits, and herdr is not asked on every render while it is unreachable
+    assert.deepEqual(reads, ['w1:p1', 'w1:p1']);
 });
 
 test('nothing is read again inside the TTL, and a lane that goes away is no longer shown', async () => {

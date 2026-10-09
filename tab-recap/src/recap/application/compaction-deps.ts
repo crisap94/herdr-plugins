@@ -35,7 +35,7 @@ export interface CompactionDeps {
     /** answers another tool's compaction request on its pane (`tab-recap-compact` = `<id>:<stage>`); absent when herdr events are off */
     answer?(id: string, pane: string, stage: string): void;
     /** the typing lease, taken around every line typed into a pane (absent: nothing is held back) */
-    readonly typing?: { acquire(pane: string): Promise<boolean>; release(pane: string): Promise<void> };
+    readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     /** the plugin's events on herdr's stream: the compaction's stages (its id is the detail) */
     readonly events?: LaneEvents;
     /** the agent's last turns, read from its own records; empty when they cannot be read */

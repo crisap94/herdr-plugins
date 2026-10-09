@@ -12,7 +12,7 @@ export function leaseBlocked(tokens: Readonly<Record<string, string>>, stamp: nu
         if (!FOREIGN.test(name) || name === LEASE) {
             return false;
         }
-        const theirs = Number(value);
-        return Number.isFinite(theirs) && (theirs < stamp || (theirs === stamp && name < LEASE));
+        const theirs = value.trim() === '' ? 0 : Number(value);
+        return Number.isFinite(theirs) && theirs > 0 && (theirs < stamp || (theirs === stamp && name < LEASE));
     });
 }

@@ -6,7 +6,9 @@ export type Unknowable =
     | { readonly why: 'unreadable'; readonly detail: string }
     | { readonly why: 'unreachable'; readonly detail: string }
     | { readonly why: 'not-found'; readonly what: string }
-    | { readonly why: 'failed'; readonly code: number; readonly detail: string };
+    | { readonly why: 'failed'; readonly code: number; readonly detail: string }
+    /** another tool holds the pane's typing lease: the compaction is not typed */
+    | { readonly why: 'lease'; readonly after: Duration };
 
 export type Unknown = { readonly kind: 'unknown'; readonly why: Unknowable };
 
@@ -31,6 +33,8 @@ export function saying(unknowable: Unknowable): string {
             return `${unknowable.what} not found`;
         case 'failed':
             return `exited ${unknowable.code}: ${unknowable.detail}`;
+        case 'lease':
+            return `another tool is typing into the pane (its lease held ${unknowable.after} ms)`;
         default: {
             const exhaustive: never = unknowable;
             return String(exhaustive);

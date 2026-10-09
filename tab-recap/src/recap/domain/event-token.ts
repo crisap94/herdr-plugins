@@ -13,8 +13,8 @@ export const EVENT_KINDS = [
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
-/** The sequence number of the n-th event of a pane (or workspace), counted from the daemon's start (epoch ms). */
-export const seqOf = (startedAt: number, n: number): string => (startedAt + n).toString(36);
+/** The sequence number of the n-th event of a pane (or workspace), counted from the daemon's start (epoch ms, whole: a fraction is cut). */
+export const seqOf = (startedAt: number, n: number): string => (Math.floor(startedAt) + n).toString(36);
 
 /** The whole value, cut to what a herdr token value holds. */
 export function eventValue(seq: string, kind: EventKind, detail?: string | null): string {

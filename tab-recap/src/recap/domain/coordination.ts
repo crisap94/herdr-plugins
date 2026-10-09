@@ -16,11 +16,14 @@ export interface NoteToken {
     readonly value: string;
 }
 
-/** Every non-empty `note` / `note-<tool>` token, in name order. */
+/** The text as the column may draw it: control characters (escapes, line breaks, tabs) become spaces, runs of spaces collapse. */
+export const plainText = (raw: string): string => raw.replace(/\p{Cc}/gu, ' ').replace(/ {2,}/g, ' ').trim();
+
+/** Every non-empty `note` / `note-<tool>` token, in name order; its text is plain (another tool wrote it, and the column draws it). */
 export function notesOf(tokens: Readonly<Record<string, string>>): readonly NoteToken[] {
     return Object.keys(tokens).toSorted().flatMap((name): NoteToken[] => {
         const found = NOTE.exec(name);
-        const value = tokens[name] ?? '';
+        const value = plainText(tokens[name] ?? '');
         return found === null || value === '' ? [] : [{ label: found[1] ?? 'note', value }];
     });
 }

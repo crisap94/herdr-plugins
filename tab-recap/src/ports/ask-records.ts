@@ -4,4 +4,6 @@ export interface AskRecords {
     seen(tool: string, id: string): boolean;
     /** the id is accepted now, on `pane` */
     remember(tool: string, id: string, pane: string): void;
+    /** forgets the asks accepted before `at` (epoch ms): one that old is no longer a risk of being acted on again */
+    prune(at: number): void;
 }

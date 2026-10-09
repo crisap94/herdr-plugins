@@ -37,3 +37,14 @@ test('an event value is `<seq>:<kind>[:<detail>]`, cut to 80 characters; the seq
     assert.equal(seqOf(36 * 36, 0), '100');
     assert.equal(seqOf(36 * 36, 1), '101');
 });
+
+test('notes are plain text: escapes, line breaks and tabs become spaces, runs of spaces collapse; a note that is only control characters is no note', () => {
+    assert.deepEqual(notesOf({ 'note-x': 'a\u001b[31mred\u001b[0m\nline\there' }), [{ label: 'x', value: 'a [31mred [0m line here' }]);
+    assert.deepEqual(notesOf({ 'note-x': '\u0007\u0008' }), []);
+});
+
+test('an empty or non-positive foreign lease is no lease', () => {
+    assert.equal(leaseBlocked({ 'typing-coordinator': '' }, 200), false);
+    assert.equal(leaseBlocked({ 'typing-coordinator': '0' }, 200), false);
+    assert.equal(leaseBlocked({ 'typing-coordinator': '-5' }, 200), false);
+});

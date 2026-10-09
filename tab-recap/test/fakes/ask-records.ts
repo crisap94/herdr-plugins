@@ -11,4 +11,8 @@ export class MemoryAsks implements AskRecords {
     remember(tool: string, id: string, pane: string): void {
         this.rows.set(`${tool}\u0000${id}`, pane);
     }
+
+    prune(): void {
+        this.rows.clear();
+    }
 }

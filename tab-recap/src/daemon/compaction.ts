@@ -43,7 +43,7 @@ export function wireCompaction(parts: {
     /** answers another tool's compaction request on its pane */
     readonly answers: { answer(id: string, pane: string, stage: string): void };
     /** the typing lease, taken around each line typed */
-    readonly typing: { acquire(pane: string): Promise<boolean>; release(pane: string): Promise<void> };
+    readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
     log(line: string): void;
 }): Compaction {

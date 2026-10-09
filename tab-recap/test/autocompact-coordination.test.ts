@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';
 import { lane, rows, world } from './autocompact-world.ts';
+import type { DecidedResult } from '#src/ports/decider.ts';
 
 test('an `awaiting` token makes the lane in flight, with the detail `awaiting <value>`: no decider is asked, nothing is requested, and the in-flight reader is not read', async () => {
     const w = world();
@@ -45,4 +46,24 @@ test('shadow mode decides and writes the decision event too, but asks for nothin
     await w.service.consider(lane());
     assert.deepEqual(w.events, ['w1:p1 autocompact-decided compact-62']);
     assert.equal(w.requests.length, 0);
+});
+
+test('an unreadable `awaiting` counts as in flight: nothing is asked, and the reason is the detail', async () => {
+    const w = world();
+    w.awaitingUnknown = true;
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked, w.requests], [[], []]);
+    const skip = w.store.autocompact.skips().find((each) => each.pane === 'w1:p1');
+    assert.ok(skip !== undefined, 'the lane was skipped');
+    assert.equal(skip.gate, 'in-flight');
+    assert.match(skip.detail ?? '', /unreadable|unreachable|not/u);
+});
+
+test('`awaiting` is read again after the decider answers: a wait that began while it answered stops the request', async () => {
+    const w = world();
+    const decide = w.decide;
+    w.decide = (): DecidedResult => { w.awaiting = 'reviewer'; return decide(); };
+    await w.service.consider(lane());
+    assert.deepEqual(w.requests, [], 'the decider was asked, but nothing is requested');
+    assert.deepEqual(w.store.autocompact.skips().find((each) => each.pane === 'w1:p1')?.detail, 'awaiting reviewer');
 });

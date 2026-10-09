@@ -13,7 +13,7 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAsks } from './fakes/ask-records.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-const board = (): Board => ({ ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) });
+const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 
 /** A frame as herdr's `pane.updated` carries it: the pane and its merged tokens. */
 const frame = (pane: string, tokens: Record<string, string>): { readonly pane: { readonly pane_id: string; readonly tokens: Record<string, string> } } => ({ pane: { pane_id: pane, tokens } });
@@ -35,11 +35,12 @@ function setup(on = true, asks = new MemoryAsks()): Harness {
 }
 
 test('askedOf: `<id>` or `<id>:<note>`; the note is everything after the first colon; an empty or long id is refused', () => {
-    assert.deepEqual(askedOf('r7'), { id: 'r7', note: null });
-    assert.deepEqual(askedOf('r7:focus: the API'), { id: 'r7', note: 'focus: the API' });
-    assert.deepEqual(askedOf('r7:'), { id: 'r7', note: null });
+    assert.deepEqual(askedOf('r7'), { id: 'r7', note: null, valid: true });
+    assert.deepEqual(askedOf('r7:focus: the API'), { id: 'r7', note: 'focus: the API', valid: true });
+    assert.deepEqual(askedOf('r7:'), { id: 'r7', note: null, valid: true });
     assert.equal(askedOf(''), null);
-    assert.equal(askedOf('x'.repeat(17)), null);
+    assert.equal(askedOf('x'.repeat(17))?.valid, false, 'an overlong id is not valid');
+    assert.equal(askedOf(':note')?.valid, false, 'an empty id is not valid');
     assert.ok(answerValue('r7', 'running').length <= VALUE_MAX);
     assert.ok((askedOf(`r7:${'n'.repeat(200)}`)?.note?.length ?? 0) + 3 <= VALUE_MAX, 'the note fits the rest of the value');
 });
@@ -134,6 +135,62 @@ test('a restart interrupts what was asked: each unfinished or queued request is 
 test('off: an interrupted request is not answered either', async () => {
     const run = setup(false);
     run.compact.answerInterrupted([{ pane: 'w1:p1', answer: 'r7' }]);
+    await run.flush();
+    assert.deepEqual(run.tokens.reports, []);
+});
+
+test('a request written while the setting is off is remembered, not acted on: turning it on later runs nothing stale', async () => {
+    const asks = new MemoryAsks();
+    const off = setup(false, asks);
+    off.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    const on = setup(true, asks);
+    on.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    on.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7', 'typing-coordinator': '1' }));
+    await on.flush();
+    assert.deepEqual(on.asked, []);
+});
+
+test('an id that is empty or overlong is answered failed-bad-id once, and the answer does not loop back into another answer', async () => {
+    const run = setup(true);
+    run.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': ':no id' }));
+    run.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': ':no id', 'tab-recap-compact': ':failed-bad-id' }));
+    run.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'x'.repeat(20) }));
+    await run.flush();
+    assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': ':failed-bad-id' }, { 'tab-recap-compact': `${'x'.repeat(16)}:failed-bad-id` }]);
+});
+
+test('a request that comes before the board exists waits for it, and is then acted on', async () => {
+    const asks = new MemoryAsks();
+    let seeded = false;
+    const asked: CompactRequest[] = [];
+    const tokens = new RecordingTokens();
+    const handler = new CompactRequests({
+        enabled: (): boolean => true, board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, log: (): void => undefined,
+    });
+    handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r9' }));
+    assert.deepEqual([asked, tokens.reports, asks.seen('coordinator', 'r9')], [[], [], false], 'not decided, not remembered, before the board');
+    seeded = true;
+    handler.tick();
+    assert.deepEqual(asked.map((request) => request.answer), ['r9'], 'the board exists: it is a lane, so it is queued');
+});
+
+test('a request is remembered only after it is queued: a refused queue leaves it free to be asked again', () => {
+    const asks = new MemoryAsks();
+    const tokens = new RecordingTokens();
+    let refuse = true;
+    const handler = new CompactRequests({
+        enabled: (): boolean => true, board: (): Board => board(), requests: { requestCompact: (): void => { if (refuse) throw new Error('database locked'); } }, asks, tokens, log: (): void => undefined,
+    });
+    handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    assert.equal(asks.seen('coordinator', 'r7'), false, 'not remembered: nothing was queued');
+    refuse = false;
+    handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    assert.equal(asks.seen('coordinator', 'r7'), true);
+});
+
+test('no answer is written on an empty pane', async () => {
+    const run = setup(true);
+    run.compact.answer('r7', '', 'queued');
     await run.flush();
     assert.deepEqual(run.tokens.reports, []);
 });

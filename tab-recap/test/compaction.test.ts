@@ -21,7 +21,7 @@ const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'g
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
 
 /** A fleet of fake agents: what each reports, what was typed into it, and what happened around it. */
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; lease: { acquire: (pane: string) => Promise<boolean>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
@@ -85,7 +85,7 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
         log: () => undefined,
         ...(world.lease === undefined ? {} : { typing: world.lease }),
         answer: (id, pane, stage) => { world.answered.push(`${id} ${pane} ${stage}`); },
-        events: { lane: (pane, kind, detail) => { world.laneEvents.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); } },
+        events: { lane: (pane, kind, detail) => { world.laneEvents.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },
     };
     return new Compaction(deps);
 }
@@ -341,12 +341,12 @@ test('the template leaves out recap items that name the plugin, unless the conve
 test('the typing lease: taken around the brief and cleared after it is typed; an earlier foreign lease that does not go means nothing is typed', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const calls: string[] = [];
-    world.lease = { acquire: (pane: string): Promise<boolean> => { calls.push(`acquire ${pane}`); return Promise.resolve(true); }, release: (pane: string): Promise<void> => { calls.push(`release ${pane}`); return Promise.resolve(); } };
+    world.lease = { acquire: (pane: string): Promise<'taken' | 'busy' | 'unavailable'> => { calls.push(`acquire ${pane}`); return Promise.resolve('taken'); }, release: (pane: string): Promise<void> => { calls.push(`release ${pane}`); return Promise.resolve(); } };
     await flow(world).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(calls, ['acquire w1:p1', 'release w1:p1'], 'taken before the line is typed, cleared after');
     assert.equal(world.typed.length, 1);
     const held = fleet({ 'w1:p1': 'idle' });
-    held.lease = { acquire: (): Promise<boolean> => Promise.resolve(false), release: (): Promise<void> => Promise.resolve() };
+    held.lease = { acquire: (): Promise<'taken' | 'busy' | 'unavailable'> => Promise.resolve('busy'), release: (): Promise<void> => Promise.resolve() };
     await flow(held).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(held.typed, [], 'nothing typed while another tool holds the pane');
 });
@@ -362,4 +362,20 @@ test('a request from another tool is answered on its pane as the compaction goes
     const world = fleet({ 'w1:p1': 'idle' });
     await flow(world, 'focused', 'w1:p1', null, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 done']);
+});
+
+test('the lease is held around the command only: a codex restore message is typed after it is released, and the agent\'s answer is not waited under it', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const calls: string[] = [];
+    world.lease = { acquire: (pane: string): Promise<'taken' | 'busy' | 'unavailable'> => { calls.push(`acquire ${pane}`); return Promise.resolve('taken'); }, release: (pane: string): Promise<void> => { calls.push(`release ${pane}`); return Promise.resolve(); } };
+    await flow(world, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p2', note: null });
+    assert.deepEqual(calls, ['acquire w1:p2', 'release w1:p2'], 'the lease covers the /compact line');
+    assert.ok(world.events.includes('prompt w1:p2'), 'the restore message is still sent');
+});
+
+test('herdr cannot take the lease: the brief is typed all the same', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    world.lease = { acquire: (): Promise<'taken' | 'busy' | 'unavailable'> => Promise.resolve('unavailable'), release: (): Promise<void> => Promise.resolve() };
+    await flow(world).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.equal(world.typed.length, 1, 'typed without a lease');
 });
