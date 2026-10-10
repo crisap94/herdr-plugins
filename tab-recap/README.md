@@ -579,6 +579,13 @@ per outage.
 
 **The version.** `tab-recap-api` is the protocol version. A breaking change to a token's name or value format raises it.
 
+## Command exit codes
+
+### Exit codes
+- Every command exits `0` when it did what was asked, `1` when it failed, `2` on a usage error (an unknown or mistyped option is named, the usage goes to stderr) and `3` when it could not look at what it was asked about.
+- `compact` exits `0` when the compaction was requested and `1` when it was not (the popup did not open, or the state store is not ready).
+- `autocompact` lists the newest autocompact decisions, read-only: exit `0` listed, `1` the state is unusable, `2` usage; `--all` is its only option.
+
 ## Configure
 
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
@@ -614,3 +621,5 @@ stops, the columns say so instead of a recap — upgrade the plugin, or restore 
 ## Develop
 
 See [`CLAUDE.md`](CLAUDE.md) (layers and red lines) and [`CONTEXT.md`](CONTEXT.md) (vocabulary).
+
+The code carries no comments. The lint gate fails on any comment that is not a directive pragma (`recap-no-comments`): names, types and tests carry the meaning, and the rationale lives in this README, [`CONTEXT.md`](CONTEXT.md) or the OpenSpec design of the change that made the decision.
