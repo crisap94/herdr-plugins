@@ -121,7 +121,7 @@ The kinds that can be compacted, appear in the default column policy, and are au
 
 ### Requirement: Each adapter states the context window of its own model
 
-Each registered kind SHALL provide a context-window function, and the domain SHALL use that function with the observed transcript, the injected catalogue where applicable, and the operator's setting. The domain SHALL apply setting priority and raise an undersized base window to cover the observed token peak. The recognized sources SHALL remain `agent`, `catalogue`, `table`, `observed`, and `setting`.
+Each registered kind SHALL provide a context-window function, and the domain SHALL use that function with the observed transcript, the injected catalogue where applicable, and the operator's setting. The domain SHALL apply setting priority and raise an undersized base window according to the size ladder carried by that window source, or to the exact observed peak when that ladder has no qualifying rung. The recognized sources SHALL remain `agent`, `catalogue`, `table`, `observed`, and `setting`.
 
 #### Scenario: A kind reports its observed context window
 
@@ -146,7 +146,32 @@ Each registered kind SHALL provide a context-window function, and the domain SHA
 #### Scenario: Observed usage raises a smaller window
 
 - **WHEN** the current token count or pre-compaction peak exceeds the base window
-- **THEN** the window SHALL be raised using the shared size ladder or the observed peak, and the source SHALL be `observed`
+- **THEN** the window SHALL be raised using the size ladder carried by that window source or to the exact observed peak, and the source SHALL be `observed`
+
+#### Scenario: Claude raises usage to its next size rung
+
+- **WHEN** Claude's token count or pre-compaction peak exceeds its base window but fits a size rung
+- **THEN** the window SHALL be raised to the smallest fitting Claude size rung and the source SHALL be `observed`
+
+#### Scenario: Codex uses the exact observed peak above its stated window
+
+- **WHEN** Codex's token count or pre-compaction peak exceeds its stated window
+- **THEN** the window SHALL equal the observed peak and the source SHALL be `observed`
+
+#### Scenario: OpenCode uses the exact observed peak above its catalogue window
+
+- **WHEN** OpenCode's token count or pre-compaction peak exceeds its catalogue window
+- **THEN** the window SHALL equal the observed peak and the source SHALL be `observed`
+
+#### Scenario: An unregistered kind uses the exact observed peak above its reported window
+
+- **WHEN** an unregistered kind's token count or pre-compaction peak exceeds its stated or catalogued window
+- **THEN** the window SHALL equal the observed peak and the source SHALL be `observed`
+
+#### Scenario: Usage within the base window leaves it unchanged
+
+- **WHEN** a kind's token count and pre-compaction peak do not exceed its stated or catalogued window
+- **THEN** the base window and its source SHALL remain unchanged
 
 #### Scenario: The operator sets a context window
 

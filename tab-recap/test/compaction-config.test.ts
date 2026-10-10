@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
-import { WINDOW_SIZES, windowOfKind } from '#src/adapters/context-window.ts';
+import { windowOfKind } from '#src/adapters/context-window.ts';
 
 test('target: focused by default, all, or kinds', () => {
     assert.deepEqual(targetOf(undefined), { kind: 'focused' });
@@ -37,7 +37,6 @@ const seen = { tokens: 90_000, peak: 0, window: null, model: 'claude-opus-4-7' }
 const context = (observed: Observed, kind: string, setting: number | null, catalogued: number | null): ContextUse | null => contextOf(
     { observed, setting },
     windowOfKind(kind, { windowOf: () => catalogued }),
-    WINDOW_SIZES,
 );
 
 test('context window, runtime first: setting, agent, catalogue, family table — in that order', () => {
