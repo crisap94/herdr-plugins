@@ -1,6 +1,6 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { OWNED_TOKENS, STATE_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
+import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
 import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
 import type { LaneFacts, TokenValues } from '#src/recap/domain/lane-tokens.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
@@ -16,6 +16,7 @@ export interface LaneTokenDeps {
     readonly enabled: () => boolean;
     readonly board: () => Board;
     readonly facts: (lane: Lane) => LaneFacts;
+    readonly capability?: () => string;
     readonly now: () => number;
     readonly log: (line: string) => void;
     readonly events?: LaneEvents;
@@ -62,7 +63,7 @@ export class LaneTokenPublisher {
             return;
         }
         const previous = this.written.get(pane);
-        const values = valuesOf(this.deps.facts(lane));
+        const values = valuesOf(this.deps.facts(lane), this.deps.capability?.() ?? CAPABILITY_VALUE);
         const due = writeDue(previous === undefined ? null : { values: previous.values, at: previous.at }, values, now, TTL_MS);
         if (due === null) {
             return;

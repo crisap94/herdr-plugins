@@ -35,7 +35,7 @@ type Vector = {
     readonly answerToken: string;
     readonly timing: Readonly<Record<string, number>>;
     readonly requests: readonly { readonly raw: string; readonly expect: unknown }[];
-    readonly serializes: readonly { readonly id: string; readonly note: string | null; readonly expect: unknown }[];
+    readonly serializes: readonly { readonly value: ParsedValue; readonly expect: unknown }[];
     readonly answers: readonly { readonly id: string; readonly stage: string; readonly expect: unknown }[];
     readonly badIds: readonly { readonly rawId: string; readonly expect: string }[];
     readonly traces: readonly Trace[];
@@ -125,8 +125,7 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: parsed values serialize as published`, () => {
         for (const item of vector.serializes) {
-            const value = { id: item.id as RequestId, note: item.note };
-            assert.deepEqual(valueOf(serializeRequest(exchange, value)), item.expect, JSON.stringify(item));
+            assert.deepEqual(valueOf(serializeRequest(exchange, item.value)), item.expect, JSON.stringify(item));
         }
     });
 

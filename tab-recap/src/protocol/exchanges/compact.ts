@@ -9,8 +9,12 @@ export const COMPACT_FAILURES = {
     notALane: 'not-a-lane',
     interrupted: 'interrupted',
     noTarget: 'no-target',
+    skipped: 'skipped',
+    busy: 'busy',
     error: 'error',
 } as const;
+
+export type CompactFailure = (typeof COMPACT_FAILURES)[keyof typeof COMPACT_FAILURES];
 
 export const compact = {
     name: must(exchangeName('compact')),

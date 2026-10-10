@@ -30,9 +30,17 @@ export interface AskKey {
     readonly pane: PaneId;
 }
 
+export interface AskIdentity {
+    readonly exchange: ExchangeName;
+    readonly requester: Requester;
+    readonly id: RequestId;
+}
+
 export interface AskLedger {
     seen(exchange: ExchangeName, requester: Requester, id: string): boolean;
     record(ask: NewAsk): void;
+    attach(match: AskKey, ref: string): void;
+    withdraw(identity: AskIdentity): void;
     settle(match: AskKey, outcome: AskOutcome): void;
     unfinished(): readonly Ask[];
     prune(before: number): void;

@@ -9,7 +9,8 @@ import { EVENT_TOKEN } from './event-token.ts';
 
 export const PROTOCOL_VERSION = '1';
 export const COMPACT_TOKEN = answerNameOf(compact);
-const CAPABILITY_VALUE = must(capabilityValue(EXCHANGES, KINDS_VERSION));
+export const capabilityOf = (isOn: (setting: string) => boolean): string => must(capabilityValue(EXCHANGES, KINDS_VERSION, isOn));
+export const CAPABILITY_VALUE = capabilityOf(() => true);
 
 const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 
@@ -30,13 +31,13 @@ export interface LaneFacts {
 
 export type TokenValues = Readonly<Record<string, string>>;
 
-export function valuesOf(facts: LaneFacts): TokenValues {
+export function valuesOf(facts: LaneFacts, capability: string = CAPABILITY_VALUE): TokenValues {
     return {
         [API_TOKEN]: PROTOCOL_VERSION,
         ...(facts.share === null ? {} : { [SHARE_TOKEN]: String(facts.share) }),
         ...(facts.recapAt === null ? {} : { [RECAP_TOKEN]: String(facts.recapAt) }),
         [NEEDS_TOKEN]: String(facts.needs),
-        [CAPABILITY_TOKEN]: CAPABILITY_VALUE,
+        [CAPABILITY_TOKEN]: capability,
     };
 }
 

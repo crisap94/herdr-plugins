@@ -51,13 +51,15 @@ import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
-import type { Requests } from '#src/ports/requests.ts';
-import { interruptAsks } from '#src/recap/application/ask-restart.ts';
+import { answerRestart } from '#src/recap/application/ask-restart.ts';
+import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
+import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
+import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
@@ -93,24 +95,9 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
     recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
 }
 
-function purgeAnsweredCompactions(requests: Pick<Requests, 'takeAnswered'>): number {
-    return requests.takeAnswered().length;
-}
-
-function answerRestart(store: Store, answers: CompactRequests): number {
-    const purged = purgeAnsweredCompactions(store.requests);
-    if (purged > 0) {
-        log(`restart: ${purged} answered compaction request(s) purged`);
-    }
-    const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
-    interruptAsks(store.asks, {
-        token: (ask): void => { answers.answerInterrupted([{ pane: ask.pane, id: ask.id }]); },
-        local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
-    });
-    return restarted;
-}
-
 const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
+
+const switchOn = (setting: string): boolean => herdrEventsOf(configGetter()(setting)) === 'on';
 
 function wantsScreen(agent: string): boolean {
     const { screenAgents } = loadConfig();
@@ -143,7 +130,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
-    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), now: (): number => Date.now(), log, events });
+    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: (): string => capabilityOf(switchOn), now: (): number => Date.now(), log, events });
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts }, log);
     const informer = new Informer(fleet, clock, config.policy, {
@@ -169,7 +156,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({
         fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
-        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, events, claims,
+        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
@@ -220,7 +207,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep, answers, events } = booted;
+    const { informer, fleet, backends, extensions, store, retention, sweep, events } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -231,7 +218,11 @@ async function start(): Promise<number> {
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
-    const restarted = answerRestart(store, answers);
+    const restarted = answerRestart({
+        exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
+        enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
+        log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
+    });
     if (restarted > 0) {
         log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
     }

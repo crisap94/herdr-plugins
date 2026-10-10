@@ -31,12 +31,14 @@ const entryOf = (item: string): Entry | null => {
 
 const unofferable = (exchange: Exchange): boolean => !EXCHANGE_NAME.test(exchange.name) || exchange.name === KINDS;
 
-export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion): Result<TokenValue, Refusal> {
+const enabled = (isOn: (setting: string) => boolean) => (exchange: Exchange): boolean => exchange.optIn === null || isOn(exchange.optIn);
+
+export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: string) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
     const offending = exchanges.find(unofferable);
     if (offending !== undefined) {
         return refuse('bad-grammar', offending.name);
     }
-    const items = exchanges.map((exchange) => `${exchange.name}${exchange.version}`);
+    const items = exchanges.filter(enabled(isOn)).map((exchange) => `${exchange.name}${exchange.version}`);
     return tokenValue([...items, `${KINDS}${kindsVersion}`].join(','));
 }
 

@@ -604,7 +604,7 @@ every pane and workspace that carried one, and the lane tokens on every lane.
 
 **Requests another tool may write** on a lane's pane: `compact-req-<tool>` = `<id>` or `<id>:<note>` (the note is the focus of the
 brief, cut to fit). tab-recap answers in `tab-recap-compact`: `<id>:queued`, then `running`, then `done` or `failed-<reason>`;
-`failed-not-a-lane` when the pane is not a lane; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
+`failed-not-a-lane` when the pane is not a lane; `failed-busy` when the agent is working; `failed-skipped` when it is not ready (blocked, or the brief does not cover the facts); `failed-error` for any other cause; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
 restarts: the same id written again asks for nothing. A request seen while the setting is off is remembered and never acted on, even
 after it goes on. A request a restart interrupts while the setting is on is answered `failed-interrupted`; one interrupted while it is
 off is not answered.

@@ -23,6 +23,7 @@ const lane = { paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude',
 
 interface Control {
     on: boolean;
+    present: boolean;
     tokens: Readonly<Record<string, string>>;
     refuseNext: boolean;
     attempts: number;
@@ -46,11 +47,12 @@ class Herdr implements FleetSource {
 
     snapshot(): Promise<SnapshotResult> {
         const panes = [{ pane_id: PANE, tokens: this.control.tokens }];
+        const present = this.control.present;
         return Promise.resolve({
             kind: 'snapshot',
-            seen: { focusedTab: null, lanes: [lane], panes: [PANE], columns: [], widths: new Map() },
+            seen: { focusedTab: null, lanes: present ? [lane] : [], panes: present ? [PANE] : [], columns: [], widths: new Map() },
             focusedTab: null,
-            paneTokens: paneTokensOf({ panes }),
+            paneTokens: paneTokensOf({ panes: present ? panes : [] }),
         });
     }
 
@@ -78,7 +80,7 @@ interface Harness {
 }
 
 function harness(): Harness {
-    const control: Control = { on: true, tokens: {}, refuseNext: false, attempts: 0 };
+    const control: Control = { on: true, present: true, tokens: {}, refuseNext: false, attempts: 0 };
     const herdr = new Herdr(control);
     const asked: CompactRequest[] = [];
     const asks = new MemoryAskLedger();
@@ -127,7 +129,9 @@ test('a request a pane holds while sharing is off is remembered and never acted 
     const run = harness();
     run.control.on = false;
     run.control.tokens = { 'compact-req-coordinator': 'r9' };
+    void run.informer.run();
     await run.informer.enterSubscription();
+    await flush();
     assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), 'r9'), true, 'remembered while off');
     run.control.on = true;
     await run.informer.reconcile();
@@ -195,4 +199,20 @@ test('the ledger decides, not the value: a map read again with the same request 
     answers.onPaneTokens(PANE, tokens);
     assert.equal(attempts, 2);
     assert.deepEqual(asked.map((request) => request.answer), ['r9']);
+});
+
+test('a pane new in a later snapshot, with its request token, is taken and queued: the board folds the snapshot before its tokens are read', async () => {
+    const run = harness();
+    run.control.present = false;
+    const running = run.informer.run();
+    await run.informer.enterSubscription();
+    await flush();
+    run.control.present = true;
+    run.control.tokens = { 'compact-req-coordinator': 'r9' };
+    await run.informer.reconcile();
+    await flush();
+    assert.deepEqual(run.asked.map((request) => request.answer), ['r9']);
+    assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': 'r9:queued' }], 'never failed-not-a-lane');
+    run.informer.stop();
+    await running;
 });

@@ -1,4 +1,4 @@
-import type { Ask, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
+import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import { requestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
@@ -18,6 +18,21 @@ export class MemoryAskLedger implements AskLedger {
         const key = keyOf(ask.exchange, ask.requester, ask.id);
         if (!this.rows.has(key)) {
             this.rows.set(key, { ...ask, id: must(requestId(ask.id, 'legacy-length')), pane: paneId(ask.pane), outcome: null });
+        }
+    }
+
+    attach(match: AskKey, ref: string): void {
+        for (const [key, ask] of this.rows) {
+            if (ask.exchange === match.exchange && ask.id === match.id && ask.pane === match.pane && ask.ref === null) {
+                this.rows.set(key, { ...ask, ref });
+            }
+        }
+    }
+
+    withdraw(identity: AskIdentity): void {
+        const key = keyOf(identity.exchange, identity.requester, identity.id);
+        if (this.rows.get(key)?.outcome === null) {
+            this.rows.delete(key);
         }
     }
 

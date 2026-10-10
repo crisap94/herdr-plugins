@@ -1,6 +1,7 @@
 import { idGrammarOf, idTextOf } from '#src/protocol/codec.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
-import { compact, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
+import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
+import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import { answerValue as answerValueOf, badIdValue, failureStage, isFailureStage, parseRequest } from '#src/protocol/exchange.ts';
 import { LIMITS, requestId } from '#src/protocol/primitives.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
@@ -48,6 +49,9 @@ const slug = (word: string): string => word.toLowerCase().replace(/[^a-z0-9]+/g,
 export const endAnswerOf = (stage: string, why: string | null): string => (stage === 'compacted' ? COMPACT_STAGES.done : failureStage(slug(why ?? stage)));
 
 export const refusalAnswerOf = (why: string): string => failureStage(slug(why));
+
+export const finalAnswerOf = (stage: string, reason: CompactFailure | null): string =>
+    stage === 'compacted' ? COMPACT_STAGES.done : failureStage(reason ?? (stage === 'skipped' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error));
 
 export const answerValue = (id: string, stage: string): string => must(answerValueOf(compact, id, stage));
 

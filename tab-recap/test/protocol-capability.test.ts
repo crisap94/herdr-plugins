@@ -68,3 +68,13 @@ test('the owner table lists the registry own names and each exchange request pre
     assert.deepEqual(owners.writable, [CAPABILITY_TOKEN, nameOf('tab-recap-compact'), nameOf('tab-recap-handoff')]);
     assert.deepEqual(owners.readPrefixes, ['compact-req-', 'handoff-req-']);
 });
+
+test('an exchange whose switch is off is not advertised, and is advertised once the switch is on', () => {
+    const switched: Exchange = { ...handoffLike, optIn: 'TAB_RECAP_HANDOFF' };
+    assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), () => false)), 'compact1,kinds1');
+    assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), (setting) => setting === 'TAB_RECAP_HANDOFF')), 'compact1,handoff1,kinds1');
+});
+
+test('an exchange with no switch is always advertised', () => {
+    assert.equal(unwrap(capabilityValue([compactLike], version(1), () => false)), 'compact1,kinds1');
+});

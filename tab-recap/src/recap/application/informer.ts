@@ -14,6 +14,16 @@ import { AsyncQueue } from './async-queue.ts';
 import { decode, paneSessionOf, tokensOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
 
+type Snapshot = Exclude<SnapshotResult, { readonly kind: 'unknown' }>;
+
+interface PaneTokens {
+    readonly kind: 'tokens';
+    readonly pane: string;
+    readonly tokens: TokenMap;
+}
+
+type Step = Observation | PaneTokens;
+
 export interface Blindness {
     readonly at: 'snapshot' | 'subscribe';
     readonly saying: string;
@@ -49,7 +59,7 @@ export class Informer {
     private readonly policy: Policy;
     private readonly hooks: InformerHooks;
     private readonly identityForSession: SessionOf;
-    private readonly queue = new AsyncQueue<Observation>();
+    private readonly queue = new AsyncQueue<Step>();
     private board: Board = emptyBoard();
     private stream: FrameStream | null = null;
     private pendingResync: ReturnType<typeof setTimeout> | null = null;
@@ -84,10 +94,14 @@ export class Informer {
             return snap;
         }
         this.lastLife = Number(this.clock.now());
-        for (const [pane, tokens] of snap.paneTokens) {
-            this.hooks.onPaneTokens?.(pane, tokens);
-        }
         return { ...snap, seen: { ...snap.seen, at: requested } };
+    }
+
+    private pushSnapshot(snap: Snapshot): void {
+        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        for (const [pane, tokens] of snap.paneTokens) {
+            this.queue.push({ kind: 'tokens', pane, tokens });
+        }
     }
 
     async enterSubscription(): Promise<void> {
@@ -109,7 +123,7 @@ export class Informer {
         this.stream = opened.stream;
         void this.pump(opened.stream);
         const first = !this.board.seeded;
-        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        this.pushSnapshot(snap);
         if (first && snap.focusedTab !== null) {
             this.queue.push({ kind: 'focused', tab: tabId(snap.focusedTab) });
         }
@@ -118,7 +132,7 @@ export class Informer {
     private async recoverWithoutStream(): Promise<void> {
         const snap = await this.stamped();
         if (!isUnknown(snap)) {
-            this.queue.push({ kind: 'reconciled', seen: snap.seen });
+            this.pushSnapshot(snap);
         }
         this.retrySoon();
     }
@@ -146,7 +160,7 @@ export class Informer {
             this.hooks.onBlind({ at: 'snapshot', saying: saying(snap.why) });
             return;
         }
-        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        this.pushSnapshot(snap);
     }
 
     tick(): void {
@@ -200,7 +214,7 @@ export class Informer {
     private paneUpdated(data: Readonly<Record<string, unknown>>): void {
         const tokens = tokensOf(data);
         if (tokens !== null) {
-            this.hooks.onPaneTokens?.(tokens.pane, tokens.tokens);
+            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: tokens.tokens });
         }
         const session = paneSessionOf(data, this.identityForSession);
         if (session !== null) {
@@ -223,8 +237,12 @@ export class Informer {
     }
 
     async run(): Promise<void> {
-        for await (const observation of this.queue) {
-            const outcome = observe(this.board, observation, this.clock.now(), this.policy);
+        for await (const step of this.queue) {
+            if (step.kind === 'tokens') {
+                this.hooks.onPaneTokens?.(step.pane, step.tokens);
+                continue;
+            }
+            const outcome = observe(this.board, step, this.clock.now(), this.policy);
             this.board = outcome.board;
             if (outcome.intents.length > 0) {
                 await this.hooks.onIntents(outcome.intents);

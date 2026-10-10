@@ -17,6 +17,7 @@ import type { LaneEvents } from './lane-events.ts';
 import type { CompactionClaims } from './compaction-claims.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
+import type { AskLedger } from '#src/ports/ask-ledger.ts';
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
@@ -33,6 +34,7 @@ export interface CompactionDeps {
     readonly checkedBriefs?: AutocompactBriefs;
     ceilingOverride?(): boolean;
     answer?(id: string, pane: string, stage: string): void;
+    readonly asks?: Pick<AskLedger, 'attach'>;
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events?: LaneEvents;
     readonly claims: CompactionClaims;

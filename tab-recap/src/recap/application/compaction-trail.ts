@@ -1,14 +1,17 @@
 import type { ActiveStage, CompactionEnd, CompactionRecords, StageFacts } from '#src/ports/compaction-records.ts';
+import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 
 export type Records = Pick<CompactionRecords, 'begin' | 'advance' | 'finish'>;
+
+export type EndObserver = (end: CompactionEnd, reason: CompactFailure | null) => void;
 
 export class Trail {
     readonly id: string;
     private readonly records: Records;
     private readonly now: () => number;
-    private readonly observe: ((end: CompactionEnd) => void) | undefined;
+    private readonly observe: EndObserver | undefined;
 
-    constructor(records: Records, id: string, now: () => number, observe?: (end: CompactionEnd) => void) {
+    constructor(records: Records, id: string, now: () => number, observe?: EndObserver) {
         this.records = records;
         this.id = id;
         this.now = now;
@@ -19,9 +22,9 @@ export class Trail {
         this.records.advance(this.id, stage, { at: this.now(), ...facts });
     }
 
-    end(stage: CompactionEnd['stage'], facts: Omit<CompactionEnd, 'stage' | 'at'> = {}): void {
+    end(stage: CompactionEnd['stage'], facts: Omit<CompactionEnd, 'stage' | 'at'> = {}, reason: CompactFailure | null = null): void {
         const end: CompactionEnd = { stage, at: this.now(), ...facts };
         this.records.finish(this.id, end);
-        this.observe?.(end);
+        this.observe?.(end, reason);
     }
 }

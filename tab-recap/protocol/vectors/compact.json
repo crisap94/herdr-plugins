@@ -88,32 +88,40 @@
     ],
     "serializes": [
         {
-            "id": "r.7",
-            "note": "why",
+            "value": {
+                "id": "r.7",
+                "note": "why"
+            },
             "expect": {
                 "kind": "value",
                 "value": "r.7:why"
             }
         },
         {
-            "id": "r7",
-            "note": null,
+            "value": {
+                "id": "r7",
+                "note": null
+            },
             "expect": {
                 "kind": "value",
                 "value": "r7"
             }
         },
         {
-            "id": "r7",
-            "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "value": {
+                "id": "r7",
+                "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
             "expect": {
                 "kind": "value",
                 "value": "r7:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             }
         },
         {
-            "id": "r7",
-            "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "value": {
+                "id": "r7",
+                "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
             "expect": {
                 "kind": "refused",
                 "reason": "too-long",
@@ -486,6 +494,66 @@
                         "id": "r4",
                         "expect": {
                             "kind": "unreadable"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a skipped compaction is answered and observed as failed with reason skipped",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r5:failed-skipped"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r5",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "skipped"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a refusal because the agent is busy is observed as failed with reason busy",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r6:failed-busy"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r6",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "busy"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a free-text cause is answered failed-error, and observed as failed with reason error",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r8:failed-error"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r8",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "error"
                         }
                     }
                 }

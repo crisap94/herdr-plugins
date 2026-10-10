@@ -88,6 +88,53 @@ for (const [name, make] of implementations) {
     });
 }
 
+for (const [name, make] of implementations) {
+    test(`${name}: attach sets the ref of the ask on its exchange, id and pane, once, and no other`, () => {
+        const ledger = make();
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r8', pane: 'w1:p2', at: 2, ref: null });
+        ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, 'compaction-1');
+        ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r8'), pane: paneId('w1:p9') }, 'compaction-2');
+        ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, 'compaction-3');
+        assert.deepEqual(ledger.unfinished().map((ask) => [ask.id, ask.ref]), [['r7', 'compaction-1'], ['r8', null]]);
+    });
+
+    test(`${name}: withdraw removes one requester's unsettled ask and leaves another requester's same id`, () => {
+        const ledger = make();
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: 'r7', pane: 'w1:p1', at: 2, ref: null });
+        ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
+        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.seen(COMPACT_EXCHANGE, reviewer, 'r7')], [false, true]);
+    });
+
+    test(`${name}: withdraw keeps a settled ask`, () => {
+        const ledger = make();
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, DONE);
+        ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
+        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.unfinished()], [true, []]);
+    });
+
+    test(`${name}: two requesters with the same id on one pane are settled together by one terminal answer`, () => {
+        const ledger = make();
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: 'r7', pane: 'w1:p1', at: 2, ref: null });
+        ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, { kind: 'failed', reason: 'interrupted' });
+        assert.deepEqual(ledger.unfinished(), [], 'the answer channel cannot tell the two apart, so the match settles both');
+    });
+}
+
+test('SQLite: a row this build cannot read is left out of unfinished and logged, not dropped silently', () => {
+    const opened = openDatabase(MEMORY);
+    assert.equal(opened.kind, 'ready');
+    const logged: string[] = [];
+    const ledger = new AskLedgerRepository(opened.db, (line) => { logged.push(line); });
+    opened.db.prepare("INSERT INTO ask (exchange, requester, id, pane, at, ref, outcome) VALUES ('Bad Name', 'coordinator', 'r1', 'w1:p1', 1, NULL, NULL)").run();
+    assert.deepEqual(ledger.unfinished(), []);
+    assert.equal(logged.length, 1);
+    assert.match(logged[0] ?? '', /Bad Name/);
+});
+
 test('SQLite: a read that fails answers seen, so nothing is acted on that cannot be recorded, and lists no unfinished ask', () => {
     const opened = openDatabase(MEMORY);
     assert.equal(opened.kind, 'ready');

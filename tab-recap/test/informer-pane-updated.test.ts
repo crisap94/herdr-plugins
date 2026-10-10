@@ -34,6 +34,7 @@ test('a pane.updated frame reaches the token hook, in both spellings, and is not
         sessionIdentity: sessionOfForKind,
         onPaneTokens: (pane, tokens): void => { routed.push({ pane, tokens }); },
     });
+    void informer.run();
     await informer.enterSubscription();
     const tokens = { pane: { pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } } };
     herdr.queue.push({ event: 'pane.updated', data: tokens });

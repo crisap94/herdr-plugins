@@ -21,6 +21,8 @@ export const ANSWER_PREFIX = 'tab-recap-';
 
 export const FAILURE_PREFIX = 'failed-';
 
+export const INTERRUPTED_REASON = 'interrupted';
+
 export const defineExchange = (exchange: Exchange): Exchange => exchange;
 
 export const failureStage = (reason: string): string => `${FAILURE_PREFIX}${reason}`;

@@ -127,13 +127,14 @@ export class CompactRequests {
             this.finish(id, pane, failureStage(COMPACT_FAILURES.notALane));
             return;
         }
+        this.remember(incoming);
         try {
             this.deps.requests.requestCompact({ tab: String(lane.tab), pane, note, origin: 'request', answer: id });
         } catch (error) {
+            this.deps.asks.withdraw({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id });
             this.deps.log(`compaction request ${id} on ${pane}: not queued (${error instanceof Error ? error.message : String(error)})`);
             return;
         }
-        this.remember(incoming);
         this.finish(id, pane, COMPACT_STAGES.queued);
     }
 
