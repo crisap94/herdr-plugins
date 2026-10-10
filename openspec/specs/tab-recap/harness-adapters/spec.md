@@ -121,7 +121,7 @@ The kinds that can be compacted, appear in the default column policy, and are au
 
 - **WHEN** a kind is added to `REGISTERED_KINDS`
 - **THEN** it SHALL declare whether it is compactable, in the default policy, and autocompacted by default
-- **AND** adding it SHALL take compiler-linked rows in the registered-kind, history, in-flight, context-window and compaction tables, since the domain cannot import adapters
+- **AND** adding it SHALL take compiler-linked rows in the registered-kind table and in the history readers, in-flight capability, context-window sources, compaction plans and session identity tables, since the domain cannot import adapters; session identity's value for a registered kind is the shared rule, but its row is still compiler-forced
 - **AND** the compiler SHALL require each table row for every registered kind and reject adapter-only kinds
 - **AND** a screen-only harness SHALL declare its unsupported history capability when registered without a transcript reader
 

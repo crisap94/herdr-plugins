@@ -29,6 +29,23 @@ The plugin SHALL declare a typed transcript capability for every registered kind
 - **WHEN** the expanded modal requests a reader for an unknown kind
 - **THEN** its registry SHALL return no reader because it has no screen fallback
 
+### Requirement: Eligibility lists derive from agent kind capabilities
+
+The kinds that can be compacted, appear in the default column policy, and are autocompacted by default SHALL be derived from explicit capability fields on the registered agent-kind entries. Every entry SHALL declare each capability, and the transcript reader registry SHALL cover the same closed kind union.
+
+#### Scenario: A registered kind declares its eligibility
+
+- **WHEN** a kind is added to `REGISTERED_KINDS`
+- **THEN** it SHALL declare whether it is compactable, in the default policy, and autocompacted by default
+- **AND** adding it SHALL take compiler-linked rows in the registered-kind table and in the history readers, in-flight capability, context-window sources, compaction plans and session identity tables, since the domain cannot import adapters; session identity's value for a registered kind is the shared rule, but its row is still compiler-forced
+- **AND** the compiler SHALL require each table row for every registered kind and reject adapter-only kinds
+- **AND** a screen-only harness SHALL declare its unsupported history capability when registered without a transcript reader
+
+#### Scenario: Eligibility defaults are derived
+
+- **WHEN** the plugin reads its compactable kinds, default policy kinds, or default autocompact kinds
+- **THEN** each list SHALL contain exactly the kinds whose corresponding capability is true
+
 ## ADDED Requirements
 
 ### Requirement: Hermes is a registered job harness with explicit unsupported adapter capabilities
