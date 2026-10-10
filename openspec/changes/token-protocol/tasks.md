@@ -37,6 +37,11 @@ typed values; one serializer per token.
 - [ ] 3.2 `recap/domain/event-token.ts`: `EVENT_KINDS` = lane events plus the derived exchange events, same kinds as today.
   Verify: the event-kind table in the lane-tokens spec matches the derived list (test).
 
+- [ ] 3.3 Compaction answers only declared failure reasons: the compact descriptor's `failureReasons` gain `skipped` and
+  `busy`; `recap/application/compaction.ts` writes `failed-skipped`, `failed-busy`, or `failed-error` for every other cause
+  (free-text agent state included); a blank note is no note and a note is cut to the room its id leaves. Verify: vectors
+  carry a skipped, a busy and a free-text-cause case; `observe` reads each as a failure, never `unreadable`.
+
 ## 4. One ask ledger (migration 015)
 
 - [ ] 4.1 `src/adapters/db/schema/015-ask-ledger.ts`: `ask` table, copy of `compact_ask` as settled `compact` asks, drop of
@@ -49,6 +54,9 @@ typed values; one serializer per token.
   exchange; the flow's answer record for a local requester); a request joined to a running compaction is settled with that
   compaction's outcome. Verify: restart tests with a queued ask, a running ask, a joined ask (answered `failed-interrupted`,
   never left `queued`) and a local requester's ask (no token written).
+- [ ] 4.4 An ask taken while the protocol is off is recorded and settled `off` in the same step and never answered; the
+  settle match is (exchange, id, pane). Verify: a test takes a request while off, restarts, and finds no answer token and no
+  `failed-interrupted`; a test settles two same-id asks from two requesters with one answer.
 
 ## 5. Level-triggered consideration and the capability token
 

@@ -17,6 +17,7 @@ recorded result.
 - The open measurement tasks of `autocompact-coverage-gate` (8.1, 8.2) and `ledger-pruning` (1.1, 4.1, 4.2, 6.1, 6.2)
   move here, unchanged in substance.
 - Later tuning changes that ship behaviour before their measurement add their measurement tasks here.
+- `recap-run-debounce` shipped its run window off by default; its replay, default decision and live check are group 3.
 
 ## Out of scope
 

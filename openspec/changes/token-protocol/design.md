@@ -32,7 +32,11 @@ Alternative rejected: keep hand-written code per exchange. It is the drift this 
 ### D2. `compact` is the first descriptor, byte-identical
 
 `compact-req-<tool>` = `<id>` or `<id>:<note>`; answer `tab-recap-compact` = `<id>:<stage>` with `queued`, `running`,
-`done`, `failed-<reason>`. Its id grammar keeps today's rule (1 to 16 characters, any character but `:`), declared as the
+`done`, `failed-<reason>`, where the reasons are the descriptor's closed list `bad-id`, `not-a-lane`, `interrupted`,
+`no-target`, `skipped`, `busy` and `error`. Compaction today also writes slugs of free text (`failed-<slug of the agent's
+state>`); from this change every cause outside the list is written `failed-error`, so a tool that reads the vectors can tell
+any compaction failure apart from an unreadable value. This is the one wire change, and the vectors pin it. A blank note is
+no note, and a note is cut to the room its id leaves. Its id grammar keeps today's rule (1 to 16 characters, any character but `:`), declared as the
 descriptor's `legacy-length` grammar; new exchanges use `token-safe` (`[A-Za-z0-9_-]{1,16}`). Compatibility vectors
 taken from today's code prove the wire is unchanged; the existing compaction request tests pass unmodified. The one
 place where the protocol's rule differs is kept for compact only: today's answer is truncated at 80 characters rather than
@@ -62,6 +66,16 @@ to its answer channel as `failed-interrupted` and never replayed; this replaces 
 joined request `queued` until its token expired (agent-compaction is modified accordingly). Migration 015 replaces `compact_ask` with
 `ask`, copying today's rows as exchange `compact` with a terminal outcome `settled` (an old row is a seen id, not an
 unfinished one). Pruning keeps the 30-day window `compact_ask` has today and never deletes an ask without a terminal outcome.
+
+The match that settles an ask is (exchange, id, pane): the answer channel knows no more, so two requesters writing the same
+id for the same exchange on one pane are settled together. An ask taken while the protocol is off is recorded and settled
+`off` in the same step and never answered, so the restart rule cannot write a stale `failed-interrupted` for a request
+tab-recap never acted on.
+
+Later, outside this change: `ref` is stored as given and stays `null` for compaction until a change reads it; the old
+compaction answer data (`compaction.answer`, `unfinishedAsks()`, the `compact_ask` copy) is no longer read and is dropped by
+a later migration, after a release; `serializeValue` does not re-check a branded id's grammar, which only a cast can break,
+and gains that check as hardening in a later change.
 
 ### D5. Level-triggered: every read is considered
 

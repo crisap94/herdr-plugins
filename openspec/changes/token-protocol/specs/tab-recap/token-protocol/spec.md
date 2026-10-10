@@ -84,7 +84,10 @@ exchange MAY be a flow not yet published as a token exchange. An ask SHALL be se
 answer channel: a token answer for a token exchange, the flow's own answer record for a local requester. A request that
 joins a running flow SHALL be settled with that flow's outcome. After a restart every ask with no terminal outcome SHALL be
 handed to its answer channel as `failed-interrupted` and SHALL NOT be acted on again. Pruning SHALL NOT delete an ask that
-has no terminal outcome.
+has no terminal outcome. The settle match SHALL be the exchange, the id and the pane the answer is written on; two
+requesters that wrote the same id for the same exchange on the same pane are settled together, because the answer channel
+cannot tell them apart. An ask taken while the token protocol is off SHALL be recorded and settled with the outcome `off`
+in the same step; it SHALL NOT be answered, and a later restart SHALL NOT answer it.
 
 #### Scenario: The same request after a restart
 
@@ -101,6 +104,12 @@ has no terminal outcome.
 - **WHEN** the daemon stops while an ask from the command line is unsettled
 - **THEN** after the restart the flow's answer record SHALL say `interrupted`, no token SHALL be written for it, and the ask
   SHALL be settled
+
+#### Scenario: An ask taken while the protocol is off
+
+- **WHEN** a request is read while the token protocol is off, and the daemon later restarts
+- **THEN** the ask SHALL be recorded and settled `off` at once, no answer token SHALL be written, and the restart SHALL NOT
+  write `failed-interrupted` for it
 
 #### Scenario: Pruning keeps unsettled asks
 
