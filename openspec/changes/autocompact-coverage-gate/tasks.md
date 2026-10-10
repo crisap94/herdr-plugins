@@ -12,8 +12,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 - [x] 2.1 `domain/autocompact.ts` and `config.ts`: `CoverageOutcome`, `UncheckedReason`, `CeilingPolicy`, `Backoff`,
   `BriefRetention`, branded `Milliseconds`, and `SKIP_GATES` as the one list the skip gate type derives from. Settings are
-  parsed once at the edge; out-of-range values fall back to their defaults. Verify: `a typed setting outside its range falls
-  back` (test/config.test.ts) and a compile-time exhaustive switch over `CoverageOutcome`.
+  parsed once at the edge; out-of-range values fall back to their defaults. Verify: `out-of-range coverage settings fall back to their defaults` (test/autocompact-style.test.ts) and a compile-time exhaustive switch over `CoverageOutcome`.
 - [x] 2.2 `CheckedFact` codec (`encode`, `decode`) used by the brief repository and nothing else. Verify: round trip
   `decode(encode(x)) == x` for zero, one and 40 facts (test/checked-fact-codec.test.ts), the only serializer test of the
   record.
@@ -36,15 +35,14 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   the listed order fails (`error in view autocompact_skip_readable: no such table: main.autocompact_skip`), and the order above
   passes (design, Verification). Verify: a test opens a database at `013` with rows, migrates to `014`,
   reads every old decision with `asked_verdict` null, keeps the old skip rows, accepts `coverage-backoff`, refuses a
-  non-member gate, and reads both views (test/migration-014.test.ts).
+  non-member gate, and reads both views (test/db/migration-014.test.ts).
 - [x] 3.2 `ports/autocompact-records.ts` and `adapters/db/autocompact-records.ts`: `record` writes `asked_verdict`; `amend`
   takes a `CoverageOutcome` and writes `coverage_missing`, `coverage_ms` and the cost; `LastDecision` gains `gate`; lane keys
   are `TabId` and `PaneId`. New port `ports/autocompact-briefs.ts` with its repository: `put(decisionId, brief, appended,
-  checked, briefedAt)` and `clearBefore(cutoff)`. Verify: `amend keeps the asked verdict when the check turns it into wait`
-  (test/autocompact-records.test.ts).
+  checked, briefedAt)` and `clearBefore(cutoff)`. Verify: `the asked verdict is stored as the decider asked it: a wait the check makes of a compact keeps compact` (test/db/autocompact-records.test.ts).
 - [x] 3.3 `application/input-retention.ts`: call `clearBefore` with the `BriefRetention` value (`none` deletes every brief
   row). The retention takes a second dependency, the brief repository, because it is typed to the run inputs only today.
-  Verify: `a checked brief is cleared after its retention` (test/retention.test.ts).
+  Verify: `retention: a brief retention of none deletes every checked brief at the daily upkeep, the newest included` (test/db/run-inputs.test.ts).
 - [x] 3.4 `bash ci/check-migrations.sh`: `010` to `013` unchanged. Verify: the script passes.
 
 ## 4. The ceiling is not blocked by the check (design D1)
@@ -53,22 +51,18 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   under `overrides-check`: the better of the two briefs is chosen (fewer missing; the rewrite on a tie; an unchecked rewrite loses
   to a checked first brief), and the missed goal, needs, decisions and rules facts are appended verbatim under a fixed heading,
   capped at 1 500 characters, in the order goal, rules, needs, decisions newest first, with the count left out in the heading.
-  Verify: `a ceiling lane is compacted when the check fails`, `a rewrite that cannot be checked loses to the checked first brief`,
-  `the appended block is capped and ordered` and `a ceiling without a decider types the operator's text` (new
-  test/compaction-coverage.test.ts).
+  Verify: `a ceiling lane types its rewrite and appends the missing fact, keeping the compact ceiling decision`, `at the ceiling a rewrite that cannot be checked loses to the checked first brief`, `the ceiling appendix is capped at 1 500 characters and says how many facts it left out` and `a ceiling lane whose brief is the template types the operator's text, records unchecked with no brief, and logs it` (test/brief-coverage.test.ts).
 - [x] 4.2 `application/compaction.ts`: pass the gate through `verified`; the decision's `why` names the count and the path;
-  one log line per ceiling case. Under `blocked-by-check` the ceiling behaves as below it. Verify: `a failed check at the
-  ceiling records compact with gate ceiling` and `the switch off keeps the check at the ceiling` (test/compaction.test.ts).
+  one log line per ceiling case. Under `blocked-by-check` the ceiling behaves as below it. Verify: `a ceiling lane types its rewrite and appends the missing fact, keeping the compact ceiling decision` and `the ceiling switch off keeps the failed check blocking` (test/brief-coverage.test.ts).
 - [x] 4.3 Update the existing ceiling-blocked case, the one test that asserts the old behaviour, and say so in the MR.
   Verify: `bash ci/test.sh` passes.
 
 ## 5. The backoff gate (design D4)
 
 - [x] 5.1 `domain/autocompact.ts`: the `coverage-backoff` gate between `unchanged` and `in-flight`, below the ceiling only, read
-  from `Backoff`. Verify: the scenarios of "A failed brief check backs off below the ceiling" (test/autocompact-skips.test.ts).
+  from `Backoff`. Verify: `coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth`, `coverage backoff releases once its window has passed`, `a boundary after the failed decision releases the backoff; one before it does not`, `a backoff holds only below the ceiling: a lane at the ceiling is not held by it`, `a backoff follows a failed coverage wait only: an ask wait within the window is not held` and `a backoff of zero never holds a lane` (test/autocompact-skips.test.ts).
 - [x] 5.2 `application/autocompact.ts`: the gate reads `LastDecision` (its `gate`, `at`, `tokens`) and `lastBreakAt`; the
-  backoff is never written to the skip table as state, only the skip row for the gate. Verify: `a backoff holds a lane and
-  releases it at ten percent growth` and `a backoff survives a restart` (test/autocompact-skips.test.ts).
+  backoff is never written to the skip table as state, only the skip row for the gate. Verify: `coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth` and `a backoff survives a restart: a fresh service that reads only the stored decision holds the lane` (test/autocompact-skips.test.ts).
 
 ## 6. Settings and listing
 
