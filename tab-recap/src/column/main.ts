@@ -16,6 +16,7 @@ import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
 import { expandedScreen } from './expanded-modal.ts';
 import { COMMAND_LAUNCHER } from './command.ts';
+import { compactFromColumn } from './compact.ts';
 import { spawn } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
 
@@ -162,12 +163,12 @@ function openModal(): void {
 }
 
 /**
- * `c`: ask what to keep, then compact. In a column the popup opens at once; the modal is itself a popup and herdr
- * shows one at a time, so it closes first and a short-lived command opens the popup right after.
+ * `c`: compact as the compact setting says (`ask`: the note popup, `skip`: queued at once). The modal is a popup
+ * itself, so it closes first and a short-lived command decides the same way.
  */
 function askToCompact(): void {
     if (mode !== 'modal') {
-        void new HerdrFleet(stateDir()).agents().askNote(tab, null);
+        compactFromColumn(store, tab);
         return;
     }
     spawn(process.execPath, [COMMAND_LAUNCHER, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();

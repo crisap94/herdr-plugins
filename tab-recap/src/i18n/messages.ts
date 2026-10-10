@@ -38,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob' | 'herdrEvents', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactJob' | 'herdrEvents', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -54,6 +54,8 @@ export interface Messages {
         readonly recapLanguageHint: string;
         readonly screenAgentsHint: string;
         readonly compactTargetHint: string;
+        readonly compactNoteChoices: { readonly ask: string; readonly skip: string };
+        readonly compactNoteHint: string;
         readonly compactHintHint: string;
         readonly compactHintOff: string;
         /** the heading over the job rows */
@@ -66,6 +68,9 @@ export interface Messages {
         readonly autocompactChoices: { readonly off: string; readonly shadow: string; readonly on: string };
         readonly autocompactHint: string;
         readonly autocompactAtHint: string;
+        /** autocompact style: the three styles' words, and the hint of its row */
+        readonly autocompactStyleChoices: { readonly gentle: string; readonly balanced: string; readonly eager: string };
+        readonly autocompactStyleHint: string;
         readonly autocompactJobHint: string;
         /** the `off` choice of the decider's harness list */
         readonly deciderOff: string;
@@ -131,6 +136,8 @@ export interface Messages {
         /** an automatic compaction whose brief still misses a fact that matters is not typed */
         readonly coverageMissed: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
+        /** a request for a lane that is already queued or compacting: it joins that compaction, starts none; `noted`: its note is not used */
+        readonly joined: (agent: string, noted: boolean) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;
     };
@@ -165,6 +172,7 @@ export interface Messages {
         readonly modalFailed: (why: string) => string;
         readonly requested: (tab: string) => string;
         readonly compactAsked: string;
+        readonly compactNotQueued: (why: string) => string;
         readonly columnToggled: (tab: string) => string;
         readonly columnsToggled: string;
         readonly setupBusy: (command: string) => string;

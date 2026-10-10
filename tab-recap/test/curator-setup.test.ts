@@ -24,8 +24,8 @@ test('the curator job: as the recap writer, no model of its own and medium effor
 });
 
 test('the curator row is the last, a job row: each part is edited and saved under its variable', () => {
-    const row = typed(start(), down(10));
-    assert.equal(row.row, 10);
+    const row = typed(start(), down(11));
+    assert.equal(row.row, 11);
     assert.equal(typed(row, ['l']).part, 1, 'it has parts, like the other jobs');
     const off = typed(row, ['\r', 'k', '\r']);
     assert.equal(off.draft.curate.by, 'off', 'the list wraps to off');
@@ -38,8 +38,8 @@ test('the curator row is the last, a job row: each part is edited and saved unde
 
 test('a curator part an environment variable sets is read-only and says which', () => {
     assert.deepEqual(locksOf({ TAB_RECAP_CURATE_BY: 'off', TAB_RECAP_CURATE_MODEL: 'x', TAB_RECAP_CURATE_EFFORT: 'low' }), { curateBy: 'TAB_RECAP_CURATE_BY', curateModel: 'TAB_RECAP_CURATE_MODEL', curateEffort: 'TAB_RECAP_CURATE_EFFORT' });
-    assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(10), 'l', '\r']).note, 'locked');
-    assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(10), 'l', 'l', '\r']).editing?.kind, 'choice', 'only the locked part');
+    assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(11), 'l', '\r']).note, 'locked');
+    assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(11), 'l', 'l', '\r']).editing?.kind, 'choice', 'only the locked part');
 });
 
 test('the Models group draws the curator in both languages, explains itself while focused, and names its own off', () => {
@@ -47,13 +47,13 @@ test('the Models group draws the curator in both languages, explains itself whil
     assert.match(english, /Curator\s+as the recap writer · the recap writer's model · medium/u);
     const spanish = setupView(start(), es, 100).join('\n');
     assert.match(spanish, /Curador\s+como el redactor · el modelo del redactor · medium/u);
-    const focused = setupView(typed(start(), down(10)), en, 100).join('\n');
+    const focused = setupView(typed(start(), down(11)), en, 100).join('\n');
     assert.match(focused, /merges duplicate facts and writes the "session so far"/u);
-    const choosing = setupView(typed(start(), [...down(10), '\r']), en, 100).join('\n');
+    const choosing = setupView(typed(start(), [...down(11), '\r']), en, 100).join('\n');
     assert.match(choosing, /▸ as the recap writer — the same harness/u);
     assert.match(choosing, /off — no paragraph, no merges/u);
     assert.ok(!choosing.includes('off — compact with the template'));
-    assert.match(setupView(typed(start(), [...down(10), '\r']), es, 100).join('\n'), /apagado — sin párrafo ni fusiones/u);
+    assert.match(setupView(typed(start(), [...down(11), '\r']), es, 100).join('\n'), /apagado — sin párrafo ni fusiones/u);
 });
 
 test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFORT, defaulting to the recap writer at medium effort', async () => {

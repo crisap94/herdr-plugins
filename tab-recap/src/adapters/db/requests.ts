@@ -2,7 +2,7 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { CompactRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
+import type { CompactionQueue, CompactRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
 import { originOf } from '#src/recap/domain/origin.ts';
 import { all, blob, guarded, maybeText, text } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
@@ -28,7 +28,7 @@ function wordOf(hidden: boolean | 'toggle'): string {
     return hidden ? 'hide' : 'show';
 }
 
-export class RequestsRepository implements Requests {
+export class RequestsRepository implements Requests, CompactionQueue {
     private readonly now: () => number;
     private readonly refresh: StatementSync;
     private readonly visibility: StatementSync;
@@ -39,6 +39,7 @@ export class RequestsRepository implements Requests {
     private readonly takeRefresh: StatementSync;
     private readonly takeHidden: StatementSync;
     private readonly takeAnsweredRows: StatementSync;
+    private readonly queuedCompact: StatementSync;
 
     constructor(db: DatabaseSync, now: () => number = Date.now) {
         this.now = now;
@@ -51,6 +52,12 @@ export class RequestsRepository implements Requests {
         this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
         this.takeAnsweredRows = db.prepare("DELETE FROM request WHERE kind = 'compact' AND answer IS NOT NULL RETURNING id, pane, answer");
+        this.queuedCompact = db.prepare("SELECT 1 FROM request WHERE kind = 'compact' AND target = ? AND (pane = ? OR pane IS NULL) LIMIT 1");
+    }
+
+    /** Whether a compaction request for the pane is still queued, or one for the tab's focused pane (no pane given). */
+    compactQueued(tab: string, pane: string): boolean {
+        return guarded(() => this.queuedCompact.get(tab, pane) !== undefined, false);
     }
 
     request(tab: string): void {

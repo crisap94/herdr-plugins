@@ -4,6 +4,7 @@ import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { FlightAnswer } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
+import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -19,6 +20,7 @@ import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { loadConfig } from './config.ts';
+import type { Config } from './config.ts';
 
 /** a lane's recap is given up on after this long (the decision goes on without) */
 const RECAP_WAIT_MS = 90_000;
@@ -45,6 +47,10 @@ async function awaitingNow(pane: string): Promise<Waiting> {
 }
 
 export function wireAutocompact(parts: {
+    /** the configuration, read on each consideration; the composition root's `loadConfig` by default */
+    readonly config?: () => Config;
+    /** the pane's `awaiting` tokens; herdr's by default */
+    readonly awaiting?: (pane: string) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: readonly Transcripts[];
     readonly contexts: LaneContexts;
@@ -53,12 +59,15 @@ export function wireAutocompact(parts: {
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
+    /** the compactions queued or running in this daemon: shared with the compaction flow, so a lane has one at a time */
+    readonly claims: CompactionClaims;
     log(line: string): void;
 }): Autocompact {
     const { store } = parts;
+    const read = parts.config ?? loadConfig;
     return new Autocompact({
-        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: (pane) => awaitingNow(pane), events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
-        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests,
+        policy: () => read().autocompact, tuning: () => read().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: parts.awaiting ?? awaitingNow, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
+        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },
         lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => Date.now(), log: (line) => { parts.log(line); },

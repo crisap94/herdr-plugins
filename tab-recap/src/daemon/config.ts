@@ -14,6 +14,8 @@ import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from 
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
 import { coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
+import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -23,6 +25,8 @@ import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
+import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -61,6 +65,8 @@ export interface Config {
     readonly curator: Job;
     /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the minimum), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
     readonly autocompact: AutocompactPolicy;
+    /** the style's numbers in force: `TAB_RECAP_AUTOCOMPACT_STYLE` and the advanced keys (`_SAFE_AT_MOST`, `_CLOSES_AT_LEAST`, `_COVERAGE_AT_LEAST`, `_RECHECK_IDLE_MS`) */
+    readonly tuning: AutocompactTuning;
     /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
     readonly decider: DeciderJob;
     /** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: who checks the brief's coverage before an automatic compaction (`auto` by default) */
@@ -73,6 +79,8 @@ export interface Config {
     readonly timeoutMs: number;
     /** `TAB_RECAP_HERDR_EVENTS`: whether lanes are shared on herdr's event stream and compaction requests answered (`off` unless set) */
     readonly herdrEvents: HerdrEvents;
+    /** `TAB_RECAP_COMPACT_NOTE`: `ask` (the note popup first, the default) or `skip` (queue the compaction at once) */
+    readonly compactNote: CompactNote;
 }
 
 /** where the plugin keeps things when herdr does not say: by the OS family (the composition root picks the adapter) */
@@ -192,6 +200,7 @@ export function loadConfig(): Config {
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         curator: curateJobOf(get),
         autocompact: policyOf(get),
+        tuning: tuningOf(get),
         decider: deciderJobOf(get),
         coverage: coverageByOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         jev: jevOf(get),
@@ -199,5 +208,6 @@ export function loadConfig(): Config {
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
         herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),
+        compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
     };
 }

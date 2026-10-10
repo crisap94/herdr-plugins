@@ -33,3 +33,8 @@ export interface Requests {
     /** the compaction requests from other tools still queued (not yet taken): removed, each with its pane and answer id */
     takeAnswered(): readonly { readonly pane: string; readonly answer: string }[];
 }
+
+/** Whether a compaction request for a lane is still queued (not yet taken). A request with no pane is the tab's focused one, so it counts for every pane of the tab. */
+export interface CompactionQueue {
+    compactQueued(tab: string, pane: string): boolean;
+}

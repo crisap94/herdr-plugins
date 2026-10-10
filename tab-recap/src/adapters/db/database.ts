@@ -7,7 +7,7 @@ import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
 import type { RunInputs } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
@@ -39,7 +39,7 @@ export interface Store {
     readonly ledger: Ledger;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
-    readonly requests: Requests;
+    readonly requests: Requests & CompactionQueue;
     readonly compactions: CompactionRecords;
     /** the compaction requests other tools made, accepted once per (tool, id) */
     readonly asks: AskRecords;

@@ -14,6 +14,7 @@ import type { Written } from './compaction-brief.ts';
 import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
+import type { CompactionClaims } from './compaction-claims.ts';
 
 export interface CompactionDeps {
     readonly agents: Agents;
@@ -38,6 +39,8 @@ export interface CompactionDeps {
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     /** the plugin's events on herdr's stream: the compaction's stages (its id is the detail) */
     readonly events?: LaneEvents;
+    /** the panes whose compaction is queued or in progress: a request for one joins it, and autocompact sees it as busy */
+    readonly claims: CompactionClaims;
     /** the agent's last turns, read from its own records; empty when they cannot be read */
     recent(lane: Lane): Promise<readonly Entry[]>;
     /** the compactions the agent's own records show, newest last; empty when they cannot be read */
