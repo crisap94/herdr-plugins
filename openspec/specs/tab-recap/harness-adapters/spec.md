@@ -231,7 +231,6 @@ Claude, Codex, and OpenCode compaction SHALL preserve their current conformance 
 - **WHEN** an adapter plan submits a typed line
 - **THEN** the Herdr adapter SHALL retain the 300 ms Enter delay
 - **AND** it SHALL treat the existing stalled-prompt response as sent
-<<<<<<< HEAD
 
 ### Requirement: Harness job environment scrub names come from the registry
 Each job harness entry SHALL declare its enumerable typed environment names to scrub. `scrubbedEnv()` SHALL remove the union of those names and the existing `HERDR_` and `TAB_RECAP_` prefixes without changing its no-argument signature or current output. Harness names are supplied as a list to the environment-name collector so additional declarations are scrubbed through the same production path.
@@ -267,8 +266,6 @@ Each transcript adapter SHALL own its observed context parser and tool-name tabl
 - **WHEN** an adapter classifies every name in its native tool vocabulary and a foreign name
 - **THEN** every native name SHALL retain its declared kind
 - **AND** the foreign name SHALL classify as `other`
-||||||| parent of 3e6bfeb (feat(tab-recap): add Codex and opencode in-flight readers)
-=======
 
 ### Requirement: Every transcript reader declares its in-flight capability
 
@@ -321,4 +318,3 @@ The opencode reader SHALL count tool parts in the session's newest messages whos
 
 - **WHEN** the opencode database cannot be opened or queried
 - **THEN** the reader SHALL return `Unknown`
->>>>>>> 3e6bfeb (feat(tab-recap): add Codex and opencode in-flight readers)
