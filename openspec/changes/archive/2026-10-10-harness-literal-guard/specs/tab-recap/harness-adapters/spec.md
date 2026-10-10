@@ -2,7 +2,7 @@
 
 ### Requirement: Harness ids appear as literals only in the adapters and the registries
 
-A string literal equal to a harness id (`claude`, `codex`, `opencode`, `hermes`, `custom`) SHALL NOT appear in `src/` or `bin/` outside the adapters and the two registry tables (the registered kinds and the job harness registry). Lint SHALL enforce this with a rule whose probes show that it triggers on a harness-id literal and does not trigger on a string that merely contains one. The rule's list of ids SHALL be checked against the ids derived from the registries, so a harness cannot be added without updating the guard.
+A string literal equal to a harness id (`claude`, `codex`, `opencode`, `hermes`, `custom`) SHALL NOT appear in `src/` or `bin/` outside the adapters and the job harness registry (the registered kinds are declared as identifiers and need no exception). Lint SHALL enforce this with a rule whose probes show that it triggers on a harness-id literal and does not trigger on a string that merely contains one. Every copy of the rule's list of ids SHALL be checked against the ids derived from the registries, so a harness cannot be added without updating the guard.
 
 #### Scenario: A core file names a harness
 
