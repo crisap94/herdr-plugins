@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the sixteen rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the seventeen rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 15);
+    assert.equal(typed(start(), down(20)).state.row, 16);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -169,15 +169,15 @@ test('the compaction rows: target, hint (40 by default, 10–95 or off) and wind
     assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: '1_000_000' }).contextWindow, '1000000');
     const target = typed(start(), [...down(6), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
     assert.deepEqual([...changes(target)], [['TAB_RECAP_COMPACT_TARGET', 'all']]);
-    const hint = typed(start(), [...down(7), '\r', '\u0015', '5', '5', '\r']).state;
+    const hint = typed(start(), [...down(8),'\r', '\u0015', '5', '5', '\r']).state;
     assert.deepEqual([...changes(hint)], [['TAB_RECAP_COMPACT_HINT', '55']]);
     assert.equal(typed(hint, ['\r', '\u0015', '3', '\r']).state.draft.compactHint, '40', 'a value out of range falls back to the default');
     assert.equal(typed(hint, ['\r', '\u0015', 'o', 'f', 'f', '\r']).state.draft.compactHint, 'off');
-    const window = typed(start(), [...down(8), '\r', '3', '0', '0', '0', '0', '0', '\r']).state;
+    const window = typed(start(), [...down(9),'\r', '3', '0', '0', '0', '0', '0', '\r']).state;
     assert.deepEqual([...changes(window)], [['TAB_RECAP_CONTEXT_WINDOW', '300000']]);
     assert.equal(typed(window, ['\r', '\u0015', '\r']).state.draft.contextWindow, '', 'emptied: detect at runtime');
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_TARGET: 'all', TAB_RECAP_COMPACT_HINT: 'off', TAB_RECAP_CONTEXT_WINDOW: '1' }), { compactTarget: 'TAB_RECAP_COMPACT_TARGET', compactHint: 'TAB_RECAP_COMPACT_HINT', contextWindow: 'TAB_RECAP_CONTEXT_WINDOW' });
-    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(7), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(8),'\r']).state.note, 'locked');
 });
 
 test('the Models group: ←/→ walk the harness · model · effort of a job row, and do nothing elsewhere', () => {
@@ -213,7 +213,7 @@ test('the judge job: as the recap writer, no model of its own and medium effort 
     const raw = { locale: undefined, recapLanguage: undefined };
     assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: ' Codex ', judgeModel: ' gpt-6-luna ', judgeEffort: 'HIGH' }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
     assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: 'nonsense', judgeEffort: 'max' }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
-    const toJudge = down(9);
+    const toJudge = down(10);
     const by = typed(start(), [...toJudge, '\r', 'j', 'j', '\r']).state;
     assert.equal(by.draft.judge.by, 'claude', 'recap → auto → claude');
     assert.deepEqual([...changes(by)], [['TAB_RECAP_JUDGE_BY', 'claude']]);
@@ -231,17 +231,17 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     assert.deepEqual([draft.autocompact, draft.autocompactAt, draft.decide], ['shadow', '10', { by: 'recap', model: '', effort: 'low' }]);
     assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'ON', autocompactAt: '55%', decideBy: 'jev', decideModel: ' x ', decideEffort: 'high' }).decide, { by: 'jev', model: 'x', effort: 'high' });
     assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'maybe', autocompactAt: '5' }).autocompactAt, '10');
-    const mode = typed(start(), [...down(11), '\r', 'j', '\r']).state;
+    const mode = typed(start(), [...down(12),'\r', 'j', '\r']).state;
     assert.deepEqual([...changes(mode)], [['TAB_RECAP_AUTOCOMPACT', 'on']]);
-    const at = typed(start(), [...down(12), '\r', '\u0015', '6', '0', '\r']).state;
+    const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
     assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
-    const by = typed(start(), [...down(14), '\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
+    const by = typed(start(), [...down(15),'\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
-    const model = typed(start(), [...down(14), 'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
+    const model = typed(start(), [...down(15),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '50', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }), { autocompact: 'TAB_RECAP_AUTOCOMPACT', autocompactAt: 'TAB_RECAP_AUTOCOMPACT_AT', decideBy: 'TAB_RECAP_AUTOCOMPACT_BY' });
-    assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(11), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(12),'\r']).state.note, 'locked');
 });
 
 test('the key and the endpoint of the TypeSafe API are never a row or a config entry the modal writes', () => {

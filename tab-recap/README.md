@@ -222,6 +222,10 @@ task every five minutes.
 `tab-recap.compact` (bind it, e.g. `prefix+shift+c`; or `c` in the column or the modal):
 
 1. A popup asks for an optional note (up to 280 characters). Enter on an empty note sends without it; Esc cancels.
+   Two ways skip the popup: `TAB_RECAP_COMPACT_NOTE=skip` (the setting; `ask` by default) queues the compaction at once
+   with no note, and `tab-recap compact --note "<text>"` queues it at once with that note, whatever the setting says.
+   `--note ""` queues with no note. A note is one line, at most 280 characters, as the popup keeps it; control characters
+   are dropped (a tab or a newline becomes a space). A note that starts with `-` takes the `=` form: `--note=-x`.
 2. The recap is refreshed. Then each target agent (`TAB_RECAP_COMPACT_TARGET`: `focused` by default,
    `all`, or kinds like `claude,codex`) that is **idle or done** gets a message written as your own
    instruction, in English, never naming the plugin, at most 3 000 characters. A **brief** writer (a

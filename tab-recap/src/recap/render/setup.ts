@@ -3,6 +3,7 @@ import type { Messages } from '#src/i18n/messages.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, STYLE_CHOICES, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import type { DeciderJob } from '#src/recap/domain/job.ts';
+import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import { coloured, visibleLength, wrap } from './wrap.ts';
@@ -77,6 +78,7 @@ const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     gitNote: (state, m) => m.setup.gitNoteChoices[state.draft.gitNote],
     herdrEvents: (state, m) => m.setup.herdrEventsChoices[state.draft.herdrEvents],
     compactTarget: (state) => state.draft.compactTarget,
+    compactNote: (state, m) => m.setup.compactNoteChoices[state.draft.compactNote],
     compactHint: (state, m) => hintText(state.draft.compactHint, m),
     contextWindow: (state, m) => (state.draft.contextWindow === '' ? m.setup.contextWindowDetected : state.draft.contextWindow),
 };
@@ -112,7 +114,7 @@ function pickList(state: Setup, labels: readonly string[], width: number, style:
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { herdrEvents: m.setup.herdrEventsHint, compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactStyle: m.setup.autocompactStyleHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { herdrEvents: m.setup.herdrEventsHint, compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactStyle: m.setup.autocompactStyleHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactNote: m.setup.compactNoteHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
@@ -135,6 +137,7 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
         locale: () => pickList(state, LOCALE_CHOICES.map((choice) => m.setup.uiChoices[choice]), width, style),
         gitNote: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.gitNoteChoices[choice]), width, style),
         herdrEvents: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.herdrEventsChoices[choice]), width, style),
+        compactNote: () => pickList(state, COMPACT_NOTE_CHOICES.map((choice) => m.setup.compactNoteChoices[choice]), width, style),
         effort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         compactBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => m.setup.jobByChoices[choice]), width, style),
         compactEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),

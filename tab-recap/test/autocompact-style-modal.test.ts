@@ -24,15 +24,15 @@ function typed(state: Setup, keys: readonly string[]): Setup {
 
 test('the row starts at balanced, and choosing eager writes TAB_RECAP_AUTOCOMPACT_STYLE only', () => {
     assert.equal(draft.autocompactStyle, 'balanced');
-    const chosen = typed(start(), [...down(13), '\r', 'j', '\r']);
+    const chosen = typed(start(), [...down(14), '\r', 'j', '\r']);
     assert.equal(chosen.draft.autocompactStyle, 'eager');
     assert.deepEqual([...changes(chosen)], [['TAB_RECAP_AUTOCOMPACT_STYLE', 'eager']]);
 });
 
 test('a locked row is never written: the row names its variable and a change is not saved', () => {
     const locked = start({ autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
-    const attempted = typed(locked, [...down(13), '\r', 'j', '\r']);
-    assert.equal(typed(locked, [...down(13), '\r']).note, 'locked');
+    const attempted = typed(locked, [...down(14), '\r', 'j', '\r']);
+    assert.equal(typed(locked, [...down(14), '\r']).note, 'locked');
     assert.deepEqual([...changes(attempted)], [], 'a locked row produces no change');
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT_STYLE: 'gentle' }), { autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
 });
@@ -42,7 +42,7 @@ test('the file\'s value: gentle and eager are read as they are; anything else is
 });
 
 test('the row shows its value and its three choices in English and Spanish, with its hint while focused', () => {
-    const focused = typed(withAvailable(initial(draft, {}), ['claude']), down(13));
+    const focused = typed(withAvailable(initial(draft, {}), ['claude']), down(14));
     const text = setupView(focused, en, 140).join('\n');
     assert.match(text, /Autocompact style\s+balanced — today's numbers/);
     assert.match(text, /how eagerly it acts/);
@@ -50,5 +50,5 @@ test('the row shows its value and its three choices in English and Spanish, with
     assert.match(choosing, /eager — acts sooner; asks an idle lane again every 30 min/);
     const spanish = setupView(typed(focused, ['\r']), es, 140).join('\n');
     assert.match(spanish, /eager — actúa antes; vuelve a mirar un agente libre cada 30 min/);
-    assert.match(setupView(typed(withAvailable(initial(draft, {}), ['claude']), down(13)), es, 140).join('\n'), /Estilo de autocompactar\s+balanced — los números de siempre/);
+    assert.match(setupView(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), es, 140).join('\n'), /Estilo de autocompactar\s+balanced — los números de siempre/);
 });
