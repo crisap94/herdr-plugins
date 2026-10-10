@@ -1,117 +1,201 @@
 ## ADDED Requirements
 
-### Requirement: Closed lane retention records are typed and time-bounded
+### Requirement: The closed-lane window is one environment setting
 
-The state store SHALL record an observed closure for a tracked lane as a `ClosedLaneIdentity` of its tab id, pane id, and close observation instant, with its latest task association when one exists. The close instant SHALL be the time the daemon processes an explicit pane-closed event, or the time of the first authoritative reconciliation that confirms a previously persisted lane is absent. The store SHALL NOT infer closure from transcript, fact, or run timestamps. `TAB_RECAP_CLOSED_LANE_DAYS` SHALL be parsed once at the configuration edge as a non-negative whole number of days, defaulting to 14 for a missing, empty, negative, fractional, or non-numeric value. A value of zero SHALL retain closure records indefinitely. An identity SHALL be inside the window when `closedAt >= now - days × 86,400,000`; it SHALL be expired only when `closedAt` is less than that cutoff. A pane reused by a later lane SHALL have a distinct identity because the tab and later close instant are part of the key. A closure with no task association SHALL resolve as `never-seen`.
+`TAB_RECAP_CLOSED_LANE_DAYS` SHALL be read once by `loadConfig()` through a pure parser, after the value is trimmed of surrounding whitespace. The parser SHALL accept only ASCII digits, at most nine characters, and SHALL return that value as a day count. Any other value, including a missing, empty, whitespace-only, negative, fractional, exponent, hexadecimal, or signed value, SHALL fall back to 14. A day count of 0 SHALL mean disabled. The setting SHALL NOT appear in the setup modal.
 
-#### Scenario: Close a tracked lane
+#### Scenario: Default window
 
-- **WHEN** an observed tracked lane closes at instant `t`
-- **THEN** the store SHALL persist its tab id, pane id, close instant `t`, and latest task association when known
+- **WHEN** `TAB_RECAP_CLOSED_LANE_DAYS` is missing
+- **THEN** the window SHALL be 14 days
+
+#### Scenario: Invalid inputs fall back to the default
+
+- **WHEN** the value is `-1`, `1.5`, `1e1`, `0x10`, `+5`, an empty string, or `1234567890`
+- **THEN** the window SHALL be 14 days
+
+#### Scenario: Surrounding whitespace is trimmed
+
+- **WHEN** the value is `  7  `
+- **THEN** the window SHALL be 7 days
+
+#### Scenario: Zero disables closed-lane retention
+
+- **WHEN** the value is `0`
+- **THEN** no closure record SHALL be written
+- **AND** no tab SHALL be protected by a closure record
+
+### Requirement: Every observed lane closure is recorded once
+
+When a lane leaves the board, the daemon SHALL write one closure record containing its tab id, pane id, agent kind, and close instant. The close instant SHALL be the daemon clock instant at which the fold observes the closure. The record's key SHALL be `(tab id, pane, close instant)`, and the write SHALL ignore a duplicate key. The record SHALL carry one task association, selected in the same write from the transcripts of that tab and pane whose first-seen instant lies from the lane's incarnation start through the close instant, ordered by run time then run id, and SHALL carry no association when the lane has no session or no incarnation start. The record SHALL NOT copy transcript, prompt, cwd, repository path, or fact text.
+
+#### Scenario: A tracked lane closes
+
+- **WHEN** a lane on the board is closed at instant `t` and its session and incarnation start are known
+- **THEN** the store SHALL persist its tab id, pane id, agent kind, instant `t`, and the task of the newest run linked to its transcripts
 - **AND** it SHALL copy no transcript or fact text
 
-#### Scenario: Reconcile a lane closed while the daemon was stopped
+#### Scenario: A repeated closure is not recorded twice
 
-- **WHEN** a previously persisted live lane is absent from the first authoritative snapshot after restart
-- **THEN** the store SHALL record closure at the snapshot observation instant
-- **AND** it SHALL not claim an earlier exact close time
+- **WHEN** two closures of the same lane arrive at the same instant
+- **THEN** the store SHALL hold one closure record
 
-#### Scenario: A pane identifier is reused
+#### Scenario: A lane without a session has no association
 
-- **WHEN** a lane closes and a later lane reuses the same pane id
-- **THEN** their closed-lane identities SHALL remain distinct by tab and close instant
-- **AND** resolving the earlier identity SHALL not select the later lane's task
+- **WHEN** a lane closes and has never reported a session
+- **THEN** the store SHALL persist the closure with no task association
 
-#### Scenario: Close time reaches the cutoff
+#### Scenario: A pane reused by a later lane
 
-- **WHEN** `closedAt` equals `now - days × 86,400,000`
-- **THEN** the identity SHALL still be inside the retention window
+- **WHEN** a lane closes, and a later lane in the same tab reuses its pane id and produces a run
+- **THEN** the earlier closure SHALL keep the task of its own runs
+- **AND** the later lane's run SHALL NOT be attributed to the earlier closure
 
-#### Scenario: Zero keeps closure identities
+#### Scenario: A pane reused in two tabs
 
-- **WHEN** `TAB_RECAP_CLOSED_LANE_DAYS` is `0`
-- **THEN** the store SHALL retain closure records indefinitely
+- **WHEN** the same pane id closes in two tabs
+- **THEN** the two closures SHALL be distinct identities by tab id and close instant
 
-### Requirement: Closed lane resolution composes with the ledger
+#### Scenario: A run that finishes after the closure
 
-The application SHALL resolve a typed closed-lane identity to one of four outcomes: `found{task, facts}`, `expired{closedAt}`, `never-seen`, or `unknown{reason}`. It SHALL return `found` only when the exact tab, pane, and close instant match a retained closure with a task association and the Ledger port returns that task's facts. It SHALL return `expired` when the supplied close instant is outside the configured window, even when its closure row has already been pruned. It SHALL return `never-seen` when no matching in-window record exists or its closure had no task association. It SHALL return `unknown` for an unreadable store, malformed stored row, or a closure pointing to a missing task. Retention metadata and ledger facts SHALL remain behind their existing separate ports and repositories.
+- **WHEN** a run of a closed lane is written after its closure record
+- **THEN** the closure record SHALL keep the association it was given at close and SHALL NOT be rewritten
 
-#### Scenario: Resolve a retained closed lane
+### Requirement: A lane leaves the board by any observation
 
-- **WHEN** the exact tab, pane, and close instant identify a retained closure with a task
-- **THEN** the resolver SHALL return `found` with that task id and its ledger facts
+The fold SHALL treat a lane as closed whenever it leaves the board by any of these observations: an explicit pane-closed event for a lane on the board, an authoritative reconciliation whose lanes no longer include the pane, including one after a subscription reconnect, and the first reconciliation after restart that lacks a lane persisted in the lane table. A `session` observation, including one caused by `/clear` or a new agent session in a surviving pane, SHALL NOT close the lane. The fold SHALL emit each closure as one `lane-closed` intent, placed before any publish, read, recap, or column intent of the same step. A reconciliation that removes the last lane of a tab SHALL also publish that tab, so its persisted lane rows do not survive to a later restart.
 
-#### Scenario: Resolve an expired identity
+#### Scenario: Explicit pane close
 
-- **WHEN** the supplied close instant is older than the configured cutoff
+- **WHEN** a pane-closed event arrives for a lane on the board
+- **THEN** the fold SHALL emit one `lane-closed` intent for that lane before its publish intent
+
+#### Scenario: A reconciliation drops a lane
+
+- **WHEN** an authoritative reconciliation no longer lists a lane on the board
+- **THEN** the fold SHALL emit one `lane-closed` intent at the snapshot instant
+
+#### Scenario: An agent exits while its pane survives
+
+- **WHEN** an agent leaves the board while its pane remains open
+- **THEN** the fold SHALL emit `lane-closed` for that agent
+
+#### Scenario: Restart with a persisted lane missing from the snapshot
+
+- **WHEN** a persisted lane is absent from the first reconciliation after restart
+- **THEN** the fold SHALL emit one `lane-closed` intent at the snapshot instant
+- **AND** no intent SHALL be emitted for a persisted lane that the snapshot still lists
+
+#### Scenario: A repeated close for a removed pane
+
+- **WHEN** a pane-closed event arrives for a pane no longer on the board
+- **THEN** the fold SHALL emit no `lane-closed` intent
+
+#### Scenario: A session change in a surviving pane
+
+- **WHEN** a session observation arrives for a lane on the board, including after `/clear`
+- **THEN** the fold SHALL emit no `lane-closed` intent
+- **AND** the lane SHALL remain on the board
+
+#### Scenario: The last lane of a tab leaves in a reconciliation
+
+- **WHEN** a reconciliation removes the only lane of a tab
+- **THEN** the fold SHALL emit a publish intent for that tab so its stored lane rows are replaced
+
+### Requirement: Lane incarnation persists across restart
+
+The `lane` table SHALL store, for each live lane, the instant its current incarnation began (`since`) and its session when known, both nullable. The daemon SHALL read these persisted rows once at boot, before its first subscription, and pass them to the fold as restored lanes. A restored lane that the first snapshot still lists SHALL keep its persisted `since` and session. Rows written before this change have no `since` and SHALL restore with none.
+
+#### Scenario: A restored lane that is still live
+
+- **WHEN** the daemon restarts and the first snapshot lists a persisted lane
+- **THEN** the lane SHALL keep its persisted incarnation start and session
+- **AND** it SHALL be read as a new lane, as before
+
+#### Scenario: A persisted row from before this change
+
+- **WHEN** a restored lane has no persisted incarnation start
+- **THEN** its later closure SHALL be recorded with no task association
+
+#### Scenario: Boot read fails
+
+- **WHEN** the persisted lane rows cannot be read at boot
+- **THEN** the daemon SHALL log the failure and skip the restart comparison for that boot
+- **AND** it SHALL NOT record any closure from that comparison
+
+### Requirement: Closed-lane resolution returns one of four outcomes
+
+The application SHALL resolve a closed-lane identity of tab id, pane id, and close instant to exactly one of `found{task, facts}`, `expired{closedAt}`, `never-seen`, or `unknown{reason}`, where `reason` is one of `store-unreadable` or `ledger-unreadable`. The resolver SHALL look up the exact key, then apply the window, then the association, then the ledger. It SHALL return `found` only for a record inside the window with an association whose ledger read succeeds. It SHALL return `expired` only when the exact key exists with a close instant before the window's cutoff. It SHALL return `never-seen` when no record exists for the key, or when the record inside the window has no association. Facts SHALL be the task's facts from the ledger that were open at the close instant or closed within the two hours ending at the close instant, using the two-hour constant of the handoff ledger input. The resolver SHALL NOT select the newest record for a pane when the key does not match.
+
+#### Scenario: A retained closed lane resolves to its task
+
+- **WHEN** the exact key identifies a record inside the window with an association
+- **THEN** the resolver SHALL return `found` with that task and the facts open at the close instant or closed within the two hours before it
+
+#### Scenario: A fact closed after the close instant
+
+- **WHEN** a fact of the task was closed after the close instant
+- **THEN** the resolver SHALL include it as open at the close instant
+- **AND** it SHALL NOT include facts opened after the close instant
+
+#### Scenario: An expired record not yet pruned
+
+- **WHEN** the exact key identifies a record whose close instant is before the window's cutoff
 - **THEN** the resolver SHALL return `expired`
-- **AND** it SHALL not read or return facts for a different closure using the same pane id
+- **AND** after the next sweep prunes the record, the same identity SHALL resolve as `never-seen`
 
-#### Scenario: No closure was recorded
+#### Scenario: An identity that was never recorded
 
-- **WHEN** an in-window identity has no matching closure record, or its record has no task association
+- **WHEN** no record exists for the exact key
+- **THEN** the resolver SHALL return `never-seen`
+- **AND** it SHALL NOT return facts of another closure of the same pane
+
+#### Scenario: A record without an association
+
+- **WHEN** the record inside the window has no task association
 - **THEN** the resolver SHALL return `never-seen`
 
-#### Scenario: A persisted closure cannot be read safely
+#### Scenario: The store cannot be read
 
-- **WHEN** the closure row is malformed, the store is unreadable, or its task association is missing from the ledger
-- **THEN** the resolver SHALL return `unknown{reason}`
-- **AND** it SHALL not guess a task or another pane's facts
+- **WHEN** the closed-lane lookup fails
+- **THEN** the resolver SHALL return `unknown` with reason `store-unreadable`
 
-### Requirement: Closed lane retention composes with tab retention
+#### Scenario: The ledger cannot be read
 
-The existing `TAB_RECAP_KEEP_DAYS` tab eligibility SHALL remain unchanged: a tab is eligible only when it has no open column and `MAX(last_seen, COALESCE(view_at, 0))` is older than its tab cutoff; zero SHALL continue to disable tab deletion. A tab SHALL additionally remain ineligible while it has any unexpired closed-lane record. When the tab remains stored after a closure record expires, the closure metadata SHALL be pruned in a transaction for that tab and logged with a count; the task and its facts SHALL remain governed by tab retention. Removing an eligible tab SHALL delete its closure records with all existing tab-owned rows in the same transaction, and the removed count SHALL include closure records. A failed tab transaction SHALL not stop cleanup of other tabs. No lane closure SHALL itself delete a task or facts shared by another lane.
+- **WHEN** the ledger read for the associated task fails
+- **THEN** the resolver SHALL return `unknown` with reason `ledger-unreadable`
 
-#### Scenario: Tab window is shorter than closed-lane window
+### Requirement: Retained closed lanes are listed newest first
 
-- **WHEN** a tab has no open column, is older than its tab cutoff, and has a closed lane still inside the 14-day window
-- **THEN** the tab and its ledger SHALL remain stored until that closed-lane record expires
+The store SHALL list the closure records of a tab whose close instant lies inside the window, newest first, each with its pane, agent kind, close instant, and task name when known. Records outside the window SHALL NOT be listed.
 
-#### Scenario: Tab window is longer than closed-lane window
+#### Scenario: Two closures of one pane
 
-- **WHEN** a closed-lane record expires but the tab remains inside its tab retention window
-- **THEN** the closure record SHALL be pruned
-- **AND** the tab, tasks, and facts SHALL remain
+- **WHEN** a tab holds two closure records for the same pane id
+- **THEN** the listing SHALL show both, newest first, as distinct identities
 
-#### Scenario: Tab retention is disabled
+#### Scenario: Empty tab
 
-- **WHEN** `TAB_RECAP_KEEP_DAYS` is `0`
-- **THEN** closed-lane expiration SHALL not cause tab deletion
-- **AND** the tab and its task facts SHALL remain stored
+- **WHEN** a tab holds no closure records inside the window
+- **THEN** the listing SHALL be empty
 
-#### Scenario: A retained tab has a shared task
+### Requirement: Expired closure records are pruned without removing their tab
 
-- **WHEN** a closed lane and a live lane share a task
-- **THEN** expiry of the closed-lane identity SHALL not delete the shared task or its facts
+Once per daily sweep, the store SHALL prune every closure record whose close instant lies before the window's cutoff, one write transaction per tab, logging the count per tab. The pruning SHALL run even when `TAB_RECAP_KEEP_DAYS` is `0`. A failure in one tab's pruning SHALL NOT stop pruning other tabs. Pruning SHALL NOT delete any task, fact, or other tab-owned row.
 
-#### Scenario: Tab deletion removes all owned rows
+#### Scenario: Pruning with tab retention off
 
-- **WHEN** a tab passes both retention rules and is removed
-- **THEN** its closed-lane rows and existing tab-owned rows SHALL be deleted in the same transaction
-- **AND** the log count SHALL include the deleted closure records
+- **WHEN** `TAB_RECAP_KEEP_DAYS` is `0` and a closure record has aged out of the window
+- **THEN** the next sweep SHALL prune that record
+- **AND** no tab SHALL be removed
 
-#### Scenario: One tab cannot be removed
+#### Scenario: Pruning keeps tasks and facts
 
-- **WHEN** deletion of one eligible tab fails
-- **THEN** that tab's rows SHALL remain intact
-- **AND** the sweep SHALL continue to other eligible tabs
+- **WHEN** a closure record is pruned and its task has other lanes or open facts
+- **THEN** the task and its facts SHALL remain
 
-### Requirement: Closed-lane schema upgrades preserve migration safety
+#### Scenario: One tab fails to prune
 
-The store SHALL add closed-lane metadata through a new forward-only numbered migration. The migration SHALL leave every released migration unchanged, run under the existing backup and transaction rules, and preserve foreign-key validity. It SHALL NOT backfill closure times from unrelated transcript, fact, run, or migration times when no observed closure time exists.
-
-#### Scenario: Upgrade a released database
-
-- **WHEN** an existing database is opened by the version containing the closed-lane migration
-- **THEN** the normal versioned backup SHALL be made before migration
-- **AND** the new schema SHALL be applied once with no broken foreign keys
-
-#### Scenario: A closed time is unavailable
-
-- **WHEN** an older database contains historical transcripts or facts but no persisted lane closure time
-- **THEN** migration SHALL create no fabricated closure record for that history
-
-#### Scenario: A released migration is edited
-
-- **WHEN** a released migration is changed to add this table
-- **THEN** the migration lint gate SHALL fail
+- **WHEN** pruning one tab fails
+- **THEN** that tab's closure records SHALL remain
+- **AND** pruning SHALL continue for the other tabs
