@@ -79,7 +79,7 @@ The plugin SHALL assemble transcript readers in one typed registry. The registry
 
 - **WHEN** the expanded modal requests a reader for an unknown kind
 - **THEN** its registry SHALL return no reader because it has no screen fallback
-||||||| parent of 0fb272e (refactor(tab-recap): centralize job harness registry)
+
 ### Requirement: Job harness lists and capabilities derive from one registry
 
 The job harness ids, automatic selection order, model defaults, job choices, setup lists and install messages SHALL derive from one typed registry. Each registry entry SHALL declare its job contract, whether it supports enumerating jobs, and whether setup displays an availability mark. Every summarizer SHALL provide a required job contract, and a registry lookup for a `BackendId` SHALL be total. Installation messages SHALL list automatically selected harnesses. The custom entry SHALL declare a free-text contract, no model, no availability mark, no enumerator, and a custom-command setup note.
