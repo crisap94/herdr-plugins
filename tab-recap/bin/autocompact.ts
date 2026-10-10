@@ -1,7 +1,7 @@
 // `tab-recap autocompact [--all]`: the newest autocompact decisions, read-only. Exit: 0 listed · 1 the state is unusable · 2 usage.
 import { stateStore } from '#src/adapters/db/database.ts';
-import { messagesOf, stateDir } from '#src/daemon/config.ts';
-import { AUTOCOMPACT_USAGE, LISTED, listing, parseListing } from '#src/recap/application/autocompact-listing.ts';
+import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
+import { AUTOCOMPACT_USAGE, LISTED, listing, parseListing, styleLine } from '#src/recap/application/autocompact-listing.ts';
 
 export function autocompactCommand(argv: readonly string[]): number {
     const parsed = parseListing(argv);
@@ -17,7 +17,8 @@ export function autocompactCommand(argv: readonly string[]): number {
     try {
         const now = Date.now();
         const lines = listing(store.autocompact.newest(LISTED), { since: now - 86_400_000, costUsd: store.autocompact.costSince(now - 86_400_000) }, now, Intl.DateTimeFormat().resolvedOptions().timeZone, store.autocompact.skips());
-        console.log(lines.join('\n'));
+        const config = loadConfig();
+        console.log([styleLine(config.autocompact, config.tuning), '', ...lines].join('\n'));
         return 0;
     } finally {
         store.close();

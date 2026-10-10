@@ -1,6 +1,6 @@
 // The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
-import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
+import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, STYLE_CHOICES, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import type { DeciderJob } from '#src/recap/domain/job.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
@@ -71,6 +71,7 @@ const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     autocompactJob: (state, m) => jobText('autocompactJob', state, m),
     autocompact: (state, m) => m.setup.autocompactChoices[state.draft.autocompact],
     autocompactAt: (state) => `${state.draft.autocompactAt}%`,
+    autocompactStyle: (state, m) => m.setup.autocompactStyleChoices[state.draft.autocompactStyle],
     locale: (state, m) => m.setup.uiChoices[state.draft.locale],
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
@@ -113,7 +114,7 @@ function pickList(state: Setup, labels: readonly string[], width: number, style:
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { herdrEvents: m.setup.herdrEventsHint, compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactNote: m.setup.compactNoteHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { herdrEvents: m.setup.herdrEventsHint, compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactStyle: m.setup.autocompactStyleHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactNote: m.setup.compactNoteHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
@@ -144,6 +145,7 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
         judgeEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         curateBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.curateOff : m.setup.jobByChoices[choice])), width, style),
         autocompact: () => pickList(state, MODE_CHOICES.map((choice) => m.setup.autocompactChoices[choice]), width, style),
+        autocompactStyle: () => pickList(state, STYLE_CHOICES.map((choice) => m.setup.autocompactStyleChoices[choice]), width, style),
         decideBy: () => pickList(state, DECIDER_BY_OPTIONS.map((choice) => (choice === 'off' ? m.setup.deciderOff : m.setup.jobByChoices[choice])), width, style),
         decideEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         curateEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),

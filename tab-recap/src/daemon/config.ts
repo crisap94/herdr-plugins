@@ -14,6 +14,8 @@ import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from 
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
 import { coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
+import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -63,6 +65,8 @@ export interface Config {
     readonly curator: Job;
     /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the minimum), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
     readonly autocompact: AutocompactPolicy;
+    /** the style's numbers in force: `TAB_RECAP_AUTOCOMPACT_STYLE` and the advanced keys (`_SAFE_AT_MOST`, `_CLOSES_AT_LEAST`, `_COVERAGE_AT_LEAST`, `_RECHECK_IDLE_MS`) */
+    readonly tuning: AutocompactTuning;
     /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
     readonly decider: DeciderJob;
     /** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: who checks the brief's coverage before an automatic compaction (`auto` by default) */
@@ -196,6 +200,7 @@ export function loadConfig(): Config {
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         curator: curateJobOf(get),
         autocompact: policyOf(get),
+        tuning: tuningOf(get),
         decider: deciderJobOf(get),
         coverage: coverageByOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         jev: jevOf(get),

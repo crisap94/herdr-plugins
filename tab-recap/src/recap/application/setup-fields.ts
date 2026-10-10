@@ -4,7 +4,7 @@ import { minimumOf } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
-import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, SWITCH_CHOICES } from './setup-state.ts';
+import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, STYLE_CHOICES, SWITCH_CHOICES } from './setup-state.ts';
 import type { Draft, FieldId } from './setup-state.ts';
 
 export interface ChoiceField {
@@ -36,6 +36,7 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     curateBy: choice(JOB_BY_OPTIONS, (draft) => draft.curate.by, (draft, by) => ({ ...draft, curate: { ...draft.curate, by } })),
     curateEffort: choice(EFFORT_CHOICES, (draft) => draft.curate.effort, (draft, effort) => ({ ...draft, curate: { ...draft.curate, effort } })),
     autocompact: choice(MODE_CHOICES, (draft) => draft.autocompact, (draft, autocompact) => ({ ...draft, autocompact })),
+    autocompactStyle: choice(STYLE_CHOICES, (draft) => draft.autocompactStyle, (draft, autocompactStyle) => ({ ...draft, autocompactStyle })),
     decideBy: choice(DECIDER_BY_OPTIONS, (draft) => draft.decide.by, (draft, by) => ({ ...draft, decide: { ...draft.decide, by } })),
     herdrEvents: choice(SWITCH_CHOICES, (draft) => draft.herdrEvents, (draft, herdrEvents) => ({ ...draft, herdrEvents })),
     compactNote: choice(COMPACT_NOTE_CHOICES, (draft) => draft.compactNote, (draft, compactNote) => ({ ...draft, compactNote })),

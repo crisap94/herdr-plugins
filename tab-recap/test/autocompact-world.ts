@@ -5,6 +5,8 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { Decider, DecidedResult } from '#src/ports/decider.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
@@ -17,15 +19,15 @@ export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_d
 
 export interface World { readonly service: Autocompact; readonly events: string[]; awaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
 
-export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0): World {
+export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<AutocompactTuning> = {}): World {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const clock = { at: NOW };
-    const state = { policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, inFlight: 0 as number | 'unknown', awaiting: null as string | null, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
+    const state = { policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningOf(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', awaiting: null as string | null, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
     const decider: Decider = { label: 'fake · m', ask: async (_state, questions) => { asked.push(Object.keys(questions).length); if (state.gate !== null) await state.gate; return state.decide(); } };
     const deps: AutocompactDeps = {
-        policy: () => state.policy, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve({ count: state.inFlight, why: 'test' }); },
+        policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve({ count: state.inFlight, why: 'test' }); },
         recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact,
         requests: { requestCompact: (request) => { requests.push(request); } }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve(); },
         lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); }, startedAt,

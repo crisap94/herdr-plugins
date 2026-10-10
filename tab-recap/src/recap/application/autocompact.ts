@@ -12,13 +12,15 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import { gateOf, READY } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
-import { busyOf, detailOf, unchangedOf } from './autocompact-gates.ts';
+import { busyOf, detailOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
 import { lineOf, moneyOf } from './autocompact-line.ts';
 import type { FlightAnswer } from './autocompact-gates.ts';
 import type { LaneEvents } from './lane-events.ts';
@@ -28,16 +30,19 @@ export type { FlightAnswer } from './autocompact-gates.ts';
 /** What the pane's `awaiting` tokens say now: clear, waiting (for what), or unreadable (which counts as in flight). */
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
 
-/** Where a consideration stopped: the gate, whether the kind is record-only, and the detail a skip keeps. */
+/** Where a consideration stopped: the gate, whether the kind is record-only, the detail a skip keeps, and whether the re-check let an unchanged lane through. */
 interface Stop {
     readonly gate: Gate;
     readonly recordOnly: boolean;
     readonly detail: string | null;
+    readonly recheck: boolean;
 }
 
 export interface AutocompactDeps {
     /** read on every consideration, so a change applies without a restart */
     policy(): AutocompactPolicy;
+    /** the style's numbers in force: the verdict's, the brief check's pass mark and the re-check; balanced when not given */
+    tuning?(): AutocompactTuning;
     decider(): Decider | null;
     readonly contexts: { of(pane: string): ContextUse | null };
     /** work the lane's agent started and has not ended; `unknown` for a reader that cannot tell */
@@ -61,6 +66,9 @@ export interface AutocompactDeps {
     now(): number;
     log(line: string): void;
 }
+
+/** The numbers of the `balanced` style, when no tuning is given. */
+const BALANCED = tuningOf(() => undefined);
 
 interface Judged {
     readonly verdict: DecisionVerdict;
@@ -90,6 +98,11 @@ export class Autocompact {
         this.deps = deps;
     }
 
+    /** The style's numbers in force, or those of `balanced` when the service was given none. */
+    private tuning(): AutocompactTuning {
+        return this.deps.tuning?.() ?? BALANCED;
+    }
+
     /** Forgets the skips of every lane that is not idle or done in `board` (all of them while autocompact is off). */
     prune(board: readonly Lane[]): void {
         const keep = this.deps.policy().mode === 'off' ? [] : board.filter((lane) => READY.has(lane.status)).map((lane) => ({ tab: String(lane.tab), pane: String(lane.pane) }));
@@ -111,24 +124,29 @@ export class Autocompact {
     }
 
     /** Where the gates stop this lane: `ask` or `ceiling` go on, anything else is a skip. The in-flight reader runs only when the lane would otherwise be asked. */
-    private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse): Promise<Stop> {
+    private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse, tuning: AutocompactTuning): Promise<Stop> {
         const { deps } = this;
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
         const now = deps.now();
         const busy = busyOf(deps, this.asked, tab, pane, now);
         const lastBreakAt = deps.boundaries.lastBreakAt(tab, pane);
         const lastDecisionAt = deps.decisions.lastDecisionAt(tab, pane);
+        // the re-check: an unchanged lane idle for the style's interval since its last decision is let through again
+        const last = deps.decisions.lastDecision(tab, pane);
+        const same = unchangedOf(last, deps.startedAt, use.tokens, policy.mode);
+        const recheck = same && recheckDue(tuning.recheckIdleMs, last, now);
         const facts = {
             kind: String(lane.agent), kinds: policy.kinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,
-            unchanged: unchangedOf(deps.decisions.lastDecision(tab, pane), deps.startedAt, use.tokens, policy.mode),
+            unchanged: same && !recheck,
         };
         const cheap = gateOf({ ...facts, inFlight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
-        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }) };
+        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }), recheck };
         const flight = await this.flightOf(lane, pane);
         const full = gateOf({ ...facts, inFlight: flight.count });
-        return { ...full, detail: detailOf(full.gate, { ...context, flight }) };
+        if (recheck && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(`autocompact ${pane}: unchanged → recheck`);
+        return { ...full, detail: detailOf(full.gate, { ...context, flight }), recheck };
     }
 
     /** Records the lane's latest skip, and logs it only when its gate differs from the lane's last logged skip. */
@@ -144,13 +162,14 @@ export class Autocompact {
     private async run(lane: Lane): Promise<void> {
         const { deps } = this;
         const policy = deps.policy();
+        const tuning = this.tuning();
         const [tab, pane, use] = [String(lane.tab), String(lane.pane), deps.contexts.of(String(lane.pane))];
         if (policy.mode === 'off') return;
         if (use === null) { this.skip(lane, 'no-context', null, 'the context share is not known yet'); return; }
-        const { gate, recordOnly, detail } = await this.gated(lane, policy, use);
+        const { gate, recordOnly, detail } = await this.gated(lane, policy, use, tuning);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
         if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
-        const judged = gate === 'ceiling' ? CEILING : await this.asking(lane);
+        const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
         // a wait that began while the decider answered is read here, before the busy check that is made synchronously with the record
         if (await this.waitSkipped(lane, use)) return;
         // the decider may have taken a while: another lane may have been requested meanwhile, so the busy check is made again, synchronously, before the record
@@ -207,8 +226,8 @@ export class Autocompact {
         this.deps.decisions.markRequested(id);
     }
 
-    /** The decider's answers about the moment, and the verdict made from them in code; one log line per outage. */
-    private async asking(lane: Lane): Promise<Judged> {
+    /** The decider's answers about the moment, and the verdict made from them in code with the style's numbers; one log line per outage. */
+    private async asking(lane: Lane, tuning: AutocompactTuning): Promise<Judged> {
         const decider = this.deps.decider();
         const state = autocompactState(await this.deps.recent(lane), this.deps.ledger.historyOf(String(lane.tab), String(lane.pane)));
         const answered = decider === null ? null : await decider.ask(state, QUESTIONS);
@@ -219,6 +238,6 @@ export class Autocompact {
             return { ...UNKNOWN, why, decider: decider?.label ?? null };
         }
         this.outage = false;
-        return { verdict: verdictOf(answered.answers), answers: answered.answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: answered.tookMs };
+        return { verdict: verdictOf(answered.answers, tuning.verdict), answers: answered.answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: answered.tookMs };
     }
 }

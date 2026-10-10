@@ -49,22 +49,22 @@ export function questionsFor(facts: readonly CoverageFact[]): Readonly<Record<st
     return questions;
 }
 
-/** The facts and reasons below the line, among the blocking sections. */
-export function missingOf(answers: Readonly<Record<string, number>>, facts: readonly CoverageFact[]): readonly string[] {
+/** The facts and reasons below the pass mark (`keptAtLeast`, the autocompact style's), among the blocking sections. */
+export function missingOf(answers: Readonly<Record<string, number>>, facts: readonly CoverageFact[], keptAtLeast: number = KEPT_AT_LEAST): readonly string[] {
     return facts.flatMap((fact, at) => {
         if (!BLOCKING.has(fact.section)) return [];
-        const kept = (answers[`keeps_${at}`] ?? 1) >= KEPT_AT_LEAST;
-        const reasoned = (answers[`reason_${at}`] ?? 1) >= KEPT_AT_LEAST;
+        const kept = (answers[`keeps_${at}`] ?? 1) >= keptAtLeast;
+        const reasoned = (answers[`reason_${at}`] ?? 1) >= keptAtLeast;
         return [...(kept ? [] : [`${fact.section}: ${fact.text}`]), ...(reasoned ? [] : [`the reason for the decision: ${fact.text} (${fact.why ?? ''})`])];
     });
 }
 
 /** Asks the decider about the brief; a decider that cannot answer leaves the brief unchecked (`ok` false, `unknown` says why). */
-export async function covered(brief: string, facts: readonly CoverageFact[], decider: Decider): Promise<Coverage> {
+export async function covered(brief: string, facts: readonly CoverageFact[], decider: Decider, keptAtLeast: number = KEPT_AT_LEAST): Promise<Coverage> {
     if (facts.length === 0) return { ok: true, missing: [], answers: {}, unknown: null };
     const asked = await decider.ask({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }, questionsFor(facts));
     if (isUnknown(asked)) return { ok: false, missing: [], answers: {}, unknown: saying(asked.why) };
-    const missing = missingOf(asked.answers, facts);
+    const missing = missingOf(asked.answers, facts, keptAtLeast);
     return { ok: missing.length === 0, missing, answers: asked.answers, unknown: null };
 }
 

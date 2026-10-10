@@ -31,7 +31,7 @@ const states: readonly [string, Setup][] = [
     ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
     ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
     ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
-    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 14 }, () => 'j'), '\r'])],
+    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 15 }, () => 'j'), '\r'])],
     ['save failed', { ...withAvailable(base, ['claude']), note: { failed: 'EACCES: permission denied, open config.env' } }],
 ];
 
@@ -165,7 +165,7 @@ test('the autocompact rows show their value, the focused one its hint, and the d
     assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
-    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 14 }, () => 'j'), '\r']), en, 140).join('\n');
+    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 15 }, () => 'j'), '\r']), en, 140).join('\n');
     assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
     assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
     assert.match(setupView(rows, es, 120).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);

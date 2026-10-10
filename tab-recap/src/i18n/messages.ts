@@ -38,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob' | 'herdrEvents', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactJob' | 'herdrEvents', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -68,6 +68,9 @@ export interface Messages {
         readonly autocompactChoices: { readonly off: string; readonly shadow: string; readonly on: string };
         readonly autocompactHint: string;
         readonly autocompactAtHint: string;
+        /** autocompact style: the three styles' words, and the hint of its row */
+        readonly autocompactStyleChoices: { readonly gentle: string; readonly balanced: string; readonly eager: string };
+        readonly autocompactStyleHint: string;
         readonly autocompactJobHint: string;
         /** the `off` choice of the decider's harness list */
         readonly deciderOff: string;
