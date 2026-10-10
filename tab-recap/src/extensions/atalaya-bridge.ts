@@ -1,6 +1,3 @@
-// The atalaya flavour's one extension: atalaya-bridge's latest alert per lane as a note under the
-// lane's header, a warning when its heartbeat has gone stale, and upkeep that starts the service
-// again (never restarts it). Reads the bridge's files; writes nothing.
 import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -22,10 +19,6 @@ function expandHome(path: string): string {
     return path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path;
 }
 
-/**
- * herdr starts the daemon without the user session's environment, and `systemctl --user` needs it to find the
- * user manager's bus. Fill in the two variables from the uid when they are missing; values already set are kept.
- */
 export function userBusEnv(base: NodeJS.ProcessEnv, uid: number | undefined): NodeJS.ProcessEnv {
     if (uid === undefined) {
         return base;
@@ -52,7 +45,6 @@ function alertOf(line: string): [string, Note] | null {
     return [pane, { label: kind, at: typeof row['at'] === 'number' ? row['at'] : 0, details: details.filter((part) => part !== null) }];
 }
 
-/** The line a stale heartbeat earns, in the operator's language. */
 function silence(locale: Locale, ms: number): string {
     const minutes = Math.max(1, Math.round(ms / MINUTE_MS));
     return locale === 'es'
@@ -116,7 +108,6 @@ export class AtalayaBridge implements Extension {
         return age < STALE_MS ? null : silence(locale, age);
     }
 
-    /** Start the unit when its heartbeat is stale and it is not active. Never restart a running one. */
     async upkeep(): Promise<UpkeepResult> {
         const beat = this.heartbeat();
         const now = this.clock();
@@ -135,7 +126,6 @@ export class AtalayaBridge implements Extension {
     }
 }
 
-/** Loaded only when the bridge's state dir exists; TAB_RECAP_BRIDGE_DIR overrides it, empty disables it. */
 export const atalayaBridge: ExtensionFactory = (get) => {
     const dir = expandHome(get('TAB_RECAP_BRIDGE_DIR') ?? join(homedir(), '.local', 'state', 'atalaya-bridge'));
     try {
