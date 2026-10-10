@@ -56,6 +56,11 @@ The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--pri
 - **WHEN** the operator supplies `--note` to a command other than `compact` or `handoff`
 - **THEN** the CLI SHALL print `--note applies to compact and handoff only` to stderr and exit 2
 
+#### Scenario: Source and target are the same pane
+
+- **WHEN** the operator invokes `handoff --from pane-a --to pane-a`
+- **THEN** the CLI SHALL refuse `source-equals-target` on stderr, exit 1 and write no request row
+
 #### Scenario: Refused or failed delivery
 
 - **WHEN** the application returns refused, unsupported, or failed
