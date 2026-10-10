@@ -27,7 +27,8 @@ today. This change stores them so that the later change can be replayed.
 ## What Changes
 
 - **The check does not block the ceiling, by default.** A lane at or above the ceiling is compacted whatever the check
-  says. The better of the two briefs written (fewer missing facts; the rewrite on a tie) is typed, with the missed
+  says. The better of the two briefs written is typed (fewer missing facts; the rewrite on a tie; a rewrite that cannot be checked loses
+  to the checked first brief), with the missed
   goal, needs, decisions and rules facts appended verbatim, so a rule the brief dropped still reaches the agent. When no
   brief text exists, the same text an operator's compaction gets is typed. The check still runs and is recorded. A
   switch, `TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK`, returns the ceiling to the check (`off`).

@@ -30,9 +30,9 @@ clutter, not the brief check or any handoff, which keep reading the full state.
   - `goal`, `now`, `needs`, `decisions` and `rules` are never pruned: they are the state the writer must keep.
 - **The hidden count is said.** Each `ledger` carries, per section, the count of open facts the view hid, so the writer
   knows they exist. No hidden fact gets an id, so the writer cannot refer to one.
-- **The gates check against the full open state.** The writer's operations are checked against every open fact, not the
-  pruned view. A hidden fact's text cannot be added again as new (the duplicate gate, G2, and the closed-repeat check
-  run on the full set).
+- **The gates check against the full open state, where it matters.** The duplicate gate (G2) checks an added fact against
+  every open fact, not the pruned view, so a hidden fact's text cannot be added again as new. The unknown-id, update and close
+  checks stay on the ids the writer was shown: a hidden fact has no id.
 - **The ledger and the curator are unchanged.** The curator reconciles the full open view, so a stale fact is still closed by
   the curator when the transcript shows it answered. Pruning changes only what the recap writer is shown.
 - **Measured before it is switched on.** The default is off, and the switch moves only when the recall replay keeps the

@@ -33,20 +33,25 @@ verdict.
 - `missed{facts}`: the facts the brief drops, after the one rewrite;
 - `unchecked{reason}`: no decider, the decider cannot answer, or no brief was written.
 
-For a lane whose gate is `ceiling`, under `CeilingPolicy = overrides-check` (the default), a `missed` or `unchecked`
-outcome does not wait:
+For a lane whose gate is `ceiling`, under `CeilingPolicy = overrides-check` (the default), a `missed` or `unchecked` outcome
+does not wait. The flow types one brief, chosen in this order:
 
-1. the flow types the better of the briefs written: the one with fewer missing facts, the rewrite on a tie;
-2. if the check missed facts, the missed goal, needs, decisions and rules facts are appended to that brief verbatim (the
-   fact's stored text, under a fixed heading), with no model call. This is deterministic and keeps a rule such as "never
-   force-push" from being lost silently;
-3. if no brief text exists (no decider, decider unreachable, or nothing written), the text an operator's compaction is
-   given is typed, and nothing is appended because no check named a missed fact.
+1. a brief whose check missed facts is compared with its rewrite: the one that misses fewer facts is typed, and the rewrite on a
+   tie. A brief whose check could not answer has no count, so it is never preferred over a checked one; when the rewrite is
+   unchecked, the first brief is typed, because its missed facts are known. A first brief whose check could not answer is
+   typed as it is, with outcome `unchecked`;
+2. if the typed brief's check missed facts, the missed goal, needs, decisions and rules facts are appended to it verbatim, with
+   no model call, under a fixed heading. The appended block is at most 1 500 characters, in the order goal, rules, needs, then
+   decisions newest first (by last seen); a fact that does not fit is left out, and the heading says how many were left out.
+   This keeps a rule such as "never force-push" from being lost silently;
+3. if no brief text exists (no decider, or nothing written), the text an operator's compaction is given is typed, and nothing is
+   appended, because no check named a missed fact.
 
-The decision keeps gate `ceiling` and verdict `compact`, with `asked_verdict` as the decider asked. Its `coverage_missing`
-holds the count for the brief that was typed (null when unchecked), and its `why` names the count and the path taken
-("2 facts missed; missed facts appended", or "no brief: operator's text typed"). Every such case writes one log line, so
-a ceiling compaction that went unchecked is visible, not silent.
+The decision keeps gate `ceiling` and verdict `compact`. Its `asked_verdict` is the verdict the decider asked for; at gate
+`ceiling` no verdict is asked, so it is `compact`, the verdict the ceiling gives. Its `coverage_outcome` is `missed` (with
+`coverage_missing`, the count the typed brief missed) or `unchecked` (with `unchecked_reason`, and `coverage_missing` null).
+Its `why` names the count and the path ("2 facts missed; missed facts appended", or "no brief: operator's text typed"). Every
+such case writes one log line, so a ceiling compaction that went unchecked is visible, not silent.
 
 Under `CeilingPolicy = blocked-by-check` (`TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK=off`), a lane at the ceiling
 behaves as a lane below it: a failed check records `wait` with gate `coverage`, as today.
@@ -95,10 +100,12 @@ Migration `014` adds to `autocompact_decision`, all nullable:
 The brief text and the checked facts go in a new table, not in the decision row, so the decision row stays small and
 every scan of decisions stays light:
 
-- `autocompact_brief (decision_id, briefed_at, body)`: `decision_id` is the decision's id with `ON DELETE CASCADE`;
-  `briefed_at INTEGER NOT NULL` is when the brief was written; `body BLOB NOT NULL` is the gzip of the typed record
-  `{ brief: string (at most 3 000 characters), checked: CheckedFact[] }`, written and read only through one codec (see
-  Types), as `run_input` is stored.
+- `autocompact_brief (decision_id, briefed_at, body)`: `decision_id` is the decision's id, its primary key (one brief per decision),
+  with `ON DELETE CASCADE`;
+  `briefed_at INTEGER NOT NULL` is when the brief was written; `body BLOB NOT NULL` is the gzip of the record `{ brief: string (the writer's text, at most 3 000 characters), appended: number[] (the indexes in
+  `checked` of the facts appended to the typed text), checked: CheckedFact[] }`, written and read only through one codec (see
+  Types), as `run_input` is stored. The appended block is not stored as text: the function that typed it rebuilds it from
+  `checked` and `appended`.
 
 `CheckedFact = { section, text, why }`, in the order `keeps_<i>` and `reason_<i>` use. The text is the fact's text as it was
 checked, because the latest wording of a fact can differ from the checked wording.
@@ -154,11 +161,16 @@ to its lane's next state. That is why the default is off. The replay in task 8.2
 ## Types
 
 These are the typed values the change introduces. Each is built once at the edge and the core never sees a raw string for
-them (the operator's typing rule, `ddd-typing-rule`).
+them (the typing rule of this plugin, stated here: a value with a fixed set of cases is a sum type, and a setting or an identifier is
+parsed once at the edge into a typed value; the core takes no raw string or number for them. A check never returns a boolean with
+a message, and an absent value is never a sentinel: null means not recorded, not a case).
 
-- `CoverageOutcome = passed | missed{facts: MissedFact[]} | unchecked{reason: UncheckedReason}`, handled exhaustively. The
+- `CoverageOutcome = passed | missed{facts: CheckedFact[]} | unchecked{reason: UncheckedReason}`, handled exhaustively. It is stored
+  as `coverage_outcome` and `unchecked_reason` (migration 014), each with a CHECK; the pairing (`unchecked_reason` set exactly when
+  the outcome is `unchecked`) is written by the one function that stores an outcome, and a test covers it. The
   boolean-plus-message `Checked { waited, why }` and `amend(id, coverage, waited, why)` are replaced by it.
-- `UncheckedReason = no-decider | decider-unreachable | decider-cannot-answer | no-brief`.
+- `UncheckedReason = no-decider | decider-cannot-answer | no-brief`. `decider-cannot-answer` covers a failed call and an answer
+  the check cannot read: both are one case in `checkedBrief` (`result.unknown`), so there is no second member for them.
 - `CeilingPolicy = overrides-check | blocked-by-check`, parsed from `TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK` (`on`
   or `off`; anything else is the default, `overrides-check`).
 - `Backoff = off | window(Milliseconds)`, parsed from `TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS`, with the range rule in the
@@ -168,7 +180,7 @@ them (the operator's typing rule, `ddd-typing-rule`).
   port (no bare `string`).
 - `SKIP_GATES` is one constant list; the skip gate type is derived from it. The migration's CHECK literal is written once,
   and a test inserts each member and one non-member to prove the table agrees with the list (no string-assembled SQL).
-- `CheckedFact` has one codec, `encode` and `decode`, used by the brief repository. The round trip
+- `CheckedFact = { section: FactSection, text: string, why: string | null }`, the existing section type; `CheckedFact` has one codec, `encode` and `decode`, used by the brief repository. The round trip
   `decode(encode(x)) == x` is tested once, including zero facts and 40 facts.
 
 ## Settings
@@ -204,9 +216,10 @@ labelled "needs a test first" ships off.
   - Ceiling, check `missed`, policy `blocked-by-check`: records `wait` with gate `coverage` and keeps `asked_verdict`.
   - Ceiling, no brief text: types the operator's text, records `compact`, gate `ceiling`, `coverage_missing` null, and writes
     the log line.
-  - Ceiling, decider unreachable: compacts, records `unchecked{decider-unreachable}`, and writes the log line.
-  - Better-of-two: the rewrite is typed when it misses fewer facts, the first brief when it misses fewer, the rewrite on a
-    tie.
+  - Ceiling, decider cannot answer: compacts with the first brief, records `unchecked{decider-cannot-answer}`, and writes the log line.
+  - Ceiling, the rewrite cannot be checked: types the first brief with its missed facts appended, records outcome `missed` with that count.
+  - Better-of-two: the rewrite is typed when it misses fewer facts, the first brief when it misses fewer, the rewrite on a tie; an
+    unchecked rewrite never wins; the appended block is capped at 1 500 characters and ordered goal, rules, needs, decisions.
   - Non-ceiling, failed check: records `wait`, gate `coverage`, keeps `asked_verdict`, keeps the brief.
   - Backoff holds a lane below the ceiling for its window and releases it at 10 % token growth; a boundary after the decision
     releases it; the backoff set to `0` never skips; a lane that reaches the ceiling is not held by the backoff.
@@ -216,11 +229,25 @@ labelled "needs a test first" ships off.
 - **Typed.** The `CoverageOutcome` switch is exhaustive (the compiler rejects a missing case). The `CheckedFact` codec round
   trip passes for zero, one and 40 facts. `SKIP_GATES` matches the table's CHECK (insert each member, refuse a non-member).
   Each typed setting falls back to its default outside its range.
-- **Migration.** `014` adds the columns and the brief table, rebuilds `autocompact_skip` with `coverage-backoff` in its
-  CHECK, and recreates both readable views. A database at `013` with rows migrates: every old row reads, `asked_verdict` is
+- **Migration.** `014` adds the columns and the brief table, rebuilds `autocompact_skip` with `coverage-backoff` in its CHECK, and
+  recreates both readable views. The order is the one in task 3.1. Run on a copy of a database built from the real `001`–`013`
+  migrations (`node:sqlite`, the repository's own runner, `foreign_keys` off, `foreign_key_check` before commit), the order as first
+  listed fails at the table rename: `error in view autocompact_skip_readable: no such table: main.autocompact_skip`. The order in
+  task 3.1 (both views dropped first) gives:
+
+  > before: user_version=13
+  > migrated: user_version=14
+  > decision rows read via view: 1 (asked_verdict null: 1)
+  > skip rows kept: 1, read via view: 1
+  > coverage-backoff accepted
+  > non-member gate refused
+  > foreign_key_check rows: 0
+  > integrity_check: ok
+
+  A row written at `013` reads back with `asked_verdict` null, the old skip row survives, and `coverage-backoff` is accepted. A database at `013` with rows migrates: every old row reads, `asked_verdict` is
   null on them, old skip rows survive the rebuild, and `coverage-backoff` is accepted. `ci/check-migrations.sh` passes with
   `010` to `013` unchanged.
-- **Replay (after the change ships, on a live copy).** After 7 days of stored briefs, replay every blocked check and every
+- **Replay (after the change ships, on a live copy).** After 14 days of stored briefs (the retention in D3), replay every blocked check and every
   backoff-skipped lane offline with the same decider, and report the number of checks that a 30-minute backoff would have
   delayed past a compaction that did happen. This is the measurement that moves the backoff default. The replay corpus stays
   on the private branch; only the metrics and run labels are committed.

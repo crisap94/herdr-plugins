@@ -23,9 +23,12 @@ brief text with the facts it was checked against SHALL be kept for `TAB_RECAP_KE
 0 keeps none).
 
 A lane at or above the ceiling SHALL NOT be blocked by the check while `TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK`
-is `on` (the default). Its automatic compaction SHALL go ahead with the better of the briefs written (the one that
-missed fewer facts; the rewrite on a tie), with the goal, needs, decisions and rules facts it missed appended to it
-verbatim, or, when no brief text exists, with the text an operator's compaction is given. The decision SHALL keep gate
+is `on` (the default). Its automatic compaction SHALL go ahead with the better of the briefs written: the one that missed fewer facts, the rewrite on a tie.
+A brief whose check could not answer has no count and SHALL NOT be preferred over a checked one; when the rewrite is unchecked,
+the first brief, whose missed facts are known, SHALL be typed. The goal, needs, decisions and rules facts that the typed brief
+missed SHALL be appended to it verbatim, under a fixed heading, in the order goal, rules, needs, then decisions newest first, in
+at most 1 500 characters; the heading SHALL say how many were left out. When no brief text exists, the text an operator's
+compaction is given SHALL be typed. The decision SHALL keep gate
 `ceiling` and verdict `compact`; when the check failed, its `why` SHALL name the count of facts missed, and the check's
 answers SHALL still be recorded. When the setting is `off`, a lane at the ceiling SHALL be treated as a lane below it.
 
@@ -59,6 +62,12 @@ answers SHALL still be recorded. When the setting is `off`, a lane at the ceilin
   with gate `ceiling` and `asked_verdict` `compact`, its `why` SHALL name the count of facts missed (two), and the check's answers
   SHALL be recorded
 
+#### Scenario: The rewrite cannot be checked
+
+- **WHEN** a Claude lane at 84 % gets gate `ceiling`, the first brief misses two `needs` facts, and the rewrite cannot be checked
+- **THEN** the first brief SHALL be typed with the two missed `needs` facts appended verbatim, the decision SHALL be `compact` with
+  gate `ceiling`, and its coverage outcome SHALL be `missed` with a count of two
+
 #### Scenario: The ceiling override switched off
 
 - **WHEN** a Claude lane at 84 % gets gate `ceiling`, the brief misses two `needs` facts after the rewrite, and the
@@ -78,10 +87,12 @@ Each decision that passed the gates SHALL be stored with:
 - the share, tokens and window;
 - the gate and the verdict, and the verdict the decider asked for (`asked_verdict`), which stays when a check later
   turns the verdict into `wait`;
-- the answers, and the coverage when there is one: the count of facts the typed brief missed, the check's time and,
+- the answers, and the coverage when there is one: its outcome (`passed`, `missed` or `unchecked`), for `unchecked` its reason
+  (`no-decider`, `decider-cannot-answer` or `no-brief`), the count of facts the typed brief missed, the check's time and,
   when the decider reports one, its cost;
 - the decider, its cost and its time;
-- the brief text and the facts it was checked against, in a record of their own keyed by the decision, kept for
+- the brief text, the facts it was checked against and the indexes of the facts appended to it, in a record of their own keyed
+  by the decision, kept for
   `TAB_RECAP_KEEP_BRIEF_DAYS` days;
 - once one begins, the compaction it led to.
 

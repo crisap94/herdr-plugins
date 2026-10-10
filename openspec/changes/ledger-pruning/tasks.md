@@ -30,9 +30,14 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   ranges checked in the parser (`TAB_RECAP_WRITER_PRUNE` `on` or `off`, default `off`; `TAB_RECAP_WRITER_KEEP_NEWEST` 1 to 50,
   default 10; `TAB_RECAP_WRITER_NEXT_HOURS` 1 to 720, default 24). Verify: `a view setting outside its range falls back`
   (new test/writer-view-config.test.ts).
-- [ ] 3.5 Gates on the full open state: the duplicate gate G2, the closed-repeat check and the unknown-id and close checks read
-  every open fact of the task, not the writer's `shown` set. Verify: `a hidden fact's text is refused when added again`
-  (test/g2-ledger-duplicate.test.ts) and `a hidden fact cannot be closed under a new id` (test/operations.test.ts).
+- [ ] 3.5 Gates on the full open state (design D6): the duplicate gate G2 reads every open fact of the task, not the writer's
+  `shown` set; the closed-repeat check is unchanged; the unknown-id, update and close checks keep the shown ids, and an id that
+  names no shown fact is refused. G2's correction for a hidden twin quotes its text and says it is already recorded and hidden.
+  Verify: `a hidden fact's text is refused when added again, and the correction quotes it` (test/g2-ledger-duplicate.test.ts) and
+  `an id that names no shown fact is refused, hidden or not` (test/operations.test.ts).
+- [ ] 3.7 `adapters/recap-instructions.ts`: the writer's instructions say what a `hidden` count means: open facts of that section
+  it cannot see or change, so it never adds a fact that repeats one of them, and ids are only for the facts it is shown. Verify:
+  the instructions carry the sentence (test/recap-instructions.test.ts, new or extended).
 - [ ] 3.6 Confirm the curator's input (`application/curator-input.ts`) is built from the full open view and is byte-identical with
   pruning on and off. Verify: the same fixture, both settings, equal curator documents (test/curate.test.ts).
 
@@ -44,7 +49,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   floor measured from two runs of the control.
 - [ ] 4.2 `tab-recap eval --replay <file> --prune` on the private branch: the EXP-001 corpus with the writer's view pruned, two
   runs of the control and two of the pruned arm, the same ruler (the full open state), writer and judge as the control (R10).
-  Commit only the metrics table and the run labels to `tab-recap/experiments/`; the corpus and raw outputs stay private. Verify:
+  Commit only the metrics table and the run labels to `experiments/` at the repository root; the corpus and raw outputs stay private. Verify:
   the report names the view as pruned (test/eval-run.test.ts), and the table compares to the bar in design D4.
 
 ## 5. Docs

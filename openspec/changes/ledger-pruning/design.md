@@ -28,9 +28,9 @@ measures the bytes per section and the ledger size per hour, to confirm or rejec
 
 The writer's input is built in `src/recap/application/recap-input.ts`, which calls `numbered` (`ledger-input.ts`) with every
 open fact of each task plus the facts closed within `CLOSED_SHOWN_MS` (2 hours). Each `ledger` element of
-`schema/recap-input.dtd` lists its facts (`fact*`). The writer answers operations that name a fact by its id. The gates that
-check those operations (the duplicate gate G2, the closed-repeat check, the unknown-id and close checks) read the writer's
-`shown` set, which is the view the writer was given (`extract-ground.ts`).
+`schema/recap-input.dtd` lists its facts (`fact*`). The writer answers operations that name a fact by its id. The duplicate gate (G2) and the unknown-id and close checks read the writer's `shown` set, which is the view the writer was given
+(`extract-ground.ts`). The closed-repeat check reads the facts closed in the last 24 hours, whatever the view shows. The writer
+answers operations that name a fact by its id; a hidden fact has no id.
 
 The curator's reconciliation has its own input, `curator-input.dtd` and `curator-input.ts`, built from the task's open facts.
 It is separate from the writer's, so a view change for the writer does not reach it.
@@ -81,7 +81,9 @@ The DTD change is additive: `section` is an enumerated attribute of the fact sec
 document without `hidden` still validates, so no version bump of `recap_input` is needed.
 
 In the code the hidden counts are a typed map from `FactSection` to a positive count, and one serializer writes the elements.
-No `section:count` string is assembled anywhere.
+No `section:count` string is assembled anywhere. The writer is told what the element means in its instructions
+(`src/adapters/recap-instructions.ts`): a `hidden` count is open facts of that section that the writer cannot see or change, so it
+never adds a fact that repeats one of them, and ids are only for the facts it is shown.
 
 ### D4. Off by default; the bar is measured on this writer
 
@@ -96,7 +98,7 @@ No `section:count` string is assembled anywhere.
 - cost per turn at or below $0.0032 (R10) in the replay; the input-only comparison reports the cost and the bytes per run of
   each arm, so the saving is visible even where the replay is too small to show it.
 
-The floor is measured on this writer, not taken from another one. The control runs twice (task 3.2), and the floor is
+The floor is measured on this writer, not taken from another one. The control runs twice (task 4.2), and the floor is
 `max(1 point, |control A − control B|)` on state coverage and on I4. The README's R02/R03 floor (coverage ±1, I4 ±1) was
 measured with a codex writer and is only a starting point, not the floor. A difference inside the floor is no difference.
 
@@ -115,11 +117,23 @@ Two measurements, both needing a harness option:
    so **the replay exercises `KEEP_NEWEST` only, not the 24-hour rule**; the input-only comparison is the measurement of that rule.
 
 The replay corpus and its raw outputs stay on the private branch (`REMOVED-ON-MAIN.txt`). Only the metrics table and the run
-labels are committed, in `tab-recap/experiments/`.
+labels are committed, in `experiments/` at the repository root.
 
 *Limit.* The EXP-001 corpus is one session of 23 turns, and the stored orchestrator inputs are two tabs. Neither shows how
 pruning does on a tab that has no large stale ledger, which the data does not contain; the default stays off until a second
 tab's data exists.
+
+### D6. Which check reads which set
+
+| Check | Reads | Why |
+|---|---|---|
+| G2, open twin: an added fact repeats an open fact | every open fact of the task | a hidden fact's text is still refused when added again |
+| G2, closed repeat: an added fact repeats a fact closed in the last 24 hours | the closed facts of the last 24 hours, whatever the view | already independent of the view (`closedLately`); unchanged |
+| unknown id, update, close | the ids the writer was shown | a hidden fact has no id; an id that names no shown fact is refused |
+
+*Correction for a hidden twin.* G2's correction names the existing fact by its id when it has one. A hidden twin has none, so the
+correction quotes its text and says that it is already recorded and hidden, so the writer drops the add. The correction names
+the fact by its text, never by an id that does not exist.
 
 ## Settings
 
@@ -159,7 +173,8 @@ The MR states the expected saving from the caps before the caps are measured.
   `links` per task and the newest K `next` seen within the hours; sets the hidden counts exactly; with pruning `off` the
   document is byte-identical to today's (a golden test on a fixture ledger).
 - **Gates on the full state.** A pruned view with a hidden `done` fact, and an operation that adds that fact's text again, is
-  refused by G2. The closed-repeat check refuses the same text closed within 24 hours and hidden from the view.
+  refused by G2. The closed-repeat check refuses the same text closed within 24 hours and hidden from the view. An operation that names an id the
+writer was not shown is refused, hidden or not, so a guessed id cannot close or update a hidden fact.
 - **DTD and typed.** The `hidden` child elements validate; a document without them still validates (test/recap-input.test.ts).
   The `hidden` serializer round-trips: `parse(serialize(x)) == x` for the typed counts, once.
 - **Ledger unchanged.** A run with pruning on writes the same ledger rows as the same run with pruning off, except for the

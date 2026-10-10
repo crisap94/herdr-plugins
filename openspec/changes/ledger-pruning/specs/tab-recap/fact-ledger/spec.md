@@ -58,7 +58,8 @@ SHALL keep every fact with its state, and no run SHALL close a fact because it i
 "Newest" SHALL mean the greatest last-seen time, the same order the column uses.
 
 A hidden fact SHALL carry no id. Each task's ledger SHALL say, in `hidden` child elements, one per section the view did not
-show, how many open facts of that section it hid. With pruning `off`, the writer's input SHALL be the same as before the
+show, how many open facts of that section it hid. The writer's instructions SHALL say what a `hidden` count means: open facts
+that the writer cannot see or change, which it SHALL NOT add again. With pruning `off`, the writer's input SHALL be the same as before the
 change. The curator's input SHALL NOT be pruned.
 
 #### Scenario: Pruning off
@@ -77,6 +78,11 @@ change. The curator's input SHALL NOT be pruned.
 - **WHEN** pruning is `on` and an open `needs` fact was last seen five days ago
 - **THEN** the writer's input SHALL show it, because `needs` is never pruned
 
+#### Scenario: The writer is told what a hidden count means
+
+- **WHEN** pruning is `on` and a task hides twenty `done` facts
+- **THEN** the writer's instructions SHALL say that a `hidden` count is open facts it cannot see or change, and the writer SHALL NOT add a fact that repeats one of them
+
 #### Scenario: The curator sees what the writer does not
 
 - **WHEN** pruning is `on` and a hidden `next` fact is answered by the transcript
@@ -84,15 +90,25 @@ change. The curator's input SHALL NOT be pruned.
 
 ### Requirement: The gates check against the full open state
 
-The writer's operations SHALL be checked against every open fact of the task, whatever the writer's view shows. The duplicate
-gate, the closed-repeat check, and the unknown-id and close checks SHALL read the full open set, not the facts the writer was
-shown. A fact hidden by pruning SHALL therefore still be refused when the writer adds its text again, and SHALL still be
-addressable by the gates when the writer's operations would close or update it.
+The duplicate gate SHALL check an added fact's text against every open fact of the task, whatever the writer's view shows, so
+a fact hidden by pruning is still refused when the writer adds its text again. The closed-repeat check already reads the facts
+closed in the last 24 hours whatever the view shows, and is unchanged. The unknown-id, update and close checks SHALL keep
+reading the ids the writer was shown: a hidden fact has no id, so an operation SHALL NOT name one, and an id that names no
+shown fact SHALL be refused, hidden or not.
+
+The duplicate gate's correction for a hidden fact SHALL quote the fact's text and say that it is already recorded and hidden,
+so the writer drops the add. A correction for a shown fact SHALL name its id, as today.
 
 #### Scenario: A hidden fact added again
 
 - **WHEN** pruning is `on`, an open `done` fact is hidden from the writer, and the writer adds a fact with the same text
-- **THEN** the duplicate gate SHALL refuse it and the correction SHALL name the existing fact
+- **THEN** the duplicate gate SHALL refuse it, and the correction SHALL quote the existing fact's text and say it is already
+  recorded and hidden
+
+#### Scenario: An id that names no shown fact
+
+- **WHEN** pruning is `on`, a hidden `done` fact exists, and the writer closes an id it was not shown
+- **THEN** that operation SHALL be refused as an unknown id, named in the correction, and dropped if repeated
 
 #### Scenario: A repeat of a fact closed in the last 24 hours
 

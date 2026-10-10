@@ -21,21 +21,26 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 ## 3. Storage (design D2, D3)
 
 - [ ] 3.1 `src/adapters/db/schema/014-coverage-evidence.ts`, registered in `schema/index.ts`:
-  1. `ALTER TABLE autocompact_decision ADD COLUMN` for `asked_verdict` (with its CHECK), `coverage_missing`, `coverage_ms`,
-     `coverage_cost_micro_usd` (all nullable, each with its CHECK);
-  2. `CREATE TABLE autocompact_brief (decision_id ... REFERENCES autocompact_decision(id) ON DELETE CASCADE, briefed_at INTEGER
-     NOT NULL, body BLOB NOT NULL)`;
-  3. rebuild `autocompact_skip` by the SQLite table-rebuild procedure (create new, copy rows, drop, rename), keeping its
-     primary key, foreign key and `STRICT, WITHOUT ROWID`, with `coverage-backoff` added to the gate CHECK;
-  4. drop and recreate `autocompact_skip_readable` and `autocompact_decision_readable`, the latter with the new columns.
+  1. drop both readable views, `autocompact_skip_readable` and `autocompact_decision_readable`: the skip view reads the table step 4
+     replaces, and SQLite refuses the rename while a view reads it (`010` drops its views first for the same reason);
+  2. `ALTER TABLE autocompact_decision ADD COLUMN` for `asked_verdict` (with its CHECK), `coverage_outcome` and `unchecked_reason`
+     (each with its CHECK), `coverage_missing`, `coverage_ms`, `coverage_cost_micro_usd` (all nullable, each with its CHECK);
+  3. `CREATE TABLE autocompact_brief (decision_id ... REFERENCES autocompact_decision(id) ON DELETE CASCADE, briefed_at INTEGER
+     NOT NULL, body BLOB NOT NULL)` and its time index;
+  4. rebuild `autocompact_skip` by the SQLite table-rebuild procedure (create new, copy rows, drop, rename), keeping its primary key,
+     foreign key and `STRICT, WITHOUT ROWID`, with `coverage-backoff` added to the gate CHECK;
+  5. recreate `autocompact_skip_readable`, and `autocompact_decision_readable` with the new columns and with `requested` (added by
+     `011`) kept beside them.
   The gate CHECK literal is written once, in this migration. Before writing it, read `schema/010-autocompact.ts` and rebuild
-  any other CHECK that must change the same way. Verify: a test opens a database at `013` with rows, migrates to `014`,
+  any other CHECK that must change the same way. The order is tested: run on a database built from the real `001`–`013` migrations,
+  the listed order fails (`error in view autocompact_skip_readable: no such table: main.autocompact_skip`), and the order above
+  passes (design, Verification). Verify: a test opens a database at `013` with rows, migrates to `014`,
   reads every old decision with `asked_verdict` null, keeps the old skip rows, accepts `coverage-backoff`, refuses a
   non-member gate, and reads both views (test/migration-014.test.ts).
 - [ ] 3.2 `ports/autocompact-records.ts` and `adapters/db/autocompact-records.ts`: `record` writes `asked_verdict`; `amend`
   takes a `CoverageOutcome` and writes `coverage_missing`, `coverage_ms` and the cost; `LastDecision` gains `gate`; lane keys
-  are `TabId` and `PaneId`. New port `ports/autocompact-briefs.ts` with its repository: `put(decisionId, brief, checked,
-  briefedAt)` and `clearBefore(cutoff)`. Verify: `amend keeps the asked verdict when the check turns it into wait`
+  are `TabId` and `PaneId`. New port `ports/autocompact-briefs.ts` with its repository: `put(decisionId, brief, appended,
+  checked, briefedAt)` and `clearBefore(cutoff)`. Verify: `amend keeps the asked verdict when the check turns it into wait`
   (test/autocompact-records.test.ts).
 - [ ] 3.3 `application/input-retention.ts`: call `clearBefore` with the `BriefRetention` value (`none` deletes every brief
   row). The retention takes a second dependency, the brief repository, because it is typed to the run inputs only today.
@@ -45,9 +50,12 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 ## 4. The ceiling is not blocked by the check (design D1)
 
 - [ ] 4.1 `application/compaction-coverage.ts`: `checkedBrief` returns a `CoverageOutcome` with the lane's gate. At the ceiling
-  under `overrides-check`: the better of the two briefs is chosen (fewer missing; the rewrite on a tie), and the missed
-  goal, needs, decisions and rules facts are appended verbatim under a fixed heading. Verify: `a ceiling lane is compacted
-  when the check fails` and `a ceiling without a decider types the operator's text` (new test/compaction-coverage.test.ts).
+  under `overrides-check`: the better of the two briefs is chosen (fewer missing; the rewrite on a tie; an unchecked rewrite loses
+  to a checked first brief), and the missed goal, needs, decisions and rules facts are appended verbatim under a fixed heading,
+  capped at 1 500 characters, in the order goal, rules, needs, decisions newest first, with the count left out in the heading.
+  Verify: `a ceiling lane is compacted when the check fails`, `a rewrite that cannot be checked loses to the checked first brief`,
+  `the appended block is capped and ordered` and `a ceiling without a decider types the operator's text` (new
+  test/compaction-coverage.test.ts).
 - [ ] 4.2 `application/compaction.ts`: pass the gate through `verified`; the decision's `why` names the count and the path;
   one log line per ceiling case. Under `blocked-by-check` the ceiling behaves as below it. Verify: `a failed check at the
   ceiling records compact with gate ceiling` and `the switch off keeps the check at the ceiling` (test/compaction.test.ts).
@@ -79,7 +87,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 - [ ] 8.1 Live check on a daemon at this version: one lane at or above the ceiling with a failed check compacts once and logs
   the missing count; with the switch `off`, the same lane waits. Verify: the log lines are in the MR.
-- [ ] 8.2 After seven days of stored briefs, replay the blocked checks offline and report how many a 30-minute backoff would
+- [ ] 8.2 After fourteen days of stored briefs, replay the blocked checks offline and report how many a 30-minute backoff would
   have delayed past a compaction that happened. Record the result in the MR. Move the backoff default to 30 minutes only in a
   separate MR, and only if the data supports it. Verify: the report is linked from the MR.
 

@@ -9,11 +9,12 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 2. The window (design D1, D2, D3)
 
-- [ ] 2.1 `application/recap-job.ts`: the slot records `lastStart` and `lastLanes`; `request` arms a `turn-ended` run at
-  `lastStart + window` inside the window and keeps the deadline for later endings; forced runs (focused, requested, the tab's
-  first run in this process, a changed lane set) start at once and set `lastStart`. Verify: the scenarios of "Turn endings
-  inside a window merge into one run per tab" and "Runs that another flow or the operator asked for start at once"
-  (new test/recap-job-window.test.ts, with a fake clock).
+- [ ] 2.1 `application/recap-job.ts`: the slot records `lastStart` (the last run that called the writer) and `lastLanes` (its lanes, a set of
+  `PaneId`); `request` arms a `turn-ended` timer at `max(lastStart + window, ending + settle)` inside the window, re-armed by each
+  request; forced runs (focused, requested, the tab's first run in this process, a changed lane set) start at once; the `again`
+  slot keeps the strongest cause, so a forced cause is never replaced by `turn-ended`. Verify: the scenarios of "Turn endings inside
+  a window merge into one run per tab" (with the settle floor), "Runs that another flow or the operator asked for start at once"
+  and the `again` scenario (new test/recap-job-window.test.ts, with a fake clock).
 - [ ] 2.2 `daemon/config.ts`: `TAB_RECAP_RUN_DEBOUNCE_MS` parsed once into `Debounce = off | window(Milliseconds)`, read on every
   request, `0` or 5 000 to 300 000, else off. Verify: `an invalid window falls back to off` (test/recap-job-window.test.ts).
 
@@ -24,7 +25,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   `one` report on the same transcript.
 - [ ] 3.2 Run the EXP-001 corpus on the private branch: `--merge-turns 1` (control) twice, and `2` and `3` twice each, writer
   Claude Haiku 5.5 at medium, judge codex gpt-6-luna at medium, pinned. Compute the floor as `max(1 point, |control A −
-  control B|)`. Commit only the metrics table and the run labels to `tab-recap/experiments/`, and link it from the MR. Verify:
+  control B|)`. Commit only the metrics table and the run labels to `experiments/` at the repository root, and link it from the MR. Verify:
   the table compares each setting against the control and the floor, as in design D5.
 
 ## 4. Docs

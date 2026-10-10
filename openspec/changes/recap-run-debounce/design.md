@@ -26,7 +26,7 @@ merges, because the window is not in use yet; the replay in D5 measures it.
 - a `turn-ended` request arms a timer of `TURN_SETTLE_MS` (2 500 ms); another request for the same tab clears the timer and
   arms it again with the newer lanes, so a burst already merges while the timer is pending;
 - a `focused` or `requested` request arms a timer of 0;
-- while a run is in progress, a new request is kept as `again` and runs when the first finishes, replacing any earlier one.
+- while a run is in progress, a new request is kept as `again` and runs when the first finishes. `again` keeps the strongest cause: a forced cause (`focused`, `requested`) is never replaced by `turn-ended`, and between two causes of the same strength the newer one replaces the older.
 
 What is missing is a floor between the start of one run and the start of the next. Runs are single-flight, so the gap
 between two runs of a tab is the first run's duration plus the settle delay. The report puts a run at a median of 13.9 s
@@ -37,10 +37,7 @@ at worst, not one every 2.5 seconds. The 60-second spacing in the data is a sum 
 
 ### D1. A per-tab minimum gap between turn-ended runs
 
-The slot records `lastStart`, the time its last run started, and `lastLanes`, the lane set of its last request. A
-`turn-ended` request whose time is less than the window after `lastStart` arms its timer for the deadline
-`lastStart + window` instead of the settle delay. Later turn-ended requests inside the window keep that deadline and replace
-the timer's lanes, so the run that starts at the deadline reads every turn the window collected.
+The slot records `lastStart`, the start of the last run that called the writer, and `lastLanes`, the lane set of that run (a set of `PaneId`). A `turn-ended` request whose time is less than the window after `lastStart` arms its timer for `max(lastStart + window, now + 2 500 ms)`, not for the settle delay alone. The settle term is a floor on the deadline: a turn that ends a second before the window closes still waits the settle delay, because its transcript may still be flushing. Each later turn-ended request inside the window re-arms the same timer with the same rule and its own lanes, so the run that starts reads every turn the window collected. A turn-ended request that arrives while a run is in progress is kept as `again` and starts when that run ends, or at its own deadline if that is later.
 
 The settle delay still applies to the first request of a burst. With a window of 60 000 ms, a burst runs once at most per
 minute per tab (plus the run's own duration, since runs are single-flight), and the run reads the turns through the cursor,
@@ -51,7 +48,7 @@ so no turn is missed.
 
 ### D2. Causes that start at once, and the data each one uses
 
-These requests start at once, as they do now, whatever `lastStart` is. Each condition reads data the job already has:
+These requests start at once, as they do now, whatever `lastStart` is; while a run of the tab is in progress they run as its `again`, as they do now. Each condition reads data the job already has:
 
 | Condition | Data | Why it is not debounced |
 |---|---|---|
@@ -60,7 +57,7 @@ These requests start at once, as they do now, whatever `lastStart` is. Each cond
 | the tab's first run in this daemon | the slot has no `lastStart` | a tab with nothing merged yet has nothing to merge into; after a restart the first turn-ended run is forced too |
 | a run whose set of lanes changed | the request's lanes against `slot.lastLanes` | the recap's structure changes, so it must be written now |
 
-Every forced run sets `lastStart`, so the next turn ending is measured from it.
+Every run that calls the writer sets `lastStart` and `lastLanes`, forced or not, so the next turn ending is measured from it. A forced run that finds no new turn returns before the writer and sets neither, so flipping focus between two tabs cannot push a real turn ending back.
 
 *Not a condition: "the first run after a boundary".* Its data does not exist: `RecapCause` is
 `turn-ended | focused | requested` (`domain/intent.ts`), and a compaction's refresh already arrives as `requested`, so it is
@@ -68,7 +65,7 @@ forced by the row above. A session switch is not a cause the job sees today. A b
 and is out of scope.
 
 These conditions are tested by their data, not by time, so a `requested` run during a window still starts at once and
-resets `lastStart`.
+sets `lastStart` when it calls the writer.
 
 ### D3. The default is 0, the recommended value is 60 000 ms, pending a replay
 
@@ -100,7 +97,7 @@ The replay (`tab-recap eval --replay <file> --pipeline one`) runs one writer cal
   README's R02 and R03 floor was measured on another writer and is not used;
 - the floor is `max(1 point, |control A − control B|)` on state coverage and on I4 supported. A difference inside the floor is
   no difference;
-- the bar, against the control's own numbers:
+- the bar, against the control's own numbers (the mean of runs A and B):
   - state coverage no more than the floor below the control's;
   - I4 supported no more than the floor below the control's;
   - read-back median not below the control's;
@@ -114,7 +111,7 @@ show merging across lanes: an orchestrator's burst comes from several lanes (chi
 A second session from another operator is not available in the repository.
 
 *Private corpus.* The corpus and raw outputs stay on the private branch (`REMOVED-ON-MAIN.txt`). The replay runs there; only
-the metrics table and the run labels are committed, in `tab-recap/experiments/`.
+the metrics table and the run labels are committed, in `experiments/` at the repository root.
 
 ## Settings
 
@@ -130,6 +127,7 @@ the metrics table and the run labels are committed, in `tab-recap/experiments/`.
   accepted. A startup catch-up (one run per tab with unread turns at boot) is a follow-up.
 - **Recap age.** A debounced recap is up to one window older when the operator looks at it (open question 2).
 - **Merged turns across lanes.** Not measured by the replay (D5).
+- **A lane set that changes often.** A request whose lane set differs from the last run's is forced (D2). On a tab whose child panes come and go, most requests are forced and the window does nothing there. The replay does not measure this; the live check (task 6.1) should say how many runs were forced, and why.
 
 ## Open questions for the operator
 
@@ -142,11 +140,7 @@ the metrics table and the run labels are committed, in `tab-recap/experiments/`.
 
 ## Verification
 
-- **Unit (new).** Two `turn-ended` requests 20 s apart start one run at the window's end and read both turns (the cursor
-  advances once); a `focused` request during the window starts at once and resets `lastStart`; a `requested` request starts
-  at once; the tab's first run starts at once; a request with a changed lane set starts at once; with the window at 0 every
-  turn-ended request starts at the settle delay as today; an invalid value is `off`; after a restart the first turn-ended run
-  starts at once.
+- **Unit (new).** Two `turn-ended` requests 20 s apart start one run at the window's end and read both turns (the cursor advances once); a turn ending at 59 s, with the last run at 0, starts at 61.5 s; a `focused` or `requested` request during the window starts at once and clears the pending timer (one timer per slot); a `requested` request kept as `again` is not replaced by a later `turn-ended`, and runs when the run in progress ends; a request that finds no new turn sets neither `lastStart` nor `lastLanes`; a request with a changed lane set starts at once; with the window at 0 every turn-ended request starts at the settle delay as today; an invalid value is `off`; after a restart the first turn-ended run starts at once.
 - **Typed.** `Debounce` is parsed once at the edge; the job takes only the parsed value (a test passes a raw number and fails
   to compile, or the config test covers each out-of-range value).
 - **Unit (existing).** Every test of `recap-job` keeps its expectations with the default of 0.
@@ -156,7 +150,7 @@ the metrics table and the run labels are committed, in `tab-recap/experiments/`.
 
 ## Non-goals
 
-- No change to the settle delay, the single-flight rule per tab, or the queued `again`.
+- No change to the settle delay or the single-flight rule per tab. The queued `again` keeps its one slot; only its cause rule changes (D1).
 - No change to which turns a run reads.
 - No change to the writer's model or effort.
 - No boundary cause.
