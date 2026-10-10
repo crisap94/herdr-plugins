@@ -17,7 +17,7 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing from `tab-
 ## 3. Keep the guard honest
 
 - [x] 3.1 Add a test that the rule's id list equals the ids in the registered kinds and the job harness registry.
-- [ ] 3.2 Show that a `'claude'` literal added to a core file makes `bash ci/lint.sh` fail, then remove it.
+- [x] 3.2 Show that a `'claude'` literal added to a core file makes `bash ci/lint.sh` fail, then remove it.
 
 ## 4. OpenSpec
 
@@ -25,4 +25,4 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing from `tab-
 
 ## 5. Archive
 
-- [ ] 5.1 Archive this change in this merge request after all tasks and gates pass, and sync the main `tab-recap/harness-adapters` specification.
+- [x] 5.1 Archive this change in this merge request after all tasks and gates pass, and sync the main `tab-recap/harness-adapters` specification.
