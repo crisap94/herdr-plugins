@@ -23,7 +23,7 @@ test('every registered job harness has a maker', () => {
 });
 
 test('custom declares the free-text contract, no model and no enumerator', () => {
-    const custom = JOB_HARNESSES.find((harness) => harness.id === 'custom');
+    const custom = JOB_HARNESSES.find((harness) => harness.job.contract === 'free-text');
     assert.deepEqual(custom, {
         id: 'custom',
         label: 'custom',
