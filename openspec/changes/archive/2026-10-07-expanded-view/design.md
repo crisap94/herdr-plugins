@@ -42,7 +42,7 @@ zip and the cell maths reuse `text-layout`.
 started 09:12 · 6 h 12 min          turns 41 (turn 36 · focus 3 · asked 2)
 compactions 2 (800k → 14k · 39k → 3k)
 claude · orchestrator  34 % of 1M   codex · host  12 % of 272k
-repo herdr-plugins · branch atalaya
+repo herdr-plugins · branch main
 files src/recap/application/compaction.ts (7), src/recap/render/present.ts (5), …
 ```
 Inputs: `tab.first_seen`, `now`; runs by cause for the tab; compaction records (tokens before → after);
