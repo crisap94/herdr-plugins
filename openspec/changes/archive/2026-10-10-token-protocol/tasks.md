@@ -76,5 +76,5 @@ typed values; one serializer per token.
 
 ## 7. Archive
 
-- [ ] 7.1 `openspec archive token-protocol` in the implementation merge request, once every other task is checked and the
+- [x] 7.1 `openspec archive token-protocol` in the implementation merge request, once every other task is checked and the
   gates pass. Verify: `openspec validate --specs --strict` passes after the archive.
