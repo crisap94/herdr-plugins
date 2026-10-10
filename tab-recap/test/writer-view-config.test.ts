@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '#src/daemon/config.ts';
+import { keepNewestOf, nextHoursOf } from '#src/recap/domain/writer-view.ts';
 
 test('a view setting outside its range falls back', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
@@ -23,5 +24,17 @@ test('a view setting outside its range falls back', () => {
     } finally {
         keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
         rmSync(dir, { recursive: true });
+    }
+});
+
+test('the view brands take only their ranges', () => {
+    assert.equal(keepNewestOf(1), 1);
+    assert.equal(keepNewestOf(50), 50);
+    assert.equal(nextHoursOf(720), 720);
+    for (const value of [0, 51, 1.5, Number.NaN]) {
+        assert.throws(() => keepNewestOf(value), /keep newest/u);
+    }
+    for (const value of [0, 721, 2.5]) {
+        assert.throws(() => nextHoursOf(value), /next hours/u);
     }
 });

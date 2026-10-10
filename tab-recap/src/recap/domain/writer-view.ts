@@ -24,6 +24,23 @@ export function positiveCount(value: number): PositiveCount {
     return value as PositiveCount;
 }
 
-export const keepNewestOf = (value: number): KeepNewest => value as KeepNewest;
-export const nextHoursOf = (value: number): NextHours => value as NextHours;
+export const KEEP_NEWEST_RANGE = { min: 1, max: 50, fallback: 10 } as const;
+export const NEXT_HOURS_RANGE = { min: 1, max: 720, fallback: 24 } as const;
+
+const inRange = (value: number, range: { readonly min: number; readonly max: number }): boolean => Number.isSafeInteger(value) && value >= range.min && value <= range.max;
+
+export function keepNewestOf(value: number): KeepNewest {
+    if (!inRange(value, KEEP_NEWEST_RANGE)) {
+        throw new Error('keep newest must be a whole number from 1 to 50');
+    }
+    return value as KeepNewest;
+}
+
+export function nextHoursOf(value: number): NextHours {
+    if (!inRange(value, NEXT_HOURS_RANGE)) {
+        throw new Error('next hours must be a whole number from 1 to 720');
+    }
+    return value as NextHours;
+}
+
 export const prunedWriterView = (keepNewest: KeepNewest, nextHours: NextHours): PrunedWriterView => ({ kind: 'pruned', keepNewest, nextHours });
