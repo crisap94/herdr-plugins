@@ -18,7 +18,7 @@
 ## 3. Specifications and review
 
 - [x] 3.1 Update `CONTEXT.md`, README/config example, and the harness-adapters and autocompact specifications.
-- [x] 3.2 Record the survey's unresolved questions and idle-gate decision in the design.
+- [x] 3.2 Record the survey's unresolved questions and the shadow-data open question in the design.
 - [x] 3.3 Run `npx --yes @fission-ai/openspec@1.12.0 validate --all --strict` from the repository root.
 
 ## Archive

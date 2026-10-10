@@ -17,7 +17,7 @@ import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { inFlightReason } from './autocompact-reasons.ts';
+import { inFlightReason } from '#src/ports/autocompact-reasons.ts';
 
 const RECAP_WAIT_MS = 90_000;
 const TAIL_BYTES = 512 * 1024;
@@ -29,7 +29,7 @@ async function inFlightOf(transcripts: TranscriptRegistry, lane: Lane): Promise<
     if (reader === undefined) return { count: 'unknown', why: inFlightReason('unregistered-reader', agent) };
     const located = await reader.locate(lane);
     if (isUnknown(located)) return { count: 'unknown', why: exact === undefined ? inFlightReason('unregistered-reader', agent) : saying(located.why) };
-    if (reader.inFlight.kind === 'unsupported') return { count: 'unknown', why: reader.inFlight.why };
+    if (reader.inFlight.kind === 'unsupported') return { count: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };
     const found = await reader.inFlight.read(located.source, TAIL_BYTES);
     return isUnknown(found) ? { count: 'unknown', why: saying(found.why) } : { count: found.count, why: `${found.count} running` };
 }

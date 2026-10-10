@@ -15,7 +15,7 @@ import { cursor } from '#test/db/support.ts';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): Transcripts => ({
     agent,
-    inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
+    inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: () => Promise.resolve(unknown({ why: 'not-found', what: 'x' })),
     latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source, was): Promise<ChunkResult> => {

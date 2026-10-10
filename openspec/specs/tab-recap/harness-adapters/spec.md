@@ -12,9 +12,9 @@ Each kind of agent the plugin reads SHALL have a row in the adapter conformance 
 assertions: `locate` places a lane or says why it cannot, and never throws; a read from the start, then from its own
 position, finds nothing new the second time; `latestPrompt` returns the newest user prompt of a recorded source, and
 reading it moves no position; `observed` is null for an empty source.
-A kind whose adapter cannot do a thing SHALL say so by name, not by silence: a kind with no reader for its in-flight
-work SHALL be stopped by autocompact with a reason, and a kind that is not compactable SHALL be left out of the
-compaction targets.
+A kind whose adapter cannot do a thing SHALL say so by name, not by silence: an unsupported in-flight reader SHALL
+provide its declared reason, an unregistered kind SHALL be named in the reason, and a kind that is not compactable
+SHALL be left out of the compaction targets.
 
 #### Scenario: A kind with its own reader
 
@@ -30,6 +30,16 @@ compaction targets.
 
 - **WHEN** autocompact considers a lane whose kind has no in-flight reader
 - **THEN** the lane SHALL be stopped in the in-flight gate, with the reason naming its kind
+
+#### Scenario: A screen lane is checked for in-flight work
+
+- **WHEN** autocompact checks a screen lane whose kind is `gemini`
+- **THEN** the in-flight skip reason SHALL say that screen transcripts do not contain in-flight work
+
+#### Scenario: An unregistered kind is checked for in-flight work
+
+- **WHEN** autocompact checks a kind with no exact or configured fallback reader
+- **THEN** the in-flight skip reason SHALL say that no transcript reader exists for that kind
 
 #### Scenario: An unconfirmed non-Claude compaction
 
@@ -286,7 +296,7 @@ Each transcript reader SHALL declare either a supported in-flight reader or `Uns
 
 ### Requirement: Codex in-flight work is counted from rollout records
 
-The Codex reader SHALL scan from the most recent `task_started`, starting with a 2 MiB tail and doubling up to 16 MiB when truncation leaves an open call uncertain. It SHALL count calls without matching outputs and yielded cells not completed by their latest `wait` output. `Script running` SHALL keep a cell in flight; `Script completed` SHALL end it. If the bounded tail remains truncated with an open call, the reader SHALL return `Unknown`. It SHALL read only the fixed cell markers, never message text.
+The Codex reader SHALL scan from the most recent `task_started`, starting with a 2 MiB tail and doubling up to 16 MiB when truncation leaves an open call uncertain. It SHALL count calls without matching outputs and yielded cells not completed by their latest `wait` output. `Script running` SHALL keep a cell in flight; `Script completed` SHALL end it. If the bounded tail is still truncated and contains an open call, the reader SHALL return `Unknown`. It SHALL read only the fixed cell markers, never message text.
 
 #### Scenario: An exec call has no output
 

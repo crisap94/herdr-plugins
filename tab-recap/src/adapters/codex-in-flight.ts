@@ -8,7 +8,6 @@ export const CODEX_IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 
 interface FlightScan {
     readonly count: number;
-    readonly hasTaskStarted: boolean;
     readonly openCall: boolean;
 }
 
@@ -82,13 +81,13 @@ function scanRows(lines: readonly string[]): FlightScan {
     const rows = lines.map(parse).filter((row): row is Row => row !== null);
     const startedAt = taskStartAt(rows);
     const state = rowsOfFlight(rows.slice(startedAt + 1));
-    return { count: state.calls.size + [...state.cells.values()].filter(Boolean).length, hasTaskStarted: startedAt >= 0, openCall: state.calls.size > 0 };
+    return { count: state.calls.size + [...state.cells.values()].filter(Boolean).length, openCall: state.calls.size > 0 };
 }
 
 export function codexInFlight(lines: readonly string[], truncated: boolean): InFlightResult {
     const found = scanRows(lines);
     if (truncated && found.openCall) {
-        return unknown({ why: 'unreadable', detail: found.hasTaskStarted ? 'the truncated rollout tail may omit an open call output' : 'the truncated rollout tail has an open call and no task start' });
+        return unknown({ why: 'unreadable', detail: 'the truncated rollout tail contains an open call' });
     }
     return { kind: 'in-flight', count: found.count };
 }

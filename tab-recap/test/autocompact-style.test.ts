@@ -123,7 +123,7 @@ test('the re-check never bypasses the in-flight gate', async () => {
     const w = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' });
     waitedMinutesAgo(w, 35);
     w.share = 12;
-    w.inFlight = 'unknown';
+    w.inFlight = 1;
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, w.store.autocompact.skips().map((skip) => skip.gate)], [0, ['in-flight']]);
 });

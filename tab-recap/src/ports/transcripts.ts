@@ -1,6 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { Unknown } from './unknowable.ts';
+import type { InFlightReason } from './autocompact-reasons.ts';
 
 export type CallKind = 'shell' | 'edit' | 'web' | 'agent' | 'other' | 'read';
 
@@ -59,7 +60,7 @@ export type InFlightResult = { readonly kind: 'in-flight'; readonly count: numbe
 
 export type InFlightCapability =
     | { readonly kind: 'supported'; readonly read: (source: string, budget: number) => Promise<InFlightResult> }
-    | { readonly kind: 'unsupported'; readonly why: string };
+    | { readonly kind: 'unsupported'; readonly why: InFlightReason };
 
 export type SupportedInFlight = Extract<InFlightCapability, { readonly kind: 'supported' }>;
 

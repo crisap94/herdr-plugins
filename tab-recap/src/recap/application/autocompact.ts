@@ -77,8 +77,8 @@ function policyForLane(policy: AutocompactPolicy, lane: Lane): (Omit<Autocompact
     if (policy.mode === 'off') return null;
     const kind = String(lane.agent);
     const registered = registeredKindOf(kind);
-    const recordOnly = (registered !== null && policy.shadowKinds.includes(registered)) || !policy.kinds.includes(kind);
-    return { ...policy, mode: recordOnly ? 'shadow' : policy.mode };
+    const shadowed = registered !== null && policy.shadowKinds.includes(registered);
+    return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
 }
 
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
@@ -180,9 +180,7 @@ export class Autocompact {
 
     private async flightOf(lane: Lane, pane: string): Promise<FlightAnswer> {
         const waiting = await this.waitingOf(pane);
-        if (waiting.kind === 'clear') {
-            return this.deps.inFlight(lane);
-        }
+        if (waiting.kind === 'clear') return this.deps.inFlight(lane);
         if (waiting.kind === 'waiting') return { count: 1, why: 'awaiting', detail: `awaiting ${waiting.value}` };
         return { count: 'unknown', why: saying(waiting.why) };
     }

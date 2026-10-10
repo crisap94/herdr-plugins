@@ -22,13 +22,57 @@ test('opencode: running or pending tool parts count; completed and error parts d
     }
 });
 
-test('opencode: a running part with only time.start counts; the idle gate handles liveness', async () => {
+test('opencode: a running part with only time.start counts', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-running-'));
     const fixture = opencodeFixture(dir);
     try {
         fixture.add({ id: 'msg-running', session: 'ses_new', role: 'assistant', updated: 100, data: { finish: null }, parts: [toolPart('running', { time: { start: 3 } })] });
         const reader = fixtureReader(fixture.db);
         assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 1 });
+    } finally {
+        fixture.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('opencode: a running part from another session is not counted', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-sessions-'));
+    const fixture = opencodeFixture(dir);
+    try {
+        fixture.add({ id: 'msg-current', session: 'ses_new', role: 'assistant', updated: 100, parts: [toolPart('pending')] });
+        fixture.add({ id: 'msg-other', session: 'ses_other', role: 'assistant', updated: 110, parts: [toolPart('running')] });
+        fixture.add({ id: 'msg-other-2', session: 'ses_other', role: 'assistant', updated: 120, parts: [toolPart('running')] });
+        const reader = fixtureReader(fixture.db);
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 1 });
+    } finally {
+        fixture.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('opencode: a running part in a message older than the newest-message limit is not counted', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-newest-'));
+    const fixture = opencodeFixture(dir);
+    try {
+        fixture.add({ id: 'msg-old', session: 'ses_new', role: 'assistant', updated: 100, parts: [toolPart('running')] });
+        for (let index = 0; index < 400; index += 1) {
+            fixture.add({ id: `msg-new-${index}`, session: 'ses_new', role: 'assistant', updated: 200 + index, parts: [] });
+        }
+        const reader = fixtureReader(fixture.db);
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 0 });
+    } finally {
+        fixture.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('opencode: a running-looking non-tool part is not counted', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-part-type-'));
+    const fixture = opencodeFixture(dir);
+    try {
+        fixture.add({ id: 'msg-current', session: 'ses_new', role: 'assistant', updated: 100, parts: [{ type: 'text', state: { status: 'running' } }] });
+        const reader = fixtureReader(fixture.db);
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 0 });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });

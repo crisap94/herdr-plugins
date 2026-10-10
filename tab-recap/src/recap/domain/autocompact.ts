@@ -1,7 +1,6 @@
 import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
 import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
-import type { RegisteredKindTable } from './registered-kinds.ts';
-import type { RegisteredKind } from './registered-kinds.ts';
+import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -101,7 +100,7 @@ export type Gate = 'busy' | 'below-minimum' | 'cooldown' | 'unchanged' | 'in-fli
 export interface GateInput {
     readonly kind: string;
     readonly kinds: readonly string[];
-    readonly shadowKinds?: readonly RegisteredKind[];
+    readonly shadowKinds: readonly RegisteredKind[];
     readonly busy: boolean;
     readonly inFlight: number | 'unknown' | null;
     readonly share: number;
@@ -115,7 +114,7 @@ export interface GateInput {
 }
 
 export function gateOf(input: GateInput): { readonly gate: Gate; readonly recordOnly: boolean } {
-    const recordOnly = !input.kinds.includes(input.kind) || input.shadowKinds?.some((kind) => kind === input.kind) === true;
+    const recordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind);
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
         if (input.busy) return 'busy';

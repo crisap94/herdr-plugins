@@ -16,7 +16,7 @@ const compactedAt = (at: number): Mark => ({ kind: 'compacted', at, tokensBefore
 function claude(files: ReadonlyMap<string, readonly Mark[]>): Transcripts {
     return {
         agent: 'claude',
-        inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
+        inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane: Lane) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: 'a session id' }) : { kind: 'located' as const, source: `/projects/x/${lane.session}.jsonl` }),
         read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: false }),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),

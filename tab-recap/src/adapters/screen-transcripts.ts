@@ -27,7 +27,7 @@ const hashOf = (text: string): string => createHash('sha1').update(text).digest(
 
 export class ScreenTranscripts implements Transcripts {
     readonly agent = SCREEN_READER_ID;
-    readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen transcripts do not contain in-flight work' };
+    readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen' };
     private readonly screens: Screens;
     private readonly wants: (agent: string) => boolean;
 

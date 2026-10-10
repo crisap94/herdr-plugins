@@ -72,9 +72,11 @@ export class CodexTranscripts implements Transcripts {
     readonly agent = 'codex';
     readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: string;
+    private readonly readTail: typeof tailOf;
 
-    constructor(root = join(homedir(), '.codex', 'sessions')) {
+    constructor(root = join(homedir(), '.codex', 'sessions'), readTail: typeof tailOf = tailOf) {
         this.root = root;
+        this.readTail = readTail;
     }
 
     private recent(): readonly { path: string; mtime: number; size: number }[] {
@@ -100,11 +102,11 @@ export class CodexTranscripts implements Transcripts {
     private readInFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
             let bytes = Math.max(budget, CODEX_IN_FLIGHT_INITIAL_BYTES);
-            let tail = tailOf(source, bytes);
+            let tail = this.readTail(source, bytes);
             let answer = codexInFlight(tail.lines, tail.truncated);
             while (tail.truncated && answer.kind === 'unknown' && bytes < CODEX_IN_FLIGHT_MAX_BYTES) {
                 bytes = Math.min(bytes * 2, CODEX_IN_FLIGHT_MAX_BYTES);
-                tail = tailOf(source, bytes);
+                tail = this.readTail(source, bytes);
                 answer = codexInFlight(tail.lines, tail.truncated);
             }
             return Promise.resolve(answer);
