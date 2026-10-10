@@ -22,3 +22,10 @@ export function notesOf(tokens: Readonly<Record<string, string>>): readonly Note
         return found === null || value === '' ? [] : [{ label: found[1] ?? 'note', value }];
     });
 }
+
+export function coordinationNamesOf(tokens: Readonly<Record<string, string>>): readonly string[] {
+    return Object.keys(tokens).toSorted().filter((name) => {
+        const raw = tokens[name] ?? '';
+        return AWAITING.test(name) ? raw !== '' : NOTE.test(name) && plainText(raw) !== '';
+    });
+}
