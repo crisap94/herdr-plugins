@@ -14,14 +14,15 @@ spike on a scratch pane, 2026-10-10; the schema snapshot `herdr api schema --jso
 | Two writes to one name in a burst can arrive as one event | a stage may be skipped; observations are monotonic states |
 | Any source can overwrite or clear any name | unauthenticated by nature; stated, not solved |
 | 16 names per request, 32 names per pane across all writers | tab-recap's own names are budgeted (at most 10 per pane) |
-| A pane read carries a `revision` | used as a change hint only, never as a version of the protocol |
+| A pane read carries a `revision` | not used by the protocol; requests are decided by the ask ledger (D5) |
 
 ## Decisions
 
 ### D1. An exchange is a descriptor; everything else is derived
 
 An `Exchange` descriptor declares its name, its version, its request prefix and fields, its answer stages and failure
-reasons, its id grammar, its events and its opt-in setting. From the registry of descriptors the module derives: the
+reasons, its id grammar, its events, its opt-in setting and, when another tool needs them to size its waits, its timing
+constants (for example `deadline-ms`), which are published in the vectors with the exchange. From the registry of descriptors the module derives: the
 types, one parser and one serializer per token (`parse(serialize(x)) = x`), the token names, the owner table that replaces
 `OWNED_TOKENS`/`PANE_WRITABLE`, the exchange event kinds, the capability value and the golden vectors. A new exchange is a
 new descriptor file plus one registry entry; the core does not change.
@@ -33,12 +34,16 @@ Alternative rejected: keep hand-written code per exchange. It is the drift this 
 `compact-req-<tool>` = `<id>` or `<id>:<note>`; answer `tab-recap-compact` = `<id>:<stage>` with `queued`, `running`,
 `done`, `failed-<reason>`. Its id grammar keeps today's rule (1 to 16 characters, any character but `:`), declared as the
 descriptor's `legacy-length` grammar; new exchanges use `token-safe` (`[A-Za-z0-9_-]{1,16}`). Compatibility vectors
-taken from today's code prove the wire is unchanged; the existing compaction request tests pass unmodified.
+taken from today's code prove the wire is unchanged; the existing compaction request tests pass unmodified. The one
+place where the protocol's rule differs is kept for compact only: today's answer is truncated at 80 characters rather than
+refused, and compact keeps that truncation; every other exchange refuses an over-long value before writing.
 
 ### D3. One answer slot per exchange, keyed by id
 
 The answer token is `tab-recap-<exchange>` = `<id>:<stage>`, shared by all requesters of that exchange on that pane. A
 requester ignores an answer whose id is not its own (`foreign-id`) and re-reads the state when it needs it.
+
+Status: DECIDED (2026-10-10, maintainers; reversible).
 
 Alternative rejected: one answer token per requester (`tab-recap-<exchange>-<tool>`). It multiplies names against a budget
 of 32 per pane shared by every tool, makes the longest names exactly 32 characters, and breaks symmetry with the existing
@@ -46,11 +51,17 @@ of 32 per pane shared by every tool, makes the longest names exactly 32 characte
 
 ### D4. One persisted ask ledger for every exchange
 
-When tab-recap takes a request it records the ask `(exchange, tool, id, pane, at)` before answering `queued`, and records
-the terminal outcome when it answers it. An ask is acted on at most once, across restarts. After a restart, every ask
-with no terminal outcome is answered `failed-interrupted` and never replayed. Migration 015 replaces `compact_ask` with
+When tab-recap takes a request it records the ask `(exchange, requester, id, pane, at, ref)` before answering `queued`,
+where `ref` is the local record the ask became (a compaction id, a handoff id), and records the terminal outcome when it
+answers it. An ask is acted on at most once, across restarts. The ledger is generic: the requester may be a local one (the
+plugin's command line, requester `cli`), and the exchange may be a flow that has no token descriptor yet. Settling belongs
+to whoever owns the exchange's answer channel: the responder writes the token answer for a token exchange; a local flow
+writes its own answer record (for example the handoff answer row) and settles the ask in the same transaction. A request
+that joins a running flow is settled with that flow's outcome. After a restart, every ask with no terminal outcome is handed
+to its answer channel as `failed-interrupted` and never replayed; this replaces the earlier compaction rule that left a
+joined request `queued` until its token expired (agent-compaction is modified accordingly). Migration 015 replaces `compact_ask` with
 `ask`, copying today's rows as exchange `compact` with a terminal outcome `settled` (an old row is a seen id, not an
-unfinished one). Pruning keeps the 30-day window `compact_ask` has today.
+unfinished one). Pruning keeps the 30-day window `compact_ask` has today and never deletes an ask without a terminal outcome.
 
 ### D5. Level-triggered: every read is considered
 
@@ -64,6 +75,9 @@ With sharing on, tab-recap publishes `tab-recap-x` beside the lane tokens: a com
 exchange it answers and has enabled (for example `compact1`). Another tool discovers support from it; a missing entry
 means "not offered". `tab-recap-api` stays `1`; it still rises only on a breaking change to an existing token. The
 capability token also carries the kinds-version of the registered agent kinds (`kinds1`), whose list is in the vectors.
+`kinds<version>` rises whenever that list changes; a test pins the vectors' list to the registered-kind table.
+
+Status: DECIDED (2026-10-10, maintainers; reversible).
 
 ### D7. A pure, self-contained module with a manifest
 
@@ -95,7 +109,10 @@ process of the same user with access to herdr's socket. The README section for t
 ## Standards (DDD, SOLID, DRY)
 
 - Aggregates and values: `Exchange` (descriptor, value object), `Ask` (aggregate of the ask ledger), branded `RequestId`,
-  `ToolName`, `TokenName`, `TokenValue` (at most 80), `ExchangeVersion`; outcomes are one `Result` union per call.
+  `ToolName`, `TokenName`, `TokenValue` (at most 80), `ExchangeVersion`. `Result<T, E>` in `src/protocol/result.ts` is the
+  repository's one result union for fallible operations; other modules import it from the protocol module (the allowed
+  direction). Domain outcome tables that are not fallible-operation results (for example a handoff's outcome table) stay
+  closed sums of their own and say so in their designs.
 - Ports: `TokenPort` (read a pane's map, write a batch), `AskLedger` (seen, record, settle, unfinished), `Clock`,
   `IdSource`. Adapters: `HerdrFleet` (already the only token writer) and the SQLite `AskLedger`.
 - Registry: `EXCHANGES` is the one list; types, codecs, owners, events and capability derive from it (open/closed: a new

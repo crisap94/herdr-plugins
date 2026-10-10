@@ -2,8 +2,8 @@
 
 ### Requirement: Migration 015 turns compaction asks into one ask ledger
 
-Migration 015 SHALL create the table `ask` (exchange, tool, id, pane, taken time, terminal outcome), keyed by exchange,
-tool and id, SHALL copy every `compact_ask` row into it as exchange `compact` with the terminal outcome `settled`, and
+Migration 015 SHALL create the table `ask` (exchange, requester, id, pane, taken time, the local record the ask became,
+terminal outcome), keyed by exchange, requester and id, SHALL copy every `compact_ask` row into it as exchange `compact` with the terminal outcome `settled`, and
 SHALL drop `compact_ask`. No copied row SHALL be answered `failed-interrupted` after the migration.
 
 #### Scenario: A database at 014 with seen compaction ids
