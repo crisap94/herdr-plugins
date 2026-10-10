@@ -1,6 +1,7 @@
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
+import type { SkipGate } from '#src/recap/domain/autocompact.ts';
 
 export type Locale = 'en' | 'es';
 
@@ -24,6 +25,8 @@ export interface Messages {
     readonly claudeOwn: string;
     readonly noRecapYet: string;
     readonly noRecapShort: string;
+    readonly autocompactGates: Readonly<Record<SkipGate, string>>;
+    readonly autocompactSettings: { readonly ceilingOverride: (enabled: boolean) => string; readonly coverageBackoff: (window: string) => string };
     readonly git: { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string };
     readonly recapError: (error: string) => string;
     readonly needsYou: (what: string) => string;
@@ -111,6 +114,9 @@ export interface Messages {
         readonly started: (agent: string) => string;
         readonly auto: (text: string) => string;
         readonly coverageMissed: (agent: string) => string;
+        readonly coverageCeiling: (count: number) => string;
+        readonly coverageUnchecked: (reason: string) => string;
+        readonly coveragePassed: string;
         readonly skipped: (agent: string, status: string) => string;
         readonly joined: (agent: string, noted: boolean) => string;
         readonly nothing: string;

@@ -52,6 +52,7 @@ export function detailOf(gate: Gate, facts: DetailFacts): string | null {
     if (gate === 'below-minimum') return `below ${facts.minimum} %`;
     if (gate === 'cooldown') return `${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`;
     if (gate === 'unchanged') return 'same tokens and mode as the last decision';
+    if (gate === 'coverage-backoff') return 'recent brief check failed';
     return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight) : null;
 }
 

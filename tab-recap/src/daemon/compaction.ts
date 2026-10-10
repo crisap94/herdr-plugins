@@ -45,6 +45,7 @@ export function wireCompaction(parts: {
     readonly recent: LaneRecent;
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
+    readonly checkedBriefs: import('#src/ports/autocompact-briefs.ts').AutocompactBriefs;
     readonly answers: { answer(id: string, pane: string, stage: string): void };
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
@@ -67,6 +68,8 @@ export function wireCompaction(parts: {
         },
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
+        checkedBriefs: parts.checkedBriefs,
+        ceilingOverride: () => loadConfig().autocompact.ceilingPolicy === 'overrides-check',
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
         typing: parts.typing,
         events: parts.events,

@@ -18,6 +18,7 @@ export interface Coverage {
     readonly missing: readonly string[];
     readonly answers: Readonly<Record<string, number>>;
     readonly unknown: string | null;
+    readonly costUsd?: number | null;
 }
 
 export const factsOf = (history: readonly HistoryFact[]): readonly CoverageFact[] =>
@@ -54,7 +55,7 @@ export async function covered(brief: string, facts: readonly CoverageFact[], dec
     const asked = await decider.ask({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }, questionsFor(facts));
     if (isUnknown(asked)) return { ok: false, missing: [], answers: {}, unknown: saying(asked.why) };
     const missing = missingOf(asked.answers, facts, keptAtLeast);
-    return { ok: missing.length === 0, missing, answers: asked.answers, unknown: null };
+    return { ok: missing.length === 0, missing, answers: asked.answers, unknown: null, costUsd: asked.costUsd };
 }
 
 export const correctionOf = (missing: readonly string[]): string => `The first version did not keep these; keep every one of them, with its detail:\n${missing.map((line) => `- ${line}`).join('\n')}`;

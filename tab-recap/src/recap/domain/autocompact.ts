@@ -1,6 +1,37 @@
 import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
 import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
 import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
+import type { Brand } from './brand.ts';
+import type { Section } from './fact.ts';
+
+export type Milliseconds = Brand<number, 'Milliseconds'>;
+export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
+export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
+export type BriefRetention = { readonly kind: 'none' } | { readonly kind: 'days'; readonly value: number };
+export type UncheckedReason = 'no-decider' | 'decider-cannot-answer' | 'no-brief';
+export interface CheckedFact {
+    readonly section: Section;
+    readonly text: string;
+    readonly why: string | null;
+}
+
+export type CoverageOutcome = { readonly kind: 'passed' } | { readonly kind: 'missed'; readonly facts: readonly CheckedFact[] } | { readonly kind: 'unchecked'; readonly reason: UncheckedReason };
+
+export const ceilingPolicyOf = (raw: string | undefined): CeilingPolicy => raw?.trim().toLowerCase() === 'off' ? 'blocked-by-check' : 'overrides-check';
+export const backoffOf = (raw: string | undefined): Backoff => {
+    const ms = Number((raw ?? '').trim());
+    if (ms === 0) return { kind: 'off' };
+    if (Number.isInteger(ms) && ms >= 60_000 && ms <= 86_400_000) return { kind: 'window', ms: ms as Milliseconds };
+    return { kind: 'off' };
+};
+export const briefRetentionOf = (raw: string | undefined): BriefRetention => {
+    if (raw === undefined || raw.trim() === '') return { kind: 'days', value: 14 };
+    const days = Number(raw.trim());
+    if (!Number.isInteger(days) || days < 0 || days > 60) return { kind: 'days', value: 14 };
+    if (days === 0) return { kind: 'none' };
+    return { kind: 'days', value: days };
+};
+export const milliseconds = (value: number): Milliseconds => value as Milliseconds;
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -11,6 +42,8 @@ export interface AutocompactPolicy {
     readonly cooldownMs: number;
     readonly kinds: readonly string[];
     readonly shadowKinds: readonly RegisteredKind[];
+    readonly ceilingPolicy: CeilingPolicy;
+    readonly coverageBackoff: Backoff;
 }
 
 export const MINIMUM_DEFAULT = 10;
@@ -66,6 +99,7 @@ export function policyOf(get: (key: string) => string | undefined): AutocompactP
     return {
         mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
         cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: shadowKindsOf(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
+        ceilingPolicy: ceilingPolicyOf(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: backoffOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
     };
 }
 
@@ -95,7 +129,9 @@ export function jevOf(get: (key: string) => string | undefined): JevSettings {
     return { url: usable ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
 }
 
-export type Gate = 'busy' | 'below-minimum' | 'cooldown' | 'unchanged' | 'in-flight' | 'ceiling' | 'ask';
+export const SKIP_GATES = ['below-minimum', 'busy', 'in-flight', 'cooldown', 'unchanged', 'no-context', 'coverage-backoff'] as const;
+export type SkipGate = (typeof SKIP_GATES)[number];
+export type Gate = SkipGate | 'ceiling' | 'ask';
 
 export interface GateInput {
     readonly kind: string;
@@ -111,6 +147,12 @@ export interface GateInput {
     readonly lastDecisionAt: number | null;
     readonly cooldownMs: number;
     readonly unchanged: boolean;
+    readonly coverageBackoff?: boolean;
+}
+
+function backoffGate(input: GateInput): Gate | null {
+    if (input.coverageBackoff && input.share < input.ceiling) return 'coverage-backoff';
+    return null;
 }
 
 export function gateOf(input: GateInput): { readonly gate: Gate; readonly recordOnly: boolean } {
@@ -121,6 +163,8 @@ export function gateOf(input: GateInput): { readonly gate: Gate; readonly record
         if (input.share < input.minimum) return 'below-minimum';
         if (input.now - since < input.cooldownMs) return 'cooldown';
         if (input.unchanged) return 'unchanged';
+        const backoff = backoffGate(input);
+        if (backoff !== null) return backoff;
         if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
         return input.share >= input.ceiling ? 'ceiling' : 'ask';
     })();

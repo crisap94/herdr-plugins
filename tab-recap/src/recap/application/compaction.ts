@@ -1,4 +1,5 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Messages } from '#src/i18n/index.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -8,6 +9,8 @@ import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
 import { checkedBrief } from './compaction-coverage.ts';
+import { factsOf } from './brief-coverage.ts';
+import { isSection } from '#src/recap/domain/fact.ts';
 import type { Briefed, Checked } from './compaction-coverage.ts';
 import { compactionInput } from './compaction-input.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
@@ -19,6 +22,41 @@ import { Trail } from './compaction-trail.ts';
 export type { CompactionDeps } from './compaction-deps.ts';
 
 const READY = new Set(['idle', 'done']);
+const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
+
+function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly import('#src/recap/domain/autocompact.ts').CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
+    const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
+    const lines = ordered.map((fact) => `${fact.section}: ${fact.text}${fact.section === 'decisions' && fact.why !== null ? ` — ${fact.why}` : ''}`);
+    const picked = lines.map((_, at) => at);
+    let block = '';
+    while (block.length === 0 || block.length > 1500) {
+        const heading = `\n\nFacts not carried into the brief (${facts.length} missed; ${lines.length - picked.length} left out):`;
+        block = `${heading}${picked.map((at) => `\n- ${lines[at] ?? ''}`).join('')}`;
+        if (block.length <= 1500 || picked.length === 0) break;
+        picked.pop();
+    }
+    const indexes = picked.map((at) => {
+        const fact = ordered[at];
+        return fact === undefined ? -1 : checkedFacts.findIndex((candidate) => candidate.section === fact.section && candidate.text === fact.text && candidate.why === fact.why);
+    }).filter((at) => at >= 0);
+    return { text: `${text}${block}`, indexes };
+}
+
+function coverageWhy(outcome: Checked['outcome'], why: string | null, messages: Messages): string | null {
+    if (outcome.kind === 'missed') return messages.compaction.coverageCeiling(outcome.facts.length);
+    if (outcome.kind === 'unchecked') return `${messages.compaction.coverageUnchecked(outcome.reason)}; ceiling override`;
+    return why;
+}
+
+function coverageLog(outcome: Checked['outcome'], messages: Messages): string {
+    if (outcome.kind === 'missed') return messages.compaction.coverageCeiling(outcome.facts.length);
+    if (outcome.kind === 'unchecked') return messages.compaction.coverageUnchecked(outcome.reason);
+    return messages.compaction.coveragePassed;
+}
+
+function blockedByCoverage(checked: Checked, ceilingOverride: boolean): boolean {
+    return !ceilingOverride && (checked.outcome.kind === 'unchecked' || checked.outcome.kind === 'missed');
+}
 
 interface Refusal {
     readonly stage: 'skipped' | 'failed';
@@ -122,10 +160,29 @@ export class Compaction {
 
     private async verified(lane: Lane, tab: string, material: Material, auto: boolean, decision: string | null): Promise<Checked> {
         const first = await this.briefOf(lane, tab, material);
-        if (!auto) return { brief: first, coverage: null, waited: false, why: null };
+        if (!auto) return { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: 0, coverageCostUsd: null, why: null };
         const checked = await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction));
-        if (decision !== null) this.deps.decisions?.amend(decision, checked.coverage, checked.waited, checked.why);
-        return checked;
+        const ceilingOverride = this.ceilingOverride(tab, String(lane.pane));
+        const saved = this.rememberCoverage(decision, checked, first.history, ceilingOverride);
+        const messages = this.deps.messages();
+        const why = ceilingOverride ? coverageWhy(saved.outcome, saved.why, messages) : saved.why;
+        if (ceilingOverride) this.deps.log(`autocompact ceiling: ${coverageLog(saved.outcome, messages)}`);
+        if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage, outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why, block: !ceilingOverride });
+        return saved;
+    }
+
+    private ceilingOverride(tab: string, pane: string): boolean {
+        return this.deps.ceilingOverride?.() !== false && this.deps.decisions?.lastDecision(tab, pane)?.gate === 'ceiling';
+    }
+
+    private rememberCoverage(decision: string | null, checked: Checked, history: ReturnType<Ledger['historyOf']>, ceilingOverride: boolean): Checked {
+        const checkedFacts = checked.outcome.kind === 'unchecked' ? [] : factsOf(history).flatMap((fact) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
+        if (decision !== null && checked.brief.text !== null) this.deps.checkedBriefs?.put(decision, checked.brief.text, [], checkedFacts, this.deps.now());
+        if (!ceilingOverride || checked.outcome.kind !== 'missed' || checked.brief.text === null) return checked;
+        const appended = appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts);
+        const found = { ...checked, brief: { ...checked.brief, text: appended.text } };
+        if (decision !== null) this.deps.checkedBriefs?.put(decision, appended.text, appended.indexes, checkedFacts, this.deps.now());
+        return found;
     }
 
     private decisionFor(auto: boolean, tab: string, pane: string, id: string): string | null {
@@ -156,11 +213,7 @@ export class Compaction {
         await this.tell(said(compaction.title(agent)), said(beginning));
         const material = this.materialOf(tab, pane, request.note);
         const checked = await this.verified(lane, tab, material, auto, this.decisionFor(auto, tab, pane, id));
-        if (checked.waited) {
-            trail.end('skipped', { why: 'coverage' });
-            await this.tell(said(compaction.title(agent)), compaction.coverageMissed(agent));
-            return;
-        }
+        if (await this.stoppedByCoverage({ lane, tab, checked, trail, said, messages: compaction })) return;
         const { brief } = checked;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         if (!(await this.refused(lane, tab, trail))) {
@@ -170,6 +223,14 @@ export class Compaction {
                 await this.tell(messages.compaction.title(String(lane.agent)), messages.compaction.failed(String(lane.agent), unsupported.why));
             }
         }
+    }
+
+    private async stoppedByCoverage(parts: { readonly lane: Lane; readonly tab: string; readonly checked: Checked; readonly trail: Trail; readonly said: (text: string) => string; readonly messages: Messages['compaction'] }): Promise<boolean> {
+        const { lane, tab, checked, trail, said, messages } = parts;
+        if (!blockedByCoverage(checked, this.ceilingOverride(tab, String(lane.pane)))) return false;
+        trail.end('skipped', { why: 'coverage' });
+        await this.tell(said(messages.title(String(lane.agent))), messages.coverageMissed(String(lane.agent)));
+        return true;
     }
 
     async run(request: CompactRequest): Promise<void> {

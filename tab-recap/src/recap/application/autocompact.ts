@@ -58,6 +58,7 @@ export interface AutocompactDeps {
     lanes(tab: string): readonly Lane[];
     now(): number;
     log(line: string): void;
+    skipLabel?(gate: SkipGate): string;
 }
 
 const BALANCED = tuningOf(() => undefined);
@@ -72,6 +73,12 @@ interface Judged {
 }
 
 const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, recordOnly: boolean): boolean => mode === 'on' && verdict === 'compact' && !recordOnly;
+
+function coverageBackoffActive(input: { readonly policy: AutocompactPolicy; readonly last: ReturnType<AutocompactDeps['decisions']['lastDecision']>; readonly now: number; readonly tokens: number; readonly window: number; readonly lastBreakAt: number | null }): boolean {
+    const { policy, last, now, tokens, window, lastBreakAt } = input;
+    if (policy.coverageBackoff.kind !== 'window' || last === null) return false;
+    return last.gate === 'coverage' && last.verdict === 'wait' && now - last.at < policy.coverageBackoff.ms && tokens - last.tokens <= window * 0.1 && (lastBreakAt === null || lastBreakAt <= last.at);
+}
 
 function policyForLane(policy: AutocompactPolicy, lane: Lane): (Omit<AutocompactPolicy, 'mode'> & { readonly mode: DecisionMode }) | null {
     if (policy.mode === 'off') return null;
@@ -125,12 +132,14 @@ export class Autocompact {
         const lastBreakAt = deps.boundaries.lastBreakAt(tab, pane);
         const lastDecisionAt = deps.decisions.lastDecisionAt(tab, pane);
         const last = deps.decisions.lastDecision(tab, pane);
+        const backoff = coverageBackoffActive({ policy, last, now, tokens: use.tokens, window: use.window, lastBreakAt });
         const same = unchangedOf(last, deps.startedAt, use.tokens, policy.mode);
         const recheck = same && recheckDue(tuning.recheckIdleMs, last, now);
         const facts = {
             kind: String(lane.agent), kinds: policy.kinds, shadowKinds: policy.shadowKinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,
             unchanged: same && !recheck,
+            coverageBackoff: backoff,
         };
         const cheap = gateOf({ ...facts, inFlight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
@@ -147,7 +156,7 @@ export class Autocompact {
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
         this.deps.events?.lane(pane, 'autocompact-skipped', gate);
-        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`);
+        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${this.deps.skipLabel?.(gate) ?? gate}${detail === null ? '' : ` (${detail})`}`);
     }
 
     private async run(lane: Lane): Promise<void> {

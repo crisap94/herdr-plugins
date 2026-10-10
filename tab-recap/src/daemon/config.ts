@@ -10,8 +10,8 @@ import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
-import { coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactPolicy, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
+import { briefRetentionOf, coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
@@ -50,6 +50,7 @@ export interface Config {
     readonly brief: Job;
     readonly judge: Job;
     readonly keepInputDays: number;
+    readonly keepBrief: BriefRetention;
     readonly curator: Job;
     readonly autocompact: AutocompactPolicy;
     readonly tuning: AutocompactTuning;
@@ -175,6 +176,7 @@ export function loadConfig(): Config {
         brief: compactJobOf(get),
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
+        keepBrief: briefRetentionOf(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
         curator: curateJobOf(get),
         autocompact: policyOf(get),
         tuning: tuningOf(get),

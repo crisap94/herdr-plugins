@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
+import { en } from '#src/i18n/en.ts';
+import { es } from '#src/i18n/es.ts';
+import { backoffOf, briefRetentionOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
@@ -55,6 +57,19 @@ test('the ceiling: gentle 85, balanced 80, eager 65 when the key is unset; an ex
     assert.deepEqual(['gentle', 'balanced', 'eager'].map((style) => policyOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).ceiling), [85, 80, 65]);
     assert.equal(policyOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: 'gentle', TAB_RECAP_AUTOCOMPACT_CEILING: '70' })).ceiling, 70);
     assert.equal(policyOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager', TAB_RECAP_AUTOCOMPACT_CEILING: 'high' })).ceiling, 65);
+});
+
+test('coverage settings default to ceiling override on, backoff off and fourteen-day brief retention', () => {
+    const policy = policyOf(env({}));
+    assert.equal(policy.ceilingPolicy, 'overrides-check');
+    assert.deepEqual(policy.coverageBackoff, { kind: 'off' });
+    assert.deepEqual(backoffOf('30000'), { kind: 'off' });
+    assert.deepEqual(backoffOf('1800000'), { kind: 'window', ms: 1_800_000 });
+    assert.deepEqual(backoffOf('86400001'), { kind: 'off' });
+    assert.deepEqual(briefRetentionOf(undefined), { kind: 'days', value: 14 });
+    assert.deepEqual(briefRetentionOf('0'), { kind: 'none' });
+    assert.deepEqual(briefRetentionOf('61'), { kind: 'days', value: 14 });
+    assert.equal(policyOf(env({ TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK: 'off' })).ceilingPolicy, 'blocked-by-check');
 });
 
 test('the cooldown: gentle twenty minutes, balanced ten, eager five; an explicit one wins; an invalid one is the style\'s', () => {
@@ -137,12 +152,13 @@ test('the re-check key works under any style: balanced with a re-check of one mi
 });
 
 test('the listing header names the style and its numbers in force', () => {
-    const balanced = styleLine(policyOf(env({})), tuningOf(env({})));
-    assert.equal(balanced, 'style balanced · warnings at most 0.30 · closes at least 0.70 · undecided 0.35–0.65 · pass mark 0.70 · ceiling 80 % · cooldown 10 min · re-check never');
+    const balanced = styleLine(policyOf(env({})), tuningOf(env({})), en.autocompactSettings);
+    assert.equal(balanced, 'style balanced · warnings at most 0.30 · closes at least 0.70 · undecided 0.35–0.65 · pass mark 0.70 · ceiling 80 % · ceiling override on · coverage backoff off · cooldown 10 min · re-check never');
     const eagerKeys = { TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' };
-    assert.equal(styleLine(policyOf(env(eagerKeys)), tuningOf(env(eagerKeys))), 'style eager · warnings at most 0.40 · closes at least 0.60 · undecided 0.45–0.55 · pass mark 0.60 · ceiling 65 % · cooldown 5 min · re-check 30 min');
+    assert.equal(styleLine(policyOf(env(eagerKeys)), tuningOf(env(eagerKeys)), en.autocompactSettings), 'style eager · warnings at most 0.40 · closes at least 0.60 · undecided 0.45–0.55 · pass mark 0.60 · ceiling 65 % · ceiling override on · coverage backoff off · cooldown 5 min · re-check 30 min');
     const seconds = { ...eagerKeys, TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS: '90000', TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS: '150000' };
-    assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds))), /cooldown 90 s · re-check 150 s$/);
+    assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds)), en.autocompactSettings), /ceiling override on · coverage backoff off · cooldown 90 s · re-check 150 s$/);
+    assert.match(styleLine(policyOf(env({})), tuningOf(env({})), es.autocompactSettings), /límite anula cobertura sí · espera de cobertura off/);
 });
 
 const balancedWith = (keys: Record<string, string>): Thresholds => tuningOf(env(keys)).verdict;

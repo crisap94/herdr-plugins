@@ -152,10 +152,10 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({
         fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
-        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers, events, claims,
+        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): import('#src/recap/domain/autocompact.ts').BriefRetention => loadConfig().keepBrief, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }
 

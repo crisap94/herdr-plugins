@@ -6,7 +6,7 @@ import { listing, parseListing } from '#src/recap/application/autocompact-listin
 const NOW = Date.parse('2026-10-08T12:00:00Z');
 const found = (over: Partial<StoredDecision>): StoredDecision => ({
     id: 'dcn_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 60_000, mode: 'shadow', share: 61, tokens: 1, window: 2, gate: 'ask', verdict: 'compact', answers: {}, coverage: null,
-    decider: 'jev · jev-1.13.0', costUsd: 0.00003, tookMs: 5, why: null, compactionId: null, ...over,
+    decider: 'jev · jev-1.13.0', costUsd: 0.00003, tookMs: 5, why: null, askedVerdict: 'compact', compactionId: null, ...over,
 });
 
 test('the listing: a header, one row per decision in the order given, the cells padded, then the last day\'s total', () => {
@@ -42,4 +42,9 @@ test('the listing: the lanes not decided now follow the decisions, newest first,
         '10-08 11:59  w1:t1  w1:p9  62 %   in-flight   2 running',
         '10-08 11:58  w2:t2  w2:p1  —      no-context  the context share is not known yet',
     ]);
+});
+
+test('the listing shows the asked verdict when coverage changed the effective verdict', () => {
+    const lines = listing([found({ verdict: 'wait', gate: 'coverage', askedVerdict: 'compact' })], { since: 0, costUsd: 0 }, NOW, 'UTC');
+    assert.match(lines[1] ?? '', /wait \(asked compact\)/);
 });

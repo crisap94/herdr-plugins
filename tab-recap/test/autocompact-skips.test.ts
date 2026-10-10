@@ -4,6 +4,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NOW, lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
+import { milliseconds } from '#src/recap/domain/autocompact.ts';
 
 const at = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
 const skipsOf = (w: World): unknown[] => w.store.autocompact.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
@@ -43,6 +44,17 @@ test('off records no skip and logs nothing', async () => {
     w.known = false;
     await w.service.consider(lane());
     assert.deepEqual([w.store.autocompact.skips().length, w.logs.length], [0, 0]);
+});
+
+test('coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth', async () => {
+    const w = world({ coverageBackoff: { kind: 'window', ms: milliseconds(30 * 60_000) } });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 10 * 60_000, mode: 'on', share: 62, tokens: 620_000, window: 1_000_000, gate: 'coverage', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.byPane = { 'w1:p1': 62.05 };
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked.length, w.store.autocompact.skips()[0]?.gate], [0, 'coverage-backoff']);
+    w.byPane = { 'w1:p1': 73.0001 };
+    await w.service.consider(lane());
+    assert.equal(w.asked.length, 1);
 });
 
 test('the log names a skip only when its gate changed; a decision removes the lane\'s skip and the next skip is logged again', async () => {

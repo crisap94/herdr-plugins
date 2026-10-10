@@ -46,7 +46,7 @@ test('missing: a goal, needs, decisions or rules fact (or a decision\'s reason) 
 
 test('covered: the brief and the facts are the one state; ok when nothing blocks; a decider that cannot answer is not ok and says why', async () => {
     const decider = deciding({ keeps_2: 0.4 });
-    assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null });
+    assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 });
     const broken: Decider = { label: 'x', ask: () => Promise.resolve(unknown({ why: 'timeout', after: 10_000 as never })) };
     const result = await covered('b', factsOf(HISTORY), broken);
     assert.deepEqual([result.ok, result.missing, result.unknown], [false, [], 'timed out after 10000 ms']);
@@ -58,7 +58,7 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 
 interface World { readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
-function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null): { world: World; compaction: Compaction } {
+function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null, ceilingOverride = true, history = HISTORY): { world: World; compaction: Compaction } {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const world: World = { typed: [], briefs: [], toasts: [], store };
@@ -69,11 +69,13 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         claims: new CompactionClaims(),
         agents: { status: () => Promise.resolve({ kind: 'agent', agent: 'claude', status: 'idle' }), prompt: () => Promise.resolve({ kind: 'sent' }), typeLine: (_pane, line) => { world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
-        records: { readRecap: () => recap }, ledger: { historyOf: () => HISTORY }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
+        records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
         brief: { enabled: () => true, job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: correction === undefined ? 'first brief' : 'second brief', why: null } : { text: null, why: template.why }); } },
         coverage: () => (withCoverage ? { check: () => Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])) } : null),
         decisions: store.autocompact,
+        ceilingOverride: () => ceilingOverride,
+        checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => NOW,
         webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })], focused: () => Promise.resolve('w1:p1'),
         refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: () => undefined,
@@ -84,8 +86,8 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
 const OK: Coverage = { ok: true, missing: [], answers: { keeps_0: 0.9 }, unknown: null };
 const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], answers: { keeps_1: 0.2 }, unknown: null };
 
-function decided(world: World): string {
-    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: 62, tokens: 1, window: 2, gate: 'ask', verdict: 'compact', answers: {}, coverage: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
+function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
+    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', answers: {}, coverage: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
     return id;
 }
 
@@ -98,6 +100,55 @@ test('an automatic compaction whose brief misses a fact is written again once wi
     assert.equal(world.typed.length, 1);
     assert.match(world.typed[0] ?? '', /^\/compact /);
     assert.match(world.toasts.join('\n'), /Compact claude \(auto\)/);
+});
+
+test('a ceiling lane types its rewrite and appends the missing fact, keeping the compact ceiling decision', async () => {
+    const { world, compaction } = flow([MISSING]);
+    const id = decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.equal(world.typed.length, 1);
+    assert.match(world.typed[0] ?? '', /Facts not carried into the brief/);
+    assert.match(world.typed[0] ?? '', /decisions: Keep SQLite/);
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.deepEqual([row.id, row.gate, row.verdict, row.askedVerdict], [id, 'ceiling', 'compact', 'compact']);
+    assert.equal(row.coverageOutcome?.kind, 'missed');
+});
+
+test('a ceiling lane with no decider types the writer brief and records the unchecked outcome', async () => {
+    const { world, compaction } = flow([], false);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.equal(world.typed.length, 1);
+    assert.equal(world.store.autocompact.newest(1)[0]?.coverageOutcome?.kind, 'unchecked');
+});
+
+test('the ceiling switch off keeps the failed check blocking', async () => {
+    const { world, compaction } = flow([MISSING], true, null, false);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.deepEqual([world.typed.length, world.store.autocompact.newest(1)[0]?.gate, world.store.autocompact.newest(1)[0]?.verdict], [0, 'coverage', 'wait']);
+});
+
+test('the ceiling appendix follows the section order and remains within its character cap', async () => {
+    const history = [
+        { ...HISTORY[0]!, section: 'decisions', text: 'new decision', why: 'latest reason', lastAt: 9 },
+        { ...HISTORY[0]!, section: 'needs', text: 'need '.repeat(45), why: null },
+        { ...HISTORY[0]!, section: 'rules', text: 'rule '.repeat(45), why: null },
+        { ...HISTORY[0]!, section: 'goal', text: 'goal '.repeat(45), why: null },
+        { ...HISTORY[0]!, section: 'decisions', text: 'old decision', why: 'older reason', lastAt: 2 },
+    ];
+    const missing = history.map((entry) => `${entry.section}: ${entry.text}`);
+    const result: Coverage = { ok: false, missing, answers: {}, unknown: null };
+    const { world, compaction } = flow([result], true, null, true, history);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const text = world.typed[0] ?? '';
+    const appendix = text.slice(text.indexOf('Facts not carried into the brief'));
+    assert.ok(appendix.length <= 1500);
+    assert.ok(appendix.indexOf('goal:') < appendix.indexOf('rules:'));
+    assert.ok(appendix.indexOf('rules:') < appendix.indexOf('needs:'));
+    assert.ok(appendix.indexOf('needs:') < appendix.indexOf('new decision'));
+    assert.ok(appendix.indexOf('new decision') < appendix.indexOf('old decision'));
 });
 
 test('the covered automatic compaction is an `auto` record, and its decision points at it with the coverage', async () => {

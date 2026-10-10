@@ -15,7 +15,7 @@ const config = (values: Readonly<Record<string, string>>) => (key: string): stri
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
 test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude only', () => {
-    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [] });
+    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [], ceilingPolicy: 'overrides-check', coverageBackoff: { kind: 'off' } });
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {
