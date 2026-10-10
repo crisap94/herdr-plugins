@@ -48,8 +48,12 @@ Compaction SHALL be the first exchange of the token protocol. When tab-recap rea
 `<id>:<note>` of a `compact-req-<tool>` token whose id it has not taken from that tool, it SHALL request a compaction of
 that pane with the origin `request` and the note. It SHALL answer in its own token `tab-recap-compact` = `<id>:<stage>`,
 with the stage `queued`, `running`, `done` or `failed-<reason>`, and SHALL act on a given id at most once, across daemon
-restarts. A request a restart interrupts SHALL be answered `<id>:failed-interrupted`. The wire format SHALL be
-byte-identical to the format before the token protocol.
+restarts. A request a restart interrupts SHALL be answered `<id>:failed-interrupted`. A `<reason>` SHALL be one the compact
+descriptor declares: `bad-id`, `not-a-lane`, `interrupted`, `no-target`, `skipped`, `busy` or `error`; a skipped compaction
+SHALL be answered `failed-skipped`, a refusal because the agent is busy `failed-busy`, and every other cause, a free-text
+agent state included, `failed-error`. An empty or blank note SHALL be read as no note, and a note SHALL be cut to the room
+its id leaves within 80 characters. The wire format SHALL be byte-identical to the format before the token protocol, except
+that an undeclared failure reason is now written as one of the declared ones.
 
 #### Scenario: Asked and done
 
@@ -61,6 +65,16 @@ byte-identical to the format before the token protocol.
 
 - **WHEN** the token is written on a pane that is not a lane
 - **THEN** tab-recap SHALL answer `r7:failed-not-a-lane` and request nothing
+
+#### Scenario: A cause the descriptor does not declare
+
+- **WHEN** a requested compaction fails because the agent's state text says it cannot compact
+- **THEN** tab-recap SHALL answer `<id>:failed-error`, never a slug of the state text
+
+#### Scenario: A blank note
+
+- **WHEN** a tool writes `compact-req-coordinator` = `r7:` or `r7:   `
+- **THEN** the compaction SHALL be requested with no note
 
 #### Scenario: Interrupted by a restart
 

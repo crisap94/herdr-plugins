@@ -25,7 +25,24 @@ commits metrics only under `experiments/` at the repository root; corpora and ra
 - [ ] 2.5 If 2.2 and 2.3 both pass the bar, move `TAB_RECAP_WRITER_PRUNE` to `on` in a separate MR labelled
   `changelog::changed`; if not, leave it `off` and record the failing measure. Verify: the MR states which.
 
-## 3. Archive
+## 3. Run window (carried from `recap-run-debounce` 3.2, 5.1, 6.1)
 
-- [ ] 3.1 `openspec archive tuning-defaults-measured` in the merge request that closes its last measurement task, once every
+Measured on the live ledger on 2026-10-10: 391 of 1 725 turn-ended runs (23 %) started within 60 s of the previous run on
+the same chapter; on the EXP-001 corpus 223 of 816 (27 %), costing $1.21, 32 % of the recorded writer spend.
+
+- [ ] 3.1 Run the EXP-001 corpus on the private branch: `--merge-turns 1` (control) twice, and `2` and `3` twice each, writer
+  Claude Haiku 5.5 at medium, judge codex gpt-6-luna at medium, pinned. Compute the floor as `max(1 point, |control A −
+  control B|)`. Commit only the metrics table and the run labels to `experiments/` at the repository root, and link it from
+  the MR. Verify: the table compares each setting against the control and the floor, as in the `recap-run-debounce` design
+  D5.
+- [ ] 3.2 If the replay passes the bar at 60 000 ms, move the default in a separate merge request labelled
+  `changelog::changed` and update the `recap-runs` spec's default. If it does not, leave the default at off and record the
+  reason in the MR. Verify: the MR states which.
+- [ ] 3.3 With the window at 60 000 ms on one busy orchestrator tab for one hour: count `recap-written` events against turn
+  endings, and the writer's spend for the hour against the same hour before. This needs the operator to turn the setting on
+  for that hour. Verify: both counts are in the MR.
+
+## 4. Archive
+
+- [ ] 4.1 `openspec archive tuning-defaults-measured` in the merge request that closes its last measurement task, once every
   other task is checked and the gates pass.
