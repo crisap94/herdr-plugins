@@ -1,28 +1,38 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: Handoff and compaction do not overlap on a lane
+### Requirement: One compaction per lane
 
-The one-operation-per-lane claim rule SHALL cover both compaction and handoff operations. Handoff SHALL atomically claim its source and target lanes after the last status check. If either lane has a compaction or handoff claim, the new handoff SHALL return a typed `lane-busy` refusal without joining, waiting, or typing. A compaction request received while handoff holds a lane SHALL not join the handoff and SHALL not type into that lane until its claim is released. Every completion path SHALL release claims.
+A lane SHALL hold at most one claim at a time, whatever asked for it: the operator, autocompact, another tool's `compact-req-<tool>` token, or a handoff. A claim is either a compaction claim, for a compaction queued or in progress, or a handoff claim. A request for a lane whose compaction is queued or in progress SHALL join that compaction: it SHALL start no compaction and SHALL NOT type anything. A request for a lane that holds a handoff claim SHALL NOT join the handoff: it SHALL be answered `failed-lane-busy` at once, SHALL be recorded as one refused compaction with stage `failed` and why `lane busy`, SHALL show the usual refusal toast, and SHALL type nothing. A joined request from another tool SHALL be answered `queued` at once and then with the running compaction's stages and outcome. The operator SHALL be told that the request joins the compaction, and, when the request carried a note, that the note is not used. An automatic request that joins SHALL NOT be announced. The lane SHALL be released when its compaction is done, failed, refused or throws, so the next request on it starts its own compaction. The check and the claim of the lane SHALL be made in one step, after the last wait before the flow starts, so two requests for one lane at the same instant cannot both start a compaction.
 
-#### Scenario: Handoff attempts a claimed source
+#### Scenario: A request and an automatic one at the same instant
 
-- **WHEN** the source lane has a queued or active compaction claim
-- **THEN** handoff SHALL refuse with `lane-busy`
-- **AND** it SHALL not join the compaction or type
+- **WHEN** another tool's request and an automatic compaction for the same pane are taken in the same second
+- **THEN** one compaction SHALL start, one `/compact` SHALL be typed, one compaction record SHALL be written, and the
+  request SHALL be answered `queued`, then with the running compaction's stages and its outcome
 
-#### Scenario: Handoff attempts a claimed target
+#### Scenario: A joined request for a refused agent
 
-- **WHEN** the target lane has a queued or active compaction claim
-- **THEN** handoff SHALL refuse with `lane-busy`
-- **AND** it SHALL not join the compaction or type
+- **WHEN** a request joins a compaction and the agent is working, so the running compaction is refused
+- **THEN** the joined request SHALL be answered with the same refusal the running compaction gets, and nothing SHALL be typed
 
-#### Scenario: A compaction arrives during handoff
+#### Scenario: A request for a lane held by handoff
 
-- **WHEN** a compaction request arrives while the handoff claim is held
-- **THEN** the request SHALL not join handoff
-- **AND** it SHALL not type until the handoff claim is released and normal compaction eligibility is checked
+- **WHEN** the operator or another tool asks for a compaction while a handoff claim holds the lane
+- **THEN** the request SHALL be answered `failed-lane-busy` at once
+- **AND** nothing SHALL be typed and one refused compaction SHALL be recorded with stage `failed` and why `lane busy`
 
-#### Scenario: Handoff completes or fails
+#### Scenario: An automatic request for a lane held by handoff
 
-- **WHEN** handoff reaches any terminal outcome or throws
-- **THEN** it SHALL release both lane claims
+- **WHEN** autocompact considers a lane that holds a handoff claim
+- **THEN** its decision SHALL have gate `busy`
+- **AND** no compaction request SHALL be queued for that lane
+
+#### Scenario: A flow that throws
+
+- **WHEN** the running compaction of a lane throws, with a request joined to it
+- **THEN** the running request and the joined one SHALL be answered `failed-error`, and the lane SHALL be released so the next request compacts
+
+#### Scenario: A daemon restart while a request is joined
+
+- **WHEN** the daemon restarts while a joined request waits for the running compaction
+- **THEN** the joined request is not answered again by this daemon and keeps the answer `queued` until its token expires; the running compaction is answered `failed-interrupted` as before

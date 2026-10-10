@@ -6,7 +6,7 @@ After a lane is cleared, crashes, or moves to a new session, the operator needs 
 
 ## What changes
 
-Add `tab-recap handoff` as an operator command. The operator identifies one source lane and an existing target pane. The command renders the selected task's ledger deterministically, supports printing without typing, and otherwise delivers only when the target is idle or done with no work in flight. Delivery uses a typed plan declared by the target's registered agent adapter, a typing lease, and the prompt boundary. The command reports a closed outcome and uses the existing command exit-code convention.
+Add `tab-recap handoff` as an operator command. The operator identifies one source lane and an existing target pane. The command renders the selected task's ledger deterministically and supports printing without typing. Otherwise it writes a handoff request to the request queue; the daemon takes it, delivers only when the target is idle or done with no work in flight, and writes a closed outcome that the command waits for and maps to its exit code. Delivery uses a typed plan declared by the target's registered agent adapter, a typing lease, and the prompt boundary.
 
 The handoff contains the goal, open facts, recently closed facts, decisions with their reasons, standing rules, and next steps. It is English, first person, operator-voiced, bounded to 3,000 characters, and vetted so the rendered text never names the plugin, its recap, a tab, or a tool. It is a static render of ledger facts and makes no model call.
 
@@ -15,11 +15,12 @@ The handoff contains the goal, open facts, recently closed facts, decisions with
 - Add `tab-recap/lane-handoff` for content selection, source and target resolution, safe delivery, outcomes, and printing.
 - Modify `tab-recap/cli` to add the command, flags, usage, and exit behavior.
 - Modify `tab-recap/harness-adapters` to declare the typed handoff delivery side and conformance expectations.
-- Modify `tab-recap/agent-compaction` to specify shared lane claims and typed delivery safety where behavior is shared.
+- Modify `tab-recap/agent-compaction` so that a lane holds one claim, compaction or handoff, and a compaction request for a handoff-held lane is answered `failed-lane-busy`.
+- Modify `tab-recap/state-migrations` with migration 14: the `handoff` request kind, its target pane column, and the `handoff_answer` table.
 
 ## Impact
 
-Implementation uses the existing ledger read port, lane and agent status, registered adapter boundary, request queue, typing lease, and en/es catalogs. It introduces no runtime dependency, writes no handoff row, and changes no existing ledger facts. A later change can add a source that survives lane closure and a token that announces handoff availability without changing the content builder or delivery result contract.
+Implementation uses the existing ledger read port, lane and agent status, registered adapter boundary, request queue, typing lease, and en/es catalogs. It introduces no runtime dependency and changes no existing ledger facts. It adds one request kind and one answer table through migration 14. A later change can add a source that survives lane closure and a token that announces handoff availability, reading the same answer row, without changing the content builder or the delivery result contract.
 
 The implementation MR will carry `changelog::added`. This spec-only MR carries `changelog::internal`.
 
