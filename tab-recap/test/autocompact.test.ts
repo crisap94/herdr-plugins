@@ -22,7 +22,7 @@ test('on: a safe moment between the limits is recorded, logged with its figures 
     await w.service.consider(lane());
     assert.deepEqual(w.requests, [{ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }]);
     const row = must(rows(w)[0]);
-    assert.deepEqual([row.verdict, row.gate, row.mode, row.share, row.decider, row.tookMs, row.answers], ['compact', 'ask', 'on', 62, 'fake · m', 550, SAFE]);
+    assert.deepEqual([row.verdict, row.askedVerdict, row.gate, row.mode, row.share, row.decider, row.tookMs, row.answers], ['compact', 'compact', 'ask', 'on', 62, 'fake · m', 550, SAFE]);
     assert.equal(row.costUsd, 0.00003);
     assert.deepEqual(w.asked, [Object.keys(QUESTIONS).length]);
     assert.deepEqual(w.logs, ['autocompact w1:p1: 62 % · closes 0.95 · continues 0.05 · choice 0.02 · verbatim 0.10 · subject 0.03 · stuck 0.01 → compact (on)']);
@@ -66,7 +66,7 @@ test('over the ceiling (81 %): compact with gate ceiling and no decider call; in
     const w = world();
     w.share = 81;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.requests.length, rows(w)[0]?.gate, rows(w)[0]?.verdict, rows(w)[0]?.decider], [0, 1, 'ceiling', 'compact', null]);
+    assert.deepEqual([w.asked.length, w.requests.length, rows(w)[0]?.gate, rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, rows(w)[0]?.decider], [0, 1, 'ceiling', 'compact', 'compact', null]);
     assert.match(w.logs[0] ?? '', /81 % → compact \(ceiling, on\)/);
     const shadow = world({ mode: 'shadow' });
     shadow.share = 90;
@@ -76,11 +76,11 @@ test('over the ceiling (81 %): compact with gate ceiling and no decider call; in
 
 test('cooldown: a wait four minutes ago stops the next consideration before any model; after ten minutes it asks again', async () => {
     const w = world();
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, rows(w).length], [0, 1]);
     const later = world();
-    later.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 11 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    later.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 11 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     await later.service.consider(lane());
     assert.equal(later.asked.length, 1);
 });
@@ -123,7 +123,7 @@ test('a lane below the minimum (8 %), or within the cooldown, never reads the in
     below.share = 8;
     await below.service.consider(lane());
     const cooling = world();
-    cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     await cooling.service.consider(lane());
     const asking = world();
     await asking.service.consider(lane());
@@ -137,7 +137,7 @@ test('a wait: not safe means wait, an undecided answer is recorded as undecided,
     const vague = world();
     vague.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, needs_verbatim: 0.48 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
     await vague.service.consider(lane());
-    assert.deepEqual([rows(w)[0]?.verdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'undecided', 0]);
+    assert.deepEqual([rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'wait', 'undecided', 0]);
 });
 
 test('a kind outside the list is decided and recorded but never requested', async () => {

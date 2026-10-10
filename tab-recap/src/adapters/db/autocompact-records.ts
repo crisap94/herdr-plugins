@@ -1,12 +1,14 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { AutocompactRecords, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
+import { unreachable } from '#src/recap/domain/autocompact.ts';
+import type { CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { all, BadRow, blob, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-const COLUMNS = 'id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, compaction_id';
+const COLUMNS = 'id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, requested, asked_verdict, coverage_outcome, unchecked_reason, coverage_missing, coverage_ms, coverage_cost_micro_usd, compaction_id';
 
 const numbers = (raw: string | null): Record<string, number> | null => {
     if (raw === null) return null;
@@ -19,14 +21,45 @@ function skipOf(row: Row): Skip {
     return { tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'), gate: text(row, 'gate') as SkipGate, share: maybeWhole(row, 'share'), detail: maybeText(row, 'detail') };
 }
 
+function outcomeOf(row: Row): StoredCoverageOutcome | null {
+    const outcome = maybeText(row, 'coverage_outcome');
+    switch (outcome) {
+        case 'passed': return { kind: 'passed' };
+        case 'missed': return { kind: 'missed', count: whole(row, 'coverage_missing') };
+        case 'unchecked': {
+            const reason = maybeText(row, 'unchecked_reason');
+            if (reason === 'no-decider' || reason === 'decider-cannot-answer' || reason === 'no-brief') return { kind: 'unchecked', reason };
+            throw new BadRow('unchecked coverage has no reason');
+        }
+        case null: return null;
+        default: throw new BadRow('unknown coverage outcome');
+    }
+}
+
+function costOf(row: Row): number | null {
+    const cost = maybeWhole(row, 'coverage_cost_micro_usd');
+    return cost === null ? null : cost / 1e6;
+}
+
+function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['coverage']): number | null {
+    switch (outcome.kind) {
+        case 'missed': return outcome.facts.length;
+        case 'unchecked': return null;
+        case 'passed': return coverage !== null && Object.keys(coverage).length > 0 ? 0 : null;
+        default: return unreachable(outcome);
+    }
+}
+
 function decisionOf(row: Row): StoredDecision {
     const compaction = row['compaction_id'] === null ? null : typeIdOf('compaction', blob(row, 'compaction_id'));
     return {
         id: typeIdOf('decision', blob(row, 'id')), tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'),
         mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: whole(row, 'tokens'), window: whole(row, 'window'),
         gate: text(row, 'gate') as DecisionGate, verdict: text(row, 'verdict') as DecisionVerdict,
+        askedVerdict: maybeText(row, 'asked_verdict') as DecisionVerdict | null,
         answers: numbers(text(row, 'answers')) ?? {}, coverage: numbers(maybeText(row, 'coverage')), decider: maybeText(row, 'decider'),
-        costUsd: whole(row, 'cost_micro_usd') / 1e6, tookMs: maybeWhole(row, 'took_ms'), why: maybeText(row, 'why'), compactionId: compaction,
+        costUsd: whole(row, 'cost_micro_usd') / 1e6, tookMs: maybeWhole(row, 'took_ms'), why: maybeText(row, 'why'),
+        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms'), coverageCostUsd: costOf(row), compactionId: compaction,
     };
 }
 
@@ -51,17 +84,17 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.insert = db.prepare(`INSERT INTO autocompact_decision (${COLUMNS.replace(', compaction_id', '')}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        this.insert = db.prepare('INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, asked_verdict) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');
-        this.latest = db.prepare("SELECT id FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
-        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = CASE WHEN ? = 1 THEN ? ELSE why END WHERE id = ?");
+        this.latest = db.prepare("SELECT id, gate FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
+        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, coverage_outcome = ?, unchecked_reason = ?, coverage_missing = ?, coverage_ms = ?, coverage_cost_micro_usd = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = COALESCE(?, why) WHERE id = ?");
         this.last = db.prepare('SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ?');
         this.asked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND mode = 'on' AND verdict = 'compact' AND requested = 1 AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.newestAll = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision ORDER BY at DESC, id DESC LIMIT ?`);
         this.newestOf = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision WHERE tab_id = ? ORDER BY at DESC, id DESC LIMIT ?`);
         this.counts = db.prepare("SELECT COUNT(*) AS decisions, COUNT(compaction_id) AS compacted, COALESCE(SUM(verdict <> 'compact'), 0) AS waited FROM autocompact_decision WHERE tab_id = ?");
         this.spent = db.prepare('SELECT COALESCE(SUM(cost_micro_usd), 0) AS micro FROM autocompact_decision WHERE at >= ?');
-        this.lastOne = db.prepare('SELECT at, tokens, mode, verdict FROM autocompact_decision WHERE tab_id = ? AND pane = ? ORDER BY at DESC, id DESC LIMIT 1');
+        this.lastOne = db.prepare('SELECT at, tokens, mode, verdict, gate FROM autocompact_decision WHERE tab_id = ? AND pane = ? ORDER BY at DESC, id DESC LIMIT 1');
         this.requested = db.prepare('UPDATE autocompact_decision SET requested = 1 WHERE id = ?');
         this.anyAsked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE mode = 'on' AND verdict = 'compact' AND requested = 1 AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.putSkip = db.prepare('INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share, detail) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (tab_id, pane) DO UPDATE SET agent = excluded.agent, at = excluded.at, gate = excluded.gate, share = excluded.share, detail = excluded.detail');
@@ -72,7 +105,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     record(d: Decision): string {
         const id = ids.next();
         writeTx(this.db, () => {
-            this.insert.run(id, d.tab, d.pane, d.agent, d.at, d.mode, d.share, d.tokens, d.window, d.gate, d.verdict, JSON.stringify(d.answers), d.coverage === null ? null : JSON.stringify(d.coverage), d.decider, Math.round(d.costUsd * 1e6), d.tookMs, d.why);
+            this.insert.run(id, d.tab, d.pane, d.agent, d.at, d.mode, d.share, d.tokens, d.window, d.gate, d.verdict, JSON.stringify(d.answers), d.coverage === null ? null : JSON.stringify(d.coverage), d.decider, Math.round(d.costUsd * 1e6), d.tookMs, d.why, d.askedVerdict);
             this.dropSkip.run(d.tab, d.pane);
         });
         return typeIdOf('decision', id);
@@ -83,17 +116,21 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         if (key !== null && target !== null) writeTx(this.db, () => { this.attach.run(target, key); });
     }
 
-    linkLatest(tab: string, pane: string, compactionId: string): string | null {
+    linkLatest(tab: string, pane: string, compactionId: string): LinkedDecision | null {
         const [row, target] = [guarded(() => one(this.latest, tab, pane), null), idOf('compaction', compactionId)];
         if (row === null || target === null) return null;
         writeTx(this.db, () => { this.attach.run(target, blob(row, 'id')); });
-        return typeIdOf('decision', blob(row, 'id'));
+        return { id: typeIdOf('decision', blob(row, 'id')), gate: text(row, 'gate') as DecisionGate };
     }
 
-    amend(id: string, coverage: Readonly<Record<string, number>> | null, waited: boolean, why: string | null): void {
+    amend(id: string, update: CoverageAmendment): void {
         const key = idOf('decision', id);
-        const flag = waited ? 1 : 0;
-        if (key !== null) writeTx(this.db, () => { this.cover.run(coverage === null ? null : JSON.stringify(coverage), flag, flag, flag, why, key); });
+        const { coverage, outcome, coverageMs, coverageCostUsd, why, block } = update;
+        const waited = outcome.kind === 'unchecked' || outcome.kind === 'missed';
+        const flag = waited && block ? 1 : 0;
+        const missing = missingOf(outcome, coverage);
+        const reason = outcome.kind === 'unchecked' ? outcome.reason : null;
+        if (key !== null) writeTx(this.db, () => { this.cover.run(coverage === null ? null : JSON.stringify(coverage), outcome.kind, reason, missing, coverageMs, coverageCostUsd === null ? null : Math.round(coverageCostUsd * 1e6), flag, flag, why, key); });
     }
 
     lastDecisionAt(tab: string, pane: string): number | null {
@@ -103,7 +140,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     lastDecision(tab: string, pane: string): LastDecision | null {
         return guarded(() => {
             const row = one(this.lastOne, tab, pane);
-            return row === null ? null : { at: whole(row, 'at'), tokens: whole(row, 'tokens'), mode: text(row, 'mode') as DecisionMode, verdict: text(row, 'verdict') as DecisionVerdict };
+            return row === null ? null : { at: whole(row, 'at'), tokens: whole(row, 'tokens'), mode: text(row, 'mode') as DecisionMode, verdict: text(row, 'verdict') as DecisionVerdict, gate: text(row, 'gate') as DecisionGate };
         }, null);
     }
 

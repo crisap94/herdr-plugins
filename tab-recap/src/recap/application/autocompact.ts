@@ -73,6 +73,12 @@ interface Judged {
 
 const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, recordOnly: boolean): boolean => mode === 'on' && verdict === 'compact' && !recordOnly;
 
+function coverageBackoffActive(input: { readonly policy: AutocompactPolicy; readonly last: ReturnType<AutocompactDeps['decisions']['lastDecision']>; readonly now: number; readonly tokens: number; readonly window: number; readonly lastBreakAt: number | null }): boolean {
+    const { policy, last, now, tokens, window, lastBreakAt } = input;
+    if (policy.coverageBackoff.kind !== 'window' || last === null) return false;
+    return last.gate === 'coverage' && last.verdict === 'wait' && now - last.at < policy.coverageBackoff.ms && tokens - last.tokens <= window * 0.1 && (lastBreakAt === null || lastBreakAt <= last.at);
+}
+
 function policyForLane(policy: AutocompactPolicy, lane: Lane): (Omit<AutocompactPolicy, 'mode'> & { readonly mode: DecisionMode }) | null {
     if (policy.mode === 'off') return null;
     const kind = String(lane.agent);
@@ -125,12 +131,14 @@ export class Autocompact {
         const lastBreakAt = deps.boundaries.lastBreakAt(tab, pane);
         const lastDecisionAt = deps.decisions.lastDecisionAt(tab, pane);
         const last = deps.decisions.lastDecision(tab, pane);
+        const backoff = coverageBackoffActive({ policy, last, now, tokens: use.tokens, window: use.window, lastBreakAt });
         const same = unchangedOf(last, deps.startedAt, use.tokens, policy.mode);
         const recheck = same && recheckDue(tuning.recheckIdleMs, last, now);
         const facts = {
             kind: String(lane.agent), kinds: policy.kinds, shadowKinds: policy.shadowKinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,
             unchanged: same && !recheck,
+            coverageBackoff: backoff,
         };
         const cheap = gateOf({ ...facts, inFlight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
@@ -194,8 +202,8 @@ export class Autocompact {
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
         const { judged, recordOnly } = found;
         const made: Decision = {
-            tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict,
-            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why,
+            tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why, coverageOutcome: null, coverageMs: null, coverageCostUsd: null,
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);

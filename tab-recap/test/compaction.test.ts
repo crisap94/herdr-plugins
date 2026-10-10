@@ -18,6 +18,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
+import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
@@ -41,6 +42,8 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
         typeLine: (pane, line, behavior): Promise<Prompted> => {
+            const refused = lineBreakRefusal(line);
+            if (refused !== null) return Promise.resolve(refused);
             const pieces = line.pieces.map(String);
             events.push(`type ${pane}`);
             typed.push({ pane, text: pieces.join(''), pieces, lineBehavior: behavior, typed: true });
@@ -83,7 +86,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve(); },
-        coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], answers: {}, unknown: null }) } : null),
+        coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),
         messages: () => en,

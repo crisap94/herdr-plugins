@@ -310,8 +310,16 @@ last turns (does the reply close the request, does it announce more work, does i
 it describes, would the next steps need exact output only the last turns hold, did the subject change, is it stuck).
 Every safe moment above the limit compacts; anything else waits and is asked again after the cooldown. At the ceiling
 (`TAB_RECAP_AUTOCOMPACT_CEILING`, 80 with the default style) the answer is yes without asking anyone. Before an automatic compaction types
-anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite, and
-a brief that still loses one is not typed.
+anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite. With
+`TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK=on` (the default), a ceiling compaction proceeds even if the check still
+misses facts; the better brief is typed with missed facts appended verbatim, capped at 1,500 characters. Set it to `off`
+to block ceiling compactions on a failed check.
+
+`TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS` sets a skip window after a failed brief check below the ceiling. Its default
+is `0` (off); accepted values are 60,000 to 86,400,000 milliseconds. The skip is `coverage-backoff` and ends when its
+window passes, tokens grow by more than 10% of the context window, or a compaction boundary occurs. Checked briefs and
+the facts they were checked against are retained for 14 days by default; `TAB_RECAP_KEEP_BRIEF_DAYS` accepts 0 to 60,
+where 0 keeps none.
 
 **Styles.** `TAB_RECAP_AUTOCOMPACT_STYLE` sets how eagerly autocompact acts. `balanced` (the default) is the numbers
 above; `gentle` waits for a clearer moment; `eager` acts sooner and asks an idle lane again. The settings modal's

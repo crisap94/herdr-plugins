@@ -7,7 +7,7 @@ import type { World } from './autocompact-world.ts';
 
 const laneAt = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const waitAt = (w: World, at: number, mode: 'shadow' | 'on'): void => {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
 };
 
 test('unchanged: the same tokens and mode as the last decision, made by this process, is skipped without a model; new tokens are asked', async () => {
