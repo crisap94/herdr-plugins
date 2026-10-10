@@ -24,10 +24,12 @@ interface Harness {
     readonly settings: Settings;
     readonly reads: number[];
     callCount(): number;
+    clockReads(): number;
 }
 
 function harness(settings: Settings, causes: string[], answer?: () => Promise<Written>): Harness {
     let calls = 0;
+    let clockCalls = 0;
     const reads: number[] = [];
     const reader: Transcripts = {
         agent: 'claude',
@@ -50,11 +52,11 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     };
     const job = new RecapJob({
         transcripts: registryWith({ claude: reader }), records: store.records, ledger: store.ledger, repos: NO_REPOS,
-        clock: { now: (): ReturnType<typeof instant> => instant(Date.now()) }, summarizer: (): Summarizer => summarizer,
+        clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },
     });
-    return { job, settings, reads, callCount: (): number => calls };
+    return { job, settings, reads, callCount: (): number => calls, clockReads: (): number => clockCalls };
 }
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
@@ -230,7 +232,9 @@ test('with no window, each turn ending starts its own run after the settle delay
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];
     const created = harness({ debounce: debounceOf(undefined) }, causes);
+    const clockBefore = created.clockReads();
     created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    assert.equal(created.clockReads(), clockBefore, 'with no window the clock is not read on a request');
     t.mock.timers.tick(2_499);
     await settle();
     assert.equal(causes.length, 0);
