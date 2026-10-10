@@ -26,7 +26,7 @@ merges, because the window is not in use yet; the replay in D5 measures it.
 - a `turn-ended` request arms a timer of `TURN_SETTLE_MS` (2 500 ms); another request for the same tab clears the timer and
   arms it again with the newer lanes, so a burst already merges while the timer is pending;
 - a `focused` or `requested` request arms a timer of 0;
-- while a run is in progress, a new request is kept as `again` and runs when the first finishes. `again` keeps the strongest cause: a forced cause (`focused`, `requested`) is never replaced by `turn-ended`, and between two causes of the same strength the newer one replaces the older.
+- while a run is in progress, a new request is kept as `again` and runs when the first finishes. On main a later request overwrites `again`. With a run window on, `again` keeps the strongest cause: a forced cause (`focused`, `requested`) is never replaced by `turn-ended`, and between two causes of the same strength the newer one replaces the older. With the window at 0 the overwrite stays.
 
 What is missing is a floor between the start of one run and the start of the next. Runs are single-flight, so the gap
 between two runs of a tab is the first run's duration plus the settle delay. The report puts a run at a median of 13.9 s
@@ -140,7 +140,7 @@ the metrics table and the run labels are committed, in `experiments/` at the rep
 
 ## Verification
 
-- **Unit (new).** Two `turn-ended` requests 20 s apart start one run at the window's end and read both turns (the cursor advances once); a turn ending at 59 s, with the last run at 0, starts at 61.5 s; a `focused` or `requested` request during the window starts at once and clears the pending timer (one timer per slot); a `requested` request kept as `again` is not replaced by a later `turn-ended`, and runs when the run in progress ends; a request that finds no new turn sets neither `lastStart` nor `lastLanes`; a request with a changed lane set starts at once; with the window at 0 every turn-ended request starts at the settle delay as today; an invalid value is `off`; after a restart the first turn-ended run starts at once.
+- **Unit (new).** Two `turn-ended` requests 20 s apart start one run at the window's end and read both turns (the cursor advances once); a turn ending at 59 s, with the last run at 0, starts at 61.5 s; a `focused` or `requested` request during the window starts at once and clears the pending timer (one timer per slot); with a window on, a `requested` request kept as `again` is not replaced by a later `turn-ended`, and runs when the run in progress ends; a request that finds no new turn sets neither `lastStart` nor `lastLanes`; a request with a changed lane set starts at once; with the window at 0 every turn-ended request starts at the settle delay as today; an invalid value is `off`; after a restart the first turn-ended run starts at once.
 - **Typed.** `Debounce` is parsed once at the edge; the job takes only the parsed value (a test passes a raw number and fails
   to compile, or the config test covers each out-of-range value).
 - **Unit (existing).** Every test of `recap-job` keeps its expectations with the default of 0.

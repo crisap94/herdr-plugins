@@ -13,8 +13,8 @@ before. In that case the run SHALL start at the later of two times: the deadline
 window, and the last turn ending plus the settle delay. Turn endings that arrive before the run starts SHALL join it, and
 the run SHALL read every turn they bring through the transcript cursor.
 
-`TAB_RECAP_RUN_DEBOUNCE_MS` SHALL be `0` by default, which is no window. Its accepted values are `0` and 5 000 to 300 000
-milliseconds; any other value SHALL fall back to `0`. It SHALL be read on every request, so a change applies without a
+`TAB_RECAP_RUN_DEBOUNCE_MS` SHALL be `0` by default, which is no window. Its accepted values are `0` and the whole numbers
+of milliseconds from 5 000 to 300 000; any other value, including a non-integer such as 5000.5, SHALL fall back to `0`. It SHALL be read on every request, so a change applies without a
 restart.
 
 #### Scenario: Endings after a run merge into the next one
@@ -46,8 +46,8 @@ restart.
 
 #### Scenario: An invalid window
 
-- **WHEN** `TAB_RECAP_RUN_DEBOUNCE_MS` is 12 000
-- **THEN** the window SHALL be 0
+- **WHEN** `TAB_RECAP_RUN_DEBOUNCE_MS` is 4 999, or 5 000.5
+- **THEN** the window SHALL be 0 in each case
 
 ### Requirement: Runs that another flow or the operator asked for start at once
 
@@ -70,12 +70,13 @@ the writer SHALL set the tab's last run start and lanes, so the next turn ending
 - **THEN** the refresh SHALL run as soon as the run in progress ends, not at a window's deadline, and the caller waiting for
   the refresh SHALL be resolved after it
 
-#### Scenario: A forced request keeps its cause over a turn ending
+#### Scenario: A forced request keeps its cause over a turn ending while a window is on
 
-- **WHEN** a run is in progress, a `requested` request is kept as the tab's next run, and a turn ending of that tab arrives
-  before the run in progress ends
+- **WHEN** the window is on, a run is in progress, a `requested` request is kept as the tab's next run, and a turn ending of
+  that tab arrives before the run in progress ends
 - **THEN** the next run SHALL still be the `requested` one, SHALL start as soon as the run in progress ends, and SHALL read the
   turn that ended through the cursor; the turn ending SHALL NOT replace it and SHALL NOT wait for a window
+- **AND** with the window at 0 a later request SHALL replace the pending one, as today
 
 #### Scenario: A changed lane set inside a window
 
