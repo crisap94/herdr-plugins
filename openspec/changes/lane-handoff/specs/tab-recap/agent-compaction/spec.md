@@ -35,4 +35,5 @@ A lane SHALL hold at most one claim at a time, whatever asked for it: the operat
 #### Scenario: A daemon restart while a request is joined
 
 - **WHEN** the daemon restarts while a joined request waits for the running compaction
-- **THEN** the joined request is not answered again by this daemon and keeps the answer `queued` until its token expires; the running compaction is answered `failed-interrupted` as before
+- **THEN** the running compaction and every request joined to it SHALL be answered `failed-interrupted` after the restart,
+  because each taken request is an ask that the restart settles, and no joined request SHALL stay `queued`
