@@ -5,6 +5,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 class Herdr implements FleetSource {
@@ -30,6 +31,7 @@ test('a pane.updated frame reaches the hook, in both spellings, and is not an un
         onBlind: (): void => undefined,
         onUnknownKind: (kind): void => { unknownKinds.push(kind); },
         onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
         onPaneUpdated: (data): void => { routed.push(data); },
     });
     await informer.enterSubscription();
@@ -72,6 +74,7 @@ test('a lane held with no session, then a pane.updated that reports one: the lan
         onBlind: (): void => undefined,
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     });
     await informer.enterSubscription();
     const running = informer.run();

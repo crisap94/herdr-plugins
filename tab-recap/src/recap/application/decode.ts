@@ -3,7 +3,7 @@ import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import type { SessionIdentity } from '#src/ports/session-identity.ts';
+import type { SessionOf } from '#src/ports/session-identity.ts';
 
 export type Decoded =
     | Observation
@@ -23,7 +23,7 @@ function field(data: Readonly<Record<string, unknown>>, key: string): string | n
     return text(data[key]) ?? text(nested(data, 'pane')[key]);
 }
 
-export function seenFrom(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): SeenLane | null {
+export function seenFrom(data: Readonly<Record<string, unknown>>, identity: SessionOf): SeenLane | null {
     const pane = field(data, 'pane_id');
     const tab = field(data, 'tab_id');
     const workspace = field(data, 'workspace_id');
@@ -54,7 +54,7 @@ function agentSessionOf(info: Readonly<Record<string, unknown>>): AgentSession |
     return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(value) } : null;
 }
 
-export function sessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): SessionId | null {
+export function sessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): SessionId | null {
     const agent = field(data, 'agent');
     for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
         const session = agentSessionOf(info);
@@ -65,7 +65,7 @@ export function sessionOf(data: Readonly<Record<string, unknown>>, identity: Ses
     return null;
 }
 
-export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): { readonly pane: string; readonly session: string } | null {
+export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): { readonly pane: string; readonly session: string } | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data, identity);
     return pane === null || session === null ? null : { pane, session };
@@ -82,7 +82,7 @@ export function tokensOf(data: Readonly<Record<string, unknown>>): { readonly pa
 
 const RESYNC = new Set(['pane_created', 'pane_moved', 'tab_closed', 'tab_created', 'layout_updated']);
 
-function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, identity: SessionIdentity): Decoded | null {
+function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, identity: SessionOf): Decoded | null {
     const pane = field(data, 'pane_id');
     if (kind === 'pane_closed' && pane !== null) {
         return { kind: 'closed', pane: paneId(pane) };
@@ -102,7 +102,7 @@ function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, iden
     return null;
 }
 
-export function decode(frame: Frame, identity: SessionIdentity): Decoded {
+export function decode(frame: Frame, identity: SessionOf): Decoded {
     const kind = frame.event.replaceAll('.', '_');
     const known = decodeKnown(kind, frame.data, identity);
     if (known !== null) {

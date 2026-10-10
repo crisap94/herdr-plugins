@@ -6,6 +6,7 @@ import type { Blindness } from '#src/recap/application/informer.ts';
 import { watchSet } from '#src/recap/domain/board.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
@@ -47,6 +48,7 @@ test('a pane that died while we were not told must not blind the daemon for good
         onBlind: (blindness): void => { blind.push(blindness); },
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40 });
     await informer.enterSubscription();
     void informer.run();
@@ -75,6 +77,7 @@ test('with herdr unreachable the retries back off instead of hammering', async (
         onBlind: (): void => undefined,
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 20, retryMaxMs: 80 });
     await informer.enterSubscription();
     await new Promise((resolve) => { setTimeout(resolve, 400); });
