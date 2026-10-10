@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -88,6 +88,26 @@ test('`eval --replay`: a missing transcript is a could-not-look error, an unknow
         } finally {
             ran.done();
         }
+    }
+});
+
+test('`eval --replay --kind` refuses kinds outside the replay readers with status 2 and no stdout', () => {
+    const root = mkdtempSync(join(tmpdir(), 'tab-recap-replay-kind-'));
+    const file = join(root, 'transcript.jsonl');
+    writeFileSync(file, '');
+    try {
+        for (const kind of ['opencode', 'foo', 'constructor']) {
+            const ran = run('eval', '--replay', file, '--kind', kind);
+            try {
+                assert.equal(ran.status, 2, kind);
+                assert.match(ran.stderr, /--kind takes claude or codex/, kind);
+                assert.equal(ran.stdout, '', kind);
+            } finally {
+                ran.done();
+            }
+        }
+    } finally {
+        rmSync(root, { recursive: true, force: true });
     }
 });
 

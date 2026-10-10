@@ -1,8 +1,8 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
-import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
+import { readerKindOf, replayTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';
 import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
@@ -28,10 +28,9 @@ import type { Config } from '#src/daemon/config.ts';
 import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
+import { countedWriter } from '#src/recap/application/counted-writer.ts';
 
-const readers: Readonly<Record<string, () => Transcripts>> = { claude: () => new ClaudeTranscripts(), codex: () => new CodexTranscripts() };
-
-const kindOf = (flag: string | null, file: string): string => flag ?? (file.includes('/.codex/') ? 'codex' : 'claude');
+const kindOf = (flag: string | null, file: string): RegisteredKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
 
 const sizeOf = (file: string): number | null => {
     try {
@@ -57,7 +56,7 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
 function counted(config: Config, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, available, join(dir, 'summarizer'));
-    const writer: Summarizer = { backend: made.backend, write: (request) => { calls.writer += 1; return made.write(request); } };
+    const writer = countedWriter(made, calls);
     const own = enumeratorFor(config, available, join(dir, 'enumerator'));
     const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };
@@ -100,9 +99,11 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
 }
 
 export function replayCommand(options: EvalOptions): Promise<number> {
+    const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
-    const make = readers[kindOf(options.kind, file)];
-    if (make === undefined) {
+    const kind = kindOf(options.kind, file);
+    const reader = kind === null ? undefined : readers.exact(kind);
+    if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
         return Promise.resolve(2);
     }
@@ -111,5 +112,5 @@ export function replayCommand(options: EvalOptions): Promise<number> {
         console.error(`tab-recap: 3 — cannot read ${file}`);
         return Promise.resolve(3);
     }
-    return run(file, make(), options, size);
+    return run(file, reader, options, size);
 }

@@ -18,6 +18,7 @@ import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { hasModel } from '#src/recap/domain/backend.ts';
 import { autocompactCommand } from './autocompact.ts';
 import { compactCommand } from './compact.ts';
 import { evalCommand } from './eval.ts';
@@ -95,7 +96,7 @@ function currentTab(): string | null {
 
 function choiceOf(arg: string | undefined, model: string | undefined): BackendChoice | null {
     const found = arg === 'auto' ? 'auto' : BACKEND_IDS.find((id) => id === arg);
-    return found === undefined || (model !== undefined && (found === 'auto' || found === 'custom')) ? null : found;
+    return found === undefined || (model !== undefined && (found === 'auto' || !hasModel(found))) ? null : found;
 }
 
 const modelSuffix = (model: string): string => (model === '' ? '' : `/${model}`);

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
@@ -37,7 +38,7 @@ function reader(agent: string, prompts: Record<string, PromptResult>): { transcr
 
 test('LivePrompts: the newest prompt of a lane, true only when it changed; a bounded tail is asked for', async () => {
     const { transcripts, asked } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'fix the build' } });
-    const prompts = new LivePrompts([transcripts]);
+    const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     assert.equal(prompts.of('w1:p1'), null);
     assert.equal(await prompts.refresh(lane('w1:p1')), true);
     assert.equal(prompts.of('w1:p1'), 'fix the build');
@@ -47,7 +48,7 @@ test('LivePrompts: the newest prompt of a lane, true only when it changed; a bou
 
 test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps what it had', async () => {
     const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'kept' }, '/t/w1:p2': unknown({ why: 'unreadable', detail: 'x' }) });
-    const prompts = new LivePrompts([transcripts]);
+    const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
     assert.equal(await prompts.refresh(laneFrom({ paneId: 'w9:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })), false, 'cannot locate');
     assert.equal(await prompts.refresh(lane('w1:p2')), false, 'unreadable');
@@ -59,7 +60,7 @@ test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps 
 
 test('LivePrompts: an agent without a store of its own goes through the any-agent reader, a screen yields none', async () => {
     const screens = { readScreen: (): Promise<never> => Promise.reject(new Error('never')) };
-    const prompts = new LivePrompts([new ScreenTranscripts(screens, () => true)]);
+    const prompts = new LivePrompts(registryWith({}, new ScreenTranscripts(screens, () => true)));
     assert.equal(await prompts.refresh(lane('w1:p1', 'gemini')), false);
     assert.equal(prompts.of('w1:p1'), null);
 });
@@ -67,7 +68,7 @@ test('LivePrompts: an agent without a store of its own goes through the any-agen
 test('LivePrompts: a changed prompt replaces the old one; the table stays bounded', async () => {
     const answers: Record<string, PromptResult> = { '/t/w1:p1': { kind: 'prompt', text: 'one' } };
     const { transcripts } = reader('claude', answers);
-    const prompts = new LivePrompts([transcripts]);
+    const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
     answers['/t/w1:p1'] = { kind: 'prompt', text: 'two' };
     assert.equal(await prompts.refresh(lane('w1:p1')), true);

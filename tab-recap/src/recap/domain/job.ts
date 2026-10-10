@@ -1,4 +1,4 @@
-import { pick } from './backend.ts';
+import { JOB_HARNESSES, pick } from './backend.ts';
 import type { BackendChoice, BackendId } from './backend.ts';
 import { EFFORTS } from './effort.ts';
 import type { Effort } from './effort.ts';
@@ -23,7 +23,7 @@ export interface DeciderJob {
     readonly effort: Effort;
 }
 
-export const JOB_BY_CHOICES: readonly JobBy[] = ['recap', 'auto', 'claude', 'codex', 'opencode', 'hermes', 'custom', 'off'];
+export const JOB_BY_CHOICES: readonly JobBy[] = ['recap', 'auto', ...JOB_HARNESSES.map(({ id }) => id), 'off'];
 
 export const DECIDER_BY_CHOICES: readonly DeciderBy[] = [...JOB_BY_CHOICES.slice(0, -1), 'jev', 'off'];
 

@@ -2,6 +2,7 @@ import type { Messages } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
 import { agoIn } from './relative.ts';
+import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const es: Messages = {
     locale: 'es',
@@ -48,8 +49,8 @@ export const es: Messages = {
         compactHintHint: 'muestra «compactar?» junto a un agente cuyo contexto pasa esta parte de su ventana: de 10 a 95, u off',
         compactHintOff: 'off',
         modelsHeading: 'Modelos — agente · modelo · esfuerzo, ←/→ elige una parte',
-        jobBy: { recap: 'como el redactor', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', jev: 'jev (API de TypeSafe)', off: 'off' },
-        jobByChoices: { recap: 'como el redactor del resumen — el mismo agente', auto: 'auto — el primero que se encuentre', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD', jev: 'jev — la API de TypeSafe; la clave se lee del entorno o de ~/.config/typesafe-api-key, nunca se muestra aquí', off: 'off — compacta con la plantilla, sin guion' },
+        jobBy: { recap: 'como el redactor', auto: 'auto', ...harnessLabels((id) => id), jev: 'jev (API de TypeSafe)', off: 'off' },
+        jobByChoices: { recap: 'como el redactor del resumen — el mismo agente', auto: 'auto — el primero que se encuentre', ...harnessChoiceLabels('tu propio comando, TAB_RECAP_CUSTOM_CMD'), jev: 'jev — la API de TypeSafe; la clave se lee del entorno o de ~/.config/typesafe-api-key, nunca se muestra aquí', off: 'off — compacta con la plantilla, sin guion' },
         compactModelSame: 'el modelo del redactor',
         curateJobHint: 'corre al abrir la vista de pantalla completa: fusiona hechos repetidos y escribe el párrafo «la sesión hasta ahora»; una vez por tarea, como mucho cada 5 minutos',
         curateOff: 'apagado — sin párrafo ni fusiones',
@@ -145,7 +146,7 @@ export const es: Messages = {
         compactNotQueued: (why) => `no se pidió la compactación (${why})`,
         columnToggled: (tab) => `columna en ${tab}: oculta o visible (los resúmenes se siguen escribiendo)`,
         columnsToggled: 'todas las columnas: ocultas o visibles (los resúmenes se siguen escribiendo)',
-        setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|claude|codex|opencode|hermes|custom> [modelo]`,
+        setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|${BACKEND_IDS.join('|')}> [modelo]`,
         backendNow: (what) => `el motor ahora es ${what} (se aplica al próximo resumen)`,
         usageBackend: (choices) => `USO: backend ${choices} [modelo]  (modelo solo para un agente concreto, p. ej. haiku, gpt-6-luna, proveedor/modelo; si lo omites se conserva el actual)`,
         usage: (commands) => `USO: tab-recap ${commands} [-h|--help]`,

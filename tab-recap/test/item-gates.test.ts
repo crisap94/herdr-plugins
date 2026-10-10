@@ -25,6 +25,7 @@ function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: R
     const asked: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request): Promise<Written> => {
             asked.push(request);
             return Promise.resolve({ kind: 'written', text: texts[Math.min(asked.length, texts.length) - 1] ?? '', costUsd: 0.01 });

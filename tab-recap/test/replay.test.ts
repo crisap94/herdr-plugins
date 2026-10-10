@@ -27,6 +27,7 @@ function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { s
     const shown: string[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
             shown.push(request.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => fact.text)).join('|'));
             const given = answers[Math.min(shown.length - 1, answers.length - 1)] ?? [];

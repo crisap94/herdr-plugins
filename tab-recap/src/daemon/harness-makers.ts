@@ -7,7 +7,7 @@ import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { Config } from './config.ts';
 
-export type Make = (config: Config, work: string) => Harness;
+export type Make = (config: Config, work: string) => Harness<BackendId>;
 
 export const MAKERS: Readonly<Record<BackendId, Make>> = {
     claude: (config, work) => new ClaudeHarness(work, config.timeoutMs),

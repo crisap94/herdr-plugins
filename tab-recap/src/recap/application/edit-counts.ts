@@ -1,11 +1,10 @@
 import { UNREAD } from '#src/ports/transcripts.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
 const BUDGET_BYTES = 4 * 1024 * 1024;
-const ANY_KIND = '*';
 
 export interface FileCount {
     readonly path: string;
@@ -21,14 +20,14 @@ export function countEdits(paths: readonly string[]): readonly FileCount[] {
 }
 
 export class EditCounts {
-    private readonly transcripts: readonly Transcripts[];
+    private readonly transcripts: TranscriptRegistry;
 
-    constructor(transcripts: readonly Transcripts[]) {
+    constructor(transcripts: TranscriptRegistry) {
         this.transcripts = transcripts;
     }
 
     private async editsOf(lane: LaneCursor): Promise<readonly string[]> {
-        const reader = this.transcripts.find((candidate) => candidate.agent === lane.agent) ?? this.transcripts.find((candidate) => candidate.agent === ANY_KIND);
+        const reader = this.transcripts.readerFor(lane.agent);
         if (reader === undefined || lane.transcript === '' || isScreenSource(lane.transcript)) {
             return [];
         }

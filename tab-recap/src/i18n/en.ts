@@ -1,6 +1,7 @@
 import type { Messages } from './messages.ts';
 import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
 import { agoIn } from './relative.ts';
+import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const en: Messages = {
     locale: 'en',
@@ -47,8 +48,8 @@ export const en: Messages = {
         compactHintHint: 'show “compact?” beside an agent whose context passes this share of its window: 10 to 95, or off',
         compactHintOff: 'off',
         modelsHeading: 'Models — harness · model · effort, ←/→ pick a part',
-        jobBy: { recap: 'as the recap writer', auto: 'auto', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'custom', jev: 'jev (TypeSafe API)', off: 'off' },
-        jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', claude: 'claude', codex: 'codex', opencode: 'opencode', hermes: 'hermes', custom: 'your own command, TAB_RECAP_CUSTOM_CMD', jev: 'jev — the TypeSafe API; the key is read from the environment or ~/.config/typesafe-api-key, never shown here', off: 'off — compact with the template, no brief' },
+        jobBy: { recap: 'as the recap writer', auto: 'auto', ...harnessLabels((id) => id), jev: 'jev (TypeSafe API)', off: 'off' },
+        jobByChoices: { recap: 'as the recap writer — the same harness', auto: 'auto — the first one found', ...harnessChoiceLabels('your own command, TAB_RECAP_CUSTOM_CMD'), jev: 'jev — the TypeSafe API; the key is read from the environment or ~/.config/typesafe-api-key, never shown here', off: 'off — compact with the template, no brief' },
         compactModelSame: "the recap writer's model",
         curateJobHint: 'runs when the full-screen view opens: merges duplicate facts and writes the "session so far" paragraph; once per task at most every 5 minutes',
         curateOff: 'off — no paragraph, no merges',
@@ -144,7 +145,7 @@ export const en: Messages = {
         compactNotQueued: (why) => `the compaction was not requested (${why})`,
         columnToggled: (tab) => `column in ${tab}: hidden or shown (recaps keep being written)`,
         columnsToggled: 'every column: hidden or shown (recaps keep being written)',
-        setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|claude|codex|opencode|hermes|custom> [model]`,
+        setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|${BACKEND_IDS.join('|')}> [model]`,
         backendNow: (what) => `backend is now ${what} (applies to the next recap)`,
         usageBackend: (choices) => `USAGE: backend ${choices} [model]  (a model only for a named harness, e.g. haiku, gpt-6-luna, provider/model; omitted = keep the one set)`,
         usage: (commands) => `USAGE: tab-recap ${commands} [-h|--help]`,

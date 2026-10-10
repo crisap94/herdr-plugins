@@ -1,7 +1,4 @@
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
-import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
-import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
-import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
+import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
@@ -14,6 +11,7 @@ import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
+import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
@@ -108,7 +106,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
-    const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
+    const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
     const recaps = new RecapJob({
@@ -126,7 +124,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
-    const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
+    const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), now: (): number => Date.now(), log, events });
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts }, log);

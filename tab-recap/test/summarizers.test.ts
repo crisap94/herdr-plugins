@@ -14,6 +14,7 @@ import { HermesHarness } from '#src/adapters/hermes-harness.ts';
 import { RecapWriter } from '#src/adapters/recap-writer.ts';
 import { ARGV_BYTES, instructions, message } from '#src/adapters/recap-prompt.ts';
 import type { Harness } from '#src/ports/harness.ts';
+import type { BackendId } from '#src/recap/domain/backend.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
@@ -91,7 +92,7 @@ test('splitArgv: whitespace, quotes, no shell', () => {
     assert.deepEqual(splitArgv('echo $HOME; rm'), ['echo', '$HOME;', 'rm']);
 });
 
-const custom = (command: string, cwd: string, ms: number): Harness => new CustomHarness(command, cwd, ms);
+const custom = (command: string, cwd: string, ms: number): Harness<BackendId> => new CustomHarness(command, cwd, ms);
 const call = { instructions: instructions(request), input: message(request) };
 const settings = { model: '', effort: 'default' as const };
 
