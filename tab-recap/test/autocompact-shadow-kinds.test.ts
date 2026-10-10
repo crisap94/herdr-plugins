@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { lane } from '#test/autocompact-world.ts';
-import { world, rows } from '#test/autocompact-world.ts';
+import { lane, world, rows } from '#test/autocompact-world.ts';
 
 test('shadow Codex records with shadow mode while enabled Claude compacts normally', async () => {
     const w = world({ mode: 'on', kinds: ['claude', 'codex'], shadowKinds: ['codex'] });

@@ -341,8 +341,9 @@ day's cost), then set `on`. `off` decides nothing. Only Claude agents are compac
 other kinds are decided and recorded, never compacted. Set `TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS=codex,opencode` to
 force those readers to record decisions with mode `shadow`, even if they are added to `TAB_RECAP_AUTOCOMPACT_KINDS`;
 their decisions appear in the same `tab-recap autocompact` list. Held-lane skips, including in-flight skips, are in
-`daemon.log` in the state directory (its path is printed by `tab-recap.status`). The setting defaults to empty. An automatic compaction goes through the same path as yours and is
-marked `(auto)` in its notification, and the expanded view's session facts count the tab's compactions by origin
+`daemon.log` in the state directory (its path is printed by `tab-recap.status`). The setting defaults to empty. An
+automatic compaction goes through the same path as yours and is marked `(auto)` in its notification, and the expanded
+view's session facts count the tab's compactions by origin
 (`compactions 4 (3 by you · 1 auto)`).
 
 **The decider** is a job like the others: `TAB_RECAP_AUTOCOMPACT_BY` is `recap` (the recap writer's harness, the

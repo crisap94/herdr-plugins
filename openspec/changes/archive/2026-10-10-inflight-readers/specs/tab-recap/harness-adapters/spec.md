@@ -77,7 +77,7 @@ SHALL be left out of the compaction targets.
 #### Scenario: A kind without a reader for its in-flight work
 
 - **WHEN** autocompact considers a lane whose kind has no in-flight reader
-- **THEN** the lane SHALL be stopped in the in-flight gate, with the reason naming its kind
+- **THEN** the lane SHALL be stopped in the in-flight gate, with its declared reason
 
 #### Scenario: A screen lane is checked for in-flight work
 

@@ -29,7 +29,7 @@ SHALL be left out of the compaction targets.
 #### Scenario: A kind without a reader for its in-flight work
 
 - **WHEN** autocompact considers a lane whose kind has no in-flight reader
-- **THEN** the lane SHALL be stopped in the in-flight gate, with the reason naming its kind
+- **THEN** the lane SHALL be stopped in the in-flight gate, with its declared reason
 
 #### Scenario: A screen lane is checked for in-flight work
 
@@ -39,7 +39,7 @@ SHALL be left out of the compaction targets.
 #### Scenario: An unregistered kind is checked for in-flight work
 
 - **WHEN** autocompact checks a kind with no exact or configured fallback reader
-- **THEN** the in-flight skip reason SHALL say that no transcript reader exists for that kind
+- **THEN** the in-flight skip reason SHALL name the unregistered kind as having no transcript reader
 
 #### Scenario: An unconfirmed non-Claude compaction
 
@@ -52,11 +52,6 @@ SHALL be left out of the compaction targets.
 - **WHEN** an unregistered kind reaches `Sender` directly
 - **THEN** it SHALL return `Unsupported{why}` and type nothing
 - **AND** current target selection SHALL continue to filter through the registered compactable kinds
-
-#### Scenario: A screen lane is checked for in-flight work
-
-- **WHEN** autocompact checks a screen lane whose kind is `gemini`
-- **THEN** the in-flight skip reason SHALL say that screen transcripts do not contain in-flight work
 
 #### Scenario: Codex observed peak is reported
 

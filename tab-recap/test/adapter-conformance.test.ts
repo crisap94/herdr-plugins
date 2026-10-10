@@ -31,6 +31,7 @@ import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
@@ -223,7 +224,7 @@ for (const row of ROWS) {
             const capability = row.reader.inFlight;
             if (capability.kind !== 'unsupported') throw new Error('the screen reader must declare unsupported in-flight work');
             const skip = await skipOf(row.kind === 'gemini' ? registryWith({}, row.reader) : registryWith({ [row.reader.agent]: row.reader }), row.recorded, row.kind);
-            assert.equal(skip?.gate, 'in-flight');
+            assert.deepEqual(skip, { gate: 'in-flight', detail: 'screen transcripts do not contain in-flight work' });
             return;
         }
         const capability = row.reader.inFlight;
@@ -247,11 +248,12 @@ test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen k
 test('a registered transcript reader without in-flight support shows its declared reason', async () => {
     const base = ROWS.find((row) => row.kind === 'codex');
     assert.ok(base);
+    const why: InFlightReason = 'unregistered-reader';
     const reader: Transcripts = {
-        agent: 'codex', inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: (placed) => base.reader.locate(placed),
+        agent: 'codex', inFlight: { kind: 'unsupported', why }, locate: (placed) => base.reader.locate(placed),
         read: (source, was, budget) => base.reader.read(source, was, budget), latestPrompt: (source, budget) => base.reader.latestPrompt(source, budget),
     };
-    assert.equal((await skipOf(registryWith({ codex: reader }), base.recorded, 'codex'))?.gate, 'in-flight');
+    assert.deepEqual(await skipOf(registryWith({ codex: reader }), base.recorded, 'codex'), { gate: 'in-flight', detail: 'no transcript reader for codex' });
 });
 
 test('every BACKEND_IDS id has a maker that names itself; custom has no model or enumerator; pins today: custom label ignores model setting', () => {
@@ -287,5 +289,5 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
     await job.refreshNow(tabId('w1:t1'), [hermes]);
     assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for hermes/);
 
-    assert.equal((await skipOf(registryWith({}), hermes, 'hermes'))?.gate, 'in-flight');
+    assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
 });
