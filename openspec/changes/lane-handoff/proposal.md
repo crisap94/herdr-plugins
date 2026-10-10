@@ -8,7 +8,7 @@ After a lane is cleared, crashes, or moves to a new session, the operator needs 
 
 Add `tab-recap handoff` as an operator command. The operator identifies one source lane and an existing target pane. The command renders the selected task's ledger deterministically and supports printing without typing. Otherwise it writes a handoff request to the request queue; the daemon takes it, delivers only when the target is idle or done with no work in flight, and writes a closed outcome that the command waits for and maps to its exit code. Delivery uses a typed plan declared by the target's registered agent adapter, a typing lease, and the prompt boundary.
 
-The handoff contains the goal, open facts, recently closed facts, decisions with their reasons, standing rules, and next steps. It is English, first person, operator-voiced, bounded to 3,000 characters, and vetted so the rendered text never names the plugin, its recap, a tab, or a tool. It is a static render of ledger facts and makes no model call.
+The handoff contains the goal, open facts, recently closed facts, decisions with their reasons, standing rules, and next steps. It is English, first person, operator-voiced, and bounded to 3,000 characters. Prompt delivery sends it as markdown with a fixed preamble that tells the receiver to verify the claims; line delivery sends a flat form of the same text. Facts that name the plugin, its recap, a tab, or herdr are dropped before delivery, while a tool call is kept. It is a static render of ledger facts and makes no model call.
 
 ## Capabilities
 
@@ -31,7 +31,3 @@ The implementation MR will carry `changelog::added`. This spec-only MR carries `
 - A column key, automatic or scheduled handoff, handoff to a remote machine, and automatic creation of a pane or tab.
 - Using a model to write the handoff, including reuse of the compaction brief job.
 - Adding the lane's last turns, repository or branch details, cwd, or edited-file list to the handoff.
-
-## Merge request labels
-
-The spec-only MR carries `changelog::internal`. The implementation MR will carry `changelog::added`.
