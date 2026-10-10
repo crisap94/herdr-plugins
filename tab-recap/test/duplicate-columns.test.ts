@@ -11,6 +11,7 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 const lane = (pane: string, tab: string, agent = 'claude'): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status: 'idle', session: `s-${pane}` });
@@ -143,6 +144,7 @@ test('informer: a slow snapshot that predates the open is stamped with when it w
             return Promise.resolve();
         },
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
     try {
         await informer.enterSubscription();

@@ -4,6 +4,7 @@ import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Json, Pushed } from '#src/transport/herdr.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { sessionOf } from '#src/recap/application/decode.ts';
+import { sessionOfForKind } from './session-registry.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -44,7 +45,7 @@ export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
 export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
     try {
         const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
-        return typeof info === 'object' && info !== null ? sessionOf(info as Record<string, unknown>) : null;
+        return typeof info === 'object' && info !== null ? sessionOf(info as Record<string, unknown>, sessionOfForKind) : null;
     } catch (error) {
         return unknown({ why: 'unreachable', detail: detail(error) });
     }

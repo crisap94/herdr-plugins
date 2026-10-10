@@ -6,7 +6,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { opencodeObserved } from './context-rows.ts';
+import { opencodeObserved } from './opencode-context.ts';
 import { parse, str } from './jsonl.ts';
 import { entriesOf, partsOf } from './opencode-parts.ts';
 import type { MessageRow } from './opencode-parts.ts';

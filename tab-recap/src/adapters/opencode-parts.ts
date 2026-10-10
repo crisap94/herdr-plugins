@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
-import { opencodeObserved } from './context-rows.ts';
+import { opencodeObserved } from './opencode-context.ts';
 import { obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
-import { namedCall, toolEntry } from './tool-calls.ts';
+import { opencodeNamedCall } from './opencode-tool-calls.ts';
+import { toolEntry } from './tool-calls.ts';
 
 export interface MessageRow { readonly id: string; readonly time_updated: number; readonly data: string }
 
@@ -17,7 +18,7 @@ function partEntry(role: string, part: Row, at: number | undefined): Entry | nul
     if (part['type'] === 'text' && text !== null && part['synthetic'] !== true && part['ignored'] !== true && text.trim() !== '') {
         return { role: role === 'user' ? 'user' : 'agent', text, ...when };
     }
-    return part['type'] === 'tool' ? toolEntry(namedCall(str(part['tool']) ?? 'tool', obj(obj(part['state'])['input'])), at) : null;
+    return part['type'] === 'tool' ? toolEntry(opencodeNamedCall(str(part['tool']) ?? 'tool', obj(obj(part['state'])['input'])), at) : null;
 }
 
 const isCompaction = (message: Row): boolean => message['summary'] === true && message['mode'] === 'compaction';
