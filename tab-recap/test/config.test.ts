@@ -76,6 +76,8 @@ test('TAB_RECAP_TELEMETRY_TAGS: off unless explicitly on', () => {
         assert.equal(loadConfig().telemetryTags, 'off');
         process.env['TAB_RECAP_TELEMETRY_TAGS'] = 'on';
         assert.equal(loadConfig().telemetryTags, 'on');
+        process.env['TAB_RECAP_TELEMETRY_TAGS'] = ' ON ';
+        assert.equal(loadConfig().telemetryTags, 'on');
         process.env['TAB_RECAP_TELEMETRY_TAGS'] = 'invalid';
         assert.equal(loadConfig().telemetryTags, 'off');
     } finally {
