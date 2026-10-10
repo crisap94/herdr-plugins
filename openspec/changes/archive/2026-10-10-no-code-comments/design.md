@@ -45,7 +45,7 @@ exclusion; the probes prove that too.
 
 ## 5. Rationale relocated from comments
 
-Every item names the source file and line it came from, before the removal, so a reviewer can compare the original comment with what now stands here. Headings group the items by owning topic. Each item is one fact that no name, type or test states; the comments that restated the code, and those already pinned by a test, are not repeated here.
+Every item names the source file and line it came from in `origin/main` at `47543dd`, before the removal, so a reviewer can compare the original comment with what now stands here. Headings group the items by owning topic. Each item is one fact that no name, type or test states; the comments that restated the code, and those already pinned by a test, are not repeated here.
 
 ### Store: connection, upgrade and reads
 - Every write is `writeTx`: `BEGIN IMMEDIATE` takes the write lock up front, because a deferred transaction that upgrades can fail at once with `SQLITE_BUSY`; a throw rolls everything back, and inside a transaction already open (the import wraps many writes) it joins it. (src/adapters/db/connection.ts:22)

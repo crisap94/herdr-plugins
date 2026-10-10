@@ -581,7 +581,6 @@ per outage.
 
 ## Command exit codes
 
-### Exit codes
 - Every command exits `0` when it did what was asked, `1` when it failed, `2` on a usage error (an unknown or mistyped option is named, the usage goes to stderr) and `3` when it could not look at what it was asked about.
 - `compact` exits `0` when the compaction was requested and `1` when it was not (the popup did not open, or the state store is not ready).
 - `autocompact` lists the newest autocompact decisions, read-only: exit `0` listed, `1` the state is unusable, `2` usage; `--all` is its only option.

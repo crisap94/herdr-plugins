@@ -21,3 +21,8 @@ when a file holds any other comment.
 
 - **WHEN** a source file under `tab-recap/src` contains only a directive pragma such as `// @ts-expect-error`
 - **THEN** the guard `recap-no-comments` SHALL NOT report it and `bash ci/lint.sh` SHALL pass
+
+#### Scenario: Released migrations are frozen; new migrations are checked
+
+- **WHEN** a released migration file and a new migration file each contain a comment
+- **THEN** the released migration SHALL be exempt because `ci/check-migrations.sh` freezes its bytes, and the new migration SHALL NOT be exempt and the guard `recap-no-comments` SHALL report its comment
