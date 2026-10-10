@@ -185,8 +185,8 @@ The real-herdr proof establishes first whether herdr reuses pane identifiers, by
   2026-10-10: input typed 0 to 3 s after an agent start was lost 6 of 6 times, taken at 4 to 5 s, worst case near 10 s, on a
   loaded host with a small sample; Codex and OpenCode are UNMEASURED and use 10 000 ms until slice 1's real-herdr task
   measures them).
-- Cross-change assumption: these restatements were written from the reviewed slice-1 head (f7138c2) plus the plan's slice-1
-  decisions, before the rebuilt slice-1 text was pushed. The archive task re-syncs every restated requirement against the
-  archived slice-1 text and requires the diff to show only the closed-source additions.
-- Assumption: slice 1 keeps handoff work rows in `request` (kind `handoff`), so `request.closed_at` stays the closed-source
-  column; if slice 1 moves the rows, the column moves with them in this migration.
+- The restated requirements were re-synced, by a three-way merge per requirement, onto the rebuilt slice-1 text (commit
+  8eb9d3b of `docs/lane-handoff-spec`): slice 1's wording governs, and each restated requirement differs from it only by
+  the closed-source additions. The archive task repeats that check against the archived slice-1 text.
+- Slice 1 keeps handoff work rows in `request` (kind `handoff`, migration 016), so `request.closed_at` stays the
+  closed-source column.
