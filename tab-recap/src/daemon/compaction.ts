@@ -9,6 +9,7 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
+import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
@@ -52,6 +53,8 @@ export function wireCompaction(parts: {
     /** the typing lease, taken around each line typed */
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
+    /** the compactions queued or running in this daemon: shared with autocompact, so a lane has one at a time */
+    readonly claims: CompactionClaims;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -72,6 +75,7 @@ export function wireCompaction(parts: {
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
         typing: parts.typing,
         events: parts.events,
+        claims: parts.claims,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

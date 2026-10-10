@@ -5,7 +5,8 @@ import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
+import type { CompactionClaims } from './compaction-claims.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -59,6 +60,10 @@ export interface AutocompactDeps {
     /** when this daemon process started (epoch ms): a decision made before it is a change */
     readonly startedAt: number;
     readonly requests: Pick<Requests, 'requestCompact'>;
+    /** the panes whose compaction is queued or in progress, of any origin: such a lane is busy */
+    readonly claims: Pick<CompactionClaims, 'has'>;
+    /** the compaction requests still queued, not yet taken: such a lane is busy */
+    readonly queue: CompactionQueue;
     /** the tab has a recap written (a lane with none gets one first) */
     hasRecap(tab: string): boolean;
     refresh(tab: string, lanes: readonly Lane[]): Promise<void>;

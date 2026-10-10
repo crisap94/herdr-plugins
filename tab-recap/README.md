@@ -256,6 +256,16 @@ typed once more; Codex's `compacted` row means it compacted (the context before 
 they are read again a moment later. The records are the ones of the session herdr reports for the agent's pane now,
 so a new agent, or one resumed into a new session, is confirmed in its own session.
 
+**One compaction per lane.** A lane has one compaction at a time, whatever asked for it (you, autocompact, or
+another tool's `compact-req-<tool>` token). A request for a lane that is already queued or compacting joins that
+compaction and starts no second one. The operator's toast says so (`already compacting: this request joins that
+compaction`), and adds `, and its note is not used` when the joining request carried a note: the running compaction's
+note stands. An automatic request that joins is not announced. Another tool's request is answered `queued` at once,
+then with the running compaction's outcome and any later stages. If the running compaction throws, its requests are
+answered `failed-error`. Autocompact sees such a lane as busy. A joined request is answered by this daemon only: if
+the daemon restarts before the running compaction ends, the joined request keeps the answer `queued` until its token
+expires.
+
 **Progress on the lane.** Every compaction is a record in the database; the column, the phone bar and the
 modal show its stage in the place of the `compact?` hint, with a clock from when the stage began:
 

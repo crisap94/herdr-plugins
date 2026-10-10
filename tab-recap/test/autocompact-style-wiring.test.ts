@@ -6,6 +6,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
+import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { coverageOf } from '#src/daemon/compaction.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -75,6 +76,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider,
         events: { lane: () => undefined, inWorkspace: () => undefined },
+        claims: new CompactionClaims(),
         log: () => undefined,
     });
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
@@ -94,7 +96,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
         const store = memoryStore();
         store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
         const service = wireAutocompact({
-            config: () => configOf(keys), awaiting: () => Promise.resolve({ kind: 'clear' }), store,
+            config: () => configOf(keys), awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims: new CompactionClaims(),
             transcripts: [inertTranscripts()],
             contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
             recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,

@@ -17,10 +17,11 @@ import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
+import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
-import { LivePrompts } from '#src/recap/application/live-prompts.ts';
-import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { dispatchFor } from './dispatch-parts.ts';
+import type { Box } from './dispatch-parts.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import { laneTurns } from './lane-turns.ts';
 import { Informer } from '#src/recap/application/informer.ts';
@@ -28,10 +29,8 @@ import type { Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
-import type { Observation } from '#src/recap/domain/fold.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import type { Sizing } from '#src/recap/domain/layout.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
@@ -133,7 +132,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
-    const box: { informer: Informer | null; autocompact: Autocompact | null } = { informer: null, autocompact: null };
+    const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
@@ -141,18 +140,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), now: (): number => Date.now(), log, events });
 
-    const dispatch = new Dispatch({
-        columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs, contexts,
-        sizing: (): Sizing => loadConfig().sizing,
-        board: (): Board => {
-            if (box.informer === null) {
-                throw new Error('dispatch before the informer exists');
-            }
-            return box.informer.current;
-        },
-        feedback: (observation: Observation): void => { box.informer?.push(observation); },
-        settled: (lane): void => { void box.autocompact?.consider(lane); },
-    });
+    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts }, log);
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
@@ -172,9 +160,14 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts, readPaneSession);
-    box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events });
+    const claims = new CompactionClaims();
+    box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
-    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers, events, typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }) });
+    const compaction = wireCompaction({
+        fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
+        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers, events, claims,
+        typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
+    });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }

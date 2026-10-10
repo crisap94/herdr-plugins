@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -21,7 +22,7 @@ const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'g
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
 
 /** A fleet of fake agents: what each reports, what was typed into it, and what happened around it. */
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
@@ -43,10 +44,10 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [] };
+    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new CompactionClaims(), refreshFails: false };
 }
 
-interface Briefing { readonly documents: string[]; readonly answer: string | null; /** where the agent's session last broke, when it did */ readonly lastBreak?: number }
+interface Briefing { readonly documents: string[]; readonly answer: string | null; /** where the agent's session last broke, when it did */ readonly lastBreak?: number; /** an automatic compaction's coverage check keeps every fact */ readonly covered?: boolean }
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
@@ -77,13 +78,15 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
         webs: { of: () => null },
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
-        refresh: () => { world.events.push('refresh'); return Promise.resolve(); },
-        coverage: () => null,
+        refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve(); },
+        // an automatic compaction waits without a coverage check; `covered` gives one that keeps every fact
+        coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], answers: {}, unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),
         messages: () => en,
         log: () => undefined,
         ...(world.lease === undefined ? {} : { typing: world.lease }),
+        claims: world.claims,
         answer: (id, pane, stage) => { world.answered.push(`${id} ${pane} ${stage}`); },
         events: { lane: (pane, kind, detail) => { world.laneEvents.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },
     };
@@ -382,4 +385,104 @@ test('herdr cannot take the lease: the brief is typed all the same', async () =>
     world.lease = { acquire: (): Promise<'taken' | 'busy' | 'unavailable'> => Promise.resolve('unavailable'), release: (): Promise<void> => Promise.resolve() };
     await flow(world).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1, 'typed without a lease');
+});
+
+// The live bug (2.3.0, 01:46:12): a token request and an automatic compaction of one pane started in the same second. Both passed the
+// status check before either wrote a record, so both typed `/compact` and the requested one ended unconfirmed.
+test('one compaction per lane: a request and an automatic one at the same instant start one compaction; the second joins it', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    // an automatic compaction needs a written brief and a coverage check before it types (a template waits)
+    const compaction = flow(world, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
+    await Promise.all([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),
+    ]);
+    assert.equal(world.typed.length, 1, 'one /compact typed');
+    assert.equal(records(world).length, 1, 'one compaction record');
+    assert.deepEqual(world.answered, ['r1 w1:p1 queued', 'r1 w1:p1 running', 'r1 w1:p1 done'], 'the joined request follows the running compaction');
+    assert.match(world.toasts.join('\n'), /already compacting/);
+});
+
+test('a request that joins a compaction the agent refuses is answered with that refusal', async () => {
+    const world = fleet({ 'w1:p1': 'working' });
+    const compaction = flow(world);
+    await Promise.all([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),
+    ]);
+    assert.deepEqual(world.typed, [], 'nothing typed into a working agent');
+    assert.deepEqual([world.answered[0], world.answered.at(-1)?.startsWith('r1 w1:p1 failed-')], ['r1 w1:p1 queued', true]);
+});
+
+// The claim is released on every path. A release that never happens, or one that happens only on success, leaves the pane held: each test here
+// fails in that case, because the second request on the pane either joins a compaction that is over or is never typed.
+test('released when the compaction is done: a second request on the same pane compacts again', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    assert.equal(world.typed.length, 2, 'the second request types its own /compact');
+    assert.equal(world.claims.has('w1:p1'), false);
+});
+
+test('released when the compaction fails (typing blocked): the next request on the pane is attempted, not held back', async () => {
+    const world = fleet({ 'w1:p1': 'idle' }, ['w1:p1']);
+    const compaction = flow(world);
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    assert.equal(world.typed.length, 2, 'both attempts were made');
+    assert.equal(world.claims.has('w1:p1'), false);
+});
+
+test('released when the agent is refused (working): once it is idle, the next request compacts', async () => {
+    const statuses: Record<string, string> = { 'w1:p1': 'working' };
+    const world = fleet(statuses);
+    const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    assert.equal(world.claims.has('w1:p1'), false, 'the refusal frees the pane');
+    statuses['w1:p1'] = 'idle';
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    assert.equal(world.typed.length, 1, 'the second request compacts');
+});
+
+test('released when the flow throws (refresh rejects): the pane is free, and the request is answered failed-error', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    world.refreshFails = true;
+    const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
+    await assert.rejects(compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r0' }), /refresh failed/);
+    assert.equal(world.claims.has('w1:p1'), false, 'a thrown flow frees the pane');
+    assert.deepEqual(world.answered, ['r0 w1:p1 failed-error']);
+    world.refreshFails = false;
+    await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    assert.equal(world.typed.length, 1, 'the next request compacts');
+});
+
+test('a flow that throws answers the joined requests too, and frees the pane', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    world.refreshFails = true;
+    const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
+    const outcomes = await Promise.allSettled([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),
+    ]);
+    assert.deepEqual(outcomes.map((each) => each.status), ['rejected', 'fulfilled']);
+    assert.deepEqual(world.answered, ['r1 w1:p1 queued', 'r1 w1:p1 failed-error']);
+    assert.equal(world.claims.has('w1:p1'), false);
+});
+
+test('a joined request with a note is told its note is not used; an automatic request that joins is not announced', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const compaction = flow(world, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
+    await Promise.all([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: 'keep it', origin: 'operator' }),
+    ]);
+    assert.match(world.toasts.join('\n'), /already compacting: this request joins that compaction, and its note is not used/);
+    const auto = fleet({ 'w1:p1': 'idle' });
+    const joining = flow(auto);
+    await Promise.all([
+        joining.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'operator' }),
+        joining.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+    ]);
+    assert.equal(auto.toasts.some((toast) => /already compacting/.test(toast)), false, 'an automatic joiner is not announced');
 });

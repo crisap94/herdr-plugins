@@ -2,6 +2,8 @@
 // lane's last decision, and the detail a skip keeps. Pure over what it is handed.
 import type { AutocompactRecords, LastDecision } from '#src/ports/autocompact-records.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
+import type { CompactionQueue } from '#src/ports/requests.ts';
+import type { CompactionClaims } from './compaction-claims.ts';
 import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
 
 export const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
@@ -19,13 +21,18 @@ export interface FlightAnswer {
 export interface BusyReads {
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
     readonly decisions: Pick<AutocompactRecords, 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
+    /** the panes whose compaction (of any origin) this daemon has queued or is running */
+    readonly claims: Pick<CompactionClaims, 'has'>;
+    /** the compaction requests still queued, not yet taken */
+    readonly queue: CompactionQueue;
 }
 
-/** A compaction of this lane is in progress or was asked for (`this lane`); an automatic one of another lane is, or was asked for (`another lane`).
- * `asked` is this process's requests by pane. */
+/** A compaction of this lane is in progress, queued or was asked for (`this lane`); an automatic one of another lane is, or was asked for (`another lane`).
+ * `asked` is this process's automatic requests by pane. */
 export function busyOf(reads: BusyReads, asked: ReadonlyMap<string, number>, tab: string, pane: string, now: number): { readonly busy: boolean; readonly detail: string | null } {
     const since = asked.get(pane);
-    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS);
+    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS)
+        || reads.claims.has(pane) || reads.queue.compactQueued(tab, pane);
     if (own) return { busy: true, detail: 'this lane' };
     const other = reads.compactions.autoInProgress() || reads.decisions.unlinkedCompactAny(now - ASKED_FOR_MS);
     return other ? { busy: true, detail: 'another lane' } : { busy: false, detail: null };
