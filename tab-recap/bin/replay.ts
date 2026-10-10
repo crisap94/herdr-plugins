@@ -31,10 +31,9 @@ import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
 import { countedWriter } from '#src/recap/application/counted-writer.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
-import type { PrunedWriterView } from '#src/recap/domain/writer-view.ts';
 
-export function writerViewOf(prune: boolean, configured: PrunedWriterView): WriterView {
-    return prune ? configured : FULL_WRITER_VIEW;
+export function viewOf(options: Pick<EvalOptions, 'prune'>, config: Pick<Config, 'writerViewSettings'>): WriterView {
+    return options.prune ? config.writerViewSettings : FULL_WRITER_VIEW;
 }
 
 const kindOf = (flag: string | null, file: string): RegisteredKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
@@ -73,11 +72,12 @@ async function replayed(input: { readonly file: string; readonly reader: Transcr
     const { config, available } = parts;
     const { writer, enumerator, calls } = counted(config, available, scratch.dir);
     const pipeline = input.options.pipeline ?? config.pipeline;
+    const view = viewOf(input.options, config);
     const done = await replay({
         reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
-        summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: writerViewOf(input.options.prune, config.writerViewSettings),
+        summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: view,
     }, input.file, input.options.tab ?? 'replay:t1', input.size);
-    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view: writerViewOf(input.options.prune, config.writerViewSettings), pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
+    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view, pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
     console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
 }
 
