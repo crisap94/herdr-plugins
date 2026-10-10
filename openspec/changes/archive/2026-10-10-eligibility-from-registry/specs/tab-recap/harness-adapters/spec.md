@@ -10,7 +10,7 @@ The kinds that can be compacted, appear in the default column policy, and are au
 - **THEN** it SHALL declare whether it is compactable, in the default policy, and autocompacted by default
 - **AND** adding it SHALL take two compiler-linked edits: its domain table row and one adapter reader line, since the domain cannot import adapters
 - **AND** the compiler SHALL require a reader line for every domain kind, reject adapter-only kinds, and require every capability on every row
-- **AND** a screen-only harness such as hermes SHALL NOT be registered until it has a transcript reader, which T5, T6 and T8 SHALL account for
+- **AND** a screen-only harness such as hermes SHALL NOT be registered until it has a transcript reader, which later harness adapters SHALL account for
 
 #### Scenario: Eligibility defaults are derived
 
