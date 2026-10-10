@@ -7,6 +7,7 @@ export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;
 export type AgentKind = Brand<string, 'AgentKind'>;
+export type HandoffId = Brand<string, 'HandoffId'>;
 export type AgentSession =
     | { readonly kind: 'id'; readonly value: SessionId }
     | { readonly kind: 'path'; readonly value: SessionPath };
@@ -48,6 +49,15 @@ export function sessionPath(raw: string): SessionPath {
 
 export function sessionPathFromAgentValue(raw: string): SessionPath {
     return raw as SessionPath;
+}
+
+const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export function handoffId(raw: string): HandoffId {
+    if (!UUID_V7.test(raw)) {
+        throw new NotAnIdentifierError('a handoff id must be a UUIDv7');
+    }
+    return raw as HandoffId;
 }
 
 export function agentKind(raw: string): AgentKind {
