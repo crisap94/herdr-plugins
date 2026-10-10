@@ -52,13 +52,17 @@ test('below the minimum (8 %): no model, no decision; the lane keeps one skip, l
     assert.deepEqual(w.logs, ['autocompact w1:p1: 8 % → skip below-minimum (below 10 %)']);
 });
 
-test('something in flight (or a reader that cannot tell): no model, no decision, no request', async () => {
-    for (const inFlight of [1, 'unknown'] as const) {
-        const w = world();
-        w.inFlight = inFlight;
-        await w.service.consider(lane());
-        assert.deepEqual([w.asked.length, rows(w).length, w.requests.length], [0, 0, 0], String(inFlight));
-    }
+test('unknown in-flight work blocks; a known call on an idle lane is stale and does not block', async () => {
+    const unreadable = world();
+    unreadable.inFlight = 'unknown';
+    await unreadable.service.consider(lane());
+    assert.deepEqual([unreadable.asked.length, rows(unreadable).length, unreadable.requests.length], [0, 0, 0]);
+    const stale = world();
+    stale.inFlight = 1;
+    await stale.service.consider(lane());
+    assert.equal(rows(stale).length, 1);
+    assert.equal(stale.requests.length, 1);
+    assert.ok(stale.logs.some((line) => line.includes('stale: idle pane with 1 open work item')));
 });
 
 test('over the ceiling (81 %): compact with gate ceiling and no decider call; in shadow it is still not requested', async () => {

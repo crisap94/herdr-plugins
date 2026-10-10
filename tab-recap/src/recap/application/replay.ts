@@ -61,7 +61,7 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
         kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: at.turn + 1, tail: null }, grew: true,
     });
     const locate = (): Promise<Located> => Promise.resolve({ kind: 'located', source: file });
-    return { agent: base.agent, locate, latestPrompt: noPrompt, read };
+    return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight: base.inFlight };
 }
 
 function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator'> {

@@ -103,6 +103,7 @@ test('files touched are the distinct paths of the edit calls, the most recent la
 
 const transcripts: Transcripts = {
     agent: 'claude',
+    inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
     locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({

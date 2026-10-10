@@ -337,8 +337,10 @@ style: if the row seems to do nothing, check those two lines.
 
 **Shadow first.** `TAB_RECAP_AUTOCOMPACT` is `shadow` by default: every decision is recorded and logged, nothing is
 ever typed. Read what it would have done with `tab-recap autocompact` (the newest twenty decisions, with the last
-day's cost), then set `on`. `off` decides nothing. Only Claude agents are compacted (`TAB_RECAP_AUTOCOMPACT_KINDS`);
-other kinds are decided and recorded, never compacted. An automatic compaction goes through the same path as yours and is
+day's cost), then set `on`. `off` decides nothing. Only Claude agents are compacted by default (`TAB_RECAP_AUTOCOMPACT_KINDS`);
+other kinds are evaluated in shadow, recorded, and never compacted. Set `TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS=codex,opencode` to
+keep those readers shadow-only even if they are added to `TAB_RECAP_AUTOCOMPACT_KINDS`; their decisions appear in the same
+`tab-recap autocompact` list with mode `shadow`, and they are never typed. The setting defaults to empty. An automatic compaction goes through the same path as yours and is
 marked `(auto)` in its notification, and the expanded view's session facts count the tab's compactions by origin
 (`compactions 4 (3 by you · 1 auto)`).
 

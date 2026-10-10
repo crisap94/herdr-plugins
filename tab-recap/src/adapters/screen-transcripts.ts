@@ -4,7 +4,7 @@ import { cleanScreen, screenEntries, steady } from '#src/recap/application/scree
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { Screens } from '#src/ports/screens.ts';
-import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
 const SCREEN_LINES = 200;
@@ -27,6 +27,7 @@ const hashOf = (text: string): string => createHash('sha1').update(text).digest(
 
 export class ScreenTranscripts implements Transcripts {
     readonly agent = SCREEN_READER_ID;
+    readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen transcripts do not contain in-flight work' };
     private readonly screens: Screens;
     private readonly wants: (agent: string) => boolean;
 

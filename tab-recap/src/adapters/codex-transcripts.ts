@@ -2,10 +2,11 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readJsonl, readLines, str, tailLines } from './jsonl.ts';
+import { arr, obj, parse, readJsonl, readLines, str, tailLines, tailOf } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
+import { CODEX_IN_FLIGHT_INITIAL_BYTES, CODEX_IN_FLIGHT_MAX_BYTES, codexInFlight } from './codex-in-flight.ts';
 import { codexMarks } from './codex-marks.ts';
 import { codexObserved } from './codex-context.ts';
 import { codexCalls } from './codex-tool-calls.ts';
@@ -69,6 +70,7 @@ function dayDir(root: string, back: number): string {
 
 export class CodexTranscripts implements Transcripts {
     readonly agent = 'codex';
+    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: string;
 
     constructor(root = join(homedir(), '.codex', 'sessions')) {
@@ -93,6 +95,22 @@ export class CodexTranscripts implements Transcripts {
 
     locate(lane: Lane): Promise<Located> {
         return Promise.resolve(this.find(lane));
+    }
+
+    private readInFlight(source: string, budget: number): Promise<InFlightResult> {
+        try {
+            let bytes = Math.max(budget, CODEX_IN_FLIGHT_INITIAL_BYTES);
+            let tail = tailOf(source, bytes);
+            let answer = codexInFlight(tail.lines, tail.truncated);
+            while (tail.truncated && answer.kind === 'unknown' && bytes < CODEX_IN_FLIGHT_MAX_BYTES) {
+                bytes = Math.min(bytes * 2, CODEX_IN_FLIGHT_MAX_BYTES);
+                tail = tailOf(source, bytes);
+                answer = codexInFlight(tail.lines, tail.truncated);
+            }
+            return Promise.resolve(answer);
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
     }
 
     private find(lane: Lane): Located {

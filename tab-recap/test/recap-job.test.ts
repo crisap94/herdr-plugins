@@ -21,6 +21,7 @@ const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'ru
 function transcriptsOf(agent: string): Transcripts {
     return {
         agent,
+        inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
         locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => {
@@ -62,6 +63,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
 
 const quiet: Transcripts = {
     agent: 'claude',
+    inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: false }),

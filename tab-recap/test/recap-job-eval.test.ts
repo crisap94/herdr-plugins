@@ -13,6 +13,7 @@ import { NO_REPOS } from '#test/support.ts';
 
 const transcripts: Transcripts = {
     agent: 'claude',
+    inFlight: { kind: 'unsupported', why: 'test reader does not expose in-flight work' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'migrate victoria' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true }),
