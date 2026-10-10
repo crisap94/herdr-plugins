@@ -37,4 +37,4 @@ Follow-up, not a task of this change: fold `test/fakes/compaction-fleet.ts` and 
 
 ## 4. Archive
 
-- [ ] 4.1 `openspec archive adapter-conformance-suite` in this merge request, once every other task is checked and the gates pass.
+- [x] 4.1 `openspec archive adapter-conformance-suite` in this merge request, once every other task is checked and the gates pass.
