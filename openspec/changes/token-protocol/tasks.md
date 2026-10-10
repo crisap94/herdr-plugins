@@ -5,19 +5,19 @@ typed values; one serializer per token.
 
 ## 1. Vocabulary
 
-- [ ] 1.1 `CONTEXT.md`: add **Exchange** (a request another tool starts and tab-recap answers, declared once as a
+- [x] 1.1 `CONTEXT.md`: add **Exchange** (a request another tool starts and tab-recap answers, declared once as a
   descriptor), **Ask** (a request tab-recap has taken, recorded until settled), **Capability token** (`tab-recap-x`).
   Verify: the `recap-vocabulary` lint passes.
 
 ## 2. The protocol module (pure)
 
-- [ ] 2.1 `src/protocol/primitives.ts`: branded `TokenName` (`[A-Za-z0-9_-]{1,32}`), `TokenValue` (at most 80),
+- [x] 2.1 `src/protocol/primitives.ts`: branded `TokenName` (`[A-Za-z0-9_-]{1,32}`), `TokenValue` (at most 80),
   `RequestId` with two grammars (`legacy-length`, `token-safe`), `ToolName`, `ExchangeVersion`; the herdr limits as one
   constant set. Verify: bound tests (81 characters refused, 33-character name refused).
-- [ ] 2.2 `src/protocol/result.ts` (the repository's one `Result<T, E>`) and `src/protocol/codec.ts`: field combinators;
+- [x] 2.2 `src/protocol/result.ts` (the repository's one `Result<T, E>`) and `src/protocol/codec.ts`: field combinators;
   `parse(serialize(x)) = x` for every field kind. Verify: property-style tests over generated values; a lint probe shows a
   second result union outside `src/protocol/` is reported.
-- [ ] 2.3 `src/protocol/exchange.ts` and `registry.ts`: the descriptor type, `EXCHANGES`, the registry build with its checks
+- [x] 2.3 `src/protocol/exchange.ts` and `registry.ts`: the descriptor type, `EXCHANGES`, the registry build with its checks
   (unique names and prefixes, every value fits, own names per pane at most 10). Verify: one test per refused registry.
 - [ ] 2.4 `src/protocol/requester.ts` and `responder.ts`: pure reducers over a token map, an ask ledger and an instant
   (`take`, `answer`, `observe`, `withdraw`), with the foreign-id rule. Verify: trace tests on an in-memory token map with
