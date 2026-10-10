@@ -16,7 +16,12 @@ The handoff is English, first person, operator-voiced markdown, delivered as one
 - Modify `tab-recap/cli` to add the command, flags, usage, and exit behavior.
 - Modify `tab-recap/harness-adapters` to declare the handoff plan and its conformance expectations.
 - Modify `tab-recap/agent-compaction` so that a lane holds one claim, compaction or handoff, and a compaction request for a handoff-held lane is answered `failed-lane-busy`.
-- Modify `tab-recap/state-migrations` with the handoff migration: the `handoff` request kind, its target pane and refresh columns, and the `handoff_answer` table.
+- Modify `tab-recap/state-migrations` with the handoff migration (016, after the token protocol's 015): the `handoff` request kind, its target pane and refresh columns, and the `handoff_answer` table.
+- Modify `tab-recap/lane-tokens` to declare the compaction answer stage `failed-lane-busy`.
+
+## Depends on
+
+- `token-protocol`: its ask ledger records each taken handoff, and its text of the compaction exchange is the base of this change's `lane-tokens` delta. It lands first.
 
 ## Impact
 
@@ -27,7 +32,7 @@ The implementation MR carries `changelog::added`. This spec-only MR carries `cha
 ## Out of scope
 
 - Slice 2: retention of a closed lane's ledger for 14 days and the closed-lane source selector.
-- A request channel for other tools (herdr tokens), the versioned availability token, and any change to the herdr token protocol.
+- A request channel for other tools (herdr tokens) and any change to the token protocol: that is the later change `lane-handoff-exchange`.
 - A column key, automatic or scheduled handoff, handoff to a remote machine, and automatic creation of a pane or tab.
 - Using a model to write the handoff, including reuse of the compaction brief job.
 - A flat single-line serialization and a typed-line delivery mode (open question 4).

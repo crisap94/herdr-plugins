@@ -377,7 +377,7 @@ The command SHALL require `--from <pane>`, a pane identifier; a label SHALL NOT 
 
 ### Requirement: Target is an explicitly selected idle lane
 
-The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared function: for a lane whose locating key is known (the session identifier for Claude, the working directory for Codex and OpenCode), a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's locating key is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
+The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared application function over an in-flight port, whose adapter resolves each kind's in-flight capability, so no application module imports an adapter: for a lane whose locating key is known (the session identifier for Claude, the working directory for Codex and OpenCode), a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's locating key is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
 
 #### Scenario: Handoff to a fresh operator-created lane
 
@@ -426,7 +426,7 @@ The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an 
 
 #### Scenario: The target has no delivery plan
 
-- **WHEN** the named pane is a lane whose kind has no handoff plan
+- **WHEN** the named pane is a lane whose kind has no handoff plan, as Hermes declares through its unsupported capability
 - **THEN** the command SHALL return `unsupported{no-plan}`
 - **AND** it SHALL send no text
 
@@ -460,7 +460,7 @@ The application SHALL claim source and target lanes as handoff claims in one all
 
 ### Requirement: The daemon flow has a fixed order
 
-The daemon SHALL run a handoff in this order: refuse `source-equals-target`; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state and require it to stay ready for `HANDOFF_SETTLE_MS` (5 000); take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
+The daemon SHALL run a handoff in this order: refuse `source-equals-target`; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state and require it to stay ready for the settle time its kind's handoff plan declares (10 000 ms for Claude, measured; 10 000 ms for Codex and OpenCode, unmeasured until the real-herdr task); take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
 
 #### Scenario: A refused target starts no refresh
 
@@ -474,13 +474,13 @@ The daemon SHALL run a handoff in this order: refuse `source-equals-target`; res
 
 #### Scenario: A target that is ready only for a moment
 
-- **WHEN** the target is `idle` at the first observation and not `idle` or `done` at the second, 5 seconds later
+- **WHEN** the target is `idle` at the first observation and not `idle` or `done` at the second, one settle time later
 - **THEN** the command SHALL return `status-not-ready` and type nothing
 
 #### Scenario: A freshly started target
 
-- **WHEN** the target became `idle` less than 5 seconds before the flow reached the readiness hold
-- **THEN** the sender SHALL wait until the target has stayed ready for 5 seconds before typing
+- **WHEN** the target became `idle` less than its plan's settle time before the flow reached the readiness hold
+- **THEN** the sender SHALL wait until the target has stayed ready for the settle time before typing
 
 #### Scenario: A throw while sending
 
@@ -494,7 +494,7 @@ The daemon SHALL run a handoff in this order: refuse `source-equals-target`; res
 
 ### Requirement: Delivery is leased and runs only from the daemon's handoff request
 
-A non-print handoff SHALL run only in the daemon, from a `handoff` request row that the daemon took from the request queue; the only writer of that row in this change is the operator's command, and any later writer SHALL amend this sentence and the prompt-boundary rule explicitly. Before typing, the sender SHALL take the `typing-tab-recap` lease with `acquire(pane, 0)`, so that it never waits, honor an earlier live `typing-*` lease, and release its lease in a finally path. A busy lease SHALL return `typing-lease-busy` and SHALL NOT queue later delivery. An `unavailable` lease result SHALL proceed without a lease, as compaction does. The sender SHALL execute the target adapter's handoff plan exhaustively and SHALL NOT branch on agent-kind literals.
+A non-print handoff SHALL run only in the daemon, from a `handoff` request row that the daemon took from the request queue and recorded as an ask of exchange `handoff` in the token protocol's ask ledger; the only writer of that row in this change is the operator's command, and any later writer SHALL amend this sentence and the prompt-boundary rule explicitly. Before typing, the sender SHALL take the `typing-tab-recap` lease with `acquire(pane, 0)`, so that it never waits, honor an earlier live `typing-*` lease, and release its lease in a finally path. A busy lease SHALL return `typing-lease-busy` and SHALL NOT queue later delivery. An `unavailable` lease result SHALL proceed without a lease, as compaction does. The sender SHALL execute the target adapter's handoff plan exhaustively and SHALL NOT branch on agent-kind literals.
 
 #### Scenario: A typing lease is available
 
@@ -568,7 +568,7 @@ The handoff plan SHALL declare its delivery mode (`prompt`), its confirmation ev
 
 ### Requirement: Handoff outcome is a closed sum recorded as one answer row
 
-The daemon SHALL answer each taken handoff with exactly one closed outcome: `delivered`, `refused{reason}`, `unsupported{reason}`, or `failed{reason}`. The answer SHALL be one row keyed by `HandoffId`, and its reader SHALL NOT delete it. The outcomes and reasons SHALL be one typed table in the domain from which the union types, the CLI's exit mapping and the catalog-key check derive. A reason marked CLI-only SHALL NOT be storable in the answer row. The `unsupported` reason SHALL be a closed type, not free text. The reader of an answer SHALL NOT delete it, so reading it twice returns it twice. The CLI SHALL handle every row exhaustively, SHALL print no secret or handoff content except in `--print` mode, and SHALL use the message keys under `cli.handoff`.
+The daemon SHALL answer each taken handoff with exactly one closed outcome: `delivered`, `refused{reason}`, `unsupported{reason}`, or `failed{reason}`. The answer SHALL be one row keyed by `HandoffId`, and its reader SHALL NOT delete it. The outcomes and reasons SHALL be one typed table in the domain from which the union types, the CLI's exit mapping and the catalog-key check derive. A reason marked CLI-only SHALL NOT be storable in the answer row. The answer repository SHALL validate a reason against the table before writing it; the database SHALL NOT carry a literal list of reasons, so adding a reason needs no migration. The `unsupported` reason SHALL be a closed type, not free text. The reader of an answer SHALL NOT delete it, so reading it twice returns it twice. The CLI SHALL handle every row exhaustively, SHALL print no secret or handoff content except in `--print` mode, and SHALL use the message keys under `cli.handoff`.
 
 | Outcome | Reason | Storable | Exit | Message key |
 | --- | --- | --- | --- | --- |
@@ -593,6 +593,7 @@ The daemon SHALL answer each taken handoff with exactly one closed outcome: `del
 | `failed` | `internal-error` | yes | 1 | `failed.internalError` |
 | `failed` | `source-unreadable` | yes | 1 | `failed.sourceUnreadable` |
 | `failed` | `expired` | yes | 1 | `failed.expired` |
+| `failed` | `interrupted` | yes | 1 | `failed.interrupted` |
 | `failed` | `not-answered-withdrawn` | no, CLI-only | 1 | `failed.notAnswered` |
 | `failed` | `not-answered-taken` | no, CLI-only | 1 | `failed.notAnsweredMayDeliver` |
 | CLI edge | usage error | no | 2 | the existing usage message |
@@ -624,7 +625,7 @@ The daemon SHALL answer each taken handoff with exactly one closed outcome: `del
 #### Scenario: A CLI-only reason is not storable
 
 - **WHEN** an answer row is written with reason `daemon-not-running`, `daemon-outdated`, `not-answered-withdrawn` or `not-answered-taken`
-- **THEN** the table's CHECK constraint SHALL reject it
+- **THEN** the answer repository SHALL refuse it because the outcome table marks it not storable
 
 #### Scenario: An answer is read twice
 
@@ -638,7 +639,7 @@ The daemon SHALL answer each taken handoff with exactly one closed outcome: `del
 
 ### Requirement: The handoff request runs once in the daemon
 
-The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note and whether `--refresh` was given, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
+The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note and whether `--refresh` was given, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL be recorded as an ask before it runs; after a daemon restart every handoff ask with no answer SHALL be answered `failed{interrupted}` and SHALL NOT be replayed.
 
 #### Scenario: A handoff is queued and answered
 
@@ -693,4 +694,4 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 - **WHEN** the daemon restarts after taking a handoff and before writing its answer
 - **THEN** the handoff SHALL NOT be replayed
-- **AND** the CLI SHALL report `failed{not-answered-taken}`
+- **AND** after the restart the daemon SHALL answer it `failed{interrupted}`, which a CLI still waiting SHALL report
