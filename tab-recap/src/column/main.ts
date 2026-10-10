@@ -7,6 +7,8 @@ import { styleFor } from '#src/adapters/terminal-style.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { startCompact } from '#src/recap/application/compact-start.ts';
+import { unknown } from '#src/ports/unknowable.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown, Mode } from '#src/recap/render/present.ts';
 import { messagesFor } from '#src/i18n/index.ts';
@@ -167,7 +169,17 @@ function openModal(): void {
  */
 function askToCompact(): void {
     if (mode !== 'modal') {
-        void new HerdrFleet(stateDir()).agents().askNote(tab, null);
+        // the setting decides here too: `ask` opens the note popup at once, `skip` queues the request from this column
+        void startCompact(tab, null, undefined, loadConfig().compactNote, {
+            askNote: (asked, pane) => new HerdrFleet(stateDir()).agents().askNote(asked, pane),
+            queue: (request) => {
+                if (store === null) {
+                    return unknown({ why: 'unreadable', detail: 'the state store is not ready' });
+                }
+                store.requests.requestCompact(request);
+                return { kind: 'done' };
+            },
+        });
         return;
     }
     spawn(process.execPath, [COMMAND_LAUNCHER, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();

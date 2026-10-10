@@ -31,7 +31,7 @@ const states: readonly [string, Setup][] = [
     ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
     ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
     ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
-    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 13 }, () => 'j'), '\r'])],
+    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 14 }, () => 'j'), '\r'])],
     ['save failed', { ...withAvailable(base, ['claude']), note: { failed: 'EACCES: permission denied, open config.env' } }],
 ];
 
@@ -118,7 +118,7 @@ test('the compaction rows are drawn in both languages: 40% by default, the windo
     assert.match(english, /Compact\s+focused/);
     assert.match(english, /Compact hint\s+40%/);
     assert.match(english, /Context window/);
-    const spanish = setupView({ ...base, row: 7 }, es, 90).join('\n');
+    const spanish = setupView({ ...base, row: 8 }, es, 90).join('\n');
     assert.match(spanish, /Aviso de compactar\s+40%/);
     assert.match(spanish, /Ventana de contexto/);
     assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
@@ -148,7 +148,7 @@ test('the Models group: a heading, one row per job showing harness · model · e
 });
 
 test('the judge row closes the Models group: harness · model · effort in both languages, its hint while focused, the off choice says what off means', () => {
-    const at = typed(withAvailable(base, ['claude']), Array.from({ length: 9 }, () => 'j'));
+    const at = typed(withAvailable(base, ['claude']), Array.from({ length: 10 }, () => 'j'));
     for (const [messages, label, hint, off] of [[en, 'Recap judge', 'scores stored recaps', 'off — no judge'], [es, 'Juez del resumen', 'puntúa los resúmenes', 'off — sin juez']] as const) {
         const view = setupView(at, messages, 100, plain).join('\n');
         assert.match(view, new RegExp(`▸ ${label} +\\[${messages.setup.jobBy['recap']}\\] · ${messages.setup.compactModelSame} · medium`));
@@ -159,13 +159,13 @@ test('the judge row closes the Models group: harness · model · effort in both 
 });
 
 test('the autocompact rows show their value, the focused one its hint, and the decider offers jev without a key', () => {
-    const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 11 }, () => 'j'));
+    const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 12 }, () => 'j'));
     const text = setupView(rows, en, 120).join('\n');
     assert.match(text, /Autocompact\s+shadow — decides and records, never compacts/);
     assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
-    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 13 }, () => 'j'), '\r']), en, 140).join('\n');
+    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 14 }, () => 'j'), '\r']), en, 140).join('\n');
     assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
     assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
     assert.match(setupView(rows, es, 120).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);
