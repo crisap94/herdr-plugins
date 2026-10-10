@@ -120,6 +120,16 @@ test('amend with no coverage (the decider could not answer, or none is set up) w
     assert.deepEqual([waited?.verdict, waited?.gate, waited?.coverage, waited?.why], ['wait', 'coverage', null, 'no decider is set up']);
 });
 
+test('amend writes a non-null why over the decision\'s own why, and keeps the decision\'s why when the amend has none', () => {
+    const store = seeded();
+    const blocked = store.autocompact.record(decision({ at: 600, why: 'the decider said wait: too early' }));
+    store.autocompact.amend(blocked, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 1, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === blocked)?.why, 'the brief still misses 1 fact(s)');
+    const passed = store.autocompact.record(decision({ at: 700, why: 'kept by the decider' }));
+    store.autocompact.amend(passed, { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: 1, coverageCostUsd: null, why: null, block: false });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === passed)?.why, 'kept by the decider');
+});
+
 test('a checked brief is stored with its exact checked fact wording and pruned by time', () => {
     const store = seeded();
     const id = store.autocompact.record(decision());

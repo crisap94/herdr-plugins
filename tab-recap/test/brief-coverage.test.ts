@@ -4,17 +4,22 @@ import { en } from '#src/i18n/en.ts';
 import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
+import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { HerdrAgents } from '#src/adapters/herdr-agents.ts';
+import type { Wire } from '#src/adapters/herdr-agents.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import type { Agents, Prompted } from '#src/ports/agents.ts';
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { memoryStore, must } from './db/support.ts';
+import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
 
 const fact = (section: string, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
@@ -56,19 +61,19 @@ test('covered: the brief and the facts are the one state; ok when nothing blocks
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 
-interface World { readonly logs: string[]; readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
+interface World { readonly harness: { agent: 'claude' | 'codex'; typeLine: Agents['typeLine'] | null }; readonly logs: string[]; readonly typed: string[]; readonly prompts: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
 function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null, ceilingOverride = true, history = HISTORY): { world: World; compaction: Compaction } {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const world: World = { logs: [], typed: [], briefs: [], toasts: [], store };
+    const world: World = { harness: { agent: 'claude', typeLine: null }, logs: [], typed: [], prompts: [], briefs: [], toasts: [], store };
     let checked = 0;
     let clock = NOW;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
         compactionPlans,
         claims: new CompactionClaims(),
-        agents: { status: () => Promise.resolve({ kind: 'agent', agent: 'claude', status: 'idle' }), prompt: () => Promise.resolve({ kind: 'sent' }), typeLine: (_pane, line) => { world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
+        agents: { status: () => Promise.resolve({ kind: 'agent', agent: world.harness.agent, status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
@@ -78,7 +83,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         ceilingOverride: () => ceilingOverride,
         checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => clock,
-        webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })], focused: () => Promise.resolve('w1:p1'),
+        webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
         refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };
@@ -113,6 +118,16 @@ test('a ceiling lane types its rewrite and appends the missing fact, keeping the
     const row = must(world.store.autocompact.newest(1)[0]);
     assert.deepEqual([row.id, row.gate, row.verdict, row.askedVerdict], [id, 'ceiling', 'compact', 'compact']);
     assert.equal(row.coverageOutcome?.kind, 'missed');
+});
+
+test('a codex ceiling lane types only /compact and restores the appended brief by prompt, where a line break is allowed', async () => {
+    const { world, compaction } = flow([MISSING]);
+    world.harness.agent = 'codex';
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.deepEqual(world.typed, ['/compact']);
+    assert.equal(world.prompts.length, 1);
+    assert.match(world.prompts[0] ?? '', /second brief\. Facts not carried into the brief \(1 missed; 0 left out\): \(1\) decisions: Keep SQLite/);
 });
 
 test('a ceiling lane with no decider types the writer brief and records the unchecked outcome', async () => {
@@ -258,6 +273,33 @@ test('the ceiling appendix is capped at 1 500 characters and says how many facts
     assert.deepEqual([heading?.[1], Number(heading?.[2]) > 0, appendix.length <= 1500], ['12', true, true]);
 });
 
+test('a ceiling lane whose brief still misses a fact sends its appended line through the real typing path, and the trail is not failed', async () => {
+    const calls: { method: string; params: unknown }[] = [];
+    const wire: Wire = (method, params) => {
+        calls.push({ method, params });
+        return Promise.resolve({});
+    };
+    const adapter = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, () => Promise.resolve());
+    const { world, compaction } = flow([MISSING]);
+    world.harness.typeLine = (pane, line, behavior): Promise<Prompted> => adapter.typeLine(pane, line, behavior);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.deepEqual(calls, [
+        { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: '/compact ' } },
+        { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: 'second brief. Facts not carried into the brief (1 missed; 0 left out): (1) decisions: Keep SQLite' } },
+        { method: 'pane.send_keys', params: { pane_id: 'w1:p1', keys: ['enter'] } },
+    ]);
+    assert.equal(world.store.compactions.shownFor('w1:t1')[0]?.stage, 'compacted');
+});
+
+test('the appended block is one line whatever the facts hold: line breaks and runs of spaces collapse, and the order is kept', () => {
+    const checked = [{ section: 'decisions' as const, text: 'Keep\nSQLite\tfor\n\nreads', why: 'one\r\nfile' }, { section: 'goal' as const, text: 'Ship\n  it', why: null }];
+    const appended = appendedBrief('The brief', checked, checked);
+    assert.equal(appended.text, 'The brief. Facts not carried into the brief (2 missed; 0 left out): (1) goal: Ship it; (2) decisions: Keep SQLite for reads — one file');
+    assert.doesNotMatch(appended.text, /[\r\n]/u);
+    assert.deepEqual(appended.indexes, [1, 0]);
+});
+
 test('a ceiling decision names its missed count in why, and its one log line says so', async () => {
     const { world, compaction } = flow([MISSING]);
     decided(world, 'ceiling');
@@ -297,6 +339,23 @@ test('off the ceiling a failed check waits, keeps the asked verdict, says how ma
     const row = must(world.store.autocompact.newest(1)[0]);
     assert.deepEqual([row.gate, row.verdict, row.askedVerdict, row.why], ['coverage', 'wait', 'compact', 'the brief still misses 1 fact(s)']);
     assert.equal(world.store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 1);
+});
+
+test('off the ceiling an unchecked rewrite still replaces the first brief, as on main: the decision waits with the decider\'s reason', async () => {
+    const UNREACHABLE: Coverage = { ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' };
+    const { world, compaction } = flow([MISSING, UNREACHABLE]);
+    decided(world, 'ask');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.deepEqual([row.gate, row.why, row.coverageOutcome], ['coverage', 'brief not checked (timed out after 10000 ms)', { kind: 'unchecked', reason: 'decider-cannot-answer' }]);
+});
+
+test('off the ceiling a rewrite that misses more facts still replaces the first brief: the wait counts the rewrite\'s misses', async () => {
+    const { world, compaction } = flow([MISSING, TWO_MISSING]);
+    decided(world, 'ask');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.deepEqual([row.why, row.coverageOutcome], ['the brief still misses 2 fact(s)', { kind: 'missed', count: 2 }]);
 });
 
 test('a fact missing both its text and its reason is one missed fact, in why and in the count', async () => {

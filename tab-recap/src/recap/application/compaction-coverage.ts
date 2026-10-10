@@ -58,20 +58,20 @@ export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log'
 
 const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
 
+const oneLine = (text: string): string => text.replace(/\s+/gu, ' ').trim();
+
 export function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
     const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
-    const lines = ordered.map((fact) => `${fact.section}: ${fact.text}${fact.section === 'decisions' && fact.why !== null ? ` — ${fact.why}` : ''}`);
-    const picked = lines.map((_, at) => at);
-    let block = '';
-    while (block.length === 0 || block.length > 1500) {
-        const heading = `\n\nFacts not carried into the brief (${facts.length} missed; ${lines.length - picked.length} left out):`;
-        block = `${heading}${picked.map((at) => `\n- ${lines[at] ?? ''}`).join('')}`;
-        if (block.length <= 1500 || picked.length === 0) break;
-        picked.pop();
+    const items = ordered.map((fact) => `${fact.section}: ${oneLine(fact.text)}${fact.section === 'decisions' && fact.why !== null ? ` — ${oneLine(fact.why)}` : ''}`);
+    const lead = /[.?!]$/u.test(text) ? '' : '.';
+    const render = (shown: number): string => `${lead} Facts not carried into the brief (${facts.length} missed; ${items.length - shown} left out): ${items.slice(0, shown).map((item, at) => `(${at + 1}) ${item}`).join('; ')}`.trimEnd();
+    let shown = items.length;
+    while (render(shown).length > 1500 && shown > 0) {
+        shown -= 1;
     }
-    const indexes = picked.map((at) => {
+    const indexes = items.slice(0, shown).map((_, at) => {
         const fact = ordered[at];
         return fact === undefined ? -1 : checkedFacts.findIndex((candidate) => candidate.section === fact.section && candidate.text === fact.text && candidate.why === fact.why);
     }).filter((at) => at >= 0);
-    return { text: `${text}${block}`, indexes };
+    return { text: `${text}${render(shown)}`, indexes };
 }

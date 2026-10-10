@@ -22,7 +22,7 @@ test('on: a safe moment between the limits is recorded, logged with its figures 
     await w.service.consider(lane());
     assert.deepEqual(w.requests, [{ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }]);
     const row = must(rows(w)[0]);
-    assert.deepEqual([row.verdict, row.gate, row.mode, row.share, row.decider, row.tookMs, row.answers], ['compact', 'ask', 'on', 62, 'fake · m', 550, SAFE]);
+    assert.deepEqual([row.verdict, row.askedVerdict, row.gate, row.mode, row.share, row.decider, row.tookMs, row.answers], ['compact', 'compact', 'ask', 'on', 62, 'fake · m', 550, SAFE]);
     assert.equal(row.costUsd, 0.00003);
     assert.deepEqual(w.asked, [Object.keys(QUESTIONS).length]);
     assert.deepEqual(w.logs, ['autocompact w1:p1: 62 % · closes 0.95 · continues 0.05 · choice 0.02 · verbatim 0.10 · subject 0.03 · stuck 0.01 → compact (on)']);
@@ -66,7 +66,7 @@ test('over the ceiling (81 %): compact with gate ceiling and no decider call; in
     const w = world();
     w.share = 81;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.requests.length, rows(w)[0]?.gate, rows(w)[0]?.verdict, rows(w)[0]?.decider], [0, 1, 'ceiling', 'compact', null]);
+    assert.deepEqual([w.asked.length, w.requests.length, rows(w)[0]?.gate, rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, rows(w)[0]?.decider], [0, 1, 'ceiling', 'compact', 'compact', null]);
     assert.match(w.logs[0] ?? '', /81 % → compact \(ceiling, on\)/);
     const shadow = world({ mode: 'shadow' });
     shadow.share = 90;
@@ -137,7 +137,7 @@ test('a wait: not safe means wait, an undecided answer is recorded as undecided,
     const vague = world();
     vague.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, needs_verbatim: 0.48 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
     await vague.service.consider(lane());
-    assert.deepEqual([rows(w)[0]?.verdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'undecided', 0]);
+    assert.deepEqual([rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'wait', 'undecided', 0]);
 });
 
 test('a kind outside the list is decided and recorded but never requested', async () => {

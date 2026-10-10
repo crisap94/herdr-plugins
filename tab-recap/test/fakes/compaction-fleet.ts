@@ -13,6 +13,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from '#test/db/support.ts';
+import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
@@ -51,6 +52,8 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
         typeLine: (pane, line, behavior): Promise<Prompted> => {
+            const refused = lineBreakRefusal(line);
+            if (refused !== null) return Promise.resolve(refused);
             events.push(`type ${pane}`);
             const pieces = line.pieces.map(String);
             typed.push({ pane, text: pieces.join(''), pieces, lineBehavior: behavior, typed: true });
