@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { configGetter, loadConfig, parseEnv } from '#src/daemon/config.ts';
+
 test('config.env: comments, blanks and quotes', () => {
     const values = parseEnv('# a comment\n\nTAB_RECAP_BACKEND=codex\nTAB_RECAP_MODEL="gpt-5-mini"\nnot a pair\n');
     assert.equal(values.get('TAB_RECAP_BACKEND'), 'codex');

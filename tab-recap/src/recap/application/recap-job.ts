@@ -57,10 +57,19 @@ interface Reading {
     readonly error: string | null;
 }
 
+type Start = { readonly kind: 'after'; readonly delay: number } | { readonly kind: 'at'; readonly deadline: number };
+
+interface Pending {
+    readonly lanes: readonly Lane[];
+    readonly cause: RecapCause;
+    readonly forced: boolean;
+    readonly start: Start;
+}
+
 interface Slot {
     timer: ReturnType<typeof setTimeout> | null;
     running: boolean;
-    pending: { lanes: readonly Lane[]; cause: RecapCause; deadline: number; delay: number | null; forced: boolean } | null;
+    pending: Pending | null;
     lastStart: number | null;
     lastLanes: ReadonlySet<Lane['pane']>;
     waiting: (() => void)[];
@@ -68,7 +77,7 @@ interface Slot {
 
 const forcedCause = (cause: RecapCause): boolean => cause !== 'turn-ended';
 
-function stronger(previous: Slot['pending'], next: NonNullable<Slot['pending']>): NonNullable<Slot['pending']> {
+function stronger(previous: Pending | null, next: Pending): Pending {
     return previous !== null && previous.forced && !next.forced ? { ...previous, lanes: next.lanes } : next;
 }
 
@@ -80,15 +89,21 @@ function sameLanes(left: ReadonlySet<Lane['pane']>, right: ReadonlySet<Lane['pan
     return left.size === right.size && [...left].every((pane) => right.has(pane));
 }
 
-function scheduleOf(slot: Slot, lanes: readonly Lane[], cause: RecapCause, now: number, debounce: Debounce): { readonly deadline: number; readonly delay: number | null; readonly forced: boolean } {
+function pendingOf(slot: Slot, lanes: readonly Lane[], cause: RecapCause, debounce: Debounce, clock: () => number): Pending {
     if (debounce.kind === 'off') {
-        return { deadline: 0, delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0, forced: forcedCause(cause) };
+        return { lanes, cause, forced: forcedCause(cause), start: { kind: 'after', delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0 } };
     }
-    const changed = slot.lastStart !== null && !sameLanes(slot.lastLanes, laneSet(lanes));
-    const forced = forcedCause(cause) || changed || slot.lastStart === null;
-    if (forced) return { deadline: now, delay: null, forced };
+    const now = clock();
     const lastStart = slot.lastStart;
-    return { deadline: Math.max((lastStart ?? now) + debounce.milliseconds, now + TURN_SETTLE_MS), delay: null, forced };
+    const forced = forcedCause(cause) || lastStart === null || !sameLanes(slot.lastLanes, laneSet(lanes));
+    if (lastStart === null || forced) {
+        return { lanes, cause, forced, start: { kind: 'at', deadline: now } };
+    }
+    return { lanes, cause, forced, start: { kind: 'at', deadline: Math.max(lastStart + debounce.window, now + TURN_SETTLE_MS) } };
+}
+
+function delayOf(start: Start, clock: () => number): number {
+    return start.kind === 'after' ? start.delay : Math.max(0, start.deadline - clock());
 }
 
 export class RecapJob {
@@ -104,8 +119,7 @@ export class RecapJob {
         const slot = this.slots.get(key) ?? { timer: null, running: false, pending: null, lastStart: null, lastLanes: new Set(), waiting: [] };
         this.slots.set(key, slot);
         const debounce = this.deps.debounce?.() ?? DEBOUNCE_OFF;
-        const now = debounce.kind === 'window' ? Number(this.deps.clock.now()) : 0;
-        const requested = { lanes, cause, ...scheduleOf(slot, lanes, cause, now, debounce) };
+        const requested = pendingOf(slot, lanes, cause, debounce, () => Number(this.deps.clock.now()));
         slot.pending = debounce.kind === 'off' ? requested : stronger(slot.pending, requested);
         this.arm(slot, tab);
     }
@@ -116,10 +130,9 @@ export class RecapJob {
         const pending = slot.pending;
         if (pending === null) return;
         slot.timer = setTimeout(() => {
-            const run = slot.pending;
             slot.pending = null;
-            if (run !== null) void this.fly(slot, tab, run.lanes, run.cause);
-        }, pending.delay ?? Math.max(0, pending.deadline - Number(this.deps.clock.now())));
+            void this.fly(slot, tab, pending.lanes, pending.cause);
+        }, delayOf(pending.start, () => Number(this.deps.clock.now())));
     }
 
     private async fly(slot: Slot, tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {

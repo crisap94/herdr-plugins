@@ -41,6 +41,8 @@ interface Ran {
     readonly documents: string[];
 }
 
+const withoutIds = (done: Replayed): Replayed => ({ ...done, facts: done.facts.map((fact) => Object.assign({}, fact, { id: '' })) });
+
 async function run(pipeline: Pipeline | undefined, writerView: WriterView, mergeTurns = 1): Promise<Ran> {
     const { summarizer, seen } = adding();
     const enumerating = scripted([candidateFor]);
@@ -90,11 +92,17 @@ test('--merge-turns is a positive whole number and goes with --replay', () => {
     assert.ok(aloneMerge.kind === 'usage' && /go with --replay/.test(aloneMerge.why));
 });
 
-test('replay with --merge-turns 1 preserves the per-turn writer calls and 2 groups adjacent turns', async () => {
-    const control = await run('one', FULL_WRITER_VIEW, 1);
+test('replay with --merge-turns 1 is the per-turn replay: the same writer inputs, facts and cost as the default', async () => {
+    const control = await run('one', FULL_WRITER_VIEW);
     assert.equal(control.done.turns, 6);
     assert.equal(control.done.windows, 6);
     assert.equal(control.seen.length, 6);
+    const explicit = await run('one', FULL_WRITER_VIEW, 1);
+    assert.deepEqual(explicit.seen, control.seen);
+    assert.deepEqual(withoutIds(explicit.done), withoutIds(control.done));
+});
+
+test('replay with --merge-turns 2 groups adjacent turns into one writer call each', async () => {
     const merged = await run('one', FULL_WRITER_VIEW, 2);
     assert.equal(merged.done.turns, 6);
     assert.equal(merged.done.windows, 3);

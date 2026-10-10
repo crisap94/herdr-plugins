@@ -47,6 +47,14 @@ test('windows: one turn each — a prompt and everything up to the next prompt; 
     assert.deepEqual(windowsOf([]), []);
 });
 
+test('merging turns groups whole turns in order and drops nothing', () => {
+    const entries = [{ role: 'user' as const, text: 'a' }, { role: 'agent' as const, text: 'x' }, { role: 'user' as const, text: 'b' }, { role: 'user' as const, text: 'c' }, { role: 'agent' as const, text: 'y' }, { role: 'user' as const, text: 'd' }, { role: 'user' as const, text: 'e' }];
+    assert.equal(windowsOf(entries).length, 5);
+    assert.deepEqual(windowsOf(entries, 1), windowsOf(entries));
+    assert.deepEqual(windowsOf(entries, 2).map((window) => window.map((entry) => entry.text)), [['a', 'x', 'b'], ['c', 'y', 'd'], ['e']]);
+    assert.deepEqual(windowsOf(entries, 2).flat(), entries);
+});
+
 test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown what the earlier ones added; the live database is not touched', async () => {
     const live = scratchDir('replay-live');
     try {
