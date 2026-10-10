@@ -20,6 +20,14 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
+import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { RecordingTokens } from './fakes/lane-tokens.ts';
+import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
+import { emptyBoard } from '#src/recap/domain/board.ts';
+import type { Board } from '#src/recap/domain/board.ts';
+import { toolName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -60,7 +68,7 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
@@ -93,7 +101,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         log: () => undefined,
         ...(world.lease === undefined ? {} : { typing: world.lease }),
         claims: world.claims,
-        answer: (id, pane, stage) => { world.answered.push(`${id} ${pane} ${stage}`); },
+        answer: (id, pane, stage) => { if (world.answerTo === undefined) { world.answered.push(`${id} ${pane} ${stage}`); } else { world.answerTo(id, pane, stage); } },
         events: { lane: (pane, kind, detail) => { world.laneEvents.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },
     };
     return new Compaction(deps);
@@ -415,6 +423,22 @@ test('one compaction per lane: a request and an automatic one at the same instan
     assert.equal(records(world).length, 1, 'one compaction record');
     assert.deepEqual(world.answered, ['r1 w1:p1 queued', 'r1 w1:p1 running', 'r1 w1:p1 done'], 'the joined request follows the running compaction');
     assert.match(world.toasts.join('\n'), /already compacting/);
+});
+
+test('a request that joins a running compaction is settled in the ask ledger when the compaction ends', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const asks = new MemoryAskLedger();
+    const handler = new CompactRequests({
+        enabled: (): boolean => true, board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): number => NOW, log: (): void => undefined,
+    });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(toolName('coordinator')), id: 'r1', pane: 'w1:p1', at: NOW, ref: null });
+    const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stage); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
+    await Promise.all([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),
+    ]);
+    assert.equal(world.typed.length, 1, 'one /compact typed');
+    assert.deepEqual(asks.unfinished(), [], 'the joined ask is settled, not left queued');
 });
 
 test('a request that joins a compaction the agent refuses is answered with that refusal', async () => {

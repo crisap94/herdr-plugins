@@ -44,13 +44,13 @@ typed values; one serializer per token.
 
 ## 4. One ask ledger (migration 015)
 
-- [ ] 4.1 `src/adapters/db/schema/015-ask-ledger.ts`: `ask` table, copy of `compact_ask` as settled `compact` asks, drop of
+- [x] 4.1 `src/adapters/db/schema/015-ask-ledger.ts`: `ask` table, copy of `compact_ask` as settled `compact` asks, drop of
   `compact_ask`. Verify: a migration test from a real 014 database with rows (every seen id kept, none interrupted).
-- [ ] 4.2 `src/ports/ask-ledger.ts` and `src/adapters/db/ask-ledger.ts` (replacing `ask-records.ts`): `seen`, `record`
+- [x] 4.2 `src/ports/ask-ledger.ts` and `src/adapters/db/ask-ledger.ts` (replacing `ask-records.ts`): `seen`, `record`
   (with `ref`), `settle`, `unfinished`, `prune` (30 days, never an unsettled ask). Verify: one contract test run against
   SQLite and the in-memory double, including a local requester `cli` and an exchange with no descriptor, and an old unsettled
   ask that pruning keeps.
-- [ ] 4.3 Restart: every unfinished ask is handed to its answer channel as `failed-interrupted` (token answer for a token
+- [x] 4.3 Restart: every unfinished ask is handed to its answer channel as `failed-interrupted` (token answer for a token
   exchange; the flow's answer record for a local requester); a request joined to a running compaction is settled with that
   compaction's outcome. Verify: restart tests with a queued ask, a running ask, a joined ask (answered `failed-interrupted`,
   never left `queued`) and a local requester's ask (no token written).

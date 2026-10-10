@@ -3,32 +3,36 @@ import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { answerValue, askedOf, endAnswerOf, refusalAnswerOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
+import { answerValue, askedOf, COMPACT_EXCHANGE, endAnswerOf, refusalAnswerOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { MemoryAsks } from './fakes/ask-records.ts';
+import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { toolName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
+
+const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(toolName(tool)), id);
 
 const frame = (pane: string, tokens: Record<string, string>): { readonly pane: { readonly pane_id: string; readonly tokens: Record<string, string> } } => ({ pane: { pane_id: pane, tokens } });
 
 interface Harness {
     readonly asked: CompactRequest[];
-    readonly asks?: MemoryAsks;
+    readonly asks?: MemoryAskLedger;
     readonly tokens: RecordingTokens;
     readonly compact: CompactRequests;
     flush(): Promise<void>;
 }
 
-function setup(on = true, asks = new MemoryAsks()): Harness {
+function setup(on = true, asks = new MemoryAskLedger()): Harness {
     const asked: CompactRequest[] = [];
     const tokens = new RecordingTokens();
     const requests = { requestCompact: (request: CompactRequest): void => { asked.push(request); } };
-    const compact = new CompactRequests({ enabled: (): boolean => on, board, requests, asks, tokens, log: (): void => undefined });
+    const compact = new CompactRequests({ enabled: (): boolean => on, board, requests, asks, tokens, now: (): number => 1000, log: (): void => undefined });
     return { asked, asks, tokens, compact, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
 
@@ -100,7 +104,7 @@ test('a compaction ends with its answer: the trail hears how it ended, and the a
 });
 
 test('the same id again, after a daemon restart: a new handler over the same stored asks requests nothing', async () => {
-    const asks = new MemoryAsks();
+    const asks = new MemoryAskLedger();
     const before = setup(true, asks);
     before.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
     await before.flush();
@@ -138,7 +142,7 @@ test('off: an interrupted request is not answered either', async () => {
 });
 
 test('a request written while the setting is off is remembered, not acted on: turning it on later runs nothing stale', async () => {
-    const asks = new MemoryAsks();
+    const asks = new MemoryAskLedger();
     const off = setup(false, asks);
     off.compact.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
     const on = setup(true, asks);
@@ -158,32 +162,32 @@ test('an id that is empty or overlong is answered failed-bad-id once, and the an
 });
 
 test('a request that comes before the board exists waits for it, and is then acted on', async () => {
-    const asks = new MemoryAsks();
+    const asks = new MemoryAskLedger();
     let seeded = false;
     const asked: CompactRequest[] = [];
     const tokens = new RecordingTokens();
     const handler = new CompactRequests({
-        enabled: (): boolean => true, board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, log: (): void => undefined,
+        enabled: (): boolean => true, board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): number => 1000, log: (): void => undefined,
     });
     handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r9' }));
-    assert.deepEqual([asked, tokens.reports, asks.seen('coordinator', 'r9')], [[], [], false], 'not decided, not remembered, before the board');
+    assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', 'r9')], [[], [], false], 'not decided, not remembered, before the board');
     seeded = true;
     handler.tick();
     assert.deepEqual(asked.map((request) => request.answer), ['r9'], 'the board exists: it is a lane, so it is queued');
 });
 
 test('a request is remembered only after it is queued: a refused queue leaves it free to be asked again', () => {
-    const asks = new MemoryAsks();
+    const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     let refuse = true;
     const handler = new CompactRequests({
-        enabled: (): boolean => true, board: (): Board => board(), requests: { requestCompact: (): void => { if (refuse) throw new Error('database locked'); } }, asks, tokens, log: (): void => undefined,
+        enabled: (): boolean => true, board: (): Board => board(), requests: { requestCompact: (): void => { if (refuse) throw new Error('database locked'); } }, asks, tokens, now: (): number => 1000, log: (): void => undefined,
     });
     handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
-    assert.equal(asks.seen('coordinator', 'r7'), false, 'not remembered: nothing was queued');
+    assert.equal(seen(asks, 'coordinator', 'r7'), false, 'not remembered: nothing was queued');
     refuse = false;
     handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
-    assert.equal(asks.seen('coordinator', 'r7'), true);
+    assert.equal(seen(asks, 'coordinator', 'r7'), true);
 });
 
 test('no answer is written on an empty pane', async () => {

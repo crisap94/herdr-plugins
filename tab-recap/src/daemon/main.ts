@@ -51,6 +51,7 @@ import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { interruptAsks } from '#src/recap/application/ask-restart.ts';
 import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
@@ -92,9 +93,12 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
 }
 
 function answerRestart(store: Store, answers: CompactRequests): number {
-    const interrupted = [...store.compactions.unfinishedAsks(), ...store.requests.takeAnswered()];
+    store.requests.takeAnswered();
     const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
-    answers.answerInterrupted(interrupted);
+    interruptAsks(store.asks, {
+        token: (ask): void => { answers.answerInterrupted([{ pane: ask.pane, answer: ask.id }]); },
+        local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
+    });
     return restarted;
 }
 
@@ -127,7 +131,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
-    const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, log });
+    const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);

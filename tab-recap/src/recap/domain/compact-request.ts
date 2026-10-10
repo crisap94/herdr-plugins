@@ -6,8 +6,10 @@ import type { RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
 export const REQUEST_PREFIX = compact.requestPrefix;
+export const COMPACT_EXCHANGE = compact.name;
 export const VALUE_MAX = LIMITS.valueMax;
 export const ANSWER_TTL_MS = 3_600_000;
+export const NOT_ACTED = 'off';
 
 const ID_GRAMMAR = must(idGrammarOf(compact.request));
 
@@ -35,3 +37,5 @@ export const endAnswerOf = (stage: string, why: string | null): string => (stage
 export const refusalAnswerOf = (why: string): string => failureStage(slug(why));
 
 export const answerValue = (id: string, stage: string): string => must(answerValueOf(compact, id as RequestId, stage));
+
+export const isTerminalStage = (stage: string): boolean => stage === 'done' || stage.startsWith('failed-');
