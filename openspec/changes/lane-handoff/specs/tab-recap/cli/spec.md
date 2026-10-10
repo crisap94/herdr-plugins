@@ -2,7 +2,7 @@
 
 ### Requirement: The handoff command has an explicit source and target
 
-The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--print]`. It SHALL extend the existing `parseArguments` in `bin/tab-recap.ts`, which uses `node:util` `parseArgs` in strict mode, with `from`, `to`, and `print`, and SHALL register `handoff` in the command table so that usage lists it. `--from` SHALL be given exactly once. `--to` SHALL be given exactly once, and it SHALL be required unless `--print` is given. A repeated single-value option SHALL be a usage error; detecting it requires the option to be declared with `multiple: true` and a length check. An option without a value, an unknown option, and `--note` given to any command other than `compact` or `handoff` SHALL be usage errors. The `--note` usage message SHALL read "compact and handoff only". Without `--print`, the command SHALL write one handoff request row, wait for its answer, and map that answer to an exit code as the `lane-handoff` outcome table specifies. Exit codes SHALL be 0 for `delivered` and `printed`, 1 for refused, unsupported, or failed outcomes, 2 for usage errors, and 3 when herdr is not reachable or the command is not run inside herdr. With `--print`, stdout SHALL contain only the vetted handoff text and the command SHALL type nothing. Other diagnostics SHALL go to stderr.
+The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--print] [--refresh]`. It SHALL extend the existing `parseArguments` in `bin/tab-recap.ts`, which uses `node:util` `parseArgs` in strict mode, with `from`, `to`, `print` and `refresh`, and SHALL register `handoff` in the command table so that usage lists it. `--from` SHALL be given exactly once. `--to` SHALL be given exactly once, and it SHALL be required unless `--print` is given. `--refresh` SHALL be a flag and SHALL NOT be combined with `--print`. A repeated single-value option SHALL be a usage error; detecting it requires the option to be declared with `multiple: true` and a length check. An option without a value, an unknown option, and `--note` given to any command other than `compact` or `handoff` SHALL be usage errors. The `--note` usage message SHALL read "compact and handoff only". Without `--print`, the command SHALL write one handoff request row, wait for its answer, and map that answer to an exit code as the `lane-handoff` outcome table specifies. Exit codes SHALL be 0 for `delivered` and `printed`, 1 for refused, unsupported, or failed outcomes, 2 for usage errors, and 3 when herdr is not reachable or the command is not run inside herdr. With `--print`, stdout SHALL contain only the vetted handoff text and the command SHALL type nothing. Other diagnostics SHALL go to stderr.
 
 #### Scenario: Deliver a handoff
 
@@ -14,6 +14,16 @@ The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--pri
 - **WHEN** the operator invokes `handoff --from pane-a --print`
 - **THEN** stdout SHALL contain the vetted handoff for the source lane only
 - **AND** the CLI SHALL exit 0 without typing, acquiring a lease, or writing a request row
+
+#### Scenario: Refresh with print
+
+- **WHEN** the operator invokes `handoff --from pane-a --print --refresh`
+- **THEN** the CLI SHALL print a usage error to stderr and exit 2
+
+#### Scenario: Refresh without print
+
+- **WHEN** the operator invokes `handoff --from pane-a --to pane-b --refresh`
+- **THEN** the CLI SHALL write one handoff request row marked as refreshing and wait for its answer at most 150 seconds
 
 #### Scenario: Print with a target
 
