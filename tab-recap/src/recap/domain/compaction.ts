@@ -65,15 +65,16 @@ export interface Observed {
 export interface WindowBasis {
     readonly window: number;
     readonly source: WindowSource;
+    readonly sizes: readonly number[];
 }
 
 export type WindowOf = (observed: Observed) => WindowBasis | null;
 
-function raised(window: number, seen: number, sizes: readonly number[]): number {
-    return seen <= window ? window : (sizes.find((size) => size >= seen) ?? seen);
+function raised(basis: WindowBasis, seen: number): number {
+    return seen <= basis.window ? basis.window : (basis.sizes.find((size) => size >= seen) ?? seen);
 }
 
-export function contextOf(found: { readonly observed: Observed; readonly setting: number | null }, resolveWindow: WindowOf, sizes: readonly number[]): ContextUse | null {
+export function contextOf(found: { readonly observed: Observed; readonly setting: number | null }, resolveWindow: WindowOf): ContextUse | null {
     const { observed, setting } = found;
     if (setting !== null) {
         return { tokens: observed.tokens, window: setting, source: 'setting' };
@@ -82,7 +83,7 @@ export function contextOf(found: { readonly observed: Observed; readonly setting
     if (base === null) {
         return null;
     }
-    const window = raised(base.window, Math.max(observed.tokens, observed.peak), sizes);
+    const window = raised(base, Math.max(observed.tokens, observed.peak));
     return { tokens: observed.tokens, window, source: window === base.window ? base.source : 'observed' };
 }
 

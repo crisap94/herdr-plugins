@@ -8,7 +8,7 @@ import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateOf } from '#sr
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
-import { WINDOW_SIZES, claudeWindowOf } from './context-window.ts';
+import { claudeWindowOf } from './context-window.ts';
 import { extractClaude } from './claude-rows.ts';
 import { claudeInFlight } from './claude-in-flight.ts';
 import { claudeObserved } from './context-rows.ts';
@@ -46,7 +46,7 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
 
 export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): { readonly tokens: number; readonly window: number; readonly share: number } | null {
     const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
-    const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue), WINDOW_SIZES);
+    const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
