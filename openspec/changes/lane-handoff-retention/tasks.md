@@ -29,6 +29,7 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 - [ ] Extend `Retention` (`src/ports/retention.ts`) with `expired(cutoff, closedCutoff)` and the `closedLanes` count in `Removed`, and update `RetentionRepository` (`src/adapters/db/retention.ts`) with the `NOT EXISTS` protection clause and the count.
 - [ ] Extend `TabViews` with `liveLanes()` and write `since` and `session` in `writeTab`; extend `TabLane` and `viewOf` accordingly.
 - [ ] Add the boot push of `restored` in `src/daemon/main.ts`, beside `hidden-restored`, before `enterSubscription`, with the read-failure log.
+- [ ] Add a `ClosedLanes` contract test (`test/closed-lanes-contract.test.ts`) run against `ClosedLanesRepository` on SQLite and an in-memory fake, mutation-checked; split the port into narrow role interfaces for the sweep, the resolver and the listing.
 - [ ] Test: fresh install and upgrade from 14 end with the same schema; the backup is `tab-recap.db.v14.bak`; the association query (pane reuse in one tab, and in two tabs; lower and upper bounds; no session; no `since`); `INSERT OR IGNORE` at one millisecond; the protection clause; the removed count.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
@@ -36,6 +37,7 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 
 - [ ] Add a `lane-closed` case to `Dispatch.send` (`src/recap/application/dispatch.ts`): when `closedLaneDays() > 0`, call `ClosedLanes.record`; on failure, log and continue. The case runs before the next intent, which is the publish.
 - [ ] Restructure `sweep` (`src/recap/application/retention.ts`): pass 1 removes eligible tabs when `TAB_RECAP_KEEP_DAYS` is non-zero, with the closed-lane cutoff; pass 2 prunes expired closure rows for `expiredTabs(closedCutoff)` regardless of the tab window. Each tab has its own try/catch. `SweepDeps` gains `closedDays()`. `daemon/retention.ts` passes `loadConfig().closedLaneDays`.
+- [ ] Add boundary probes under `rules/probes/` showing that `recap-domain-pure` rejects a fold or intent module importing an adapter or the clock directly, and that `recap-write-transactions` rejects a bare `BEGIN` in the closure recorder.
 - [ ] Add the resolver (`src/recap/application/closed-lane-source.ts`): lookup, window, association, ledger; the fact filter over `Ledger.allOf` using `CLOSED_SHOWN_MS` from `ledger-input.ts`. Return `found | expired | never-seen | unknown{store-unreadable | ledger-unreadable}`.
 - [ ] Test the resolver with fake ports for every outcome, the fact filter at exactly `closedAt - CLOSED_SHOWN_MS`, the expired-then-never-seen sequence after a prune, and the sweep with `TAB_RECAP_KEEP_DAYS=0`, per-tab failure, and the removed count.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
