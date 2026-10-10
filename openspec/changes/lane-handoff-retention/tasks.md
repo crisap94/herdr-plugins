@@ -48,10 +48,12 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 - [ ] Test: the tuple and usage matrix; a reused pane id that is also the target's pane is delivered; `delivered`, `source-unavailable`, `source-unreadable`; the Freshness and Worksite text for a closed source and its absence for a live one; the listing order, the sanitizing of a name with an escape sequence, and an empty tab; `--print` and `--list-closed` read-only with zero writes and on an older schema. Verify: the tests named in this group pass under `bash ci/test.sh`, and a mutant that removes this step fails one of them.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
-## 6. Real-herdr proof
+## 6. Real-herdr proof (automated)
+
+Run by a test lane as `CONTRIBUTING.md` "Real-herdr proofs" describes (scratch workspace, throwaway lanes, scratch daemon).
 
 - [ ] Establish whether herdr reuses pane identifiers: close a pane, create another in the same tab, compare identifiers; record the result and the herdr version; if it does not reuse them, verify the reuse scenarios with a fake wire and say so. Verify: the recorded evidence (no secrets, no transcript content) is linked from the merge request.
-- [ ] On a real herdr session, observe a tracked lane close, list it with `--list-closed`, and hand it over with `--from-closed`; observe a restart closure. Record evidence without secrets or transcript content. Verify: the recorded evidence (no secrets, no transcript content) is linked from the merge request.
+- [ ] On a real herdr session, observe a tracked throwaway lane close, list it with `--list-closed`, and hand it over with `--from-closed`; observe a restart closure. Record evidence without secrets or transcript content. Verify: the recorded evidence (no secrets, no transcript content) is linked from the merge request.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 7. Archive

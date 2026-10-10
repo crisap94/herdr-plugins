@@ -5,7 +5,7 @@ commits metrics only under `experiments/` at the repository root; corpora and ra
 
 ## 1. Coverage gate (carried from `autocompact-coverage-gate` 8.1, 8.2)
 
-- [ ] 1.1 Live check on a daemon at this version: one lane at or above the ceiling with a failed check compacts once and logs
+- [ ] 1.1 Live check (automated, `CONTRIBUTING.md` "Real-herdr proofs"), on a scratch daemon at this version: one throwaway lane at or above the ceiling with a failed check compacts once and logs
   the missing count; with the switch `off`, the same lane waits. Verify: the log lines are in the MR.
 - [ ] 1.2 After fourteen days of stored briefs, replay the blocked checks offline and report how many a 30-minute backoff would
   have delayed past a compaction that happened. Move the backoff default to 30 minutes only in a separate MR, and only if the
@@ -21,7 +21,10 @@ commits metrics only under `experiments/` at the repository root; corpora and ra
 - [ ] 2.3 `tab-recap eval --replay <file> --prune` on the private corpus: two control runs and two pruned runs, same ruler.
   Verify: the report names the view as pruned and compares to the bar in the `ledger-pruning` design D4.
 - [ ] 2.4 Live check: pruning on for one busy tab for 24 hours: input bytes per run, recap spend, `needs` closed by the curator,
-  hidden open `next` facts, against the 24 hours before. Verify: the counts are in the MR.
+  hidden open `next` facts, against the 24 hours before. The test lane first runs the same check on a scratch daemon with a
+  throwaway workload, then reads the counts from the maintainer's daemon during the real 24 hours. Verify: the counts are in the MR.
+- [ ] 2.4a Maintainer: turn `TAB_RECAP_WRITER_PRUNE` on in your own daemon for those 24 hours, then off. Verify: the start and end
+  instants are in the MR.
 - [ ] 2.5 If 2.2 and 2.3 both pass the bar, move `TAB_RECAP_WRITER_PRUNE` to `on` in a separate MR labelled
   `changelog::changed`; if not, leave it `off` and record the failing measure. Verify: the MR states which.
 
@@ -39,8 +42,11 @@ the same chapter; on the EXP-001 corpus 223 of 816 (27 %), costing $1.21, 32 % o
   `changelog::changed` and update the `recap-runs` spec's default. If it does not, leave the default at off and record the
   reason in the MR. Verify: the MR states which.
 - [ ] 3.3 With the window at 60 000 ms on one busy orchestrator tab for one hour: count `recap-written` events against turn
-  endings, and the writer's spend for the hour against the same hour before. This needs the operator to turn the setting on
-  for that hour. Verify: both counts are in the MR.
+  endings, and the writer's spend for the hour against the same hour before. The test lane first runs the window on a scratch
+  daemon with a throwaway workload, then reads the counts from the maintainer's daemon for the real hour. Verify: both counts
+  are in the MR.
+- [ ] 3.3a Maintainer: turn the window on at 60 000 ms in your own daemon for that hour, then off. Verify: the start and end
+  instants are in the MR.
 
 ## 4. Archive
 
