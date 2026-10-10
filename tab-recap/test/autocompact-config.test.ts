@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/harness-decider.ts';
 import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, minimumOf } from '#src/recap/domain/autocompact.ts';
+import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -15,7 +15,7 @@ const config = (values: Readonly<Record<string, string>>) => (key: string): stri
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
 test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude only', () => {
-    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'] });
+    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [] });
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {
@@ -41,6 +41,12 @@ test('the cooldown is a whole number of milliseconds (0 allowed); nonsense is te
 test('the kinds are a comma list, lower-cased and de-duplicated; empty is claude', () => {
     assert.deepEqual(kindsOf(' Claude, codex ,,claude'), ['claude', 'codex']);
     assert.deepEqual([kindsOf(''), kindsOf(' , '), kindsOf(undefined)], [['claude'], ['claude'], ['claude']]);
+});
+
+test('shadow kinds parse registered transcript readers and default to none', () => {
+    assert.deepEqual(shadowKindsOf(' Codex, opencode, codex, hermes, gemini, '), ['codex', 'opencode']);
+    assert.deepEqual(shadowKindsOf(undefined), []);
+    assert.deepEqual(policyOf(config({ TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS: 'codex,opencode' })).shadowKinds, ['codex', 'opencode']);
 });
 
 test('the decider job: the recap writer\'s harness at low effort; it also takes jev; the other jobs do not', () => {

@@ -10,6 +10,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
@@ -40,6 +41,7 @@ test('watchdog: after N minutes with no frame and no snapshot the tick says so a
     const informer = new Informer(source, { now: (): ReturnType<typeof instant> => instant(now) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (blindness): void => { blind.push(blindness); }, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5, watchdogMs: 5 * 60_000 });
     try {
         await informer.enterSubscription();
@@ -75,6 +77,7 @@ test('watchdog: a frame, or a snapshot, counts as a sign of life', async () => {
     const informer = new Informer(source, { now: (): ReturnType<typeof instant> => instant(now) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5, watchdogMs: 5 * 60_000 });
     try {
         await informer.enterSubscription();

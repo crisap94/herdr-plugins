@@ -10,6 +10,7 @@ import { paneId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 import { memoryStore } from './db/support.ts';
 
@@ -51,6 +52,7 @@ test('the informer hands every status push to the daemon\'s hook, before the fol
     const heard: string[] = [];
     const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(), onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
         onStatus: (pane, status): void => { heard.push(`${pane}:${status}`); },
     });
     assert.equal(informer.listening, false);

@@ -42,7 +42,10 @@ export function opencodeOutput(stdout: string): OpencodeOutput {
         if (event === null) {
             continue;
         }
-        session = str(event['sessionID']) ?? session;
+        const observedSession = str(event['sessionID']);
+        if (observedSession !== null) {
+            session = observedSession;
+        }
         const part = obj(event['part']);
         if (event['type'] === 'text' && typeof part['text'] === 'string') {
             text += part['text'];

@@ -38,7 +38,7 @@ function inertTranscripts(): Transcripts {
         locate: (): Promise<Located> => Promise.resolve({ kind: 'located', source: 's' }),
         read: (): Promise<never> => Promise.reject(new Error('unused')),
         latestPrompt: (): Promise<never> => Promise.reject(new Error('unused')),
-        inFlight: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: 0 }),
+        inFlight: { kind: 'supported', read: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: 0 }) },
     };
 }
 
@@ -58,7 +58,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         locate: () => Promise.resolve({ kind: 'located', source: 'transcript' }),
         read: () => Promise.reject(new Error('not read here')),
         latestPrompt: () => Promise.reject(new Error('not read here')),
-        inFlight: () => Promise.resolve({ kind: 'in-flight', count: 0 }),
+        inFlight: { kind: 'supported', read: () => Promise.resolve({ kind: 'in-flight', count: 0 }) },
     };
     const service = wireAutocompact({
         config: () => configOf(keys),

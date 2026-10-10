@@ -11,6 +11,7 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import { gateOf, READY } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
@@ -72,6 +73,14 @@ interface Judged {
 
 const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, recordOnly: boolean): boolean => mode === 'on' && verdict === 'compact' && !recordOnly;
 
+function policyForLane(policy: AutocompactPolicy, lane: Lane): (Omit<AutocompactPolicy, 'mode'> & { readonly mode: DecisionMode }) | null {
+    if (policy.mode === 'off') return null;
+    const kind = String(lane.agent);
+    const registered = registeredKindOf(kind);
+    const shadowed = registered !== null && policy.shadowKinds.includes(registered);
+    return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
+}
+
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 
@@ -119,7 +128,7 @@ export class Autocompact {
         const same = unchangedOf(last, deps.startedAt, use.tokens, policy.mode);
         const recheck = same && recheckDue(tuning.recheckIdleMs, last, now);
         const facts = {
-            kind: String(lane.agent), kinds: policy.kinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
+            kind: String(lane.agent), kinds: policy.kinds, shadowKinds: policy.shadowKinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,
             unchanged: same && !recheck,
         };
@@ -143,10 +152,10 @@ export class Autocompact {
 
     private async run(lane: Lane): Promise<void> {
         const { deps } = this;
-        const policy = deps.policy();
+        const policy = policyForLane(deps.policy(), lane);
+        if (policy === null) return;
         const tuning = this.tuning();
         const [tab, pane, use] = [String(lane.tab), String(lane.pane), deps.contexts.of(String(lane.pane))];
-        if (policy.mode === 'off') return;
         if (use === null) { this.skip(lane, 'no-context', null, 'the context share is not known yet'); return; }
         const { gate, recordOnly, detail } = await this.gated(lane, policy, use, tuning);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }

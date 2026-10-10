@@ -34,6 +34,7 @@ const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 
 function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
     return {
         agent,
+        inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: () => Promise.resolve({ kind: 'located', source: 's' }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),

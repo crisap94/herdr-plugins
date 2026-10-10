@@ -1,0 +1,2 @@
+{"type":"event_msg","payload":{"type":"task_started","turn_id":"turn-1"}}
+{"type":"response_item","payload":{"type":"function_call","call_id":"call-1","name":"sleep","arguments":"x"}}

@@ -7,6 +7,12 @@ export interface Fixture {
     close(): void;
 }
 
+export type ToolStatus = 'completed' | 'error' | 'running' | 'pending';
+
+export function toolPart(status: ToolStatus, state: Readonly<Record<string, unknown>> = {}): object {
+    return { type: 'tool', state: { ...state, status } };
+}
+
 export function opencodeFixture(dir: string): Fixture {
     const db = join(dir, 'opencode.db');
     const writer = new DatabaseSync(db);

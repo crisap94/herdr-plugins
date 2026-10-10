@@ -1,5 +1,6 @@
 import { agentPanesIn, columnsIn } from './column-panes.ts';
 import { seenFrom } from '#src/recap/application/decode.ts';
+import { sessionOfForKind } from './session-registry.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
@@ -24,7 +25,7 @@ export function rectOf(value: unknown): Rect {
 export function reconciliationOf(snapshot: Json): Reconciliation {
     const panes = list(snapshot['panes']);
     const agents = agentPanesIn(panes, list(snapshot['agents']));
-    const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent)).filter((lane): lane is SeenLane => lane !== null);
+    const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent, sessionOfForKind)).filter((lane): lane is SeenLane => lane !== null);
     const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
     const focused = str(snapshot['focused_tab_id']);
     return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths };

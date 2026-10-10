@@ -1,0 +1,3 @@
+{"type":"event_msg","payload":{"type":"task_started","turn_id":"turn-1"}}
+{"type":"response_item","payload":{"type":"custom_tool_call","call_id":"call-1","name":"exec","input":"x"}}
+{"type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call-1","output":[{"type":"input_text","text":"Script running with cell ID cell-1"}]}}

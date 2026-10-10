@@ -5,7 +5,7 @@ import type { GateInput } from '#src/recap/domain/autocompact.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 
 const NOW = 10_000_000;
-const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], busy: false, inFlight: 0, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
+const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: false, inFlight: 0, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
 
 test('gates: below the minimum (31 % with minimum 40) stops before any model', () => {
     assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-minimum', recordOnly: false });
@@ -46,6 +46,10 @@ test('gates: an in-flight count not read yet (null) is passed over; the lane is 
 test('gates: a kind outside the list is still gated and asked, but record-only', () => {
     assert.deepEqual(gateOf(lane({ kind: 'codex' })), { gate: 'ask', recordOnly: true });
     assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'] })), { gate: 'ask', recordOnly: false });
+});
+
+test('gates: an enabled shadow kind stays record-only', () => {
+    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'], shadowKinds: ['codex'] })), { gate: 'ask', recordOnly: true });
 });
 
 const answers = (over: Readonly<Record<string, number>> = {}): Record<string, number> => ({ closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01, ...over });

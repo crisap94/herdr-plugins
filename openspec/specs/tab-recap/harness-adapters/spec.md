@@ -12,9 +12,9 @@ Each kind of agent the plugin reads SHALL have a row in the adapter conformance 
 assertions: `locate` places a lane or says why it cannot, and never throws; a read from the start, then from its own
 position, finds nothing new the second time; `latestPrompt` returns the newest user prompt of a recorded source, and
 reading it moves no position; `observed` is null for an empty source.
-A kind whose adapter cannot do a thing SHALL say so by name, not by silence: a kind with no reader for its in-flight
-work SHALL be stopped by autocompact with a reason, and a kind that is not compactable SHALL be left out of the
-compaction targets.
+A kind whose adapter cannot do a thing SHALL say so by name, not by silence: an unsupported in-flight reader SHALL
+provide its declared reason, an unregistered kind SHALL be named in the reason, and a kind that is not compactable
+SHALL be left out of the compaction targets.
 
 #### Scenario: A kind with its own reader
 
@@ -29,7 +29,17 @@ compaction targets.
 #### Scenario: A kind without a reader for its in-flight work
 
 - **WHEN** autocompact considers a lane whose kind has no in-flight reader
-- **THEN** the lane SHALL be stopped in the in-flight gate, with the reason naming its kind
+- **THEN** the lane SHALL be stopped in the in-flight gate, with its declared reason
+
+#### Scenario: A screen lane is checked for in-flight work
+
+- **WHEN** autocompact checks a screen lane whose kind is `gemini`
+- **THEN** the in-flight skip reason SHALL say that screen transcripts do not contain in-flight work
+
+#### Scenario: An unregistered kind is checked for in-flight work
+
+- **WHEN** autocompact checks a kind with no exact or configured fallback reader
+- **THEN** the in-flight skip reason SHALL name the unregistered kind as having no transcript reader
 
 #### Scenario: An unconfirmed non-Claude compaction
 
@@ -42,11 +52,6 @@ compaction targets.
 - **WHEN** an unregistered kind reaches `Sender` directly
 - **THEN** it SHALL return `Unsupported{why}` and type nothing
 - **AND** current target selection SHALL continue to filter through the registered compactable kinds
-
-#### Scenario: A screen lane is checked for in-flight work
-
-- **WHEN** autocompact checks a screen lane whose kind is `gemini`
-- **THEN** the in-flight skip reason SHALL say `no reader for gemini`, because lookup uses the exact lane kind although a `*` screen reader exists
 
 #### Scenario: Codex observed peak is reported
 
@@ -226,3 +231,90 @@ Claude, Codex, and OpenCode compaction SHALL preserve their current conformance 
 - **WHEN** an adapter plan submits a typed line
 - **THEN** the Herdr adapter SHALL retain the 300 ms Enter delay
 - **AND** it SHALL treat the existing stalled-prompt response as sent
+
+### Requirement: Harness job environment scrub names come from the registry
+Each job harness entry SHALL declare its enumerable typed environment names to scrub. `scrubbedEnv()` SHALL remove the union of those names and the existing `HERDR_` and `TAB_RECAP_` prefixes without changing its no-argument signature or current output. Harness names are supplied as a list to the environment-name collector so additional declarations are scrubbed through the same production path.
+
+#### Scenario: Existing child environment remains unchanged
+- **WHEN** `scrubbedEnv()` receives the current set of process variables
+- **THEN** its output SHALL match the established key set for every harness and git child
+- **AND** a name declared by a harness SHALL be removed
+
+### Requirement: Screen chrome rules come from the screen adapter
+The screen adapter SHALL provide the chrome rules to the application cleaner. The same rules SHALL apply to every screen-read kind and SHALL preserve today's cleaned output, including box-only lines, spinners, blank runs, and repeated lines.
+
+#### Scenario: A recorded screen is cleaned
+- **WHEN** the screen adapter reads the chrome corpus
+- **THEN** the cleaner SHALL return the established output for that corpus
+
+### Requirement: Session identity is resolved through registered adapters
+The decoder SHALL pass the typed agent session value through a table keyed by `RegisteredKind`. Each registered adapter SHALL use the shared file-name helper, and an explicit fallback SHALL preserve today's result for unregistered kinds. Parsing SHALL remain total and preserve whitespace-only ids and paths as returned before, and empty basenames SHALL return the empty string and stop searching later candidates.
+
+#### Scenario: Every kind keeps today's id and path result
+- **WHEN** Claude, Codex, OpenCode, or an unknown kind reports an id or path, including a Windows-style path
+- **THEN** the decoded session id SHALL match today's output for that kind
+- **AND** degenerate whitespace-only values SHALL not throw, while an empty basename SHALL remain an empty session id
+
+### Requirement: Context and tool-call data stays with each transcript adapter
+Each transcript adapter SHALL own its observed context parser and tool-name table. A tool name in an adapter's native vocabulary SHALL retain its kind; a name outside that vocabulary SHALL classify as `other`, including a name native to another adapter. Shared row and count helpers, call builders, and generic shell helpers SHALL remain available to all adapters.
+
+#### Scenario: Existing transcript fixtures retain context and tool calls
+- **WHEN** Claude, Codex, or OpenCode reads its recorded transcript fixtures
+- **THEN** observed context, tool-call kinds, text, timestamps, and marks SHALL remain unchanged
+
+#### Scenario: Tool names are classified by their owning adapter
+- **WHEN** an adapter classifies every name in its native tool vocabulary and a foreign name
+- **THEN** every native name SHALL retain its declared kind
+- **AND** the foreign name SHALL classify as `other`
+
+### Requirement: Every transcript reader declares its in-flight capability
+
+Each transcript reader SHALL declare either a supported in-flight reader or `Unsupported{why}`. The Claude, Codex and opencode transcript readers SHALL support in-flight reads. A screen reader SHALL declare that screen transcripts do not contain in-flight work. Autocompact SHALL use the declared reason for an unsupported reader, and SHALL report an unregistered kind as having no transcript reader.
+
+#### Scenario: A supported reader reports in-flight work
+
+- **WHEN** a supported transcript source can be read
+- **THEN** its reader SHALL return the existing in-flight count or `Unknown`
+
+#### Scenario: A reader cannot report in-flight work
+
+- **WHEN** an exact reader declares `Unsupported{why}`
+- **THEN** autocompact SHALL stop at the in-flight gate and show that `why`
+
+#### Scenario: An unregistered kind has no transcript reader
+
+- **WHEN** autocompact checks a kind with no exact or configured fallback reader
+- **THEN** its reason SHALL say that no transcript reader exists for that kind
+
+### Requirement: Codex in-flight work is counted from rollout records
+
+The Codex reader SHALL scan from the most recent `task_started`, starting with a 2 MiB tail and doubling up to 16 MiB when truncation leaves an open call uncertain. It SHALL count calls without matching outputs and yielded cells not completed by their latest `wait` output. `Script running` SHALL keep a cell in flight; `Script completed` SHALL end it. If the bounded tail is still truncated and contains an open call, the reader SHALL return `Unknown`. It SHALL read only the fixed cell markers, never message text.
+
+#### Scenario: An exec call has no output
+
+- **WHEN** the last Codex rollout record is a tool call without a matching output
+- **THEN** the reader SHALL count one in-flight call
+
+#### Scenario: A yielded cell returns running before completion
+
+- **WHEN** a yielded cell's latest wait output says `Script running`
+- **THEN** the reader SHALL count the cell as in flight
+
+#### Scenario: A yielded cell completes
+
+- **WHEN** a yielded cell's latest wait output says `Script completed`
+- **THEN** the reader SHALL not count that cell as in flight
+
+### Requirement: OpenCode in-flight work is counted from tool parts
+
+The opencode reader SHALL count tool parts in the session's newest messages whose state is `pending` or `running`. It SHALL include running parts with only a start time and SHALL return `Unknown` when the database cannot be read.
+
+#### Scenario: Pending and running parts
+
+- **WHEN** the newest session messages contain pending or running tool parts
+- **THEN** the reader SHALL count those parts and SHALL ignore completed and error parts
+
+#### Scenario: The database is unavailable
+
+- **WHEN** the opencode database cannot be opened or queried
+- **THEN** the reader SHALL return `Unknown`

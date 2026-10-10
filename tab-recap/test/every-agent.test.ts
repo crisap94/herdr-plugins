@@ -23,6 +23,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
     const seen: Position[] = [];
     const reader: Transcripts = {
         agent,
+        inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: source(String(lane.pane)) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {

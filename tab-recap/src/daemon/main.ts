@@ -1,4 +1,5 @@
 import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
@@ -142,6 +143,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onBeat: (): void => { },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
         onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
+        sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts, readPaneSession);

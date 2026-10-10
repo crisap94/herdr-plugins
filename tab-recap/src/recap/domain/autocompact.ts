@@ -1,6 +1,6 @@
 import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
-import { REGISTERED_KINDS, kindsWith } from './registered-kinds.ts';
-import type { RegisteredKindTable } from './registered-kinds.ts';
+import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
+import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -10,6 +10,7 @@ export interface AutocompactPolicy {
     readonly ceiling: number;
     readonly cooldownMs: number;
     readonly kinds: readonly string[];
+    readonly shadowKinds: readonly RegisteredKind[];
 }
 
 export const MINIMUM_DEFAULT = 10;
@@ -54,12 +55,17 @@ export function kindsOf(raw: string | undefined): readonly string[] {
     return kinds.length === 0 ? KINDS_DEFAULT : kinds;
 }
 
+export function shadowKindsOf(raw: string | undefined): readonly RegisteredKind[] {
+    const kinds = (raw ?? '').split(',').map((kind) => registeredKindOf(word(kind))).filter((kind): kind is RegisteredKind => kind !== null);
+    return [...new Set(kinds)];
+}
+
 export function policyOf(get: (key: string) => string | undefined): AutocompactPolicy {
     const numbers = STYLE_NUMBERS[styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'))];
     const minimum = minimumOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
     return {
         mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
-        cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')),
+        cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: shadowKindsOf(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
     };
 }
 
@@ -94,6 +100,7 @@ export type Gate = 'busy' | 'below-minimum' | 'cooldown' | 'unchanged' | 'in-fli
 export interface GateInput {
     readonly kind: string;
     readonly kinds: readonly string[];
+    readonly shadowKinds: readonly RegisteredKind[];
     readonly busy: boolean;
     readonly inFlight: number | 'unknown' | null;
     readonly share: number;
@@ -107,7 +114,7 @@ export interface GateInput {
 }
 
 export function gateOf(input: GateInput): { readonly gate: Gate; readonly recordOnly: boolean } {
-    const recordOnly = !input.kinds.includes(input.kind);
+    const recordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind);
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
         if (input.busy) return 'busy';

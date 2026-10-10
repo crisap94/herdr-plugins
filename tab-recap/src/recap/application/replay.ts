@@ -4,7 +4,7 @@ import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
-import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
@@ -61,7 +61,8 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
         kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: at.turn + 1, tail: null }, grew: true,
     });
     const locate = (): Promise<Located> => Promise.resolve({ kind: 'located', source: file });
-    return { agent: base.agent, locate, latestPrompt: noPrompt, read };
+    const inFlight: InFlightCapability = { kind: 'unsupported', why: 'windowed-reader' };
+    return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight };
 }
 
 function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator'> {

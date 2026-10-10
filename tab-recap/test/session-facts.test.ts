@@ -79,7 +79,7 @@ test('edit counts: per path, most edited first, ties by path', () => {
 });
 
 const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: string }[] | 'unreadable'): Transcripts => ({
-    agent, locate: () => Promise.resolve({ kind: 'located', source: 'x' }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
+    agent, inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: 'x' }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: 'x' }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
 });
 

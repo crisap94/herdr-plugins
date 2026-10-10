@@ -1,7 +1,8 @@
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
-import { namedCall, toolEntry } from './tool-calls.ts';
+import { claudeNamedCall } from './claude-tool-calls.ts';
+import { toolEntry } from './tool-calls.ts';
 
 const NOISE = ['<command-', '<local-command', '<system-reminder', '<task-notification', 'Caveat: The messages below', '[Request interrupted by user'];
 
@@ -94,7 +95,7 @@ function agentEntries(row: Row): readonly Entry[] {
         if (block['type'] === 'text' && text !== null && text.trim() !== '') {
             entries.push({ role: 'agent', text, ...(at === undefined ? {} : { at }) });
         } else if (block['type'] === 'tool_use') {
-            entries.push(toolEntry(namedCall(str(block['name']) ?? 'tool', obj(block['input'])), at));
+            entries.push(toolEntry(claudeNamedCall(str(block['name']) ?? 'tool', obj(block['input'])), at));
         }
     }
     return entries;

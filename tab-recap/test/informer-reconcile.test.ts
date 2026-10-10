@@ -5,6 +5,7 @@ import { Informer, RESUBSCRIBE_EVERY } from '#src/recap/application/informer.ts'
 import { watchSet } from '#src/recap/domain/board.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 class CountingHerdr implements FleetSource {
@@ -49,6 +50,7 @@ async function settled(): Promise<{ herdr: CountingHerdr; informer: Informer }> 
         onBlind: (): void => undefined,
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
     await informer.enterSubscription();
     void informer.run();
@@ -134,6 +136,7 @@ async function recoversFrom(endAt: 'before-snapshot' | 'during-snapshot' | 'righ
     const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
+        sessionIdentity: sessionOfForKind,
     }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
     await informer.enterSubscription();
     void informer.run();
