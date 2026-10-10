@@ -40,7 +40,8 @@ The mirror finds the ask by the `HandoffId` (the request row is deleted when tak
 the token on the ask's pane, and writes the target-pane events while the flow runs. A row the exchange queued is covered by
 the exchange's ask only: the slice-1 rule that records a `cli` ask applies to rows the command wrote. After a restart the
 token protocol's sweep answers an unsettled exchange ask `<id>:failed-interrupted` on the source pane; no event goes to the
-target's pane then, because the target is known only to the flow. `queued` is written when the row is
+target's pane then, because the target is known only to the flow, and the sweep withdraws every exchange-queued row that was
+not taken, so a requester told `failed-interrupted` never sees a late delivery. `queued` is written when the row is
 queued and `running` when the flow takes it. There is one flow, one outcome table and one answer row per handoff.
 
 ### D3. Checks before queueing, answered by the exchange

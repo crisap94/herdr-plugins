@@ -62,13 +62,15 @@ terminal stage mapped from the row's closed outcome by one total function over t
 its local record when the row is queued; the mirror SHALL find the ask by that `HandoffId` when the answer row is written,
 write the token on the ask's pane (the source pane), and settle the ask in the same transaction as the answer row. Events
 on the target's pane SHALL be written while the flow runs; after a restart the restart sweep answers an unsettled exchange
-ask `<id>:failed-interrupted` on the source pane only. A row the command wrote SHALL write no token.
+ask `<id>:failed-interrupted` on the source pane only, and the same sweep SHALL withdraw every exchange-queued row that was not
+taken, so nothing is typed for an ask already answered. A row the command wrote SHALL write no token.
 
 #### Scenario: Interrupted after queueing
 
 - **WHEN** the daemon restarts after the exchange queued a row and before its answer row was written
 - **THEN** `tab-recap-handoff` on the source pane SHALL say `<id>:failed-interrupted` and no event SHALL be written on the
   target's pane for it
+- **AND** the queued row SHALL be withdrawn, so no handoff is typed for that id after the restart
 
 #### Scenario: A delivered handoff asked by token
 

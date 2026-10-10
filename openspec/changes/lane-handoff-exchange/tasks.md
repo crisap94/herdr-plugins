@@ -56,5 +56,5 @@ typed values; one serializer per token. Build after `token-protocol`, `lane-hand
 
 - [ ] 6.1 `openspec archive lane-handoff-exchange` in the implementation merge request after slices 1 and 2 are archived,
   once every other task is checked and the gates pass. Before it, re-sync the restated requirements (`Delivery is leased`,
-  `Handoff outcome is a closed sum`, `Sharing on herdr is a setting`, `The plugin's own events`) against the archived text;
+  `Sharing on herdr is a setting`, `The plugin's own events`) against the archived text;
   the diff SHALL show only this change's additions. Verify: `openspec validate --specs --strict` passes after the archive.
