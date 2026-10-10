@@ -59,7 +59,6 @@ export function autocompactDefaultKinds<T extends RegisteredKindTable>(table: T)
 }
 
 export const KINDS_DEFAULT = autocompactDefaultKinds(REGISTERED_KINDS);
-export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 

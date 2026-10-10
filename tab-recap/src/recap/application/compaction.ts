@@ -2,6 +2,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { READY } from '#src/recap/domain/status.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { CompactionEnd } from '#src/ports/compaction-records.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
@@ -28,7 +29,6 @@ import { Trail } from './compaction-trail.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
-const READY = new Set(['idle', 'done']);
 interface Link {
     readonly auto: boolean;
     readonly decision: string | null;

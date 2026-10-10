@@ -1,3 +1,5 @@
+import { collapsedText } from './text-collapse.ts';
+
 const AWAITING = /^awaiting(?:-.+)?$/;
 const NOTE = /^note(?:-(.+))?$/;
 
@@ -11,7 +13,7 @@ export interface NoteToken {
     readonly value: string;
 }
 
-export const plainText = (raw: string): string => raw.replace(/\p{Cc}/gu, ' ').replace(/ {2,}/g, ' ').trim();
+export const plainText = (raw: string): string => collapsedText(raw, 'space');
 
 export function notesOf(tokens: Readonly<Record<string, string>>): readonly NoteToken[] {
     return Object.keys(tokens).toSorted().flatMap((name): NoteToken[] => {

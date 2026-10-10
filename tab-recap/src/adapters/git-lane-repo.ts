@@ -7,7 +7,7 @@ import { run, scrubbedEnv } from './process.ts';
 import type { Runner, RunResult } from './process.ts';
 
 export const REPO_TTL_MS = 10_000;
-const TIMEOUT_MS = 1500;
+export const TIMEOUT_MS = 1500;
 const NOT_A_REPOSITORY = 128;
 const ENOENT = 127;
 

@@ -25,9 +25,8 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { bounded } from './bounded.ts';
+import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 import { loadConfig, messagesOf } from './config.ts';
-
-const RECAP_WAIT_MS = 90_000;
 
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
     return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };

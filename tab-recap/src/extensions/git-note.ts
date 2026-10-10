@@ -1,7 +1,7 @@
 import { statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { GitLaneRepo, gitEnv } from '#src/adapters/git-lane-repo.ts';
+import { GitLaneRepo, gitEnv, TIMEOUT_MS } from '#src/adapters/git-lane-repo.ts';
 import { run } from '#src/adapters/process.ts';
 import type { Runner } from '#src/adapters/process.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
@@ -14,7 +14,6 @@ import type { TabLane } from '#src/ports/tab-views.ts';
 
 export const GIT_NOTE_MARK = '⎇';
 export const STATUS_ARGS: readonly string[] = ['-c', 'core.fsmonitor=false', 'status', '--porcelain=v2', '--branch'];
-export const TIMEOUT_MS = 1500;
 export const TTL_MS = 5000;
 const FORGET_MS = 60_000;
 const DETACHED = '(detached)';
