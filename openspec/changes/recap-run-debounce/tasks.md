@@ -7,34 +7,35 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 - [ ] 1.1 `CONTEXT.md`: add **Run window** (the minimum gap between two turn-ended runs of one tab) and **Forced run** (a run
   that starts at once whatever the window). Verify: the `recap-vocabulary` lint passes.
 
-## 2. The window (design D1, D2)
+## 2. The window (design D1, D2, D3)
 
-- [ ] 2.1 `application/recap-job.ts`: the slot records `lastStart`; `request` arms a `turn-ended` run at `lastStart + window`
-  inside the window, keeps the deadline for later endings, and gives forced causes (focused, requested, first run, lane-set
-  change, first run after a boundary) an immediate start that sets `lastStart`. Verify: the scenarios of "Turn endings inside a
-  window merge into one run per tab" and "Runs that another flow or the operator asked for start at once"
+- [ ] 2.1 `application/recap-job.ts`: the slot records `lastStart` and `lastLanes`; `request` arms a `turn-ended` run at
+  `lastStart + window` inside the window and keeps the deadline for later endings; forced runs (focused, requested, the tab's
+  first run in this process, a changed lane set) start at once and set `lastStart`. Verify: the scenarios of "Turn endings
+  inside a window merge into one run per tab" and "Runs that another flow or the operator asked for start at once"
   (new test/recap-job-window.test.ts, with a fake clock).
-- [ ] 2.2 `daemon/config.ts`: `TAB_RECAP_RUN_DEBOUNCE_MS`, read on every request, 0 or 5 000 to 300 000, else 0. Verify:
-  `an invalid window falls back to 0` (test/recap-job-window.test.ts).
+- [ ] 2.2 `daemon/config.ts`: `TAB_RECAP_RUN_DEBOUNCE_MS` parsed once into `Debounce = off | window(Milliseconds)`, read on every
+  request, `0` or 5 000 to 300 000, else off. Verify: `an invalid window falls back to off` (test/recap-job-window.test.ts).
 
 ## 3. Measurement (design D5)
 
 - [ ] 3.1 `application/replay.ts` and the `eval --replay` command: `--merge-turns <n>` groups consecutive turns into one writer
   call; the report names `merge-turns` next to the pipeline. Verify: a replay with `--merge-turns 1` reproduces the existing
   `one` report on the same transcript.
-- [ ] 3.2 Run the EXP-001 corpus with `--merge-turns 1` (control), `2` and `3`, twice each (noise floor), writer Claude Haiku 5.5
-  at medium, judge codex gpt-6-luna at medium, pinned. Record the labels, coverage, read-back median, I4, dropped items and cost
-  per turn in an experiment folder, and link it from the MR. Verify: the table compares against the bar in design D5.
+- [ ] 3.2 Run the EXP-001 corpus on the private branch: `--merge-turns 1` (control) twice, and `2` and `3` twice each, writer
+  Claude Haiku 5.5 at medium, judge codex gpt-6-luna at medium, pinned. Compute the floor as `max(1 point, |control A −
+  control B|)`. Commit only the metrics table and the run labels to `tab-recap/experiments/`, and link it from the MR. Verify:
+  the table compares each setting against the control and the floor, as in design D5.
 
 ## 4. Docs
 
-- [ ] 4.1 `config.example.env` and `README.md` "Recap runs": the window, the forced causes, and the default of 0 with the
+- [ ] 4.1 `config.example.env` and `README.md` "Recap runs": the window, the forced causes, and the default of off with the
   replay's result. Verify: `bash ci/lint.sh` passes.
 
 ## 5. Decide the default
 
 - [ ] 5.1 If the replay passes the bar at 60 000 ms, move the default in a separate merge request labelled `changelog::changed`
-  and update design D3. If it does not, leave the default at 0 and record the reason in the MR. Verify: the MR states which.
+  and update design D3. If it does not, leave the default at off and record the reason in the MR. Verify: the MR states which.
 
 ## 6. Live check
 

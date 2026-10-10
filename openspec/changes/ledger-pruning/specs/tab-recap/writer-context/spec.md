@@ -5,7 +5,7 @@
 Everything tab-recap gives the writer about a tab SHALL be one XML document, `recap_input` version 2,
 that is well-formed XML 1.0 and valid against `tab-recap/schema/recap-input.dtd`, whatever the transcripts contain. In place of a previous recap, the document SHALL carry one `ledger` per task with the
 task's open facts as the writer's view shows them (every open fact, or the pruned view of the fact-ledger capability when pruning is on) and the facts closed in the last two hours, each with an id the writer's operations refer to,
-its section, state, first and last time, why, reference and agent. A `ledger` whose view hid open facts SHALL carry a `hidden` attribute with the count per section.
+its section, state, first and last time, why, reference and agent. A `ledger` whose view hid open facts SHALL carry one `hidden` child element per section it hid, with the count of hidden open facts of that section, placed before its facts.
 
 #### Scenario: Hostile content
 
@@ -26,4 +26,4 @@ its section, state, first and last time, why, reference and agent. A `ledger` wh
 #### Scenario: Hidden facts are counted
 
 - **WHEN** pruning is on and a task hides twenty `done` facts
-- **THEN** the document SHALL carry the task's `ledger` with `hidden` naming `done:20`, and the document SHALL still validate against the DTD
+- **THEN** the document SHALL carry the task's `ledger` with a `hidden` element whose section is `done` and whose count is 20, and the document SHALL still validate against the DTD

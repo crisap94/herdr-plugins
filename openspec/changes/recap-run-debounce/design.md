@@ -8,15 +8,16 @@ taken on 2026-10-10. Figures marked **reading** are interpretation.
 | Fact | Count | Notes |
 |---|---|---|
 | Runs starting less than 60 s after the previous run on the same tab | 223 of 816 (27 %) | |
-| Their spend | $1.21 (32 % of recorded writer spend) | |
-| Concentration | orchestrator tab A 95 runs, tab B 27, tab C 24 | three orchestrator tabs |
-| Cost per run, 10-09 against 10-10 | $0.0030 against $0.0057 | the rise is input size, addressed by the ledger-pruning change |
+| Their spend | $1.21 (32 % of recorded writer spend) | an upper bound on a window's saving, not the saving |
+| Concentration | 95, 27 and 24 runs on the three orchestrator tabs with the most bursts | the three orchestrator tabs |
+| Run rate, 10-09 against 10-10 | 273 runs in 24 h (11.4 per hour) against 498 in 4.15 h (120 per hour) | about 10× |
+| Cost per run, 10-09 against 10-10 | $0.0030 against $0.0057 | 1.9×; the input-size part is addressed by the ledger-pruning change |
 | EXP-001 bar, cost per turn (R10) | $0.0032 | the bar is per turn, so merged runs must be compared per turn of text read |
 
 **Reading.** A burst run reads the turns that arrived since the previous run through the cursor, so its input is small in
 turns but carries the whole ledger. Merging a burst into one run saves the ledger's per-run input for every merged run. The
 saving is at most the cost of the runs a window merges into a neighbour. The data cannot say how many runs a given window
-merges, because the window is not in use yet; the replay in the verification section measures it.
+merges, because the window is not in use yet; the replay in D5 measures it.
 
 ## Current code
 
@@ -27,45 +28,57 @@ merges, because the window is not in use yet; the replay in the verification sec
 - a `focused` or `requested` request arms a timer of 0;
 - while a run is in progress, a new request is kept as `again` and runs when the first finishes, replacing any earlier one.
 
-What is missing is a floor between the start of one run and the start of the next. A burst that spans more than the settle
-delay is therefore one run per 2.5 seconds at worst, and the 60-second spacing in the data is a sum of such starts.
+What is missing is a floor between the start of one run and the start of the next. Runs are single-flight, so the gap
+between two runs of a tab is the first run's duration plus the settle delay. The report puts a run at a median of 13.9 s
+and a 90th percentile of 26 s, so a burst that spans more than the settle delay produces a run about every 16 to 30 seconds
+at worst, not one every 2.5 seconds. The 60-second spacing in the data is a sum of such starts.
 
 ## Decisions
 
 ### D1. A per-tab minimum gap between turn-ended runs
 
-The slot records `lastStart`, the time its last run started. A `turn-ended` request whose time is less than
-`TAB_RECAP_RUN_DEBOUNCE_MS` after `lastStart` arms its timer for the deadline `lastStart + window` instead of the settle delay.
-Later turn-ended requests inside the window keep that deadline and replace the timer's lanes, so the run that starts at the
-deadline reads every turn the window collected.
+The slot records `lastStart`, the time its last run started, and `lastLanes`, the lane set of its last request. A
+`turn-ended` request whose time is less than the window after `lastStart` arms its timer for the deadline
+`lastStart + window` instead of the settle delay. Later turn-ended requests inside the window keep that deadline and replace
+the timer's lanes, so the run that starts at the deadline reads every turn the window collected.
 
 The settle delay still applies to the first request of a burst. With a window of 60 000 ms, a burst runs once at most per
-minute per tab, and the run reads the turns through the cursor, so no turn is missed.
+minute per tab (plus the run's own duration, since runs are single-flight), and the run reads the turns through the cursor,
+so no turn is missed.
 
-*Built-ins.* `setTimeout` and `Date.now` through the existing `Clock` port; no timer library. The `lastStart` value is one
-number per slot.
+*Built-ins.* `setTimeout` and `Date.now` through the existing `Clock` port; no timer library. The slot holds two values,
+`lastStart` and `lastLanes`.
 
-### D2. Explicit causes are never debounced
+### D2. Causes that start at once, and the data each one uses
 
-These requests start at once, as they do now, whatever `lastStart` is:
+These requests start at once, as they do now, whatever `lastStart` is. Each condition reads data the job already has:
 
-| Cause | Why it is not debounced |
-|---|---|
-| `focused` | the operator is looking at the tab, and waits for its recap |
-| `requested` | another flow waits for it: autocompact's refresh (`refreshNow`), a compaction's refresh, an operator's request |
-| the first run of a tab (no recap yet) | a tab with no recap has nothing to merge into |
-| a run whose set of lanes changed (a lane was opened or closed) | the recap's structure changes, so it must be written now |
-| the first run after a boundary (a compaction, a switch) | the curator reconciles then, and its input is the boundary's |
+| Condition | Data | Why it is not debounced |
+|---|---|---|
+| `focused` cause | the request's cause | the operator is looking at the tab, and waits for its recap |
+| `requested` cause | the request's cause | another flow waits for it: autocompact's refresh (`refreshNow`), a compaction's refresh, an operator's request |
+| the tab's first run in this daemon | the slot has no `lastStart` | a tab with nothing merged yet has nothing to merge into; after a restart the first turn-ended run is forced too |
+| a run whose set of lanes changed | the request's lanes against `slot.lastLanes` | the recap's structure changes, so it must be written now |
 
-These are tested by cause, not by time, so a `requested` run during a window still starts at once and resets `lastStart`.
+Every forced run sets `lastStart`, so the next turn ending is measured from it.
+
+*Not a condition: "the first run after a boundary".* Its data does not exist: `RecapCause` is
+`turn-ended | focused | requested` (`domain/intent.ts`), and a compaction's refresh already arrives as `requested`, so it is
+forced by the row above. A session switch is not a cause the job sees today. A boundary cause would be a separate change
+and is out of scope.
+
+These conditions are tested by their data, not by time, so a `requested` run during a window still starts at once and
+resets `lastStart`.
 
 ### D3. The default is 0, the recommended value is 60 000 ms, pending a replay
 
-`TAB_RECAP_RUN_DEBOUNCE_MS` is `0` (today's behaviour) by default. The value is read on every request, so a change applies
-without a restart. The accepted values are `0` and 5 000 to 300 000 ms; anything else falls back to `0`.
+`TAB_RECAP_RUN_DEBOUNCE_MS` is `0` (today's behaviour) by default. It is read on every request, so a change applies without
+a restart. The config edge parses it once into a typed value, `Debounce = off | window(Milliseconds)`, with the accepted
+values `0` (off) and 5 000 to 300 000 ms; anything else is `off`. Milliseconds is a branded number, so a raw number never
+reaches the job.
 
-The recommended value is 60 000 ms: it covers the measured burst spacing (under 60 s) and is one minute of recap age at most.
-It is not made the default until the replay (D5) keeps the EXP-001 bar.
+The recommended value is 60 000 ms: it covers the measured burst spacing (under 60 s) and is one minute of recap age at
+most. It is not made the default until the replay (D5) keeps the EXP-001 bar.
 
 *Why the default stays at 0.* The debounce changes when a recap is written, and the recall effect of merging turns has not
 been measured. EXP-001 measured one run per turn. The operator's rule is that a default moves only when the data supports
@@ -79,18 +92,29 @@ name. No new column or view is proposed.
 ### D5. Measurement: merged turns in the replay
 
 The replay (`tab-recap eval --replay <file> --pipeline one`) runs one writer call per turn. A `--merge-turns <n>` option
-(new) groups consecutive turns into one call, the way a window merges them. The measurement is then:
+(new) groups consecutive turns into one call, the way a window merges them within one session. The measurement is then:
 
-- the EXP-001 corpus with `--merge-turns 1` (the control, equal to the R05/R10 setting) and `--merge-turns 2`, `3`, with the
-  writer and judge pinned as in R10 (writer Claude Haiku 5.5 at medium, judge codex gpt-6-luna at medium);
-- the same two runs repeated for the noise floor (R02/R03 showed coverage ±1, median 0, I4 ±1);
-- the bar: state coverage within the floor of the control (78–83 %), read-back median not below the control's, I4 within
-  the floor (87–93 %), 0 items dropped after the retry, and cost per turn at or below $0.0032.
+- the EXP-001 corpus with `--merge-turns 1` (the control, the R10 setting) and `--merge-turns 2` and `3`, with the writer and
+  judge pinned as in R10 (writer Claude Haiku 5.5 at medium, judge codex gpt-6-luna at medium);
+- the control run twice (A and B), and each merged setting run twice, so the noise floor is measured on this writer. The
+  README's R02 and R03 floor was measured on another writer and is not used;
+- the floor is `max(1 point, |control A − control B|)` on state coverage and on I4 supported. A difference inside the floor is
+  no difference;
+- the bar, against the control's own numbers:
+  - state coverage no more than the floor below the control's;
+  - I4 supported no more than the floor below the control's;
+  - read-back median not below the control's;
+  - 0 items dropped after the retry;
+  - cost per turn of text read at or below $0.0032.
 
-A window of 60 000 ms is recommended only if a merge of the typical burst (two to three turns) passes the bar.
+A window of 60 000 ms is recommended only if a merge of the typical burst (two to three turns) passes this bar.
 
-*Limit.* The EXP-001 corpus has 23 turns from one session, so the test is one session's worth of merging. A second session
-from another operator is not available in the repository.
+*Limit.* The EXP-001 corpus has 23 turns from one session. The replay merges consecutive turns of one session, so it cannot
+show merging across lanes: an orchestrator's burst comes from several lanes (child events), and that case is not measured.
+A second session from another operator is not available in the repository.
+
+*Private corpus.* The corpus and raw outputs stay on the private branch (`REMOVED-ON-MAIN.txt`). The replay runs there; only
+the metrics table and the run labels are committed, in `tab-recap/experiments/`.
 
 ## Settings
 
@@ -98,19 +122,33 @@ from another operator is not available in the repository.
 |---|---|---|---|
 | `TAB_RECAP_RUN_DEBOUNCE_MS` | 0 | 0 or 5 000 to 300 000 | needs a test first (recall with merged turns, D5); recommended 60 000 |
 
+## Risks
+
+- **A run lost to a restart or a tab close.** A pending debounced run lives in memory. A restart, or the tab closing, inside a
+  window drops it, and the recap stays stale until the next event on that tab. The cursor is not lost, because the next run
+  reads through it. Only the last turn of a burst is affected. The report counts 6 restarts in 32 hours. This risk is
+  accepted. A startup catch-up (one run per tab with unread turns at boot) is a follow-up.
+- **Recap age.** A debounced recap is up to one window older when the operator looks at it (open question 2).
+- **Merged turns across lanes.** Not measured by the replay (D5).
+
 ## Open questions for the operator
 
 1. **The recommended value.** 60 000 ms covers the measured bursts. A 30 000 ms window merges fewer runs and keeps the recap
    fresher; the data cannot choose between them until the D5 replay runs.
 2. **Recap age.** A debounced recap is up to one window older when the operator looks at it. Is one minute acceptable on the
    busiest orchestrator tabs?
+3. **A boundary cause.** Should a session switch get its own cause, so that it can be forced explicitly? Today it is not a
+   cause the job sees, so it is debounced like any turn ending. Accepting that is the default here.
 
 ## Verification
 
 - **Unit (new).** Two `turn-ended` requests 20 s apart start one run at the window's end and read both turns (the cursor
   advances once); a `focused` request during the window starts at once and resets `lastStart`; a `requested` request starts
-  at once; the first run of a tab starts at once; a lane-set change starts at once; `TAB_RECAP_RUN_DEBOUNCE_MS=0` starts
-  every turn-ended request at the settle delay as today; an invalid value falls back to 0.
+  at once; the tab's first run starts at once; a request with a changed lane set starts at once; with the window at 0 every
+  turn-ended request starts at the settle delay as today; an invalid value is `off`; after a restart the first turn-ended run
+  starts at once.
+- **Typed.** `Debounce` is parsed once at the edge; the job takes only the parsed value (a test passes a raw number and fails
+  to compile, or the config test covers each out-of-range value).
 - **Unit (existing).** Every test of `recap-job` keeps its expectations with the default of 0.
 - **Replay (D5).** The `--merge-turns` runs above, with the noise floor, reported in the MR with the run labels.
 - **Live check.** With the window at 60 000 ms on one busy orchestrator tab for one hour: the count of `recap-written` events
@@ -121,3 +159,4 @@ from another operator is not available in the repository.
 - No change to the settle delay, the single-flight rule per tab, or the queued `again`.
 - No change to which turns a run reads.
 - No change to the writer's model or effort.
+- No boundary cause.

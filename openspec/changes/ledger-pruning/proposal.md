@@ -7,12 +7,18 @@ and closed facts are shown to the writer for two hours. On the live data (32.3 h
 2 200 open facts, and the open facts that are older than 24 hours are almost all history: 957 open `done` facts (266 of them
 untouched for more than 24 hours), 284 open `next` facts (96 untouched), and 335 open `decisions` (71 untouched).
 
-Two orchestrator tabs carry 446 and 331 open facts. They send 72 to 74 KB of input per run and account for 63 % of the
-recap writer's spend (37 % and 26 %). The cost per run rose from $0.0030 on 10-09 to $0.0057 on 10-10, as those two ledgers
-grew; the EXP-001 bar is $0.0032 per turn.
+Two orchestrator tabs carry most of the open facts and most of the spend. One has 446 open facts, sends 74 KB of input per
+run, and accounts for 26 % of the recap writer's spend. The other has 331 open facts, sends 72 KB per run, and accounts for
+37 %. Together they are 63 % of the spend. The EXP-001 bar is $0.0032 per turn.
 
-The same stale facts fill the brief check's blocking set (see `autocompact-coverage-gate`), and they would carry stale
-questions into any handoff.
+The cost per run rose from $0.0030 on 10-09 to $0.0057 on 10-10. The report shows that the mean input per run rose from 25 KB
+at 01:00 to 61–68 KB at 03:00–04:00 on 10-10, and that the two tabs' input is the largest. It does not show their ledgers
+growing hour by hour. **Reading:** the growth of those ledgers is the likely cause of the input rise, and a per-hour ledger
+size is needed to confirm it (task 1.1).
+
+The stale facts also make the writer's input harder to use: stale `needs` and `next` facts are questions and steps answered
+days ago, shown beside the current ones. Pruning changes only what the writer is shown, so it addresses the cost and the
+clutter, not the brief check or any handoff, which keep reading the full state.
 
 ## What Changes
 
@@ -22,24 +28,30 @@ questions into any handoff.
   - `next` shows only the facts seen within `TAB_RECAP_WRITER_NEXT_HOURS` (24 by default), and at most the newest
     `TAB_RECAP_WRITER_KEEP_NEWEST`;
   - `goal`, `now`, `needs`, `decisions` and `rules` are never pruned: they are the state the writer must keep.
-- **The hidden count is said.** Each `ledger` carries the count of open facts the view hid, by section, so the writer knows they
-  exist. No hidden fact gets an id, so the writer cannot refer to one.
+- **The hidden count is said.** Each `ledger` carries, per section, the count of open facts the view hid, so the writer
+  knows they exist. No hidden fact gets an id, so the writer cannot refer to one.
+- **The gates check against the full open state.** The writer's operations are checked against every open fact, not the
+  pruned view. A hidden fact's text cannot be added again as new (the duplicate gate, G2, and the closed-repeat check
+  run on the full set).
 - **The ledger and the curator are unchanged.** The curator reconciles the full open view, so a stale fact is still closed by
   the curator when the transcript shows it answered. Pruning changes only what the recap writer is shown.
-- **Measured before it is switched on.** The default is off, and the switch moves only when the recall replay keeps the EXP-001
-  bar on the same writer and judge.
+- **Measured before it is switched on.** The default is off, and the switch moves only when the recall replay keeps the
+  EXP-001 bar on the same writer and judge.
 
 ## Out of scope
 
 - Closing facts by age. A fact's state is changed only by the writer's operations or the curator, as today.
 - The curator's input, the brief check's scope (`autocompact-coverage-gate`), and the recap run cadence (`recap-run-debounce`).
+  The brief check reads the full open goal, needs, decisions and rules facts; pruning does not change what it reads.
 - The writer's model and effort, and the EXP-001 corpus.
+- The column's caps (`fact-ledger`), which are separate from the writer's view. The column only changes how "newest" is defined.
 
 ## Impact
 
 - Code: `src/recap/application/recap-input.ts` (the writer's input builder, where `numbered` is called), `ledger-input.ts`
-  (the view), `schema/recap-input.dtd` (one optional attribute on `ledger`, additive: no version bump), `daemon/config.ts`
-  (three keys), `CONTEXT.md` (writer's view, hidden count).
+  (the view), `operations` gate (G2 and the closed-repeat check, which take the full open set), `schema/recap-input.dtd`
+  (an optional `hidden` child on `ledger`, additive: no version bump), `daemon/config.ts` (three keys, parsed to a typed
+  `WriterView`), `CONTEXT.md` (writer's view, hidden count).
 - Docs: `config.example.env`, `README.md`.
 - Behaviour with the default setting: none.
 - Measurement: a replay option for the pruned view (`tab-recap eval --replay --prune`), and an input-only comparison on the

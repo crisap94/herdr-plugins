@@ -41,9 +41,9 @@ restart.
 ### Requirement: Runs that another flow or the operator asked for start at once
 
 A run asked for by the operator's focus, by a refresh another flow is waiting for (autocompact's refresh, a compaction's
-refresh, an operator's request), for a tab with no recap yet, for a run whose set of lanes changed, or for the first run after
-a boundary (a compaction or a switch) SHALL start at once, whatever the window. Such a run SHALL set the tab's last run
-start, so the next turn ending is measured from it.
+refresh, an operator's request), for the first run of a tab in this daemon process, or for a run whose set of lanes differs
+from the tab's last run SHALL start at once, whatever the window. Such a run SHALL set the tab's last run start, so the next
+turn ending is measured from it.
 
 #### Scenario: A refresh inside a window
 
@@ -51,13 +51,18 @@ start, so the next turn ending is measured from it.
 - **THEN** the refresh SHALL start at once, and the turn ending SHALL start its run at the deadline measured from the
   refresh's start
 
-#### Scenario: A lane closes inside a window
+#### Scenario: A changed lane set inside a window
 
-- **WHEN** a lane of a tab closes during a window
-- **THEN** the run that records the closure SHALL start at once
+- **WHEN** a turn ending of a tab arrives inside a window and its lane set differs from the tab's last run's
+- **THEN** the run SHALL start at once and set the tab's last run start
 
 #### Scenario: A run in progress keeps its queue
 
 - **WHEN** a run is in progress and a turn ending arrives
 - **THEN** the turn ending SHALL be kept as the tab's next run, as today, and it SHALL start after the current run ends, not
   before the window's deadline
+
+#### Scenario: The first run after a restart
+
+- **WHEN** the daemon restarts and a turn ending of a tab arrives within the window of that tab's last run before the restart
+- **THEN** the run SHALL start at once, because the tab has no run in this process
