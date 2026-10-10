@@ -10,9 +10,11 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   message, compactability (hand-written per row). Verify: `node --test test/adapter-conformance.test.ts` passes.
 - [x] 1.2 Every pinned oddity carries a `PINS TODAY:` comment in the file that pins it.
   Verify: `grep -n "PINS TODAY" test/adapter-conformance*.test.ts` lists each one.
-- [x] 1.3 The `latestPrompt` text of each kind is pinned, and the pin bites: with claude's `latestPrompt` made to return
-  a fixed garbage string, the claude row fails (`latestPrompt finds the newest user prompt …`), and the adapter is
-  restored from git afterwards without a commit. Verify: that run, then `git status` shows no change under `src/`.
+- [x] 1.3 The `latestPrompt` text of each kind is pinned, and the pin bites for the claude and codex rows: with that
+  adapter's `latestPrompt` made to return a fixed value (a garbage string for claude, `null` for codex), its row fails
+  (`latestPrompt finds the newest user prompt …`), and the adapter is restored from git afterwards without a commit.
+  The opencode and screen rows are not mutation-checked by this change. Verify: those runs, then `git status` shows no
+  change under `src/`.
 
 ## 2. The missing cells (design decision 2)
 

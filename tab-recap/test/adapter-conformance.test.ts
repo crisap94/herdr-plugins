@@ -98,7 +98,9 @@ function rows(): Row[] {
     const day = join(codexRoot, today());
     mkdirSync(day, { recursive: true });
     writeFileSync(join(day, 'rollout-empty.jsonl'), `${JSON.stringify({ type: 'session_meta', payload: { cwd: '/empty' } })}\n`);
-    writeFileSync(join(day, 'rollout-recorded.jsonl'), [JSON.stringify({ type: 'session_meta', payload: { cwd: '/repo' } }), ...fixtureLines('codex-compacted.jsonl')].join('\n') + '\n');
+    // the user message is synthesized (the recorded fixture has none): it is the newest prompt, and the marks and observed values read only token_count, compacted and turn_context rows
+    const prompt = { type: 'response_item', timestamp: '2026-10-06T13:08:00.000Z', payload: { type: 'message', role: 'user', content: [{ text: 'keep going' }] } };
+    writeFileSync(join(day, 'rollout-recorded.jsonl'), [JSON.stringify({ type: 'session_meta', payload: { cwd: '/repo' } }), JSON.stringify(prompt), ...fixtureLines('codex-compacted.jsonl')].join('\n') + '\n');
     out.push({
         kind: 'codex', reader: new CodexTranscripts(codexRoot),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
@@ -106,8 +108,7 @@ function rows(): Row[] {
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
         inFlight: false,
-        // PINS TODAY: the recorded rollout carries no user message, so there is no prompt to find
-        prompt: null,
+        prompt: 'keep going',
         compactable: true,
     });
 
