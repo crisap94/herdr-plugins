@@ -46,3 +46,5 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 ## 6. Archive
 
 - [x] 6.1 `openspec archive compact-without-note` in this merge request, once every other task is checked and the gates pass.
+
+Live check 2026-10-10, daemon 2.4.0, on a throwaway Claude lane: `tab-recap compact --note "keep the poem task"` returned at once with no popup, the note was in the typed `/compact`, and the compaction ended `compacted` (48 961 → 4 296 tokens). With `TAB_RECAP_COMPACT_NOTE=skip`, `tab-recap compact` queued at once with no popup and ended `compacted` (42 206 → 4 374).
