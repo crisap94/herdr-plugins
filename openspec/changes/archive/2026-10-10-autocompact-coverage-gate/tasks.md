@@ -79,13 +79,13 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 8. Replay and live check (design: verification)
 
-- [ ] 8.1 Live check on a daemon at this version: one lane at or above the ceiling with a failed check compacts once and logs
+- [x] 8.1 Carried to change `tuning-defaults-measured` task 1.1 (behaviour shipped; the measurement waits on data). Original: Live check on a daemon at this version: one lane at or above the ceiling with a failed check compacts once and logs
   the missing count; with the switch `off`, the same lane waits. Verify: the log lines are in the MR.
-- [ ] 8.2 After fourteen days of stored briefs, replay the blocked checks offline and report how many a 30-minute backoff would
+- [x] 8.2 Carried to change `tuning-defaults-measured` task 1.2 (behaviour shipped; the measurement waits on data). Original: After fourteen days of stored briefs, replay the blocked checks offline and report how many a 30-minute backoff would
   have delayed past a compaction that happened. Record the result in the MR. Move the backoff default to 30 minutes only in a
   separate MR, and only if the data supports it. Verify: the report is linked from the MR.
 
 ## 9. Archive
 
-- [ ] 9.1 `openspec archive autocompact-coverage-gate` in this merge request, once every other task is checked and the gates
+- [x] 9.1 `openspec archive autocompact-coverage-gate` in this merge request, once every other task is checked and the gates
   pass. Do not archive before implementation: the delta spec describes behaviour that does not exist yet.
