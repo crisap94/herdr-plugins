@@ -16,7 +16,9 @@ export const JOB_TAG_BY_CALL: Readonly<Record<JobCall, JobTag>> = {
     coverageCheck: JOB_TAGS[5],
 };
 
-export type JobAttributes = Readonly<{ 'tab_recap.job': JobTag }>;
+export const JOB_ATTRIBUTE_KEY = 'tab_recap.job';
+
+export type JobAttributes = Readonly<{ [JOB_ATTRIBUTE_KEY]: JobTag }>;
 
 export function isJobTag(value: unknown): value is JobTag {
     return typeof value === 'string' && (JOB_TAGS as readonly string[]).includes(value);
