@@ -1,8 +1,7 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
-import { readerKindOf, replayTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { replayKindOf, replayTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';
 import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
@@ -35,8 +34,6 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 export function viewOf(options: Pick<EvalOptions, 'prune'>, config: Pick<Config, 'writerViewSettings'>): WriterView {
     return options.prune ? config.writerViewSettings : FULL_WRITER_VIEW;
 }
-
-const kindOf = (flag: string | null, file: string): RegisteredKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
 
 const sizeOf = (file: string): number | null => {
     try {
@@ -108,7 +105,7 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
 export function replayCommand(options: EvalOptions): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
-    const kind = kindOf(options.kind, file);
+    const kind = replayKindOf(options.kind, file);
     const reader = kind === null ? undefined : readers.exact(kind);
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
