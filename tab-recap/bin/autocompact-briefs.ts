@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/brief-instructions.ts';
+import { CLAUDE_KIND } from '#src/adapters/claude-transcripts.ts';
 import { CodexHarness } from '#src/adapters/codex-harness.ts';
 import { readPoints } from '#src/adapters/experiment-data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment-io.ts';
@@ -23,7 +24,7 @@ export function briefPoints(points: readonly Point[]): readonly Point[] {
 }
 
 const documentOf = (point: Point): string => compactionInput({
-    agent: { kind: 'claude', label: '', repo: null, branch: null }, note: null, current: sectionsOf(point.history), history: point.history, lastBreakAt: point.lastBreakAt,
+    agent: { kind: CLAUDE_KIND, label: '', repo: null, branch: null }, note: null, current: sectionsOf(point.history), history: point.history, lastBreakAt: point.lastBreakAt,
     recent: point.recent, clock: { now: point.at, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
 });
 

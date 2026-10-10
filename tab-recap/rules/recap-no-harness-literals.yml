@@ -1,0 +1,21 @@
+id: recap-no-harness-literals
+language: typescript
+severity: error
+message: >-
+  A harness id literal outside the adapters and the registries: ask the registry (`registeredKindOf`, the capability tables) instead.
+note: >-
+  The harness ids (claude, codex, opencode, hermes, custom) are spoken only by the adapters, by the job harness registry (`JOB_HARNESSES` in `backend.ts`) and by the registered kinds table (`REGISTERED_KINDS` in `registered-kinds.ts`).
+  Elsewhere a literal is a branch on the harness kind in the core, which the registries exist to replace.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-no-harness-literals/**"
+ignores:
+  - "**/src/adapters/**"
+  - "**/src/recap/domain/backend.ts"
+rule:
+  any:
+    - kind: string
+      regex: "^['\"](claude|codex|opencode|hermes|custom)['\"]$"
+    - kind: template_string
+      regex: "^`(claude|codex|opencode|hermes|custom)`$"

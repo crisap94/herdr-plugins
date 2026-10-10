@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment-data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment-io.ts';
+import { CODEX_PROGRAM } from '#src/adapters/codex-harness.ts';
 import { Labeller } from '#src/adapters/experiment-labeller.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';
@@ -42,7 +43,7 @@ function tally(dir: string): void {
     const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
         crossCheck: { n: rows.length, agreement: agreement(rows.map((r) => r.model), rows.map((r) => r.code)), kappa: kappa(rows.map((r) => r.model), rows.map((r) => r.code)), labellerPositives: rows.filter((r) => r.model === 1).length, codePositives: rows.filter((r) => r.code === 1).length },
-        codex: spawnSync('codex', ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
+        codex: spawnSync(CODEX_PROGRAM, ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
     };
     console.log(JSON.stringify(result, null, 2));
 }

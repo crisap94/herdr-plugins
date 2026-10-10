@@ -1,13 +1,15 @@
 export interface RegisteredKindCapabilities {
+    readonly hasTranscript: boolean;
     readonly compactable: boolean;
     readonly defaultPolicy: boolean;
     readonly autocompactDefault: boolean;
 }
 
 export const REGISTERED_KINDS = {
-    claude: { compactable: true, defaultPolicy: true, autocompactDefault: true },
-    codex: { compactable: true, defaultPolicy: true, autocompactDefault: false },
-    opencode: { compactable: true, defaultPolicy: true, autocompactDefault: false },
+    claude: { hasTranscript: true, compactable: true, defaultPolicy: true, autocompactDefault: true },
+    codex: { hasTranscript: true, compactable: true, defaultPolicy: true, autocompactDefault: false },
+    opencode: { hasTranscript: true, compactable: true, defaultPolicy: true, autocompactDefault: false },
+    hermes: { hasTranscript: false, compactable: false, defaultPolicy: false, autocompactDefault: false },
 } as const satisfies Readonly<Record<string, RegisteredKindCapabilities>>;
 
 export type RegisteredKind = keyof typeof REGISTERED_KINDS;

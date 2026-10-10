@@ -70,16 +70,22 @@ SHALL be left out of the compaction targets.
 
 ### Requirement: One registry hands out the transcript reader for a kind
 
-The plugin SHALL assemble transcript readers in one typed registry. The registry SHALL return a reader for each registered kind and SHALL return the screen reader for an unknown kind only when its configured fallback is present. Callers that require exact lookup SHALL receive no reader for an unregistered kind.
+The plugin SHALL declare a typed transcript capability for every registered kind. A supported capability SHALL provide its transcript reader. An unsupported capability SHALL name its reason and SHALL yield no exact reader. The registry SHALL return the screen reader for an unknown kind only when its configured fallback is present. Callers that require exact lookup SHALL receive no reader for an unsupported or unregistered kind.
 
 #### Scenario: A daemon reads an unknown kind
 
 - **WHEN** the daemon requests a reader for an unknown kind
-- **THEN** the registry SHALL return its screen reader fallback
+- **THEN** the registry SHALL return its screen reader fallback when configured
+
+#### Scenario: A registered kind declares unsupported history
+
+- **WHEN** a caller requests exact lookup for a registered kind with unsupported history
+- **THEN** the registry SHALL return no reader
+- **AND** its capability row SHALL expose the declared unsupported reason
 
 #### Scenario: A caller uses exact lookup
 
-- **WHEN** a caller requests exact lookup for an unknown kind
+- **WHEN** a caller requests exact lookup for an unregistered kind
 - **THEN** the registry SHALL return no reader
 
 #### Scenario: A modal reads an unknown kind
@@ -115,9 +121,9 @@ The kinds that can be compacted, appear in the default column policy, and are au
 
 - **WHEN** a kind is added to `REGISTERED_KINDS`
 - **THEN** it SHALL declare whether it is compactable, in the default policy, and autocompacted by default
-- **AND** adding it SHALL take two compiler-linked edits: its domain table row and one adapter reader line, since the domain cannot import adapters
-- **AND** the compiler SHALL require a reader line for every domain kind, reject adapter-only kinds, and require every capability on every row
-- **AND** a screen-only harness such as hermes SHALL NOT be registered until it has a transcript reader, which later harness adapters SHALL account for
+- **AND** adding it SHALL take compiler-linked rows in the registered-kind table and in the history readers, in-flight capability, context-window sources, compaction plans and session identity tables, since the domain cannot import adapters; session identity's value for a registered kind is the shared rule, but its row is still compiler-forced
+- **AND** the compiler SHALL require each table row for every registered kind and reject adapter-only kinds
+- **AND** a screen-only harness SHALL declare its unsupported history capability when registered without a transcript reader
 
 #### Scenario: Eligibility defaults are derived
 
@@ -318,3 +324,73 @@ The opencode reader SHALL count tool parts in the session's newest messages whos
 
 - **WHEN** the opencode database cannot be opened or queried
 - **THEN** the reader SHALL return `Unknown`
+
+### Requirement: Hermes is a registered job harness with explicit unsupported adapter capabilities
+
+Hermes SHALL remain a registered job harness and SHALL declare unsupported history, in-flight work, context window and compaction capabilities with typed reasons. Its session identity SHALL use the shared parser for reported pane sessions. Setup SHALL show a note derived from the job harness registry that identifies Hermes as recap-only. Hermes job behavior SHALL remain unchanged.
+
+#### Scenario: Hermes capabilities are declared in their registries
+
+- **WHEN** conformance checks inspect Hermes's registered capability row
+- **THEN** history, in-flight work, context window and compaction SHALL report their capability outcomes
+- **AND** a Hermes session id SHALL pass through the shared session parser
+
+#### Scenario: Hermes has no context-window basis
+
+- **WHEN** Hermes reports an observed context window
+- **THEN** the context-window lookup SHALL return no basis
+- **AND** an unregistered kind with the same observation SHALL retain its stated basis
+
+#### Scenario: Hermes keeps reported session identity
+
+- **WHEN** herdr reports a Hermes session id or session path
+- **THEN** the shared session parser SHALL return the parsed session identity
+
+#### Scenario: Hermes is selected for a recap job
+
+- **WHEN** the setup harness list is shown
+- **THEN** Hermes SHALL be shown with the localized recap-only note
+- **AND** the existing Hermes job invocation behavior SHALL remain unchanged
+
+#### Scenario: Hermes is a recognized reader kind
+
+- **WHEN** `readerKindOf` is asked about Hermes
+- **THEN** it SHALL return `hermes`
+
+#### Scenario: Hermes is used for recap, compaction and autocompact
+
+- **WHEN** a Hermes lane is read or considered for compaction or autocompaction
+- **THEN** recap SHALL report `no reader for hermes`
+- **AND** compaction SHALL not offer or type into the lane
+- **AND** autocompact SHALL stop at the in-flight gate with `no transcript reader for hermes`
+
+#### Scenario: A hermes lane with a screen reader is checked for in-flight work
+
+- **WHEN** autocompact checks a Hermes lane while `hermes` is listed in both `TAB_RECAP_SCREEN_AGENTS` and `TAB_RECAP_AUTOCOMPACT_KINDS`
+- **THEN** the in-flight skip reason SHALL be `no transcript reader for hermes`
+- **AND** the screen reader SHALL NOT be consulted for in-flight work
+
+### Requirement: Harness ids appear as literals only in the adapters and the registries
+
+A string literal equal to a harness id (`claude`, `codex`, `opencode`, `hermes`, `custom`) SHALL NOT appear in `src/` or `bin/` outside the adapters and the job harness registry (the registered kinds are declared as identifiers and need no exception). Lint SHALL enforce this with a rule whose probes show that it triggers on a harness-id literal and does not trigger on a string that merely contains one. Every copy of the rule's list of ids SHALL be checked against the ids derived from the registries, so a harness cannot be added without updating the guard.
+
+#### Scenario: A core file names a harness
+
+- **WHEN** a file in `src/` or `bin/` outside the allow-list contains a string literal equal to a harness id
+- **THEN** lint SHALL fail and its message SHALL point to the registry as the place to ask
+
+#### Scenario: A string only contains an id
+
+- **WHEN** a string such as a model name contains a harness id as a substring
+- **THEN** the rule SHALL NOT report it
+
+#### Scenario: A harness is added to the registries
+
+- **WHEN** a harness id is added to the registered kinds or to the job harness registry
+- **THEN** a test SHALL fail until the rule's list of ids includes it
+
+#### Scenario: A tool needs a harness fact
+
+- **WHEN** a tool under `bin/` needs a harness's kind or program name
+- **THEN** it SHALL import a named constant or function from the adapter that owns the fact
+- **AND** replay's default kind from a transcript path SHALL be inferred by the reader registry module, giving the same kind as before for every input

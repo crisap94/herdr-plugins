@@ -56,6 +56,8 @@ test('the harness list marks the current one ✓, the available ones ● and the
     assert.match(text, /✓ codex/);
     assert.match(text, /● claude/);
     assert.match(text, /● opencode/);
+    assert.match(text, /○ hermes — recap only/);
+    assert.match(setupView(withAvailable(base, ['hermes']), es, 80).join('\n'), /hermes — solo resúmenes/);
     assert.match(text, /auto — the first one found: claude → codex → opencode → hermes/);
 });
 

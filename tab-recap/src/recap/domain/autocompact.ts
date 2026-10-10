@@ -92,7 +92,7 @@ export function kindsOf(raw: string | undefined): readonly string[] {
 }
 
 export function shadowKindsOf(raw: string | undefined): readonly RegisteredKind[] {
-    const kinds = (raw ?? '').split(',').map((kind) => registeredKindOf(word(kind))).filter((kind): kind is RegisteredKind => kind !== null);
+    const kinds = (raw ?? '').split(',').map((kind) => registeredKindOf(word(kind))).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
     return [...new Set(kinds)];
 }
 

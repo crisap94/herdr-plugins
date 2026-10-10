@@ -2,6 +2,7 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
@@ -10,6 +11,8 @@ import { extractClaude } from './claude-rows.ts';
 import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts';
 
 export { extractClaude };
+
+export const CLAUDE_KIND = 'claude' satisfies RegisteredKind;
 
 function answerAt(source: string, budget: number): InFlightResult {
     let bytes = budget;
@@ -26,7 +29,7 @@ function answerAt(source: string, budget: number): InFlightResult {
 export const KEPT_UNKNOWN_MAX = 256;
 
 export class ClaudeTranscripts implements Transcripts {
-    readonly agent = 'claude';
+    readonly agent = CLAUDE_KIND;
     private readonly root: string;
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
     readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };

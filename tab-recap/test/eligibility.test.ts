@@ -13,7 +13,8 @@ test('eligibility lists preserve the current defaults', () => {
 
 test('every agent kind declares each eligibility capability as a boolean', () => {
     for (const [kind, capabilities] of Object.entries(REGISTERED_KINDS)) {
-        assert.deepEqual(Object.keys(capabilities).toSorted(), ['autocompactDefault', 'compactable', 'defaultPolicy'], kind);
+        assert.deepEqual(Object.keys(capabilities).toSorted(), ['autocompactDefault', 'compactable', 'defaultPolicy', 'hasTranscript'], kind);
+        assert.equal(typeof capabilities.hasTranscript, 'boolean', kind);
         assert.equal(typeof capabilities.compactable, 'boolean', kind);
         assert.equal(typeof capabilities.defaultPolicy, 'boolean', kind);
         assert.equal(typeof capabilities.autocompactDefault, 'boolean', kind);
@@ -22,9 +23,9 @@ test('every agent kind declares each eligibility capability as a boolean', () =>
 
 test('each eligibility list reads its own capability from the supplied table', () => {
     const table = {
-        alpha: { compactable: true, defaultPolicy: false, autocompactDefault: false },
-        beta: { compactable: false, defaultPolicy: true, autocompactDefault: false },
-        gamma: { compactable: false, defaultPolicy: false, autocompactDefault: true },
+        alpha: { hasTranscript: true, compactable: true, defaultPolicy: false, autocompactDefault: false },
+        beta: { hasTranscript: false, compactable: false, defaultPolicy: true, autocompactDefault: false },
+        gamma: { hasTranscript: false, compactable: false, defaultPolicy: false, autocompactDefault: true },
     } as const;
     assert.deepEqual(compactableKinds(table), ['alpha']);
     assert.deepEqual(defaultPolicyKinds(table), ['beta']);

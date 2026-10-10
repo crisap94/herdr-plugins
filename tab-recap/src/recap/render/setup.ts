@@ -92,7 +92,12 @@ function harnessChoices(state: Setup, m: Messages, width: number, style: Style):
     const editing = state.editing?.kind === 'choice' && fieldOf(state) === 'harness' ? state.editing.at : -1;
     const notes: Readonly<Partial<Record<BackendChoice, string>>> = {
         auto: m.setup.auto(AUTO_ORDER.join(' → ')),
-        ...Object.fromEntries(JOB_HARNESSES.flatMap(({ id, customCommand }) => customCommand ? [[id, m.setup.custom]] : [])),
+        ...Object.fromEntries(JOB_HARNESSES.flatMap(({ id, customCommand, setupNote }) => {
+            let note: string | undefined;
+            if (customCommand) note = m.setup.custom;
+            else if (setupNote !== null) note = m.setup.harnessNotes[setupNote];
+            return note === undefined ? [] : [[id, note]];
+        })),
     };
     const lines = HARNESS_CHOICES.flatMap((choice, at) => {
         const note = notes[choice];
