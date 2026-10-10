@@ -41,9 +41,7 @@ interface Ran {
     readonly documents: string[];
 }
 
-const withoutIds = (done: Replayed): Replayed => ({ ...done, facts: done.facts.map((fact) => Object.assign({}, fact, { id: '' })) });
-
-async function run(pipeline: Pipeline | undefined, writerView: WriterView, mergeTurns = 1): Promise<Ran> {
+async function run(pipeline: Pipeline | undefined, writerView: WriterView, mergeTurns?: number): Promise<Ran> {
     const { summarizer, seen } = adding();
     const enumerating = scripted([candidateFor]);
     const scratch = scratchStore();
@@ -92,21 +90,26 @@ test('--merge-turns is a positive whole number and goes with --replay', () => {
     assert.ok(aloneMerge.kind === 'usage' && /go with --replay/.test(aloneMerge.why));
 });
 
-test('replay with --merge-turns 1 is the per-turn replay: the same writer inputs, facts and cost as the default', async () => {
-    const control = await run('one', FULL_WRITER_VIEW);
-    assert.equal(control.done.turns, 6);
-    assert.equal(control.done.windows, 6);
-    assert.equal(control.seen.length, 6);
-    const explicit = await run('one', FULL_WRITER_VIEW, 1);
-    assert.deepEqual(explicit.seen, control.seen);
-    assert.deepEqual(withoutIds(explicit.done), withoutIds(control.done));
+test('replay with --merge-turns 1 is the per-turn replay: one writer call per turn, with or without the flag', async () => {
+    for (const mergeTurns of [undefined, 1]) {
+        const replayed = await run('one', FULL_WRITER_VIEW, mergeTurns);
+        assert.equal(replayed.done.turns, 6);
+        assert.equal(replayed.done.windows, 6);
+        assert.equal(replayed.done.facts.length, 6);
+        assert.equal(replayed.done.costUsd, 1.5);
+        assert.deepEqual(replayed.seen.map((request) => request.input.transcripts[0]?.entries[0]?.text), ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine']);
+        assert.deepEqual(replayed.seen.map((request) => request.input.transcripts.length), [1, 1, 1, 1, 1, 1]);
+    }
 });
 
 test('replay with --merge-turns 2 groups adjacent turns into one writer call each', async () => {
     const merged = await run('one', FULL_WRITER_VIEW, 2);
     assert.equal(merged.done.turns, 6);
     assert.equal(merged.done.windows, 3);
-    assert.equal(merged.seen.length, 3);
+    assert.equal(merged.done.facts.length, 3);
+    assert.equal(merged.done.costUsd, 0.75);
+    assert.deepEqual(merged.seen.map((request) => request.input.transcripts[0]?.entries.length), [4, 4, 4]);
+    assert.deepEqual(merged.seen.map((request) => request.input.transcripts[0]?.entries[0]?.text), ['Add a cart to the shop', 'also add totals', 'can guests keep their basket?']);
 });
 
 test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, the writer reconciles the candidates, the cost is summed', async () => {
