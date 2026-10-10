@@ -79,7 +79,7 @@ The command SHALL require exactly one source: `--from <pane>`, a pane identifier
 
 ### Requirement: Target is an explicitly selected idle lane
 
-The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. For a live source, `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. A closed source SHALL NOT be subject to this refusal, because a fresh pane may reuse a closed lane's identifier. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared function: for a lane whose session is known, a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's session is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
+The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. For a live source, `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. A closed source SHALL NOT be subject to this refusal, because a fresh pane may reuse a closed lane's identifier. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared function: for a lane whose locating key is known (the session identifier for Claude, the working directory for Codex and OpenCode), a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's locating key is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
 
 #### Scenario: Handoff to a fresh operator-created lane
 
@@ -92,9 +92,9 @@ The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an 
 - **THEN** the source's transcript SHALL NOT be read as the target's
 - **AND** readiness SHALL be decided by the status and the `awaiting` token only, and confirmation by the status only
 
-#### Scenario: The target's session is not known yet
+#### Scenario: The target's locating key is not known yet
 
-- **WHEN** the target's session identifier is not known to the daemon
+- **WHEN** the target's session identifier (Claude) or working directory (Codex, OpenCode) is not known to the daemon
 - **THEN** a missing transcript SHALL NOT mean nothing is in flight, and readiness SHALL be decided by the status and the `awaiting` token only
 
 #### Scenario: A done target
@@ -196,7 +196,7 @@ The daemon SHALL run a handoff in this order: refuse `source-equals-target` for 
 
 ### Requirement: The handoff states how fresh the ledger is
 
-The text SHALL carry a Freshness block before the ledger with: the time and run cause of the ledger's last recap run; the source lane's current status, or for a closed source the text `closed at` and the close instant as ISO-8601 UTC in its place; the newer user prompts; and the refresh result. The newer user prompts SHALL be counted by reading the lane's transcript from the recap's cursor through the lane's reader, and SHALL be shown as `none` when the read reports no growth, `at least N` when it found N user prompts, and `unknown` when the transcript cannot be read; `none` means no user prompt was found, and the count is a lower bound because the reader may skip the oldest part of an over-budget span. The refresh field SHALL be one of `not-requested`, `refreshed`, `failed` and `timed-out`. For a closed source the ledger run SHALL be the newest run linked to the task at or before the close instant and the newer prompts SHALL always be `unknown`. For a live source the daemon SHALL locate the transcript with the lane's current session; the CLI SHALL read the transcript the daemon last stored in the lane's cursor and SHALL NOT locate one. A lane that has never had a recap run SHALL be refused as `ledger-empty`. The source lane MAY be working; only the target is required to be idle.
+The text SHALL carry a Freshness block before the ledger with: the time of the ledger's last good run and how it came to run, in the words `after a turn`, `when the tab was focused`, `on request` or `imported` (the last good run is the one whose tasks and facts the handoff renders); the source lane's current status, or for a closed source the text `closed at` and the close instant as ISO-8601 UTC in its place; the newer user prompts; and the refresh result. The newer user prompts SHALL be counted by reading the lane's transcript from the recap's cursor through the lane's reader, and SHALL be shown as `newer prompts: none` when no user prompt was found (including when the transcript grew with agent output only), `newer prompts: at least N` when it found N user prompts, and `newer prompts: unknown` when the transcript cannot be read; the count is a lower bound because the reader may skip the oldest part of an over-budget span. The refresh field SHALL be rendered literally as `refresh not requested`, `refreshed`, `refresh failed` or `refresh timed out`. For a closed source the ledger run SHALL be the newest run linked to the task at or before the close instant and the newer prompts SHALL always be `unknown`. For a live source the daemon SHALL locate the transcript with the lane's current session; the CLI SHALL read the transcript the daemon last stored in the lane's cursor and SHALL NOT locate one. A lane that has never had a recap run, when none was made by `--refresh`, SHALL be refused as `ledger-empty`; when the refresh produced the only run, the Freshness time and cause SHALL be that run's. The Freshness labels SHALL contain no forbidden word. The source lane MAY be working; only the target is required to be idle.
 
 #### Scenario: The lane has newer prompts than the ledger
 
@@ -285,7 +285,7 @@ After the ledger the text SHALL carry a Worksite section with the values that ca
 
 ### Requirement: The handoff request runs once in the daemon
 
-The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row older than `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) when taken SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the running daemon is older than the CLI. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
+The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
 
 #### Scenario: A handoff is queued and answered
 
@@ -305,7 +305,7 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 #### Scenario: The daemon is older than the CLI
 
-- **WHEN** the running daemon recorded an older code version than the CLI
+- **WHEN** the running daemon recorded a code version that differs from the CLI's, or either version is unknown
 - **THEN** the CLI SHALL write no row and report `refused{daemon-outdated}`
 
 #### Scenario: The daemon is not running
@@ -317,13 +317,13 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 #### Scenario: No answer and the request was not taken
 
 - **WHEN** no answer appears within the wait bound and the CLI's withdrawal removes its request row
-- **THEN** the outcome SHALL be `failed{not-answered}` with the withdrawn message
+- **THEN** the outcome SHALL be `failed{not-answered-withdrawn}` with the withdrawn message
 - **AND** nothing SHALL be typed
 
 #### Scenario: No answer and the request was taken
 
 - **WHEN** no answer appears within the wait bound, the withdrawal removes no row, and a second read finds no answer
-- **THEN** the outcome SHALL be `failed{not-answered}` with the may-still-deliver message
+- **THEN** the outcome SHALL be `failed{not-answered-taken}` with the may-still-deliver message
 - **AND** the CLI SHALL NOT state that nothing was typed
 
 #### Scenario: The answer lands between the last poll and the withdrawal
@@ -340,7 +340,7 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 - **WHEN** the daemon restarts after taking a handoff and before writing its answer
 - **THEN** the handoff SHALL NOT be replayed
-- **AND** the CLI SHALL report `failed{not-answered}`
+- **AND** the CLI SHALL report `failed{not-answered-taken}`
 
 ## ADDED Requirements
 
