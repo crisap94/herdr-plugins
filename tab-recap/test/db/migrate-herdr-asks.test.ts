@@ -10,6 +10,8 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { rid } from '../fakes/ask-ledger.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { scratchDir, shapeOf } from './support.ts';
 
@@ -35,7 +37,7 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
         store.compactions.interrupted(3, 'restarted');
         assert.deepEqual(unfinishedCompactionAsks(db), [], 'once interrupted, nothing is unfinished');
         const coordinator = must(toolName('coordinator'));
-        const ask = { exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 3, ref: null };
+        const ask = { exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 3, ref: null };
         assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), false);
         store.asks.record(ask);
         assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), true);

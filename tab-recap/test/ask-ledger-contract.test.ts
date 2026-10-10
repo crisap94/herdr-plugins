@@ -4,13 +4,12 @@ import { AskLedgerRepository } from '#src/adapters/db/ask-ledger.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
-import type { RequestId } from '#src/protocol/primitives.ts';
+import { exchangeName, toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const sqlite = (): AskLedger => {
     const opened = openDatabase(MEMORY);
@@ -23,15 +22,14 @@ const implementations: readonly (readonly [string, () => AskLedger])[] = [['SQLi
 const coordinator = must(toolName('coordinator'));
 const reviewer = must(toolName('reviewer'));
 const handoff = must(exchangeName('handoff'));
-const rid = (raw: string): RequestId => must(requestId(raw, 'legacy-length'));
 const DONE: AskOutcome = { kind: 'done' };
 
 for (const [name, make] of implementations) {
     test(`${name}: an ask is seen by its exchange, requester and id; the local 'cli' requester and another tool are other asks`, () => {
         const ledger = make();
         assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), false);
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: 'r7', pane: 'w1:p1', at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('r7'), pane: paneId('w1:p1'), at: 2, ref: null });
         assert.deepEqual(
             [ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.seen(COMPACT_EXCHANGE, reviewer, 'r7'), ledger.seen(COMPACT_EXCHANGE, 'cli', 'r7'), ledger.seen(handoff, coordinator, 'r7')],
             [true, false, true, false],
@@ -40,14 +38,14 @@ for (const [name, make] of implementations) {
 
     test(`${name}: a duplicate record is ignored and keeps the first ask`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p2', at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p2'), at: 2, ref: null });
         assert.deepEqual(ledger.unfinished().map((ask) => [ask.pane, ask.at]), [['w1:p1', 1]]);
     });
 
     test(`${name}: an exchange with no descriptor is recorded, settled and seen like any other`, () => {
         const ledger = make();
-        ledger.record({ exchange: handoff, requester: coordinator, id: 'h1', pane: 'w1:p1', at: 1, ref: 'handoff-1' });
+        ledger.record({ exchange: handoff, requester: coordinator, id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: 'handoff-1' });
         assert.equal(ledger.seen(handoff, coordinator, 'h1'), true);
         ledger.settle({ exchange: handoff, id: rid('h1'), pane: paneId('w1:p1') }, DONE);
         assert.deepEqual(ledger.unfinished(), []);
@@ -55,7 +53,7 @@ for (const [name, make] of implementations) {
 
     test(`${name}: settle matches the exchange, the id and the pane, and only an unsettled ask`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p2') }, DONE);
         ledger.settle({ exchange: handoff, id: rid('r7'), pane: paneId('w1:p1') }, DONE);
         assert.equal(ledger.unfinished().length, 1, 'another pane or another exchange settles nothing');
@@ -65,19 +63,19 @@ for (const [name, make] of implementations) {
 
     test(`${name}: unfinished lists the asks with no outcome, oldest first, including a local requester's`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: 'l1', pane: 'w1:p1', at: 2, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p2', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: 'r8', pane: 'w1:p3', at: 3, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('l1'), pane: paneId('w1:p1'), at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p2'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: rid('r8'), pane: paneId('w1:p3'), at: 3, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r8'), pane: paneId('w1:p3') }, DONE);
         assert.deepEqual(ledger.unfinished().map((ask) => [ask.requester, ask.id, ask.exchange]), [['coordinator', 'r7', 'compact'], ['cli', 'l1', 'compact']]);
     });
 
     test(`${name}: prune deletes only settled asks older than the cut; an old unsettled ask stays`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'old-open', pane: 'w1:p1', at: 100, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'old-done', pane: 'w1:p2', at: 100, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('old-open'), pane: paneId('w1:p1'), at: 100, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('old-done'), pane: paneId('w1:p2'), at: 100, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('old-done'), pane: paneId('w1:p2') }, DONE);
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'new-done', pane: 'w1:p3', at: 900, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('new-done'), pane: paneId('w1:p3'), at: 900, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('new-done'), pane: paneId('w1:p3') }, DONE);
         ledger.prune(500);
         assert.deepEqual(
@@ -91,8 +89,8 @@ for (const [name, make] of implementations) {
 for (const [name, make] of implementations) {
     test(`${name}: attach sets the ref of the ask on its exchange, id and pane, once, and no other`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r8', pane: 'w1:p2', at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r8'), pane: paneId('w1:p2'), at: 2, ref: null });
         ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, 'compaction-1');
         ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r8'), pane: paneId('w1:p9') }, 'compaction-2');
         ledger.attach({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, 'compaction-3');
@@ -101,15 +99,15 @@ for (const [name, make] of implementations) {
 
     test(`${name}: withdraw removes one requester's unsettled ask and leaves another requester's same id`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: 'r7', pane: 'w1:p1', at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: rid('r7'), pane: paneId('w1:p1'), at: 2, ref: null });
         ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
         assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.seen(COMPACT_EXCHANGE, reviewer, 'r7')], [false, true]);
     });
 
     test(`${name}: withdraw keeps a settled ask`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, DONE);
         ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
         assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.unfinished()], [true, []]);
@@ -117,8 +115,8 @@ for (const [name, make] of implementations) {
 
     test(`${name}: two requesters with the same id on one pane are settled together by one terminal answer`, () => {
         const ledger = make();
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
-        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: 'r7', pane: 'w1:p1', at: 2, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+        ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: rid('r7'), pane: paneId('w1:p1'), at: 2, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, { kind: 'failed', reason: 'interrupted' });
         assert.deepEqual(ledger.unfinished(), [], 'the answer channel cannot tell the two apart, so the match settles both');
     });

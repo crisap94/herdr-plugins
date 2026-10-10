@@ -1,8 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { answerValue, askedOf, badIdAnswer, endAnswerOf, refusalAnswerOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
+import { finalAnswerOf, noteOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
+import { REGISTRY } from '#src/recap/domain/token-registry.ts';
+import { failureStage, answerValue } from '#src/protocol/exchange.ts';
+import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
+import { must } from '#src/protocol/result.ts';
+import { take } from '#src/protocol/responder.ts';
 
-test('askedOf reads a request value exactly as today: id, note and validity', () => {
+const readRequest = (raw: string): ReturnType<typeof take> => take(REGISTRY, { 'compact-req-coordinator': raw }, () => false);
+
+const askedOf = (raw: string): { readonly id: string; readonly note: string | null; readonly valid: boolean } | null => {
+    const read = readRequest(raw);
+    const [taken] = read.taken;
+    if (taken !== undefined) {
+        return { id: taken.id, note: noteOf(taken.value), valid: true };
+    }
+    const [refused] = read.refused;
+    return refused === undefined ? null : { id: refused.rawId, note: null, valid: false };
+};
+
+test('a request value is read exactly as before: id, note and validity', () => {
     const cases: readonly [string, ReturnType<typeof askedOf>][] = [
         ['', null],
         ['r7', { id: 'r7', note: null, valid: true }],
@@ -14,7 +31,7 @@ test('askedOf reads a request value exactly as today: id, note and validity', ()
         ['r7:   ', { id: 'r7', note: null, valid: true }],
         ['r7:  padded  ', { id: 'r7', note: '  padded  ', valid: true }],
         ['r7:a:b', { id: 'r7', note: 'a:b', valid: true }],
-        [':x', { id: '', note: 'x', valid: false }],
+        [':x', { id: '', note: null, valid: false }],
         [':', { id: '', note: null, valid: false }],
         ['a'.repeat(16), { id: 'a'.repeat(16), note: null, valid: true }],
         ['a'.repeat(17), { id: 'a'.repeat(17), note: null, valid: false }],
@@ -26,37 +43,31 @@ test('askedOf reads a request value exactly as today: id, note and validity', ()
     }
 });
 
-test('answerValue is id:stage, cut at 80 characters and never refused', () => {
+test('an answer is id:stage, cut at 80 characters and never refused', () => {
     assert.equal(VALUE_MAX, 80);
-    assert.equal(answerValue('r7', 'queued'), 'r7:queued');
-    assert.equal(answerValue('r7', 'running'), 'r7:running');
-    assert.equal(answerValue('r7', 'done'), 'r7:done');
-    assert.equal(answerValue('r7', 'failed-interrupted'), 'r7:failed-interrupted');
-    assert.equal(answerValue('', 'queued'), ':queued');
-    assert.equal(answerValue('a'.repeat(16), 'x'.repeat(63)), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'exactly 80 is kept');
-    assert.equal(answerValue('a'.repeat(16), 'x'.repeat(70)), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'over 80 is cut');
-    assert.equal(answerValue('a'.repeat(17), 'x'.repeat(70)), `${'a'.repeat(17)}:${'x'.repeat(62)}`, 'a 17-character id is cut too');
-    assert.equal(answerValue('r7', 'failed-' + 'z'.repeat(100)).length, 80);
+    assert.equal(must(answerValue(compact, 'r7', COMPACT_STAGES.queued)), 'r7:queued');
+    assert.equal(must(answerValue(compact, 'r7', COMPACT_STAGES.running)), 'r7:running');
+    assert.equal(must(answerValue(compact, 'r7', COMPACT_STAGES.done)), 'r7:done');
+    assert.equal(must(answerValue(compact, 'r7', failureStage(COMPACT_FAILURES.interrupted))), 'r7:failed-interrupted');
+    assert.equal(must(answerValue(compact, '', COMPACT_STAGES.queued)), ':queued');
+    assert.equal(must(answerValue(compact, 'a'.repeat(16), 'x'.repeat(63))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'exactly 80 is kept');
+    assert.equal(must(answerValue(compact, 'a'.repeat(16), 'x'.repeat(70))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'over 80 is cut');
+    assert.equal(must(answerValue(compact, 'a'.repeat(17), 'x'.repeat(70))), `${'a'.repeat(17)}:${'x'.repeat(62)}`, 'a 17-character id is cut too');
+    assert.equal(must(answerValue(compact, 'r7', 'failed-' + 'z'.repeat(100))).length, 80);
 });
 
-test('badIdAnswer keeps the first 16 characters of the id and says failed-bad-id', () => {
-    assert.equal(badIdAnswer('r7'), 'r7:failed-bad-id');
-    assert.equal(badIdAnswer(''), ':failed-bad-id');
-    assert.equal(badIdAnswer('a'.repeat(17)), `${'a'.repeat(16)}:failed-bad-id`);
+const refusedAnswer = (raw: string): string | undefined => readRequest(raw).refused[0]?.answer;
+
+test('a bad compact id is refused with failed-bad-id, its first 16 characters kept', () => {
+    assert.equal(refusedAnswer('r7'), undefined, 'a good id is taken, not refused');
+    assert.equal(refusedAnswer(':note'), ':failed-bad-id');
+    assert.equal(refusedAnswer(`${'a'.repeat(17)}:n`), `${'a'.repeat(16)}:failed-bad-id`);
 });
 
-test('endAnswerOf is done for a compaction and a slug of the reason otherwise', () => {
-    assert.equal(endAnswerOf('compacted', null), 'done');
-    assert.equal(endAnswerOf('compacted', 'anything'), 'done');
-    assert.equal(endAnswerOf('failed', 'agent busy'), 'failed-agent-busy');
-    assert.equal(endAnswerOf('failed', 'Not Ready!!'), 'failed-not-ready');
-    assert.equal(endAnswerOf('skipped', null), 'failed-skipped');
-    assert.equal(endAnswerOf('failed', ''), 'failed-unknown');
-    assert.equal(endAnswerOf('failed', '   '), 'failed-unknown');
-});
-
-test('refusalAnswerOf slugs the reason', () => {
-    assert.equal(refusalAnswerOf('bad id'), 'failed-bad-id');
-    assert.equal(refusalAnswerOf('Not a lane'), 'failed-not-a-lane');
-    assert.equal(refusalAnswerOf(''), 'failed-unknown');
+test('a compaction ends with done, or failed with its declared reason', () => {
+    assert.equal(finalAnswerOf('compacted', null), 'done');
+    assert.equal(finalAnswerOf('compacted', COMPACT_FAILURES.error), 'done');
+    assert.equal(finalAnswerOf('failed', COMPACT_FAILURES.error), 'failed-error');
+    assert.equal(finalAnswerOf('skipped', null), 'failed-skipped');
+    assert.equal(failureStage(COMPACT_FAILURES.notALane), 'failed-not-a-lane');
 });

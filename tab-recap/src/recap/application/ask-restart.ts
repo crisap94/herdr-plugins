@@ -1,3 +1,4 @@
+import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
@@ -58,7 +59,7 @@ export function answerRestart(deps: RestartDeps): number {
     }
     const restarted = deps.compactions.interrupted(deps.now(), deps.restartedWhy);
     for (const ask of deps.ledger.unfinished()) {
-        if (ask.requester === 'cli') {
+        if (ask.requester === LOCAL_REQUESTER) {
             deps.local(ask);
             deps.ledger.settle(ask, INTERRUPTED);
         } else {

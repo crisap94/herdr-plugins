@@ -13,12 +13,12 @@ import type { Ask } from '#src/ports/ask-ledger.ts';
 import { exchangeName, toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
-const frame = (pane: string, tokens: Record<string, string>): { readonly pane: { readonly pane_id: string; readonly tokens: Record<string, string> } } => ({ pane: { pane_id: pane, tokens } });
 const coordinator = must(toolName('coordinator'));
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
@@ -60,7 +60,7 @@ test('a queued request is answered failed-interrupted by a restart, and nothing 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual(lastOf(tokens, 'w1:p1'), { 'tab-recap-compact': 'r7:queued' });
     restart(asks, tokens);
@@ -72,7 +72,7 @@ test('a running compaction is answered failed-interrupted by a restart, and its 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     before.handler.answer('r7', 'w1:p1', 'running');
     await flush();
     restart(asks, tokens);
@@ -84,7 +84,7 @@ test('a request whose compaction finished is settled by its terminal answer, so 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     before.handler.answer('r7', 'w1:p1', 'running');
     before.handler.answer('r7', 'w1:p1', 'done');
     await flush();
@@ -98,8 +98,8 @@ test('joined requests are never left queued: every one of them is answered faile
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
-    before.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-reviewer': 'r8' }));
+    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
+    before.handler.onPaneTokens('w1:p1', { 'compact-req-reviewer': 'r8' });
     await flush();
     restart(asks, tokens);
     await flush();
@@ -113,7 +113,7 @@ test('joined requests are never left queued: every one of them is answered faile
 test('a local requester\'s ask is interrupted with no token: the local channel hears it and the ask is settled', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: 'l1', pane: 'w1:p1', at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('l1'), pane: paneId('w1:p1'), at: 1, ref: null });
     const localAsks: string[] = [];
     restart(asks, tokens, true, localAsks);
     assert.deepEqual([localAsks, tokens.reports, asks.unfinished()], [['l1'], [], []]);
@@ -122,7 +122,7 @@ test('a local requester\'s ask is interrupted with no token: the local channel h
 test('an unfinished ask of an exchange with no descriptor here is settled interrupted and writes no token', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: must(exchangeName('orphan')), requester: coordinator, id: 'o1', pane: 'w1:p1', at: 1, ref: null });
+    asks.record({ exchange: must(exchangeName('orphan')), requester: coordinator, id: rid('o1'), pane: paneId('w1:p1'), at: 1, ref: null });
     restart(asks, tokens, true, []);
     assert.deepEqual([tokens.reports, asks.unfinished()], [[], []]);
 });
@@ -130,17 +130,40 @@ test('an unfinished ask of an exchange with no descriptor here is settled interr
 test('an unfinished ask of a second exchange is answered under that exchange\'s own answer token', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: handoffLike.name, requester: coordinator, id: 'h1', pane: 'w1:p1', at: 1, ref: null });
+    asks.record({ exchange: handoffLike.name, requester: coordinator, id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: null });
     restart(asks, tokens);
     await flush();
     assert.deepEqual(tokens.reports.map((report) => report.tokens), [{ 'tab-recap-handoff': 'h1:failed-interrupted' }]);
     assert.deepEqual(asks.unfinished(), []);
 });
 
+test('a restart interrupts what was asked on every pane: each unfinished request is answered failed-interrupted, and none is run', async () => {
+    const asks = new MemoryAskLedger();
+    const tokens = new RecordingTokens();
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r8'), pane: paneId('w1:p2'), at: 2, ref: null });
+    restart(asks, tokens);
+    await flush();
+    assert.deepEqual(tokens.reports.map((report) => [report.pane, report.tokens]), [
+        ['w1:p1', { 'tab-recap-compact': 'r7:failed-interrupted' }],
+        ['w1:p2', { 'tab-recap-compact': 'r8:failed-interrupted' }],
+    ]);
+    assert.deepEqual(asks.unfinished(), []);
+});
+
+test('off: an interrupted request is not answered either', async () => {
+    const asks = new MemoryAskLedger();
+    const tokens = new RecordingTokens();
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+    restart(asks, tokens, false);
+    await flush();
+    assert.deepEqual(tokens.reports, []);
+});
+
 test('a restart interrupts each ask once: a second restart writes nothing', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
     restart(asks, tokens);
     const afterFirst = tokens.reports.length;
     restart(asks, tokens);
@@ -150,12 +173,12 @@ test('a restart interrupts each ask once: a second restart writes nothing', () =
 test('a taken id after a restart acts on nothing', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    daemon(asks, tokens).handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    daemon(asks, tokens).handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     const reported = tokens.reports.length;
     const after = daemon(asks, tokens);
     restart(asks, tokens);
-    after.handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    after.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual([after.asked, tokens.reports.length - reported], [[], 1], 'only the failed-interrupted answer is written');
 });
@@ -163,7 +186,7 @@ test('a taken id after a restart acts on nothing', async () => {
 test('a request taken while sharing is off is settled as off at once, so a later restart writes nothing for it', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    daemon(asks, tokens, false).handler.onPaneUpdated(frame('w1:p1', { 'compact-req-coordinator': 'r7' }));
+    daemon(asks, tokens, false).handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     const localAsks: string[] = [];
     const count = restart(asks, tokens, true, localAsks);

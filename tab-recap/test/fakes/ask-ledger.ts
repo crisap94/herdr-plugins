@@ -1,9 +1,10 @@
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import { requestId } from '#src/protocol/primitives.ts';
-import type { ExchangeName } from '#src/protocol/primitives.ts';
+import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+
+export const rid = (raw: string): RequestId => must(requestId(raw, 'legacy-length'));
 
 const keyOf = (exchange: ExchangeName, requester: Requester, id: string): string => `${exchange}\u0000${requester}\u0000${id}`;
 
@@ -17,7 +18,7 @@ export class MemoryAskLedger implements AskLedger {
     record(ask: NewAsk): void {
         const key = keyOf(ask.exchange, ask.requester, ask.id);
         if (!this.rows.has(key)) {
-            this.rows.set(key, { ...ask, id: must(requestId(ask.id, 'legacy-length')), pane: paneId(ask.pane), outcome: null });
+            this.rows.set(key, { ...ask, outcome: null });
         }
     }
 

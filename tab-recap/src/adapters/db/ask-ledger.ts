@@ -1,8 +1,8 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
 import type { ExchangeName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
 import { outcomeOf, outcomeText } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -11,8 +11,8 @@ import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
 
 const requesterOf = (raw: string): Requester | null => {
-    if (raw === 'cli') {
-        return 'cli';
+    if (raw === LOCAL_REQUESTER) {
+        return LOCAL_REQUESTER;
     }
     const parsed = toolName(raw);
     return parsed.kind === 'ok' ? parsed.value : null;
@@ -59,9 +59,7 @@ export class AskLedgerRepository implements AskLedger {
     }
 
     record(ask: NewAsk): void {
-        const id = must(requestId(ask.id, 'legacy-length'));
-        const pane = paneId(ask.pane);
-        writeTx(this.db, () => { this.insert.run(ask.exchange, ask.requester, id, pane, ask.at, ask.ref); });
+        writeTx(this.db, () => { this.insert.run(ask.exchange, ask.requester, ask.id, ask.pane, ask.at, ask.ref); });
     }
 
     attach(match: AskKey, ref: string): void {

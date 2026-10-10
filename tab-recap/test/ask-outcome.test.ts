@@ -14,4 +14,5 @@ test('a text that is not an outcome is refused, and a running stage is not one',
     assert.equal(outcomeOf('running'), null);
     assert.equal(outcomeOf('queued'), null);
     assert.equal(outcomeOf('bogus'), null);
+    assert.equal(outcomeOf('failed-bogus'), null, 'a failure reason no exchange declares is not an outcome');
 });

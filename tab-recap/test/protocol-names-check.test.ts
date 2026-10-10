@@ -46,3 +46,33 @@ test('a copy of a failure stage in src fails the check: the wire form failed-<re
         rmSync(root, { recursive: true, force: true });
     }
 });
+
+const LEAKS: readonly (readonly [string, string, string])[] = [
+    ['a template literal that builds a request name', 'const name = `compact-req-${tool}`;\n', 'compact-req-${tool}'],
+    ['a literal request name', "const name = 'compact-req-coordinator';\n", 'compact-req-coordinator'],
+    ['a concatenated failure stage', "const stage = 'failed-' + 'x';\n", 'failed-'],
+    ['a copy of an answer token', "const token = 'tab-recap-compact';\n", 'tab-recap-compact'],
+    ['a copy of an event kind', "emit('compact-queued');\n", 'compact-queued'],
+];
+
+for (const [what, source, literal] of LEAKS) {
+    test(`${what} in src fails the check`, () => {
+        const root = scratchTree('leak.ts', source);
+        try {
+            const result = check(root);
+            assert.equal(result.status, 1);
+            assert.match(result.stderr, /src\/adapters\/leak\.ts:1: ".*" is a protocol name/, literal);
+        } finally {
+            rmSync(root, { recursive: true, force: true });
+        }
+    });
+}
+
+test('a bare stage word is not a protocol name: done and running are ordinary words in src', () => {
+    const root = scratchTree('status.ts', "export const status = ['done', 'running'];\n");
+    try {
+        assert.deepEqual(check(root), { status: 0, stderr: '' });
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+});

@@ -2,11 +2,11 @@ import { err, ok } from './result.ts';
 import type { Result } from './result.ts';
 import { LIMITS, exchangeName, exchangeVersion } from './primitives.ts';
 import type { TokenName } from './primitives.ts';
-import { answerToken, failureStage } from './exchange.ts';
+import { answerToken, failureStage, INTERRUPTED_REASON } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
 
 export type RegistryRefusal = {
-    readonly reason: 'duplicate-name' | 'duplicate-prefix' | 'prefix-overlap' | 'bad-name' | 'bad-version' | 'name-too-long' | 'value-too-long' | 'too-many-own-names';
+    readonly reason: 'duplicate-name' | 'duplicate-prefix' | 'prefix-overlap' | 'bad-name' | 'bad-version' | 'name-too-long' | 'value-too-long' | 'too-many-own-names' | 'missing-interrupted';
     readonly detail: string;
 };
 
@@ -34,6 +34,9 @@ function checkExchange(exchange: Exchange): Result<TokenName, RegistryRefusal> {
     }
     if (exchangeVersion(exchange.version).kind === 'err') {
         return refusal('bad-version', String(exchange.version));
+    }
+    if (!exchange.failureReasons.includes(INTERRUPTED_REASON)) {
+        return refusal('missing-interrupted', exchange.name);
     }
     const answer = answerToken(exchange);
     if (answer.kind === 'err' || exchange.requestPrefix.length + LIMITS.toolMax > LIMITS.nameMax) {

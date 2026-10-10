@@ -18,7 +18,8 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 
 const NOW = Date.parse('2026-10-10T10:00:00Z');
@@ -41,7 +42,7 @@ function world(states: readonly AgentState[], answerOn: boolean): World {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const handler = new CompactRequests({ enabled: (): boolean => true, board, requests: { requestCompact: (): void => undefined }, asks, tokens, now: (): number => NOW, log: (): void => undefined });
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: 'r7', pane: 'w1:p1', at: NOW, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: NOW, ref: null });
     const agents: Agents = {
         status: (): Promise<AgentState> => {
             const state = states[Math.min(reads, states.length - 1)] ?? states[0];

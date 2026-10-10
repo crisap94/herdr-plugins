@@ -15,7 +15,6 @@ import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
-const frame = (tokens: Record<string, string>): { readonly pane: { readonly pane_id: string; readonly tokens: Record<string, string> } } => ({ pane: { pane_id: 'w1:p1', tokens } });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 const coordinator = must(toolName('coordinator'));
 
@@ -48,11 +47,11 @@ test('an enqueue that throws leaves no ask behind, so the same request is taken 
     const asked: CompactRequest[] = [];
     const queue = { throwing: true };
     const first = handler(asks, tokens, queue, asked);
-    first.onPaneUpdated(frame({ 'compact-req-coordinator': 'r7' }));
+    first.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual([asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), tokens.reports.length, asked.length], [false, 0, 0]);
     queue.throwing = false;
-    first.onPaneUpdated(frame({ 'compact-req-coordinator': 'r7' }));
+    first.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual([asked.map((request) => request.answer), tokens.reports.map((report) => report.tokens)], [['r7'], [{ 'tab-recap-compact': 'r7:queued' }]]);
 });
@@ -61,7 +60,7 @@ test('a crash between recording the ask and enqueueing leaves an unfinished ask 
     const asks = new CrashingLedger();
     const tokens = new RecordingTokens();
     const asked: CompactRequest[] = [];
-    handler(asks, tokens, { throwing: true }, asked).onPaneUpdated(frame({ 'compact-req-coordinator': 'r7' }));
+    handler(asks, tokens, { throwing: true }, asked).onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual([asked.length, asks.unfinished().map((ask) => ask.id)], [0, ['r7']]);
     answerRestart({
@@ -98,7 +97,7 @@ test('the ask is recorded before the request is queued, so the queue never sees 
         now: (): number => 1000,
         log: (): void => undefined,
     });
-    probing.onPaneUpdated(frame({ 'compact-req-coordinator': 'r7' }));
+    probing.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
     assert.deepEqual(seenAtEnqueue, [true]);
 });

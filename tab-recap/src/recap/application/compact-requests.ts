@@ -15,7 +15,6 @@ import { answer as answerOf, take } from '#src/protocol/responder.ts';
 import type { Refused } from '#src/protocol/responder.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
-import { tokensOf } from './decode.ts';
 
 const PENDING_MAX = 200;
 const BAD_MAX = 500;
@@ -44,13 +43,6 @@ export class CompactRequests {
 
     constructor(deps: CompactRequestDeps) {
         this.deps = deps;
-    }
-
-    onPaneUpdated(data: Readonly<Record<string, unknown>>): void {
-        const frame = tokensOf(data);
-        if (frame !== null) {
-            this.onPaneTokens(frame.pane, frame.tokens);
-        }
     }
 
     onPaneTokens(pane: string, tokens: TokenMap): void {
@@ -85,12 +77,6 @@ export class CompactRequests {
         const askId = parseAskId(id);
         if (askId !== null) {
             this.finish(askId, pane, stage);
-        }
-    }
-
-    answerInterrupted(asks: readonly { readonly pane: string; readonly id: string }[]): void {
-        for (const ask of asks) {
-            this.answer(ask.id, ask.pane, failureStage(COMPACT_FAILURES.interrupted));
         }
     }
 
@@ -150,7 +136,7 @@ export class CompactRequests {
     }
 
     private remember(incoming: Incoming): void {
-        this.deps.asks.record({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id: incoming.id, pane: incoming.pane, at: this.deps.now(), ref: null });
+        this.deps.asks.record({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id: incoming.id, pane: paneId(incoming.pane), at: this.deps.now(), ref: null });
     }
 
     private reply(pane: string, write: TokenWrite): void {

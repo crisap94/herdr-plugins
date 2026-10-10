@@ -7,7 +7,7 @@ import type { RegistryRefusal } from '#src/protocol/registry.ts';
 import { exchangeName, exchangeVersion, requestId, tokenName, toolName } from '#src/protocol/primitives.ts';
 import type { RequestId, TokenName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
-import { answerValue as compactAnswerValue } from '#src/recap/domain/compact-request.ts';
+import { compact } from '#src/protocol/exchanges/compact.ts';
 
 const brand = <T, E>(result: Result<T, E>): T => {
     if (result.kind === 'err') {
@@ -22,7 +22,7 @@ const probe = (raw: string, over: Partial<Exchange> = {}): Exchange => defineExc
     requestPrefix: 'probe-req-',
     request: [{ kind: 'id', grammar: 'token-safe' }],
     answerStages: ['queued', 'running', 'done'],
-    failureReasons: ['bad-id'],
+    failureReasons: ['bad-id', 'interrupted'],
     events: [],
     optIn: null,
     timing: {},
@@ -60,6 +60,11 @@ test('a request prefix that lets a 20-character tool name pass 32 characters is 
     assert.equal(buildRegistry([probe('probe', { requestPrefix: 'compact-req-' })], []).kind, 'ok');
 });
 
+test('an exchange that does not declare the restart reason interrupted is refused: a restart answers every exchange with it', () => {
+    assert.deepEqual(refused(buildRegistry([probe('probe', { failureReasons: ['bad-id'] })], [])), { reason: 'missing-interrupted', detail: 'probe' });
+    assert.equal(buildRegistry([probe('probe', { failureReasons: ['bad-id', 'interrupted'] })], []).kind, 'ok');
+});
+
 test('a derived answer longer than 80 characters is refused, unless the exchange truncates it', () => {
     const longStage = { answerStages: ['x'.repeat(64)] };
     assert.deepEqual(refused(buildRegistry([probe('probe', longStage)], [])), { reason: 'value-too-long', detail: 'probe' });
@@ -84,7 +89,7 @@ test('a truncating exchange answers exactly as the compaction answer did', () =>
     const exchange = probe('compact', { request: [{ kind: 'id', grammar: 'legacy-length' }], truncatesAnswer: true });
     const id: RequestId = brand(requestId('r.7', 'legacy-length'));
     const stage = 'failed-' + 'z'.repeat(90);
-    assert.equal(brand(answerValue(exchange, id, stage)), compactAnswerValue('r.7', stage));
+    assert.equal(brand(answerValue(exchange, id, stage)), brand(answerValue(compact, 'r.7', stage)));
 });
 
 test('a refusing exchange refuses a value longer than 80 characters instead of truncating it', () => {

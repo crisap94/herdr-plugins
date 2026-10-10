@@ -3,7 +3,9 @@ import type { RequestId } from '#src/protocol/primitives.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 
-export type Requester = ToolName | 'cli';
+export const LOCAL_REQUESTER = 'cli';
+
+export type Requester = ToolName | typeof LOCAL_REQUESTER;
 
 export interface Ask {
     readonly exchange: ExchangeName;
@@ -18,8 +20,8 @@ export interface Ask {
 export interface NewAsk {
     readonly exchange: ExchangeName;
     readonly requester: Requester;
-    readonly id: string;
-    readonly pane: string;
+    readonly id: RequestId;
+    readonly pane: PaneId;
     readonly at: number;
     readonly ref: string | null;
 }

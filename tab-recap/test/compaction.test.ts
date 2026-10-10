@@ -20,7 +20,8 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
@@ -431,7 +432,7 @@ test('a request that joins a running compaction is settled in the ask ledger whe
     const handler = new CompactRequests({
         enabled: (): boolean => true, board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): number => NOW, log: (): void => undefined,
     });
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(toolName('coordinator')), id: 'r1', pane: 'w1:p1', at: NOW, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(toolName('coordinator')), id: rid('r1'), pane: paneId('w1:p1'), at: NOW, ref: null });
     const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stage); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
     await Promise.all([
         compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
@@ -521,4 +522,37 @@ test('a joined request with a note is told its note is not used; an automatic re
         joining.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
     ]);
     assert.equal(auto.toasts.some((toast) => /already compacting/.test(toast)), false, 'an automatic joiner is not announced');
+});
+
+test('a request whose agent blocks at the typing is answered failed-skipped: the same cause as an agent blocked when it is read', async () => {
+    const world = fleet({ 'w1:p1': 'idle' }, ['w1:p1']);
+    await flow(world, 'focused', 'w1:p1').run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-skipped']);
+});
+
+test('a request whose typing is refused for any other cause is answered failed-error', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const refusing = { ...world, agents: { ...world.agents, typeLine: (): Promise<Prompted> => Promise.resolve(unknown({ why: 'not-found', what: 'w1:p1' })) } };
+    await flow(refusing, 'focused', 'w1:p1').run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-error']);
+});
+
+test('a request for an agent with no compaction plan is answered failed-error', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: 'w1:p2', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p2 running', 'r7 w1:p2 failed-error']);
+});
+
+test('a request whose compaction fails on its own summary, twice, is answered failed-error', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', null, [[failed]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-error']);
+});
+
+test('an automatic request the coverage check stops is answered failed-skipped', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'a brief' }).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-skipped']);
+    assert.deepEqual(world.typed, [], 'nothing is typed');
 });

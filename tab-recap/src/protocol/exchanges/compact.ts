@@ -1,3 +1,4 @@
+import { INTERRUPTED_REASON } from '../exchange.ts';
 import type { Exchange } from '../exchange.ts';
 import { exchangeName, exchangeVersion } from '../primitives.ts';
 import { must } from '../result.ts';
@@ -7,7 +8,7 @@ export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'don
 export const COMPACT_FAILURES = {
     badId: 'bad-id',
     notALane: 'not-a-lane',
-    interrupted: 'interrupted',
+    interrupted: INTERRUPTED_REASON,
     noTarget: 'no-target',
     skipped: 'skipped',
     busy: 'busy',
@@ -15,6 +16,13 @@ export const COMPACT_FAILURES = {
 } as const;
 
 export type CompactFailure = (typeof COMPACT_FAILURES)[keyof typeof COMPACT_FAILURES];
+
+export const COMPACT_EVENTS = {
+    queued: 'compact-queued',
+    running: 'compact-running',
+    done: 'compact-done',
+    failed: 'compact-failed',
+} as const;
 
 export const compact = {
     name: must(exchangeName('compact')),
@@ -26,7 +34,7 @@ export const compact = {
     ],
     answerStages: Object.values(COMPACT_STAGES),
     failureReasons: Object.values(COMPACT_FAILURES),
-    events: ['compact-queued', 'compact-running', 'compact-done', 'compact-failed'],
+    events: Object.values(COMPACT_EVENTS),
     optIn: 'TAB_RECAP_HERDR_EVENTS',
     timing: {},
     truncatesAnswer: true,

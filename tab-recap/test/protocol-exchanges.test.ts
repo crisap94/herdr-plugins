@@ -9,14 +9,14 @@ import { must } from '#src/protocol/result.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
 import { ANSWER_TOKENS, REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { COMPACT_TOKEN, OWNED_TOKENS, PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
-import { REQUEST_PREFIX } from '#src/recap/domain/compact-request.ts';
+import { compact } from '#src/protocol/exchanges/compact.ts';
 
 test('the capability value for compact alone is compact1,kinds1', () => {
     assert.deepEqual(capabilityValue(EXCHANGES, must(exchangeVersion(1))), { kind: 'ok', value: 'compact1,kinds1' });
 });
 
 test('the compact names are derived from its descriptor: request prefix and answer token', () => {
-    assert.equal(REQUEST_PREFIX, 'compact-req-');
+    assert.equal(compact.requestPrefix, 'compact-req-');
     assert.equal(COMPACT_TOKEN, 'tab-recap-compact');
     assert.deepEqual(ANSWER_TOKENS, ['tab-recap-compact']);
 });

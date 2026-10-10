@@ -33,7 +33,7 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
     publisher.tick();
     events.lane('w1:p1', 'recap-written', 'turn-ended');
     const answers = new CompactRequests({ enabled: (): boolean => true, board: (): Board => board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens: paneWrites, now: (): number => 1000, log: (): void => undefined });
-    answers.onPaneUpdated({ pane: { pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } } });
+    answers.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: {} }) };
     const lease = new TypingLease({ tokens: paneWrites, panes, now: (): number => 5, pause: async (): Promise<void> => undefined, log: (): void => undefined });
     await lease.acquire('w1:p1', 0);
@@ -53,7 +53,7 @@ test('the request answers are not the tool\'s token: the answer is written under
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
     const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) };
     new CompactRequests({ enabled: (): boolean => true, board: (): Board => board, requests: { requestCompact: (request: CompactRequest): void => { requests.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): number => 1000, log: (): void => undefined })
-        .onPaneUpdated({ pane: { pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } } });
+        .onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await new Promise<void>((resolve) => { setImmediate(resolve); });
     assert.deepEqual(tokens.reports.map((report) => Object.keys(report.tokens)), [['tab-recap-compact']]);
 });

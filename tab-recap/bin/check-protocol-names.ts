@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { answerToken, failureStage } from '#src/protocol/exchange.ts';
+import { answerToken, FAILURE_PREFIX } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 
@@ -17,11 +17,11 @@ const STRING_LITERAL = /(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g;
 
 const wireNamesOf = (exchange: Exchange): readonly string[] => {
     const answer = answerToken(exchange);
-    return [exchange.requestPrefix, ...(answer.kind === 'ok' ? [answer.value] : []), ...exchange.failureReasons.map(failureStage)];
+    return [exchange.requestPrefix, ...(answer.kind === 'ok' ? [answer.value] : []), ...exchange.events];
 };
 
-export const protocolLiterals = (exchanges: readonly Exchange[]): ReadonlySet<string> =>
-    new Set([CAPABILITY_TOKEN, ...exchanges.flatMap(wireNamesOf)]);
+export const protocolNames = (exchanges: readonly Exchange[]): ReadonlySet<string> =>
+    new Set([CAPABILITY_TOKEN, FAILURE_PREFIX, ...exchanges.flatMap(wireNamesOf)]);
 
 const sourceFiles = (root: string): readonly string[] =>
     readdirSync(join(root, 'src'), { recursive: true, withFileTypes: true })
@@ -33,15 +33,15 @@ const sourceFiles = (root: string): readonly string[] =>
 const literalsIn = (text: string): readonly { readonly literal: string; readonly line: number }[] =>
     [...text.matchAll(STRING_LITERAL)].map((match) => ({ literal: match[2] ?? '', line: text.slice(0, match.index).split('\n').length }));
 
-export function findNames(root: string, literals: ReadonlySet<string>): readonly Finding[] {
+export function findNames(root: string, names: ReadonlySet<string>): readonly Finding[] {
     return sourceFiles(root).flatMap((file) =>
         literalsIn(readFileSync(join(root, file), 'utf8'))
-            .filter((found) => literals.has(found.literal))
+            .filter((found) => [...names].some((name) => found.literal.includes(name)))
             .map((found) => ({ file, line: found.line, literal: found.literal })));
 }
 
 function main(root: string): number {
-    const findings = findNames(root, protocolLiterals(REGISTRY.exchanges));
+    const findings = findNames(root, protocolNames(REGISTRY.exchanges));
     if (findings.length === 0) {
         console.log('protocol names: clean');
         return 0;
