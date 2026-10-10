@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { outcomeOf } from '#src/recap/application/compaction-outcome.ts';
@@ -32,21 +33,21 @@ function confirm(recent: LaneRecent, lane: Lane): Promise<string> {
 
 test('a brand-new agent: its lane has no session yet, herdr reports one now, and the compaction is confirmed in that session', async () => {
     const files = new Map([['/projects/x/S-new.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent([claude(files)], () => Promise.resolve('S-new'));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve('S-new'));
     const lane = laneFrom({ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', session: null });
     assert.equal(await confirm(recent, lane), 'compacted');
 });
 
 test('a resumed agent: its lane holds the session it had, herdr reports the new one, and the compaction is confirmed in the new one', async () => {
     const files = new Map([['/projects/x/S-old.jsonl', []], ['/projects/x/S-new.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent([claude(files)], () => Promise.resolve('S-new'));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve('S-new'));
     const lane = laneFrom({ paneId: 'w28:p1', tabId: 'w28:t1', workspaceId: 'w28', agent: 'claude', session: 'S-old' });
     assert.equal(await confirm(recent, lane), 'compacted');
 });
 
 test('herdr cannot say the session: the lane as the board holds it is read, as before', async () => {
     const files = new Map([['/projects/x/S-old.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent([claude(files)], () => Promise.resolve(unknown({ why: 'unreachable', detail: 'pane.get' })));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve(unknown({ why: 'unreachable', detail: 'pane.get' })));
     const lane = laneFrom({ paneId: 'w28:p1', tabId: 'w28:t1', workspaceId: 'w28', agent: 'claude', session: 'S-old' });
     assert.equal(await confirm(recent, lane), 'compacted');
 });

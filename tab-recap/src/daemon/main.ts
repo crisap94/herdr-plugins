@@ -1,7 +1,4 @@
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
-import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
-import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
-import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
+import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
@@ -108,7 +105,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
-    const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
+    const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
     const recaps = new RecapJob({

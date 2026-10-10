@@ -1,4 +1,5 @@
 import { test, after } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -29,6 +30,7 @@ import { policyOf } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
@@ -148,7 +150,7 @@ const sourceOf = (found: Located): string => {
     return found.source;
 };
 
-async function skipOf(readers: readonly Transcripts[], placed: Lane, kind: BackendId | 'gemini'): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
+async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: BackendId | 'gemini'): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const decider: Decider = { label: 'fake', ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
@@ -219,7 +221,7 @@ for (const row of ROWS) {
     test(`${row.kind}: inFlight is present for claude only; with the kind enabled for autocompact, where it is absent autocompact says why it stopped${row.kind === 'gemini' ? '; pins today: screen lane says no reader for gemini although the screen reader exists' : ''}`, async () => {
         if (!row.inFlight) {
             assert.equal(typeof row.reader.inFlight, 'undefined');
-            const skip = await skipOf([row.reader], row.recorded, row.kind);
+            const skip = await skipOf(registryWith({ [row.reader.agent]: row.reader }), row.recorded, row.kind);
             assert.deepEqual(skip, { gate: 'in-flight', detail: `no reader for ${row.kind}` });
             return;
         }
@@ -266,12 +268,12 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
     const store = memoryStore();
     const writer: Summarizer = { backend: 'fake', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: '{"ops":[]}', costUsd: 0 }) };
     const job = new RecapJob({
-        repos: NO_REPOS, transcripts: [], records: store.records, ledger: store.ledger,
+        repos: NO_REPOS, transcripts: registryWith({}), records: store.records, ledger: store.ledger,
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,
     });
     await job.refreshNow(tabId('w1:t1'), [hermes]);
     assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for hermes/);
 
-    assert.deepEqual(await skipOf([], hermes, 'hermes'), { gate: 'in-flight', detail: 'no reader for hermes' });
+    assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no reader for hermes' });
 });

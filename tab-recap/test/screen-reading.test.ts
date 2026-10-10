@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
+import { ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';
@@ -45,7 +45,7 @@ const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 
 test('ScreenTranscripts: only for the kinds asked, one source per pane, the revision is the cursor and a hash of the clean text the tail', async () => {
     const screens = new FakeScreens();
     const reader = new ScreenTranscripts(screens, (agent) => agent === 'gemini');
-    assert.equal(reader.agent, '*');
+    assert.equal(reader.agent, SCREEN_READER_ID);
     assert.equal((await reader.locate(lane('qwen'))).kind, 'unknown');
     const located = await reader.locate(lane('gemini'));
     assert.deepEqual(located, { kind: 'located', source: 'screen:w1:p3' });

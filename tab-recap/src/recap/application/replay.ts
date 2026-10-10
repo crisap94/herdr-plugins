@@ -5,6 +5,7 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -76,7 +77,7 @@ export async function replay(deps: ReplayDeps, file: string, label: string, size
     const windows = windowsOf(whole.entries);
     const at: Position = { turn: 0, now: windows.at(0)?.at(0)?.at ?? 1 };
     const job = new RecapJob({
-        transcripts: [windowed(deps.reader, file, windows, at)], records: deps.records, ledger: deps.ledger, repos: deps.repos, summarizer: deps.summarizer,
+        transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null), records: deps.records, ledger: deps.ledger, repos: deps.repos, summarizer: deps.summarizer,
         language: (): string => deps.language, log: deps.log, clock: { now: (): Instant => instant(at.now) },
         ...pipelineOf(deps),
     });

@@ -1,20 +1,18 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { sessionId } from '#src/recap/domain/ids.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
-import type { Entry, Mark, Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
+import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
 const TAIL_BYTES = 256 * 1024;
-const ANY_KIND = '*';
 
 export type CurrentSession = (pane: string) => Promise<string | null | Unknown>;
 
 export class LaneRecent {
-    private readonly transcripts: readonly Transcripts[];
+    private readonly transcripts: TranscriptRegistry;
     private readonly session: CurrentSession;
 
-    constructor(transcripts: readonly Transcripts[], session: CurrentSession) {
+    constructor(transcripts: TranscriptRegistry, session: CurrentSession) {
         this.transcripts = transcripts;
         this.session = session;
     }
@@ -26,7 +24,7 @@ export class LaneRecent {
 
     private async tail(lane: Lane): Promise<{ readonly entries: readonly Entry[]; readonly marks: readonly Mark[] }> {
         const agent = String(lane.agent);
-        const reader = this.transcripts.find((candidate) => candidate.agent === agent) ?? this.transcripts.find((candidate) => candidate.agent === ANY_KIND);
+        const reader = this.transcripts.readerFor(agent);
         const current = await this.now(lane);
         const located = reader === undefined ? null : await reader.locate(current);
         if (reader === undefined || located === null || isUnknown(located)) {
