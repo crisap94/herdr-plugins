@@ -7,6 +7,8 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
+import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
@@ -59,7 +61,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     const job = new RecapJob({
         transcripts: registryWith({ claude: reader }), records: store.records, ledger: store.ledger, repos: NO_REPOS,
         clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Summarizer => summarizer,
-        language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce,
+        language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce, writerView: (): WriterView => FULL_WRITER_VIEW,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },
     });
     return { job, settings, reads, sources, callCount: (): number => calls, clockReads: (): number => clockCalls };
