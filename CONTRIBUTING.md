@@ -34,6 +34,23 @@ could not look (a tool is missing — run `npm install`).
 Both also run on GitHub Actions (Linux and macOS) for every push and pull request to `main`, and in
 the upstream CI.
 
+## Real-herdr proofs
+
+A change that must be shown working on a real herdr says so in a "Real herdr" task group. These proofs are automated: a coding
+agent acting as the test lane runs them, never a person by hand.
+
+- Work in a scratch herdr workspace created for the run and closed after it. Start throwaway agents there for the test and close
+  them at the end; never prompt, close or read an existing lane.
+- Run the build under test as a scratch daemon with `HERDR_PLUGIN_STATE_DIR` and `HERDR_PLUGIN_CONFIG_DIR` pointed at a temporary
+  directory, so it has its own database and configuration; never the maintainer's running daemon, database or config.
+- A herdr command honoured only from inside a pane is run by the throwaway agent from its own shell, at the test lane's request. A
+  typed step (`/clear`, a resume, a task) goes through `herdr agent prompt`, and a command in a fresh shell pane through
+  `herdr pane run`. Nothing is sent as key presses.
+- Record evidence without secrets or transcript content: commands, exit codes, timings, the herdr and harness versions. Metrics go
+  under `experiments/` at the repository root and are linked from the merge request.
+- What only the maintainer can give is its own task: a credential, a decision, a label on a judged sample, or turning a setting on
+  in the maintainer's own daemon for a measurement on real work.
+
 ## Changelog and versions
 
 You do not edit `CHANGELOG.md` or any version. Every change reaches `main` through a merge request

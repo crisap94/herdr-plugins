@@ -45,9 +45,9 @@ typed values; one serializer per token. Build after `token-protocol`, `lane-hand
 - [ ] 4.2 `README.md` "For other tools": the handoff exchange, its grammar, the deadline, the settings, the
   unauthenticated nature. `config.example.env`: the new setting. Verify: `bash ci/lint.sh` passes.
 
-## 5. Real herdr
+## 5. Real herdr (automated)
 
-- [ ] 5.1 With sharing on and the setting on, a second shell writes `handoff-req-<tool>` on a source lane's pane naming a
+- [ ] 5.1 Run by a test lane as `CONTRIBUTING.md` "Real-herdr proofs" describes, with the scratch daemon's sharing and setting on: a second shell writes `handoff-req-<tool>` on a source lane's pane naming a
   fresh idle lane; record the stages and events and that the handoff is delivered once. With the setting off, the same
   request is answered `refused-not-offered`. Evidence without content or secrets. Verify: the stage sequence and the pane
   identifier format seen are recorded and linked from the merge request.
