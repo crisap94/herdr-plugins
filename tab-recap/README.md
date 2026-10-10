@@ -654,6 +654,19 @@ Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate
 
 Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
 
+### Recap runs
+
+`TAB_RECAP_RUN_DEBOUNCE_MS` sets the run window, the minimum gap between turn-ended runs of one tab, measured from
+the start of the last run that called the writer. Endings inside the window are collected into one run, which reads
+their turns through the transcript cursor. The settle delay still applies after each ending. Focus, requested refreshes,
+and, when a window is enabled, the first run of a tab in this process and a changed lane set are forced runs and start at once. The default is `0`
+(off), which keeps the previous timing. Set `5000` through `300000` to use a window; invalid values act as `0`.
+
+Use `tab-recap eval --replay <file> --merge-turns <n>` to group consecutive turns into one writer call and compare its
+result with the existing `--merge-turns 1` report. The replay report names the merge count beside the pipeline.
+The recommended window is `60000` ms, pending measurement against the recall bar. That replay has not been measured,
+so the default remains off.
+
 ## State and rolling back
 
 The plugin keeps what it knows in one SQLite file, `tab-recap.db`, in its state directory (the path `tab-recap.status` prints;

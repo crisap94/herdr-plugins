@@ -2,7 +2,8 @@ import type { Lane } from './lane.ts';
 import type { HiddenState, Shape } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 
-export type RecapCause = 'turn-ended' | 'focused' | 'requested';
+export const RECAP_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
+export type RecapCause = typeof RECAP_CAUSES[number];
 
 export type Intent =
     | { readonly kind: 'open-column'; readonly tab: TabId; readonly shape: Shape }
