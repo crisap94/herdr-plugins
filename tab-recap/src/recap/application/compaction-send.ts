@@ -1,6 +1,8 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { CompactionPlan, CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
 import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
+import type { Unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
@@ -11,8 +13,6 @@ import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
 import type { Trail } from './compaction-trail.ts';
 
-const CONFIRM_READS = 20;
-const CONFIRM_MS = 1000;
 const RESTORING_MS = 2 * 60_000;
 const RESTORE_SETTLE_MS = 15_000;
 
@@ -51,26 +51,42 @@ export class Sender {
         }
     }
 
-    private async attempt(lane: Lane, command: () => Promise<Prompted>): Promise<Tried> {
+    private async attempt(lane: Lane, plan: CompactionPlan): Promise<Tried> {
         const since = this.deps.now();
-        const sent = await this.typed(String(lane.pane), command);
+        const pane = String(lane.pane);
+        const sent = await this.typed(pane, async () => {
+            for (const line of plan.lines) {
+                const typed = await this.deps.agents.typeLine(pane, line, { enterDelay: plan.enterDelay, acceptsStall: plan.acceptsStall });
+                if (typed.kind !== 'sent') {
+                    return typed;
+                }
+            }
+            return { kind: 'sent' };
+        });
         if (sent.kind !== 'sent') {
             return { sent, verdict: null };
         }
-        return { sent, verdict: await this.confirmed(lane, since) };
+        return { sent, verdict: await this.confirmed(lane, since, plan) };
     }
 
-    private async confirmed(lane: Lane, since: number): Promise<Verdict> {
+    private async confirmed(lane: Lane, since: number, plan: CompactionPlan): Promise<Verdict> {
         const deps: OutcomeDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms) };
-        if (String(lane.agent) === 'claude') {
-            return outcomeOf(deps, lane, since, true);
+        switch (plan.confirm.kind) {
+            case 'turn-end':
+                return outcomeOf(deps, lane, since, true);
+            case 'poll': {
+                let verdict = await outcomeOf(deps, lane, since, false);
+                for (let read = 1; read < plan.confirm.reads && verdict.outcome === 'unconfirmed'; read += 1) {
+                    await this.deps.pause(plan.confirm.every);
+                    verdict = await outcomeOf(deps, lane, since, false);
+                }
+                return verdict;
+            }
+            default: {
+                const exhaustive: never = plan.confirm;
+                return exhaustive;
+            }
         }
-        let verdict = await outcomeOf(deps, lane, since, false);
-        for (let read = 1; read < CONFIRM_READS && verdict.outcome === 'unconfirmed'; read += 1) {
-            await this.deps.pause(CONFIRM_MS);
-            verdict = await outcomeOf(deps, lane, since, false);
-        }
-        return verdict;
     }
 
     private async tell(title: string, body: string): Promise<void> {
@@ -87,20 +103,23 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.failed(String(lane.agent), why));
     }
 
-    private commandOf(lane: Lane, text: Text): () => Promise<Prompted> {
-        const pane = String(lane.pane);
-        if (String(lane.agent) === 'claude') {
-            return () => this.deps.agents.typeLine(pane, ['/compact ', text.brief ?? guidanceOf(text.material)]);
+    private async restore(lane: Lane, text: Text, plan: CompactionPlan, trail: Trail): Promise<void> {
+        switch (plan.followUp.kind) {
+            case 'none':
+                return;
+            case 'restore-message':
+                break;
+            default: {
+                const exhaustive: never = plan.followUp;
+                String(exhaustive);
+                return;
+            }
         }
-        return () => this.deps.agents.typeLine(pane, ['/compact']);
-    }
-
-    private async restore(lane: Lane, text: Text, trail: Trail): Promise<void> {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const pane = String(lane.pane);
         const since = this.deps.now();
-        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message));
+        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: plan.acceptsStall }));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(pane, since, RESTORING_MS);
             await this.deps.settling.settled(pane, since, RESTORE_SETTLE_MS);
@@ -116,21 +135,26 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }));
     }
 
-    async send(lane: Lane, text: Text, trail: Trail): Promise<void> {
-        const claude = String(lane.agent) === 'claude';
-        const command = this.commandOf(lane, text);
+    async send(lane: Lane, text: Text, trail: Trail): Promise<Unsupported | undefined> {
+        const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(String(lane.agent), text.brief ?? guidanceOf(text.material));
+        if (resolved.kind === 'unsupported') {
+            trail.end('failed', { why: resolved.why });
+            return resolved;
+        }
+        const plan = resolved.plan;
         const began = this.deps.now();
-        let tried = await this.attempt(lane, command);
-        const retried = claude && tried.verdict?.outcome === 'failed';
-        tried = retried ? await this.attempt(lane, command) : tried;
+        let tried = await this.attempt(lane, plan);
+        const retried = plan.retryOnSelfFailure && tried.verdict?.outcome === 'failed';
+        tried = retried ? await this.attempt(lane, plan) : tried;
         if (tried.sent.kind !== 'sent') {
             await this.refused(lane, trail, tried.sent);
-            return;
+            return undefined;
         }
         const verdict = tried.verdict ?? { outcome: 'unconfirmed' as const };
-        if (!claude && verdict.outcome !== 'failed') {
-            await this.restore(lane, text, trail);
+        if (plan.followUp.kind === 'restore-message' && verdict.outcome !== 'failed') {
+            await this.restore(lane, text, plan, trail);
         }
         await this.conclude(lane, trail, { verdict, retried, began });
+        return undefined;
     }
 }

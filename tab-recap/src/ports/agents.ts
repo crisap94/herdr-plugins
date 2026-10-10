@@ -1,4 +1,6 @@
 import type { LaneStatus } from '#src/recap/domain/status.ts';
+import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
+import type { Duration } from '#src/recap/domain/time.ts';
 import type { Done } from './columns.ts';
 import type { Unknown } from './unknowable.ts';
 
@@ -11,9 +13,17 @@ export interface PromptWait {
     readonly timeoutMs: number;
 }
 
+export interface PromptBehavior {
+    readonly acceptsStall: boolean;
+}
+
+export interface LineBehavior extends PromptBehavior {
+    readonly enterDelay: Duration;
+}
+
 export interface Agents {
     status(pane: string): Promise<AgentState>;
-    prompt(pane: string, text: string, wait?: PromptWait): Promise<Prompted>;
-    typeLine(pane: string, pieces: readonly string[]): Promise<Prompted>;
+    prompt(pane: string, text: string, wait?: PromptWait, behavior?: PromptBehavior): Promise<Prompted>;
+    typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
     askNote(tab: string, pane: string | null): Promise<Done>;
 }

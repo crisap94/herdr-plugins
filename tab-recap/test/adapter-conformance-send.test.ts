@@ -24,8 +24,8 @@ test('opencode: its own /compact is confirmed on the second look, then restored;
     assert.match(world.toasts.at(-1) ?? '', /opencode compacted/);
 });
 
-test('pins today: an unknown kind sent directly takes the Codex path; target selection filters non-COMPACTABLE kinds', async () => {
-    for (const kind of ['codex', 'opencode', 'zed']) {
+test('every non-Claude kind takes the Codex path; target selection filters non-COMPACTABLE kinds', async () => {
+    for (const kind of ['codex', 'opencode']) {
         const world = typingFleet({ 'w1:p9': 'idle' });
         const looks = [[], [], [], [], [], [], [], [], [compacted]];
         await new Sender(compactionDeps(world, 'focused', 'w1:p9', looks)).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: kind }), TEXT, trailOf());
@@ -39,11 +39,15 @@ test('pins today: an unknown kind sent directly takes the Codex path; target sel
         assert.equal(failing.typed.length, 1, `${kind}: typed once, not retried`);
         assert.deepEqual(failing.pauses, [], `${kind}: a failure is not polled`);
     }
+    const unknownKind = typingFleet({ 'w1:p9': 'idle' });
+    const refused = await new Sender(compactionDeps(unknownKind, 'focused', 'w1:p9')).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' }), TEXT, trailOf());
+    assert.equal(refused?.kind, 'unsupported');
+    assert.deepEqual(unknownKind.typed, []);
 });
 
 test('pins today: an unconfirmed non-Claude compaction gets 20 looks and still gets the restore message', async () => {
     const world = typingFleet({ 'w1:p9': 'idle' });
-    await new Sender(compactionDeps(world, 'focused', 'w1:p9', [[]])).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' }), TEXT, trailOf());
+    await new Sender(compactionDeps(world, 'focused', 'w1:p9', [[]])).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex' }), TEXT, trailOf());
     assert.deepEqual([world.pauses.filter((ms) => ms === 1000).length, world.pauses.filter((ms) => ms === 300).length], [19, 60]);
     assert.equal(world.typed.length, 2, 'the command, then the restore message');
     assert.match(world.toasts.at(-1) ?? '', /could not confirm the compaction/);

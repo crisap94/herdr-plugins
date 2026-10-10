@@ -15,8 +15,10 @@ import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { CompactionClaims } from './compaction-claims.ts';
+import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 
 export interface CompactionDeps {
+    readonly compactionPlans: CompactionPlans;
     readonly agents: Agents;
     readonly notifier: Notifier;
     readonly records: Pick<RecapRecords, 'readRecap'>;

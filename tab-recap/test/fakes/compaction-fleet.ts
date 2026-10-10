@@ -1,4 +1,5 @@
 import { en } from '#src/i18n/en.ts';
+import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
@@ -7,7 +8,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
-import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
@@ -44,13 +45,14 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
         status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
-        prompt: (pane, text, wait): Promise<Prompted> => {
+        prompt: (pane, text, wait, _behavior?: PromptBehavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
             typed.push({ pane, text, wait });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
-        typeLine: (pane, pieces): Promise<Prompted> => {
+        typeLine: (pane, line, _behavior: LineBehavior): Promise<Prompted> => {
             events.push(`type ${pane}`);
+            const pieces = line.pieces.map(String);
             typed.push({ pane, text: pieces.join(''), pieces, typed: true });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
@@ -67,6 +69,7 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
     let looked = 0;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     return {
+        compactionPlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
