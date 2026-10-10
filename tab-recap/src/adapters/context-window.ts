@@ -19,36 +19,38 @@ const familyWindow = (model: string): number => {
     return major > 4 || (major === 4 && minor >= 6) ? 1_000_000 : 200_000;
 };
 
-const catalogued = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null => {
+const catalogued = (observed: Observed, catalogue: ModelCatalogue, sizes: readonly number[]): WindowBasis | null => {
     if (observed.model === null) {
         return null;
     }
     const window = catalogue.windowOf(observed.model);
-    return window === null ? null : { window, source: 'catalogue' };
+    return window === null ? null : { window, source: 'catalogue', sizes };
 };
 
-const stated = (observed: Observed): WindowBasis | null => observed.window === null ? null : { window: observed.window, source: 'agent' };
+const stated = (observed: Observed, sizes: readonly number[]): WindowBasis | null => observed.window === null ? null : { window: observed.window, source: 'agent', sizes };
 
-const reportedWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null =>
-    stated(observed) ?? catalogued(observed, catalogue);
+const reportedWindow = (observed: Observed, catalogue: ModelCatalogue, sizes: readonly number[]): WindowBasis | null =>
+    stated(observed, sizes) ?? catalogued(observed, catalogue, sizes);
 
 const claudeWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis =>
-    reportedWindow(observed, catalogue) ?? { window: familyWindow(observed.model ?? ''), source: 'table' };
+    reportedWindow(observed, catalogue, WINDOW_SIZES) ?? { window: familyWindow(observed.model ?? ''), source: 'table', sizes: WINDOW_SIZES };
+
+const exactWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null => reportedWindow(observed, catalogue, []);
 
 const WINDOW_SOURCES = {
     claude: claudeWindow,
-    codex: reportedWindow,
-    opencode: reportedWindow,
+    codex: exactWindow,
+    opencode: exactWindow,
 } satisfies Readonly<Record<RegisteredKind, (observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null>>;
 
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {
     const registered = registeredKindOf(kind);
-    const source = registered === null ? reportedWindow : WINDOW_SOURCES[registered];
+    const source = registered === null ? exactWindow : WINDOW_SOURCES[registered];
     return (observed) => source(observed, catalogue);
 }
 
 export function contextWindows(catalogue: ModelCatalogue): ContextWindows {
-    return { sizes: WINDOW_SIZES, windowOf: (kind) => windowOfKind(kind, catalogue) };
+    return { windowOf: (kind) => windowOfKind(kind, catalogue) };
 }
 
 export function claudeWindowOf(catalogue: ModelCatalogue): WindowOf {

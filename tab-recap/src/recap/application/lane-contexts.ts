@@ -40,7 +40,7 @@ export class LaneContexts {
             return undefined;
         }
         const { observed } = found;
-        return observed === null ? null : contextOf({ observed, setting: this.setting() }, this.windows.windowOf(String(lane.agent)), this.windows.sizes);
+        return observed === null ? null : contextOf({ observed, setting: this.setting() }, this.windows.windowOf(String(lane.agent)));
     }
 
     async refresh(lane: Lane): Promise<boolean> {
