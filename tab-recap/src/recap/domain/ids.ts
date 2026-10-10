@@ -2,6 +2,7 @@ import type { Brand } from './brand.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
 export type TabId = Brand<string, 'TabId'>;
+export type HandoffId = Brand<string, 'HandoffId'>;
 export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;

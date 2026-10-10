@@ -30,6 +30,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
@@ -239,6 +240,7 @@ async function start(): Promise<number> {
         }
         informer.tick();
         store.asks.prune(Date.now() - ASK_KEEP_MS);
+        store.handoffs.prune(Date.now() - HANDOFF_ANSWER_TTL_MS);
         events.prune(Date.now());
         sweep.tick();
         retention.tick();
