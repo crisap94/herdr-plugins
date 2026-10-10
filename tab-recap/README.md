@@ -253,7 +253,8 @@ reacts to it at once (it polls only while the daemon is not hearing from herdr) 
 how long it took; an `Error during compaction` row (its own summarizer failed) means the same guidance is
 typed once more; Codex's `compacted` row means it compacted (the context before and after come from the
 `token_count` rows around it), and only then does it get the restore message. If the records say nothing yet
-they are read again a moment later.
+they are read again a moment later. The records are the ones of the session herdr reports for the agent's pane now,
+so a new agent, or one resumed into a new session, is confirmed in its own session.
 
 **Progress on the lane.** Every compaction is a record in the database; the column, the phone bar and the
 modal show its stage in the place of the `compact?` hint, with a clock from when the stage began:

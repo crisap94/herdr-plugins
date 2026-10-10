@@ -36,10 +36,31 @@ export function seenFrom(data: Readonly<Record<string, unknown>>): SeenLane | nu
         workspaceId: workspace,
         agent,
         status: field(data, 'agent_status'),
-        session: text(nested(data, 'agent_session')['value']) ?? text(nested(nested(data, 'pane'), 'agent_session')['value']),
+        session: sessionOf(data),
         cwd: field(data, 'foreground_cwd') ?? field(data, 'cwd'),
         title: field(data, 'terminal_title_stripped'),
     };
+}
+
+/**
+ * herdr's `agent_session` ({ source, agent, kind, value }) as the session id the transcripts are named by. `kind` `path` gives the transcript's
+ * path, whose file name is that id (`<id>.jsonl`), so both kinds name the same session. Null when herdr reports none.
+ */
+export function sessionOf(data: Readonly<Record<string, unknown>>): string | null {
+    for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
+        const value = text(info['value']);
+        if (value !== null) {
+            return info['kind'] === 'path' ? (value.split(/[\\/]/u).at(-1) ?? value).replace(/\.jsonl$/u, '') : value;
+        }
+    }
+    return null;
+}
+
+/** A `pane.updated` frame's pane and its session, when the frame carries one (herdr reports a session on the pane's frames, not on the detection). */
+export function paneSessionOf(data: Readonly<Record<string, unknown>>): { readonly pane: string; readonly session: string } | null {
+    const pane = field(data, 'pane_id');
+    const session = sessionOf(data);
+    return pane === null || session === null ? null : { pane, session };
 }
 
 /** A `pane.updated` frame's pane and its merged tokens: herdr's flat map, name → value (other values are left out). */

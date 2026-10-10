@@ -2,6 +2,7 @@ import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './bo
 import type { Board, HiddenState, Placement, Shape, Visibility, VisibilityTarget } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
+import { sessionId } from './ids.ts';
 import { laneFrom, withStatus } from './lane.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
@@ -30,6 +31,8 @@ export type Observation =
     | { readonly kind: 'detected'; readonly lane: SeenLane }
     | { readonly kind: 'closed'; readonly pane: PaneId }
     | { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
+    /** herdr reports the pane's agent session (a `pane.updated` frame): the lane follows it, a new agent's or a resumed one's */
+    | { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
     | { readonly kind: 'reconciled'; readonly seen: Reconciliation }
     | { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
     | { readonly kind: 'column-failed'; readonly tab: TabId }
@@ -76,7 +79,8 @@ function onDetected(held: Board, seen: SeenLane, policy: Policy): Step {
     if (!wanted(seen, policy)) {
         return step(board);
     }
-    const lane = laneFrom(seen);
+    const fresh = laneFrom(seen);
+    const lane = keepingSession(fresh, board.lanes.get(fresh.pane));
     const isNew = !board.lanes.has(lane.pane);
     const reads: Intent[] = isNew ? [{ kind: 'read-prompt', lane }] : [];
     return step({ ...board, lanes: put(board.lanes, lane.pane, lane) }, [{ kind: 'publish', tab: lane.tab }, ...reads], isNew);
@@ -96,6 +100,20 @@ function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Ste
     }
     const [spent, intents] = spend({ ...board, columns: without(board.columns, tab) }, tab, now, policy);
     return step(spent, intents);
+}
+
+/** A detection frame or a snapshot may carry no session (herdr reports it on the pane's frames): the lane keeps the one it held. */
+function keepingSession(lane: Lane, held: Lane | undefined): Lane {
+    return lane.session === null && held?.session ? { ...lane, session: held.session } : lane;
+}
+
+/** herdr's session for a lane, as it reports it now: the board's lane follows, and nothing else changes (no intent, no watch set). */
+function onSession(board: Board, pane: PaneId, session: string): Step {
+    const lane = board.lanes.get(pane);
+    if (lane === undefined || String(lane.session) === session) {
+        return step(board);
+    }
+    return step({ ...board, lanes: put(board.lanes, pane, { ...lane, session: sessionId(session) }) });
 }
 
 function onStatus(board: Board, pane: PaneId, raw: string): Step {
@@ -151,7 +169,8 @@ function newerThan(placed: Placement, seen: Reconciliation): boolean {
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
     const lanes = new Map<PaneId, Lane>();
     for (const raw of seen.lanes.filter((lane) => wanted(lane, policy))) {
-        const lane = laneFrom(raw);
+        const fresh = laneFrom(raw);
+        const lane = keepingSession(fresh, board.lanes.get(fresh.pane));
         lanes.set(lane.pane, lane);
     }
     const { columns, extras: found } = columnsAfter(board, seen);
@@ -213,6 +232,8 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
             return onClosed(board, observation.pane, now, policy);
         case 'status':
             return onStatus(board, observation.pane, observation.status);
+        case 'session':
+            return onSession(board, observation.pane, observation.session);
         case 'reconciled':
             return onReconciled(board, observation.seen, now, policy);
         case 'column-opened':
