@@ -29,12 +29,11 @@ test('a stop by the minimum, the cooldown, in flight, busy or an unknown share k
     await unknownShare.service.consider(lane());
     assert.deepEqual(skipsOf(below), [['below-minimum', 8, 'below 10 %']]);
     assert.deepEqual(skipsOf(cooling), [['cooldown', 62, '360 s left']]);
-    assert.deepEqual(skipsOf(flying), []);
+    assert.deepEqual(skipsOf(flying), [['in-flight', 62, '2 running']]);
     assert.deepEqual(skipsOf(unreadable), [['in-flight', 62, 'test']]);
     assert.deepEqual(skipsOf(busy), [['busy', 62, 'this lane']]);
     assert.deepEqual(skipsOf(unknownShare), [['no-context', null, 'the context share is not known yet']]);
-    assert.deepEqual([below.asked.length, flying.asked.length, busy.asked.length, unknownShare.asked.length], [0, 1, 0, 0]);
-    assert.ok(flying.logs.some((line) => line.includes('stale: idle pane with 2 open work items')));
+    assert.deepEqual([below.asked.length, flying.asked.length, busy.asked.length, unknownShare.asked.length], [0, 0, 0, 0]);
 });
 
 test('off records no skip and logs nothing', async () => {

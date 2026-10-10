@@ -137,7 +137,6 @@ export class Autocompact {
         if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }), recheck };
         const flight = await this.flightOf(lane, pane);
         const full = gateOf({ ...facts, inFlight: flight.count });
-        if (flight.detail?.startsWith('stale:') === true) deps.log(`autocompact ${pane}: ${flight.detail}`);
         if (recheck && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(`autocompact ${pane}: unchanged → recheck`);
         return { ...full, detail: detailOf(full.gate, { ...context, flight }), recheck };
     }
@@ -182,11 +181,7 @@ export class Autocompact {
     private async flightOf(lane: Lane, pane: string): Promise<FlightAnswer> {
         const waiting = await this.waitingOf(pane);
         if (waiting.kind === 'clear') {
-            const found = await this.deps.inFlight(lane);
-            if (found.count !== 'unknown' && found.count > 0 && (lane.status === 'idle' || lane.status === 'done')) {
-                return { count: 0, why: 'stale', detail: `stale: idle pane with ${found.count} open work item${found.count === 1 ? '' : 's'}` };
-            }
-            return found;
+            return this.deps.inFlight(lane);
         }
         if (waiting.kind === 'waiting') return { count: 1, why: 'awaiting', detail: `awaiting ${waiting.value}` };
         return { count: 'unknown', why: saying(waiting.why) };

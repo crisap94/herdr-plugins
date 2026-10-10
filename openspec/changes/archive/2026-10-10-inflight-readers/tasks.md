@@ -10,7 +10,7 @@
 
 ## 2. Gate and shadow run
 
-- [x] 2.1 Preserve the idle/done sweep gate and report known open work as stale without blocking its decision.
+- [x] 2.1 Preserve the idle/done sweep gate and verify known positive and unknown in-flight results block compaction.
 - [x] 2.2 Add the typed `TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS` setting, record-only behavior, documentation, and tests that assert no request is queued.
 - [x] 2.3 Verify the default autocompact kinds remain Claude only and mutate each reader's wait, state-count and budget-growth rule.
 - [x] 2.4 Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.

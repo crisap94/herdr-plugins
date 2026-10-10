@@ -9,7 +9,6 @@ Autocompact can currently mistake an open call or tool part for live work foreve
 - Add typed in-flight capabilities to the registered transcript readers and implement bounded Codex rollout and opencode database readers.
 - Make unsupported and unregistered reader reasons explicit in the autocompact gate.
 - Add opt-in shadow kinds that store full decisions with mode `shadow` and never request compaction.
-- Treat known open work on an idle or done lane as stale, log that reason, and allow the lane's decision to proceed.
 
 ## Out of scope
 

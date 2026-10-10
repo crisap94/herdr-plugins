@@ -337,19 +337,6 @@ and a notice in the read still names a launch the read does not hold.
 - **THEN** no kind SHALL be explicitly forced to shadow by that setting
 - **AND** the default autocompact kinds SHALL remain Claude
 
-### Requirement: Idle transcript work is treated as stale
-
-When herdr reports a lane as idle or done and its transcript reports positive in-flight work, autocompact SHALL treat that work as stale, log a reason beginning `stale:`, and continue the decision without blocking on the transcript count. Existing busy and queued-compaction gates SHALL continue to stop the lane.
-
-#### Scenario: An idle lane has open transcript work
-
-- **WHEN** an idle or done lane's transcript reports one or more open calls or tool parts
-- **THEN** autocompact SHALL log a stale reason and continue through the remaining gates
-
-#### Scenario: A compaction is already active
-
-- **WHEN** a lane has an active or queued compaction
-- **THEN** the busy gate SHALL stop it before considering in-flight work
 
 ### Requirement: The style sets the verdict and the checks
 

@@ -8,15 +8,15 @@ Codex scans JSONL rows from the most recent `task_started`. It pairs tool calls 
 
 The opencode reader selects tool parts belonging to the session's newest messages and counts only `pending` and `running` states. The query is a fixed prepared statement over Node's built-in SQLite interface; that API has no typed query builder, so the statement stays explicit and static. JSON state is parsed at the adapter edge. Database errors use the existing `unreadable` result.
 
-## Idle liveness and shadow decisions
+## In-flight gate and shadow decisions
 
-The sweep already selects herdr `idle` and `done` statuses. It also checks autocompact activity and queued work before reading in-flight state. If an idle or done lane reports a positive transcript count, the count is treated as zero for the gate and a `stale: idle pane with open work` log line is written. A lane that is working is not considered by the sweep. This follows the proposed idle rule; it does not infer Codex cell liveness beyond herdr status.
+The sweep selects herdr `idle` and `done` statuses and checks autocompact activity and queued work before reading in-flight state. A known positive count blocks the in-flight gate for every kind, including Claude. Unknown counts also block. Whether an idle pane with open Codex/opencode work should count; decide with the shadow data.
 
 `TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS` parses to registered transcript kinds at the configuration edge and defaults to empty. Those kinds run the full gate and decider while the global mode is on, record with mode `shadow`, and use the existing `recordOnly` path to prevent compact requests, including when also named in `TAB_RECAP_AUTOCOMPACT_KINDS`. Kinds omitted from the compactable list keep their existing record-only behavior. The operator reads the decisions with `tab-recap autocompact`. The default compactable kind list remains Claude.
 
 ## Open questions
 
-- A Codex yielded cell may outlive the turn that yielded it; the survey could not establish this. If it does, the idle rule may ignore work that is still running.
+- A Codex yielded cell may outlive the turn that yielded it; the survey could not establish this.
 - The survey did not establish whether `item_completed` is written when a yielded cell ends, what output represents a long exec that resumed, which output contains the user-aborted marker, or whether `turn_attribution.parent_turn_id` identifies sub-agent rollouts.
 - The opencode sub-agent task shape, a live running part, whether `time_updated` changes during a running part, and the meaning of the event table remain undetermined.
 - Claude reader false-positive and false-negative rates remain unmeasured.
