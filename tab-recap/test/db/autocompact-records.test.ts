@@ -131,3 +131,23 @@ test('a checked brief is stored with its exact checked fact wording and pruned b
     assert.equal(store.autocompactBriefs.clearBefore(101), 1);
     assert.equal(store.autocompactBriefs.clearBefore(101), 0);
 });
+
+test('the asked verdict is stored as the decider asked it: a wait the check makes of a compact keeps compact', () => {
+    const store = seeded();
+    const id = store.autocompact.record(decision({ verdict: 'wait', askedVerdict: 'compact', gate: 'coverage' }));
+    const row = must(store.autocompact.newest(1).find((each) => each.id === id));
+    assert.deepEqual([row.verdict, row.askedVerdict], ['wait', 'compact']);
+});
+
+test('the unchecked reason is set exactly when the outcome is unchecked', () => {
+    const store = seeded();
+    const unchecked = store.autocompact.record(decision({ at: 2_000, gate: 'ceiling' }));
+    const passed = store.autocompact.record(decision({ at: 3_000 }));
+    const missed = store.autocompact.record(decision({ at: 4_000 }));
+    const amend = (id: string, outcome: Parameters<typeof store.autocompact.amend>[1]['outcome']): void => store.autocompact.amend(id, { coverage: {}, outcome, coverageMs: 1, coverageCostUsd: null, why: null, block: false });
+    amend(unchecked, { kind: 'unchecked', reason: 'no-brief' });
+    amend(passed, { kind: 'passed' });
+    amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: 'ship', why: null }] });
+    const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', id))?.['reason'];
+    assert.deepEqual([reasonOf(unchecked), reasonOf(passed), reasonOf(missed)], ['no-brief', null, null]);
+});

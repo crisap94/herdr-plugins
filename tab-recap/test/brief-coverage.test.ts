@@ -56,13 +56,14 @@ test('covered: the brief and the facts are the one state; ok when nothing blocks
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 
-interface World { readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
+interface World { readonly logs: string[]; readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
 function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null, ceilingOverride = true, history = HISTORY): { world: World; compaction: Compaction } {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const world: World = { typed: [], briefs: [], toasts: [], store };
+    const world: World = { logs: [], typed: [], briefs: [], toasts: [], store };
     let checked = 0;
+    let clock = NOW;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
         compactionPlans,
@@ -72,13 +73,13 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
         brief: { enabled: () => true, job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: correction === undefined ? 'first brief' : 'second brief', why: null } : { text: null, why: template.why }); } },
-        coverage: () => (withCoverage ? { check: () => Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])) } : null),
+        coverage: () => (withCoverage ? { check: () => { clock += 40; return Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])); } } : null),
         decisions: store.autocompact,
         ceilingOverride: () => ceilingOverride,
         checkedBriefs: store.autocompactBriefs,
-        recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => NOW,
+        recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => clock,
         webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })], focused: () => Promise.resolve('w1:p1'),
-        refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: () => undefined,
+        refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };
 }
@@ -211,4 +212,96 @@ test('the operator\'s template compaction is typed as before, unchecked, with th
     const operator = flow([MISSING], true, { why: 'the brief job is off' });
     await operator.compaction.run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual([operator.world.typed.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 'operator']);
+});
+
+const UNCHECKED: Coverage = { ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' };
+const TWO_MISSING: Coverage = {
+    ok: false, missing: ['goal: Ship the cart rewrite', 'decisions: Keep SQLite'], missingFacts: [{ index: 0, fact: { section: 'goal', text: 'Ship the cart rewrite', why: null }, parts: ['text'] }, { index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: 'one file' }, parts: ['text'] }],
+    answers: { keeps_0: 0.2, keeps_1: 0.1 }, unknown: null,
+};
+const BOTH_PARTS: Coverage = { ok: false, missing: ['decisions: Keep SQLite', 'the reason for the decision: Keep SQLite (one file)'], missingFacts: [{ index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: 'one file' }, parts: ['text', 'reason'] }], answers: { keeps_1: 0.2, reason_1: 0.2 }, unknown: null };
+const costed = (coverage: Coverage, costUsd: number): Coverage => ({ ...coverage, costUsd });
+const manyMissing = (texts: readonly string[]): Coverage => ({ ok: false, missing: texts.map((text) => `decisions: ${text}`), missingFacts: texts.map((text, index) => ({ index, fact: { section: 'decisions', text, why: null }, parts: ['text'] })), answers: {}, unknown: null });
+const cause = (world: World): string => world.logs.join('\n');
+
+test('at the ceiling a rewrite that misses as many facts as the first brief is typed: the tie goes to the rewrite', async () => {
+    const { world, compaction } = flow([MISSING, MISSING]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.match(world.typed[0] ?? '', /^\/compact second brief/);
+});
+
+test('at the ceiling the first brief is typed when its rewrite misses more facts', async () => {
+    const { world, compaction } = flow([MISSING, TWO_MISSING]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.match(world.typed[0] ?? '', /^\/compact first brief/);
+});
+
+test('at the ceiling a rewrite that cannot be checked loses to the checked first brief', async () => {
+    const { world, compaction } = flow([MISSING, UNCHECKED]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.match(world.typed[0] ?? '', /^\/compact first brief/);
+    assert.deepEqual(world.store.autocompact.newest(1)[0]?.coverageOutcome, { kind: 'missed', count: 1 });
+});
+
+test('the ceiling appendix is capped at 1 500 characters and says how many facts it left out', async () => {
+    const texts = Array.from({ length: 12 }, (_, n) => `decision ${n} ${'x'.repeat(170)}`);
+    const history = texts.map((text, n) => ({ ...HISTORY[1]!, text, why: null, lastAt: n }));
+    const { world, compaction } = flow([manyMissing(texts), manyMissing(texts)], true, null, true, history);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const text = world.typed[0] ?? '';
+    const appendix = text.slice(text.indexOf('Facts not carried into the brief'));
+    const heading = /\((\d+) missed; (\d+) left out\)/.exec(appendix);
+    assert.deepEqual([heading?.[1], Number(heading?.[2]) > 0, appendix.length <= 1500], ['12', true, true]);
+});
+
+test('a ceiling decision names its missed count in why, and its one log line says so', async () => {
+    const { world, compaction } = flow([MISSING]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.match(row.why ?? '', /1 fact/);
+    assert.deepEqual([row.coverageOutcome, world.logs.filter((line) => line.startsWith('autocompact ceiling: ')).length], [{ kind: 'missed', count: 1 }, 1]);
+});
+
+test('a ceiling lane whose brief is the template types the operator\'s text, records unchecked with no brief, and logs it', async () => {
+    const { world, compaction } = flow([OK], true, { why: 'no brief' });
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.deepEqual([world.typed.length, row.gate, row.verdict, row.coverageOutcome, cause(world).includes('autocompact ceiling: ')], [1, 'ceiling', 'compact', { kind: 'unchecked', reason: 'no-brief' }, true]);
+    assert.doesNotMatch(world.typed[0] ?? '', /Facts not carried/);
+});
+
+test('at the ceiling both checks are summed into the recorded cost', async () => {
+    const { world, compaction } = flow([costed(MISSING, 0.01), costed(MISSING, 0.02)]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.ok(Math.abs((world.store.autocompact.newest(1)[0]?.coverageCostUsd ?? 0) - 0.03) < 1e-9);
+});
+
+test('the recorded check duration is measured on the injected clock: two checks, two steps', async () => {
+    const { world, compaction } = flow([MISSING, MISSING]);
+    decided(world, 'ceiling');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.equal(world.store.autocompact.newest(1)[0]?.coverageMs, 80);
+});
+
+test('off the ceiling a failed check waits, keeps the asked verdict, says how many facts it misses, and stores the brief', async () => {
+    const { world, compaction } = flow([MISSING, MISSING]);
+    decided(world, 'ask');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    const row = must(world.store.autocompact.newest(1)[0]);
+    assert.deepEqual([row.gate, row.verdict, row.askedVerdict, row.why], ['coverage', 'wait', 'compact', 'the brief still misses 1 fact(s)']);
+    assert.equal(world.store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 1);
+});
+
+test('a fact missing both its text and its reason is one missed fact, in why and in the count', async () => {
+    const { world, compaction } = flow([BOTH_PARTS, BOTH_PARTS]);
+    decided(world, 'ask');
+    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    assert.equal(world.store.autocompact.newest(1)[0]?.why, 'the brief still misses 1 fact(s)');
 });

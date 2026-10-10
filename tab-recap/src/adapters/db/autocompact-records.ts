@@ -87,7 +87,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         this.insert = db.prepare('INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, asked_verdict) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');
         this.latest = db.prepare("SELECT id, gate FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
-        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, coverage_outcome = ?, unchecked_reason = ?, coverage_missing = ?, coverage_ms = ?, coverage_cost_micro_usd = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = CASE WHEN ? = 1 THEN ? ELSE why END WHERE id = ?");
+        this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, coverage_outcome = ?, unchecked_reason = ?, coverage_missing = ?, coverage_ms = ?, coverage_cost_micro_usd = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = COALESCE(?, why) WHERE id = ?");
         this.last = db.prepare('SELECT MAX(at) AS at FROM autocompact_decision WHERE tab_id = ? AND pane = ?');
         this.asked = db.prepare("SELECT 1 AS found FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND mode = 'on' AND verdict = 'compact' AND requested = 1 AND compaction_id IS NULL AND at >= ? LIMIT 1");
         this.newestAll = db.prepare(`SELECT ${COLUMNS} FROM autocompact_decision ORDER BY at DESC, id DESC LIMIT ?`);
@@ -130,7 +130,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         const flag = waited && block ? 1 : 0;
         const missing = missingOf(outcome, coverage);
         const reason = outcome.kind === 'unchecked' ? outcome.reason : null;
-        if (key !== null) writeTx(this.db, () => { this.cover.run(coverage === null ? null : JSON.stringify(coverage), outcome.kind, reason, missing, coverageMs, coverageCostUsd === null ? null : Math.round(coverageCostUsd * 1e6), flag, flag, flag, why, key); });
+        if (key !== null) writeTx(this.db, () => { this.cover.run(coverage === null ? null : JSON.stringify(coverage), outcome.kind, reason, missing, coverageMs, coverageCostUsd === null ? null : Math.round(coverageCostUsd * 1e6), flag, flag, why, key); });
     }
 
     lastDecisionAt(tab: string, pane: string): number | null {

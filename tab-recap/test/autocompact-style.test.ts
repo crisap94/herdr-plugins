@@ -4,7 +4,7 @@ import { covered } from '#src/recap/application/brief-coverage.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { backoffOf, briefRetentionOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import { backoffOf, briefRetentionOf, ceilingPolicyOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
@@ -173,4 +173,11 @@ test('no answer sheet inside the band compacts: every answer at 0.5 is undecided
     const verdict = tuningOf(env({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.5', TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.5' })).verdict;
     assert.notEqual(verdictOf(middling, verdict), 'compact');
     assert.equal(verdictOf(middling, verdict), 'undecided');
+});
+
+test('out-of-range coverage settings fall back to their defaults; in-range ones are read', () => {
+    assert.deepEqual([backoffOf('59999'), backoffOf('86400001'), backoffOf('abc'), backoffOf('-5')], [{ kind: 'off' }, { kind: 'off' }, { kind: 'off' }, { kind: 'off' }]);
+    assert.deepEqual(backoffOf('60000'), { kind: 'window', ms: 60_000 });
+    assert.deepEqual([briefRetentionOf('-1'), briefRetentionOf('x'), briefRetentionOf('61')], [{ kind: 'days', value: 14 }, { kind: 'days', value: 14 }, { kind: 'days', value: 14 }]);
+    assert.deepEqual([ceilingPolicyOf('maybe'), ceilingPolicyOf('off'), ceilingPolicyOf('ON')], ['overrides-check', 'blocked-by-check', 'overrides-check']);
 });
