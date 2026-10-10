@@ -27,7 +27,7 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 
 ## Impact
 
-The migration is forward-only and follows the handoff migration (the number is the next free one at implementation time). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
+The migration is forward-only and follows the handoff migration (migration 016 in the cross-stream numbering table; 015 is the handoff migration). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
 
 ## Out of scope
 
