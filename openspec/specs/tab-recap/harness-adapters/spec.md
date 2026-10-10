@@ -61,7 +61,6 @@ compaction targets.
 
 - **WHEN** an OpenCode compaction appears on the second polling look
 - **THEN** each empty look SHALL read marks four times, a one-second pause SHALL separate looks, and confirmation SHALL be followed by one restore message without a retry
-
 ### Requirement: One registry hands out the transcript reader for a kind
 
 The plugin SHALL assemble transcript readers in one typed registry. The registry SHALL return a reader for each registered kind and SHALL return the screen reader for an unknown kind only when its configured fallback is present. Callers that require exact lookup SHALL receive no reader for an unregistered kind.
@@ -80,6 +79,26 @@ The plugin SHALL assemble transcript readers in one typed registry. The registry
 
 - **WHEN** the expanded modal requests a reader for an unknown kind
 - **THEN** its registry SHALL return no reader because it has no screen fallback
+
+### Requirement: Job harness lists and capabilities derive from one registry
+
+The job harness ids, automatic selection order, model defaults, job choices, setup lists and install messages SHALL derive from one typed registry. Each registry entry SHALL declare its job contract, whether it supports enumerating jobs, and whether setup displays an availability mark. Every summarizer SHALL provide a required job contract, and a registry lookup for a `BackendId` SHALL be total. Installation messages SHALL list automatically selected harnesses. The custom entry SHALL declare a free-text contract, no model, no availability mark, no enumerator, and a custom-command setup note.
+
+#### Scenario: Existing harness lists remain unchanged
+
+- **WHEN** the registry is used to produce the existing job harness lists
+- **THEN** the ids, order, defaults and displayed choices SHALL match their existing values
+
+#### Scenario: A free-text harness is configured
+
+- **WHEN** the custom harness is used for a job
+- **THEN** its free-text contract SHALL control extraction and its lack of a model and enumerator SHALL control setup and job enumeration
+- **AND** its label SHALL continue to show the command and ignore the model setting
+
+#### Scenario: A custom harness is used during replay
+
+- **WHEN** a custom harness writes during transcript replay
+- **THEN** the replay counting wrapper SHALL preserve its required free-text contract
 
 ### Requirement: Eligibility lists derive from agent kind capabilities
 
