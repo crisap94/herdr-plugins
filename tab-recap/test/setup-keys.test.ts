@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the fifteen rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the sixteen rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 14);
+    assert.equal(typed(start(), down(20)).state.row, 15);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -236,9 +236,9 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const at = typed(start(), [...down(12), '\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
     assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
-    const by = typed(start(), [...down(13), '\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
+    const by = typed(start(), [...down(14), '\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
-    const model = typed(start(), [...down(13), 'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
+    const model = typed(start(), [...down(14), 'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '50', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }), { autocompact: 'TAB_RECAP_AUTOCOMPACT', autocompactAt: 'TAB_RECAP_AUTOCOMPACT_AT', decideBy: 'TAB_RECAP_AUTOCOMPACT_BY' });
     assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(11), '\r']).state.note, 'locked');

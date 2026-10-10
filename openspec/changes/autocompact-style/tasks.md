@@ -32,12 +32,12 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 
 ## 5. Where it shows (design decisions 5 and 6)
 
-- [ ] The settings modal row «Autocompact style» (English and Spanish), its hint, its lock key, and the write of
+- [x] The settings modal row «Autocompact style» (English and Spanish), its hint, its lock key, and the write of
       `TAB_RECAP_AUTOCOMPACT_STYLE`; a locked row is never written.
-- [ ] `config.example.env`: the style and the four advanced keys, commented with their defaults.
-- [ ] README: a table of the three styles and their numbers, and the advanced keys.
-- [ ] `tab-recap autocompact` prints the active style and its numbers in its header; a test pins the header.
-- [ ] Screenshots `docs/screens/setup-en.png` and `setup-es.png` regenerated as before.
+- [x] `config.example.env`: the style and the four advanced keys, commented with their defaults.
+- [x] README: a table of the three styles and their numbers, and the advanced keys.
+- [x] `tab-recap autocompact` prints the active style and its numbers in its header; a test pins the header.
+- [x] Screenshots `docs/screens/setup-en.png` and `setup-es.png` regenerated as before.
 
 ## 6. Archive
 
