@@ -2,31 +2,33 @@
 
 ## Why
 
-Headless jobs launched by tab-recap use the same harnesses as interactive sessions. Their telemetry is therefore difficult to distinguish when an operator exports OpenTelemetry. A closed, generic job attribute lets a collector separate plugin jobs without putting prompt or session data into telemetry.
+Headless jobs launched by tab-recap use the same harnesses as interactive sessions. Their telemetry is difficult to distinguish when an observability stack exports OpenTelemetry. A closed, generic job attribute lets a collector separate plugin jobs without putting prompt or session data into telemetry.
 
 ## What Changes
 
-- Add an opt-in setting, `TAB_RECAP_TELEMETRY_TAGS`, defaulting to `off`.
+- Add an opt-in `TAB_RECAP_TELEMETRY_TAGS` setting, defaulting to `off`.
 - When enabled, tag supported child jobs with the constant resource attribute `tab_recap.job`, whose value is one of `recap-writer`, `curator`, `decider`, `judge`, `compaction-brief`, or `coverage-check`.
-- Specify typed job attributes and one serializer for the comma-separated `OTEL_RESOURCE_ATTRIBUTES` format, with the harness adapter applying it while building each child environment.
-- Specify collector-independent dashboard queries and the Codex token-based cost derivation.
-- Add the `job-telemetry` capability and extend the harness-adapters capability with the registry integration requirement.
+- Add a new job-kind tuple and pass its typed value through the harness maker to child-environment construction.
+- Document collector-dependent dashboard queries and the limits of deriving Codex cost from token metrics.
 
 ## Out of scope
 
-- Implementing code, changing job launch behavior, or enabling tagging by default.
-- Tagging OpenCode, Hermes, or custom harness jobs without a verified resource-attribute mechanism.
-- Adding telemetry exporters, configuring a collector, or changing any harness-specific telemetry settings.
+- Implementing code, changing launch behavior, or enabling tagging by default.
+- Tagging remote HTTP-backed decisions, OpenCode, Hermes, or a custom harness command.
+- Adding telemetry exporters, configuring a collector, or changing harness-specific telemetry settings.
 - Shipping a token price table or a Codex cost metric.
-- Adding prompt, lane, tab, path, model, or other session-specific values to attributes.
+- Adding prompts, lane or tab titles or identifiers, paths, model names, or other session-specific values to attributes.
 - Updating `CHANGELOG.md` or version fields.
 
 ## Dependencies
 
-Implementation depends on the job harness registry (T6) and on T7, the follow-up that moves job launching behind the registry. The tag hook belongs in the registry-backed adapter method that builds a job's child environment and invocation. This change is specification only; the implementation is a later merge request after those dependencies land.
+This change builds on the job harness registry, which has landed. If a later adapter refactor changes the `Harness` port or `scrubbedEnv`, implementation rebases onto that refactor. The scope of T7 is unconfirmed, and this change does not depend on an assumed T7 launch relocation. The hook is in the `Harness` port, the five entries of `src/daemon/harness-makers.ts`, and the child environment built through `scrubbedEnv` in `src/adapters/process.ts`. This change is specification only.
 
 ## Impact
 
-- Specifications: `job-telemetry` and `harness-adapters`.
-- Implementation tasks will update the setting parser, example environment file, setup modal, and harness adapter environment construction.
-- The implementation merge request carries the `changelog::internal` label.
+- Specifications: `job-telemetry` and a port-level addition to `harness-adapters`.
+- Implementation will update the setting parser, example environment file, setup modal, documentation, harness makers, and child environment construction.
+
+## Changelog
+
+This specification merge request carries `changelog::internal`. The implementation merge request will most likely carry `changelog::added` because it introduces an operator-facing setting and setup row.
