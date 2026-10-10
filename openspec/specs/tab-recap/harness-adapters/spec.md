@@ -61,6 +61,7 @@ compaction targets.
 
 - **WHEN** an OpenCode compaction appears on the second polling look
 - **THEN** each empty look SHALL read marks four times, a one-second pause SHALL separate looks, and confirmation SHALL be followed by one restore message without a retry
+
 ### Requirement: One registry hands out the transcript reader for a kind
 
 The plugin SHALL assemble transcript readers in one typed registry. The registry SHALL return a reader for each registered kind and SHALL return the screen reader for an unknown kind only when its configured fallback is present. Callers that require exact lookup SHALL receive no reader for an unregistered kind.
@@ -116,3 +117,37 @@ The kinds that can be compacted, appear in the default column policy, and are au
 
 - **WHEN** the plugin reads its compactable kinds, default policy kinds, or default autocompact kinds
 - **THEN** each list SHALL contain exactly the kinds whose corresponding capability is true
+
+### Requirement: Each adapter states the context window of its own model
+
+Each registered kind SHALL provide a context-window function, and the domain SHALL use that function with the observed transcript, the injected catalogue where applicable, and the operator's setting. The domain SHALL apply setting priority and raise an undersized base window to cover the observed token peak. The recognized sources SHALL remain `agent`, `catalogue`, `table`, `observed`, and `setting`.
+
+#### Scenario: A kind reports its observed context window
+
+- **WHEN** a kind reports a window in its transcript records
+- **THEN** the resulting context source SHALL be `agent`
+
+#### Scenario: A kind resolves its model through the catalogue
+
+- **WHEN** a kind has no observed window and its injected catalogue has an entry for the model
+- **THEN** the resulting context source SHALL be `catalogue`
+
+#### Scenario: Claude uses its family table
+
+- **WHEN** Claude has no observed window and the catalogue has no matching entry
+- **THEN** the family table SHALL determine the window and the source SHALL be `table`
+
+#### Scenario: Observed usage raises a smaller window
+
+- **WHEN** the current token count or pre-compaction peak exceeds the base window
+- **THEN** the window SHALL be raised using the shared size ladder or the observed peak, and the source SHALL be `observed`
+
+#### Scenario: The operator sets a context window
+
+- **WHEN** an explicit context-window setting is present
+- **THEN** it SHALL take priority over observed, catalogue, or table values and the source SHALL be `setting`
+
+#### Scenario: A screen-only kind has no context source
+
+- **WHEN** an unregistered screen-read kind has no stated window and no catalogue entry
+- **THEN** its context SHALL remain unknown and no context use SHALL be returned

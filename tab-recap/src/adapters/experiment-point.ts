@@ -4,6 +4,7 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState } from '#src/recap/application/autocompact-state.ts';
 import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
 import { contextOf, shareOf } from '#src/recap/domain/compaction.ts';
+import { WINDOW_SIZES, claudeWindowOf } from './context-window.ts';
 import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateOf } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
@@ -45,7 +46,7 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
 
 export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): { readonly tokens: number; readonly window: number; readonly share: number } | null {
     const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
-    const use = observed === null ? null : contextOf({ observed, agent: 'claude', setting: null, catalogued: observed.model === null ? null : catalogue.windowOf(observed.model) });
+    const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue), WINDOW_SIZES);
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
