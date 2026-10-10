@@ -1,12 +1,3 @@
-// A fleet of fake agents and the compaction flow over it, for the tests that pin what is typed into each kind of agent.
-//
-// DELIBERATE COPY. `test/compaction.test.ts` has its own `fleet` and `flow` helpers, with a different third argument to
-// `flow` (briefing, not reads), a typing lease and a briefing fake. This module adds what the conformance suite needs:
-// recorded pauses, a `lanes` argument and typed-piece records. Do not edit `compaction.test.ts` to use this file in
-// this change; fold the two into one module in a later step (see tasks.md, section 2).
-//
-// The exports are named `typingFleet`, `compactionFlow` and `compactionDeps` so an import cannot be mistaken for the
-// helpers of the same name in `compaction.test.ts`.
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
@@ -40,11 +31,9 @@ export interface Fleet {
     readonly answered: string[];
     readonly claims: CompactionClaims;
     refreshFails: boolean;
-    /** the pauses the flow asked for, in milliseconds: a confirmation that polls shows here */
     readonly pauses: number[];
 }
 
-/** A fleet of fake agents: what each reports, what was typed into it, and what happened around it. */
 export function typingFleet(statuses: Record<string, string>, blocked: readonly string[] = []): Fleet {
     const typed: Typed[] = [];
     const toasts: string[] = [];
@@ -74,7 +63,6 @@ export const NOW = Date.parse('2026-10-07T10:00:00Z');
 export const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 export const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-/** The compaction's dependencies over a fleet. `reads`: what the agent's records show each time they are looked at; the last one repeats. */
 export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionDeps {
     let looked = 0;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
@@ -106,7 +94,6 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
     };
 }
 
-/** The compaction flow over a fleet, as `Compaction.run` sees it. */
 export function compactionFlow(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): Compaction {
     return new Compaction(compactionDeps(world, setting, focused, reads, lanes));
 }

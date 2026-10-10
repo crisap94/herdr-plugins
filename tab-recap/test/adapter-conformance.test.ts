@@ -1,6 +1,3 @@
-// The harness adapters, one row per kind, run through the same expectations. This pins what each adapter does TODAY so the
-// "one adapter per harness" refactor can be proven behaviour-preserving. Every line marked `PINS TODAY:` is an oddity the refactor
-// may change on purpose; when it does, it edits that line here.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -24,6 +21,7 @@ import { compactable, targetsOf } from '#src/recap/application/compaction-target
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
+import type { BackendId } from '#src/recap/domain/backend.ts';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -54,38 +52,27 @@ const lane = (agent: string, extra: { cwd?: string; session?: string; pane?: str
 const today = (): string => { const day = new Date(); return join(String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0')); };
 
 interface Row {
-    readonly kind: string;
+    readonly kind: BackendId | 'gemini';
     readonly reader: Transcripts;
-    /** placed on a source that holds nothing */
     readonly empty: Lane;
-    /** placed on a recorded compaction */
     readonly recorded: Lane;
-    /** nothing to find it by (no cwd, no session, or a kind it does not read) */
     readonly unplaced: Lane;
-    /** the recorded source's `observed`; `absent` when the reader has no such method */
     readonly observed: Observed | null | 'absent';
-    /** the recorded source's compaction marks; `absent` when the reader does not report marks at all */
     readonly marks: readonly Mark[] | 'absent';
-    /** whether the reader has an in-flight method */
     readonly inFlight: boolean;
-    /** the recorded source's newest user prompt; `null` when it holds none (or, for a screen, cannot say) */
     readonly prompt: string | null;
-    /** whether the kind is offered a compaction today (`COMPACTABLE`), written here by hand so the table does not read the constant it checks */
     readonly compactable: boolean;
 }
 
-/** Writes each kind's files under `dir` and returns its row. Synchronous: the rows are built once, before the tests run. */
 function rows(): Row[] {
     const out: Row[] = [];
 
-    // claude: a session file per id in one project folder
     mkdirSync(join(dir, 'claude', 'proj'), { recursive: true });
     writeFileSync(join(dir, 'claude', 'proj', 'empty.jsonl'), '');
     copyFileSync(join(FIXTURES, 'claude-compact-boundary.jsonl'), join(dir, 'claude', 'proj', 'recorded.jsonl'));
     out.push({
         kind: 'claude', reader: new ClaudeTranscripts(join(dir, 'claude')),
         empty: lane('claude', { session: 'empty' }), recorded: lane('claude', { session: 'recorded' }), unplaced: lane('claude'),
-        // PINS TODAY: the boundary row alone: after is the compaction's postTokens, peak is its preTokens, no window or model is stated
         observed: { tokens: 3057, peak: 39532, window: null, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, trigger: 'manual' }],
         inFlight: true,
@@ -93,18 +80,15 @@ function rows(): Row[] {
         compactable: true,
     });
 
-    // codex: one rollout per lane, located by the cwd on its first line (the recorded fixture has no session line of its own)
     const codexRoot = join(dir, 'codex');
     const day = join(codexRoot, today());
     mkdirSync(day, { recursive: true });
     writeFileSync(join(day, 'rollout-empty.jsonl'), `${JSON.stringify({ type: 'session_meta', payload: { cwd: '/empty' } })}\n`);
-    // the user message is synthesized (the recorded fixture has none): it is the newest prompt, and the marks and observed values read only token_count, compacted and turn_context rows
     const prompt = { type: 'response_item', timestamp: '2026-10-06T13:08:00.000Z', payload: { type: 'message', role: 'user', content: [{ text: 'keep going' }] } };
     writeFileSync(join(day, 'rollout-recorded.jsonl'), [JSON.stringify({ type: 'session_meta', payload: { cwd: '/repo' } }), JSON.stringify(prompt), ...fixtureLines('codex-compacted.jsonl')].join('\n') + '\n');
     out.push({
         kind: 'codex', reader: new CodexTranscripts(codexRoot),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
-        // PINS TODAY: codex's peak is the newest token_count, so the pre-compaction 17 133 appears only in the mark, not as a peak (claude's peak takes the boundary's preTokens); the recorded compacted row has no preTokens to read; the window is the one the rollout states
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
         inFlight: false,
@@ -112,7 +96,6 @@ function rows(): Row[] {
         compactable: true,
     });
 
-    // opencode: one database; /repo holds the recorded compaction, /elsewhere a session with no messages at all
     const database = opencodeFixture(dir);
     database.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'keep going' }] });
     const created = 1_790_000_009_000;
@@ -121,7 +104,6 @@ function rows(): Row[] {
     out.push({
         kind: 'opencode', reader: new OpencodeTranscripts(database.db),
         empty: lane('opencode', { cwd: '/elsewhere' }), recorded: lane('opencode', { cwd: '/repo' }), unplaced: lane('opencode'),
-        // PINS TODAY: output tokens are not counted; the provider/model is the message's own
         observed: { tokens: 1020, peak: 1020, window: null, model: 'acme/big-1' },
         marks: [{ kind: 'compacted', at: created, tokensBefore: 1020, tookMs: 7000 }],
         inFlight: false,
@@ -129,17 +111,13 @@ function rows(): Row[] {
         compactable: true,
     });
 
-    // screen (`*`, here read as gemini): the pane's text; a pane that is empty holds nothing
     const screens: Screens = { readScreen: (pane): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.', revision: 1, truncated: false }) };
     out.push({
         kind: 'gemini', reader: new ScreenTranscripts(screens, (agent) => agent === 'gemini'),
         empty: lane('gemini', { pane: 'w1:p8' }), recorded: lane('gemini', { pane: 'w1:p3' }), unplaced: lane('zed'),
-        // PINS TODAY: a screen has no context to read, so the method is absent and LaneContexts says "cannot read"
         observed: 'absent',
-        // PINS TODAY: a screen reports no compaction marks, so a compaction read from one would end `unconfirmed`; screen kinds are not compactable, so the flow cannot reach this today (lane-recent.ts:44 gives no marks)
         marks: 'absent',
         inFlight: false,
-        // PINS TODAY: a screen cannot say what the operator typed (screen-transcripts.ts:34-35 returns null)
         prompt: null,
         compactable: false,
     });
@@ -147,6 +125,18 @@ function rows(): Row[] {
 }
 
 const ROWS = rows();
+
+function observedPinFor(kind: BackendId | 'gemini'): string {
+    switch (kind) {
+        case 'claude': return '; pins today: peak uses boundary preTokens, with no window or model stated';
+        case 'codex': return '; pins today: peak is the post-compaction token_count and preTokens appears only in the mark';
+        case 'opencode': return '; pins today: output tokens are excluded and provider/model come from the message';
+        case 'gemini': return '; pins today: a screen has no observed method and LaneContexts cannot read it';
+        case 'hermes':
+        case 'custom': return '';
+    }
+    return '';
+}
 
 const chunkOf = async (result: Promise<ChunkResult>): Promise<Chunk> => {
     const got = await result;
@@ -158,8 +148,7 @@ const sourceOf = (found: Located): string => {
     return found.source;
 };
 
-/** What the wiring of the daemon's autocompact says about a lane, with its kind enabled in the kinds: its skip, if it was skipped. The share is 62 %, so the gates before the in-flight one pass. */
-async function skipOf(readers: readonly Transcripts[], placed: Lane, kind: string): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
+async function skipOf(readers: readonly Transcripts[], placed: Lane, kind: BackendId | 'gemini'): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const decider: Decider = { label: 'fake', ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
@@ -198,7 +187,7 @@ for (const row of ROWS) {
         assert.equal(empty.entries.length, 0, 'an empty source yields no entries');
     });
 
-    test(`${row.kind}: latestPrompt finds the newest user prompt of the recorded source, and reading it moves no position`, async () => {
+    test(`${row.kind}: latestPrompt finds the newest user prompt of the recorded source, and reading it moves no position${row.kind === 'gemini' ? '; pins today: a screen cannot say what the operator typed' : ''}`, async () => {
         const source = sourceOf(await row.reader.locate(row.recorded));
         const before = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
         assert.deepEqual(await row.reader.latestPrompt(source, BUDGET), { kind: 'prompt', text: row.prompt });
@@ -206,7 +195,7 @@ for (const row of ROWS) {
         assert.deepEqual([later.position, later.entries.length], [before.position, before.entries.length]);
     });
 
-    test(`${row.kind}: observed is null for an empty source; the recorded one gives today's numbers, or the method is absent`, async () => {
+    test(`${row.kind}: observed is null for an empty source; the recorded one gives today's numbers, or the method is absent${observedPinFor(row.kind)}`, async () => {
         if (row.observed === 'absent') {
             assert.equal(typeof row.reader.observed, 'undefined');
             return;
@@ -218,7 +207,7 @@ for (const row of ROWS) {
         assert.deepEqual(recorded, { kind: 'observed', observed: row.observed });
     });
 
-    test(`${row.kind}: the compaction marks of the recorded source are the ones the existing tests expect; a screen reports none`, async () => {
+    test(`${row.kind}: the compaction marks of the recorded source are the ones the existing tests expect; a screen reports none${row.kind === 'gemini' ? '; pins today: screen has no marks, so a compaction would be unconfirmed but is not reachable today' : ''}`, async () => {
         const chunk = await chunkOf(row.reader.read(sourceOf(await row.reader.locate(row.recorded)), UNREAD, BUDGET));
         if (row.marks === 'absent') {
             assert.equal(chunk.marks, undefined);
@@ -227,10 +216,9 @@ for (const row of ROWS) {
         assert.deepEqual(chunk.marks, row.marks);
     });
 
-    test(`${row.kind}: inFlight is present for claude only; with the kind enabled for autocompact, where it is absent autocompact says why it stopped`, async () => {
+    test(`${row.kind}: inFlight is present for claude only; with the kind enabled for autocompact, where it is absent autocompact says why it stopped${row.kind === 'gemini' ? '; pins today: screen lane says no reader for gemini although the screen reader exists' : ''}`, async () => {
         if (!row.inFlight) {
             assert.equal(typeof row.reader.inFlight, 'undefined');
-            // PINS TODAY: the message names the lane's own kind and claims there is no reader, although the reader exists; a screen lane is looked up by its kind, not by the `*` reader
             const skip = await skipOf([row.reader], row.recorded, row.kind);
             assert.deepEqual(skip, { gate: 'in-flight', detail: `no reader for ${row.kind}` });
             return;
@@ -247,12 +235,12 @@ for (const row of ROWS) {
     });
 }
 
-test('COMPACTABLE is claude, codex and opencode: hermes and the screen kinds are not offered (PINS TODAY)', () => {
+test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen kinds are not offered', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);
     assert.deepEqual(compactable([lane('hermes'), lane('gemini'), lane('custom')]), []);
 });
 
-test('every BACKEND_IDS id has a maker that names itself; custom has no model and no enumerator', () => {
+test('every BACKEND_IDS id has a maker that names itself; custom has no model or enumerator; pins today: custom label ignores model setting', () => {
     const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', hermes: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
     assert.deepEqual(Object.keys(MAKERS).toSorted(), [...BACKEND_IDS].toSorted());
     for (const id of BACKEND_IDS) {
@@ -261,16 +249,12 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model an
     assert.equal(MODEL_DEFAULTS.custom, '');
     assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], dir), null);
     for (const id of BACKEND_IDS.filter((each) => each !== 'custom')) {
-        // every other id gets an enumerator, whichever harness it is
         assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], dir), null, `${id} enumerates`);
     }
-    // PINS TODAY: custom's label names only the command; the model setting is silently ignored
     const harness: Harness = new CustomHarness('my-llm --model x', dir, 1000);
     assert.equal(harness.label({ model: 'gpt-x', effort: 'high' }), 'custom/my-llm');
 });
 
-// Hermes: a headless job harness only. Nothing reads its history, so it is refused in each place that needs a reader.
-// The autocompact half enables hermes in the kinds (the production default is claude alone, a record-only lane); the record-only variant is not pinned here.
 test('hermes refuses: not compactable, `no reader for hermes` in the recap, and autocompact stops the lane in-flight (with the kind enabled)', async () => {
     const hermes = lane('hermes', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
     assert.deepEqual(targetsOf([hermes], { kind: 'all' }, { pane: null, focused: null }), []);

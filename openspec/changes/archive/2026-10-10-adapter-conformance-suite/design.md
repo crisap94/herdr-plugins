@@ -19,18 +19,29 @@ A compactable kind is driven through `Compaction.run`, as the operator's request
 compactable, so the flow never types into it: its cell drives `Sender` directly, which is the one place anything is
 typed. Both use the same fleet fakes (`test/fakes/compaction-fleet.ts`), which record each typed line, each pause and
 each event in order. A look at the records reads them four times when they say nothing, so the pauses are counted per
-duration rather than per look; the test comments say why. The named test asserts that it polled and that the restore
-message follows; the exact pause counts stay in the two tests marked `PINS TODAY:`, so a tuning change fails only those.
+duration rather than per look; the test names identify the current polling counts and restore behavior.
 
 The fakes are a deliberate copy of the helpers in `test/compaction.test.ts`, with different names, and that file is not
 edited here. The copy is folded into the other in a later change (see tasks.md).
 
 ## 3. Pins, not fixes
 
-A pinned oddity is asserted as it is today, with a `PINS TODAY:` comment. The refactor that changes it edits that line
-on purpose, and the change is visible in the diff. Nothing is asserted as "correct" that the code does not do.
+A pinned oddity is asserted as it is today, with `pins today` in its test name. The refactor that changes it edits that
+test name and assertion on purpose, and the change is visible in the diff. Nothing is asserted as "correct" that the
+code does not do.
 
 ## 4. Why no Node built-in and no new dependency
 
 The tests use `node:test`, `node:assert`, `node:fs` and `node:os`, as the rest of the suite does. The fakes are plain
 TypeScript objects. No runtime code is added, so no package is added either.
+
+## 5. Pinned adapter oddities
+
+These current behaviours are deliberately discoverable in the conformance test names as `pins today`:
+
+- A non-Claude compaction that remains unconfirmed is inspected 20 times, with 19 one-second pauses and 60 300 ms record re-reads; it still sends the restore message. A failed verdict skips that message.
+- The Codex send path also handles an unknown kind if it reaches `Sender`; today that case is latent because target selection filters through `COMPACTABLE` first.
+- A screen lane of kind `gemini` reports `no reader for gemini` at the in-flight gate even though the screen reader exists; lookup uses the exact lane kind rather than the `*` reader.
+- Codex observed peak is the post-compaction `token_count`; the pre-compaction count appears in the compaction mark.
+- The custom harness label includes its command and ignores the model setting.
+- For a confirmed OpenCode compaction, each look makes four mark reads, then a one-second pause separates looks; after confirmation the restore message is sent and no retry occurs.

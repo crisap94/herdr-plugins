@@ -30,3 +30,34 @@ compaction targets.
 
 - **WHEN** autocompact considers a lane whose kind has no in-flight reader
 - **THEN** the lane SHALL be stopped in the in-flight gate, with the reason naming its kind
+
+#### Scenario: An unconfirmed non-Claude compaction
+
+- **WHEN** a non-Claude compaction remains unconfirmed through polling
+- **THEN** the sender SHALL inspect it 20 times, with 19 one-second pauses and 60 additional 300 ms record reads, and SHALL still send the restore message
+- **AND** a failed verdict SHALL skip the restore message
+
+#### Scenario: An unknown kind reaches the sender
+
+- **WHEN** an unknown kind reaches `Sender` directly
+- **THEN** it SHALL take the Codex send path; current target selection filters by `COMPACTABLE` first, so the case is latent until an unknown kind is added there
+
+#### Scenario: A screen lane is checked for in-flight work
+
+- **WHEN** autocompact checks a screen lane whose kind is `gemini`
+- **THEN** the in-flight skip reason SHALL say `no reader for gemini`, because lookup uses the exact lane kind although a `*` screen reader exists
+
+#### Scenario: Codex observed peak is reported
+
+- **WHEN** the Codex transcript reader reports observed compaction tokens
+- **THEN** `peak` SHALL equal the post-compaction `token_count`, while the pre-compaction count appears in the compaction mark
+
+#### Scenario: A custom harness is labelled
+
+- **WHEN** a custom harness has a command and model setting
+- **THEN** its label SHALL include the command and ignore the model setting
+
+#### Scenario: OpenCode compaction is confirmed on a later look
+
+- **WHEN** an OpenCode compaction appears on the second polling look
+- **THEN** each empty look SHALL read marks four times, a one-second pause SHALL separate looks, and confirmation SHALL be followed by one restore message without a retry
