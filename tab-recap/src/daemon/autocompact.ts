@@ -34,7 +34,7 @@ async function inFlightOf(transcripts: TranscriptRegistry, lane: Lane): Promise<
     }
     const exact = transcripts.exact(agent);
     const reader = exact ?? transcripts.readerFor(agent);
-    if (reader === undefined) return { count: 'unknown', why: registered === null ? inFlightReason('unregistered-reader', agent) : `no in-flight reader is registered for ${agent}` };
+    if (reader === undefined) return { count: 'unknown', why: inFlightReason('unregistered-reader', agent) };
     const located = await reader.locate(lane);
     if (isUnknown(located)) return { count: 'unknown', why: exact === undefined ? inFlightReason('unregistered-reader', agent) : saying(located.why) };
     if (reader.inFlight.kind === 'unsupported') return { count: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };

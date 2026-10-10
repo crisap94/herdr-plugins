@@ -8,7 +8,7 @@ import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
-import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import { daemonTranscriptRegistry, IN_FLIGHT_CAPABILITIES, modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { CustomHarness } from '#src/adapters/custom-harness.ts';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
@@ -250,15 +250,37 @@ test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen k
 
 test('registered kind flags match transcript and compaction lookup outcomes', () => {
     const transcripts = modalTranscriptRegistry();
+    const inFlight: Readonly<Record<string, { readonly kind: string }>> = IN_FLIGHT_CAPABILITIES;
     for (const [kind, flags] of Object.entries(REGISTERED_KINDS)) {
         assert.equal(transcripts.exact(kind) !== undefined, flags.hasTranscript, `${kind} transcript capability`);
         assert.equal(compactionPlans.forKind(kind, '').kind === 'supported', flags.compactable, `${kind} compaction capability`);
+        assert.equal(inFlight[kind]?.kind === 'supported', flags.hasTranscript, `${kind} in-flight capability`);
     }
 });
 
 test('hermes history and compaction lookups refuse with their established wording', () => {
     assert.equal(modalTranscriptRegistry().exact('hermes'), undefined);
     assert.deepEqual(compactionPlans.forKind('hermes', ''), { kind: 'unsupported', why: 'no compaction plan is registered for hermes' });
+});
+
+test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
+    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: '', revision: 1, truncated: false }) };
+    const daemon = daemonTranscriptRegistry(screens, () => true);
+    assert.equal(modalTranscriptRegistry().unavailableReason('hermes'), 'no reader for hermes');
+    assert.equal(modalTranscriptRegistry().unavailableReason('zed'), 'no reader for zed');
+    assert.equal(daemon.unavailableReason('hermes'), 'no reader for hermes');
+    assert.equal(daemon.unavailableReason('zed'), 'no reader for zed');
+});
+
+test('a registered Unsupported kind answers from the capability table before a screen reader is consulted', async () => {
+    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: 'working', revision: 1, truncated: false }) };
+    const hermes = lane('hermes', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
+    assert.deepEqual(await skipOf(registryWith({}, new ScreenTranscripts(screens, () => true)), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
+});
+
+test('a registered kind with no reader in the registry names the missing transcript reader', async () => {
+    const codex = lane('codex', { pane: 'w1:p5', cwd: '/repo', session: 'c1' });
+    assert.deepEqual(await skipOf(registryWith({}), codex, 'codex'), { gate: 'in-flight', detail: 'no transcript reader for codex' });
 });
 
 test('a registered transcript reader without in-flight support shows its declared reason', async () => {

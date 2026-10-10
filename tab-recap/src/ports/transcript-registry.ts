@@ -5,7 +5,7 @@ export class TranscriptRegistry {
     private readonly fallback: Transcripts | null;
     private readonly unavailable: (kind: string) => string;
 
-    constructor(readers: Readonly<Record<string, Transcripts>>, fallback: Transcripts | null, unavailable: (kind: string) => string = (kind): string => `no reader for ${kind}`) {
+    constructor(readers: Readonly<Record<string, Transcripts>>, fallback: Transcripts | null, unavailable: (kind: string) => string) {
         this.readers = readers;
         this.fallback = fallback;
         this.unavailable = unavailable;
