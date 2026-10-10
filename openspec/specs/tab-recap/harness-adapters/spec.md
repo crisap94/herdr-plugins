@@ -363,3 +363,9 @@ Hermes SHALL remain a registered job harness and SHALL declare unsupported histo
 - **THEN** recap SHALL report `no reader for hermes`
 - **AND** compaction SHALL not offer or type into the lane
 - **AND** autocompact SHALL stop at the in-flight gate with `no transcript reader for hermes`
+
+#### Scenario: A hermes lane with a screen reader is checked for in-flight work
+
+- **WHEN** autocompact checks a Hermes lane while `hermes` is listed in both `TAB_RECAP_SCREEN_AGENTS` and `TAB_RECAP_AUTOCOMPACT_KINDS`
+- **THEN** the in-flight skip reason SHALL be `no transcript reader for hermes`
+- **AND** the screen reader SHALL NOT be consulted for in-flight work

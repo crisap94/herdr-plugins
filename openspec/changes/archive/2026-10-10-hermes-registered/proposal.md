@@ -5,6 +5,8 @@ The typed adapter tables represent transcript readers, context windows, session 
 ## What Changes
 
 - Add Hermes to registered kinds with explicit unsupported capabilities for history, in-flight work, context windows and compaction; session identity keeps the shared parser.
+- Declare an in-flight difference for Hermes: a registered kind whose in-flight capability is unsupported answers from the capability table before any screen reader is consulted. A Hermes lane with a screen reader enabled (`TAB_RECAP_SCREEN_AGENTS` and `TAB_RECAP_AUTOCOMPACT_KINDS` both listing `hermes`) now reports `no transcript reader for hermes`, where it reported `screen transcripts do not contain in-flight work`.
+- Keep the in-flight reasons of Claude, Codex and OpenCode byte-identical to before, including when a registry has no reader for them (`no transcript reader for <kind>`).
 - Show the Hermes job-only capability in setup using the job harness registry.
 - Make `readerKindOf('hermes')` return `hermes` as part of registered-kind lookup.
 - Return no context-window basis for Hermes even when a window is reported; other unregistered kinds keep their existing lookup behavior.
