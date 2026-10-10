@@ -57,7 +57,7 @@ test('release: MRs found through the commits of previous..to, once each, merged 
         c1: [mr(5, 'Add a thing', ['changelog::added'])],
         c2: [mr(5, 'Add a thing', ['changelog::added']), mr(6, 'Fix it', ['changelog::fixed'])],
         c3: [],
-        c4: [mr(8, 'Not merged', ['changelog::added'], { state: 'opened' }), mr(9, 'Other branch', [], { target_branch: 'atalaya' })],
+        c4: [mr(8, 'Not merged', ['changelog::added'], { state: 'opened' }), mr(9, 'Other branch', [], { target_branch: 'release' })],
     };
     const get: Get = (path) => {
         if (path.startsWith('/repository/compare?from=tab-recap-v1.0.1&to=abc')) {

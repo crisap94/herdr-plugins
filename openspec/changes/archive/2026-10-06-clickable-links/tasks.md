@@ -16,6 +16,6 @@ Paths under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash ci/t
 
 ## 3. Integration and archive (before merge)
 
-- [x] 3.1 Live check from the branch: a column for a tab with `!N`, a SHA, a branch and a file shows OSC 8 links (raw pty capture) that resolve to the right GitLab pages — verify: excerpt in the MR — done: branch column in a 60-cell pty on a copy of the live db (migrated to v2, v1 backup made) drew OSC 8 links for !25, ca9a099, a file path, the branch and a GitHub URL; the GitLab API confirms MR 25, commit ca9a099 and branch atalaya exist
+- [x] 3.1 Live check from the branch: a column for a tab with `!N`, a SHA, a branch and a file shows OSC 8 links (raw pty capture) that resolve to the right GitLab pages — verify: excerpt in the MR — done: branch column in a 60-cell pty on a copy of the live db (migrated to v2, v1 backup made) drew OSC 8 links for !25, ca9a099, a file path, the branch and a GitHub URL; the GitLab API confirms MR 25, commit ca9a099 and the branch exist
 - [x] 3.2 GitLab pipeline green on the branch (GitHub runs after merge, green before `release:prepare`) — verify: pipeline link — MR !28 pipeline 16094 green
 - [x] 3.3 `openspec archive clickable-links --yes`, no TBD Purpose, `openspec validate --specs --strict` — verify: specs updated in this MR
