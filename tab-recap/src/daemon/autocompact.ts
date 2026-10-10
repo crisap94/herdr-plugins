@@ -57,7 +57,7 @@ export function wireAutocompact(parts: {
 }): Autocompact {
     const { store } = parts;
     return new Autocompact({
-        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: (pane) => awaitingNow(pane), events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
+        policy: () => loadConfig().autocompact, tuning: () => loadConfig().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: (pane) => awaitingNow(pane), events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },

@@ -62,7 +62,7 @@ export function wireCompaction(parts: {
         },
         coverage: () => {
             const decider = parts.coverageDecider();
-            return decider === null ? null : { check: (text, facts) => covered(text, facts, decider) };
+            return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, loadConfig().tuning.coverageAtLeast) };
         },
         decisions: parts.decisions,
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },

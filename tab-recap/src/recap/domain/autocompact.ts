@@ -1,4 +1,5 @@
 // Autocompact's policy: when it may act and where its decider lives. Pure parsers over config values; the gates and the verdict join them here.
+import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -16,8 +17,9 @@ export interface AutocompactPolicy {
 export const MINIMUM_DEFAULT = 10;
 export const MINIMUM_MIN = 10;
 export const MINIMUM_MAX = 95;
-export const CEILING_DEFAULT = 80;
-export const COOLDOWN_DEFAULT_MS = 10 * 60_000;
+/** the `balanced` style's numbers: what a ceiling and a cooldown are when their keys are unset and the style is not chosen */
+export const CEILING_DEFAULT = STYLE_NUMBERS.balanced.ceiling;
+export const COOLDOWN_DEFAULT_MS = STYLE_NUMBERS.balanced.cooldownMs;
 export const KINDS_DEFAULT: readonly string[] = ['claude'];
 /** the agent statuses a lane is considered in: its agent is free (a sweep and a settled lane take these only) */
 export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
@@ -38,16 +40,19 @@ function percentOf(raw: string | undefined): number | null {
 /** `TAB_RECAP_AUTOCOMPACT_AT`: 10–95, else 10. */
 export const minimumOf = (raw: string | undefined): number => percentOf(raw) ?? MINIMUM_DEFAULT;
 
-/** `TAB_RECAP_AUTOCOMPACT_CEILING`: 10–95, else 80; and above `minimum` always — a ceiling that is not becomes `minimum` + 10, at most 95. */
-export function ceilingOf(raw: string | undefined, minimum: number): number {
-    const ceiling = percentOf(raw) ?? CEILING_DEFAULT;
+/** `TAB_RECAP_AUTOCOMPACT_CEILING`: 10–95, else the style's (80 with `balanced`); and above `minimum` always — a ceiling that is not becomes `minimum` + 10, at most 95. */
+export function ceilingOf(raw: string | undefined, minimum: number, fallback: number = CEILING_DEFAULT): number {
+    const ceiling = percentOf(raw) ?? fallback;
     return ceiling > minimum ? ceiling : Math.min(MINIMUM_MAX, minimum + 10);
 }
 
-/** `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`: a whole number of milliseconds, 0 or more, else ten minutes. */
-export function cooldownOf(raw: string | undefined): number {
+/** `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`: a whole number of milliseconds, 0 or more, else ten minutes (the `balanced` style's). */
+export const cooldownOf = (raw: string | undefined): number => cooldownWith(raw, COOLDOWN_DEFAULT_MS);
+
+/** The same, with the style's cooldown as the fallback when the key is not a valid number. */
+export function cooldownWith(raw: string | undefined, fallback: number): number {
     const ms = Number(word(raw));
-    return word(raw) !== '' && Number.isInteger(ms) && ms >= 0 ? ms : COOLDOWN_DEFAULT_MS;
+    return word(raw) !== '' && Number.isInteger(ms) && ms >= 0 ? ms : fallback;
 }
 
 /** `TAB_RECAP_AUTOCOMPACT_KINDS`: a comma list of agent kinds, else `claude`. */
@@ -56,10 +61,14 @@ export function kindsOf(raw: string | undefined): readonly string[] {
     return kinds.length === 0 ? KINDS_DEFAULT : kinds;
 }
 
-/** The whole policy from the configuration. */
+/** The whole policy from the configuration: the ceiling and the cooldown are the style's unless their own keys hold a valid value. */
 export function policyOf(get: (key: string) => string | undefined): AutocompactPolicy {
+    const numbers = STYLE_NUMBERS[styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'))];
     const minimum = minimumOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
-    return { mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum), cooldownMs: cooldownOf(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS')), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')) };
+    return {
+        mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
+        cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')),
+    };
 }
 
 /** Who checks a brief's coverage: `auto` (Jev when a key is found, else the moment decider), `jev`, or `decider` (the moment decider). */

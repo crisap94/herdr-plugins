@@ -36,6 +36,9 @@ export function unchangedOf(last: LastDecision | null, startedAt: number, tokens
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode;
 }
 
+/** The re-check: the style's interval has passed since the lane's last decision, so an unchanged lane is asked again (never when `interval` is null). */
+export const recheckDue = (interval: number | null, lastDecisionAt: number | null, now: number): boolean => interval !== null && lastDecisionAt !== null && now - lastDecisionAt >= interval;
+
 export interface DetailFacts {
     readonly now: number;
     readonly minimum: number;
