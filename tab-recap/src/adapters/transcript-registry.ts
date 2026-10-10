@@ -43,6 +43,10 @@ export function readerKindOf(raw: string): RegisteredKind | null {
     return registeredKindOf(raw);
 }
 
+export function replayKindOf(flag: string | null, file: string): RegisteredKind | null {
+    return readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
+}
+
 export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {
     return new TranscriptRegistry(readersOf(READERS), new ScreenTranscripts(screens, wants), unavailableReason);
 }
