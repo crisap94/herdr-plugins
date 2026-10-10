@@ -1,11 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { numbered, writerFacts } from '#src/recap/application/ledger-input.ts';
+import { inputOf } from '#src/recap/application/recap-input.ts';
+import { laneFrom } from '#src/recap/domain/lane.ts';
 import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { factOf } from './fakes/facts.ts';
-import { agentOf } from '#test/support.ts';
+import { agentOf, NO_REPOS } from '#test/support.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
+const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
+const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const cursor = { pane: 'w1:p1', agent: 'claude', transcript: '/t', cursor: 5, tail: null, title: null, lastPrompt: null, claudeRecap: null };
 const HOUR = 3_600_000;
 const NOW = 100 * HOUR;
 const facts = [
@@ -34,4 +39,28 @@ test('numbering gives ids only to shown and closed facts', () => {
     assert.equal(ledger.facts.some((fact) => fact.text === 'done-0'), false);
     assert.equal(ledger.facts.find((fact) => fact.text === 'closed')?.id, 'f12');
     assert.equal(result.shown.get('t1')?.size, ledger.facts.length);
+});
+
+const nextFacts = [
+    factOf('next', 'older than the window', { lastAt: NOW - 25 * HOUR }),
+    factOf('next', 'on the boundary', { lastAt: NOW - 24 * HOUR }),
+    factOf('next', 'just inside', { lastAt: NOW - 24 * HOUR + 60_000 }),
+    factOf('next', 'recent', { lastAt: NOW - HOUR }),
+];
+
+test('the next window hides facts older than its hours, keeps a fact exactly at the boundary, and counts the hidden ones', () => {
+    const result = writerFacts(nextFacts, wide, NOW);
+    assert.deepEqual(result.shown.map((fact) => fact.text), ['on the boundary', 'just inside', 'recent']);
+    assert.deepEqual([...result.hidden], [['next', 1]]);
+});
+
+test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
+    const built = await inputOf([{ lane, cursor, chunk: null, fresh: false }], {
+        tab: 'w1:t1', repos: NO_REPOS, now: NOW, tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }],
+        facts: [{ key: 't1', open: nextFacts, closed: [] }], writerView: wide,
+    });
+    const ledger = built.input.ledgers.at(0);
+    assert.ok(ledger);
+    assert.deepEqual(ledger.facts.map((fact) => fact.text), ['on the boundary', 'just inside', 'recent']);
+    assert.equal(ledger.hidden?.get('next'), 1);
 });
