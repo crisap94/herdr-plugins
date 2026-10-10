@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { CLAUDE_SCREEN_CHROME, ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';
@@ -25,10 +25,10 @@ const SCREEN = [
 ].join('\n');
 
 test('a screen is read without its chrome: borders, the empty prompt, key hints and spinners go; blank runs collapse', () => {
-    assert.equal(cleanScreen(SCREEN), '● I fixed the parser and the tests pass now.\n\n  Ran 2 shell commands');
-    assert.equal(cleanScreen('────\n❯ \n⏵⏵ bypass permissions on'), '');
-    assert.deepEqual(screenEntries(SCREEN).map((entry) => entry.text), ['● I fixed the parser and the tests pass now.', '  Ran 2 shell commands']);
-    assert.ok(screenEntries('x'.repeat(5000)).every((entry) => entry.text.length <= 2000), 'no entry outgrows the excerpt clip');
+    assert.equal(cleanScreen(SCREEN, CLAUDE_SCREEN_CHROME), '● I fixed the parser and the tests pass now.\n\n  Ran 2 shell commands');
+    assert.equal(cleanScreen('────\n❯ \n⏵⏵ bypass permissions on', CLAUDE_SCREEN_CHROME), '');
+    assert.deepEqual(screenEntries(SCREEN, CLAUDE_SCREEN_CHROME).map((entry) => entry.text), ['● I fixed the parser and the tests pass now.', '  Ran 2 shell commands']);
+    assert.ok(screenEntries('x'.repeat(5000), CLAUDE_SCREEN_CHROME).every((entry) => entry.text.length <= 2000), 'no entry outgrows the excerpt clip');
 });
 
 class FakeScreens implements Screens {
@@ -112,5 +112,5 @@ test('"the same screen" survives a repaint: reordered or repeated lines, ticking
     assert.equal(steady(history.slice(10).join('\n')), same, 'the oldest lines slid out of the window');
     assert.equal(steady(`${history.join('\n')}\nelapsed 12s`), steady(`${history.join('\n')}\nelapsed 98s`), 'counters tick');
     assert.notEqual(steady(`${history.join('\n')}\nsomething new was said`), same);
-    assert.equal(cleanScreen('same\nsame\nsame\nother\nsame'), 'same\nother\nsame', 'a notice printed again right after itself is one line');
+    assert.equal(cleanScreen('same\nsame\nsame\nother\nsame', CLAUDE_SCREEN_CHROME), 'same\nother\nsame', 'a notice printed again right after itself is one line');
 });
