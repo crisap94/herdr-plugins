@@ -24,7 +24,7 @@ const answer = (closes: number, rest = 0.15): DecidedResult => ({
 });
 
 function decidedMinutesAgo(w: World, minutes: number, verdict: 'wait' | 'undecided' | 'compact', mode: DecisionMode = 'on'): void {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict, answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
 }
 
 test('the decider\'s answers become the verdict under the style: a close of 0.65 compacts under eager and is undecided under balanced and gentle', async () => {

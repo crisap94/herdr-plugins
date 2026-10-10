@@ -14,7 +14,7 @@ test('a stop by the minimum, the cooldown, in flight, busy or an unknown share k
     below.share = 8;
     await below.service.consider(lane());
     const cooling = world();
-    cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    cooling.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 4 * 60_000, mode: 'on', share: 60, tokens: 1, window: 2, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     await cooling.service.consider(lane());
     const flying = world();
     flying.inFlight = 2;
@@ -48,7 +48,7 @@ test('off records no skip and logs nothing', async () => {
 
 test('coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth', async () => {
     const w = world({ coverageBackoff: { kind: 'window', ms: milliseconds(30 * 60_000) } });
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 10 * 60_000, mode: 'on', share: 62, tokens: 620_000, window: 1_000_000, gate: 'coverage', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 10 * 60_000, mode: 'on', share: 62, tokens: 620_000, window: 1_000_000, gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     w.byPane = { 'w1:p1': 62.05 };
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, w.store.autocompact.skips()[0]?.gate], [0, 'coverage-backoff']);

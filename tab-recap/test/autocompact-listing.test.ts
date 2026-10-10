@@ -6,7 +6,7 @@ import { listing, parseListing } from '#src/recap/application/autocompact-listin
 const NOW = Date.parse('2026-10-08T12:00:00Z');
 const found = (over: Partial<StoredDecision>): StoredDecision => ({
     id: 'dcn_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 60_000, mode: 'shadow', share: 61, tokens: 1, window: 2, gate: 'ask', verdict: 'compact', answers: {}, coverage: null,
-    decider: 'jev · jev-1.13.0', costUsd: 0.00003, tookMs: 5, why: null, askedVerdict: 'compact', compactionId: null, ...over,
+    decider: 'jev · jev-1.13.0', costUsd: 0.00003, tookMs: 5, why: null, askedVerdict: 'compact', coverageOutcome: null, coverageMs: null, coverageCostUsd: null, compactionId: null, ...over,
 });
 
 test('the listing: a header, one row per decision in the order given, the cells padded, then the last day\'s total', () => {

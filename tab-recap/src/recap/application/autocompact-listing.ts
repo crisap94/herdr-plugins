@@ -26,7 +26,7 @@ function stamp(at: number, zone: string): string {
 }
 
 const rowOf = (found: StoredDecision, zone: string): readonly string[] => [
-    stamp(found.at, zone), found.tab, found.pane, `${found.share} %`, found.askedVerdict !== null && found.askedVerdict !== undefined && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
+    stamp(found.at, zone), found.tab, found.pane, `${found.share} %`, found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
 ];
 
 const HEAD = ['time', 'tab', 'pane', 'share', 'verdict', 'gate', 'decider', 'cost'] as const;

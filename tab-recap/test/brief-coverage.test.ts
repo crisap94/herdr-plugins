@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
-import { correctionOf, covered, factsOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
+import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
@@ -39,18 +39,18 @@ test('the questions: keeps_<i> per fact, reason_<i> per decision with a reason; 
 
 test('missing: a goal, needs, decisions or rules fact (or a decision\'s reason) below 0.70; now and next never block', () => {
     const facts = factsOf(HISTORY);
-    assert.deepEqual(missingOf({ keeps_0: 0.69, keeps_1: 0.7, reason_1: 0.7, keeps_2: 0.1 }, facts), ['goal: Ship the cart rewrite']);
-    assert.deepEqual(missingOf({ keeps_0: 1, keeps_1: 0.95, reason_1: 0.2, keeps_2: 0.4 }, facts), ['the reason for the decision: Keep SQLite (one file)']);
-    assert.deepEqual(missingOf({ keeps_0: 1, keeps_1: 1, reason_1: 1, keeps_2: 0.4 }, facts), []);
+    assert.deepEqual(linesOf(missingOf({ keeps_0: 0.69, keeps_1: 0.7, reason_1: 0.7, keeps_2: 0.1 }, facts)), ['goal: Ship the cart rewrite']);
+    assert.deepEqual(linesOf(missingOf({ keeps_0: 1, keeps_1: 0.95, reason_1: 0.2, keeps_2: 0.4 }, facts)), ['the reason for the decision: Keep SQLite (one file)']);
+    assert.deepEqual(linesOf(missingOf({ keeps_0: 1, keeps_1: 1, reason_1: 1, keeps_2: 0.4 }, facts)), []);
 });
 
 test('covered: the brief and the facts are the one state; ok when nothing blocks; a decider that cannot answer is not ok and says why', async () => {
     const decider = deciding({ keeps_2: 0.4 });
-    assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 });
+    assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], missingFacts: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 });
     const broken: Decider = { label: 'x', ask: () => Promise.resolve(unknown({ why: 'timeout', after: 10_000 as never })) };
     const result = await covered('b', factsOf(HISTORY), broken);
     assert.deepEqual([result.ok, result.missing, result.unknown], [false, [], 'timed out after 10000 ms']);
-    assert.deepEqual(await covered('b', [], broken), { ok: true, missing: [], answers: {}, unknown: null });
+    assert.deepEqual(await covered('b', [], broken), { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null });
     assert.match(correctionOf(['goal: Ship it']), /did not keep these.*\n- goal: Ship it$/s);
 });
 
@@ -83,11 +83,11 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     return { world, compaction: new Compaction(deps) };
 }
 
-const OK: Coverage = { ok: true, missing: [], answers: { keeps_0: 0.9 }, unknown: null };
-const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], answers: { keeps_1: 0.2 }, unknown: null };
+const OK: Coverage = { ok: true, missing: [], missingFacts: [], answers: { keeps_0: 0.9 }, unknown: null };
+const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], missingFacts: [{ index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: null }, parts: ['text'] }], answers: { keeps_1: 0.2 }, unknown: null };
 
 function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
-    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', answers: {}, coverage: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
+    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
     return id;
 }
 
@@ -138,7 +138,7 @@ test('the ceiling appendix follows the section order and remains within its char
         { ...HISTORY[0]!, section: 'decisions', text: 'old decision', why: 'older reason', lastAt: 2 },
     ];
     const missing = history.map((entry) => `${entry.section}: ${entry.text}`);
-    const result: Coverage = { ok: false, missing, answers: {}, unknown: null };
+    const result: Coverage = { ok: false, missing, missingFacts: history.map((entry, index) => ({ index, fact: { section: entry.section, text: entry.text, why: entry.why }, parts: ['text'] })), answers: {}, unknown: null };
     const { world, compaction } = flow([result], true, null, true, history);
     decided(world, 'ceiling');
     await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
@@ -175,7 +175,7 @@ test('still missing after the rewrite: nothing is typed, the record is skipped w
 });
 
 test('a decider that cannot be reached leaves the brief unchecked: no rewrite, no typing, a coverage wait', async () => {
-    const { world, compaction } = flow([{ ok: false, missing: [], answers: {}, unknown: 'timed out after 10000 ms' }]);
+    const { world, compaction } = flow([{ ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' }]);
     decided(world);
     await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
     assert.deepEqual([world.typed.length, world.briefs.length, world.store.autocompact.newest(1)[0]?.gate], [0, 1, 'coverage'], 'unchecked: no rewrite, and the decision waits');

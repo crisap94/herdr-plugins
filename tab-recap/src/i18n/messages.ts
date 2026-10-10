@@ -25,7 +25,6 @@ export interface Messages {
     readonly claudeOwn: string;
     readonly noRecapYet: string;
     readonly noRecapShort: string;
-    readonly autocompactGates: Readonly<Record<SkipGate, string>>;
     readonly autocompactSettings: { readonly ceilingOverride: (enabled: boolean) => string; readonly coverageBackoff: (window: string) => string };
     readonly git: { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string };
     readonly recapError: (error: string) => string;

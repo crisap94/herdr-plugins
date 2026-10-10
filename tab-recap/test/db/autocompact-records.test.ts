@@ -8,7 +8,7 @@ import { decode } from '#src/adapters/db/checked-fact-codec.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
     tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: 1_000, mode: 'shadow', share: 61, tokens: 610_000, window: 1_000_000, gate: 'ask', verdict: 'compact',
-    answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, ...over,
+    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, ...over,
 });
 
 function seeded(): Store {
@@ -100,13 +100,13 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     const newer = store.autocompact.record(decision({ at: 200 }));
     store.autocompact.record(decision({ at: 300, verdict: 'wait' }));
     const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
-    assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), newer);
+    assert.deepEqual(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), { id: newer, gate: 'ask' });
     assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p2', cmp), null);
     store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 12, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     const row = store.autocompact.newest(5).find((each) => each.id === newer);
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
     assert.equal(row?.askedVerdict, 'compact');
-    assert.deepEqual(row.coverageOutcome, { kind: 'missed', facts: [] });
+    assert.deepEqual(row.coverageOutcome, { kind: 'missed', count: 1 });
     assert.equal(store.compactions.shownFor('w1:t1')[0]?.origin, 'auto');
     store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: 3, coverageCostUsd: null, why: null, block: false });
     assert.equal(store.autocompact.newest(1)[0]?.verdict, 'compact');

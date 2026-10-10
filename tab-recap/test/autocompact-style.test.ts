@@ -19,7 +19,7 @@ function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
 }
 
 function waitedMinutesAgo(w: World, minutes: number): void {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode: 'on', share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode: 'on', share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
 }
 
 const passes = async (style: string): Promise<boolean> => (await covered('the brief', NEEDS, keeping(0.65), tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)).ok;

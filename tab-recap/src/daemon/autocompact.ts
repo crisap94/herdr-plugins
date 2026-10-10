@@ -15,7 +15,7 @@ import { bounded } from './bounded.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
-import { loadConfig, messagesOf, type Config } from './config.ts';
+import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { inFlightReason } from '#src/ports/autocompact-reasons.ts';
 
@@ -62,6 +62,6 @@ export function wireAutocompact(parts: {
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },
-        lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => Date.now(), log: (line) => { parts.log(line); }, skipLabel: (gate) => messagesOf().autocompactGates[gate],
+        lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => Date.now(), log: (line) => { parts.log(line); },
     });
 }

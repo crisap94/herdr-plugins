@@ -32,6 +32,9 @@ export const briefRetentionOf = (raw: string | undefined): BriefRetention => {
     return { kind: 'days', value: days };
 };
 export const milliseconds = (value: number): Milliseconds => value as Milliseconds;
+export function unreachable(value: never): never {
+    throw new Error(`unexpected case: ${String(value)}`);
+}
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 

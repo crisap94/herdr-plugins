@@ -58,7 +58,6 @@ export interface AutocompactDeps {
     lanes(tab: string): readonly Lane[];
     now(): number;
     log(line: string): void;
-    skipLabel?(gate: SkipGate): string;
 }
 
 const BALANCED = tuningOf(() => undefined);
@@ -156,7 +155,7 @@ export class Autocompact {
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
         this.deps.events?.lane(pane, 'autocompact-skipped', gate);
-        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${this.deps.skipLabel?.(gate) ?? gate}${detail === null ? '' : ` (${detail})`}`);
+        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`);
     }
 
     private async run(lane: Lane): Promise<void> {
@@ -203,8 +202,8 @@ export class Autocompact {
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
         const { judged, recordOnly } = found;
         const made: Decision = {
-            tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict,
-            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why,
+            tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why, coverageOutcome: null, coverageMs: null, coverageCostUsd: null,
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);

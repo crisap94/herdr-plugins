@@ -74,7 +74,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     const now = 100 * DAY;
     store.records.recordRun(run(now - 15 * DAY, { input: '<old/>' }));
     store.records.recordRun(run(now - 13 * DAY, { input: '<recent/>' }));
-    const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - 15 * DAY, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - 15 * DAY, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     store.autocompactBriefs.put(decision, 'old brief', [], [], now - 15 * DAY);
     let clock = now;
     const lines: string[] = [];

@@ -16,7 +16,6 @@ export const es: Messages = {
     claudeOwn: 'El resumen propio de Claude, hasta que se escriba el de la pestaña:',
     noRecapYet: 'Aún no hay resumen. Se escribe cuando un agente de esta pestaña termina un turno; pulsa r para escribirlo ahora.',
     noRecapShort: 'aún sin resumen',
-    autocompactGates: { 'below-minimum': 'por debajo del mínimo', busy: 'ocupado', 'in-flight': 'en curso', cooldown: 'espera', unchanged: 'sin cambios', 'no-context': 'sin contexto', 'coverage-backoff': 'espera de cobertura' },
     autocompactSettings: { ceilingOverride: (enabled) => `límite anula cobertura ${enabled ? 'sí' : 'no'}`, coverageBackoff: (window) => `espera de cobertura ${window}` },
     git: { unpushed: (count) => `${count} sin subir`, changed: (count) => (count === 1 ? '1 cambiado' : `${count} cambiados`) },
     recapError: (error) => `resumen: ${error}`,

@@ -15,7 +15,6 @@ export const en: Messages = {
     claudeOwn: "Claude's own recap, until the tab's is written:",
     noRecapYet: 'No recap yet. It is written when an agent in this tab finishes a turn — press r to write it now.',
     noRecapShort: 'no recap yet',
-    autocompactGates: { 'below-minimum': 'below minimum', busy: 'busy', 'in-flight': 'in flight', cooldown: 'cooldown', unchanged: 'unchanged', 'no-context': 'no context', 'coverage-backoff': 'coverage backoff' },
     autocompactSettings: { ceilingOverride: (enabled) => `ceiling override ${enabled ? 'on' : 'off'}`, coverageBackoff: (window) => `coverage backoff ${window}` },
     git: { unpushed: (count) => `${count} unpushed`, changed: (count) => `${count} changed` },
     recapError: (error) => `recap: ${error}`,
