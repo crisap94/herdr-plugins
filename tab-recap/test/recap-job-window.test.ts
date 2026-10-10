@@ -254,6 +254,47 @@ test('a refresh caller is resolved when its own run ends, not behind a debounced
     assert.equal(causes.length, 3);
 });
 
+test('with no window, a refresh caller waits for the turn ending that arrives during the refresh run', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    const releases: ((result: Written) => void)[] = [];
+    let answers = 0;
+    const created = harness({ debounce: debounceOf(undefined) }, causes, () => {
+        answers += 1;
+        if (answers > 2) {
+            return Promise.resolve(written);
+        }
+        return new Promise<Written>((resolve) => { releases.push(resolve); });
+    });
+    const job = created.job;
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(2_500);
+    await settle();
+    t.mock.timers.setTime(10_000);
+    let refreshed = false;
+    void job.refreshNow(tabId('w1:t1'), [lane]).then(() => (refreshed = true));
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(created.callCount(), 1, 'the refresh waits for the run in progress');
+    releases[0]?.(written);
+    await settle();
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(created.callCount(), 2, 'the refresh runs at once after the run in progress');
+    t.mock.timers.setTime(11_000);
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    releases[1]?.(written);
+    await settle();
+    assert.equal(refreshed, false, 'the caller is not resolved when the refresh run ends while a turn ending waits behind it');
+    t.mock.timers.tick(2_499);
+    await settle();
+    assert.equal(refreshed, false, 'the caller is still waiting during the settle delay');
+    t.mock.timers.tick(1);
+    await settle();
+    assert.equal(refreshed, true, 'the caller is resolved when the turn-ending run that follows the refresh ends');
+    assert.deepEqual(causes, ['turn-ended', 'requested', 'turn-ended']);
+});
+
 test('a lane joining or leaving the set inside a run window starts at once', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];
