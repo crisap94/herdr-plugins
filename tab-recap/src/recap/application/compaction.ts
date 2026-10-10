@@ -8,7 +8,7 @@ import { endAnswerOf, refusalAnswerOf } from '#src/recap/domain/compact-request.
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
-import { checkedBrief } from './compaction-coverage.ts';
+import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
 import { isSection } from '#src/recap/domain/fact.ts';
 import type { Briefed, Checked } from './compaction-coverage.ts';
@@ -17,7 +17,6 @@ import type { CompactionDeps } from './compaction-deps.ts';
 import type { Material } from './compaction-message.ts';
 import { unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
-import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import { Sender } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
@@ -25,24 +24,10 @@ import { Trail } from './compaction-trail.ts';
 export type { CompactionDeps } from './compaction-deps.ts';
 
 const READY = new Set(['idle', 'done']);
-const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
-
-function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
-    const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
-    const lines = ordered.map((fact) => `${fact.section}: ${fact.text}${fact.section === 'decisions' && fact.why !== null ? ` — ${fact.why}` : ''}`);
-    const picked = lines.map((_, at) => at);
-    let block = '';
-    while (block.length === 0 || block.length > 1500) {
-        const heading = `\n\nFacts not carried into the brief (${facts.length} missed; ${lines.length - picked.length} left out):`;
-        block = `${heading}${picked.map((at) => `\n- ${lines[at] ?? ''}`).join('')}`;
-        if (block.length <= 1500 || picked.length === 0) break;
-        picked.pop();
-    }
-    const indexes = picked.map((at) => {
-        const fact = ordered[at];
-        return fact === undefined ? -1 : checkedFacts.findIndex((candidate) => candidate.section === fact.section && candidate.text === fact.text && candidate.why === fact.why);
-    }).filter((at) => at >= 0);
-    return { text: `${text}${block}`, indexes };
+interface Link {
+    readonly auto: boolean;
+    readonly decision: string | null;
+    readonly ceilingOverride: boolean;
 }
 
 function coverageWhy(outcome: Checked['outcome'], why: string | null, messages: Messages): string | null {
@@ -173,7 +158,8 @@ export class Compaction {
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
-    private async verified(lane: Lane, tab: string, material: Material, auto: boolean, decision: string | null, ceilingOverride: boolean): Promise<Checked> {
+    private async verified(lane: Lane, tab: string, material: Material, link: Link): Promise<Checked> {
+        const { auto, decision, ceilingOverride } = link;
         const first = await this.briefOf(lane, tab, material);
         if (!auto) return { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: 0, coverageCostUsd: null, why: null };
         const checked = await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction), ceilingOverride);
@@ -194,8 +180,9 @@ export class Compaction {
         return appended === null ? checked : { ...checked, brief: { ...checked.brief, text: appended.text } };
     }
 
-    private decisionFor(auto: boolean, tab: string, pane: string, id: string): LinkedDecision | null {
-        return auto ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
+    private linkedDecision(auto: boolean, tab: string, pane: string, id: string): Link {
+        const linked = auto ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
+        return { auto, decision: linked?.id ?? null, ceilingOverride: linked?.gate === 'ceiling' && this.deps.ceilingOverride?.() !== false };
     }
 
     private begun(request: CompactRequest, start: { readonly tab: string; readonly pane: string; readonly agent: string; readonly stage: 'briefing' | 'compacting'; readonly writer: string | null }): string {
@@ -221,10 +208,9 @@ export class Compaction {
         const beginning = writing ? compaction.writing(agent) : compaction.started(agent);
         await this.tell(said(compaction.title(agent)), said(beginning));
         const material = this.materialOf(tab, pane, request.note);
-        const linked = this.decisionFor(auto, tab, pane, id);
-        const ceilingOverride = linked?.gate === 'ceiling' && this.deps.ceilingOverride?.() !== false;
-        const checked = await this.verified(lane, tab, material, auto, linked?.id ?? null, ceilingOverride);
-        if (await this.stoppedByCoverage({ lane, checked, ceilingOverride, trail, said, messages: compaction })) return;
+        const link = this.linkedDecision(auto, tab, pane, id);
+        const checked = await this.verified(lane, tab, material, link);
+        if (await this.stoppedByCoverage({ lane, checked, ceilingOverride: link.ceilingOverride, trail, said, messages: compaction })) return;
         const { brief } = checked;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         if (!(await this.refused(lane, tab, trail))) {

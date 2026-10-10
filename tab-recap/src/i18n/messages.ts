@@ -2,7 +2,6 @@ import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
-import type { SkipGate } from '#src/recap/domain/autocompact.ts';
 
 export type Locale = 'en' | 'es';
 

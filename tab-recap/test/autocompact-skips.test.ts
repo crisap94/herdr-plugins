@@ -85,8 +85,8 @@ test('prune: the skips of lanes that are not idle or done are forgotten; with au
 });
 
 const BACKOFF = { kind: 'window', ms: milliseconds(30 * 60_000) } as const;
-const failedWait = (w: World, at: number, tokens: number, gate: 'coverage' | 'ask' = 'coverage'): void => {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at, mode: 'on', share: 62, tokens, window: 1_000_000, gate, verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
+const failedWait = (w: World, when: number, tokens: number, gate: 'coverage' | 'ask' = 'coverage'): void => {
+    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: when, mode: 'on', share: 62, tokens, window: 1_000_000, gate, verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
 };
 const backoffSkips = (w: World): number => w.store.autocompact.skips().filter((skip) => skip.gate === 'coverage-backoff').length;
 

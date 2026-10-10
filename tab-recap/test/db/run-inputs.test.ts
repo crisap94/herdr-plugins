@@ -126,7 +126,7 @@ test('retention: a brief retention of none deletes every checked brief at the da
     const now = 100 * DAY;
     const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     store.autocompactBriefs.put(decision, 'fresh brief', [], [], now);
-    let clock = now;
+    const clock = now;
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
     retention.tick();
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0);

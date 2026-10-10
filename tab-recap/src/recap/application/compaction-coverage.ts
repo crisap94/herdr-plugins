@@ -2,7 +2,7 @@ import type { HistoryFact } from '#src/ports/ledger.ts';
 import { correctionOf, factsOf } from './brief-coverage.ts';
 import type { Coverage } from './brief-coverage.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
-import type { CoverageOutcome } from '#src/recap/domain/autocompact.ts';
+import type { CheckedFact, CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { isSection } from '#src/recap/domain/fact.ts';
 
 export interface Briefed {
@@ -24,7 +24,8 @@ const waiting = (parts: { readonly brief: Briefed; readonly why: string; readonl
     brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? 0, coverageCostUsd: parts.coverageCostUsd ?? null,
 });
 
-async function bestBrief(coverage: { check(brief: string, facts: ReturnType<typeof factsOf>): Promise<Coverage> }, first: Briefed, facts: ReturnType<typeof factsOf>, rewrite: (correction: string) => Promise<Briefed>, log: (line: string) => void, ceiling: boolean): Promise<{ readonly brief: Briefed; readonly result: Coverage }> {
+async function bestBrief(parts: { readonly coverage: { check(brief: string, facts: ReturnType<typeof factsOf>): Promise<Coverage> }; readonly first: Briefed; readonly facts: ReturnType<typeof factsOf>; readonly rewrite: (correction: string) => Promise<Briefed>; readonly log: (line: string) => void; readonly ceiling: boolean }): Promise<{ readonly brief: Briefed; readonly result: Coverage }> {
+    const { coverage, first, facts, rewrite, log, ceiling } = parts;
     let brief = first;
     let result = await coverage.check(first.text ?? '', facts);
     if (!result.ok && result.unknown === null) {
@@ -46,11 +47,31 @@ export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log'
     if (coverage === null) return waiting({ brief: first, why: 'no decider is set up', outcome: { kind: 'unchecked', reason: 'no-decider' } });
     if (first.text === null) return waiting({ brief: first, why: first.why ?? 'the template would be used', outcome: { kind: 'unchecked', reason: 'no-brief' } });
     const facts = factsOf(history);
-    const { brief, result } = await bestBrief(coverage, first, facts, rewrite, deps.log, ceiling);
+    const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, ceiling });
     if (result.unknown !== null) return waiting({ brief, why: `brief not checked (${result.unknown})`, outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: deps.now() - started, coverageCostUsd: result.costUsd ?? null });
     if (!result.ok) {
         const missed = result.missingFacts.flatMap(({ fact }) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
         return waiting({ brief, why: `the brief still misses ${missed.length} fact(s)`, outcome: { kind: 'missed', facts: missed }, coverage: result.answers, coverageMs: deps.now() - started, coverageCostUsd: result.costUsd ?? null });
     }
     return { brief, coverage: result.answers, outcome: { kind: 'passed' }, coverageMs: deps.now() - started, coverageCostUsd: result.costUsd ?? null, why: null };
+}
+
+const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
+
+export function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
+    const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
+    const lines = ordered.map((fact) => `${fact.section}: ${fact.text}${fact.section === 'decisions' && fact.why !== null ? ` — ${fact.why}` : ''}`);
+    const picked = lines.map((_, at) => at);
+    let block = '';
+    while (block.length === 0 || block.length > 1500) {
+        const heading = `\n\nFacts not carried into the brief (${facts.length} missed; ${lines.length - picked.length} left out):`;
+        block = `${heading}${picked.map((at) => `\n- ${lines[at] ?? ''}`).join('')}`;
+        if (block.length <= 1500 || picked.length === 0) break;
+        picked.pop();
+    }
+    const indexes = picked.map((at) => {
+        const fact = ordered[at];
+        return fact === undefined ? -1 : checkedFacts.findIndex((candidate) => candidate.section === fact.section && candidate.text === fact.text && candidate.why === fact.why);
+    }).filter((at) => at >= 0);
+    return { text: `${text}${block}`, indexes };
 }
