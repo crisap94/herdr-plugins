@@ -3,6 +3,8 @@ import type { Platform } from '#src/ports/host.ts';
 import type { ProcessControl, Runner } from '#src/ports/process-control.ts';
 import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
+import { isJobTag } from '#src/recap/domain/job-tag.ts';
+import type { JobAttributes, JobTag } from '#src/recap/domain/job-tag.ts';
 import { posixProcess } from './process-posix.ts';
 import { windowsProcess } from './process-windows.ts';
 
@@ -28,6 +30,37 @@ export function scrubEnvironment(source: NodeJS.ProcessEnv, names: readonly Envi
     return env;
 }
 
-export function scrubbedEnv(): NodeJS.ProcessEnv {
-    return scrubEnvironment(process.env, SCRUBBED_ENV_NAMES);
+export function serializeJobAttributes(attributes: JobAttributes): string {
+    const value: unknown = attributes['tab_recap.job'];
+    if (!isJobTag(value)) {
+        throw new TypeError('Unknown job tag');
+    }
+    return `tab_recap.job=${encodeURIComponent(value)}`;
+}
+
+function keyOf(entry: string): string | null {
+    const equals = entry.indexOf('=');
+    return equals < 0 ? null : entry.slice(0, equals).trim();
+}
+
+export function mergeResourceAttributes(inherited: string | undefined, attributes: JobAttributes): string {
+    const kept = inherited?.split(',').filter((entry) => entry !== '' && keyOf(entry) !== 'tab_recap.job') ?? [];
+    return [...kept, serializeJobAttributes(attributes)].join(',');
+}
+
+export function scrubbedEnv(jobTag?: JobTag): NodeJS.ProcessEnv {
+    const env = scrubEnvironment(process.env, SCRUBBED_ENV_NAMES);
+    if (jobTag === undefined) {
+        return env;
+    }
+    try {
+        const attributes = { 'tab_recap.job': jobTag } satisfies JobAttributes;
+        env['OTEL_RESOURCE_ATTRIBUTES'] = mergeResourceAttributes(env['OTEL_RESOURCE_ATTRIBUTES'], attributes);
+    } catch (error) {
+        if (!(error instanceof TypeError)) {
+            throw error;
+        }
+        process.stderr.write(`tab-recap: could not add telemetry job tag: ${error.message}\n`);
+    }
+    return env;
 }

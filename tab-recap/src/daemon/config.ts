@@ -25,6 +25,8 @@ import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
+import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -66,6 +68,7 @@ export interface Config {
     readonly compactNote: CompactNote;
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;
+    readonly telemetryTags: TelemetryTags;
 }
 
 const defaults = configPathsFor(nodeHost().platform, homedir(), process.env);
@@ -203,5 +206,6 @@ export function loadConfig(): Config {
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,
+        telemetryTags: telemetryTagsOf(get('TAB_RECAP_TELEMETRY_TAGS')),
     };
 }

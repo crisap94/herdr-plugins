@@ -69,6 +69,15 @@ test('a locked row names its variable; the recap writer row shows harness · mod
     }
 });
 
+test('the telemetry setting shows its choices and environment lock', () => {
+    const choices = setupView({ ...base, row: 17, editing: { kind: 'choice', at: 1 } }, en, 100).join('\n');
+    assert.ok(choices.includes('Job telemetry tags'));
+    assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
+    assert.ok(choices.includes('off — do not add a job attribute'));
+    const locked = { ...base, row: 17, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
+    assert.ok(setupView(locked, en, 100).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
+});
+
 test('Spanish: rows, legend, hints and test results are Spanish', () => {
     const text = setupView(tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), es, 80).join('\n');
     for (const expected of ['ajustes', 'Redactor del resumen', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {

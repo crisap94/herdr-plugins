@@ -25,6 +25,7 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     harness: choice(HARNESS_CHOICES, (draft) => draft.backend, (draft, backend) => ({ ...draft, backend })),
     locale: choice(LOCALE_CHOICES, (draft) => draft.locale, (draft, locale) => ({ ...draft, locale })),
     gitNote: choice(SWITCH_CHOICES, (draft) => draft.gitNote, (draft, gitNote) => ({ ...draft, gitNote })),
+    telemetryTags: choice(SWITCH_CHOICES, (draft) => draft.telemetryTags, (draft, telemetryTags) => ({ ...draft, telemetryTags })),
     effort: choice(EFFORT_CHOICES, (draft) => draft.effort, (draft, effort) => ({ ...draft, effort })),
     compactBy: choice(JOB_BY_OPTIONS, (draft) => draft.compact.by, (draft, by) => ({ ...draft, compact: { ...draft.compact, by } })),
     compactEffort: choice(EFFORT_CHOICES, (draft) => draft.compact.effort, (draft, effort) => ({ ...draft, compact: { ...draft.compact, effort } })),

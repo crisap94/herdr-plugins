@@ -69,6 +69,7 @@ const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
     gitNote: (state, m) => m.setup.gitNoteChoices[state.draft.gitNote],
+    telemetryTags: (state, m) => m.setup.telemetryTagsChoices[state.draft.telemetryTags],
     herdrEvents: (state, m) => m.setup.herdrEventsChoices[state.draft.herdrEvents],
     compactTarget: (state) => state.draft.compactTarget,
     compactNote: (state, m) => m.setup.compactNoteChoices[state.draft.compactNote],
@@ -134,6 +135,7 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
     const lists: Readonly<Partial<Record<FieldId, () => string[]>>> = {
         locale: () => pickList(state, LOCALE_CHOICES.map((choice) => m.setup.uiChoices[choice]), width, style),
         gitNote: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.gitNoteChoices[choice]), width, style),
+        telemetryTags: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.telemetryTagsChoices[choice]), width, style),
         herdrEvents: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.herdrEventsChoices[choice]), width, style),
         compactNote: () => pickList(state, COMPACT_NOTE_CHOICES.map((choice) => m.setup.compactNoteChoices[choice]), width, style),
         effort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),

@@ -69,6 +69,20 @@ test('TAB_RECAP_EFFORT: medium unless set to low, high or default; anything else
     }
 });
 
+test('TAB_RECAP_TELEMETRY_TAGS: off unless explicitly on', () => {
+    const saved = process.env['TAB_RECAP_TELEMETRY_TAGS'];
+    try {
+        delete process.env['TAB_RECAP_TELEMETRY_TAGS'];
+        assert.equal(loadConfig().telemetryTags, 'off');
+        process.env['TAB_RECAP_TELEMETRY_TAGS'] = 'on';
+        assert.equal(loadConfig().telemetryTags, 'on');
+        process.env['TAB_RECAP_TELEMETRY_TAGS'] = 'invalid';
+        assert.equal(loadConfig().telemetryTags, 'off');
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_TELEMETRY_TAGS']; } else { process.env['TAB_RECAP_TELEMETRY_TAGS'] = saved; }
+    }
+});
+
 test('TAB_RECAP_KEEP_DAYS: 30 unless set to whole days; 0 keeps everything', () => {
     const saved = process.env['TAB_RECAP_KEEP_DAYS'];
     try {

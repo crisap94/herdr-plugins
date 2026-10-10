@@ -393,6 +393,39 @@ The enumeration of a run (see [How a turn is read](#how-the-recap-is-kept)) is n
 Efforts: `low` · `medium` · `high` · `default` (pass nothing). Every harness runs with no tools, no user
 settings or MCP and no session left behind. The judge runs only when you run `tab-recap eval` (below).
 
+### Job telemetry tags
+
+`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `tab_recap.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, Hermes, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
+
+Claude's telemetry and `OTEL_*` variables must be present in the daemon environment. The Claude CLI is launched with an empty setting source list, so telemetry variables in Claude settings files are not a supported source. For Codex, configure exporters in its configuration under the inherited `CODEX_HOME`. Any Codex OTel environment variables used, such as exporter headers, must also be present in the daemon environment.
+
+Collectors determine whether resource attributes become metric labels or are exposed through a resource information metric. Prometheus-style names are illustrative: `tab_recap.job` is commonly normalized to `tab_recap_job`, and metric units and `_total` suffixes vary by exporter. If a resource attribute is promoted to a label, Claude cost and token series can be queried as:
+
+```promql
+sum by (tab_recap_job) (increase(claude_code_cost_usage_USD_total{tab_recap_job=~".+"}[1h]))
+sum by (tab_recap_job, type) (increase(claude_code_token_usage_tokens_total{tab_recap_job=~".+"}[1h]))
+```
+
+An absent or empty label may select the whole fleet when the collector did not promote the resource attribute. If it exposes `target_info`, join the resource attribute instead; join keys depend on the collector:
+
+```promql
+sum by (tab_recap_job) (increase(claude_code_cost_usage_USD_total[1h]) * on (job, instance) group_left (tab_recap_job) target_info{tab_recap_job=~".+"})
+```
+
+Codex 0.162.1 emitted `codex.turn.token_usage` as a delta histogram with the job attribute on log and metric resources. Convert delta points to cumulative temporality before using `increase` on the cumulative sum:
+
+```promql
+sum by (tab_recap_job, model, token_type) (increase(codex_turn_token_usage_sum{tab_recap_job=~".+"}[1h]))
+```
+
+A delta-native backend needs its own range sum query. With tagging off, the fallback filter below selects the default `codex_exec` entry point, but it cannot prove a call belongs to this plugin because interactive `exec` calls can share those attributes:
+
+```promql
+sum by (job, originator, session_source, model, token_type) (codex_turn_token_usage_sum{job="codex_exec", originator="codex_exec", session_source="exec"})
+```
+
+Codex metrics require `[analytics] enabled = true` and an OTLP metrics exporter table. Without an OTLP metrics exporter, metrics go to a vendor analytics endpoint. A configured Codex OTel exporter also sends a turn-id-only request with no content to the model provider. Codex exposes token metrics, not cost. An estimate would use `Σ model ((input − cached_input) × p_in + cached_input × p_cached + cache_write_input × p_write + output × p_out)`. This assumes cached input is included in input, cache-write input is separately billable, and reasoning output is included in output and billed at `p_out`. Those overlaps have not been verified for this build. If reasoning output is additive, its count must be added at `p_out`; never add `token_type="total"` to component counts. This plugin publishes no Codex cost estimate or price table.
+
 ## How recaps are checked
 
 Three things keep a recap's items worth reading, none of them a second model call on every turn.
