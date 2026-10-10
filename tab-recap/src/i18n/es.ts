@@ -27,7 +27,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactStyle: 'Estilo autocomp.', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
+        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', telemetryTags: 'Etiquetas de telemetría', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactStyle: 'Estilo autocomp.', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
@@ -39,6 +39,7 @@ export const es: Messages = {
         uiChoices: { auto: 'auto (según tu idioma)', en: 'English', es: 'Español' },
         gitNoteChoices: { on: 'sí — rama, commits sin subir y archivos cambiados bajo cada agente', off: 'no' },
         herdrEventsChoices: { on: 'sí — carriles compartidos en herdr: marcas, eventos, peticiones de compactar atendidas', off: 'no' },
+        telemetryTagsChoices: { on: 'sí — añade el atributo tab_recap.job a los trabajos de Claude y Codex', off: 'no — no añade el atributo del trabajo' },
         herdrEventsHint: 'otras herramientas leen las marcas de un carril y piden compactar por herdr; no escribe nada',
         effortChoices: { low: 'bajo — reescribir en corto no pide deliberar (lo más barato)', medium: 'medio', high: 'alto', default: 'el ajuste propio del agente (no se pasa nada)' },
         recapLanguageHint: 'ui (como la interfaz) · en · es · o el nombre de un idioma',

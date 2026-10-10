@@ -19,6 +19,7 @@ import { MAKERS } from './harness-makers.ts';
 import { enumeratesJob, installableHarnessSentence, pick } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import type { Config } from './config.ts';
+import { jobTagFor } from './harness-makers.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
 
@@ -41,27 +42,27 @@ class Nothing implements Summarizer {
 
 export function summarizerFor(config: Config, available: readonly string[], work: string): Summarizer {
     const id = pick(config.backend, available);
-    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work), { model: config.models[id], effort: config.effort });
+    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, jobTagFor(config, 'recapWriter')), { model: config.models[id], effort: config.effort });
 }
 
 export function enumeratorFor(config: Config, available: readonly string[], work: string): Enumerators | null {
     const id = pick(config.backend, available);
-    return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work), { model: config.models[id], effort: 'low' });
+    return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, jobTagFor(config, 'enumerator')), { model: config.models[id], effort: 'low' });
 }
 
 export function briefFor(config: Config, available: readonly string[], work: string): CompactionBriefs | null {
     const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, jobTagFor(config, 'compactionBrief')), { model: placed.model, effort: placed.effort });
 }
 
 export function judgeFor(config: Config, available: readonly string[], work: string, anchors?: CheckAnchors): Judge | null {
     const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort }, anchors);
+    return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
 
 export function curatorFor(config: Config, available: readonly string[], work: string): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, jobTagFor(config, 'curator')), { model: placed.model, effort: placed.effort });
 }
 
 export class Backends {

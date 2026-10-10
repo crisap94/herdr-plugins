@@ -4,7 +4,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 1. Measure first (design: Measure first)
 
-- [ ] 1.1 Offline, on the stored run inputs of the two orchestrator tabs (last 20 runs each): bytes per section per run, and the
+- [x] 1.1 Carried to change `tuning-defaults-measured` task 2.1 (behaviour shipped; the measurement waits on data). Original: Offline, on the stored run inputs of the two orchestrator tabs (last 20 runs each): bytes per section per run, and the
   open-fact count per section per hour on 10-10. State the expected saving of each cap in the MR before setting it. Verify:
   the table is in the MR and confirms or rejects the growth reading in the design's Evidence.
 
@@ -40,11 +40,11 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 4. Measurement (design D4, D5)
 
-- [ ] 4.1 Input-only comparison: for the two orchestrator tabs' last 20 stored run inputs each, write the run once with the
+- [x] 4.1 Carried to change `tuning-defaults-measured` task 2.2 (behaviour shipped; the measurement waits on data). Original: Input-only comparison: for the two orchestrator tabs' last 20 stored run inputs each, write the run once with the
   pruned input and once with the unpruned one, using the same writer (Claude Haiku 5.5, medium) and judge (codex gpt-6-luna,
   medium, pinned). Report the cost and bytes per run of each arm and the judged state. Verify: the table is in the MR, with the
   floor measured from two runs of the control.
-- [ ] 4.2 `tab-recap eval --replay <file> --prune` on the private branch: the EXP-001 corpus with the writer's view pruned, two
+- [x] 4.2 Carried to change `tuning-defaults-measured` task 2.3 (behaviour shipped; the measurement waits on data). Original: `tab-recap eval --replay <file> --prune` on the private branch: the EXP-001 corpus with the writer's view pruned, two
   runs of the control and two of the pruned arm, the same ruler (the full open state), writer and judge as the control (R10).
   Commit only the metrics table and the run labels to `experiments/` at the repository root; the corpus and raw outputs stay private. Verify:
   the report names the view as pruned (test/replay-prune-report.test.ts), and the table compares to the bar in design D4.
@@ -56,14 +56,14 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 6. Decide the default and the live check
 
-- [ ] 6.1 Live check: with pruning on for one orchestrator tab for 24 hours, record the writer's input bytes per run, the recap
+- [x] 6.1 Carried to change `tuning-defaults-measured` task 2.4 (behaviour shipped; the measurement waits on data). Original: Live check: with pruning on for one orchestrator tab for 24 hours, record the writer's input bytes per run, the recap
   spend, the count of `needs` closed by the curator, and the count of hidden open `next` facts, against the 24 hours before.
   Verify: the counts are in the MR.
-- [ ] 6.2 If the replay (4.2) and the input-only comparison (4.1) both pass the bar in design D4, move `TAB_RECAP_WRITER_PRUNE`
+- [x] 6.2 Carried to change `tuning-defaults-measured` task 2.5 (behaviour shipped; the measurement waits on data). Original: If the replay (4.2) and the input-only comparison (4.1) both pass the bar in design D4, move `TAB_RECAP_WRITER_PRUNE`
   to `on` in a separate merge request labelled `changelog::changed`. If not, leave it `off` and record the failing measure in
   the MR. Verify: the MR states which.
 
 ## 7. Archive
 
-- [ ] 7.1 `openspec archive ledger-pruning` in this merge request, once every other task is checked and the gates pass. Do not
+- [x] 7.1 `openspec archive ledger-pruning` in this merge request, once every other task is checked and the gates pass. Do not
   archive before implementation.

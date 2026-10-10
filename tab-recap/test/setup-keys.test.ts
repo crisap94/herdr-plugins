@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the seventeen rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the eighteen rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 16);
+    assert.equal(typed(start(), down(20)).state.row, 17);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -147,6 +147,19 @@ test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOT
     assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
     assert.deepEqual(locksOf({ TAB_RECAP_GIT_NOTE: 'off' }), { gitNote: 'TAB_RECAP_GIT_NOTE' });
     assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
+});
+
+test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, read-only when the variable is set', () => {
+    assert.equal(draft.telemetryTags, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: ' ON ' }).telemetryTags, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: 'maybe' }).telemetryTags, 'off');
+    const on = typed(start(), [...down(17), '\r', 'k', '\r']);
+    assert.equal(on.state.draft.telemetryTags, 'on');
+    assert.deepEqual([...changes(on.state)], [['TAB_RECAP_TELEMETRY_TAGS', 'on']]);
+    assert.deepEqual(locksOf({ TAB_RECAP_TELEMETRY_TAGS: 'on' }), { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' });
+    const locked = typed(start({ telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' }), [...down(17), '\r']).state;
+    assert.equal(locked.note, 'locked');
+    assert.deepEqual([...changes(locked)], []);
 });
 
 test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {

@@ -7,6 +7,7 @@ import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner } from './process.ts';
+import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
 export const CODEX_PROGRAM = 'codex';
 export const UNUSED_FEATURES: readonly string[] = ['multi_agent', 'plugins', 'browser_use', 'computer_use', 'skill_search', 'tool_suggest', 'hooks'];
@@ -27,11 +28,13 @@ export class CodexHarness implements Harness {
     private readonly workDir: string;
     private readonly timeoutMs: number;
     private readonly runner: Runner;
+    private readonly jobTag: JobTag | undefined;
 
-    constructor(workDir: string, timeoutMs: number, runner: Runner = run) {
+    constructor(workDir: string, timeoutMs: number, runner: Runner = run, jobTag?: JobTag) {
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
         this.runner = runner;
+        this.jobTag = jobTag;
     }
 
     label(settings: HarnessSettings): string {
@@ -42,7 +45,7 @@ export class CodexHarness implements Harness {
         mkdirSync(this.workDir, { recursive: true });
         const out = join(this.workDir, `codex-${process.pid}-${Date.now()}.md`);
         const input = `${call.input}\n\n${call.instructions}`;
-        const ran = await this.runner(CODEX_PROGRAM, codexArgs(settings.model, out, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
+        const ran = await this.runner(CODEX_PROGRAM, codexArgs(settings.model, out, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv(this.jobTag) });
         let text = '';
         try { text = readFileSync(out, 'utf8'); } catch { }
         rmSync(out, { force: true });

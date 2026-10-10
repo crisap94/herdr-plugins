@@ -6,6 +6,7 @@ import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner } from './process.ts';
+import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
 export function resultOf(stdout: string): { text: string; cost: number } | null {
     try {
@@ -37,11 +38,13 @@ export class ClaudeHarness implements Harness {
     private readonly workDir: string;
     private readonly timeoutMs: number;
     private readonly runner: Runner;
+    private readonly jobTag: JobTag | undefined;
 
-    constructor(workDir: string, timeoutMs: number, runner: Runner = run) {
+    constructor(workDir: string, timeoutMs: number, runner: Runner = run, jobTag?: JobTag) {
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
         this.runner = runner;
+        this.jobTag = jobTag;
     }
 
     label(settings: HarnessSettings): string {
@@ -50,7 +53,7 @@ export class ClaudeHarness implements Harness {
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
-        const ran = await this.runner('claude', claudeArgs(settings.model, call.instructions, settings.effort), { input: call.input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
+        const ran = await this.runner('claude', claudeArgs(settings.model, call.instructions, settings.effort), { input: call.input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv(this.jobTag) });
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }

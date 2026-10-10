@@ -34,7 +34,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactJob' | 'herdrEvents', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactJob' | 'herdrEvents', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -46,6 +46,7 @@ export interface Messages {
         readonly uiChoices: { readonly auto: string; readonly en: string; readonly es: string };
         readonly gitNoteChoices: { readonly on: string; readonly off: string };
         readonly herdrEventsChoices: { readonly on: string; readonly off: string };
+        readonly telemetryTagsChoices: { readonly on: string; readonly off: string };
         readonly herdrEventsHint: string;
         readonly effortChoices: { readonly low: string; readonly medium: string; readonly high: string; readonly default: string };
         readonly recapLanguageHint: string;
