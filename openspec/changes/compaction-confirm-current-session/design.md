@@ -26,6 +26,21 @@ does not depend on the push having arrived.
 locates by (`<root>/<project>/<id>.jsonl`). Both kinds therefore name the same session, and no reader changes. The
 path split accepts `/` and `\` so the rule holds on any host.
 
+## 3b. Keeping a session only for the same agent
+
+A detection or a snapshot that names no session keeps the lane's session, but only when the agent is the same. If a
+pane's agent was replaced (a new conversation, or another agent kind) and herdr names no session yet, the old
+session belongs to the old agent, so the lane holds none. The window in which the board reads nothing is the price:
+the confirmation asks `pane.get` and is not affected, and the board catches up on the next `pane.updated` or snapshot.
+
+## 3c. Only the kinds herdr reports are read
+
+`sessionOf` reads `id` and `path`. Any other `kind` names no session rather than being guessed at.
+
+Codex and opencode name their sessions in the same field. For a codex path the file name without `.jsonl` is the
+rollout name (`rollout-<date>-<uuid>`), not the bare uuid. Their readers locate by working directory and not by
+session id, so nothing breaks now; a later change must not assume a lane's session is a bare id for those agents.
+
 ## 4. What stays the same
 
 - The confirmation waits for the push and re-reads as before (`outcomeOf`).

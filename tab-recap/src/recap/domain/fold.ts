@@ -102,9 +102,12 @@ function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Ste
     return step(spent, intents);
 }
 
-/** A detection frame or a snapshot may carry no session (herdr reports it on the pane's frames): the lane keeps the one it held. */
+/**
+ * A detection frame or a snapshot may carry no session (herdr reports it on the pane's frames): the lane keeps the one it held, but only for the same
+ * agent. When the pane's agent changed, the held session is the old agent's, and the new one has not been named yet, so the lane holds none.
+ */
 function keepingSession(lane: Lane, held: Lane | undefined): Lane {
-    return lane.session === null && held?.session ? { ...lane, session: held.session } : lane;
+    return lane.session === null && held?.session && held.agent === lane.agent ? { ...lane, session: held.session } : lane;
 }
 
 /** herdr's session for a lane, as it reports it now: the board's lane follows, and nothing else changes (no intent, no watch set). */

@@ -48,7 +48,17 @@ ask for no intent: no recap, no compaction and no toast.
 - **WHEN** a `pane.updated` frame reports a session for a pane the board holds
 - **THEN** the lane SHALL hold that session, and a frame reporting the session the lane already holds SHALL change nothing
 
-#### Scenario: A detection without a session
+#### Scenario: A detection or a snapshot without a session
 
-- **WHEN** an agent is detected again in a pane whose lane holds a session, and the detection names none
+- **WHEN** an agent is detected again, or a snapshot lists it, in a pane whose lane holds a session for the same agent, and the detection or snapshot names none
 - **THEN** the lane SHALL keep its session
+
+#### Scenario: A different agent in the pane
+
+- **WHEN** the pane's agent is a different one (another kind, or a new conversation of the same kind that names no session yet)
+- **THEN** the lane SHALL hold no session until herdr names one, and SHALL NOT keep the old agent's
+
+#### Scenario: A session of a kind herdr does not report
+
+- **WHEN** herdr reports a session whose kind is neither `id` nor `path`
+- **THEN** no session SHALL be named from it

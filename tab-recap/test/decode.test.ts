@@ -19,7 +19,7 @@ test('a created pane asks for a reconcile rather than guessing', () => {
 });
 
 test('a detected agent with the nested pane shape becomes a lane', () => {
-    const decoded = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { value: 'abc' } } } });
+    const decoded = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { kind: 'id', value: 'abc' } } } });
     assert.ok(decoded.kind === 'detected');
     assert.equal(decoded.lane.session, 'abc');
 });
@@ -35,6 +35,11 @@ test('a pane.updated frame names its pane and session when it carries one; a fra
     const withSession = { pane: { pane_id: 'w28:p1', agent_session: { source: 'claude', agent: 'claude', kind: 'id', value: 'new-session' } } };
     assert.deepEqual(paneSessionOf(withSession), { pane: 'w28:p1', session: 'new-session' });
     assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: null }, tokens: {} }), null);
+});
+
+test('a session of a kind this does not know is not guessed at: no session is named', () => {
+    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: { kind: 'uuid', value: 'x-1' } } }), null);
+    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1' }, agent_session: { value: 'no-kind' } }), null);
 });
 
 test('unknown events are counted, not mapped', () => {

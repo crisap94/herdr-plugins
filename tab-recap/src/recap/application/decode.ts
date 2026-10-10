@@ -44,13 +44,17 @@ export function seenFrom(data: Readonly<Record<string, unknown>>): SeenLane | nu
 
 /**
  * herdr's `agent_session` ({ source, agent, kind, value }) as the session id the transcripts are named by. `kind` `path` gives the transcript's
- * path, whose file name is that id (`<id>.jsonl`), so both kinds name the same session. Null when herdr reports none.
+ * path, whose file name is that id (`<id>.jsonl`), so both kinds name the same session. Null when herdr reports none, or reports a kind this reads no
+ * session from (only `id` and `path` are known; a new kind is not guessed at).
  */
 export function sessionOf(data: Readonly<Record<string, unknown>>): string | null {
     for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
         const value = text(info['value']);
-        if (value !== null) {
-            return info['kind'] === 'path' ? (value.split(/[\\/]/u).at(-1) ?? value).replace(/\.jsonl$/u, '') : value;
+        if (value !== null && info['kind'] === 'id') {
+            return value;
+        }
+        if (value !== null && info['kind'] === 'path') {
+            return (value.split(/[\\/]/u).at(-1) ?? value).replace(/\.jsonl$/u, '');
         }
     }
     return null;
