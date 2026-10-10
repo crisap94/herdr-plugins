@@ -32,7 +32,7 @@ export interface InputWorld {
     readonly now: number;
     readonly tasks: readonly TaskShape[];
     readonly facts: readonly TaskFacts[];
-    readonly writerView?: WriterView;
+    readonly writerView: WriterView;
 }
 
 export interface Built {
@@ -46,9 +46,7 @@ export async function inputOf(seen: readonly Observed[], world: InputWorld): Pro
         source: isScreenSource(one.cursor.transcript) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
-    const numbering = world.writerView === undefined
-        ? numbered(world.facts, agents, world.facts.length > 1)
-        : numbered(world.facts, agents, world.facts.length > 1, world.writerView, world.now);
+    const numbering = numbered(world.facts, agents, world.facts.length > 1, world.writerView, world.now);
     const input: RecapInput = {
         tab: { id: world.tab, now: world.now, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
         agents,

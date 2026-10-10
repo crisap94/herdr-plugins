@@ -2,13 +2,15 @@ import type { Brand } from './brand.ts';
 import type { Section } from './fact.ts';
 
 export type PositiveCount = Brand<number, 'PositiveCount'>;
+export type KeepNewest = Brand<number, 'KeepNewest'>;
+export type NextHours = Brand<number, 'NextHours'>;
 
 export type HiddenCounts = ReadonlyMap<Section, PositiveCount>;
 
 export interface PrunedWriterView {
     readonly kind: 'pruned';
-    readonly keepNewest: number;
-    readonly nextHours: number;
+    readonly keepNewest: KeepNewest;
+    readonly nextHours: NextHours;
 }
 
 export type WriterView = { readonly kind: 'full' } | PrunedWriterView;
@@ -22,4 +24,6 @@ export function positiveCount(value: number): PositiveCount {
     return value as PositiveCount;
 }
 
-export const prunedWriterView = (keepNewest: number, nextHours: number): PrunedWriterView => ({ kind: 'pruned', keepNewest, nextHours });
+export const keepNewestOf = (value: number): KeepNewest => value as KeepNewest;
+export const nextHoursOf = (value: number): NextHours => value as NextHours;
+export const prunedWriterView = (keepNewest: KeepNewest, nextHours: NextHours): PrunedWriterView => ({ kind: 'pruned', keepNewest, nextHours });

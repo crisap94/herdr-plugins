@@ -4,6 +4,9 @@ import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
+import { SECTION_IDS } from '#src/recap/domain/fact.ts';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { agentOf, requestOf } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 
@@ -94,6 +97,13 @@ dtdTest('DTD: hidden section counts validate and appear before the facts', () =>
     assert.ok(validate(document).valid);
     assert.match(document, /<ledger>\s*<hidden section="done" count="20"\/>\s*<fact id="f1"/);
     assert.ok(validate(writerContext(requestOf({ ledgers: [{ task: null, facts: [fact('f1', 'done', 'Recent fact')] }] }))).valid);
+});
+
+test('DTD section values match SECTION_IDS', () => {
+    const dtd = readFileSync(fileURLToPath(new URL('../schema/recap-input.dtd', import.meta.url)), 'utf8');
+    const declarations = [...dtd.matchAll(/section \(([^)]+)\) #REQUIRED/gu)];
+    assert.equal(declarations.length, 3);
+    declarations.forEach((declaration) => assert.deepEqual(declaration[1]?.split('|'), SECTION_IDS));
 });
 
 test('the tab states the time now (UTC) and the zone; turns carry HH:MM in that zone, with the date when it is not today', () => {

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '#src/daemon/config.ts';
 
-test('writer view settings default off and out-of-range values fall back to the typed defaults', () => {
+test('a view setting outside its range falls back', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_WRITER_PRUNE', 'TAB_RECAP_WRITER_KEEP_NEWEST', 'TAB_RECAP_WRITER_NEXT_HOURS'] as const;
     const saved = keys.map((key) => process.env[key]);

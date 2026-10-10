@@ -40,7 +40,7 @@ export interface ReplayDeps {
     readonly log: (line: string) => void;
     readonly pipeline?: Pipeline;
     readonly enumerator?: () => Enumerators | null;
-    readonly writerView?: WriterView;
+    readonly writerView: WriterView;
 }
 
 export interface Replayed {
@@ -69,8 +69,7 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
 
 function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator' | 'writerView'> {
     const chosen = deps.pipeline;
-    const writerView = deps.writerView;
-    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }), ...(writerView === undefined ? {} : { writerView: (): WriterView => writerView }) };
+    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }), writerView: (): WriterView => deps.writerView };
 }
 
 export async function replay(deps: ReplayDeps, file: string, label: string, size: number): Promise<Replayed> {

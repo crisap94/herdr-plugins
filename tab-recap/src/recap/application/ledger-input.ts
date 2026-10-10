@@ -1,7 +1,7 @@
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
-import { FULL_WRITER_VIEW, positiveCount } from '#src/recap/domain/writer-view.ts';
+import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 
 export const CLOSED_SHOWN_MS = 2 * 3_600_000;
@@ -38,7 +38,7 @@ export function writerFacts(open: readonly Fact[], view: WriterView, now: number
         const facts = sorted.filter((fact) => fact.section === section);
         const candidates = section === 'next' ? facts.filter((fact) => fact.lastAt >= now - view.nextHours * 3_600_000) : facts;
         const limited = section === 'done' || section === 'links' || section === 'next'
-            ? candidates.slice(-view.keepNewest)
+            ? candidates.slice(-Number(view.keepNewest))
             : candidates;
         limited.forEach((fact) => shown.add(fact));
         const count = facts.length - limited.length;
@@ -49,12 +49,7 @@ export function writerFacts(open: readonly Fact[], view: WriterView, now: number
     return { shown: sorted.filter((fact) => shown.has(fact)), hidden };
 }
 
-export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: boolean): Numbering;
-export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: boolean, view: WriterView, now: number): Numbering;
-export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: boolean, view: WriterView = FULL_WRITER_VIEW, now?: number): Numbering {
-    if (view.kind === 'pruned' && now === undefined) {
-        throw new Error('a pruned writer view needs its clock');
-    }
+export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: boolean, view: WriterView, now: number): Numbering {
     let next = 0;
     const byId = new Map<string, Fact>();
     const taskOf = new Map<string, string>();
@@ -62,7 +57,7 @@ export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgen
     const ledgers = tasks.map((task): InputLedger => {
         const mine = new Map<string, Fact>();
         shown.set(task.key, mine);
-        const viewed = writerFacts(task.open, view, now ?? 0);
+        const viewed = writerFacts(task.open, view, now);
         const facts = [...viewed.shown, ...task.closed].map((fact): InputFact => {
             const id = `f${(next += 1)}`;
             byId.set(id, fact);

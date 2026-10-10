@@ -142,15 +142,15 @@ decision), an optional reference and agent, when it was first and last seen, and
 the reason — `done`, `wrong`, `superseded`, `answered` (the writer), `merged` or `rewritten` (the upkeep and the import).
 Facts are never deleted.
 
-The writer is shown the task's open facts (and those closed in the last two hours) as `<ledger>` in the version 2
-document, with ids `f1…fn`, plus only what is new in each transcript, and answers **operations** only:
-
 **Writer's view.** `TAB_RECAP_WRITER_PRUNE=off` by default. When set to `on`, the writer sees every open `goal`, `now`,
 `needs`, `decisions` and `rules` fact; the newest `TAB_RECAP_WRITER_KEEP_NEWEST` `done` and `links` facts per task
 (default 10, range 1–50); and `next` facts seen within `TAB_RECAP_WRITER_NEXT_HOURS` (default 24, range 1–720), up
 to the same newest-fact limit. A hidden count tells the writer how many open facts in each section it cannot see or
 change. The curator continues to receive the full open ledger. The setting stays off until the recall replay has been
 measured against its quality bar.
+
+The writer is shown the task's open facts (and those closed in the last two hours) as `<ledger>` in the version 2
+document, with ids `f1…fn`, plus only what is new in each transcript, and answers **operations** only:
 
 ```json
 {"ops": [

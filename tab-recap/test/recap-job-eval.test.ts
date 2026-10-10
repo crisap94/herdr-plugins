@@ -24,7 +24,7 @@ async function recapWith(keepInput: (() => boolean) | undefined): Promise<Return
     const narrator = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }] });
     const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
     const store = memoryStore();
-    const job = new RecapJob({
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }),
         repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) },
         summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
     });

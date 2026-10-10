@@ -18,11 +18,9 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 - [x] 3.1 `application/ledger-input.ts`: a view function that takes the task's open facts and the typed `WriterView` and returns
   the shown facts and the hidden counts (a typed map from section to count); `numbered` numbers only the shown facts. The view
-  sorts by `lastAt`, the same key the column uses. Verify: `the view keeps every needs, decision, goal and rule fact` and
-  `the view keeps the newest K of done and links` (new test/ledger-view.test.ts).
+  sorts by `lastAt`, the same key the column uses. Verify: `the view keeps every needs, decision, goal and rule fact, and the newest K of done, links and next` (test/ledger-view.test.ts).
 - [x] 3.2 `application/recap-input.ts`: the writer's input calls the view when the view is `pruned`; with `full` the document is
-  byte-identical to today's. The hidden counts are written by one serializer as `hidden` child elements. Verify: a golden test
-  on a fixture ledger, `full` against the stored output (test/recap-input.test.ts).
+  byte-identical to today's. The hidden counts are written by one serializer as `hidden` child elements. Verify: `full writer view matches the stored ledger output for a fixture with several sections and closed facts` (test/recap-input.test.ts).
 - [x] 3.3 `schema/recap-input.dtd`: the optional `hidden` child elements on `ledger`, additive, no version bump. Verify: a
   document with `hidden` validates, and one without it still does (test/recap-input.test.ts); the serializer round trip
   `parse(serialize(x)) == x` (test/hidden-codec.test.ts).
@@ -33,13 +31,12 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 - [x] 3.5 Gates on the full open state (design D6): the duplicate gate G2 reads every open fact of the task, not the writer's
   `shown` set; the closed-repeat check is unchanged; the unknown-id, update and close checks keep the shown ids, and an id that
   names no shown fact is refused. G2's correction for a hidden twin quotes its text and says it is already recorded and hidden.
-  Verify: `a hidden fact's text is refused when added again, and the correction quotes it` (test/g2-ledger-duplicate.test.ts) and
-  `an id that names no shown fact is refused, hidden or not` (test/operations.test.ts).
+  Verify: `groundOf and judge refuse an add that repeats an open fact hidden by pruned numbering` (test/ground-open-gates.test.ts), `a hidden fact's text is refused when added again, and the correction quotes it`, and `an id that names no shown fact is refused, hidden or not` (test/ledger-gates.test.ts).
 - [x] 3.7 `adapters/recap-instructions.ts`: the writer's instructions say what a `hidden` count means: open facts of that section
   it cannot see or change, so it never adds a fact that repeats one of them, and ids are only for the facts it is shown. Verify:
   the instructions carry the sentence (test/recap-instructions.test.ts, new or extended).
 - [x] 3.6 Confirm the curator's input (`application/curator-input.ts`) is built from the full open view and is byte-identical with
-  pruning on and off. Verify: the same fixture, both settings, equal curator documents (test/curate.test.ts).
+  pruning on and off. Verify: `the curator document stays byte-identical and includes every open fact when the writer view is pruned` (test/curate.test.ts).
 
 ## 4. Measurement (design D4, D5)
 
@@ -50,7 +47,7 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 - [ ] 4.2 `tab-recap eval --replay <file> --prune` on the private branch: the EXP-001 corpus with the writer's view pruned, two
   runs of the control and two of the pruned arm, the same ruler (the full open state), writer and judge as the control (R10).
   Commit only the metrics table and the run labels to `experiments/` at the repository root; the corpus and raw outputs stay private. Verify:
-  the report names the view as pruned (test/eval-run.test.ts), and the table compares to the bar in design D4.
+  the report names the view as pruned (test/replay-prune-report.test.ts), and the table compares to the bar in design D4.
 
 ## 5. Docs
 

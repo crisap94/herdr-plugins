@@ -13,7 +13,7 @@ const NOW = 10 * 3_600_000;
 const f4 = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const f5 = factOf('next', 'Review the migration test');
 const shut = factOf('done', 'Fixed the flaky lint job on main', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3 * 3_600_000 });
-const context: GateContext = { now: NOW, language: 'en', agents: [], shown: new Map([['f4', f4], ['f5', f5]]), closedLately: [shut], source: 'the pipeline went green and the release was tagged' };
+const context: GateContext = { now: NOW, language: 'en', agents: [], shown: new Map([['f4', f4], ['f5', f5]]), open: [f4, f5], closedLately: [shut], source: 'the pipeline went green and the release was tagged' };
 const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, anchor: 'the pipeline went green' });
 const gates = [duplicateGate, unknownIdGate, closeWhyGate];
 
@@ -29,7 +29,7 @@ test('G2 refuses an add that repeats an open fact and names the one to update', 
     assert.match(correctionOf([add('Released tab-recap 1.10.0 through the pipeline today')], found.refused), /G2: add done "Released[^"]*" — it repeats f4 .*update f4 instead/);
 });
 
-test('G2 refuses a hidden open twin and quotes it without inventing an id', () => {
+test('a hidden fact\'s text is refused when added again, and the correction quotes it', () => {
     const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
     const hiddenContext: GateContext = { ...context, shown: new Map(), open: [hidden] };
     const operation = add('Released tab-recap 1.10.0 through the pipeline today');
@@ -37,6 +37,15 @@ test('G2 refuses a hidden open twin and quotes it without inventing an id', () =
     assert.equal(found.refused.length, 1);
     assert.match(correctionOf([operation], found.refused), /already recorded and hidden \("Released tab-recap 1\.10\.0 through the pipeline"\): drop the add/);
     assert.doesNotMatch(found.refused[0]?.reason ?? '', /f\d+/);
+});
+
+test('G2 prefers a shown twin when both shown and hidden open twins exist', () => {
+    const shown = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
+    const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
+    const contextWithTwins: GateContext = { ...context, shown: new Map([['f8', shown]]), open: [hidden, shown] };
+    const operation = add('Released tab-recap 1.10.0 through the pipeline today');
+    const found = gatekeeper(gates, [operation], contextWithTwins);
+    assert.match(found.refused[0]?.reason ?? '', /it repeats f8 .*update f8 instead/);
 });
 
 test('G2 against facts closed in the last day needs 0.8, and the fact itself is not named by an id', () => {
@@ -61,10 +70,10 @@ test('G6 refuses an unknown id and G10 a close without a why; the rest of the an
     assert.match(correctionOf(ops, found.refused), /G6: close f99 — f99 is not in the ledger\nG10: close f5 — closing f5 needs a why/);
 });
 
-test('an operation cannot use the id of an open fact that the writer was not shown', () => {
+test('an id that names no shown fact is refused, hidden or not', () => {
     const hidden = factOf('done', 'An open fact hidden by the view');
     const hiddenContext: GateContext = { ...context, shown: new Map(), open: [hidden] };
-    const close: Operation = { op: 'close', id: 'f99', why: 'done' };
+    const close: Operation = { op: 'close', id: hidden.id, why: 'done' };
     const found = gatekeeper(gates, [close], hiddenContext);
-    assert.deepEqual(found.refused.map((finding) => [finding.gate, finding.reason]), [['G6', 'f99 is not in the ledger']]);
+    assert.deepEqual(found.refused.map((finding) => [finding.gate, finding.reason]), [['G6', `${hidden.id} is not in the ledger`]]);
 });

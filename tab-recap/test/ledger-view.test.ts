@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { numbered, writerFacts } from '#src/recap/application/ledger-input.ts';
+import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { factOf } from './fakes/facts.ts';
 import { agentOf } from '#test/support.ts';
 
-const view = { kind: 'pruned', keepNewest: 2, nextHours: 24 } as const;
+const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const HOUR = 3_600_000;
 const NOW = 100 * HOUR;
 const facts = [
@@ -15,7 +16,7 @@ const facts = [
     factOf('next', 'old next', { lastAt: NOW - 25 * HOUR }), factOf('next', 'recent next 1', { lastAt: NOW - 3 * HOUR }), factOf('next', 'recent next 2', { lastAt: NOW - 2 * HOUR }), factOf('next', 'recent next 3', { lastAt: NOW - HOUR }),
 ];
 
-test('pruned writer view keeps all protected sections and newest limited facts, with section hidden counts', () => {
+test('the view keeps every needs, decision, goal and rule fact, and the newest K of done, links and next', () => {
     const result = writerFacts(facts, view, NOW);
     assert.deepEqual(result.shown.filter((fact) => ['goal', 'now', 'needs', 'decisions', 'rules'].includes(fact.section)).map((fact) => fact.text), ['goal', 'now', 'needs', 'decision', 'rule']);
     assert.deepEqual(result.shown.filter((fact) => fact.section === 'done').map((fact) => fact.text), ['done-2', 'done-3']);

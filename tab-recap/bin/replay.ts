@@ -30,6 +30,12 @@ import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/repla
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
 import { countedWriter } from '#src/recap/application/counted-writer.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
+import type { PrunedWriterView } from '#src/recap/domain/writer-view.ts';
+
+export function writerViewOf(prune: boolean, configured: PrunedWriterView): WriterView {
+    return prune ? configured : FULL_WRITER_VIEW;
+}
 
 const kindOf = (flag: string | null, file: string): RegisteredKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
 
@@ -41,9 +47,9 @@ const sizeOf = (file: string): number | null => {
     }
 };
 
-export function ranLine(done: Replayed, jobs: { readonly view: string; readonly pipeline: string; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
+export function ranLine(done: Replayed, jobs: { readonly view: WriterView; readonly pipeline: string; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
     const per = done.windows === 0 ? 0 : done.costUsd / done.windows;
-    return `view ${jobs.view} · pipeline ${jobs.pipeline} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.windows} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.windows)).toFixed(2)} per turn)`;
+    return `view ${jobs.view.kind} · pipeline ${jobs.pipeline} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.windows} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.windows)).toFixed(2)} per turn)`;
 }
 
 function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
@@ -69,9 +75,9 @@ async function replayed(input: { readonly file: string; readonly reader: Transcr
     const pipeline = input.options.pipeline ?? config.pipeline;
     const done = await replay({
         reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
-        summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: input.options.prune ? config.writerViewSettings : FULL_WRITER_VIEW,
+        summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: writerViewOf(input.options.prune, config.writerViewSettings),
     }, input.file, input.options.tab ?? 'replay:t1', input.size);
-    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view: input.options.prune ? 'pruned' : 'full', pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
+    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view: writerViewOf(input.options.prune, config.writerViewSettings), pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
     console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
 }
 

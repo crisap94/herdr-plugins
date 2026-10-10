@@ -11,6 +11,7 @@ import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
@@ -117,7 +118,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         language: (): string => loadConfig().recapLanguage,
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
         pipeline: (): Pipeline => loadConfig().pipeline,
-        writerView: (): ReturnType<typeof loadConfig>['writerView'] => loadConfig().writerView,
+        writerView: (): WriterView => loadConfig().writerView,
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });

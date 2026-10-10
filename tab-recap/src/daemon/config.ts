@@ -30,7 +30,7 @@ import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-import { FULL_WRITER_VIEW, prunedWriterView } from '#src/recap/domain/writer-view.ts';
+import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view.ts';
 
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
@@ -155,7 +155,7 @@ export function loadConfig(): Config {
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
     const keepNewest = rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), 10, 1, 50);
     const nextHours = rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), 24, 1, 720);
-    const writerViewSettings = prunedWriterView(keepNewest, nextHours);
+    const writerViewSettings = prunedWriterView(keepNewestOf(keepNewest), nextHoursOf(nextHours));
     const kinds = get('TAB_RECAP_AGENTS');
     const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');
