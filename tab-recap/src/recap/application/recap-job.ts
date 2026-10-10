@@ -11,6 +11,8 @@ import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts'
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type Pipeline } from '#src/recap/domain/pipeline.ts';
+import { DEBOUNCE_OFF } from '#src/recap/domain/debounce.ts';
+import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
 import { CLOSED_SHOWN_MS, type TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
@@ -33,6 +35,7 @@ export interface RecapJobDeps {
     keepInput?(): boolean;
     pipeline?(): Pipeline;
     writerView(): WriterView;
+    debounce?(): Debounce;
     enumerator?(): Enumerators | null;
     ran?(event: RunEvent): void;
     log(line: string): void;
@@ -57,8 +60,35 @@ interface Reading {
 interface Slot {
     timer: ReturnType<typeof setTimeout> | null;
     running: boolean;
-    again: { lanes: readonly Lane[]; cause: RecapCause } | null;
+    pending: { lanes: readonly Lane[]; cause: RecapCause; deadline: number; delay: number | null; forced: boolean } | null;
+    lastStart: number | null;
+    lastLanes: ReadonlySet<Lane['pane']>;
     waiting: (() => void)[];
+}
+
+const forcedCause = (cause: RecapCause): boolean => cause !== 'turn-ended';
+
+function stronger(previous: Slot['pending'], next: NonNullable<Slot['pending']>): NonNullable<Slot['pending']> {
+    return previous !== null && previous.forced && !next.forced ? { ...previous, lanes: next.lanes } : next;
+}
+
+function laneSet(lanes: readonly Lane[]): ReadonlySet<Lane['pane']> {
+    return new Set(lanes.map((lane) => lane.pane));
+}
+
+function sameLanes(left: ReadonlySet<Lane['pane']>, right: ReadonlySet<Lane['pane']>): boolean {
+    return left.size === right.size && [...left].every((pane) => right.has(pane));
+}
+
+function scheduleOf(slot: Slot, lanes: readonly Lane[], cause: RecapCause, now: number, debounce: Debounce): { readonly deadline: number; readonly delay: number | null; readonly forced: boolean } {
+    if (debounce.kind === 'off') {
+        return { deadline: 0, delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0, forced: forcedCause(cause) };
+    }
+    const changed = slot.lastStart !== null && !sameLanes(slot.lastLanes, laneSet(lanes));
+    const forced = forcedCause(cause) || changed || slot.lastStart === null;
+    if (forced) return { deadline: now, delay: null, forced };
+    const lastStart = slot.lastStart;
+    return { deadline: Math.max((lastStart ?? now) + debounce.milliseconds, now + TURN_SETTLE_MS), delay: null, forced };
 }
 
 export class RecapJob {
@@ -71,31 +101,38 @@ export class RecapJob {
 
     request(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void {
         const key = String(tab);
-        const slot = this.slots.get(key) ?? { timer: null, running: false, again: null, waiting: [] };
+        const slot = this.slots.get(key) ?? { timer: null, running: false, pending: null, lastStart: null, lastLanes: new Set(), waiting: [] };
         this.slots.set(key, slot);
-        if (slot.running) {
-            slot.again = { lanes, cause };
-            return;
-        }
-        if (slot.timer !== null) {
-            clearTimeout(slot.timer);
-        }
-        slot.timer = setTimeout(() => { void this.fly(slot, tab, lanes, cause); }, cause === 'turn-ended' ? TURN_SETTLE_MS : 0);
+        const debounce = this.deps.debounce?.() ?? DEBOUNCE_OFF;
+        const now = debounce.kind === 'window' ? Number(this.deps.clock.now()) : 0;
+        const requested = { lanes, cause, ...scheduleOf(slot, lanes, cause, now, debounce) };
+        slot.pending = debounce.kind === 'off' ? requested : stronger(slot.pending, requested);
+        this.arm(slot, tab);
+    }
+
+    private arm(slot: Slot, tab: TabId): void {
+        if (slot.running) return;
+        if (slot.timer !== null) clearTimeout(slot.timer);
+        const pending = slot.pending;
+        if (pending === null) return;
+        slot.timer = setTimeout(() => {
+            const run = slot.pending;
+            slot.pending = null;
+            if (run !== null) void this.fly(slot, tab, run.lanes, run.cause);
+        }, pending.delay ?? Math.max(0, pending.deadline - Number(this.deps.clock.now())));
     }
 
     private async fly(slot: Slot, tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {
         slot.timer = null;
         slot.running = true;
         try {
-            await this.recap(tab, lanes, cause);
+            await this.recap(tab, lanes, cause, (at) => { slot.lastStart = Number(at); slot.lastLanes = laneSet(lanes); });
         } catch (error) {
             this.deps.log(`recap ${tab}: ${error instanceof Error ? error.message : String(error)}`);
         }
         slot.running = false;
-        const again = slot.again;
-        slot.again = null;
-        if (again !== null) {
-            this.request(tab, again.lanes, again.cause);
+        if (slot.pending !== null) {
+            this.arm(slot, tab);
             return;
         }
         for (const done of slot.waiting.splice(0)) {
@@ -141,7 +178,7 @@ export class RecapJob {
         return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor, error: null };
     }
 
-    private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {
+    private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
         const prior = this.deps.records.readRecap(String(tab)) ?? blankRecap(String(tab));
         const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
         const readings = await Promise.all(lanes.map((lane) => this.read(lane, prior, budget)));
@@ -150,7 +187,7 @@ export class RecapJob {
         if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) {
             return;
         }
-        await this.summarize(prior, readings, { want, switched, cause });
+        await this.summarize(prior, readings, { want, switched, cause }, writerStarted);
     }
 
     private factsOf(tab: string, tasks: readonly TaskShape[], now: number): readonly TaskFacts[] {
@@ -172,7 +209,7 @@ export class RecapJob {
         return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
     }
 
-    private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }): Promise<void> {
+    private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
         const note = errors.length > 0 ? errors.join('; ') : null;
         const was = hasRecap(prior) ? prior.language : language.want;
@@ -186,6 +223,7 @@ export class RecapJob {
         }
         const summarizer = this.deps.summarizer();
         const began = clock.now();
+        writerStarted(began);
         records.beginRun(prior.tab, summarizer.backend, began);
         const { tasks, request, ground } = await this.prepared(prior, readings, { want: language.want, was });
         const asked = await this.piped(summarizer, request, ground);

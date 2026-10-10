@@ -41,13 +41,13 @@ interface Ran {
     readonly documents: string[];
 }
 
-async function run(pipeline: Pipeline | undefined, writerView: WriterView): Promise<Ran> {
+async function run(pipeline: Pipeline | undefined, writerView: WriterView, mergeTurns = 1): Promise<Ran> {
     const { summarizer, seen } = adding();
     const enumerating = scripted([candidateFor]);
     const scratch = scratchStore();
     try {
         const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
-        const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size);
+        const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size, mergeTurns);
         return { done, seen, documents: enumerating.documents };
     } finally {
         scratch.dispose();
@@ -55,7 +55,7 @@ async function run(pipeline: Pipeline | undefined, writerView: WriterView): Prom
 }
 
 test('--pipeline is parsed, checked, and goes with --replay only', () => {
-    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', check: null, prune: false } });
+    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', mergeTurns: 1, check: null, prune: false } });
     assert.ok(parseEval(['--replay', 'x.jsonl', '--prune']).kind === 'options');
     for (const name of ['one', 'enumerate', 'enumerate+gates', 'full']) {
         const parsed = parseEval(['--replay', 'x.jsonl', '--pipeline', name]);
@@ -77,6 +77,28 @@ test('a pruned replay input hides older facts and reports the count without chan
     assert.ok(hidden.length > 0);
     assert.equal(hidden.at(-1), 3);
     assert.equal(seen.at(-1)?.input.ledgers[0]?.facts.length, 2);
+});
+
+test('--merge-turns is a positive whole number and goes with --replay', () => {
+    const merged = parseEval(['--replay', 'x.jsonl', '--merge-turns', '2']);
+    assert.ok(merged.kind === 'options' && merged.options.mergeTurns === 2);
+    for (const [flag, value] of [['--merge-turns', '0'], ['--merge-turns=-1', ''], ['--merge-turns', '1.2'], ['--merge-turns', 'no']] as const) {
+        const invalid = parseEval(['--replay', 'x.jsonl', flag, ...(value === '' ? [] : [value])]);
+        assert.ok(invalid.kind === 'usage' && /--merge-turns takes a whole number above 0/.test(invalid.why), value);
+    }
+    const aloneMerge = parseEval(['--merge-turns', '2']);
+    assert.ok(aloneMerge.kind === 'usage' && /go with --replay/.test(aloneMerge.why));
+});
+
+test('replay with --merge-turns 1 preserves the per-turn writer calls and 2 groups adjacent turns', async () => {
+    const control = await run('one', FULL_WRITER_VIEW, 1);
+    assert.equal(control.done.turns, 6);
+    assert.equal(control.done.windows, 6);
+    assert.equal(control.seen.length, 6);
+    const merged = await run('one', FULL_WRITER_VIEW, 2);
+    assert.equal(merged.done.turns, 6);
+    assert.equal(merged.done.windows, 3);
+    assert.equal(merged.seen.length, 3);
 });
 
 test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, the writer reconciles the candidates, the cost is summed', async () => {

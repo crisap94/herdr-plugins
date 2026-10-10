@@ -43,6 +43,7 @@ import { wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
+import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { wireCurate } from './curate.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -120,6 +121,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
         pipeline: (): Pipeline => loadConfig().pipeline,
         writerView: (): WriterView => loadConfig().writerView,
+        debounce: (): Debounce => loadConfig().recapDebounce,
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
