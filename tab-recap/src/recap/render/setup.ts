@@ -74,6 +74,7 @@ const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     recapLanguage: (state, m) => recapText(state.draft.recapLanguage, m),
     screenAgents: (state, m) => screenText(state.draft.screenAgents, m),
     gitNote: (state, m) => m.setup.gitNoteChoices[state.draft.gitNote],
+    herdrEvents: (state, m) => m.setup.herdrEventsChoices[state.draft.herdrEvents],
     compactTarget: (state) => state.draft.compactTarget,
     compactHint: (state, m) => hintText(state.draft.compactHint, m),
     contextWindow: (state, m) => (state.draft.contextWindow === '' ? m.setup.contextWindowDetected : state.draft.contextWindow),
@@ -110,7 +111,7 @@ function pickList(state: Setup, labels: readonly string[], width: number, style:
 }
 
 function hintOf(row: RowId, m: Messages): string | null {
-    const hints: Readonly<Partial<Record<RowId, string>>> = { compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
+    const hints: Readonly<Partial<Record<RowId, string>>> = { herdrEvents: m.setup.herdrEventsHint, compactJob: m.setup.compactJobHint, judgeJob: m.setup.judgeJobHint, curatorJob: m.setup.curateJobHint, autocompact: m.setup.autocompactHint, autocompactAt: m.setup.autocompactAtHint, autocompactJob: m.setup.autocompactJobHint, recapLanguage: m.setup.recapLanguageHint, screenAgents: m.setup.screenAgentsHint, compactTarget: m.setup.compactTargetHint, compactHint: m.setup.compactHintHint, contextWindow: m.setup.contextWindowHint };
     return hints[row] ?? null;
 }
 
@@ -132,6 +133,7 @@ function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, styl
     const lists: Readonly<Partial<Record<FieldId, () => string[]>>> = {
         locale: () => pickList(state, LOCALE_CHOICES.map((choice) => m.setup.uiChoices[choice]), width, style),
         gitNote: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.gitNoteChoices[choice]), width, style),
+        herdrEvents: () => pickList(state, SWITCH_CHOICES.map((choice) => m.setup.herdrEventsChoices[choice]), width, style),
         effort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),
         compactBy: () => pickList(state, JOB_BY_OPTIONS.map((choice) => m.setup.jobByChoices[choice]), width, style),
         compactEffort: () => pickList(state, EFFORT_CHOICES.map((choice) => m.setup.effortChoices[choice]), width, style),

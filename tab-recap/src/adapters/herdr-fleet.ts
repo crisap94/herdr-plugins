@@ -18,6 +18,11 @@ import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
+import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import { PANE_WRITABLE, WORKSPACE_WRITABLE, unownedName } from '#src/recap/domain/lane-tokens.ts';
+import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
+import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
 export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
 export const PLUGIN_ID = 'tab-recap';
@@ -64,7 +69,24 @@ function layoutOf(layout: Json): LayoutResult {
 /** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens {
+/** A write naming a name tab-recap does not own is refused here, before herdr sees it. */
+const refusalOf = (tokens: Readonly<Record<string, string | null>>, allowed: readonly string[]): Unknown | null => {
+    const foreign = unownedName(Object.keys(tokens), allowed);
+    return foreign === null ? null : unknown({ why: 'unreadable', detail: `refused: ${foreign} is not a tab-recap token name` });
+};
+
+/** `pane.get`: the pane's tokens as herdr holds them now (a name whose time to live passed is not there). Stand-alone, for readers that hold no fleet. */
+export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
+    try {
+        const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
+        const tokens = typeof info === 'object' && info !== null ? (info as Json)['tokens'] : undefined;
+        return { kind: 'tokens', tokens: typeof tokens === 'object' && tokens !== null ? Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {} };
+    } catch (error) {
+        return unknown({ why: 'unreachable', detail: detail(error) });
+    }
+}
+
+export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens, PaneTokens, WorkspaceTokens {
     private readonly stateDir: string;
 
     constructor(stateDir: string) {
@@ -180,6 +202,31 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             return typeof fields['text'] === 'string'
                 ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
                 : unknown({ why: 'unreadable', detail: `pane.read of ${pane} returned no text` });
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: detail(error) });
+        }
+    }
+
+    /** `pane.report_metadata` under the plugin's source: the names are the application's to choose, and a null value removes a name. A token is not typing, so an agent's pane may carry one. */
+    async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
+        const refused = refusalOf(tokens, PANE_WRITABLE);
+        return refused ?? this.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+    }
+
+    async read(pane: string): Promise<PaneTokensResult> {
+        return readPaneTokens(pane);
+    }
+
+    /** `workspace.report_metadata` under the plugin's source: the daemon's own events, on every workspace. */
+    async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
+        const refused = refusalOf(tokens, WORKSPACE_WRITABLE);
+        return refused ?? this.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+    }
+
+    async workspaces(): Promise<WorkspacesResult> {
+        try {
+            const found = list((await rpc('workspace.list', {}))['workspaces']);
+            return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
         }

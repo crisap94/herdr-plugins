@@ -24,6 +24,8 @@ export interface InformerHooks {
     onBeat(): void;
     /** herdr pushed a lane's status (the compaction flow waits on it, and an agent's next turn ends the compaction's showing) */
     onStatus?(pane: string, status: string): void;
+    /** a `pane.updated` frame: a pane's tokens changed (another tool may have asked for a compaction) */
+    onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
 }
 
 const RESYNC_DEBOUNCE_MS = 400;
@@ -187,6 +189,10 @@ export class Informer {
     private async pump(stream: FrameStream): Promise<void> {
         for await (const frame of stream.frames()) {
             this.lastLife = Number(this.clock.now());
+            if (frame.event.replaceAll('.', '_') === 'pane_updated') {
+                this.hooks.onPaneUpdated?.(frame.data);
+                continue;
+            }
             const decoded = decode(frame);
             if (decoded.kind === 'unknown') {
                 this.hooks.onUnknownKind(decoded.rawKind);

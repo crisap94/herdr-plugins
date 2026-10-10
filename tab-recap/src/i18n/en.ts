@@ -24,7 +24,7 @@ export const en: Messages = {
     },
     setup: {
         title: 'TAB RECAP — settings',
-        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window', autocompact: 'Autocompact', autocompactAt: 'Autocompact from', autocompactJob: 'Autocompact decider' },
+        rows: { recapJob: 'Recap writer', compactJob: 'Compact brief', judgeJob: 'Recap judge', curatorJob: 'Curator', locale: 'Interface', recapLanguage: 'Recap language', screenAgents: 'Screen agents', gitNote: 'Git note', compactTarget: 'Compact', compactHint: 'Compact hint', contextWindow: 'Context window', autocompact: 'Autocompact', autocompactAt: 'Autocompact from', autocompactJob: 'Autocompact decider', herdrEvents: 'Herdr events' },
         loading: 'looking for agents…',
         auto: (order) => `the first one found: ${order}`,
         custom: 'your own command, TAB_RECAP_CUSTOM_CMD',
@@ -34,6 +34,8 @@ export const en: Messages = {
         modelNoAgent: 'no agent found yet — pick one above',
         uiChoices: { auto: 'auto (from your locale)', en: 'English', es: 'Español' },
         gitNoteChoices: { on: 'on — branch, unpushed and changed files under each agent', off: 'off' },
+        herdrEventsChoices: { on: 'on — lanes shared on herdr: tokens, events, compaction requests answered', off: 'off' },
+        herdrEventsHint: 'other tools read a lane\'s tokens and ask for compactions through herdr; off writes nothing',
         effortChoices: { low: 'low — a short rewrite needs no deliberation (cheapest)', medium: 'medium', high: 'high', default: "the agent's own setting (nothing is passed)" },
         recapLanguageHint: 'ui (as the interface) · en · es · or a language name',
         screenAgentsHint: 'agents with no transcript to read, e.g. gemini,qwen — or all; their recap comes from the screen. Applies after the daemon restarts',

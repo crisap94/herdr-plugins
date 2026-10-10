@@ -29,6 +29,7 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     decideBy: ['TAB_RECAP_AUTOCOMPACT_BY'],
     decideModel: ['TAB_RECAP_AUTOCOMPACT_MODEL'],
     decideEffort: ['TAB_RECAP_AUTOCOMPACT_EFFORT'],
+    herdrEvents: ['TAB_RECAP_HERDR_EVENTS'],
 };
 
 /** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
@@ -58,6 +59,7 @@ function entriesOf(draft: Draft): readonly Entry[] {
         ['gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote], ['effort', 'TAB_RECAP_EFFORT', draft.effort], ['compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget],
         ['compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint], ['contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow],
         ['autocompact', 'TAB_RECAP_AUTOCOMPACT', draft.autocompact], ['autocompactAt', 'TAB_RECAP_AUTOCOMPACT_AT', draft.autocompactAt],
+        ['herdrEvents', 'TAB_RECAP_HERDR_EVENTS', draft.herdrEvents],
         ...jobs('compactBy', 'compactModel', 'compactEffort', 'TAB_RECAP_COMPACT', draft.compact),
         ...jobs('judgeBy', 'judgeModel', 'judgeEffort', 'TAB_RECAP_JUDGE', draft.judge),
         ...jobs('curateBy', 'curateModel', 'curateEffort', 'TAB_RECAP_CURATE', draft.curate),

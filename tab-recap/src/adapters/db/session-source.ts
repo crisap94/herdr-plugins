@@ -1,3 +1,5 @@
+import { originOf } from '#src/recap/domain/origin.ts';
+import type { Origin } from '#src/recap/domain/origin.ts';
 // The SessionSource repository: what the store knows of a tab's session — when it began, how many runs of each cause, the compactions.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { SessionSource } from '#src/ports/session-source.ts';
@@ -25,7 +27,7 @@ export class SessionSourceRepository implements SessionSource {
         return guarded(() => Object.fromEntries(all(this.runs, tab).map((row) => [text(row, 'cause'), whole(row, 'n')])), {});
     }
 
-    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: 'operator' | 'auto' }[] {
-        return guarded(() => all(this.compacted, tab).map((row) => ({ tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator' })), []);
+    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin }[] {
+        return guarded(() => all(this.compacted, tab).map((row) => ({ tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), origin: originOf(text(row, 'origin')) })), []);
     }
 }

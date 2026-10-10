@@ -74,8 +74,9 @@ is the tool's name taken from the token name, or `note` for a bare `note`.
 
 The events the daemon logs about a lane are also written to that lane's pane as `tab-recap-event` =
 `<seq>:<kind>[:<detail>]`. Each write is one `pane.updated` for every subscriber, so the token works as an
-event stream on herdr's own socket. Daemon-wide events go to every workspace through
-`workspace.report_metadata` (`workspace.metadata_updated`).
+event stream on herdr's own socket. Two kinds go to a workspace instead, through `workspace.report_metadata`
+(`workspace.metadata_updated`): `lane-closed`, whose pane is already gone (the workspace of the lane, with the
+pane as detail), and the daemon-wide events, which go to every workspace.
 
 - **Gap detection:** `<seq>` rises by one per pane (or workspace), starting from the daemon's start time in
   base 36 so a restart never reuses a number. A subscriber that sees a gap knows it missed events, and reads

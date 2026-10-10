@@ -17,6 +17,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { bounded } from './bounded.ts';
 import { loadConfig, messagesOf } from './config.ts';
@@ -39,6 +40,11 @@ export function wireCompaction(parts: {
     /** the decider that checks the brief's coverage (`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`) */
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
+    /** answers another tool's compaction request on its pane */
+    readonly answers: { answer(id: string, pane: string, stage: string): void };
+    /** the typing lease, taken around each line typed */
+    readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
+    readonly events: LaneEvents;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -59,6 +65,9 @@ export function wireCompaction(parts: {
             return decider === null ? null : { check: (text, facts) => covered(text, facts, decider) };
         },
         decisions: parts.decisions,
+        answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
+        typing: parts.typing,
+        events: parts.events,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

@@ -121,8 +121,9 @@ The column SHALL show every `note` or `note-<tool>` token on a lane's pane under
 ### Requirement: The plugin's own events are piped into herdr's event stream
 
 Every event the daemon logs about a lane SHALL also be written to that lane's pane as the token
-`tab-recap-event` = `<seq>:<kind>[:<detail>]`, so that every `pane.updated` subscriber receives it. Events
-about the daemon itself SHALL go to every workspace's metadata as the same token, through
+`tab-recap-event` = `<seq>:<kind>[:<detail>]`, so that every `pane.updated` subscriber receives it. The
+`lane-closed` event SHALL go to the lane's workspace instead, as the same token, since its pane is already gone.
+Events about the daemon itself SHALL go to every workspace's metadata as the same token, through
 `workspace.report_metadata`. `<seq>` SHALL rise by one per pane (or per workspace), so a subscriber can tell
 it missed an event; the whole value SHALL fit in 80 characters. The kinds SHALL be:
 
@@ -133,7 +134,7 @@ it missed an event; the whole value SHALL fit in 80 characters. The kinds SHALL 
 | `compact-queued`, `compact-running`, `compact-done`, `compact-failed` | the compaction id, and the reason when failed |
 | `autocompact-decided` | the verdict and the share (`compact-24`, `wait-61`) |
 | `autocompact-skipped` | the gate (`in-flight`, `cooldown`, `below-minimum`, …), written only when the gate changes |
-| `lane-closed` | none |
+| `lane-closed` | the pane that closed (written on the lane's workspace, not the pane) |
 | `daemon-started`, `daemon-stopping` | the version (workspace token) |
 
 The state tokens (`tab-recap-share`, `tab-recap-recap`, `tab-recap-needs`, `tab-recap-compact`) SHALL stay

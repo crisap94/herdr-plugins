@@ -1,4 +1,5 @@
 // The CompactionRecords repository: one row per compaction of a lane; every write is one transaction, every read answers [] when it cannot.
+import { originOf } from '#src/recap/domain/origin.ts';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
 import { all, BadRow, blob, flag, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
@@ -29,7 +30,7 @@ function recordOf(row: Row): CompactionRecord {
         stage: stageOf(row), brief: briefOf(row), writer: maybeText(row, 'writer'), templateWhy: maybeText(row, 'template_why'),
         startedAt: whole(row, 'started_at'), stageAt: whole(row, 'stage_at'), finishedAt: maybeWhole(row, 'finished_at'),
         tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), tookMs: maybeWhole(row, 'took_ms'),
-        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: text(row, 'origin') === 'auto' ? 'auto' : 'operator',
+        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: originOf(text(row, 'origin')),
     };
 }
 
@@ -46,10 +47,12 @@ export class CompactionRecordsRepository implements CompactionRecords {
     private readonly interrupt: StatementSync;
     private readonly shown: StatementSync;
     private readonly autoRunning: StatementSync;
+    private readonly asks: StatementSync;
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.asks = db.prepare("SELECT pane, answer FROM compaction WHERE origin = 'request' AND answer IS NOT NULL AND finished_at IS NULL");
         this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why) WHERE id = ? AND finished_at IS NULL');
         this.finishStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, finished_at = ?, tokens_before = ?, tokens_after = ?, took_ms = ?, retried = ?, why = ? WHERE id = ? AND finished_at IS NULL');
         this.dismiss = db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL');
@@ -61,7 +64,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     begin(start: BeginCompaction): string {
         const id = ids.next();
         const finished = ENDED.has(start.stage) ? start.at : null;
-        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null, start.origin ?? 'operator'); });
+        writeTx(this.db, () => { this.insert.run(id, start.tab, start.pane, start.agent, start.stage, start.writer ?? null, start.at, start.at, finished, start.why ?? null, start.origin ?? 'operator', start.answer ?? null); });
         return typeIdOf('compaction', id);
     }
 
@@ -81,6 +84,10 @@ export class CompactionRecordsRepository implements CompactionRecords {
 
     dismissTurn(tab: string, pane: string, at: number): void {
         writeTx(this.db, () => { this.dismiss.run(at, tab, pane, at); });
+    }
+
+    unfinishedAsks(): readonly { readonly pane: string; readonly answer: string }[] {
+        return guarded(() => all(this.asks).map((row) => ({ pane: text(row, 'pane'), answer: text(row, 'answer') })), []);
     }
 
     interrupted(at: number, why: string): number {

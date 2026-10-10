@@ -1,6 +1,6 @@
 // Autocompact: when a lane's agent is free and its context is full enough, ask the decider whether this is a safe moment, record the
 // decision, and (when `on`) ask for a compaction through the operator's own request path. Typing stays in the compaction flow.
-import type { AutocompactRecords, Decision, DecisionVerdict, SkipGate } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, Decision, DecisionGate, DecisionMode, DecisionVerdict, SkipGate } from '#src/ports/autocompact-records.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
@@ -8,6 +8,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 import { gateOf, READY } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
@@ -20,8 +21,12 @@ import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, unchangedOf } from './autocompact-gates.ts';
 import { lineOf, moneyOf } from './autocompact-line.ts';
 import type { FlightAnswer } from './autocompact-gates.ts';
+import type { LaneEvents } from './lane-events.ts';
 
 export type { FlightAnswer } from './autocompact-gates.ts';
+
+/** What the pane's `awaiting` tokens say now: clear, waiting (for what), or unreadable (which counts as in flight). */
+export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
 
 /** Where a consideration stopped: the gate, whether the kind is record-only, and the detail a skip keeps. */
 interface Stop {
@@ -37,6 +42,10 @@ export interface AutocompactDeps {
     readonly contexts: { of(pane: string): ContextUse | null };
     /** work the lane's agent started and has not ended; `unknown` for a reader that cannot tell */
     inFlight(lane: Lane): Promise<FlightAnswer>;
+    /** the pane's `awaiting` / `awaiting-<tool>` tokens (a wait counts as in flight, whatever the setting; unreadable counts as in flight too) */
+    awaiting?(pane: string): Promise<Waiting>;
+    /** the plugin's events on herdr's stream */
+    readonly events?: LaneEvents;
     recent(lane: Lane): Promise<readonly Entry[]>;
     readonly ledger: Pick<Ledger, 'historyOf'>;
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
@@ -117,7 +126,7 @@ export class Autocompact {
         const cheap = gateOf({ ...facts, inFlight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
         if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }) };
-        const flight = await deps.inFlight(lane);
+        const flight = await this.flightOf(lane, pane);
         const full = gateOf({ ...facts, inFlight: flight.count });
         return { ...full, detail: detailOf(full.gate, { ...context, flight }) };
     }
@@ -128,6 +137,7 @@ export class Autocompact {
         this.deps.decisions.skip({ tab: String(lane.tab), pane, agent: String(lane.agent), at: this.deps.now(), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
+        this.deps.events?.lane(pane, 'autocompact-skipped', gate);
         this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`);
     }
 
@@ -141,6 +151,8 @@ export class Autocompact {
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
         if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane);
+        // a wait that began while the decider answered is read here, before the busy check that is made synchronously with the record
+        if (await this.waitSkipped(lane, use)) return;
         // the decider may have taken a while: another lane may have been requested meanwhile, so the busy check is made again, synchronously, before the record
         const again = busyOf(deps, this.asked, tab, pane, deps.now());
         if (again.busy) {
@@ -149,14 +161,43 @@ export class Autocompact {
             this.skip(lane, 'busy', shareOf(use), `${again.detail}${paid}`);
             return;
         }
+        this.record(lane, use, { mode: policy.mode, gate, recordOnly, judged });
+    }
+
+    /** The decider was paid for; a wait that began while it answered stops the request, as one that began before would have. True when skipped. */
+    private async waitSkipped(lane: Lane, use: ContextUse): Promise<boolean> {
+        const late = await this.waitingOf(String(lane.pane));
+        if (late.kind === 'clear') return false;
+        this.skip(lane, 'in-flight', shareOf(use), late.kind === 'waiting' ? `awaiting ${late.value}` : saying(late.why));
+        return true;
+    }
+
+    /** The pane's wait as the in-flight gate counts it: an `awaiting` token, or the reader's count (an unreadable token is in flight). */
+    private async flightOf(lane: Lane, pane: string): Promise<FlightAnswer> {
+        const waiting = await this.waitingOf(pane);
+        if (waiting.kind === 'clear') return this.deps.inFlight(lane);
+        if (waiting.kind === 'waiting') return { count: 1, why: 'awaiting', detail: `awaiting ${waiting.value}` };
+        return { count: 'unknown', why: saying(waiting.why) };
+    }
+
+    private async waitingOf(pane: string): Promise<Waiting> {
+        return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(pane);
+    }
+
+    /** The decision is recorded, logged and said as an event; a compact one of mode `on` is requested. */
+    private record(lane: Lane, use: ContextUse, found: { readonly mode: DecisionMode; readonly gate: DecisionGate; readonly recordOnly: boolean; readonly judged: Judged }): void {
+        const { deps } = this;
+        const [tab, pane] = [String(lane.tab), String(lane.pane)];
+        const { judged, recordOnly } = found;
         const made: Decision = {
-            tab, pane, agent: String(lane.agent), at: deps.now(), mode: policy.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate, verdict: judged.verdict,
+            tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why,
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);
+        deps.events?.lane(pane, 'autocompact-decided', `${judged.verdict}-${shareOf(use)}`);
         deps.log(lineOf(made, recordOnly));
-        if (asksForCompaction(policy.mode, judged.verdict, recordOnly)) this.request(tab, pane, id);
+        if (asksForCompaction(found.mode, judged.verdict, recordOnly)) this.request(tab, pane, id);
     }
 
     /** The compaction is asked for through the operator's request path, and the decision says so. */
