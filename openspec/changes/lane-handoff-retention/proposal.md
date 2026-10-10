@@ -10,7 +10,7 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 
 ## What changes
 
-- A new domain intent `lane-closed` carries every observed closure of a lane on the board or persisted. Closure detection is one pure function; the fold stays pure and the dispatcher writes the record.
+- A new domain intent `lane-closed` carries every observed closure of a lane on the board or persisted. Closure detection is one pure function; the fold stays pure and the dispatcher writes the record. It is the only closure detector in the plugin: the same intent also drives the `lane-closed` event, which the lane-token publisher no longer derives from its own diff.
 - A closure record stores the tab, pane, agent kind, the lane's last-known working directory, the close instant, and the task association when one exists. It copies no transcript, prompt, repository contents or fact text.
 - `TAB_RECAP_CLOSED_LANE_DAYS` (default 14; `0` disables closed-lane retention) sets how long a closure record is retained and resolvable.
 - Tab-wide retention in `session-chapters` is modified: a tab that holds a closure record inside the window is not removed, and closure records are removed with their tab.
@@ -23,11 +23,12 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 - **Added** to `tab-recap/state-store`: closure recording, the association, the lane-closure observation rule, the incarnation, the closed-lane window setting, resolution, the fact filter as of the close, listing, pruning, and the old-schema rule.
 - **Added** to `tab-recap/state-migrations`: the closed-lane migration.
 - **Modified** in `tab-recap/lane-handoff` and `tab-recap/cli`: the source requirements, the content requirement's fact source, the claims requirement for a closed source, and the command syntax. These capabilities exist in main only after the lane-handoff change (slice 1) is archived, so this change MUST be archived after it.
+- **Modified** `tab-recap/lane-tokens`: "The plugin's own events are piped into herdr's event stream" now takes `lane-closed` from the fold's closure decision, so one detector decides what a closure is.
 - `tab-recap/fact-ledger` is unchanged.
 
 ## Impact
 
-The migration is forward-only and follows the handoff migration (migration 016 in the cross-stream numbering table; 015 is the handoff migration). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
+The migration is forward-only and follows the handoff migration: it is migration 017 in the numbering table (015 is the token protocol's ask ledger, 016 the handoff migration). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
 
 ## Out of scope
 
@@ -46,4 +47,18 @@ The spec-only MR carries `changelog::internal`. The implementation MR carries `c
 
 ## Implementation order
 
-lane-handoff (slice 1) → lane-handoff-retention (this change) → the token protocol work. Archiving this change before slice 1 creates `tab-recap/lane-handoff` with a placeholder Purpose and `openspec validate --specs --strict` then fails (checked in a scratch copy); archiving slice 1 first, then this change, passes.
+token-protocol → lane-handoff (slice 1) → lane-handoff-retention (this change) → lane-handoff-exchange (slice 3). Archiving this change before slice 1 creates `tab-recap/lane-handoff` with a placeholder Purpose and `openspec validate --specs --strict` then fails (checked in a scratch copy); archiving slice 1 first, then this change, passes.
+
+## Reconciliation (2026-10-10)
+
+This change was rebuilt against the factory reconciliation plan. What changed from the reviewed head d15911b:
+
+- The migration is 017, not 016: the token protocol's ask ledger takes 015 and the handoff 016, in landing order.
+- One closure detector: the fold's `lane-closed` intent also drives the `lane-closed` event (lane-tokens modified), so the
+  publisher's own diff no longer decides closures and the two can never disagree.
+- The restated handoff requirements follow the reconciled slice 1: a handoff interrupted by a restart is answered
+  `failed{interrupted}` from the token protocol's ask ledger, and the readiness hold is the settle time the target's agent
+  kind declares.
+- Two inconsistencies of the restated text are fixed: a closed source's task is the association stored with its closure
+  (not the live lanes of `readRecap`), and a closed source supplies its tab (the "tab cannot be resolved" refusal applies to a
+  live source only).

@@ -2,7 +2,7 @@
 
 ### Requirement: Handoff content is one task's ledger render
 
-The handoff command SHALL render one task's ledger without a model call. The task SHALL be the one whose `lanes` include the source pane in `readRecap(tab).tasks`; `tasks[0]` SHALL NOT be used as a fallback. The facts SHALL come from the fact source of the source resolver's `found` answer; for a live lane that is `Ledger.openOf(task)` and the facts closed in the preceding two hours with `Ledger.recentlyClosed(task, now - CLOSED_SHOWN_MS)`, and for a closed lane it is the task's facts as of the close. It SHALL NOT use `Ledger.historyOf`, which is the per-pane session history. The render SHALL be a pure function of the ledger facts, the freshness values, the worksite values, the note, the `HandoffId` and an injected instant. A task with no goal, open facts, or recently closed facts SHALL be refused as `ledger-empty`.
+The handoff command SHALL render one task's ledger without a model call. For a live source the task SHALL be the one whose `lanes` include the source pane in `readRecap(tab).tasks`; for a closed source it SHALL be the task association stored with its closure record; `tasks[0]` SHALL NOT be used as a fallback. The facts SHALL come from the fact source of the source resolver's `found` answer; for a live lane that is `Ledger.openOf(task)` and the facts closed in the preceding two hours with `Ledger.recentlyClosed(task, now - CLOSED_SHOWN_MS)`, and for a closed lane it is the task's facts as of the close. It SHALL NOT use `Ledger.historyOf`, which is the per-pane session history. The render SHALL be a pure function of the ledger facts, the freshness values, the worksite values, the note, the `HandoffId` and an injected instant. A task with no goal, open facts, or recently closed facts SHALL be refused as `ledger-empty`.
 
 #### Scenario: Render a task ledger
 
@@ -33,7 +33,7 @@ The handoff command SHALL render one task's ledger without a model call. The tas
 
 ### Requirement: Source lane selects exactly one task
 
-The command SHALL require exactly one source: `--from <pane>`, a pane identifier (a label SHALL NOT be resolved), or the closed-lane tuple `--from-closed <pane> --tab <tab-id> --closed-at <epoch-ms>`. For `--from`, the CLI SHALL find the pane's tab in the store's lane rows and SHALL refuse `source-unavailable`, writing no request row, when the pane has no row. For `--from-closed`, the CLI SHALL NOT look the pane up and SHALL require no live lane. For a live source the daemon SHALL re-verify from its board that the pane is a lane of that tab; for a closed source it SHALL resolve the exact identity with the closed-lane resolver, answering `source-unavailable` for `expired` and `never-seen`. The source SHALL be resolved through a `SourceResolver`, one entry of a registry keyed by source kind, that answers `found{task, facts}`, `source-unavailable`, `task-ambiguous` or `unknown`; an `unknown` answer SHALL be the storable `failed{source-unreadable}`. The command SHALL refuse with `ledger-empty` when no task lists the lane and with `task-ambiguous` when more than one task lists it, deciding both after any refresh. It SHALL NOT fall back to another lane or to the whole tab's ledger.
+The command SHALL require exactly one source: `--from <pane>`, a pane identifier (a label SHALL NOT be resolved), or the closed-lane tuple `--from-closed <pane> --tab <tab-id> --closed-at <epoch-ms>`. For `--from`, the CLI SHALL find the pane's tab in the store's lane rows and SHALL refuse `source-unavailable`, writing no request row, when the pane has no row. For `--from-closed`, the CLI SHALL NOT look the pane up and SHALL require no live lane. For a live source the daemon SHALL re-verify from its board that the pane is a lane of that tab; for a closed source it SHALL resolve the exact identity with the closed-lane resolver, answering `source-unavailable` for `expired` and `never-seen`. The source SHALL be resolved through a `SourceResolver`, one entry of a registry keyed by source kind, that answers `found{task, facts}`, `source-unavailable`, `task-ambiguous` or `unknown`; an `unknown` answer SHALL be the storable `failed{source-unreadable}`. For a live source the command SHALL refuse with `ledger-empty` when no task lists the lane and with `task-ambiguous` when more than one task lists it, deciding both after any refresh; a closed source has at most one stored association, and a closure with none resolves `never-seen`. It SHALL NOT fall back to another lane or to the whole tab's ledger.
 
 #### Scenario: A tab contains multiple tasks
 
@@ -172,7 +172,7 @@ The application SHALL claim the source and target lanes as handoff claims in one
 
 ### Requirement: The daemon flow has a fixed order
 
-The daemon SHALL run a handoff in this order: refuse `source-equals-target` for a live source; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state and require it to stay ready for `HANDOFF_SETTLE_MS` (5 000); take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
+The daemon SHALL run a handoff in this order: refuse `source-equals-target` for a live source; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state and require it to stay ready for the settle time the target's agent kind declares (`HANDOFF_SETTLE_MS` per kind: 10 000 for Claude, measured; 10 000 for Codex and OpenCode until measured); take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
 
 #### Scenario: A refused target starts no refresh
 
@@ -186,13 +186,13 @@ The daemon SHALL run a handoff in this order: refuse `source-equals-target` for 
 
 #### Scenario: A target that is ready only for a moment
 
-- **WHEN** the target is `idle` at the first observation and not `idle` or `done` at the second, 5 seconds later
+- **WHEN** the target is `idle` at the first observation and not `idle` or `done` at the second, one settle time later
 - **THEN** the command SHALL return `status-not-ready` and type nothing
 
 #### Scenario: A freshly started target
 
-- **WHEN** the target became `idle` less than 5 seconds before the flow reached the readiness hold
-- **THEN** the sender SHALL wait until the target has stayed ready for 5 seconds before typing
+- **WHEN** the target became `idle` less than its kind's settle time before the flow reached the readiness hold
+- **THEN** the sender SHALL wait until the target has stayed ready for the settle time before typing
 
 #### Scenario: A throw while sending
 
@@ -295,7 +295,7 @@ After the ledger the text SHALL carry a Worksite section with the values that ca
 
 ### Requirement: The handoff request runs once in the daemon
 
-The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
+The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or, for a live source, when the source pane's tab cannot be resolved; a closed source supplies its tab. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart: it is recorded as an ask in the token protocol's ask ledger, and the restarted daemon SHALL answer it `failed{interrupted}`.
 
 #### Scenario: A handoff is queued and answered
 
@@ -350,7 +350,8 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 - **WHEN** the daemon restarts after taking a handoff and before writing its answer
 - **THEN** the handoff SHALL NOT be replayed
-- **AND** the CLI SHALL report `failed{not-answered-taken}`
+- **AND** the restarted daemon SHALL answer it `failed{interrupted}`
+- **AND** the CLI SHALL report `failed{interrupted}` when it reads that answer within its wait bound, and `failed{not-answered-taken}` otherwise
 
 ## ADDED Requirements
 

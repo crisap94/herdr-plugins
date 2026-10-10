@@ -30,6 +30,8 @@ These do not close a lane. A `session` observation (a `/clear`, or a new agent s
 
 Closure detection is a pure module, `recap/domain/closures.ts`: `closuresBetween(before, after, persisted, now): readonly ClosedLane[]`. `onClosed` and `onReconciled` call it instead of growing their own branches. `onDetected` receives `now` for the agent-kind case.
 
+**One closure detector.** The `lane-closed` intent is the only place the plugin decides that a lane closed. Dispatch maps it to two effects: the closure record (when the window is above zero) and the `lane-closed` event on the lane's workspace (when sharing is on). The lane-token publisher keeps clearing a departed lane's tokens but no longer emits `lane-closed` from its own diff of written panes, which could disagree with the fold (for example after a restart, when the publisher has written nothing yet). The event's value format and detail (the pane) are unchanged; it is now also emitted for a restart closure and for an agent-kind change in a surviving pane, which is what "the lane left the board" means.
+
 A restart needs the persisted lanes. The boot code pushes one new observation, `{ kind: 'restored', lanes: readonly RestoredLane[] }`, where it pushes `hidden-restored` (`daemon/main.ts`, before `enterSubscription`). The fold stores `restored` on the board as `persisted` without publishing or emitting intents; the first `reconciled` observation consumes it: a persisted pane the snapshot still wants keeps its `since` and is read as a new lane, exactly as today; a persisted pane the snapshot lacks, or lists with a different agent kind, emits `lane-closed` at the snapshot instant. `persisted` is then cleared. A read failure while loading persisted rows is logged and the comparison is skipped for that boot; nothing is fabricated.
 
 ### 3. Order, and publishing the tabs that lost a lane
@@ -101,7 +103,7 @@ A closure recorded at restart for a tab last seen long ago is protected by the s
 
 ### 10. Migration
 
-The migration is 016, assigned by the cross-stream numbering table, after the handoff migration 015 (it must run after it; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
+The migration is 017, assigned by the numbering table, after the token protocol's ask ledger (015) and the handoff migration (016) (it must run after them; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
 
 ```sql
 CREATE TABLE closed_lane (
@@ -172,3 +174,19 @@ The real-herdr proof establishes first whether herdr reuses pane identifiers, by
 - **`TAB_RECAP_CLOSED_LANE_DAYS=0`:** disabled, records nothing and prunes (default); the alternative keeps closure records forever, and every tab that ever had a closed lane would then be protected from deletion indefinitely, which with `TAB_RECAP_KEEP_DAYS=30` disables tab cleanup for nearly every tab.
 - **`--list-closed` shape:** a flag on the handoff command with tab-separated output (default) or a separate command.
 - **Pre-migration lanes:** a lane persisted before the migration and closed after it is recorded with no association and resolves `never-seen` (default), or the first boot after the upgrade is skipped entirely.
+
+## Reconciliation with the factory plan (2026-10-10)
+
+- Numbering: 015 token protocol ask ledger, 016 lane-handoff, 017 this change, in landing order.
+- Decision 7 of the plan: one closure detector (decision 2 above, "One closure detector"); `lane-tokens` is modified for it.
+- The restated slice-1 requirements follow the plan's decisions for slice 1: asks are kept in the token protocol's ask
+  ledger, so a handoff a restart interrupts is answered `failed{interrupted}` (aligned with compaction) instead of being left
+  unanswered; the readiness hold uses the settle time each agent kind declares (Claude 10 000 ms, from the measurement of
+  2026-10-10: input typed 0 to 3 s after an agent start was lost 6 of 6 times, taken at 4 to 5 s, worst case near 10 s, on a
+  loaded host with a small sample; Codex and OpenCode are UNMEASURED and use 10 000 ms until slice 1's real-herdr task
+  measures them).
+- Cross-change assumption: these restatements were written from the reviewed slice-1 head (f7138c2) plus the plan's slice-1
+  decisions, before the rebuilt slice-1 text was pushed. The archive task re-syncs every restated requirement against the
+  archived slice-1 text and requires the diff to show only the closed-source additions.
+- Assumption: slice 1 keeps handoff work rows in `request` (kind `handoff`), so `request.closed_at` stays the closed-source
+  column; if slice 1 moves the rows, the column moves with them in this migration.
