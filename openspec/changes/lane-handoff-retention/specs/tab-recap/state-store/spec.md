@@ -27,7 +27,7 @@
 
 ### Requirement: Every observed lane closure is recorded once
 
-When a lane leaves the board, the daemon SHALL write one closure record containing its tab id, pane id, agent kind, and close instant. The close instant SHALL be the daemon clock instant at which the fold observes the closure. The record's key SHALL be `(tab id, pane, close instant)`, and the write SHALL ignore a duplicate key. The record SHALL carry one task association, selected in the same write from the transcripts of that tab and pane whose first-seen instant lies from the lane's incarnation start through the close instant, ordered by run time then run id, and SHALL carry no association when the lane has no session or no incarnation start. The record SHALL NOT copy transcript, prompt, cwd, repository path, or fact text.
+When a lane leaves the board, the daemon SHALL write one closure record containing its tab id, pane id, agent kind, last-known working directory, and close instant. The close instant SHALL be the daemon clock instant at which the fold observes the closure. The record's key SHALL be `(tab id, pane, close instant)`, and the write SHALL ignore a duplicate key. The record SHALL carry one task association, selected in the same write from the transcripts of that tab and pane whose first-seen instant lies from the lane's incarnation start through the close instant, ordered by run time then run id, and SHALL carry no association when the lane has no session or no incarnation start. The record SHALL NOT copy transcript, prompt, repository contents, or fact text.
 
 #### Scenario: A tracked lane closes
 

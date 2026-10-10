@@ -11,7 +11,7 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 ## What changes
 
 - A new domain intent `lane-closed` carries every observed closure of a lane on the board. The fold stays pure; the dispatcher writes the closure record.
-- A closure record stores the tab, pane, agent kind, the close instant, and the task association when one exists. It copies no transcript, prompt, cwd, repository path, or fact text.
+- A closure record stores the tab, pane, agent kind, the lane's last-known working directory, the close instant, and the task association when one exists. It copies no transcript, prompt, repository contents, or fact text.
 - `TAB_RECAP_CLOSED_LANE_DAYS` (default 14; `0` disables closed-lane retention) sets how long a closure record is retained and resolvable.
 - Tab-wide retention in `session-chapters` is modified: a tab that holds a closure record inside the window is not removed, and closure records are removed with their tab.
 - A typed resolver returns `found`, `expired`, `never-seen`, or `unknown` for a closed-lane identity. Facts come from the existing ledger port, which does not change.

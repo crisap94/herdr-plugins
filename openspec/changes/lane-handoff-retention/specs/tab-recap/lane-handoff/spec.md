@@ -52,17 +52,22 @@ The daemon SHALL resolve a closed source with the closed-lane resolver. `found` 
 
 ### Requirement: A closed source's handoff states that it closed
 
-The rendered handoff for a closed source SHALL include one Freshness line stating that the source lane is closed and giving its close instant as ISO-8601 UTC. The Freshness line SHALL be English and SHALL pass the same vetting as every other line. A live source SHALL NOT carry this line.
+The rendered handoff for a closed source SHALL carry the same Freshness block as a live source, with the lane status replaced by `closed at` and the close instant as ISO-8601 UTC. The count of turns after the last recap run SHALL be `unknown` when the closed lane's transcript cannot be read. Its Workspace section SHALL be read from the working directory stored with the closure when that directory still exists, and SHALL be the single line `workspace unavailable` otherwise. The Freshness block SHALL be English and SHALL pass the same vetting as every other line. A live source's text SHALL be unchanged.
 
 #### Scenario: A closed source's text
 
 - **WHEN** a handoff is rendered for a closed source closed at instant `t`
-- **THEN** its text SHALL contain a Freshness line stating the source closed at `t` in ISO-8601 UTC
+- **THEN** its Freshness block SHALL state that the source closed at `t` in ISO-8601 UTC in place of a lane status
+
+#### Scenario: A closed source whose directory is gone
+
+- **WHEN** the stored working directory no longer exists
+- **THEN** the Workspace section SHALL be the single line `workspace unavailable`
 
 #### Scenario: A live source's text
 
 - **WHEN** a handoff is rendered for a live source
-- **THEN** its text SHALL NOT contain a Freshness line
+- **THEN** its Freshness block SHALL name the lane's status and SHALL NOT say `closed at`
 
 ### Requirement: Retained closed lanes are listed for the operator
 
@@ -85,7 +90,7 @@ The closed-source reason `source-unreadable`, under the `failed` outcome, SHALL 
 #### Scenario: A closed source is printed
 
 - **WHEN** `--print` runs with a retained `--from-closed` identity
-- **THEN** the vetted handoff SHALL be written to stdout with the Freshness line
+- **THEN** the vetted handoff SHALL be written to stdout with the Freshness block saying `closed at`
 - **AND** the store SHALL be opened read-only
 
 #### Scenario: A closed source's print is refused

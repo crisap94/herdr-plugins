@@ -14,7 +14,7 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 ## 2. Domain: the closure, the window, and the fold
 
 - [ ] Add `closedLaneDaysOf(raw)` to `src/recap/domain/retention.ts`, beside `tabKeepDaysOf`, with the parser of the state-store requirement: trim, ASCII digits, at most nine characters, else 14. `loadConfig()` only calls it.
-- [ ] Add the `ClosedLane` value (tab, pane, agent, session, since, closedAt) and the `RestoredLane` value to the domain.
+- [ ] Add the `ClosedLane` value (tab, pane, agent, session, since, cwd, closedAt) and the `RestoredLane` value to the domain.
 - [ ] Add the `lane-closed` member to the `Intent` union and the `restored` member to `Observation`. `Dispatch.send` fails to compile until the new intent is handled (task 4).
 - [ ] Add `since` and `persisted` to `Board` in `src/recap/domain/board.ts`, set and cleared by the fold as the decisions describe.
 - [ ] Implement the fold rules in `src/recap/domain/fold.ts`: `onClosed` and `onReconciled` emit `lane-closed` before any other intent; the restart comparison consumes `persisted` on the first reconciliation; a reconciliation that removes a tab's last lane publishes that tab.
@@ -24,7 +24,7 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 
 ## 3. Migration 15 and the repositories
 
-- [ ] Add `src/adapters/db/schema/015-closed-lane-retention.ts` and register it in `schema/index.ts`. Include: the two nullable `lane` columns, the `closed_at` column on `request` with its CHECK, the recreated `request_readable` view, the `closed_lane` table and its two indexes. Do not edit released migrations. Do not backfill.
+- [ ] Add `src/adapters/db/schema/015-closed-lane-retention.ts` and register it in `schema/index.ts`. Include: the two nullable `lane` columns, the `closed_at` column on `request` with its CHECK, the recreated `request_readable` view, the `closed_lane` table (including the nullable `cwd`) and its two indexes. Do not edit released migrations. Do not backfill.
 - [ ] Add the `ClosedLanes` port in `src/ports/closed-lanes.ts` (record, resolve, listOf, latestOf, expiredTabs, pruneTab) with the closed union for the lookup, and its `ClosedLanesRepository` in `src/adapters/db/closed-lanes.ts`. `record` runs in `writeTx` and selects the association in one statement: the newest `run_task_lane` over the tab and pane transcripts with `first_seen` in `[since, closedAt]`, ordered by `run.at` and `run.id`, returning the task id and `run_task.name`.
 - [ ] Extend `Retention` (`src/ports/retention.ts`) with `expired(cutoff, closedCutoff)` and the `closedLanes` count in `Removed`, and update `RetentionRepository` (`src/adapters/db/retention.ts`) with the `NOT EXISTS` protection clause and the count.
 - [ ] Extend `TabViews` with `liveLanes()` and write `since` and `session` in `writeTab`; extend `TabLane` and `viewOf` accordingly.
@@ -44,11 +44,11 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 
 - [ ] Parse `--from-closed`, `--tab`, `--closed-at` as an all-or-none tuple into `ClosedLaneIdentity` at the CLI edge (`bin/tab-recap.ts`, `node:util` `parseArgs`); usage error exit 2 for `--from` with `--from-closed` and for a partial tuple.
 - [ ] Write the `handoff` request row with `closed_at` in the CLI path; keep the daemon-running check and skip the herdr lookup for a closed source.
-- [ ] Route a closed source in the daemon handoff flow: resolver outcomes map to `found` (content builder with the resolver's facts), `refused` `source-unavailable`, or `failed` `source-unreadable`; add the Freshness line for closed sources only.
+- [ ] Route a closed source in the daemon handoff flow: resolver outcomes map to `found` (content builder with the resolver's facts), `refused` `source-unavailable`, or `failed` `source-unreadable`; feed the closed source's close instant and stored directory into slice 1's Freshness block and Workspace section.
 - [ ] Add `--list-closed --tab <tab-id>` (read-only store, newest first, one line per identity).
 - [ ] Add `--print` support for `--from-closed` through the read-only store.
 - [ ] Add the `failed.sourceUnreadable` message key to the English and Spanish catalogs with parity.
-- [ ] Test: tuple parsing and exit 2 cases; `source-equals-target` for a reused pane; `delivered`, `source-unavailable`, `source-unreadable`; the Freshness line present for closed and absent for live; `--list-closed` ordering and empty tab; `--print` read-only with zero writes.
+- [ ] Test: tuple parsing and exit 2 cases; `source-equals-target` for a reused pane; `delivered`, `source-unavailable`, `source-unreadable`; the Freshness block saying `closed at` for a closed source and unchanged for a live one, the Workspace section from the stored directory and `workspace unavailable` when it is gone; `--list-closed` ordering and empty tab; `--print` read-only with zero writes.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 6. Real-herdr proof

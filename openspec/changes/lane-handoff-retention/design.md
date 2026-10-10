@@ -31,7 +31,7 @@ The fold emits one intent for each closure. `Intent` gains:
 { kind: 'lane-closed', closed: ClosedLane }
 ```
 
-where `ClosedLane` is a value built in the fold: `tab`, `pane`, `agent`, `session` (`SessionId | null`), `since` (`Instant | null`), and `closedAt`. The intent carries the value because the board no longer holds the lane when dispatch runs; `Informer.run` stores `outcome.board` before `onIntents`.
+where `ClosedLane` is a value built in the fold: `tab`, `pane`, `agent`, `session` (`SessionId | null`), `since` (`Instant | null`), `cwd` (`string | null`, the directory herdr last reported for the lane) and `closedAt`. The intent carries the value because the board no longer holds the lane when dispatch runs; `Informer.run` stores `outcome.board` before `onIntents`.
 
 `Board` gains `since: ReadonlyMap<PaneId, Instant>`: the instant the fold first put the pane on the board in its current incarnation. `onDetected` and the new-pane branch of `onReconciled` set it; an existing pane keeps it; a removed pane loses it. A reused pane id that reappears after a close therefore starts a new `since`.
 
@@ -148,6 +148,7 @@ CREATE TABLE closed_lane (
   pane      TEXT    NOT NULL,
   closed_at INTEGER NOT NULL CHECK (closed_at >= 0),
   agent     TEXT    NOT NULL,
+  cwd       TEXT,
   task_id   BLOB    CHECK (task_id IS NULL OR length(task_id) = 16) REFERENCES task(id) ON DELETE CASCADE,
   task_name TEXT,
   PRIMARY KEY (tab_id, pane, closed_at)
@@ -168,7 +169,7 @@ The `lane-handoff` capability gains requirements, specified in `specs/tab-recap/
 - The CLI writes a `handoff` request row with `pane` = the source pane, `target` = the tab from `--tab`, `to_pane` = the target, and `closed_at`. It does not resolve the source through herdr, so it does not need a live lane. It keeps the existing checks: the daemon must be running, and nothing is written otherwise.
 - The daemon resolves the identity with the resolver. `found` goes through the existing content builder with the resolver's facts. `expired` and `never-seen` are refused as `source-unavailable`. `unknown` is a new failed reason, `source-unreadable`.
 - A closed source that equals the target pane is refused as `source-equals-target` before resolution, as for a live source.
-- The rendered handoff for a closed source carries a Freshness line that says the source lane closed and gives the close instant as ISO-8601 UTC. Live sources keep their current text.
+- The rendered handoff for a closed source carries the same Freshness block as a live source (slice 1), with the status line replaced by `closed at <ISO-8601 UTC>` and the turns-after count `unknown` when the transcript cannot be read; its Workspace section is read from the stored directory when it still exists and is `workspace unavailable` otherwise. A live source's text is unchanged.
 - `--list-closed --tab <tab-id>` prints the retained identities, newest first, one per line: pane, agent, close instant in epoch milliseconds, and task name when known. It reads the store read-only and needs no daemon.
 
 Two conflicts with slice 1 must be settled when slice 1 and this change are merged, and the report repeats them:
@@ -176,7 +177,7 @@ Two conflicts with slice 1 must be settled when slice 1 and this change are merg
 - Slice 1's `cli` requirement "The handoff command has an explicit source and target" and its "Source lane selects exactly one task" requirement say `--from` is required. This change adds the alternative selector without modifying those requirements, so main would hold both until slice 2's merge reconciles them.
 - Slice 1's outcome table says its reasons are exactly the table's rows. This change adds `failed | source-unreadable`, which the table must include.
 
-Slice 1 has no Freshness block. The line is specified here for closed sources only, and the lane-handoff template must include it when slice 1's template is implemented.
+The Freshness block and the Workspace section are slice 1's; this change only supplies a closed source's inputs for them (the close instant and the stored directory).
 
 ### 12. Consumers, restated
 
@@ -184,7 +185,7 @@ Another tool may replace an agent by starting a new agent in a new pane and hand
 
 ### 13. Privacy, size, and built-ins
 
-The closure table stores identifiers, an agent kind, one optional task id, one optional name, and one close instant per observed closure. It stores no transcript, prompt, cwd, repository path, or fact text. Its size is bounded by the closures observed in the window; `0` records nothing. All writes stay in the state database under the plugin's state directory.
+The closure table stores identifiers, an agent kind, the lane's last-known working directory, one optional task id, one optional name, and one close instant per observed closure. The directory is what the handoff's Workspace section needs for a lane that no longer exists, and the live `lane` table already stores it; it is kept for the same retention window and removed with the record. The table stores no transcript, prompt, repository contents, or fact text. Its size is bounded by the closures observed in the window; `0` records nothing. All writes stay in the state database under the plugin's state directory.
 
 The settings parser is hand-written because no Node built-in maps an environment value to a non-negative whole number of days with this fallback contract. The resolver, the association query, the window, and the fact filter are hand-written because no Node built-in knows the tab, pane, and task ownership or the cutoff rules. The migration is SQL run by the existing `node:sqlite` adapter. No serializer or parser format is added. No runtime dependency is added.
 
