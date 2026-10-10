@@ -66,7 +66,6 @@ function dayDir(root: string, back: number): string {
     return join(root, String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0'));
 }
 
-/** Codex lanes carry no session id in herdr: the newest rollout started in the lane's cwd is its transcript. */
 export class CodexTranscripts implements Transcripts {
     readonly agent = 'codex';
     private readonly root: string;
@@ -85,7 +84,7 @@ export class CodexTranscripts implements Transcripts {
                 try {
                     const stat = statSync(join(dir, name));
                     found.push({ path: join(dir, name), mtime: stat.mtimeMs, size: stat.size });
-                } catch { /* raced a rename */ }
+                } catch { }
             }
         }
         return found.toSorted((a, b) => b.mtime - a.mtime).slice(0, CANDIDATES);

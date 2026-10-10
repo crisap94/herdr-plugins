@@ -1,4 +1,3 @@
-// Asked again only when something changed (tokens, mode, a restart), and one automatic compaction at a time across the lanes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -7,7 +6,6 @@ import { NOW, lane, rows, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 
 const laneAt = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-/** A `wait` decision of this lane at `at`, with the tokens (12 % of the window is 120 000) and the mode it was made at. */
 const waitAt = (w: World, at: number, mode: 'shadow' | 'on'): void => {
     w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
 };

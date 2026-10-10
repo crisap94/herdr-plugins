@@ -1,4 +1,3 @@
-// G10 close without a why: a close must say done, wrong, superseded or answered.
 import type { Gate } from './gate.ts';
 
 export const closeWhyGate: Gate = {

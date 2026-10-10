@@ -14,7 +14,6 @@ export function onPath(command: string, path: string): boolean {
     });
 }
 
-/** The harnesses among `ids` whose program resolves on this process's PATH (what a summarizer would spawn). */
 export class PathHarnesses implements Harnesses {
     private readonly ids: readonly string[];
 

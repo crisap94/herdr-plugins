@@ -56,7 +56,6 @@ test('a failed import: logged, shown on screen, the daemon does not run, the fil
 
 test('a database newer than this plugin: the daemon says which backup to restore, shows it, and does not run', async () => {
     const dir = scratchDir('daemon-newer');
-    // the messages asserted below are English whatever the machine's locale
     const locale = process.env['TAB_RECAP_LOCALE'];
     process.env['TAB_RECAP_LOCALE'] = 'en';
     try {

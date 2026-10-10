@@ -1,4 +1,3 @@
-// `tab-recap eval`, one mode at a time, over ports the composition root hands in. Returns the exit code: 0 done · 1 no judge or every run failed.
 import type { Judge } from '#src/ports/judge.ts';
 import type { RunInputs, RunQuery } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
@@ -14,21 +13,17 @@ import { judgeRuns } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
 
 const DAY_MS = 86_400_000;
-/** how many runs `--label` looks back over for items to ask about */
 const LABEL_RUNS = 200;
 
 export interface EvalDeps {
     readonly inputs: RunInputs;
     readonly verdicts: Verdicts;
     readonly now: () => number;
-    /** the judge job's model, or null when no harness is available for it */
     readonly judge: () => Judge | null;
-    /** the rubric file's text */
     readonly rubric: string;
     readonly style: Style;
     out(line: string): void;
     err(line: string): void;
-    /** one line from the operator, or null when the input has ended */
     ask(prompt: string): Promise<string | null>;
 }
 
@@ -51,7 +46,6 @@ async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 
-/** One item: shown, answered (asked again until it is understood), its verdicts stored at once. False: the operator quit. `check`: the one check asked about. */
 async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, check: string | null): Promise<boolean> {
     deps.out(candidateLines(candidate, position, deps.style).join('\n'));
     for (;;) {

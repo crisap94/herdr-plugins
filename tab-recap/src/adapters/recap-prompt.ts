@@ -5,15 +5,12 @@ import { instructions } from './recap-instructions.ts';
 
 export { instructions };
 
-/** The data the writer reads: one `recap_input` document (the instructions follow it, see `prompt`). */
 export function message(request: RecapRequest): string {
     return writerContext(request);
 }
 
-/** Data first, instructions after: what a harness that reads one prompt from stdin gets. */
 export const prompt = (request: RecapRequest): string => `${message(request)}\n\n${instructions(request)}`;
 
-/** Models sometimes wrap the whole answer in a fence; the parser wants the JSON itself. */
 export function unfenced(markdown: string): string {
     const trimmed = markdown.trim();
     const lines = trimmed.split('\n');
@@ -23,10 +20,8 @@ export function unfenced(markdown: string): string {
     return trimmed;
 }
 
-/** What an argv-only harness is given: more than this risks E2BIG and a long process command line. */
 export const ARGV_BYTES = 120_000;
 
-/** `text` without its oldest lines until it fits `max` bytes (UTF-8); a lone overlong line loses its head. */
 export function fitBytes(text: string, max: number): string {
     if (Buffer.byteLength(text) <= max) {
         return text;
@@ -53,7 +48,6 @@ export function fitBytes(text: string, max: number): string {
     return chars.join('');
 }
 
-/** What a harness that takes its prompt as an argument is given: the document is re-rendered with a smaller transcript budget (whole oldest turns dropped, never a cut tag) until both parts fit `limit` bytes. */
 export function fittedCall(request: RecapRequest, limit: number): HarnessCall {
     const rules = instructions(request);
     let budget = TRANSCRIPT_BUDGET;
@@ -65,7 +59,6 @@ export function fittedCall(request: RecapRequest, limit: number): HarnessCall {
     return { instructions: rules, input };
 }
 
-/** The one prompt for a harness that takes it as an argument, data first. */
 export function argvPrompt(request: RecapRequest): string {
     const call = fittedCall(request, ARGV_BYTES);
     return `${call.input}\n\n${call.instructions}`;

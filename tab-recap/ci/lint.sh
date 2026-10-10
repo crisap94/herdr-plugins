@@ -24,7 +24,7 @@ for rule in "${RULES[@]}"; do
     [ -f "$probes/bad.ts" ] && [ -f "$probes/good.ts" ] || { fail "$id — no bad/good probe"; continue; }
     $AST scan --rule "$rule" src bin test >/dev/null 2>&1 || { $AST scan --rule "$rule" src bin test; fail "$id — the tree breaks it"; continue; }
     $AST scan --rule "$rule" "$probes/bad.ts" >/dev/null 2>&1 && { fail "$id — its bad probe does not trigger it: the rule does not bite"; continue; }
-    for extra in "$probes"/bad-*.ts; do
+    for extra in "$probes"/bad-*; do
         [ -f "$extra" ] || continue
         $AST scan --rule "$rule" "$extra" >/dev/null 2>&1 && fail "$id — $(basename "$extra") does not trigger it: that alternative does not bite"
     done

@@ -1,4 +1,3 @@
-// The Stories repository: the curator's paragraph per task, kept in the task's row, and its merges in the same transaction.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Applied, Ledger } from '#src/ports/ledger.ts';
 import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';

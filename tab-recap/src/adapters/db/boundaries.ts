@@ -1,4 +1,3 @@
-// Recording boundaries: inside the run's transaction, the marks and the new transcripts of a read become boundary rows, each opening the next chapter.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
 import type { LaneMark, Planned } from '#src/recap/domain/boundary.ts';
@@ -6,7 +5,6 @@ import { all, maybeWhole, one, whole } from './rows.ts';
 import type { Moved, TranscriptRows } from './transcripts.ts';
 import { ids } from './uuid7.ts';
 
-/** What one read of a tab found: the compactions in the agents' records, and the transcripts that now stand where another did. */
 export interface Found {
     readonly at: number;
     readonly marks: readonly LaneMark[];
@@ -37,7 +35,6 @@ export class BoundaryRows {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this.lastCompacted = db.prepare("SELECT MAX(b.at) AS at FROM boundary b JOIN transcript t ON t.id = b.transcript_id WHERE b.kind = 'compacted' AND t.tab_id = ? AND t.pane = ?");
         this.askedAt = db.prepare("SELECT started_at FROM compaction WHERE tab_id = ? AND pane = ? AND stage <> 'skipped'");
-        // a compaction the plugin drove points at the nearest plugin boundary that followed it by at most ten minutes, once it is under way or confirmed
         this.link = db.prepare(`UPDATE compaction SET boundary_id = (
             SELECT b.id FROM boundary b JOIN transcript t ON t.id = b.transcript_id
             WHERE b.kind = 'compacted' AND b.trigger = 'plugin' AND t.tab_id = compaction.tab_id AND t.pane = compaction.pane
@@ -63,7 +60,6 @@ export class BoundaryRows {
         }]));
     }
 
-    /** The boundary seals the tab's newest chapter and opens the next one. */
     private open(tab: string, row: Row): void {
         const sealed = one(this.latest, tab) ?? { n: 1, started_at: row.at };
         const chapter = ids.next();
@@ -71,7 +67,6 @@ export class BoundaryRows {
         this.boundary.run(ids.next(), chapter, row.transcript, row.kind, row.at, row.trigger, row.cursor, row.replaces, row.tokensBefore, row.tokensAfter, row.tookMs);
     }
 
-    /** Every boundary the read shows, oldest first, then the links to the compactions the plugin drove. Call after the transcripts are attached. */
     record(tab: string, found: Found): void {
         this.first.run(ids.next(), tab, found.at);
         for (const row of [...this.compacted(tab, found), ...this.switched(found)].toSorted((a, b) => a.at - b.at)) {

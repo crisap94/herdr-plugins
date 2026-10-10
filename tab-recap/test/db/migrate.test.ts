@@ -17,7 +17,6 @@ import { must, scratchDir } from './support.ts';
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 const FIXTURE_V2 = join(import.meta.dirname, 'fixtures', 'schema-v2.sql');
 
-/** Two toy releases after the real one: a new column, and a table rebuilt with a stricter CHECK. */
 const toy2: Migration = { version: 2, name: 'toy-note', up: ['ALTER TABLE tab ADD COLUMN note TEXT'] };
 const toy3: Migration = {
     version: 3, name: 'toy-rebuild',

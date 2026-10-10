@@ -1,4 +1,3 @@
-// The retry's document: the refused operations with their reasons and the facts they name, valid against schema/correction-input.dtd, never the transcript.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { InputFact } from '#src/ports/recap-input.ts';

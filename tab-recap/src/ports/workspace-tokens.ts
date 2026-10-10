@@ -1,4 +1,3 @@
-// The daemon's events about itself, on every workspace (`workspace.report_metadata`), and the list of the workspaces herdr has.
 import type { Done } from './columns.ts';
 import type { Unknown } from './unknowable.ts';
 

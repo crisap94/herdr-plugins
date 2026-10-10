@@ -9,10 +9,6 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
-/**
- * herdr, as measured on 0.9.0 in a named session: an events.subscribe that names a pane herdr does
- * not have is closed with no ack and no error — `closed before the ack`.
- */
 class StrictHerdr implements FleetSource {
     live = new Set<string>(['w1:p1']);
     attempts = 0;
@@ -57,7 +53,6 @@ test('a pane that died while we were not told must not blind the daemon for good
     await until(() => watchSet(informer.current).length === 1 && herdr.acked >= 2);
     assert.equal(watchSet(informer.current).length, 1, 'the lane is watched');
 
-    // the pane dies and its pane.closed never reaches us (the race the daemon met on 2026-09-27)
     herdr.live.delete('w1:p1');
     herdr.live.add('w1:p2');
     const before = herdr.acked;

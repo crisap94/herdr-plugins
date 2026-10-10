@@ -12,7 +12,6 @@ const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
     chunk: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks, position: { cursor: 900, tail: null }, grew: true } satisfies Chunk,
 });
 
-// the marks as the readers return them (recorded from real sessions; the readers' own tests assert these exact values)
 const CLAUDE: Mark = { kind: 'compacted', at: AT, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' };
 const CODEX: Mark = { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17_133, tokensAfter: 4617 };
 const OPENCODE: Mark = { kind: 'compacted', at: 1_790_000_009_000, tokensBefore: 1020, tookMs: 7000 };

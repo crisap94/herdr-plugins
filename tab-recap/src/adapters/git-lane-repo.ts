@@ -1,5 +1,3 @@
-// Asks git which repository and branch a lane's directory belongs to. Read-only: no optional locks
-// (so a status check never creates index.lock under the operator's own git) and no fsmonitor daemon.
 import { duration } from '#src/recap/domain/time.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
@@ -15,10 +13,8 @@ const ENOENT = 127;
 
 const GIT = ['-c', 'core.fsmonitor=false'];
 export const ROOT_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel'];
-/** exits 1 on a detached HEAD, and still works in a repository with no commit yet */
 export const BRANCH_ARGS: readonly string[] = [...GIT, 'symbolic-ref', '--short', '-q', 'HEAD'];
 
-/** exits 2 when there is no `origin` */
 export const ORIGIN_ARGS: readonly string[] = [...GIT, 'remote', 'get-url', 'origin'];
 
 export function gitEnv(): NodeJS.ProcessEnv {

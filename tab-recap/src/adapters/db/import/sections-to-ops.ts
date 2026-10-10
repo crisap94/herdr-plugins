@@ -1,4 +1,3 @@
-// A recap stored as sections (the 1.x JSON files) as the operations that make its facts: one add per line, in the order they were drawn.
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { isSection } from '#src/recap/domain/fact.ts';

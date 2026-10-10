@@ -1,8 +1,6 @@
-// What autocompact's decider reads: one JSON state of five named fields, each of which some question names. Pure.
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 
-/** The state document. Adding a field means a question names it (a test checks it). */
 export interface AutocompactState {
     readonly last_prompt: string | null;
     readonly last_reply: string | null;
@@ -20,12 +18,10 @@ const OPEN_WORK_SECTIONS: ReadonlySet<string> = new Set(['now', 'next', 'needs']
 
 const clip = (text: string, limit: number): string => (text.length > limit ? `${text.slice(0, limit - 1)}…` : text);
 
-/** A long reply keeps its start and its end (where the question to the operator is), with `[…]` between. */
 export const replyOf = (text: string): string => (text.length > REPLY_HEAD + REPLY_TAIL ? `${text.slice(0, REPLY_HEAD)}[…]${text.slice(-REPLY_TAIL)}` : text);
 
 const turnOf = (entry: Entry): { role: string; text: string } => ({ role: entry.role, text: clip(entry.role === 'tool' ? `${entry.kind ?? 'other'}: ${entry.text}` : entry.text, TURN_CLIP) });
 
-/** The state from the lane's latest entries (oldest first) and the facts of the tasks that hold it (newest last seen first, as `Ledger.historyOf` gives them). */
 export function autocompactState(recent: readonly Entry[], history: readonly HistoryFact[]): AutocompactState {
     const open = history.filter((fact) => fact.state === 'open');
     const [prompt, reply] = [recent.findLast((entry) => entry.role === 'user'), recent.findLast((entry) => entry.role === 'agent')];

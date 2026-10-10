@@ -1,4 +1,3 @@
-// The pipeline of a run: `one` is the single call; the others enumerate first, `full` may take one second look, then the writer reconciles.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Entry } from '#src/ports/transcripts.ts';

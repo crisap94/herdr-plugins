@@ -3,12 +3,10 @@ import { DatabaseSync } from 'node:sqlite';
 
 export interface Fixture {
     readonly db: string;
-    /** `data`: more of the message's own JSON (time, summary, mode) */
     add(message: { id: string; session: string; role: string; updated: number; parts: readonly object[]; data?: object }): void;
     close(): void;
 }
 
-/** A WAL database like opencode's. Tests create their own fixtures, so they may open one writable. */
 export function opencodeFixture(dir: string): Fixture {
     const db = join(dir, 'opencode.db');
     const writer = new DatabaseSync(db);

@@ -1,4 +1,3 @@
-// The skip rows and the reads the gates need: one skip per lane, removed by a decision; the last decision's tokens and mode; any lane's unlinked `on` compact.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Decision, Skip } from '#src/ports/autocompact-records.ts';

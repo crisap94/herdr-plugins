@@ -1,5 +1,3 @@
-// The settings modal as a pure reducer: (state, key) -> (state, effects). It never touches the
-// terminal, the config file or a harness; src/setup/main.ts performs the effects.
 import { changes, dirty } from './setup-changes.ts';
 import { CHOICES, TEXTS } from './setup-fields.ts';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
@@ -100,7 +98,6 @@ function save(state: Setup): Stepped {
     return { state, effects: [{ kind: 'save', values, languageChanged }] };
 }
 
-/** t: one tiny real request through what is selected, unless one is already running. */
 function startTest(state: Setup): Stepped {
     if (state.test.kind === 'running') {
         return { state, effects: [] };
@@ -112,7 +109,6 @@ function move(state: Setup, by: number): Setup {
     return { ...state, row: Math.min(ROWS.length - 1, Math.max(0, state.row + by)), note: null };
 }
 
-/** ←/→ walk the parts of a job row (harness · model · effort); on any other row they do nothing. */
 function across(state: Setup, by: number): Setup {
     const parts = JOB_FIELDS[rowOf(state)]?.length ?? 0;
     return parts === 0 ? state : { ...state, part: Math.min(parts - 1, Math.max(0, state.part + by)), note: null };
@@ -122,7 +118,6 @@ const QUIT = new Set(['q', ESC, '\u0003']);
 
 const stay = (state: Setup): Stepped => ({ state, effects: [] });
 
-/** Every key outside editing, by what it does; the movement keys are listed once for each of their spellings. */
 const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
     s: save,
     t: startTest,
@@ -133,7 +128,6 @@ const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
     ...Object.fromEntries([...RIGHT].map((key) => [key, (state: Setup): Stepped => stay(across(state, 1))])),
 };
 
-/** One key. `asked` lasts for exactly one key: anything but a second q/Esc takes the question back. */
 export function step(state: Setup, key: string): Stepped {
     if (state.editing !== null) {
         return editKey({ ...state, asked: false }, state.editing, key);
@@ -144,12 +138,10 @@ export function step(state: Setup, key: string): Stepped {
     return (COMMANDS[key] ?? stay)({ ...state, asked: false, note: state.asked ? null : state.note });
 }
 
-/** herdr and the PATH have answered. */
 export const withAvailable = (state: Setup, available: readonly string[]): Setup => ({ ...state, available });
 
 export const tested = (state: Setup, test: TestState): Setup => ({ ...state, test });
 
-/** The file was written (or not). */
 export function saved(state: Setup, failure: string | null, rewriting: boolean): Setup {
     return failure === null
         ? { ...state, stored: state.draft, note: rewriting ? 'rewriting' : 'saved', asked: false }

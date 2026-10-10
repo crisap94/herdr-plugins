@@ -1,5 +1,3 @@
-// The 1.x recaps a database still holds for a tab — read-only, so a replay can set the last good recap of each chapter beside what it makes.
-// A 1.x recap is the `item` rows of a run; the run is good when it did not fail, and the recap of a chapter is its newest good run's.
 import { existsSync } from 'node:fs';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import { connectReadOnly } from './connection.ts';
@@ -20,7 +18,6 @@ const itemOf = (row: Row): ImportedChapter['items'][number] => {
     return { key, section: text(row, 'section'), text: text(row, 'text'), fact: key, born: false, anchor: null };
 };
 
-/** The tab's chapters that have a good 1.x recap, oldest first; null when the file, or the tables of a 1.x recap, are not there. */
 export function importedChapters(path: string, tab: string): readonly ImportedChapter[] | null {
     if (!existsSync(path)) {
         return null;

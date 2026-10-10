@@ -1,4 +1,3 @@
-// The session facts as the lines the expanded view draws, in the interface language. Pure.
 import { sizeOf } from '#src/recap/domain/compaction.ts';
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
 import type { Messages } from '#src/i18n/messages.ts';
@@ -6,7 +5,6 @@ import { clockOf, dayOf } from './timeline.ts';
 
 const MINUTE = 60_000;
 
-/** `6 h 12 min`, `2 d 3 h`, `5 min`; under a minute reads as `0 min`. */
 export function spanOf(ms: number): string {
     const minutes = Math.floor(ms / MINUTE);
     const [days, hours, rest] = [Math.floor(minutes / 1440), Math.floor((minutes % 1440) / 60), minutes % 60];
@@ -27,7 +25,6 @@ export interface SessionContext {
 
 const joined = (parts: readonly string[]): string => parts.join(' · ');
 
-/** `compactions 4 (3 by you · 1 auto) (800k → 14k · 39k → 3k) · chapters 3`; the chapter count alone when the session broke without a compaction. */
 function chapterLines(facts: SessionFacts, context: SessionContext): readonly { readonly label: string; readonly text: string }[] {
     const { compactions, chapters } = facts;
     const count = chapters === null ? [] : [context.messages.chapters.count(chapters)];
@@ -42,7 +39,6 @@ function chapterLines(facts: SessionFacts, context: SessionContext): readonly { 
     return [{ label: context.messages.expanded.compactions, text: joined([pairs === '' ? counted : `${counted} (${pairs})`, ...count]) }];
 }
 
-/** One unwrapped line per known fact; `label` is the caller's to style. */
 export function sessionLines(facts: SessionFacts, context: SessionContext): readonly { readonly label: string; readonly text: string }[] {
     const m = context.messages.expanded;
     const lines: { label: string; text: string }[] = [];

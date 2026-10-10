@@ -1,6 +1,3 @@
-// The git note: under each lane, `⎇ <branch> · N unpushed · M changed` for the repository the lane works in.
-// notes() runs in the column's 1 s render path, so it only ever reads a cache; a stale or missing entry
-// starts ONE async refresh (git through adapters/process.ts) and the next render shows the answer.
 import { statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -18,20 +15,16 @@ import type { TabLane } from '#src/ports/tab-views.ts';
 export const GIT_NOTE_MARK = '⎇';
 export const STATUS_ARGS: readonly string[] = ['-c', 'core.fsmonitor=false', 'status', '--porcelain=v2', '--branch'];
 export const TIMEOUT_MS = 1500;
-/** How long an answer is trusted when neither HEAD nor the index moved (an edit to a tracked file moves neither). */
 export const TTL_MS = 5000;
-/** A directory nobody asked about for this long is forgotten. */
 const FORGET_MS = 60_000;
 const DETACHED = '(detached)';
 
-/** What `git status` said about one working tree. `ahead` is null without an upstream. */
 export interface GitStatus {
     readonly branch: string;
     readonly ahead: number | null;
     readonly changed: number;
 }
 
-/** Pure: the porcelain v2 `--branch` output. Changed = every tracked change, conflict and untracked path. */
 export function parseStatus(text: string): GitStatus {
     let head = '';
     let oid = '';
@@ -51,7 +44,6 @@ export function parseStatus(text: string): GitStatus {
     return { branch: head === DETACHED ? oid.slice(0, 7) : head, ahead, changed };
 }
 
-/** Pure: the note a status becomes in a locale; a clean branch that is not ahead is just its name. */
 export function noteOf(status: GitStatus, locale: Locale): Note {
     const m = messagesFor(locale);
     const details = [
@@ -61,7 +53,6 @@ export function noteOf(status: GitStatus, locale: Locale): Note {
     return { label: status.branch, at: null, details, mark: GIT_NOTE_MARK };
 }
 
-/** The files whose mtimes say the repository moved: HEAD and the index of THIS working tree (a linked worktree has its own). */
 async function watchedFiles(root: string): Promise<readonly string[]> {
     const dotGit = join(root, '.git');
     let gitDir = dotGit;
@@ -137,7 +128,6 @@ class GitNote implements Extension {
         return entry;
     }
 
-    /** Never rejects; a failed look keeps the last status and waits for the next TTL. */
     private async refresh(cwd: string, previous: Entry | undefined): Promise<void> {
         try {
             const entry = await this.ask(cwd, previous);
@@ -164,7 +154,6 @@ class GitNote implements Extension {
         return { status: await this.status(cwd, previous.status), at, files, stamp: before, seen: at };
     }
 
-    /** One `git status`; a failed or timed-out look answers with what was known. */
     private async status(cwd: string, known: GitStatus | null): Promise<GitStatus | null> {
         const result = await this.deps.runner('git', STATUS_ARGS, { input: '', timeoutMs: TIMEOUT_MS, cwd, env: gitEnv() });
         return result.code === 0 && !result.timedOut ? parseStatus(result.stdout) : known;
@@ -183,7 +172,6 @@ export function createGitNote(deps: GitNoteDeps): Extension {
     return new GitNote(deps);
 }
 
-/** Always built: `TAB_RECAP_GIT_NOTE=off` is read at call time, so switching it needs no restart. */
 export const gitNote: ExtensionFactory = (get) => {
     const clock = new SystemClock();
     return createGitNote({ get, repo: new GitLaneRepo(clock), runner: run, clock });

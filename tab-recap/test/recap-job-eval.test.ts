@@ -1,4 +1,3 @@
-// A run through the job keeps what the judge needs: the document the writer was given and the gates' counts — unless the retention is 0.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RecapJob } from '#src/recap/application/recap-job.ts';

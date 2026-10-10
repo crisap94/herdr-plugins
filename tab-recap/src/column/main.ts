@@ -1,6 +1,3 @@
-// The column: a long-running pane process that renders its tab's recaps. Composition
-// root for the pane; reads the store the daemon writes, never writes anything but a
-// refresh request.
 import { stateStore } from '#src/adapters/db/database.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
@@ -23,16 +20,10 @@ import { stripVTControlCharacters } from 'node:util';
 const ESC = String.fromCodePoint(0x1b);
 const BEL = String.fromCodePoint(0x07);
 const TICK_MS = 1000;
-/** how often the locale and the code's version are looked at (the variable is for tests: nobody needs it faster) */
 const LOCALE_MS = Number(process.env['TAB_RECAP_COLUMN_POLL_MS'] ?? '') || 3000;
-/** one cell of padding on each side: writing the last column of a row makes ESC[K eat it */
 const GUTTER = 2;
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
-/**
- * 'modal' when opened as a herdr popup: q / Esc close it. 'bar' when docked along the bottom of a
- * narrow tab (a phone). A column never closes itself; a tap on a column or a bar opens the modal.
- */
 function modeOf(env: NodeJS.ProcessEnv): Mode {
     if (env['TAB_RECAP_MODE'] === 'modal') {
         return 'modal';
@@ -41,21 +32,16 @@ function modeOf(env: NodeJS.ProcessEnv): Mode {
 }
 const mode = modeOf(process.env);
 const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
-/** A database written by a newer plugin is read-only and not ours to draw: the column says so instead of a recap. */
 const opened = stateStore(stateDir());
 const store = opened.kind === 'ready' ? opened : null;
 const config = loadConfig();
-/** the locale is re-read, not frozen at start: a change in config.env shows within a few seconds */
 const startedVersion = codeVersion();
 let settled = { at: 0, locale: config.locale, version: startedVersion };
-/** the version seen on the previous look, and whether replacing this process in place has already failed once */
 let candidate: string | null = null;
 let rollFailed = false;
-/** Notes and warnings only: upkeep belongs to the daemon, the column never runs it. */
 const extensions = loadExtensions(configGetter());
 const glow = glowRenderer(config.glow);
 const style = styleFor(process.stdout);
-/** ends every row's styling before the erase; with no colour there is nothing to end */
 const RESET = style === coloured ? `${ESC}[0m` : '';
 
 const expandedLines = mode === 'modal' ? expandedScreen(store) : null;
@@ -81,11 +67,6 @@ function localeNow(): Locale {
     return settled.locale;
 }
 
-/**
- * An upgrade replaces this process in place: the same pid, the same terminal, so herdr sees no pane close and the
- * daemon spends no reopen budget. (Closing and reopening 27 columns for a new version is what this avoids.) The
- * terminal is put back first; the new process sets it up again. A modal is short-lived and is left alone.
- */
 function rollWhenUpgraded(): void {
     const current = settled.version;
     if (mode !== 'modal' && !rollFailed && typeof process.execve === 'function' && shouldRoll(startedVersion, current, candidate)) {
@@ -108,10 +89,6 @@ function view(): ColumnView {
     return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, compactions: store?.compactions.shownFor(tab) ?? [], style };
 }
 
-/**
- * Ask the terminal every time: herdr resizes the column right after opening it, and the
- * SIGWINCH that would refresh `process.stdout.columns` does not always arrive.
- */
 function size(): [number, number] {
     try {
         const [columns, rows] = process.stdout.getWindowSize();
@@ -153,7 +130,6 @@ function draw(force = false): void {
 
 let opening = false;
 
-/** A tap (or Enter) on a column or a bar opens the tab's recap as a modal over everything. */
 function openModal(): void {
     if (mode === 'modal' || opening) {
         return;
@@ -162,10 +138,6 @@ function openModal(): void {
     void new HerdrFleet(stateDir()).show(tabId(tab)).finally(() => { opening = false; });
 }
 
-/**
- * `c`: compact as the compact setting says (`ask`: the note popup, `skip`: queued at once). The modal is a popup
- * itself, so it closes first and a short-lived command decides the same way.
- */
 function askToCompact(): void {
     if (mode !== 'modal') {
         compactFromColumn(store, tab);
@@ -175,10 +147,6 @@ function askToCompact(): void {
     process.exit(0);
 }
 
-/**
- * `s`: the settings modal. It is a popup, so from the modal this one closes first and a short-lived command opens
- * the settings right after; from a column the command runs at once (it asks herdr for the popup itself).
- */
 function openSettings(): void {
     const delay = mode === 'modal' ? '400' : '0';
     spawn(process.execPath, [COMMAND_LAUNCHER, 'configure'], { detached: true, stdio: 'ignore', env: { ...process.env, HERDR_PLUGIN_CONTEXT_JSON: '', HERDR_TAB_ID: tab, TAB_RECAP_OPEN_DELAY_MS: delay } }).unref();
@@ -187,7 +155,6 @@ function openSettings(): void {
     }
 }
 
-/** SGR mouse report: ESC [ < button ; x ; y M — M is a press. Button 0 is a tap / left click. */
 function isTap(input: string): boolean {
     const at = input.indexOf(`${ESC}[<`);
     if (at < 0 || !input.endsWith('M')) {
@@ -214,7 +181,6 @@ const KEYS: Readonly<Record<string, () => void>> = {
     '\r': openModal,
 };
 
-/** Mouse reporting on (press/release, SGR encoding): herdr passes taps to pane programs that ask. */
 const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
 const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
 

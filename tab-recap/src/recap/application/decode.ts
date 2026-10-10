@@ -17,7 +17,6 @@ function nested(data: Readonly<Record<string, unknown>>, key: string): Readonly<
     return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
-/** herdr's frames carry the pane either flat or under `pane`. */
 function field(data: Readonly<Record<string, unknown>>, key: string): string | null {
     return text(data[key]) ?? text(nested(data, 'pane')[key]);
 }
@@ -42,11 +41,6 @@ export function seenFrom(data: Readonly<Record<string, unknown>>): SeenLane | nu
     };
 }
 
-/**
- * herdr's `agent_session` ({ source, agent, kind, value }) as the session id the transcripts are named by. `kind` `path` gives the transcript's
- * path, whose file name is that id (`<id>.jsonl`), so both kinds name the same session. Null when herdr reports none, or reports a kind this reads no
- * session from (only `id` and `path` are known; a new kind is not guessed at).
- */
 export function sessionOf(data: Readonly<Record<string, unknown>>): string | null {
     for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
         const value = text(info['value']);
@@ -60,14 +54,12 @@ export function sessionOf(data: Readonly<Record<string, unknown>>): string | nul
     return null;
 }
 
-/** A `pane.updated` frame's pane and its session, when the frame carries one (herdr reports a session on the pane's frames, not on the detection). */
 export function paneSessionOf(data: Readonly<Record<string, unknown>>): { readonly pane: string; readonly session: string } | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data);
     return pane === null || session === null ? null : { pane, session };
 }
 
-/** A `pane.updated` frame's pane and its merged tokens: herdr's flat map, name → value (other values are left out). */
 export function tokensOf(data: Readonly<Record<string, unknown>>): { readonly pane: string; readonly tokens: Readonly<Record<string, string>> } | null {
     const pane = field(data, 'pane_id');
     const raw = nested(data, 'pane')['tokens'] ?? data['tokens'];
@@ -77,7 +69,6 @@ export function tokensOf(data: Readonly<Record<string, unknown>>): { readonly pa
     return { pane, tokens: Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
 }
 
-/** Structural changes: re-read the snapshot. `layout_updated` is how a phone attaching (a narrower tab) is noticed. */
 const RESYNC = new Set(['pane_created', 'pane_moved', 'tab_closed', 'tab_created', 'layout_updated']);
 
 function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>): Decoded | null {
@@ -100,7 +91,6 @@ function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>): Dec
     return null;
 }
 
-/** herdr names emitted events with underscores and subscriptions with dots: accept both. */
 export function decode(frame: Frame): Decoded {
     const kind = frame.event.replaceAll('.', '_');
     const known = decodeKnown(kind, frame.data);

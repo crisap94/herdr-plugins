@@ -1,5 +1,3 @@
-// What an answer is understood and judged against, built from the document that was sent: the tasks, the ids, the turns' times, the ledger's
-// recent closes (for the duplicate gate).
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
@@ -8,7 +6,6 @@ import type { Ground } from './extract-job.ts';
 import { anchorSource } from './anchor-source.ts';
 import type { Built } from './recap-input.ts';
 
-/** How far back a closed fact still counts as a repeat (gate G2). */
 const REPEAT_WINDOW_MS = 24 * 3_600_000;
 
 export function groundOf(world: { readonly tab: string; readonly tasks: readonly TaskShape[]; readonly built: Built; readonly entries: readonly Entry[]; readonly ledger: Ledger; readonly now: number; readonly language: string }): Ground {

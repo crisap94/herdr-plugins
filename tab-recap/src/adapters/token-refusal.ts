@@ -1,4 +1,3 @@
-// The one-writer rule at the edge: a write naming a token tab-recap does not own is refused here, before herdr sees it. Pure.
 import { unownedName } from '#src/recap/domain/lane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';

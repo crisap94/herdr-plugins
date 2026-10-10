@@ -1,5 +1,3 @@
-// Compacting an agent, once the operator asked: tell the agent what matters, in the operator's own words — and only when it is free.
-// Every step is a stage of the lane's compaction record; the toasts say when it starts and when it ends.
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -22,7 +20,6 @@ export type { CompactionDeps } from './compaction-deps.ts';
 
 const READY = new Set(['idle', 'done']);
 
-/** Why a compaction does not happen: `skipped` (the agent is busy) or `failed` (herdr cannot say how it stands). */
 interface Refusal {
     readonly stage: 'skipped' | 'failed';
     readonly why: string;
@@ -45,7 +42,6 @@ export class Compaction {
         }
     }
 
-    /** What stops the agent being compacted now; null when it is free. */
     private async refusalOf(lane: Lane): Promise<Refusal | null> {
         const { compaction, badge } = this.deps.messages();
         const agent = String(lane.agent);
@@ -57,14 +53,12 @@ export class Compaction {
         return READY.has(state.status) ? null : { stage: 'skipped', why: badge[state.status], toast: compaction.skipped(agent, state.status) };
     }
 
-    /** The request's answer on its pane, when it came from another tool. */
     private answerOne(request: CompactRequest | null, pane: string, stage: string): void {
         if (request?.answer !== undefined && pane !== '') {
             this.deps.answer?.(request.answer, pane, stage);
         }
     }
 
-    /** A stage of the pane's compaction: the owner's answer, and the answer of every request that joined it. */
     private answer(request: CompactRequest | null, pane: string, stage: string): void {
         this.answerOne(request, pane, stage);
         for (const joined of this.deps.claims.joinedOf(pane)) {
@@ -72,19 +66,16 @@ export class Compaction {
         }
     }
 
-    /** A request for a lane that is already queued or compacting joins that compaction: `queued` now, then the running one's stages. */
     private joinRunning(lane: Lane, request: CompactRequest): void {
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
         const { compaction } = this.deps.messages();
         this.deps.claims.join(pane, request);
         this.answerOne(request, pane, 'queued');
-        // an automatic request that loses the race is not the operator's to hear about; a note on a joined request is not used (the running one's stands)
         if (request.origin !== 'auto') {
             void this.tell(compaction.title(agent), compaction.joined(agent, request.note !== null));
         }
     }
 
-    /** Claims the lane's pane for this request, or joins the compaction that holds it; true when the request owns the lane. */
     private claimed(lane: Lane, request: CompactRequest): boolean {
         if (this.deps.claims.claim(String(lane.pane))) {
             return true;
@@ -93,7 +84,6 @@ export class Compaction {
         return false;
     }
 
-    /** A lane that is not free is recorded and said, once, and left alone. */
     private async refused(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<boolean> {
         const refusal = await this.refusalOf(lane);
         if (refusal === null) {
@@ -116,7 +106,6 @@ export class Compaction {
         return { sections: task?.sections ?? NO_SECTIONS, web: this.deps.webs.of(pane), note };
     }
 
-    /** What the brief job is given, and what the agent's own conversation says (the words it may use). */
     private async briefOf(lane: Lane, tab: string, material: Material, correction?: string): Promise<Briefed & { readonly history: ReturnType<Ledger['historyOf']> }> {
         const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
@@ -131,7 +120,6 @@ export class Compaction {
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
-    /** The brief, and for an automatic compaction its check against the facts; the decision it answers is told the coverage, and that it waits (with why) when the brief cannot go ahead. The operator's is not checked. */
     private async verified(lane: Lane, tab: string, material: Material, auto: boolean, decision: string | null): Promise<Checked> {
         const first = await this.briefOf(lane, tab, material);
         if (!auto) return { brief: first, coverage: null, waited: false, why: null };
@@ -140,25 +128,21 @@ export class Compaction {
         return checked;
     }
 
-    /** The decision an automatic compaction answers, now pointing at the compaction `id`; null for the operator's. */
     private decisionFor(auto: boolean, tab: string, pane: string, id: string): string | null {
         return auto ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
     }
 
-    /** The compaction's record begins, and the event says it is queued with its id. */
     private begun(request: CompactRequest, start: { readonly tab: string; readonly pane: string; readonly agent: string; readonly stage: 'briefing' | 'compacting'; readonly writer: string | null }): string {
         const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
         this.deps.events?.lane(start.pane, 'compact-queued', id);
         return id;
     }
 
-    /** How a compaction ended, as the request's answer and as the event stream. */
     private ended(request: CompactRequest, pane: string, id: string, end: { readonly stage: string; readonly why?: string | null }): void {
         this.answer(request, pane, endAnswerOf(end.stage, end.why ?? null));
         this.deps.events?.lane(pane, end.stage === 'compacted' ? 'compact-done' : 'compact-failed', end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
     }
 
-    /** One free agent, from the first stage to the last. */
     private async compact(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
@@ -193,8 +177,6 @@ export class Compaction {
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        // the claim is made here, after the last await before the flow starts, in one synchronous step: a lane that is already queued or compacting
-        // is joined, never compacted a second time (the same check-then-record shape autocompact uses)
         const owned = targets.filter((lane) => this.claimed(lane, request));
         if (owned.length === 0) {
             return;
@@ -207,7 +189,6 @@ export class Compaction {
             await this.deps.refresh(tab, lanes);
             await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
         } catch (error) {
-            // a flow that throws still answers its requests, the owner's and the joined ones': no tool waits an hour on a compaction that will not come
             for (const lane of owned) {
                 this.answer(request, String(lane.pane), 'failed-error');
             }

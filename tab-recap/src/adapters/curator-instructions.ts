@@ -1,9 +1,5 @@
 import { STORY_WORDS } from '#src/recap/domain/curation.ts';
 
-/**
- * What the curator is told. The operator reads its paragraph, so the plugin's own words are fine here; what it may DO is
- * narrow: close a duplicate as merged into the fact that says it better.
- */
 export const CURATOR_INSTRUCTIONS = [
     'You curate the ledger of facts kept about one piece of work done by AI coding agents, and you tell its story.',
     '',

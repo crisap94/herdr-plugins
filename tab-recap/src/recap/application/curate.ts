@@ -1,7 +1,3 @@
-// The curator job. For each task of a tab whose ledger changed since its story was written, one model call that may close
-// duplicates as merged and writes the "session so far" paragraph. And, every few turns, at an open of the expanded view and after a
-// boundary, one that reconciles the open facts with the newest turns (ledger-reconcile.ts). At most once per five minutes per task and
-// kind of call; never in the view's way (the view asks through the request queue and redraws from the store).
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
@@ -15,7 +11,6 @@ import type { CurateWhy, ReconcilingDeps, RunEvent } from './ledger-reconcile.ts
 
 export type { CurateWhy, RunEvent };
 
-/** a task is curated at most this often */
 export const CURATE_GAP_MS = 5 * 60_000;
 
 export interface CurateDeps extends ReconcilingDeps {
@@ -33,14 +28,12 @@ export class Curate {
         this.reconciling = new Reconciling(deps);
     }
 
-    /** A run of the tab's lanes was recorded: the ledger is reconciled when enough turns have passed or a lane was compacted. */
     async afterRun(event: RunEvent): Promise<void> {
         if (this.reconciling.due(event)) {
             await this.run(event.tab, event.boundary ? 'boundary' : 'turns');
         }
     }
 
-    /** Every task of the tab, one after the other; a task that cannot be curated is logged and the next goes on. */
     async run(tab: string, why: CurateWhy = 'open'): Promise<void> {
         const recap = this.deps.records.readRecap(tab);
         const done: boolean[] = [];
@@ -52,7 +45,6 @@ export class Curate {
         }
     }
 
-    /** One task: reconciled when it is time to, then its story as today; whether it was reconciled. A task that fails is logged and the next goes on. */
     private async one(tab: string, task: { readonly id: string; readonly name: string; readonly lanes: readonly string[] }, how: { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }): Promise<boolean> {
         try {
             const reconciled = await this.reconciling.task(tab, task, how.lanes, how.why);
@@ -66,7 +58,6 @@ export class Curate {
         }
     }
 
-    /** Whether the task is worth a call now: it has facts, its story is older than them, and it was not curated lately. */
     private due(key: string, facts: readonly Fact[], storyAt: number | null, now: number): boolean {
         const change = newestChange(facts);
         const last = this.lastRun.get(key);
@@ -96,7 +87,6 @@ export class Curate {
         }
     }
 
-    /** Check the answer, map its ids back to facts, and keep the story with the merges in one transaction. */
     private store(run: CurationRun, answer: string, named: ReadonlyMap<string, Fact>): void {
         const [open, where] = [new Set([...named].filter(([, fact]) => fact.state === 'open').map(([id]) => id)), `curator ${run.task.tab} ${run.task.key}`];
         const checked = curationOf(answer, open);

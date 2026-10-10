@@ -1,4 +1,3 @@
-// Migration 12, herdr events: from a version 11 database with a compaction and a request in it; the two CHECKs learn `request`, the request keeps its answer id.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

@@ -11,7 +11,6 @@ import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-ver
 const fact = (section: string, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text, why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2, ...over });
 const FIELDS = ['last_prompt', 'last_reply', 'recent_turns', 'goal', 'open_work'];
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'autocompact');
-/** the questions with an offer fixture: an offer to the operator is a yes for `closes_request` and a no for `announces_continuation` */
 const OFFERS: Readonly<Record<string, true>> = { closes_request: true, announces_continuation: true };
 
 test('the six questions are the ones the verdict uses; each has instructions and both criteria, and names a field in backticks', () => {

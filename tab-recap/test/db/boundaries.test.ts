@@ -14,7 +14,6 @@ const run = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     tab: 'w1:t1', at: T0, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')],
     tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops: opsOfSections(sections) }], ...over,
 });
-/** the shape the readers give: Claude's compact_boundary with its compactMetadata (800k → 14k in 16 s) */
 const claude = (at: number, over: Partial<LaneMark> = {}): LaneMark => ({ pane: 'w1:p1', at, cursor: 200, tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588, ...over });
 
 const rows = (db: DatabaseSync, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));

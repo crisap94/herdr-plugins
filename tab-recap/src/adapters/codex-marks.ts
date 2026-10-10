@@ -1,4 +1,3 @@
-// Codex's compactions: a `compacted` row in the rollout, between two `token_count` rows (the context before and after).
 import type { Mark } from '#src/ports/transcripts.ts';
 import { obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
@@ -14,7 +13,6 @@ const timeOf = (row: Row): number | null => {
     return Number.isNaN(at) ? null : at;
 };
 
-/** Each `compacted` row is a mark; the last `token_count` before it is the context before, the first one after it the context after (when the lines hold them). */
 export function codexMarks(lines: readonly string[]): readonly Mark[] {
     const marks: { mark: Mark; waiting: boolean }[] = [];
     let last: number | undefined;

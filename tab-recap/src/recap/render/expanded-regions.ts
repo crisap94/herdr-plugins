@@ -1,5 +1,3 @@
-// The regions of the expanded view, each as wrapped lines for one column width: head, goal, now, needs you, decisions,
-// timeline, next, rules, links, session. A region with nothing in it draws nothing. Pure.
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
 import type { Messages } from '#src/i18n/messages.ts';
@@ -15,14 +13,12 @@ import { elapsed, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
 
 export interface Draw {
-    /** the cells of one column */
     readonly width: number;
     readonly style: Style;
     readonly messages: Messages;
     readonly now: number;
     readonly zone: string;
     readonly webs: readonly (LaneWeb | null | undefined)[];
-    /** where the session broke: a gray line in the timeline at each */
     readonly breaks: readonly Break[];
 }
 
@@ -50,12 +46,10 @@ const text = (fact: Fact, draw: Draw): string => linked(fact.agent === null ? fa
 
 const bullets = (facts: readonly Fact[], draw: Draw): readonly string[] => facts.flatMap((fact) => wrap(`• ${text(fact, draw)}`, draw.width, '  '));
 
-/** `14:02`, or `2026-10-05 14:02` when it is not today */
 function stamp(at: number, draw: Draw): string {
     return dayOf(at, draw.zone) === dayOf(draw.now, draw.zone) ? clockOf(at, draw.zone) : `${dayOf(at, draw.zone)} ${clockOf(at, draw.zone)}`;
 }
 
-/** `lines` with `tail` after the last one when it fits there, else on a line of its own: a mark is never cut in two. */
 function tailed(lines: readonly string[], tail: string, draw: Draw, hang: string): readonly string[] {
     const last = lines.at(-1) ?? '';
     return visibleLength(`${last} · ${tail}`) <= draw.width ? [...lines.slice(0, -1), `${last}${draw.style.gray(' · ')}${tail}`] : [...lines, `${hang}${tail}`];
@@ -68,10 +62,8 @@ function needs(facts: readonly Fact[], draw: Draw): readonly string[] {
     });
 }
 
-/** What the import wrote as the reason of a decision that never said why. */
 const NOT_RECORDED = '(not recorded)';
 
-/** Open decisions and those closed for a real reason: `rewritten` is the 1.x import's artificial close and stays out. */
 const inDecisions = (fact: Fact): boolean => fact.section === 'decisions' && fact.closedWhy !== 'rewritten';
 
 function decisions(facts: readonly Fact[], draw: Draw): readonly string[] {
@@ -84,7 +76,6 @@ function decisions(facts: readonly Fact[], draw: Draw): readonly string[] {
     });
 }
 
-/** What the timeline draws, newest first: a fact's entry or a break; a break is drawn above the facts of its own minute. */
 type Row = { readonly at: number; readonly entry: ReturnType<typeof timelineOf>[number] } | { readonly at: number; readonly broke: Break };
 
 function timeline(facts: readonly Fact[], draw: Draw): readonly string[] {
@@ -112,7 +103,6 @@ function links(facts: readonly Fact[], draw: Draw): readonly string[] {
     });
 }
 
-/** The curator's paragraph with its time, `updating…` while it runs; nothing when there is neither. */
 function head(data: TaskData, draw: Draw): readonly string[] {
     const { story, curating } = data;
     if (story === null && !curating) {
@@ -123,13 +113,11 @@ function head(data: TaskData, draw: Draw): readonly string[] {
     return [[draw.style.bold(draw.style.cyan(m.story.toUpperCase())), ...tags].join(draw.style.gray(' · ')), ...(story === null ? [] : wrap(story.text, draw.width))];
 }
 
-/** The session facts: a label in gray and the value; wrapped under the label. */
 export function session(facts: SessionFacts, draw: Draw): readonly string[] {
     const lines = sessionLines(facts, { now: draw.now, zone: draw.zone, messages: draw.messages });
     return titled('session', lines.flatMap((line) => wrap(`${draw.style.gray(line.label)} ${line.text}`, draw.width, '  ')), draw);
 }
 
-/** Every region of one task except the session, which belongs to the tab. */
 export function regionsOf(data: TaskData, draw: Draw): Omit<Regions, 'session'> {
     const { facts } = data;
     const goal = newest(open(facts, 'goal')).slice(0, 1);

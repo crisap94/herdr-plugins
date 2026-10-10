@@ -1,4 +1,3 @@
-// `tab-recap eval` through the real entry: usage errors, no judge, the state it opens, a scripted `--label` on stdin.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -11,7 +10,6 @@ import { oneTask, withFacts } from '#test/support.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
-/** The entry in a throw-away state directory with an empty PATH, so no harness exists and nothing real is touched. */
 function run(args: readonly string[], input = ''): { status: number | null; stdout: string; stderr: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-eval-'));
     const state = join(root, 'state');
@@ -22,7 +20,6 @@ function run(args: readonly string[], input = ''): { status: number | null; stdo
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }
 
-/** The state directory with one recorded run, closed again for the entry to open. */
 function seeded(): ReturnType<typeof run> {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-eval-'));
     const state = join(root, 'state');

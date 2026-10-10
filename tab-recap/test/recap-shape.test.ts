@@ -55,15 +55,12 @@ test('the operations contract survives every summarizer\'s way of handing the an
     const { unfenced } = await import('#src/adapters/recap-prompt.ts');
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'now', text: 'running CI' }, { op: 'close', id: 'f2', why: 'done' }] });
     const fenced = `\`\`\`json\n${answer}\n\`\`\``;
-    // claude: `--output-format json` wraps the model's text in a `result` field — the contract JSON is inside it
     const claude = resultOf(JSON.stringify({ type: 'result', result: fenced, total_cost_usd: 0.01 }));
     assert.ok(claude !== null);
     assert.equal(opsOf(unfenced(claude.text)), 2);
-    // opencode: NDJSON events, the answer split over two `text` parts
     const half = Math.floor(answer.length / 2);
     const events = [answer.slice(0, half), answer.slice(half)].map((text) => JSON.stringify({ type: 'text', sessionID: 's', part: { text } })).join('\n');
     assert.equal(opsOf(unfenced(opencodeOutput(events).text)), 2);
-    // codex (the -o file), hermes and custom (stdout): plain text, possibly fenced
     for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
         assert.equal(opsOf(unfenced(raw)), 2);
     }

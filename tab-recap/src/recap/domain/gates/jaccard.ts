@@ -1,4 +1,3 @@
-// How alike two lines are: the share of their words they have in common (words of three letters or more, lower-cased).
 const WORDS = new Intl.Segmenter(undefined, { granularity: 'word' });
 
 export function tokensOf(text: string): ReadonlySet<string> {

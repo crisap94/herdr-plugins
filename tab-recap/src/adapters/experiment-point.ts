@@ -1,4 +1,3 @@
-// One point of EXP-002: a stored turn end of a lane, rebuilt from the transcript bytes before its cursor and the ledger at its time.
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
@@ -15,11 +14,8 @@ import { claudeObserved } from './context-rows.ts';
 import { linesAfter, linesBefore } from './transcript-slice.ts';
 import type { ExperimentStore, StoredPoint } from './experiment-store.ts';
 
-/** The tail of a transcript every live reader looks through. */
 const TAIL_BYTES = 256 * 1024;
-/** the minimum EXP-002 was measured with (the default was 40 then; the replay keeps it) */
 const EXPERIMENT_MINIMUM = 40;
-/** Characters of recent entries kept in a point (the brief job clips them again to its own budget). */
 const RECENT_KEPT = 60_000;
 
 export interface Point extends StoredPoint {
@@ -36,7 +32,6 @@ export interface Point extends StoredPoint {
     readonly hindsight: Hindsight;
 }
 
-/** The newest entries whose texts fit `RECENT_KEPT` characters together. */
 function trimmed(entries: readonly Entry[]): readonly Entry[] {
     let room = RECENT_KEPT;
     const kept: Entry[] = [];
@@ -48,14 +43,12 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
     return kept.toReversed();
 }
 
-/** The share of the window in percent from the tail of the transcript, as the live context reader would see it. */
 export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): { readonly tokens: number; readonly window: number; readonly share: number } | null {
     const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
     const use = observed === null ? null : contextOf({ observed, agent: 'claude', setting: null, catalogued: observed.model === null ? null : catalogue.windowOf(observed.model) });
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
-/** The gate this point would get, with the live defaults: in flight from the scanner over the same lines. */
 function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
@@ -63,7 +56,6 @@ function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: numb
     return { inFlight, gate };
 }
 
-/** A point, or null when its transcript cannot be read. */
 export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: StoredPoint & { readonly blob: Uint8Array }, stratum: string): Point | null {
     try {
         const lines = linesBefore(stored.source, stored.cursor, TAIL_BYTES);

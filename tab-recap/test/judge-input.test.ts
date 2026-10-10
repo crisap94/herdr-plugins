@@ -1,4 +1,3 @@
-// The judge's documents validated against schema/judge-input.dtd, and broken ones that must fail.
 import assert from 'node:assert/strict';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
 import { coverDocument, gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';

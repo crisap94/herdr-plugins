@@ -1,4 +1,3 @@
-// `autocompact-probe.ts` without `--dir`: the usage line, exit 2, and nothing written (a flag that is absent is not read as the next argument).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

@@ -21,38 +21,23 @@ export interface CompactionDeps {
     readonly notifier: Notifier;
     readonly records: Pick<RecapRecords, 'readRecap'>;
     readonly ledger: Pick<Ledger, 'historyOf'>;
-    /** where the agent's session last broke: the facts closed before it are named as settled in the brief */
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
-    /** the compaction records: every stage of every compaction is written here, the column and the bar read it */
     readonly compactions: Records;
-    /** herdr's push that a lane is free again (polling when the daemon is blind) */
     readonly settling: LaneSettling;
-    /** writes the brief from a document; no text when it is off or gave none (the template is used, and `why` says why) */
     readonly brief: { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> };
-    /** an automatic compaction checks its brief against the facts before anything is typed; null when there is no decider (it goes ahead unchecked) */
     coverage(): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null;
-    /** the decisions an automatic compaction points back to */
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend'> | null;
-    /** answers another tool's compaction request on its pane (`tab-recap-compact` = `<id>:<stage>`); absent when herdr events are off */
     answer?(id: string, pane: string, stage: string): void;
-    /** the typing lease, taken around every line typed into a pane (absent: nothing is held back) */
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
-    /** the plugin's events on herdr's stream: the compaction's stages (its id is the detail) */
     readonly events?: LaneEvents;
-    /** the panes whose compaction is queued or in progress: a request for one joins it, and autocompact sees it as busy */
     readonly claims: CompactionClaims;
-    /** the agent's last turns, read from its own records; empty when they cannot be read */
     recent(lane: Lane): Promise<readonly Entry[]>;
-    /** the compactions the agent's own records show, newest last; empty when they cannot be read */
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: number): Promise<void>;
     now(): number;
     readonly webs: { of(pane: string): LaneWeb | null };
-    /** the lanes the daemon holds for the tab */
     lanes(tab: string): readonly Lane[];
-    /** the pane herdr focuses in the tab */
     focused(tab: string): Promise<string | null>;
-    /** the tab's recap, written now and awaited; it never rejects (a failed or slow one leaves the last good recap) */
     refresh(tab: string, lanes: readonly Lane[]): Promise<void>;
     target(): CompactTarget;
     messages(): Messages;

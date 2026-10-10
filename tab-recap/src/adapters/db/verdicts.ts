@@ -1,4 +1,3 @@
-// The Verdicts repository: what the judge and the operator said about a run's items, one row per check.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Disagreement, Pair, Verdict, VerdictSource, Verdicts } from '#src/ports/verdicts.ts';
 import { writeTx } from './connection.ts';
@@ -7,7 +6,6 @@ import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-/** Newest verdict of each source per (run, item, check), then the pairs that have both. `IS` compares NULL items too. */
 const PAIRS = `WITH latest AS (
     SELECT v.* FROM verdict v WHERE v.at = (SELECT MAX(x.at) FROM verdict x WHERE x.run_id = v.run_id AND x.item_key IS v.item_key AND x.check_id = v.check_id AND x.source = v.source)
   )
@@ -19,7 +17,6 @@ const LATEST = `WITH latest AS (
     SELECT v.* FROM verdict v WHERE v.at = (SELECT MAX(x.at) FROM verdict x WHERE x.run_id = v.run_id AND x.item_key IS v.item_key AND x.check_id = v.check_id AND x.source = v.source)
   )`;
 
-/** The items where the newest judge verdict and the newest operator verdict of a check differ, the operator's newest ruling first. */
 const DISAGREE = `${LATEST}
   SELECT j.run_id, j.item_key, j.check_id, j.pass AS judge_pass, o.pass AS operator_pass, j.critique AS judge_critique, o.critique AS reason, o.at AS at FROM latest j
   JOIN latest o ON o.run_id = j.run_id AND o.item_key IS j.item_key AND o.check_id = j.check_id AND o.source = 'operator'

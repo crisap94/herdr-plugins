@@ -1,5 +1,3 @@
-/** Pure geometry over herdr's tab layout: where a column goes and how wide it is. */
-
 export interface Rect {
     readonly x: number;
     readonly y: number;
@@ -27,10 +25,8 @@ export interface Sizing {
 const right = (r: Rect): number => r.x + r.width;
 const bottom = (r: Rect): number => r.y + r.height;
 
-/** Which edge a column docks on: 'right' for a side column, 'down' for a bar along the bottom. */
 export type Axis = 'right' | 'down';
 
-/** The pane a column splits: the one on the docking edge — the longest along it, then the first. */
 export function edgePane(panes: readonly Placed[], axis: Axis): Placed | null {
     const sorted = axis === 'right'
         ? panes.toSorted((a, b) => right(b.rect) - right(a.rect) || b.rect.height - a.rect.height || a.rect.y - b.rect.y)
@@ -46,7 +42,6 @@ export function targetCols(tabWidth: number, sizing: Sizing): number {
 const contains = (outer: Rect, inner: Rect): boolean =>
     inner.x >= outer.x && inner.y >= outer.y && right(inner) <= right(outer) && bottom(inner) <= bottom(outer);
 
-/** The innermost split holding the column on its docking edge: the divider we move. */
 export function parentSplit(splits: readonly Split[], column: Rect, axis: Axis): Split | null {
     const onEdge = (s: Split): boolean => (axis === 'right'
         ? s.direction === 'right' && right(s.rect) === right(column)
@@ -66,11 +61,6 @@ const MIN_RATIO = 0.1;
 const MAX_RATIO = 0.95;
 const NEGLIGIBLE = 0.005;
 
-/**
- * herdr moves a divider in ratio units (measured on 0.9.0: `right 0.1` takes 0.5 to 0.6; `up 0.4`
- * takes 0.5 to 0.1, its floor). herdr only splits right or down, so a column is always the SECOND
- * child: a side column's ratio is 1 - its share of the width, a bottom bar's 1 - its share of the height.
- */
 export function moveFor(split: Split, cells: number, axis: Axis): Move | null {
     const side = axis === 'right';
     const share = cells / (side ? split.rect.width : split.rect.height);

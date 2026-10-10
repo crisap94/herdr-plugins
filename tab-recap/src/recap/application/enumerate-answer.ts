@@ -1,5 +1,3 @@
-// The enumeration's answer, `{"candidates":[…],"skip":[…]}`, as candidates: tolerant of a fence around the JSON, strict about what a candidate
-// is. A candidate's anchor must be a piece of the chunk it came from (or it takes the anchor of the stub it answers); one that is neither is lost.
 import type { InputCandidate } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isSection } from '#src/recap/domain/fact.ts';
@@ -11,7 +9,6 @@ import { objectIn, tidy } from './recap-shape.ts';
 
 const WHY_WORDS = 24;
 
-/** What a chunk's answer is read against. */
 export interface AnswerGround {
     readonly agent: string;
     readonly entries: readonly Entry[];
@@ -20,12 +17,9 @@ export interface AnswerGround {
 }
 
 export interface Answered {
-    /** the candidates, and the ids (`g2`) of the stubs the answer filled in */
     readonly candidates: readonly InputCandidate[];
     readonly filled: ReadonlySet<string>;
-    /** the stubs the answer skipped, with the reason it gave */
     readonly skipped: ReadonlyMap<string, string>;
-    /** candidates lost for want of a section, a text or an anchor that is in the chunk */
     readonly lost: number;
 }
 
@@ -36,7 +30,6 @@ const maybe = (value: unknown, words: number): string | null => {
     return one === '' ? null : one;
 };
 
-/** The words an entry can be quoted from: what it says, and what the agent said about the call. */
 const sayings = (entries: readonly Entry[]): string => entries.map((entry) => `${entry.text}\n${entry.what ?? ''}`).join('\n');
 
 function resolveAt(label: unknown, ground: AnswerGround): number | null {
@@ -44,7 +37,6 @@ function resolveAt(label: unknown, ground: AnswerGround): number | null {
     return typeof label === 'string' ? (ground.entries.findLast((entry) => entry.at !== undefined && localTime(entry.at, now, zone) === label.trim())?.at ?? null) : null;
 }
 
-/** The first QUOTE_CHARS characters of a quote that is too long, cut at a word edge: still a verbatim piece of what it quoted. */
 function headOf(quote: string): string {
     const body = quote.trim();
     if (body.length <= QUOTE_CHARS) {
@@ -54,7 +46,6 @@ function headOf(quote: string): string {
     return body.slice(0, cut > 0 ? cut : QUOTE_CHARS).trimEnd();
 }
 
-/** The anchor of `fields` when it is in the chunk, else the stub's it answers, else null. */
 function anchorOf(fields: Fields, ground: AnswerGround, said: string): { readonly anchor: string; readonly stub: string | null } | null {
     const named = typeof fields['stub'] === 'string' ? fields['stub'] : null;
     const stub = ground.stubs.find((_, at) => stubId(at) === named);
@@ -74,13 +65,11 @@ function candidateOf(fields: Fields, ground: AnswerGround, said: string): { read
     return { one, stub: found.stub };
 }
 
-/** The ids of the stubs that a candidate shows without naming them: its anchor quotes the stub's, or the stub's quotes its. */
 const showing = (candidates: readonly InputCandidate[], stubs: readonly Stub[]): readonly string[] =>
     stubs.flatMap((stub, at) => (candidates.some((one) => quotedIn(stub.anchor, one.anchor) || quotedIn(one.anchor, stub.anchor)) ? [stubId(at)] : []));
 
 const listOf = (value: unknown): readonly unknown[] => (Array.isArray(value) ? (value as unknown[]) : []);
 
-/** The answer for one chunk; null when it is not the JSON object the contract asks for. */
 export function answeredBy(text: string, ground: AnswerGround): Answered | null {
     let parsed: unknown;
     try {

@@ -1,4 +1,3 @@
-// Replay: the extractor runs once per turn of a stored transcript, on a scratch ledger; the live database is never written.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -22,10 +21,8 @@ import { factOf } from './fakes/facts.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
-/** The first prompt of each turn of the fixture: a writer that follows the contract quotes what is in the window it was shown. */
 const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
 
-/** A writer that answers one scripted list of operations per call, and remembers what it was shown. */
 function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { summarizer: Summarizer; shown: string[] } {
     const shown: string[] = [];
     const summarizer: Summarizer = {
@@ -113,7 +110,6 @@ test('the store a replay writes to is a real store: the same repositories, the f
     }
 });
 
-/** A judge that passes every item it is shown, finds one key fact, and answers the read-back. */
 const lenient: Judge = {
     label: 'fake · judge · low',
     ask: (task, document) => {

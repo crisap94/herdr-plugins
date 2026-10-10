@@ -1,4 +1,3 @@
-// A whole Claude transcript as the few events an outcome check needs: tool calls (with the files they read), operator prompts and compactions.
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { readsOf } from '#src/experiment/read-paths.ts';
@@ -8,14 +7,12 @@ import { arr, obj, parse, str } from './jsonl.ts';
 
 const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
 
-/** A row's tool calls (the main conversation's only). */
 function toolEvents(line: string): readonly Event[] {
     const row = parse(line);
     if (row === null || row['type'] !== 'assistant' || row['isSidechain'] === true) return [];
     return arr(obj(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => ({ kind: 'tool', reads: readsOf(str(block['name']) ?? '', obj(block['input'])) }));
 }
 
-/** The prompts and compactions of a row, through the plugin's own Claude parser. */
 function entryEvents(line: string, pos: number): readonly Event[] {
     const found = extractClaude([line]);
     const prompts: Event[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
@@ -26,7 +23,6 @@ function entryEvents(line: string, pos: number): readonly Event[] {
     return [...prompts, ...marks];
 }
 
-/** Every event of a transcript in order. A boundary carries the byte position of its row. */
 export async function eventsOf(path: string): Promise<readonly Event[]> {
     const events: Event[] = [];
     let pos = 0;

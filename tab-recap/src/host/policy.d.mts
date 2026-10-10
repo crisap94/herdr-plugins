@@ -17,7 +17,6 @@ export type Support = { readonly ok: true } | Refusal;
 
 export function supportOf(host: { readonly nodeVersion: string; readonly platform: string }): Support;
 
-/** one language's words for the refusal; the catalogs carry their own */
 export interface RefusalWords {
     readonly headline: (found: string, needed: string, path: string) => string;
     readonly fix: string;

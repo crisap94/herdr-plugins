@@ -24,7 +24,6 @@ import { unknown } from '#src/ports/unknowable.ts';
 
 const lane = (pane: string, agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` });
 
-/** A reader whose answers a test scripts per source; it records how it was asked. */
 function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: Transcripts; asked: { source: string; budget: number }[] } {
     const asked: { source: string; budget: number }[] = [];
     const transcripts: Transcripts = {

@@ -1,4 +1,3 @@
-// Brief coverage: one question per fact, a miss gets one rewrite and then the automatic compaction waits; the operator's goes on unchanged.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
@@ -20,7 +19,6 @@ import { oneTask } from './support.ts';
 const fact = (section: string, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
 const HISTORY = [fact('goal', 'Ship the cart rewrite'), fact('decisions', 'Keep SQLite', 'one file'), fact('next', 'Tag the release'), fact('done', 'Merged !12'), fact('rules', 'Never push to main', null, 'closed')];
 
-/** A decider that answers from a table of id → probability (default `fallback`). */
 function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): Decider & { asked: Record<string, Noul>[] } {
     const asked: Record<string, Noul>[] = [];
     return { label: 'fake', asked, ask: (_state, questions): Promise<DecidedResult> => { asked.push({ ...questions }); return Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id) => [id, answers[id] ?? fallback])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }); } };
@@ -55,13 +53,10 @@ test('covered: the brief and the facts are the one state; ok when nothing blocks
     assert.match(correctionOf(['goal: Ship it']), /did not keep these.*\n- goal: Ship it$/s);
 });
 
-// -- the flow --
-
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 
 interface World { readonly typed: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
-/** `template` makes the brief job give no text (the template is used, and `why` says why). */
 function flow(checks: readonly Coverage[], withCoverage = true, template: { readonly why: string | null } | null = null): { world: World; compaction: Compaction } {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();

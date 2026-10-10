@@ -1,4 +1,3 @@
-// The autocompact service with fakes: shadow records and never requests, on requests once, and the gates stop what they must before any model.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';

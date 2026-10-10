@@ -1,19 +1,13 @@
-// What the curator may answer, and what of it is accepted: closing a fact as merged into another, and one paragraph. Pure.
-/** One fact closed as merged into another (document ids, as the curator answered them). */
 export interface Merge {
     readonly id: string;
     readonly into: string;
 }
 
-/** The most words the paragraph may hold. */
 export const STORY_WORDS = 120;
 
 export interface Curation {
-    /** the `close … merged` operations answered, in order */
     readonly merges: readonly Merge[];
-    /** the paragraph, cut to STORY_WORDS; null when none was given */
     readonly story: string | null;
-    /** each refused operation, said in a line for the log */
     readonly refused: readonly string[];
 }
 
@@ -21,7 +15,6 @@ const NOTHING: Curation = { merges: [], story: null, refused: [] };
 
 const isObject = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** The paragraph on one line, at most STORY_WORDS words; a longer one is cut there and ends with `…`. */
 export function storyOf(raw: unknown): string | null {
     if (typeof raw !== 'string') {
         return null;
@@ -38,7 +31,6 @@ interface Merged {
     readonly targets: ReadonlySet<string>;
 }
 
-/** Why a `close` is refused, or null when it is a close as merged of an open fact into another that stays open. */
 function closeRefusal(op: Readonly<Record<string, unknown>>, open: ReadonlySet<string>, merged: Merged): string | null {
     const [id, into] = [op['id'], op['into']];
     if (op['why'] !== 'merged' || typeof into !== 'string') {
@@ -53,7 +45,6 @@ function closeRefusal(op: Readonly<Record<string, unknown>>, open: ReadonlySet<s
     return id === into || !open.has(into) || merged.ids.has(into) ? `${id} cannot merge into ${into}` : null;
 }
 
-/** Why `op` is refused, or null when it is a `close … merged` of an open fact into another open fact. */
 function refusal(op: unknown, open: ReadonlySet<string>, merged: Merged): string | null {
     if (!isObject(op)) {
         return 'not an operation';
@@ -61,10 +52,6 @@ function refusal(op: unknown, open: ReadonlySet<string>, merged: Merged): string
     return op['op'] === 'close' ? closeRefusal(op, open, merged) : `${String(op['op'])} is not allowed: the curator may only close`;
 }
 
-/**
- * The curator's answer: `{"ops":[…],"story":"…"}`. Only closes as merged are accepted, each of an open fact into another open
- * fact that stays open; the rest is refused and named. An answer that is not that JSON gives nothing.
- */
 export function curationOf(answer: string, open: ReadonlySet<string>): Curation {
     let parsed: unknown;
     try {

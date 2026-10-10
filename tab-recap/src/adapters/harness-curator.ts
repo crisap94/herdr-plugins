@@ -5,7 +5,6 @@ import { CURATOR_INSTRUCTIONS } from './curator-instructions.ts';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from './curator-reconcile-instructions.ts';
 import { unfenced } from './recap-prompt.ts';
 
-/** The curator: one job on a harness. */
 export class HarnessCurator implements Curators {
     readonly backend: string;
     private readonly harness: Harness;

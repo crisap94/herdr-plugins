@@ -1,5 +1,3 @@
-// The settings modal: a popup pane process. Composition root — it asks herdr and the PATH what is
-// available, runs the pure reducer on raw keys, and performs the effects it returns.
 import { setValues } from '#src/adapters/config-file.ts';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
@@ -22,7 +20,6 @@ const style = styleFor(process.stdout);
 const ESC = String.fromCodePoint(0x1b);
 const RESET = style === coloured ? `${ESC}[0m` : '';
 const BEL = String.fromCodePoint(0x07);
-/** one cell of padding on each side, as in the column */
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
 const TINY: RecapRequest = {

@@ -1,5 +1,3 @@
-// The words of the host refusal (a Node too old, with the steps for the OS). The English ones live next to the policy
-// (src/host/policy.mjs), because a Node that cannot load this catalog still has to say them.
 import type { RefusalWords } from '#src/host/policy.mjs';
 
 export const SPANISH_REFUSAL: RefusalWords = {

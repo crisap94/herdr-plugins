@@ -1,12 +1,8 @@
-// G11 anchor: an added fact quotes the input it comes from (a turn, a tool call or an agent note), so "supported" is checked by a machine first.
-// The quote must be found in the input after whitespace folding (words by Intl.Segmenter, case kept). An update may carry one; if it does it is checked too. A close never has one.
 import type { Gate, GateContext } from './gate.ts';
 import { foldedOf } from './words.ts';
 
-/** The most characters an anchor keeps. */
 export const ANCHOR_CHARS = 120;
 
-/** Whether the folded `source` holds `anchor` as whole words in a row; false for an anchor with no words. */
 export function quotedIn(anchor: string, source: string): boolean {
     const folded = foldedOf(anchor);
     return folded !== '' && ` ${source} `.includes(` ${folded} `);

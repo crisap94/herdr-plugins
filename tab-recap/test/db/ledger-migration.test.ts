@@ -1,5 +1,3 @@
-// Migration 6 over a real set of stored recaps (the items of three tasks of a long-lived database, every word replaced):
-// every tab's column after the upgrade is the column before it, and the backup of the previous version exists.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
@@ -18,7 +16,6 @@ type Stored = readonly { readonly key: string; readonly runs: readonly { readonl
 const FIXTURE = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', 'live-items.json'), 'utf8')) as Stored;
 const SECTIONS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules'] as const;
 
-/** A version 5 database holding the fixture: one tab per task, its runs in order, the last run of the second tab with an error line. */
 function oldDatabase(path: string): DatabaseSync {
     const db = connect(path);
     migrate(db, MIGRATIONS.slice(0, 5));
@@ -41,7 +38,6 @@ function oldDatabase(path: string): DatabaseSync {
     return db;
 }
 
-/** What a tab's column showed before: the items of the last run with no error, per section, in position order. */
 function columnBefore(db: DatabaseSync, tab: string): Record<string, string[]> {
     const rows = db.prepare(`SELECT i.section, i.text FROM item i JOIN last_good_run g ON g.run_id = i.run_id JOIN task k ON k.id = i.task_id
       WHERE g.tab_id = ? AND i.view = 'recap' ORDER BY i.section, i.position`).all(tab) as { section: string; text: string }[];

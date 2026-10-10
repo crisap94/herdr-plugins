@@ -1,4 +1,3 @@
-// The ONLY module that talks to herdr (rules/recap-transport-boundary.yml).
 import { agentPanesIn, columnsIn } from './column-panes.ts';
 import { HerdrAgents } from './herdr-agents.ts';
 import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
@@ -30,10 +29,8 @@ export const SETUP_ENTRYPOINT = 'setup';
 
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-/** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
 
-/** `pane.get`: the pane's tokens as herdr holds them now (a name whose time to live passed is not there). Stand-alone, for readers that hold no fleet. */
 export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
     try {
         const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
@@ -44,7 +41,6 @@ export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
     }
 }
 
-/** `pane.get`: the session herdr reports for the pane now, as the transcripts name it; null when it has none, unknown when herdr cannot say. */
 export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
     try {
         const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
@@ -61,7 +57,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         this.stateDir = stateDir;
     }
 
-    /** What the operator's compaction needs of herdr; the wire is ours, so it stays the only import of the transport. */
     agents(): HerdrAgents {
         return new HerdrAgents(rpc, { id: PLUGIN_ID, stateDir: this.stateDir });
     }
@@ -132,7 +127,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         });
     }
 
-    /** herdr shows one modal at a time: `ui_busy` means another one is up. */
     async setup(tab: TabId | null): Promise<SetupOpened> {
         try {
             await rpc('plugin.pane.open', {
@@ -150,7 +144,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    /** herdr's own integration table: `available` says the agent's program resolves for herdr. */
     async available(): Promise<HarnessesResult> {
         try {
             const ids = list((await rpc('integration.list', {}))['integrations'])
@@ -162,7 +155,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    /** `pane.read`: the pane's most recent `lines` lines, unwrapped. Reading never types into the pane. */
     async readScreen(pane: string, lines: number): Promise<ScreenResult> {
         try {
             const read = (await rpc('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' }))['read'];
@@ -175,7 +167,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    /** `pane.report_metadata` under the plugin's source: the names are the application's to choose, and a null value removes a name. A token is not typing, so an agent's pane may carry one. */
     async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
         const refused = refusalOf(tokens, PANE_WRITABLE);
         return refused ?? this.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
@@ -185,7 +176,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return readPaneTokens(pane);
     }
 
-    /** `workspace.report_metadata` under the plugin's source: the daemon's own events, on every workspace. */
     async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
         const refused = refusalOf(tokens, WORKSPACE_WRITABLE);
         return refused ?? this.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
@@ -205,10 +195,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
-    /**
-     * THE RED LINE: a recap never closes, resizes or moves a pane that hosts an agent. Looked up right
-     * before the call, from herdr itself, so a stale board cannot talk us into it. null = go ahead.
-     */
     private async refuseAgent(verb: string, pane: string): Promise<Done | null> {
         try {
             const snapshot = await this.rawSnapshot();
@@ -236,10 +222,6 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return this.guarded('close', String(pane), 'pane.close', { pane_id: String(pane) });
     }
 
-    /**
-     * The columns are picked from one snapshot with the same rule that recognises them everywhere else — exact
-     * title, no agent, the manifest's label — so a pane that hosts an agent is never in the batch.
-     */
     async closeEvery(): Promise<ClosedAll> {
         try {
             const snapshot = await this.rawSnapshot();

@@ -1,12 +1,9 @@
-// G1 narrator: the item's subject is an agent (its label, its kind, "the agent") followed by a verb — the item is about the narrator, not the work (I5).
 import { said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 
-/** Always a narrator. The kinds of the tab's own agents (claude, codex, …) come in the context: elsewhere `Hermes` or `Claude` may be what the work is about. */
 const GENERIC = ['agent', 'the agent', 'the assistant', 'the model', 'el agente', 'el asistente', 'el modelo', 'the plugin'];
 const OPENING = /^\W*([\p{L}\p{N}_-]+(?: [\p{L}\p{N}_-]+)?)(.*)$/su;
 
-/** The words the item opens with that name an agent, and what follows them. */
 function subjectOf(text: string, known: ReadonlySet<string>): { readonly rest: string } | null {
     const lowered = text.toLowerCase();
     const named = [...known].filter((name) => lowered.startsWith(name) && !/[\p{L}\p{N}_-]/u.test(lowered.charAt(name.length)));

@@ -1,4 +1,3 @@
-// The labeller of EXP-002: Codex through the plugin's own harness, one slot per concurrent call (each with its own work folder).
 import { join } from 'node:path';
 import { CodexHarness } from './codex-harness.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
@@ -12,7 +11,6 @@ export interface Labelled<T> {
     readonly answer: T | null;
     readonly ms: number;
     readonly attempts: number;
-    /** why the last attempt gave nothing, when it did not */
     readonly why: string | null;
 }
 
@@ -38,7 +36,6 @@ export class Labeller {
         if (next === undefined) this.free.push(harness); else next(harness);
     }
 
-    /** One labelling call: instructions and input to the model, the reply through `parse`. A reply that does not parse, or a failed call, is tried again with a growing wait. */
     async ask<T>(instructions: string, input: object, parse: (reply: string) => T | null, name: string): Promise<Labelled<T>> {
         const harness = await this.take();
         const began = Date.now();

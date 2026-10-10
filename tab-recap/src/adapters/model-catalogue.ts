@@ -1,4 +1,3 @@
-// opencode keeps a models.dev catalogue on disk. Read-only, once per daemon run, never fetched from the network.
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -34,7 +33,6 @@ export class LocalCatalogue implements ModelCatalogue {
         return this.loaded;
     }
 
-    /** `provider/model` is looked up in that provider; a bare id (claude's) in `anthropic` first, then in any provider. */
     windowOf(model: string): number | null {
         const providers = this.providers();
         const id = model.replace(/\[1m\]$/i, '');
