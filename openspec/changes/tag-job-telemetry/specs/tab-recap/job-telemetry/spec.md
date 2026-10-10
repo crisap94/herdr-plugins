@@ -6,7 +6,7 @@ Give supported harness child processes a constant, privacy-safe OpenTelemetry re
 
 ### Requirement: Job tags use a closed set of constant values
 
-The plugin SHALL define a closed `JOB_KINDS as const` tuple and derive `JobKind` from it. Its six values SHALL map to configured Jobs as described in the scenarios. The serializer SHALL reject values outside the tuple. Only the constant `tab_recap.job` attribute SHALL be added; it SHALL contain no session content.
+The plugin SHALL define a closed `JOB_TAGS as const` tuple and derive `JobTag` from it. Its six values SHALL map to configured Jobs as described in the scenarios. The serializer SHALL reject values outside the tuple. Only the constant `tab_recap.job` attribute SHALL be added; it SHALL contain no session content.
 
 #### Scenario: Every Job tag is mapped to its harness calls
 
@@ -15,7 +15,7 @@ The plugin SHALL define a closed `JOB_KINDS as const` tuple and derive `JobKind`
 
 #### Scenario: A value is outside the closed set
 
-- **WHEN** typed code supplies an unknown literal or untyped code supplies a value rejected by `isJobKind`
+- **WHEN** typed code supplies an unknown literal or untyped code supplies a value rejected by `isJobTag`
 - **THEN** the compile-time check or runtime guard SHALL reject the value before serialization
 
 #### Scenario: Job attributes contain no session content
@@ -36,7 +36,7 @@ The plugin SHALL define a closed `JOB_KINDS as const` tuple and derive `JobKind`
 
 - **WHEN** a user opens setup with telemetry tags configured as `on` or `off`
 - **THEN** the setup row SHALL show that value and allow changing it when the setting is not environment-locked
-- **AND** a value locked by the environment SHALL not be written over by setup saving
+- **AND** a value locked by the environment SHALL NOT be written over by setup saving
 
 ### Requirement: The process adapter merges encoded job attributes without rewriting inherited entries
 
@@ -116,6 +116,13 @@ The README SHALL document illustrative Claude queries, collector label behavior,
 
 The README SHALL document Codex token queries that match the stated temporality and collector conversion, plus an illustrative fallback based on entry-point labels. It SHALL explain the limits of those labels and that disabled tags are absent.
 
+#### Scenario: Codex metrics preconditions are documented
+
+- **WHEN** the README describes Codex OTel metrics
+- **THEN** it SHALL state that exported metrics require analytics enabled and an OTLP metrics exporter table
+- **AND** it SHALL state that without that exporter metrics go to a vendor analytics endpoint
+- **AND** it SHALL disclose that a configured Codex OTel exporter also sends a turn-id-only request with no content to the model provider
+
 #### Scenario: Codex telemetry is queried with the documented temporality
 
 - **WHEN** Codex token metrics are queried from a collector that promotes resource attributes
@@ -124,7 +131,7 @@ The README SHALL document Codex token queries that match the stated temporality 
 #### Scenario: Codex uses fallback labels
 
 - **WHEN** the Job tag is absent and a dashboard filters on Codex entry-point attributes
-- **THEN** the query SHALL use the default translated label `job="codex_exec"` with `originator` and `session_source`, and SHALL not imply that these alone identify plugin jobs
+- **THEN** the query SHALL use the default translated label `job="codex_exec"` with `originator` and `session_source`, and SHALL NOT imply that these alone identify plugin jobs
 
 ### Requirement: Codex cost documentation states assumptions
 

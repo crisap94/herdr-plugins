@@ -4,7 +4,7 @@
 
 ### D1. The Job tag vocabulary
 
-The harness registry in `recap/domain/backend.ts` lists harness ids. The existing `Job` record is the harness, model, and effort configuration; the new **Job tag** is a separate closed value set carried in `tab_recap.job`. Five tags map to configured Jobs: `recap-writer`, `curator`, `decider`, `judge`, and `compaction-brief`. `coverage-check` shares the decider Job configuration, while the enumerator shares the recap-writer Job configuration. Add `src/recap/domain/job-kind.ts` with a `JOB_KINDS as const` tuple and derive `JobKind` from its members. `JobAttributes` is the closed record the plugin owns, with the single key `tab_recap.job` and a `JobKind` value.
+The harness registry in `recap/domain/backend.ts` lists harness ids. The existing `Job` record is the harness, model, and effort configuration; the new **Job tag** is a separate closed value set carried in `tab_recap.job`. Five tags map to configured Jobs: `recap-writer`, `curator`, `decider`, `judge`, and `compaction-brief`. `coverage-check` shares the decider Job configuration, while the enumerator shares the recap writer backend and model, with effort fixed at low. Add `src/recap/domain/job-tag.ts` with a `JOB_TAGS as const` tuple and derive `JobTag` from its members. `JobAttributes` is the closed record the plugin owns, with the single key `tab_recap.job` and a `JobTag` value.
 
 `recap-writer` labels both the `RecapWriter` call and the separate `HarnessEnumerator` call, including the enumerator built by `bin/replay.ts`. `curator` covers both story and reconcile modes. The shared `HarnessDecider` receives `decider` or `coverage-check` at construction, depending on its caller. The judge uses `judge`; a brief uses `compaction-brief`. A remote HTTP-backed decider or coverage check launches no harness child and remains untagged.
 
@@ -12,7 +12,7 @@ The harness registry in `recap/domain/backend.ts` lists harness ids. The existin
 
 `TAB_RECAP_TELEMETRY_TAGS` accepts `on` or `off`, defaults to `off`, and controls tagging in every plugin job harness built from `loadConfig()`. This includes daemon jobs and the harness-backed writer, enumerator, and judge paths used by `bin/replay.ts` and evaluation commands. The Job tag is supplied at construction because the same concrete harness and wrapper classes serve more than one Job tag.
 
-Today, `Harness.run(call, settings)` in `src/ports/harness.ts` has no job identity. The chosen seam carries an optional, default-off typed `JobKind` through the `Make` function and its five entries in `src/daemon/harness-makers.ts`; the `Harness` port remains unchanged. Adding the tag to the port call or settings type was considered and rejected. Each supported concrete harness uses the value while building its child environment through `scrubbedEnv()` in `src/adapters/process.ts`. With the setting off, `scrubbedEnv()` returns the same child environment as before. With it on, Claude and Codex receive the plugin-owned job attribute; OpenCode and Hermes remain unchanged. A custom command receives the daemon's inherited `OTEL_RESOURCE_ATTRIBUTES` through unchanged and receives no plugin tag.
+Today, `Harness.run(call, settings)` in `src/ports/harness.ts` has no job identity. The chosen seam carries an optional, default-off typed `JobTag` through the `Make` function and its five entries in `src/daemon/harness-makers.ts`; the `Harness` port remains unchanged. Adding the tag to the port call or settings type was considered and rejected. Each supported concrete harness uses the value while building its child environment through `scrubbedEnv()` in `src/adapters/process.ts`. With the setting off, `scrubbedEnv()` returns the same child environment as before. With it on, Claude and Codex receive the plugin-owned job attribute; OpenCode and Hermes remain unchanged. A custom command receives the daemon's inherited `OTEL_RESOURCE_ATTRIBUTES` through unchanged and receives no plugin tag.
 
 Claude is launched with `--setting-sources ''`. The CLI help describes this as loading a comma-separated list of `user`, `project`, and `local` settings sources; this invocation names none. Whether that also suppresses `env` blocks in those setting files was not verified. Therefore Claude's `OTEL_*` and telemetry-enable variables must be present in the daemon process environment; setting this plugin key does not load them from a Claude settings file. This environment precondition is for Claude only. For Codex, the plugin supplies the tag and exporters are configured in Codex's own config under the inherited `CODEX_HOME`. Any Codex OTel environment variables the operator relies on, such as exporter headers, must be present in the daemon environment because `scrubbedEnv()` forwards them. Experiment and probe tools (`experiment-arms`, `experiment-labeller`, `autocompact-briefs`) and git children (`git-lane-repo`) stay untagged; the new `Make` parameter is optional and defaults off.
 
@@ -25,17 +25,17 @@ The serializer accepts the closed plugin-owned record. The inherited value is se
 A sketch of the types and merge is:
 
 ```typescript
-export const JOB_KINDS = ['recap-writer', 'curator', 'decider', 'judge', 'compaction-brief', 'coverage-check'] as const;
-export type JobKind = typeof JOB_KINDS[number];
-export type JobAttributes = Readonly<{ 'tab_recap.job': JobKind }>;
+export const JOB_TAGS = ['recap-writer', 'curator', 'decider', 'judge', 'compaction-brief', 'coverage-check'] as const;
+export type JobTag = typeof JOB_TAGS[number];
+export type JobAttributes = Readonly<{ 'tab_recap.job': JobTag }>;
 
-export function isJobKind(value: unknown): value is JobKind {
-  return typeof value === 'string' && (JOB_KINDS as readonly string[]).includes(value);
+export function isJobTag(value: unknown): value is JobTag {
+  return typeof value === 'string' && (JOB_TAGS as readonly string[]).includes(value);
 }
 
 export function serializeJobAttributes(attributes: JobAttributes): string {
   const value: unknown = attributes['tab_recap.job'];
-  if (!isJobKind(value)) throw new TypeError('Unknown job tag');
+  if (!isJobTag(value)) throw new TypeError('Unknown job tag');
   return `tab_recap.job=${encodeURIComponent(value)}`;
 }
 
