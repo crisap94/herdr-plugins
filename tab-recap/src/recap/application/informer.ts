@@ -7,6 +7,8 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
+import type { SessionIdentity } from '#src/ports/session-identity.ts';
+import { fallbackSessionIdentity } from '#src/recap/domain/session-identity.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { AsyncQueue } from './async-queue.ts';
 import { decode, paneSessionOf } from './decode.ts';
@@ -24,6 +26,7 @@ export interface InformerHooks {
     onBeat(): void;
     onStatus?(pane: string, status: string): void;
     onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
+    sessionIdentity?: SessionIdentity;
 }
 
 const RESYNC_DEBOUNCE_MS = 400;
@@ -45,6 +48,7 @@ export class Informer {
     private readonly clock: Clock;
     private readonly policy: Policy;
     private readonly hooks: InformerHooks;
+    private readonly sessionIdentity: SessionIdentity;
     private readonly queue = new AsyncQueue<Observation>();
     private board: Board = emptyBoard();
     private stream: FrameStream | null = null;
@@ -62,6 +66,7 @@ export class Informer {
         this.clock = clock;
         this.policy = policy;
         this.hooks = hooks;
+        this.sessionIdentity = hooks.sessionIdentity ?? fallbackSessionIdentity;
     }
 
     get current(): Board {
@@ -167,13 +172,13 @@ export class Informer {
             this.lastLife = Number(this.clock.now());
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
                 this.hooks.onPaneUpdated?.(frame.data);
-                const session = paneSessionOf(frame.data);
+                const session = paneSessionOf(frame.data, this.sessionIdentity);
                 if (session !== null) {
                     this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
                 }
                 continue;
             }
-            const decoded = decode(frame);
+            const decoded = decode(frame, this.sessionIdentity);
             if (decoded.kind === 'unknown') {
                 this.hooks.onUnknownKind(decoded.rawKind);
             } else if (decoded.kind === 'resync') {

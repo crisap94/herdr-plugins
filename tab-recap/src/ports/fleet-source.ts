@@ -1,5 +1,6 @@
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import type { Unknown } from './unknowable.ts';
+export type { AgentSession } from '#src/recap/domain/ids.ts';
 
 export interface Topic {
     readonly type: string;
