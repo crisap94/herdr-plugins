@@ -162,6 +162,16 @@ no recap yet SHALL have one written first.
 - **THEN** nothing SHALL be requested for the second lane, its skip SHALL be `busy`, and a later sweep SHALL
   consider it again
 
+#### Scenario: An agent waits for another agent
+
+- **WHEN** an idle lane at 40 % carries the herdr token `awaiting-coordinator` = `reviewer`, set by another tool
+- **THEN** no model SHALL be asked, and the lane's skip SHALL be `in-flight` with the detail `awaiting reviewer`
+
+#### Scenario: The answer arrived
+
+- **WHEN** the `awaiting` token is cleared or has expired
+- **THEN** a later sweep SHALL take the lane through the remaining gates again
+
 ## ADDED Requirements
 
 ### Requirement: The style sets the verdict and the checks

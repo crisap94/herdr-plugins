@@ -3,7 +3,7 @@
 ## Why
 
 Live, in 2.3.0, at 01:46:12 the same second brought two compactions of one pane. A compaction asked for by
-another tool (a `compact-req-atalaya-bridge` token on pane w21:pBX, origin `request`) and an automatic compaction of
+another tool (a `compact-req-<tool>` token on pane w21:pBX, origin `request`) and an automatic compaction of
 that pane both started. The automatic one compacted (54 709 → 4 460 tokens). The requested one ended `unconfirmed`,
 and its answer was `failed-unconfirmed`, although the work it asked for had been done.
 

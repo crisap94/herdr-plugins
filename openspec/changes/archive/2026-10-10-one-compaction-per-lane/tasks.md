@@ -41,4 +41,6 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 7. Archive
 
-- [ ] 7.1 `openspec archive one-compaction-per-lane` in this merge request, once every other task is checked and the gates pass.
+- [x] 7.1 `openspec archive one-compaction-per-lane` in this merge request, once every other task is checked and the gates pass.
+
+Live check 2026-10-10, daemon 2.4.0: while a requested compaction ran, autocompact logged `skip busy (this lane)` for the lane; a `compact-req-probe` token and a `compact --note` request sent at the same moment produced one compaction record, and it ended `compacted` (not `unconfirmed`).
