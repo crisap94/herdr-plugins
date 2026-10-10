@@ -19,7 +19,11 @@ A compactable kind is driven through `Compaction.run`, as the operator's request
 compactable, so the flow never types into it: its cell drives `Sender` directly, which is the one place anything is
 typed. Both use the same fleet fakes (`test/fakes/compaction-fleet.ts`), which record each typed line, each pause and
 each event in order. A look at the records reads them four times when they say nothing, so the pauses are counted per
-duration rather than per look; the test comments say why.
+duration rather than per look; the test comments say why. The named test asserts that it polled and that the restore
+message follows; the exact pause counts stay in the two tests marked `PINS TODAY:`, so a tuning change fails only those.
+
+The fakes are a deliberate copy of the helpers in `test/compaction.test.ts`, with different names, and that file is not
+edited here. The copy is folded into the other in a later change (see tasks.md).
 
 ## 3. Pins, not fixes
 

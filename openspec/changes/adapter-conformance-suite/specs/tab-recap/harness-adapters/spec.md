@@ -1,10 +1,16 @@
+## Purpose
+
+Every kind of agent tab-recap reads is held to one table of expectations, so that a change to how a kind is read,
+compacted or checked can be proven behaviour-preserving, and so that a kind which cannot do something says so by name.
+
 ## ADDED Requirements
 
 ### Requirement: Every harness adapter is held to one conformance table
 
 Each kind of agent the plugin reads SHALL have a row in the adapter conformance table, and every row SHALL pass the same
 assertions: `locate` places a lane or says why it cannot, and never throws; a read from the start, then from its own
-position, finds nothing new the second time; `latestPrompt` moves no position; `observed` is null for an empty source.
+position, finds nothing new the second time; `latestPrompt` returns the newest user prompt of a recorded source, and
+reading it moves no position; `observed` is null for an empty source.
 A kind whose adapter cannot do a thing SHALL say so by name, not by silence: a kind with no reader for its in-flight
 work SHALL be stopped by autocompact with a reason, and a kind that is not compactable SHALL be left out of the
 compaction targets.

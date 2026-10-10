@@ -38,11 +38,10 @@ import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, ChunkResult, Located, Mark, Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
-import { flow, fleet } from '#test/fakes/compaction-fleet.ts';
+import { compactionFlow, typingFleet } from '#test/fakes/compaction-fleet.ts';
 
 const BUDGET = 1 << 20;
 const dir = mkdtempSync(join(tmpdir(), 'recap-conformance-'));
@@ -69,6 +68,10 @@ interface Row {
     readonly marks: readonly Mark[] | 'absent';
     /** whether the reader has an in-flight method */
     readonly inFlight: boolean;
+    /** the recorded source's newest user prompt; `null` when it holds none (or, for a screen, cannot say) */
+    readonly prompt: string | null;
+    /** whether the kind is offered a compaction today (`COMPACTABLE`), written here by hand so the table does not read the constant it checks */
+    readonly compactable: boolean;
 }
 
 /** Writes each kind's files under `dir` and returns its row. Synchronous: the rows are built once, before the tests run. */
@@ -86,6 +89,8 @@ function rows(): Row[] {
         observed: { tokens: 3057, peak: 39532, window: null, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, trigger: 'manual' }],
         inFlight: true,
+        prompt: 'keep going',
+        compactable: true,
     });
 
     // codex: one rollout per lane, located by the cwd on its first line (the recorded fixture has no session line of its own)
@@ -101,6 +106,9 @@ function rows(): Row[] {
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
         inFlight: false,
+        // PINS TODAY: the recorded rollout carries no user message, so there is no prompt to find
+        prompt: null,
+        compactable: true,
     });
 
     // opencode: one database; /repo holds the recorded compaction, /elsewhere a session with no messages at all
@@ -116,6 +124,8 @@ function rows(): Row[] {
         observed: { tokens: 1020, peak: 1020, window: null, model: 'acme/big-1' },
         marks: [{ kind: 'compacted', at: created, tokensBefore: 1020, tookMs: 7000 }],
         inFlight: false,
+        prompt: 'keep going',
+        compactable: true,
     });
 
     // screen (`*`, here read as gemini): the pane's text; a pane that is empty holds nothing
@@ -128,6 +138,9 @@ function rows(): Row[] {
         // PINS TODAY: a screen reports no compaction marks, so a compaction read from one can only end `unconfirmed`
         marks: 'absent',
         inFlight: false,
+        // PINS TODAY: a screen cannot say what the operator typed (screen-transcripts.ts:35-37 returns null)
+        prompt: null,
+        compactable: false,
     });
     return out;
 }
@@ -144,7 +157,7 @@ const sourceOf = (found: Located): string => {
     return found.source;
 };
 
-/** What the wiring of the daemon's autocompact says about a lane: its skip, if it was skipped. The share is 62 %, so the gates before the in-flight one pass. */
+/** What the wiring of the daemon's autocompact says about a lane, with its kind enabled in the kinds: its skip, if it was skipped. The share is 62 %, so the gates before the in-flight one pass. */
 async function skipOf(readers: readonly Transcripts[], placed: Lane, kind: string): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
@@ -170,9 +183,7 @@ for (const row of ROWS) {
         for (const each of [row.empty, row.recorded]) {
             assert.equal((await row.reader.locate(each)).kind, 'located');
         }
-        const unplaced = await row.reader.locate(row.unplaced);
-        assert.ok(unplaced.kind === 'located' || isUnknown(unplaced));
-        assert.equal(unplaced.kind, 'unknown');
+        assert.equal((await row.reader.locate(row.unplaced)).kind, 'unknown');
     });
 
     test(`${row.kind}: a read from the start, then from its own position, finds nothing new the second time`, async () => {
@@ -186,11 +197,10 @@ for (const row of ROWS) {
         assert.equal(empty.entries.length, 0, 'an empty source yields no entries');
     });
 
-    test(`${row.kind}: latestPrompt moves no position`, async () => {
+    test(`${row.kind}: latestPrompt finds the newest user prompt of the recorded source, and reading it moves no position`, async () => {
         const source = sourceOf(await row.reader.locate(row.recorded));
         const before = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
-        const prompt = await row.reader.latestPrompt(source, BUDGET);
-        assert.ok(prompt.kind === 'prompt' || isUnknown(prompt));
+        assert.deepEqual(await row.reader.latestPrompt(source, BUDGET), { kind: 'prompt', text: row.prompt });
         const later = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
         assert.deepEqual([later.position, later.entries.length], [before.position, before.entries.length]);
     });
@@ -216,7 +226,7 @@ for (const row of ROWS) {
         assert.deepEqual(chunk.marks, row.marks);
     });
 
-    test(`${row.kind}: inFlight is present for claude only; where it is absent, autocompact says why it stopped`, async () => {
+    test(`${row.kind}: inFlight is present for claude only; with the kind enabled for autocompact, where it is absent autocompact says why it stopped`, async () => {
         if (!row.inFlight) {
             assert.equal(typeof row.reader.inFlight, 'undefined');
             // PINS TODAY: the message names the lane's own kind and claims there is no reader, although the reader exists; a screen lane is looked up by its kind, not by the `*` reader
@@ -229,10 +239,10 @@ for (const row of ROWS) {
         assert.deepEqual(found, { kind: 'in-flight', count: 0 });
     });
 
-    test(`${row.kind}: compactable: ${COMPACTABLE.includes(row.kind) ? 'yes' : 'not offered'}`, () => {
+    test(`${row.kind}: ${row.compactable ? 'offered a compaction' : 'not offered a compaction'}`, () => {
         const offered = targetsOf([row.recorded], { kind: 'all' }, { pane: null, focused: null });
-        assert.equal(offered.length, COMPACTABLE.includes(row.kind) ? 1 : 0);
-        assert.equal(compactable([row.recorded]).length, COMPACTABLE.includes(row.kind) ? 1 : 0);
+        assert.equal(offered.length, row.compactable ? 1 : 0);
+        assert.equal(compactable([row.recorded]).length, row.compactable ? 1 : 0);
     });
 }
 
@@ -259,11 +269,12 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model an
 });
 
 // Hermes: a headless job harness only. Nothing reads its history, so it is refused in each place that needs a reader.
-test('hermes refuses: not compactable, `no reader for hermes` in the recap, and autocompact stops the lane in-flight', async () => {
+// The autocompact half enables hermes in the kinds (the production default is claude alone, a record-only lane); the record-only variant is not pinned here.
+test('hermes refuses: not compactable, `no reader for hermes` in the recap, and autocompact stops the lane in-flight (with the kind enabled)', async () => {
     const hermes = lane('hermes', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
     assert.deepEqual(targetsOf([hermes], { kind: 'all' }, { pane: null, focused: null }), []);
-    const world = fleet({ 'w1:p5': 'idle' });
-    await flow(world, 'all', null, [[]], [hermes]).run({ tab: 'w1:t1', pane: null, note: null });
+    const world = typingFleet({ 'w1:p5': 'idle' });
+    await compactionFlow(world, 'all', null, [[]], [hermes]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed, [], 'nothing is typed into hermes');
     assert.match(world.toasts.join('\n'), /No agent here can be compacted/);
 
@@ -274,8 +285,7 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,
     });
-    job.request(tabId('w1:t1'), [hermes], 'requested');
-    await new Promise((resolve) => { setTimeout(resolve, 30); });
+    await job.refreshNow(tabId('w1:t1'), [hermes]);
     assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for hermes/);
 
     assert.deepEqual(await skipOf([], hermes, 'hermes'), { gate: 'in-flight', detail: 'no reader for hermes' });

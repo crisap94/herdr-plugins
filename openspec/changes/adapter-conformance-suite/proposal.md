@@ -12,7 +12,7 @@ per harness needs something to prove it changed nothing. This change adds that p
 - **A conformance table.** `tab-recap/test/adapter-conformance.test.ts` has one row per kind of agent that is read
   (claude, codex, opencode, and the screen reader). Every row runs the same assertions: `locate` places a lane or
   says why it cannot and never throws; a read from its own position finds nothing new the second time; `latestPrompt`
-  moves no position; `observed` is null for an empty source; the recorded compaction marks; `inFlight` is present
+  returns each kind's newest user prompt and moves no position; `observed` is null for an empty source; the recorded compaction marks; `inFlight` is present
   for claude only, and autocompact says why it stopped for the others.
 - **The missing cells.** `tab-recap/test/adapter-conformance-send.test.ts` pins the opencode compaction send path
   (what is typed, in which pieces, the polling, the restore message, no retry) and the named test "every non-Claude
@@ -29,7 +29,7 @@ per harness needs something to prove it changed nothing. This change adds that p
 - No new seam: the tests use the existing constructors, ports and the daemon's `wireAutocompact`.
 - The shared fleet fakes are copied into `tab-recap/test/fakes/compaction-fleet.ts`; the existing
   `compaction.test.ts` keeps its own helpers.
-- The archive of this change happens in a follow-up merge request, after this one is live.
+- No follow-up merge request: the archive lands in this one, as `openspec/config.yaml` requires (task 4.1).
 
 ## Changelog
 
