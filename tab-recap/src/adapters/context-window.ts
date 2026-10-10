@@ -3,8 +3,9 @@ import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
-import { supported } from '#src/ports/capability.ts';
+import { supported, unsupportedCapability } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
+import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
 
 export const WINDOW_SIZES: readonly number[] = [200_000, 1_000_000];
 
@@ -38,17 +39,19 @@ const claudeWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasi
     reportedWindow(observed, catalogue, WINDOW_SIZES) ?? { window: familyWindow(observed.model ?? ''), source: 'table', sizes: WINDOW_SIZES };
 
 const exactWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null => reportedWindow(observed, catalogue, []);
+const noWindow = (_observed: Observed, _catalogue: ModelCatalogue): WindowBasis | null => null;
 
 const WINDOW_SOURCES = {
     claude: supported(claudeWindow),
     codex: supported(exactWindow),
     opencode: supported(exactWindow),
-} satisfies Readonly<Record<RegisteredKind, Capability<(observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null>>>;
+    hermes: unsupportedCapability('context-window-unavailable'),
+} satisfies Readonly<Record<RegisteredKind, Capability<(observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null, ContextWindowWhy>>>;
 
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {
     const registered = registeredKindOf(kind);
     const capability = registered === null ? supported(exactWindow) : WINDOW_SOURCES[registered];
-    const source = capability.kind === 'supported' ? capability.value : exactWindow;
+    const source = capability.kind === 'supported' ? capability.value : noWindow;
     return (observed) => source(observed, catalogue);
 }
 

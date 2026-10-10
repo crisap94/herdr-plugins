@@ -19,6 +19,11 @@ test('session extraction preserves current id and path outputs for registered an
     }
 });
 
+test('Hermes session identity keeps the shared id and path parsing', () => {
+    assert.equal(sessionOf({ agent: 'hermes', agent_session: { kind: 'id', value: 'session-1' } }, sessionOfForKind), 'session-1');
+    assert.equal(sessionOf({ agent: 'hermes', agent_session: { kind: 'path', value: '/tmp/session-1.jsonl' } }, sessionOfForKind), 'session-1');
+});
+
 test('degenerate session values remain total through every decoder entry point', () => {
     const idData = { pane_id: 'p', tab_id: 't', workspace_id: 'w', agent: 'claude', agent_session: { kind: 'id', value: ' ' } };
     const pathValues = ['/tmp/', '.jsonl', '/tmp/.jsonl', '/tmp\\', 'a.jsonl/'];

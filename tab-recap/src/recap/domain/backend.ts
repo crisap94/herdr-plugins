@@ -1,4 +1,5 @@
 import type { Brand } from './brand.ts';
+import type { SetupNote } from './setup-note.ts';
 
 export type EnvironmentName = Brand<string, 'EnvironmentName'>;
 
@@ -16,15 +17,16 @@ interface JobHarness {
     readonly automatic: boolean;
     readonly availabilityMark: boolean;
     readonly customCommand: boolean;
+    readonly setupNote: SetupNote | null;
     readonly job: { readonly contract: 'strict' | 'free-text'; readonly enumerates: boolean; readonly envScrub: readonly EnvironmentName[] };
 }
 
 export const JOB_HARNESSES = [
-    { id: 'claude', label: 'claude', model: { default: 'haiku', legacyEnv: 'TAB_RECAP_CLAUDE_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [environmentName('CLAUDECODE'), environmentName('CLAUDE_CODE_ENTRYPOINT')] } },
-    { id: 'codex', label: 'codex', model: { default: '', legacyEnv: 'TAB_RECAP_CODEX_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
-    { id: 'opencode', label: 'opencode', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
-    { id: 'hermes', label: 'hermes', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
-    { id: 'custom', label: 'custom', model: null, automatic: false, availabilityMark: false, customCommand: true, job: { contract: 'free-text', enumerates: false, envScrub: [] } },
+    { id: 'claude', label: 'claude', model: { default: 'haiku', legacyEnv: 'TAB_RECAP_CLAUDE_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, setupNote: null, job: { contract: 'strict', enumerates: true, envScrub: [environmentName('CLAUDECODE'), environmentName('CLAUDE_CODE_ENTRYPOINT')] } },
+    { id: 'codex', label: 'codex', model: { default: '', legacyEnv: 'TAB_RECAP_CODEX_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, setupNote: null, job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'opencode', label: 'opencode', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, setupNote: null, job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'hermes', label: 'hermes', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, setupNote: 'recapOnly', job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'custom', label: 'custom', model: null, automatic: false, availabilityMark: false, customCommand: true, setupNote: null, job: { contract: 'free-text', enumerates: false, envScrub: [] } },
 ] as const satisfies readonly JobHarness[];
 
 export type BackendId = (typeof JOB_HARNESSES)[number]['id'];

@@ -18,15 +18,23 @@ import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { inFlightReason } from '#src/ports/autocompact-reasons.ts';
+import { IN_FLIGHT_CAPABILITIES } from '#src/adapters/transcript-registry.ts';
+import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
+import { capabilityWording } from '#src/ports/capability-reasons.ts';
 
 const RECAP_WAIT_MS = 90_000;
 const TAIL_BYTES = 512 * 1024;
 
 async function inFlightOf(transcripts: TranscriptRegistry, lane: Lane): Promise<FlightAnswer> {
     const agent = String(lane.agent);
+    const registered = registeredKindOf(agent);
+    if (registered !== null) {
+        const capability = IN_FLIGHT_CAPABILITIES[registered];
+        if (capability.kind === 'unsupported') return { count: 'unknown', why: capabilityWording(capability.why, agent) };
+    }
     const exact = transcripts.exact(agent);
     const reader = exact ?? transcripts.readerFor(agent);
-    if (reader === undefined) return { count: 'unknown', why: inFlightReason('unregistered-reader', agent) };
+    if (reader === undefined) return { count: 'unknown', why: registered === null ? inFlightReason('unregistered-reader', agent) : `no in-flight reader is registered for ${agent}` };
     const located = await reader.locate(lane);
     if (isUnknown(located)) return { count: 'unknown', why: exact === undefined ? inFlightReason('unregistered-reader', agent) : saying(located.why) };
     if (reader.inFlight.kind === 'unsupported') return { count: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };

@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { CustomHarness } from '#src/adapters/custom-harness.ts';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
@@ -24,6 +26,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
+import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
@@ -243,6 +246,19 @@ for (const row of ROWS) {
 test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen kinds are not offered', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);
     assert.deepEqual(compactable([lane('hermes'), lane('gemini'), lane('custom')]), []);
+});
+
+test('registered kind flags match transcript and compaction lookup outcomes', () => {
+    const transcripts = modalTranscriptRegistry();
+    for (const [kind, flags] of Object.entries(REGISTERED_KINDS)) {
+        assert.equal(transcripts.exact(kind) !== undefined, flags.hasTranscript, `${kind} transcript capability`);
+        assert.equal(compactionPlans.forKind(kind, '').kind === 'supported', flags.compactable, `${kind} compaction capability`);
+    }
+});
+
+test('hermes history and compaction lookups refuse with their established wording', () => {
+    assert.equal(modalTranscriptRegistry().exact('hermes'), undefined);
+    assert.deepEqual(compactionPlans.forKind('hermes', ''), { kind: 'unsupported', why: 'no compaction plan is registered for hermes' });
 });
 
 test('a registered transcript reader without in-flight support shows its declared reason', async () => {

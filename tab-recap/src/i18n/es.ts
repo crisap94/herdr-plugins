@@ -31,6 +31,7 @@ export const es: Messages = {
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
+        harnessNotes: { recapOnly: 'solo resúmenes' },
         legend: { current: 'actual', available: 'disponible', missing: 'no está en el PATH' },
         locked: (name) => `solo lectura: ${name} está definida en el entorno`,
         modelDefault: (model) => (model === '' ? 'el predeterminado del agente' : `predeterminado: ${model}`),
