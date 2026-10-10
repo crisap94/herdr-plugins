@@ -2,14 +2,14 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { AsyncQueue } from './async-queue.ts';
-import { decode } from './decode.ts';
+import { decode, paneSessionOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
 
 export interface Blindness {
@@ -191,6 +191,11 @@ export class Informer {
             this.lastLife = Number(this.clock.now());
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
                 this.hooks.onPaneUpdated?.(frame.data);
+                // herdr reports a pane's agent session on its frames: the lane follows it, so the next transcript read is the one herdr names now
+                const session = paneSessionOf(frame.data);
+                if (session !== null) {
+                    this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
+                }
                 continue;
             }
             const decoded = decode(frame);

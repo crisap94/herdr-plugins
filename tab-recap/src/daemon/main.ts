@@ -6,7 +6,7 @@ import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet, readPaneSession } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
@@ -159,7 +159,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
     });
     box.informer = informer;
-    const recent = new LaneRecent(transcripts);
+    const recent = new LaneRecent(transcripts, readPaneSession);
     const claims = new CompactionClaims();
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });

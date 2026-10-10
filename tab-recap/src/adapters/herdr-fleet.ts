@@ -4,13 +4,10 @@ import { HerdrAgents } from './herdr-agents.ts';
 import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Json, Pushed } from '#src/transport/herdr.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { seenFrom } from '#src/recap/application/decode.ts';
+import { sessionOf } from '#src/recap/application/decode.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
-import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { ClosedAll, Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
@@ -20,7 +17,9 @@ import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#s
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import { PANE_WRITABLE, WORKSPACE_WRITABLE, unownedName } from '#src/recap/domain/lane-tokens.ts';
+import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
+import { refusalOf } from './token-refusal.ts';
+import { layoutOf, list, reconciliationOf, str } from './herdr-json.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
@@ -31,49 +30,8 @@ export const SETUP_ENTRYPOINT = 'setup';
 
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-function list(value: unknown): readonly Json[] {
-    return Array.isArray(value) ? value.filter((item): item is Json => typeof item === 'object' && item !== null) : [];
-}
-
-function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
-
-function rectOf(value: unknown): Rect {
-    const r = typeof value === 'object' && value !== null ? (value as Json) : {};
-    const n = (key: string): number => (typeof r[key] === 'number' ? r[key] : 0);
-    return { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
-}
-
-export function reconciliationOf(snapshot: Json): Reconciliation {
-    const panes = list(snapshot['panes']);
-    const agents = agentPanesIn(panes, list(snapshot['agents']));
-    const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent)).filter((lane): lane is SeenLane => lane !== null);
-    const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
-    const focused = str(snapshot['focused_tab_id']);
-    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths };
-}
-
-function layoutOf(layout: Json): LayoutResult {
-    const panes: Placed[] = list(layout['panes']).map((pane) => ({ paneId: str(pane['pane_id']), rect: rectOf(pane['rect']) }));
-    const splits: Split[] = list(layout['splits']).map((split) => ({
-        direction: str(split['direction']),
-        ratio: typeof split['ratio'] === 'number' ? split['ratio'] : 0.5,
-        rect: rectOf(split['rect']),
-    }));
-    const area = rectOf(layout['area']);
-    const focused = str(layout['focused_pane_id']);
-    return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : focused, panes, splits };
-}
-
 /** A modal is a herdr popup: session-modal, no pane id, gone when its process exits. */
 const MODAL_SIZE = '96%';
-
-/** A write naming a name tab-recap does not own is refused here, before herdr sees it. */
-const refusalOf = (tokens: Readonly<Record<string, string | null>>, allowed: readonly string[]): Unknown | null => {
-    const foreign = unownedName(Object.keys(tokens), allowed);
-    return foreign === null ? null : unknown({ why: 'unreadable', detail: `refused: ${foreign} is not a tab-recap token name` });
-};
 
 /** `pane.get`: the pane's tokens as herdr holds them now (a name whose time to live passed is not there). Stand-alone, for readers that hold no fleet. */
 export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
@@ -81,6 +39,16 @@ export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
         const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
         const tokens = typeof info === 'object' && info !== null ? (info as Json)['tokens'] : undefined;
         return { kind: 'tokens', tokens: typeof tokens === 'object' && tokens !== null ? Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {} };
+    } catch (error) {
+        return unknown({ why: 'unreachable', detail: detail(error) });
+    }
+}
+
+/** `pane.get`: the session herdr reports for the pane now, as the transcripts name it; null when it has none, unknown when herdr cannot say. */
+export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
+    try {
+        const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
+        return typeof info === 'object' && info !== null ? sessionOf(info as Record<string, unknown>) : null;
     } catch (error) {
         return unknown({ why: 'unreachable', detail: detail(error) });
     }

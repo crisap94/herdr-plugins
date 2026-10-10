@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decode } from '#src/recap/application/decode.ts';
+import { decode, paneSessionOf } from '#src/recap/application/decode.ts';
 import { specsFor, GLOBAL_TOPICS, PER_PANE_TOPIC } from '#src/recap/application/watch-set.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 
@@ -19,9 +19,27 @@ test('a created pane asks for a reconcile rather than guessing', () => {
 });
 
 test('a detected agent with the nested pane shape becomes a lane', () => {
-    const decoded = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { value: 'abc' } } } });
+    const decoded = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { kind: 'id', value: 'abc' } } } });
     assert.ok(decoded.kind === 'detected');
     assert.equal(decoded.lane.session, 'abc');
+});
+
+test('herdr names the session by id; a path names the same session by its file name (`<id>.jsonl`)', () => {
+    const id = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { source: 'claude', agent: 'claude', kind: 'id', value: '4ce6fce1-e940' } } } });
+    const path = decode({ event: 'pane_agent_detected', data: { pane: { pane_id: 'w1:p1', tab_id: 'w1:t1', workspace_id: 'w1', agent: 'claude', agent_session: { source: 'claude', agent: 'claude', kind: 'path', value: '/home/u/.claude/projects/-x/4ce6fce1-e940.jsonl' } } } });
+    assert.ok(id.kind === 'detected' && path.kind === 'detected');
+    assert.deepEqual([id.lane.session, path.lane.session], ['4ce6fce1-e940', '4ce6fce1-e940']);
+});
+
+test('a pane.updated frame names its pane and session when it carries one; a frame without a session names none', () => {
+    const withSession = { pane: { pane_id: 'w28:p1', agent_session: { source: 'claude', agent: 'claude', kind: 'id', value: 'new-session' } } };
+    assert.deepEqual(paneSessionOf(withSession), { pane: 'w28:p1', session: 'new-session' });
+    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: null }, tokens: {} }), null);
+});
+
+test('a session of a kind this does not know is not guessed at: no session is named', () => {
+    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: { kind: 'uuid', value: 'x-1' } } }), null);
+    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1' }, agent_session: { value: 'no-kind' } }), null);
 });
 
 test('unknown events are counted, not mapped', () => {
