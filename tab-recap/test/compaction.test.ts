@@ -4,6 +4,8 @@ import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import { unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
@@ -55,12 +57,12 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
-        compactionPlans,
+        compactionPlans: world.plans ?? compactionPlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
@@ -145,6 +147,16 @@ test('codex that cannot finish its /compact gets no restore message', async () =
     const world = fleet({ 'w1:p2': 'idle' }, ['w1:p2']);
     await flow(world, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
+});
+
+test('an unsupported send tells the operator after the started toast', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.toasts, [
+        'Compact codex | Compacting codex',
+        'Compact codex | Could not compact codex: no compaction plan is registered for codex',
+    ]);
 });
 
 test('all and kinds: every compactable agent that is free; gemini is never offered', async () => {

@@ -20,7 +20,7 @@ The registered-kind plan registry uses the `RegisteredKind` type derived from th
 - The Herdr line entry delay remains 300 ms. A stalled prompt continues to be accepted as sent.
 - Poll look counts preserve the current total of 20 looks; each look still runs the existing outcome/mark inspection, including its per-mark settle reads and delays.
 
-The one deliberate conformance change is that an unregistered kind sent directly to the sender returns `Unsupported` and types nothing, rather than taking the Codex plan. The T0 test's `zed` Codex-path loop case is now a separate Unsupported assertion. Existing confirmation, retry, restore, and timing oddities remain as recorded.
+The one deliberate conformance change is that an unregistered kind sent directly to the sender returns `Unsupported` and types nothing, rather than taking the Codex plan. The adapter-conformance send test's `zed` Codex-path loop case is now a separate Unsupported assertion. Existing confirmation, retry, restore, and timing oddities remain as recorded.
 
 ## Decisions
 

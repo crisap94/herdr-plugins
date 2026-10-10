@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Sender } from '#src/recap/application/compaction-send.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
-import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -10,7 +9,7 @@ import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFle
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: 'keep the schema' }, brief: null };
 
-const trailOf = (): Trail => new Trail({ advance: () => undefined, finish: () => undefined } as unknown as Records, 'cmp_t0', () => NOW);
+const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => 'cmp_t0', advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, 'cmp_t0', () => NOW);
 
 test('opencode: its own /compact is confirmed on the second look, then restored; pins today: four reads per look and a one second gap', async () => {
     const world = typingFleet({ 'w1:p4': 'idle' });
@@ -51,9 +50,11 @@ test('every non-Claude kind takes the Codex path; target selection filters non-C
         assert.deepEqual(failing.pauses, [], `${kind}: a failure is not polled`);
     }
     const unknownKind = typingFleet({ 'w1:p9': 'idle' });
-    const refused = await new Sender(compactionDeps(unknownKind, 'focused', 'w1:p9')).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' }), TEXT, trailOf());
+    const trailEnds: unknown[] = [];
+    const refused = await new Sender(compactionDeps(unknownKind, 'focused', 'w1:p9')).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' }), TEXT, trailOf(trailEnds));
     assert.equal(refused?.kind, 'unsupported');
     assert.deepEqual(unknownKind.typed, []);
+    assert.deepEqual(trailEnds, [{ stage: 'failed', at: NOW, why: 'no compaction plan is registered for zed' }]);
 });
 
 test('pins today: an unconfirmed non-Claude compaction gets 20 looks and still gets the restore message', async () => {

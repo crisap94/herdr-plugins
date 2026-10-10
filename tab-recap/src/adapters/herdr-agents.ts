@@ -1,6 +1,7 @@
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import type { Done } from '#src/ports/columns.ts';
+import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
 type Json = Readonly<Record<string, unknown>>;
@@ -50,7 +51,7 @@ export class HerdrAgents implements Agents {
         }
     }
 
-    async typeLine(pane: string, line: { readonly pieces: readonly string[] }, behavior: LineBehavior): Promise<Prompted> {
+    async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
         const pieces = line.pieces;
         if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: 'a typed line has no line break' });
