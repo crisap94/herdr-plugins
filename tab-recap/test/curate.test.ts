@@ -9,7 +9,8 @@ import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
-import { writerFacts } from '#src/recap/application/ledger-input.ts';
+import { inputOf } from '#src/recap/application/recap-input.ts';
+import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
 import { timelineOf } from '#src/recap/render/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
@@ -18,8 +19,8 @@ import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';
 import { factOf } from './fakes/facts.ts';
-import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
-import { oneTask } from '#test/support.ts';
+import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
+import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 
 const T1 = { tab: 'w1:t1', key: 't1' };
 
@@ -39,19 +40,18 @@ const answer = (body: object): Curated => ({ kind: 'curated', text: JSON.stringi
 
 test('the curator document stays byte-identical and includes every open fact when the writer view is pruned', async () => {
     const open = Array.from({ length: 20 }, (_, at) => factOf('done', `done ${at}`, { lastAt: at + 1 }));
-    const full = writerFacts(open, FULL_WRITER_VIEW, 100);
-    const pruned = writerFacts(open, prunedWriterView(keepNewestOf(10), nextHoursOf(24)), 100);
-    assert.equal(full.shown.length, 20);
-    assert.equal(pruned.shown.length, 10);
+    const ledger = new MemoryLedger().seed(...open);
     const runCurator = async (): Promise<string> => {
-        const { curate, calls } = setup([answer({ story: 'All facts are retained.' })], { ledger: new MemoryLedger().seed(...open) });
+        const { curate, calls } = setup([answer({ story: 'All facts are retained.' })], { ledger });
         await curate.run('w1:t1');
         assert.equal(calls.length, 1);
         return calls[0] ?? '';
     };
+    const beforePruning = await runCurator();
+    const built = await inputOf([], { tab: 'w1:t1', repos: NO_REPOS, now: NOW, tasks: [{ id: 't1', name: '', lanes: [] }], facts: [{ key: 't1', open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
+    assert.match(writerContext({ ...requestOf(), input: built.input }), /<hidden section="done" count="10"\/>/u, 'the writer view really prunes in this run');
     const withPruning = await runCurator();
-    const withoutPruning = await runCurator();
-    assert.equal(withPruning, withoutPruning);
+    assert.equal(withPruning, beforePruning);
     assert.equal((withPruning.match(/<fact /gu) ?? []).length, 20);
 });
 
