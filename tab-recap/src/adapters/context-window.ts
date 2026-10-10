@@ -3,6 +3,8 @@ import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import { supported } from '#src/ports/capability.ts';
+import type { Capability } from '#src/ports/capability.ts';
 
 export const WINDOW_SIZES: readonly number[] = [200_000, 1_000_000];
 
@@ -38,14 +40,15 @@ const claudeWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasi
 const exactWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null => reportedWindow(observed, catalogue, []);
 
 const WINDOW_SOURCES = {
-    claude: claudeWindow,
-    codex: exactWindow,
-    opencode: exactWindow,
-} satisfies Readonly<Record<RegisteredKind, (observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null>>;
+    claude: supported(claudeWindow),
+    codex: supported(exactWindow),
+    opencode: supported(exactWindow),
+} satisfies Readonly<Record<RegisteredKind, Capability<(observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null>>>;
 
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {
     const registered = registeredKindOf(kind);
-    const source = registered === null ? exactWindow : WINDOW_SOURCES[registered];
+    const capability = registered === null ? supported(exactWindow) : WINDOW_SOURCES[registered];
+    const source = capability.kind === 'supported' ? capability.value : exactWindow;
     return (observed) => source(observed, catalogue);
 }
 

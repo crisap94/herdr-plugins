@@ -7,31 +7,36 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
+import { supported } from '#src/ports/capability.ts';
+import type { Capability } from '#src/ports/capability.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
 const READERS = {
-    claude: () => new ClaudeTranscripts(),
-    codex: () => new CodexTranscripts(),
-    opencode: () => new OpencodeTranscripts(),
-} as const satisfies Readonly<Record<RegisteredKind, () => Transcripts>>;
+    claude: supported(() => new ClaudeTranscripts()),
+    codex: supported(() => new CodexTranscripts()),
+    opencode: supported(() => new OpencodeTranscripts()),
+} satisfies Readonly<Record<RegisteredKind, Capability<() => Transcripts>>>;
+
+function readersOf(readers: typeof READERS): Readonly<Record<string, Transcripts>> {
+    return Object.fromEntries(Object.entries(readers).flatMap(([kind, capability]) => capability.kind === 'supported' ? [[kind, capability.value()]] : []));
+}
 
 export function readerKindOf(raw: string): RegisteredKind | null {
     return registeredKindOf(raw);
 }
 
-function registryFrom(readers: Readonly<Record<string, () => Transcripts>>, fallback: Transcripts | null): TranscriptRegistry {
-    return new TranscriptRegistry(Object.fromEntries(Object.entries(readers).map(([kind, make]) => [kind, make()])), fallback);
-}
-
 export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {
-    return new TranscriptRegistry(Object.fromEntries(Object.entries(READERS).map(([kind, make]) => [kind, make()])), new ScreenTranscripts(screens, wants));
+    return new TranscriptRegistry(readersOf(READERS), new ScreenTranscripts(screens, wants));
 }
 
 export function modalTranscriptRegistry(): TranscriptRegistry {
-    return registryFrom(READERS, null);
+    return new TranscriptRegistry(readersOf(READERS), null);
 }
 
 export function replayTranscriptRegistry(): TranscriptRegistry {
-    return new TranscriptRegistry({ claude: READERS.claude(), codex: READERS.codex() }, null);
+    const claude = READERS.claude;
+    const codex = READERS.codex;
+    if (claude.kind !== 'supported' || codex.kind !== 'supported') throw new Error('Replay readers are unavailable');
+    return new TranscriptRegistry({ claude: claude.value(), codex: codex.value() }, null);
 }
