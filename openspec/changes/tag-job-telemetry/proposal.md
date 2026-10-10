@@ -8,7 +8,7 @@ Headless jobs launched by tab-recap use the same harnesses as interactive sessio
 
 - Add an opt-in `TAB_RECAP_TELEMETRY_TAGS` setting, defaulting to `off`.
 - When enabled, tag supported child jobs with the constant resource attribute `tab_recap.job`, whose value is one of `recap-writer`, `curator`, `decider`, `judge`, `compaction-brief`, or `coverage-check`.
-- Add a new job-kind tuple and pass its typed value through the harness maker to child-environment construction.
+- Add a closed Job tag value set and pass its typed value through the harness maker to child-environment construction.
 - Document collector-dependent dashboard queries and the limits of deriving Codex cost from token metrics.
 
 ## Out of scope
@@ -22,7 +22,7 @@ Headless jobs launched by tab-recap use the same harnesses as interactive sessio
 
 ## Dependencies
 
-This change builds on the job harness registry, which has landed. If a later adapter refactor changes the `Harness` port or `scrubbedEnv`, implementation rebases onto that refactor. The scope of T7 is unconfirmed, and this change does not depend on an assumed T7 launch relocation. The hook is in the `Harness` port, the five entries of `src/daemon/harness-makers.ts`, and the child environment built through `scrubbedEnv` in `src/adapters/process.ts`. This change is specification only.
+This change builds on the job harness registry (landed, archived as `job-harness-registry`) and any later adapter refactor of the `Harness` port or `scrubbedEnv`. The hook is in the five entries of `src/daemon/harness-makers.ts` and the child environment built through `scrubbedEnv` in `src/adapters/process.ts`. This change is specification only.
 
 ## Impact
 
