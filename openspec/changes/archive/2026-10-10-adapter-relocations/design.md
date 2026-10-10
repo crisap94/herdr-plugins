@@ -1,0 +1,9 @@
+# Design
+
+The job registry declares typed environment names. `scrubbedEnv()` keeps its no-argument signature and scrubs the union of those names plus the existing `HERDR_` and `TAB_RECAP_` prefixes. The adapter owns Claude's two explicit names, while all callers keep the current environment output. A later telemetry tag can attach to each child environment after `scrubbedEnv()` returns: the optional default-off `JobTag` travels through `Make` in `daemon/harness-makers.ts`, and the five harness makers add the serialized attribute to the copied environment. Git children remain untagged.
+
+The screen adapter owns the existing chrome regexes and passes them to the application cleaner. The cleaner keeps the same removal order, line deduplication, and output for every screen reader kind.
+
+The session adapter registry is keyed by `RegisteredKind`. Each registered adapter and an explicit unregistered-kind fallback call one named helper for the existing id/path interpretation. Codex, OpenCode, and unknown kinds retain today's basename and `.jsonl` stripping behavior on purpose; deciding whether their path interpretation should differ is a later change. `decode.ts` already reads the lane's `agent` field before session extraction and passes it to the registry.
+
+Observed context parsers move to adjacent per-harness modules. Tool-name maps move to per-harness modules, while the shared call builders, shell classification, clipping and entry construction remain in `tool-calls.ts`. The regexes, maps, and environment prefix filter are hand-written because Node has no built-in for interpreting these harness transcript formats, removing their terminal chrome, classifying tool names, or selecting environment variables by prefix and registered name. The session helper parses both slash styles independent of the host OS because `node:path` basename follows the host platform and would not preserve Windows path behavior on every host.

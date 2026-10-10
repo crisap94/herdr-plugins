@@ -5,7 +5,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
-import { claudeObserved } from './context-rows.ts';
+import { claudeObserved } from './claude-context.ts';
 import { extractClaude } from './claude-rows.ts';
 import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts';
 
