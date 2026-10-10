@@ -1,5 +1,6 @@
 import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
-import { kindsWith } from './agent-kinds.ts';
+import { REGISTERED_KINDS, kindsWith } from './registered-kinds.ts';
+import type { RegisteredKindTable } from './registered-kinds.ts';
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -16,7 +17,11 @@ export const MINIMUM_MIN = 10;
 export const MINIMUM_MAX = 95;
 export const CEILING_DEFAULT = STYLE_NUMBERS.balanced.ceiling;
 export const COOLDOWN_DEFAULT_MS = STYLE_NUMBERS.balanced.cooldownMs;
-export const KINDS_DEFAULT = kindsWith('autocompactDefault');
+export function autocompactDefaultKinds<T extends RegisteredKindTable>(table: T): readonly (keyof T)[] {
+    return kindsWith(table, 'autocompactDefault');
+}
+
+export const KINDS_DEFAULT = autocompactDefaultKinds(REGISTERED_KINDS);
 export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];

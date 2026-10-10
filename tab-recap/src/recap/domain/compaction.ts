@@ -1,6 +1,11 @@
-import { kindsWith } from './agent-kinds.ts';
+import { REGISTERED_KINDS, kindsWith } from './registered-kinds.ts';
+import type { RegisteredKindTable } from './registered-kinds.ts';
 
-export const COMPACTABLE = kindsWith('compactable');
+export function compactableKinds<T extends RegisteredKindTable>(table: T): readonly (keyof T)[] {
+    return kindsWith(table, 'compactable');
+}
+
+export const COMPACTABLE = compactableKinds(REGISTERED_KINDS);
 
 export type CompactTarget = { readonly kind: 'focused' } | { readonly kind: 'all' } | { readonly kind: 'kinds'; readonly kinds: readonly string[] };
 

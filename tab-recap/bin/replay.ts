@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
 import { readerKindOf, replayTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
-import type { ReaderKind } from '#src/adapters/transcript-registry.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';
 import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
@@ -30,7 +30,7 @@ import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
 import { countedWriter } from '#src/recap/application/counted-writer.ts';
 
-const kindOf = (flag: string | null, file: string): ReaderKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
+const kindOf = (flag: string | null, file: string): RegisteredKind | null => readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
 
 const sizeOf = (file: string): number | null => {
     try {
