@@ -23,6 +23,7 @@ interface Harness {
     readonly job: RecapJob;
     readonly settings: Settings;
     readonly reads: number[];
+    readonly sources: string[];
     callCount(): number;
     clockReads(): number;
 }
@@ -31,13 +32,15 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     let calls = 0;
     let clockCalls = 0;
     const reads: number[] = [];
+    const sources: string[] = [];
     const reader: Transcripts = {
         agent: 'claude',
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-        read: (_source, from): Promise<ChunkResult> => {
+        read: (source, from): Promise<ChunkResult> => {
             reads.push(from.cursor);
+            sources.push(source);
             return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'migrate victoria' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: reads.length, tail: null }, grew: true });
         },
     };
@@ -56,10 +59,11 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
         language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },
     });
-    return { job, settings, reads, callCount: (): number => calls, clockReads: (): number => clockCalls };
+    return { job, settings, reads, sources, callCount: (): number => calls, clockReads: (): number => clockCalls };
 }
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+const second = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 const written: Written = { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 };
 
@@ -245,6 +249,52 @@ test('a refresh caller is resolved when its own run ends, not behind a debounced
     t.mock.timers.tick(1);
     await settle();
     assert.equal(causes.length, 3);
+});
+
+test('a lane joining or leaving the set inside a run window starts at once', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    const created = harness({ debounce: WINDOW_60S }, causes);
+    const job = created.job;
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    t.mock.timers.setTime(20_000);
+    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 2, 'a lane joining the set starts at once');
+    t.mock.timers.setTime(40_000);
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 3, 'a lane leaving the set starts at once');
+});
+
+test('a forced request kept in the again slot runs the lanes of the turn ending that joins it', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    let release: ((result: Written) => void) | undefined;
+    let answers = 0;
+    const blocked = new Promise<Written>((resolve) => { release = resolve; });
+    const created = harness({ debounce: WINDOW_60S }, causes, () => {
+        answers += 1;
+        return answers === 1 ? blocked : Promise.resolve(written);
+    });
+    const job = created.job;
+    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    t.mock.timers.setTime(10_000);
+    job.request(tabId('w1:t1'), [lane], 'requested');
+    t.mock.timers.setTime(11_000);
+    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    release?.(written);
+    await settle();
+    t.mock.timers.tick(0);
+    await settle();
+    assert.deepEqual(causes, ['turn-ended', 'requested']);
+    assert.deepEqual(created.sources.slice(2), ['/t/w1:p1', '/t/w1:p2'], 'the kept request reads the joined lane too');
 });
 
 test('a changed lane set starts at once inside a run window', async (t) => {
