@@ -1,7 +1,3 @@
-## Purpose
-
-Every registered kind declares how its own model's context window is determined, while common context-use rules stay independent of adapter identity.
-
 ## ADDED Requirements
 
 ### Requirement: Each adapter states the context window of its own model
@@ -17,6 +13,11 @@ Each registered kind SHALL provide a context-window function, and the domain SHA
 
 - **WHEN** a kind has no observed window and its injected catalogue has an entry for the model
 - **THEN** the resulting context source SHALL be `catalogue`
+
+#### Scenario: Claude consults the catalogue before its family table
+
+- **WHEN** Claude has no stated window and the injected catalogue, currently backed by the OpenCode model cache, has an entry for its model
+- **THEN** the catalogue SHALL determine the window before Claude's family table is consulted
 
 #### Scenario: Claude uses its family table
 

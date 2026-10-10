@@ -1,4 +1,5 @@
 import type { Observed, WindowBasis, WindowOf } from '#src/recap/domain/compaction.ts';
+import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
@@ -28,27 +29,22 @@ const catalogued = (observed: Observed, catalogue: ModelCatalogue): WindowBasis 
 
 const stated = (observed: Observed): WindowBasis | null => observed.window === null ? null : { window: observed.window, source: 'agent' };
 
+const reportedWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null =>
+    stated(observed) ?? catalogued(observed, catalogue);
+
 const claudeWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis =>
-    stated(observed) ?? catalogued(observed, catalogue) ?? { window: familyWindow(observed.model ?? ''), source: 'table' };
-
-const codexWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null =>
-    stated(observed) ?? catalogued(observed, catalogue);
-
-const opencodeWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null =>
-    stated(observed) ?? catalogued(observed, catalogue);
+    reportedWindow(observed, catalogue) ?? { window: familyWindow(observed.model ?? ''), source: 'table' };
 
 const WINDOW_SOURCES = {
     claude: claudeWindow,
-    codex: codexWindow,
-    opencode: opencodeWindow,
+    codex: reportedWindow,
+    opencode: reportedWindow,
 } satisfies Readonly<Record<RegisteredKind, (observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null>>;
 
-const unregisteredWindow = (observed: Observed, catalogue: ModelCatalogue): WindowBasis | null =>
-    stated(observed) ?? catalogued(observed, catalogue);
-
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {
-    const source = Object.hasOwn(WINDOW_SOURCES, kind) ? WINDOW_SOURCES[kind as RegisteredKind] : null;
-    return (observed) => source === null ? unregisteredWindow(observed, catalogue) : source(observed, catalogue);
+    const registered = registeredKindOf(kind);
+    const source = registered === null ? reportedWindow : WINDOW_SOURCES[registered];
+    return (observed) => source(observed, catalogue);
 }
 
 export function contextWindows(catalogue: ModelCatalogue): ContextWindows {
