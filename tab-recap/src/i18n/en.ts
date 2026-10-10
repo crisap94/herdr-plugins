@@ -108,7 +108,7 @@ export const en: Messages = {
         auto: (text) => `${text} (auto)`,
         coverageMissed: (agent) => `${agent} not compacted: the brief would lose something the work needs`,
         skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
-        joined: (agent) => `${agent} is already compacting: this request joins that compaction`,
+        joined: (agent, noted) => `${agent} is already compacting: this request joins that compaction${noted ? ', and its note is not used' : ''}`,
         nothing: 'No agent here can be compacted',
         failed: (agent, why) => `Could not compact ${agent}: ${why}`,
     },

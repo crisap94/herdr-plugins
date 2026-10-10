@@ -78,7 +78,10 @@ export class Compaction {
         const { compaction } = this.deps.messages();
         this.deps.claims.join(pane, request);
         this.answerOne(request, pane, 'queued');
-        void this.tell(compaction.title(agent), compaction.joined(agent));
+        // an automatic request that loses the race is not the operator's to hear about; a note on a joined request is not used (the running one's stands)
+        if (request.origin !== 'auto') {
+            void this.tell(compaction.title(agent), compaction.joined(agent, request.note !== null));
+        }
     }
 
     /** Claims the lane's pane for this request, or joins the compaction that holds it; true when the request owns the lane. */
@@ -203,6 +206,12 @@ export class Compaction {
             }
             await this.deps.refresh(tab, lanes);
             await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
+        } catch (error) {
+            // a flow that throws still answers its requests, the owner's and the joined ones': no tool waits an hour on a compaction that will not come
+            for (const lane of owned) {
+                this.answer(request, String(lane.pane), 'failed-error');
+            }
+            throw error;
         } finally {
             for (const lane of owned) {
                 this.deps.claims.release(String(lane.pane));

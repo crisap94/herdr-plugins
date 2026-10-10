@@ -35,6 +35,9 @@ its own. A refused owner (a working agent, for example) passes its refusal to th
 The queue read is one `SELECT … LIMIT 1` on the `request` table, in `RequestsRepository`, behind the new
 `CompactionQueue` port. No Node built-in is involved; nothing is added to `package.json`.
 
+A tool request that the daemon will not run (the herdr events setting is off) is counted as queued until
+`takeAnswered` removes it. For that moment the lane reads as busy: conservative and brief, so it is left as it is.
+
 ## 4. Why no restart guarantee for joined requests
 
 A joined request exists only in memory: it was taken from the queue, and the running compaction's record does not
