@@ -30,11 +30,11 @@ typed values; one serializer per token.
 
 ## 3. Compaction becomes the first exchange
 
-- [ ] 3.1 `src/protocol/exchanges/compact.ts`: the compact descriptor (legacy id grammar, stages, reasons, events).
+- [x] 3.1 `src/protocol/exchanges/compact.ts`: the compact descriptor (legacy id grammar, stages, reasons, events).
   `recap/domain/compact-request.ts` and the owner lists in `recap/domain/lane-tokens.ts` are replaced by derivations.
   Verify: compatibility vectors taken from today's `askedOf`/`answerValue`; `test/compact-requests.test.ts` and
   `test/one-writer.test.ts` pass unmodified.
-- [ ] 3.2 `recap/domain/event-token.ts`: `EVENT_KINDS` = lane events plus the derived exchange events, same kinds as today.
+- [x] 3.2 `recap/domain/event-token.ts`: `EVENT_KINDS` = lane events plus the derived exchange events, same kinds as today.
   Verify: the event-kind table in the lane-tokens spec matches the derived list (test).
 
 - [ ] 3.3 Compaction answers only declared failure reasons: the compact descriptor's `failureReasons` gain `skipped` and

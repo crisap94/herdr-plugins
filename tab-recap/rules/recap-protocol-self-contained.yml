@@ -9,6 +9,8 @@ note: >-
 files:
   - "**/src/protocol/**"
   - "**/probes/recap-protocol-self-contained/**"
+ignores:
+  - "**/src/protocol/exchanges/**"
 rule:
   kind: string_fragment
   inside:

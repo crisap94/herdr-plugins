@@ -1,6 +1,7 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { OWNED_TOKENS, STATE_TOKENS, NEEDS_TOKEN, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
+import { OWNED_TOKENS, STATE_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
+import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
 import type { LaneFacts, TokenValues } from '#src/recap/domain/lane-tokens.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';

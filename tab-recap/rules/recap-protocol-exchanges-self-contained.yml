@@ -1,0 +1,20 @@
+id: recap-protocol-exchanges-self-contained
+language: typescript
+severity: error
+message: >-
+  An exchange descriptor imports the protocol's own files only: './' within its folder, or one '../'
+  to a file of src/protocol/ itself. Two or more levels up leave the protocol, and a copy another tool
+  carries verbatim would no longer compile on its own.
+note: >-
+  The allowed shape is one segment after '../' that names a file (no further slash, no dots first):
+  '../exchange.ts' passes, '../../recap/x.ts' fails. The exchanges folder is the only place with '../'.
+files:
+  - "**/src/protocol/exchanges/**"
+  - "**/probes/recap-protocol-exchanges-self-contained/**"
+rule:
+  kind: string_fragment
+  inside:
+    kind: import_statement
+    stopBy: end
+  not:
+    regex: "^(\\./|\\.\\./[^/.][^/]*$)"
