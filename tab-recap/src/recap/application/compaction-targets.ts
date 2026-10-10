@@ -2,7 +2,7 @@ import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 
-export const compactable = (lanes: readonly Lane[]): readonly Lane[] => lanes.filter((lane) => COMPACTABLE.includes(String(lane.agent)));
+export const compactable = (lanes: readonly Lane[]): readonly Lane[] => lanes.filter((lane) => COMPACTABLE.some((kind) => kind === String(lane.agent)));
 
 export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where: { readonly pane: string | null; readonly focused: string | null }): readonly Lane[] {
     const eligible = compactable(lanes);

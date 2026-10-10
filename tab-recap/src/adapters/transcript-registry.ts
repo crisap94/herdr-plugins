@@ -2,6 +2,7 @@ import { ClaudeTranscripts } from './claude-transcripts.ts';
 import { CodexTranscripts } from './codex-transcripts.ts';
 import { OpencodeTranscripts } from './opencode-transcripts.ts';
 import { ScreenTranscripts } from './screen-transcripts.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
@@ -12,12 +13,10 @@ const READERS = {
     claude: () => new ClaudeTranscripts(),
     codex: () => new CodexTranscripts(),
     opencode: () => new OpencodeTranscripts(),
-} as const satisfies Readonly<Record<string, () => Transcripts>>;
+} as const satisfies Readonly<Record<RegisteredKind, () => Transcripts>>;
 
-export type ReaderKind = keyof typeof READERS;
-
-export function readerKindOf(raw: string): ReaderKind | null {
-    return Object.hasOwn(READERS, raw) ? raw as ReaderKind : null;
+export function readerKindOf(raw: string): RegisteredKind | null {
+    return Object.hasOwn(READERS, raw) ? raw as RegisteredKind : null;
 }
 
 function registryFrom(readers: Readonly<Record<string, () => Transcripts>>, fallback: Transcripts | null): TranscriptRegistry {
