@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
+import type { RecapRecords, RecordedRun } from '#src/ports/recap-records.ts';
 import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryRunHistory } from './fakes/run-history.ts';
@@ -17,7 +17,7 @@ const subjects: readonly Subject[] = [
     { name: 'in-memory double', runs: () => new MemoryRunHistory(), views: () => new MemoryTabViews() },
 ];
 
-const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported') => ({ tab, at, cause, backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
+const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ tab, at, cause, backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
 const lane = (pane: string): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
 
 for (const { name, runs, views } of subjects) {

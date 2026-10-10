@@ -14,7 +14,7 @@ export class MemoryRunHistory implements Pick<RecapRecords, 'recordRun' | 'failR
     }
 
     lastRunOf(tab: string): LastRun | null {
-        const good = this.runs.filter((run) => run.tab === tab && run.error === null).at(-1);
+        const good = this.runs.findLast((run) => run.tab === tab && run.error === null);
         return good === undefined ? null : { at: good.at, cause: good.cause };
     }
 }

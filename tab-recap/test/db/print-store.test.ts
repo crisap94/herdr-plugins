@@ -16,7 +16,7 @@ const BEFORE_HANDOFF = MIGRATIONS.length - 1;
 const rowCounts = (path: string): readonly number[] => {
     const db = connectReadOnly(path);
     try {
-        return ['tab', 'lane', 'run', 'request'].map((table) => Number((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n));
+        return ['tab', 'lane', 'run', 'request'].map((table) => (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n);
     } finally {
         db.close();
     }
