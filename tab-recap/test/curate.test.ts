@@ -9,6 +9,8 @@ import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
+import { inputOf } from '#src/recap/application/recap-input.ts';
+import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
 import { timelineOf } from '#src/recap/render/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
@@ -16,7 +18,9 @@ import { facts, NOW } from '#test/fakes/curated-facts.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';
-import { oneTask } from '#test/support.ts';
+import { factOf } from './fakes/facts.ts';
+import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
+import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 
 const T1 = { tab: 'w1:t1', key: 't1' };
 
@@ -33,6 +37,23 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
 }
 
 const answer = (body: object): Curated => ({ kind: 'curated', text: JSON.stringify(body) });
+
+test('the curator document stays byte-identical and includes every open fact when the writer view is pruned', async () => {
+    const open = Array.from({ length: 20 }, (_, at) => factOf('done', `done ${at}`, { lastAt: at + 1 }));
+    const ledger = new MemoryLedger().seed(...open);
+    const runCurator = async (): Promise<string> => {
+        const { curate, calls } = setup([answer({ story: 'All facts are retained.' })], { ledger });
+        await curate.run('w1:t1');
+        assert.equal(calls.length, 1);
+        return calls[0] ?? '';
+    };
+    const beforePruning = await runCurator();
+    const built = await inputOf([], { tab: 'w1:t1', repos: NO_REPOS, now: NOW, tasks: [{ id: 't1', name: '', lanes: [] }], facts: [{ key: 't1', open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
+    assert.match(writerContext({ ...requestOf(), input: built.input }), /<hidden section="done" count="10"\/>/u, 'the writer view really prunes in this run');
+    const withPruning = await runCurator();
+    assert.equal(withPruning, beforePruning);
+    assert.equal((withPruning.match(/<fact /gu) ?? []).length, 20);
+});
 
 test('a duplicate is closed as merged and the paragraph stored with the run time; the timeline shows it as merged', async () => {
     const { curate, ledger, stories, calls } = setup([answer({ ops: [{ op: 'close', id: 'f1', why: 'merged', into: 'f2' }], story: 'The migration is written; its tests run.' })]);

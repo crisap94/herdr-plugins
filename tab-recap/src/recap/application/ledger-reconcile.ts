@@ -48,7 +48,8 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     }
     const checked = reconciliationOf(answered.text, input.facts, input.tail);
     checked.refused.forEach((why) => { parts.log(`${where}: reconcile refused — ${why}`); });
-    const ground = { key: task.key, tab: task.tab, shown: input.facts, closedLately: [], source: '', language: parts.language, agents: task.agents };
+    const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
+    const ground = { key: task.key, tab: task.tab, shown: input.facts, open: openFacts, closedLately: [], source: '', language: parts.language, agents: task.agents };
     const gated = judge(LEDGER_GATES, checked.ops.map(operationOf), ground, clock.now);
     gated.refused.forEach((finding) => { parts.log(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`); });
     if (gated.kept.length === 0) {

@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import type { Decision } from '#src/ports/autocompact-records.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
+import { idOf } from '#src/adapters/db/typeid.ts';
+import { decode } from '#src/adapters/db/checked-fact-codec.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
     tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: 1_000, mode: 'shadow', share: 61, tokens: 610_000, window: 1_000_000, gate: 'ask', verdict: 'compact',
-    answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, ...over,
+    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, ...over,
 });
 
 function seeded(): Store {
@@ -19,7 +21,7 @@ test('a decision round-trips: the answers, the coverage, the cost in micro-dolla
     const store = seeded();
     const id = store.autocompact.record(decision({ coverage: { keeps_0: 0.9 }, why: 'x' }));
     assert.match(id, /^dcn_[0-9a-hjkmnp-tv-z]{26}$/);
-    assert.deepEqual(store.autocompact.newest(5), [{ ...decision({ coverage: { keeps_0: 0.9 }, why: 'x' }), id, compactionId: null }]);
+    assert.deepEqual(store.autocompact.newest(5), [{ ...decision({ coverage: { keeps_0: 0.9 }, why: 'x' }), id, askedVerdict: 'compact', coverageOutcome: null, coverageMs: null, coverageCostUsd: null, compactionId: null }]);
     assert.equal(must(store.db.prepare('SELECT cost_micro_usd AS c FROM autocompact_decision').get()).c, 31);
 });
 
@@ -98,20 +100,64 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     const newer = store.autocompact.record(decision({ at: 200 }));
     store.autocompact.record(decision({ at: 300, verdict: 'wait' }));
     const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
-    assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), newer);
+    assert.deepEqual(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), { id: newer, gate: 'ask' });
     assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p2', cmp), null);
-    store.autocompact.amend(newer, { keeps_0: 0.2 }, true, 'the brief still misses 1 fact(s)');
+    store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 12, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     const row = store.autocompact.newest(5).find((each) => each.id === newer);
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
+    assert.equal(row?.askedVerdict, 'compact');
+    assert.deepEqual(row.coverageOutcome, { kind: 'missed', count: 1 });
     assert.equal(store.compactions.shownFor('w1:t1')[0]?.origin, 'auto');
-    store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { keeps_0: 0.9 }, false, null);
+    store.autocompact.amend(store.autocompact.record(decision({ at: 400 })), { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: 3, coverageCostUsd: null, why: null, block: false });
     assert.equal(store.autocompact.newest(1)[0]?.verdict, 'compact');
 });
 
 test('amend with no coverage (the decider could not answer, or none is set up) waits for coverage and keeps the reason', () => {
     const store = seeded();
     const unchecked = store.autocompact.record(decision({ at: 500 }));
-    store.autocompact.amend(unchecked, null, true, 'no decider is set up');
+    store.autocompact.amend(unchecked, { coverage: null, outcome: { kind: 'unchecked', reason: 'no-decider' }, coverageMs: 0, coverageCostUsd: null, why: 'no decider is set up', block: true });
     const waited = store.autocompact.newest(5).find((each) => each.id === unchecked);
     assert.deepEqual([waited?.verdict, waited?.gate, waited?.coverage, waited?.why], ['wait', 'coverage', null, 'no decider is set up']);
+});
+
+test('amend writes a non-null why over the decision\'s own why, and keeps the decision\'s why when the amend has none', () => {
+    const store = seeded();
+    const blocked = store.autocompact.record(decision({ at: 600, why: 'the decider said wait: too early' }));
+    store.autocompact.amend(blocked, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 1, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === blocked)?.why, 'the brief still misses 1 fact(s)');
+    const passed = store.autocompact.record(decision({ at: 700, why: 'kept by the decider' }));
+    store.autocompact.amend(passed, { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: 1, coverageCostUsd: null, why: null, block: false });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === passed)?.why, 'kept by the decider');
+});
+
+test('a checked brief is stored with its exact checked fact wording and pruned by time', () => {
+    const store = seeded();
+    const id = store.autocompact.record(decision());
+    const checked = [{ section: 'needs' as const, text: 'keep the title', why: null }];
+    store.autocompactBriefs.put(id, 'brief body', [0], checked, 100);
+    const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | undefined);
+    assert.equal(row.briefed_at, 100);
+    assert.deepEqual(decode(row.body), { brief: 'brief body', appended: [0], checked });
+    assert.equal(store.autocompactBriefs.clearBefore(101), 1);
+    assert.equal(store.autocompactBriefs.clearBefore(101), 0);
+});
+
+test('the asked verdict is stored as the decider asked it: a wait the check makes of a compact keeps compact', () => {
+    const store = seeded();
+    const id = store.autocompact.record(decision({ verdict: 'wait', askedVerdict: 'compact', gate: 'coverage' }));
+    const row = must(store.autocompact.newest(1).find((each) => each.id === id));
+    assert.deepEqual([row.verdict, row.askedVerdict], ['wait', 'compact']);
+});
+
+test('the unchecked reason is set exactly when the outcome is unchecked', () => {
+    const store = seeded();
+    const unchecked = store.autocompact.record(decision({ at: 2_000, gate: 'ceiling' }));
+    const passed = store.autocompact.record(decision({ at: 3_000 }));
+    const missed = store.autocompact.record(decision({ at: 4_000 }));
+    const amend = (id: string, outcome: Parameters<typeof store.autocompact.amend>[1]['outcome']): void => store.autocompact.amend(id, { coverage: {}, outcome, coverageMs: 1, coverageCostUsd: null, why: null, block: false });
+    amend(unchecked, { kind: 'unchecked', reason: 'no-brief' });
+    amend(passed, { kind: 'passed' });
+    amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: 'ship', why: null }] });
+    const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', id))?.['reason'];
+    assert.deepEqual([reasonOf(unchecked), reasonOf(passed), reasonOf(missed)], ['no-brief', null, null]);
 });

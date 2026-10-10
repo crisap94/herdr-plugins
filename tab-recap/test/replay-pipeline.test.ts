@@ -9,6 +9,8 @@ import { replay } from '#src/recap/application/replay.ts';
 import type { Replayed, ReplayDeps } from '#src/recap/application/replay.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
+import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted } from '#test/fakes/enumerator.ts';
 
@@ -39,12 +41,12 @@ interface Ran {
     readonly documents: string[];
 }
 
-async function run(pipeline: Pipeline | undefined): Promise<Ran> {
+async function run(pipeline: Pipeline | undefined, writerView: WriterView): Promise<Ran> {
     const { summarizer, seen } = adding();
     const enumerating = scripted([candidateFor]);
     const scratch = scratchStore();
     try {
-        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }) };
+        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
         const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size);
         return { done, seen, documents: enumerating.documents };
     } finally {
@@ -53,7 +55,8 @@ async function run(pipeline: Pipeline | undefined): Promise<Ran> {
 }
 
 test('--pipeline is parsed, checked, and goes with --replay only', () => {
-    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', check: null } });
+    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', check: null, prune: false } });
+    assert.ok(parseEval(['--replay', 'x.jsonl', '--prune']).kind === 'options');
     for (const name of ['one', 'enumerate', 'enumerate+gates', 'full']) {
         const parsed = parseEval(['--replay', 'x.jsonl', '--pipeline', name]);
         assert.ok(parsed.kind === 'options' && parsed.options.pipeline === name, name);
@@ -64,10 +67,20 @@ test('--pipeline is parsed, checked, and goes with --replay only', () => {
     assert.ok(alone.kind === 'usage' && /go with --replay/.test(alone.why));
     const without = parseEval(['--replay', 'x.jsonl']);
     assert.ok(without.kind === 'options' && without.options.pipeline === null);
+    assert.ok(parseEval(['--prune']).kind === 'usage');
+});
+
+test('a pruned replay input hides older facts and reports the count without changing the ledger', async () => {
+    const { done, seen } = await run('one', prunedWriterView(keepNewestOf(2), nextHoursOf(24)));
+    assert.equal(done.facts.length, 6);
+    const hidden = seen.flatMap((request) => request.input.ledgers[0]?.hidden?.get('done') ?? []);
+    assert.ok(hidden.length > 0);
+    assert.equal(hidden.at(-1), 3);
+    assert.equal(seen.at(-1)?.input.ledgers[0]?.facts.length, 2);
 });
 
 test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, the writer reconciles the candidates, the cost is summed', async () => {
-    const { done, seen, documents } = await run('full');
+    const { done, seen, documents } = await run('full', FULL_WRITER_VIEW);
     assert.equal(done.windows, 6);
     assert.equal(documents.length, 6, 'one enumeration call per turn (each turn is one short chunk with enough candidates)');
     assert.ok(seen.every((request) => request.input.candidates?.length === 1));
@@ -77,7 +90,7 @@ test('replay with --pipeline full on the 6-turn fixture: every turn enumerated, 
 
 test('replay with --pipeline one, or none named: the single call, the enumeration is never asked', async () => {
     for (const pipeline of ['one', undefined] as const) {
-        const { done, seen, documents } = await run(pipeline);
+        const { done, seen, documents } = await run(pipeline, FULL_WRITER_VIEW);
         assert.equal(documents.length, 0, pipeline ?? 'the job\'s default is one: nothing is enumerated');
         assert.equal(seen.length, 6);
         assert.ok(done.costUsd > 0);

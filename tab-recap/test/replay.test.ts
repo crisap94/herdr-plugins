@@ -14,6 +14,7 @@ import { styleFor } from '#src/adapters/terminal-style.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay, windowsOf } from '#src/recap/application/replay.ts';
+import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { checksOf, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { scratchDir } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
@@ -57,7 +58,7 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
         const { summarizer, shown } = scripted([[add('goal', 'Add a cart to the shop')], [add('decisions', 'Store carts in SQLite', 'no server needed')], [add('done', 'Added cart totals')], [add('done', 'Opened !34 for feat/cart')], [add('needs', 'Should guests keep their basket?')], [{ op: 'close', id: 'f5', why: 'answered' }, add('done', 'Guests keep their basket in a cookie')]]);
         const scratch = scratchStore();
         try {
-            const done = await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined }, FILE, 'replay:t1', statSync(FILE).size);
+            const done = await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, writerView: FULL_WRITER_VIEW }, FILE, 'replay:t1', statSync(FILE).size);
             assert.equal(done.windows, 6);
             assert.equal(shown.length, 6, 'six extractor runs');
             assert.deepEqual(shown.map((each) => each.split('|').filter((line) => line !== '').length), [0, 1, 2, 3, 4, 5], 'each run is shown the facts the earlier ones added');
@@ -129,7 +130,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
     const { summarizer } = scripted([[add('goal', 'Add a cart to the shop')], [add('done', 'Added cart totals in src/totals.ts')], [], [], [], []]);
     const scratch = scratchStore();
     try {
-        await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined }, FILE, 'replay:t1', statSync(FILE).size);
+        await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, writerView: FULL_WRITER_VIEW }, FILE, 'replay:t1', statSync(FILE).size);
         const imported = [{ n: 1, at: Date.parse('2026-10-07T09:20:00Z'), items: [{ key: 'state/t1/goal/0', section: 'goal', text: 'Shop with a cart', fact: 'state/t1/goal/0', born: false, anchor: null }, { key: 'state/t1/done/0', section: 'done', text: 'Cart totals added in src/totals.ts', fact: 'state/t1/done/0', born: false, anchor: null }] }];
         const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: 'rubric', label: 'replay:t1', imported, beside: 'w1:t9', style: styleFor(process.stdout), err: () => undefined });
         const text = lines.join('\n');

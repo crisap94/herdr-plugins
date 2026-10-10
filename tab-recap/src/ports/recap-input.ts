@@ -1,4 +1,5 @@
 import type { ClosedWhy, Section } from '#src/recap/domain/fact.ts';
+import type { HiddenCounts } from '#src/recap/domain/writer-view.ts';
 import type { AgentNote, Entry } from './transcripts.ts';
 
 export interface InputAgent extends LaneHint {
@@ -48,6 +49,7 @@ export interface InputFact {
 export interface InputLedger {
     readonly task: string | null;
     readonly facts: readonly InputFact[];
+    readonly hidden?: HiddenCounts;
 }
 
 export interface InputCandidate {

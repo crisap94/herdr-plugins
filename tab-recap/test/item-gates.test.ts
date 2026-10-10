@@ -18,7 +18,7 @@ const ops = (...list: readonly Record<string, unknown>[]): string => JSON.string
 const groundOf = (over: { readonly language?: string; readonly agents?: readonly string[] } = {}): Ground => ({
     gates: LEDGER_GATES, now: 1, facts: new Map(),
     resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], source: 'go', language: over.language ?? 'en', agents: over.agents ?? ['claude', 'a1'] }],
+    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: over.language ?? 'en', agents: over.agents ?? ['claude', 'a1'] }],
 });
 
 function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: RecapRequest[] } {
@@ -41,7 +41,7 @@ const texts = (done: Extracted): readonly string[] => (done.kind === 'ops' ? don
 
 test('the adapter: an add or update becomes the item it would put in the recap; a close puts nothing; a decision\'s why is its reason clause', () => {
     const shown = new Map([['f1', factOf('decisions', 'Keep SQLite', { why: 'one file to back up' })]]);
-    const context = { now: 1, language: 'en', agents: ['claude'], shown, closedLately: [], source: 'go' };
+    const context = { now: 1, language: 'en', agents: ['claude'], shown, open: [...shown.values()], closedLately: [], source: 'go' };
     const found = (list: readonly Operation[]): readonly string[] => itemGate.check(list, context).map((finding) => `${finding.at}:${finding.gate}:${finding.outcome}`);
     assert.deepEqual(found([{ op: 'add', section: 'done', text: NARRATOR, why: null, ref: null, at: null, agent: null }]), ['0:G1:refuse']);
     assert.deepEqual(found([{ op: 'add', section: 'decisions', text: 'Leave the db tab alone.', why: null, ref: null, at: null, agent: null }]), ['0:G3:refuse']);

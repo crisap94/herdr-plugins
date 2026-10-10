@@ -142,6 +142,13 @@ decision), an optional reference and agent, when it was first and last seen, and
 the reason — `done`, `wrong`, `superseded`, `answered` (the writer), `merged` or `rewritten` (the upkeep and the import).
 Facts are never deleted.
 
+**Writer's view.** `TAB_RECAP_WRITER_PRUNE=off` by default. When set to `on`, the writer sees every open `goal`, `now`,
+`needs`, `decisions` and `rules` fact; the newest `TAB_RECAP_WRITER_KEEP_NEWEST` `done` and `links` facts per task
+(default 10, range 1–50); and `next` facts seen within `TAB_RECAP_WRITER_NEXT_HOURS` (default 24, range 1–720), up
+to the same newest-fact limit. A hidden count tells the writer how many open facts in each section it cannot see or
+change. The curator continues to receive the full open ledger. The setting stays off until the recall replay has been
+measured against its quality bar.
+
 The writer is shown the task's open facts (and those closed in the last two hours) as `<ledger>` in the version 2
 document, with ids `f1…fn`, plus only what is new in each transcript, and answers **operations** only:
 
@@ -303,8 +310,16 @@ last turns (does the reply close the request, does it announce more work, does i
 it describes, would the next steps need exact output only the last turns hold, did the subject change, is it stuck).
 Every safe moment above the limit compacts; anything else waits and is asked again after the cooldown. At the ceiling
 (`TAB_RECAP_AUTOCOMPACT_CEILING`, 80 with the default style) the answer is yes without asking anyone. Before an automatic compaction types
-anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite, and
-a brief that still loses one is not typed.
+anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite. With
+`TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK=on` (the default), a ceiling compaction proceeds even if the check still
+misses facts; the better brief is typed with missed facts appended verbatim, capped at 1,500 characters. Set it to `off`
+to block ceiling compactions on a failed check.
+
+`TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS` sets a skip window after a failed brief check below the ceiling. Its default
+is `0` (off); accepted values are 60,000 to 86,400,000 milliseconds. The skip is `coverage-backoff` and ends when its
+window passes, tokens grow by more than 10% of the context window, or a compaction boundary occurs. Checked briefs and
+the facts they were checked against are retained for 14 days by default; `TAB_RECAP_KEEP_BRIEF_DAYS` accepts 0 to 60,
+where 0 keeps none.
 
 **Styles.** `TAB_RECAP_AUTOCOMPACT_STYLE` sets how eagerly autocompact acts. `balanced` (the default) is the numbers
 above; `gentle` waits for a clearer moment; `eager` acts sooner and asks an idle lane again. The settings modal's
@@ -410,7 +425,7 @@ runs stay).
 | `tab-recap eval --label <n> [--check <I1…I7\|S-section>]` | shows `n` items you have not labelled, newest first; answer `ok`, `fail` (every check fails) or `fail I3 S-done` (those fail, the rest pass), then a reason; `skip` and `quit` also work. With `--check I5` only that check is asked (the fastest way to fix a weak one), including for items you labelled on other checks |
 | `tab-recap eval --agree` | per check, how often the judge and you agree on the same items, with false passes and false fails, Cohen's kappa beside the 0.6 bar (a check under it is yellow) and the three newest items they disagree on |
 | `tab-recap eval --gates [--since <days>]` | the gates' counts per gate, with no model call |
-| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one\|enumerate\|enumerate+gates\|full]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger and judges the result (see [How the recap is kept](#how-the-recap-is-kept)) |
+| `tab-recap eval --replay <file> [--kind claude\|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one\|enumerate\|enumerate+gates\|full] [--prune]` | runs the writer over a stored transcript, one turn at a time, on a scratch ledger; `--prune` uses the configured K and hours (see [How the recap is kept](#how-the-recap-is-kept)) |
 
 `--json` prints the report as JSON. `--label`, `--agree` and `--gates` exclude each other and `--sample`; `--replay` excludes all of them. A judge on the same model as
 the writer may favour the writer's wording, so label some items yourself and look at `--agree` before trusting its numbers; the judge job

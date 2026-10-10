@@ -42,7 +42,7 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
 
 async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const job = new RecapJob({ repos: NO_REPOS, transcripts, records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS, transcripts, records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });

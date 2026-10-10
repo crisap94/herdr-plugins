@@ -16,6 +16,7 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { CompactionClaims } from './compaction-claims.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
@@ -28,7 +29,9 @@ export interface CompactionDeps {
     readonly settling: LaneSettling;
     readonly brief: { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> };
     coverage(): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null;
-    readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend'> | null;
+    readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
+    readonly checkedBriefs?: AutocompactBriefs;
+    ceilingOverride?(): boolean;
     answer?(id: string, pane: string, stage: string): void;
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events?: LaneEvents;

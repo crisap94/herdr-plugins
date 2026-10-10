@@ -11,6 +11,7 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { RecapJob } from './recap-job.ts';
@@ -39,6 +40,7 @@ export interface ReplayDeps {
     readonly log: (line: string) => void;
     readonly pipeline?: Pipeline;
     readonly enumerator?: () => Enumerators | null;
+    readonly writerView: WriterView;
 }
 
 export interface Replayed {
@@ -65,9 +67,9 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
     return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight };
 }
 
-function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator'> {
+function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator' | 'writerView'> {
     const chosen = deps.pipeline;
-    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }) };
+    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }), writerView: (): WriterView => deps.writerView };
 }
 
 export async function replay(deps: ReplayDeps, file: string, label: string, size: number): Promise<Replayed> {

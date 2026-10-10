@@ -14,6 +14,8 @@ import type { Stories } from '#src/ports/stories.ts';
 import type { Retention } from '#src/ports/retention.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
+import { AutocompactBriefsRepository } from './autocompact-briefs.ts';
+import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import { CompactionRecordsRepository } from './compaction-records.ts';
 import { BoundaryRepository } from './boundary-read.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
@@ -42,6 +44,7 @@ export interface Store {
     readonly compactions: CompactionRecords;
     readonly asks: AskRecords;
     readonly autocompact: AutocompactRecords;
+    readonly autocompactBriefs: AutocompactBriefs;
     readonly inputs: RunInputs;
     readonly verdicts: Verdicts;
     readonly stories: Stories;
@@ -61,7 +64,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskRepository(db, options.now), autocompact: new AutocompactRecordsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskRepository(db, options.now), autocompact: new AutocompactRecordsRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),

@@ -5,6 +5,7 @@ import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { numbered } from './ledger-input.ts';
 import type { Numbering, TaskFacts } from './ledger-input.ts';
 import { hintOf } from './lane-hints.ts';
@@ -31,6 +32,7 @@ export interface InputWorld {
     readonly now: number;
     readonly tasks: readonly TaskShape[];
     readonly facts: readonly TaskFacts[];
+    readonly writerView: WriterView;
 }
 
 export interface Built {
@@ -44,7 +46,7 @@ export async function inputOf(seen: readonly Observed[], world: InputWorld): Pro
         source: isScreenSource(one.cursor.transcript) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
-    const numbering = numbered(world.facts, agents, world.facts.length > 1);
+    const numbering = numbered(world.facts, agents, world.facts.length > 1, world.writerView, world.now);
     const input: RecapInput = {
         tab: { id: world.tab, now: world.now, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
         agents,

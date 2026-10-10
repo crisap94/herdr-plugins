@@ -6,6 +6,7 @@ import { localTime, isoSecond } from './local-time.ts';
 import { candidatesOf } from './writer-candidates.ts';
 import { transcriptOf } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
+import { serializeHidden } from './hidden-codec.ts';
 
 export const TRANSCRIPT_BUDGET = 60_000;
 const NOTE_CHARS = { 'away_summary': 400, compaction: 2_000 } as const;
@@ -34,11 +35,12 @@ const clockOf = (input: RecapInput): ((at: number) => string) => (at) => localTi
 function ledgersOf(input: RecapInput): string {
     const at = clockOf(input);
     return input.ledgers.map((ledger) => {
+        const hidden = serializeHidden(ledger.hidden ?? new Map());
         const facts = ledger.facts.map((fact) => {
             const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(fact.first), last: at(fact.last), why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: fact.agent, closed: fact.closed };
             return `\n ${leaf('fact', attrs, fact.text)}`;
         }).join('');
-        return `${NEST}${element('ledger', { task: ledger.task }, facts === '' ? '' : `${facts}\n`)}`;
+        return `${NEST}${element('ledger', { task: ledger.task }, `${hidden}${facts}${hidden === '' && facts === '' ? '' : '\n'}`)}`;
     }).join('');
 }
 

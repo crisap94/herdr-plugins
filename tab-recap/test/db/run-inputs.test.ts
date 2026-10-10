@@ -1,3 +1,4 @@
+import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
@@ -74,12 +75,15 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     const now = 100 * DAY;
     store.records.recordRun(run(now - 15 * DAY, { input: '<old/>' }));
     store.records.recordRun(run(now - 13 * DAY, { input: '<recent/>' }));
+    const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - 15 * DAY, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    store.autocompactBriefs.put(decision, 'old brief', [], [], now - 15 * DAY);
     let clock = now;
     const lines: string[] = [];
     const days = { value: 14 };
-    const retention = new InputRetention({ inputs: store.inputs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, log: (line): void => { lines.push(line); } });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: 14 }), log: (line: string): void => { lines.push(line); } });
     assert.equal(retention.tick(), 1);
     assert.deepEqual(store.inputs.runs(QUERY).map((r) => [r.at, r.hasInput]), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
+    assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0, 'the checked brief is past its retention');
     assert.match(lines.join(), /deleted 1 stored run input older than 14 days/);
     clock += 3_600_000;
     days.value = 0;
@@ -114,4 +118,16 @@ test('verdicts round-trip, one transaction; operator labels are found; pairs joi
     assert.deepEqual(store.verdicts.pairs().toSorted(byCheck), [{ check: 'I1', judge: true, operator: true }, { check: 'I3', judge: false, operator: false }]);
     assert.throws(() => { store.verdicts.add([verdict({ run: 'nonsense' })]); }, /not a run id/);
     assert.equal(store.verdicts.ofRun(id).length, 7, 'a failed batch writes nothing');
+});
+
+test('retention: a brief retention of none deletes every checked brief at the daily upkeep, the newest included', () => {
+    const store = memoryStore();
+    store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
+    const now = 100 * DAY;
+    const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    store.autocompactBriefs.put(decision, 'fresh brief', [], [], now);
+    const clock = now;
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
+    retention.tick();
+    assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0);
 });

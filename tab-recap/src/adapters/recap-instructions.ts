@@ -57,6 +57,7 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '- close what finished ("done"), turned out wrong ("wrong"), was replaced ("superseded") or was answered ("answered"; only a question waiting on the operator, a "needs" fact).',
         '- an update may carry an "anchor" too, the quote that shows the change. A close never does.',
         '- never add a fact that is in the ledger: update it. A fact closed less than two hours ago is not added again either.',
+        ...(request.input.ledgers.some((ledger) => (ledger.hidden?.size ?? 0) > 0) ? ['- <hidden section="…" count="…"/> means open facts of that section that you cannot see or change. Never add a fact that repeats one of them; ids are only for facts you are shown.'] : []),
         '- a decision always has a "why": the reason, in your own words. On an add or an update of anything else "why" is null. On a close it is the reason code.',
         '- a "now" fact you do not carry forward (update it, or add its next state) is closed for you: now is only what is under way at this moment.',
         '- when nothing changed, answer {"ops": []}.',

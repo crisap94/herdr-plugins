@@ -40,10 +40,12 @@ does not wait. The flow types one brief, chosen in this order:
    tie. A brief whose check could not answer has no count, so it is never preferred over a checked one; when the rewrite is
    unchecked, the first brief is typed, because its missed facts are known. A first brief whose check could not answer is
    typed as it is, with outcome `unchecked`;
-2. if the typed brief's check missed facts, the missed goal, needs, decisions and rules facts are appended to it verbatim, with
-   no model call, under a fixed heading. The appended block is at most 1 500 characters, in the order goal, rules, needs, then
-   decisions newest first (by last seen); a fact that does not fit is left out, and the heading says how many were left out.
-   This keeps a rule such as "never force-push" from being lost silently;
+2. if the typed brief's check missed facts, the missed goal, needs, decisions and rules facts are appended to it, with no model
+   call, under a fixed heading, on the same line: `(1) goal: …; (2) rules: …`. The block is one line because a Claude lane's
+   text is typed by the herdr adapter, which refuses any line break (a typed line has none). So each fact's text and reason
+   have their whitespace collapsed; the wording is otherwise kept. The appended block is at most 1 500 characters, in the
+   order goal, rules, needs, then decisions newest first (by last seen); a fact that does not fit is left out, and the heading
+   says how many were left out. This keeps a rule such as "never force-push" from being lost silently;
 3. if no brief text exists (no decider, or nothing written), the text an operator's compaction is given is typed, and nothing is
    appended, because no check named a missed fact.
 

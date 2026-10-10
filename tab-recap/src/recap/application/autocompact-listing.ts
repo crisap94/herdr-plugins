@@ -3,6 +3,7 @@ import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
+import type { Messages } from '#src/i18n/index.ts';
 
 export const AUTOCOMPACT_USAGE = 'USAGE: tab-recap autocompact [--all]';
 export const LISTED = 20;
@@ -25,7 +26,7 @@ function stamp(at: number, zone: string): string {
 }
 
 const rowOf = (found: StoredDecision, zone: string): readonly string[] => [
-    stamp(found.at, zone), found.tab, found.pane, `${found.share} %`, found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
+    stamp(found.at, zone), found.tab, found.pane, `${found.share} %`, found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
 ];
 
 const HEAD = ['time', 'tab', 'pane', 'share', 'verdict', 'gate', 'decider', 'cost'] as const;
@@ -37,7 +38,7 @@ const skippedRow = (found: Skip, zone: string): readonly string[] => [
 
 const everyOf = (ms: number): string => (ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`);
 
-export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning): string {
+export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): string {
     const { verdict } = tuning;
     return [
         `style ${tuning.style}`,
@@ -46,6 +47,8 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning):
         `undecided ${verdict.undecidedFrom.toFixed(2)}–${verdict.undecidedTo.toFixed(2)}`,
         `pass mark ${tuning.coverageAtLeast.toFixed(2)}`,
         `ceiling ${policy.ceiling} %`,
+        settings.ceilingOverride(policy.ceilingPolicy === 'overrides-check'),
+        settings.coverageBackoff(policy.coverageBackoff.kind === 'off' ? 'off' : everyOf(policy.coverageBackoff.ms)),
         `cooldown ${everyOf(policy.cooldownMs)}`,
         `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(tuning.recheckIdleMs)}`,
     ].join(' · ');

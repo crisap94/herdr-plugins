@@ -1,3 +1,4 @@
+import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -11,6 +12,7 @@ import { SystemClock } from '#src/adapters/system-clock.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
@@ -117,6 +119,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         language: (): string => loadConfig().recapLanguage,
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
         pipeline: (): Pipeline => loadConfig().pipeline,
+        writerView: (): WriterView => loadConfig().writerView,
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
@@ -152,10 +155,10 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({
         fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
-        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers, events, claims,
+        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }
 
