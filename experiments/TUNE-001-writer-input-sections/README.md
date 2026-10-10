@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | concluded (measurement) |
-| Decision | inconclusive for the input-growth reading; the section shares are confirmed. The caps are not decided here: tasks 2.2 and 2.3 decide them |
+| Decision | section shares confirmed. Growth reading not supported on the 20 measured runs (the pre-stated rule, applied as written); not tested at the 24-hour scale. The caps are not decided here: tasks 2.2 and 2.3 decide them |
 | Owner | OpenSpec change `tuning-defaults-measured`, task 2.1 |
 | Dates | 2026-10-10. Snapshot taken at the newest recap run (2026-10-10, 20:47 UTC) |
 | Parent | `ledger-pruning` design, Evidence and D2 (archived 2026-10-10) |
@@ -20,9 +20,9 @@ Question: on the two busiest live tabs, how many bytes of the writer's input doe
 
 - **Tabs.** The two tabs with the highest summed `cost_micro_usd` of `run` rows in the 24 hours up to the newest run. The join is `run` to `chapter` to the tab. They are labelled tab-A (the higher cost) and tab-B. Window spend: 9.1193 USD over 1673 runs on 240 tabs; the two labelled tabs are 63.6 % of it.
 - **Input.** Each run's `run_input` row holds the writer document, gzip-compressed UTF-8. The script decompresses it and checks that its UTF-8 byte length equals the stored `bytes` column; this held for all 40 runs.
-- **Sections.** Every `<fact section="…">…</fact>` and `<hidden section="…"/>` element is measured in bytes, tags included, and summed by its section. `rest` is the document's total minus those elements: the tab header, agents, tasks, notes, transcripts, candidates and whitespace. The writer serializer escapes `>` and `"` in attribute values (`src/recap/application/xml.ts`), so element boundaries are unambiguous.
+- **Sections.** Every `<fact section="…">…</fact>` and `<hidden section="…"/>` element is measured in bytes, tags included, and summed by its section. `rest` is the document's total minus those elements: the tab header, agents, tasks, notes, transcripts, candidates and whitespace. The writer serializer escapes `>` and `"` in attribute values (`tab-recap/src/recap/application/xml.ts`), so element boundaries are unambiguous.
 - **Runs.** The last 20 runs of each tab, by run id (time-ordered), each with its input. Per section: minimum, median and maximum over the 20 runs, and the run order from oldest to newest.
-- **Open facts per hour.** From the `fact` table of each tab. A fact is open at time t when `first_at` ≤ t and (`closed_at` is null or `closed_at` > t). Counted at 24 points, t = newest run minus k hours, for k = 23 … 0. The count is by the fact's `section` column.
+- **Open facts per hour.** From the `fact` table of each tab. A fact is open at time t when `first_at` ≤ t and (`closed_at` is null or `closed_at` > t). Counted at 24 points, t = newest run minus k hours, for k = 23 … 0. The count is by the fact's `section` column. The newest run is the newest of all tabs, not of tab-A, so tab-A's own newest run is not necessarily at t = 0.
 - **Cost.** Recorded writer spend, `cost_micro_usd` / 1 000 000. Not a billed figure.
 - **Access.** The live database was opened read-only (`DatabaseSync`, `readOnly: true`). Nothing was written to it or copied into the repository. The analysis script lives outside the repository and is not committed. Only section names, counts, byte sizes, hours and costs are recorded here.
 
@@ -52,7 +52,7 @@ Question: on the two busiest live tabs, how many bytes of the writer's input doe
 | fact elements | 851 | 869 | 891 |  | 455 | 505 | 564 |  |
 | hidden elements | 0 | 0 | 0 |  | 0 | 0 | 0 |  |
 
-Share of median total: the section's median bytes divided by the median total of the same tab, in %. Every run had input; none was missing.
+Share of median total: the section's median bytes divided by the median total of the same tab, in %. Shares of medians do not add to exactly 100 (tab-A's sum to 100.8, tab-B's to 100.1), because the median of a part is not additive. Every run had input; none was missing.
 
 ### Growth across the 20 runs (first run to last run)
 
@@ -176,9 +176,9 @@ The rows are the hours before the newest run. The count is the open facts at tha
 ## Anomalies and threats to validity
 
 - **Span.** The 20 runs cover 3.4 hours on tab-A and 13.6 hours on tab-B, not 24 hours. The per-run input therefore cannot show a 24-hour trend. The open-fact counts can, and they are the only 24-hour series here.
-- **Closed facts inside the input.** The writer's document includes the facts closed in the last two hours (`CLOSED_SHOWN_MS` in `src/recap/application/ledger-input.ts`). The section bytes here include those closed facts; they are not split from the open ones.
+- **Closed facts inside the input.** The writer's document includes the facts closed in the last two hours (`CLOSED_SHOWN_MS` in `tab-recap/src/recap/application/ledger-input.ts`). The section bytes here include those closed facts; they are not split from the open ones.
 - **Hidden facts.** No `<hidden>` element appears in the 40 documents, so the writer was given every open fact in these runs and the view was not pruned.
-- **Different figures in the design.** The design's Evidence reports 74 KB and 72 KB of input per run for its two orchestrator tabs, and 25 KB to 68 KB as the mean for 10-10. This measurement reports 183.9 KB to 203.5 KB for tab-A and 102.3 KB to 130.5 KB for tab-B over the last 20 runs, using the stored uncompressed size. The design does not name its byte measure. Its open-fact counts for its two orchestrator tabs (446 and 331) cannot be set against the 894 and 455 here without knowing whether they are the same tabs. I could not reconcile the two from the data available.
+- **Different figures in the design.** The design's Evidence reports 74 KB and 72 KB of input per run for its two orchestrator tabs, and 25 KB to 68 KB as the mean for 10-10. This measurement reports 183.9 KB to 203.5 KB for tab-A and 102.3 KB to 130.5 KB for tab-B over the last 20 runs, using the stored uncompressed size. The design does not name its byte measure. Its open-fact counts for its two orchestrator tabs (446 and 331) cannot be set against the 894 and 455 here without knowing whether they are the same tabs. The window volume differs too: the design's Evidence has 816 runs, 46 live tabs and 3.83 USD over 32.3 hours; this record has 1673 runs, 240 tabs with runs and 9.1193 USD over 24 hours. The two-tab spend share agrees (63 % in the design, 63.6 % here), but the per-tab shares do not (26 % and 37 % in the design, 38.7 % and 24.8 % here), so the two tabs may not be the same, or the snapshots differ. I could not reconcile the two from the data available.
 - **Snapshot.** One snapshot of a live database. The counts are not reproducible on a later snapshot, and the database is private, so its hash is not recorded.
 - **Tokens.** Bytes are not tokens, and no token count was taken.
 
@@ -186,16 +186,19 @@ The rows are the hours before the newest run. The count is the open facts at tha
 
 **The size lives in `done`, `next` and `decisions`: confirmed for the share.** Together they are 75.8 % of the median input on tab-A and 72.3 % on tab-B. `goal` and `rules` are small (0.1 % and 1.6 % on tab-A; 0.2 % and 0.8 % on tab-B). The Reading does not name `links`, which is 10.5 % and 14.4 % of the median input and larger than `needs` (6.3 % and 7.0 %).
 
-**The ledger's growth explains the input rise: not confirmed, and not rejected at the 24-hour scale.**
+**The ledger's growth explains the input rise: not supported on the 20 measured runs.**
 
-- Over the 20 measured runs, tab-A's total input rose by 19079 bytes (10.4 %). Of that, the 8 ledger sections rose by 5909 bytes (3.3 %), and `rest` rose by 13170 bytes. The rise over these runs is mostly outside the ledger.
+- Over the 20 measured runs, tab-A's total input rose by 19079 bytes (10.4 %) from run 1 to run 20. Of that, the 8 ledger sections rose by 5909 bytes (3.3 %), and `rest` rose by 13170 bytes. On these two endpoints most of the rise is outside the ledger. `rest` is the volatile part: it ranges from 2074 to 20502 bytes across the 20 runs and changes by up to 15343 bytes between adjacent runs (run 18 to run 19), so the 13170 figure depends on the endpoints. The median of the first five runs against the last five is +4205 bytes for the ledger sections and +7846 bytes for the total, so on medians about half of the rise is in the ledger.
 - Over its 20 runs (13.6 h), tab-B's total input fell by 25932 bytes, and its ledger sections fell by 24706 bytes. There was no rise to explain.
+- Applied as written, the rule in the Question rejects the growth part on these runs: tab-B shows no rise in the ledger sections, and tab-A's rise is only partly in them. The growth reading is therefore not supported on the 20 measured runs.
+- The 24-hour scale was not covered: the 20 runs span 3.4 hours (tab-A) and 13.6 hours (tab-B), so no conclusion is drawn for 24 hours.
 - Open facts grew across the day. tab-A rose from 240 to 894 open facts and went up in 23 of 23 hourly steps. tab-B rose from 42 to 455 and went up in 11 of 23 steps. Over its last 12 hours it stayed between 455 and 464 open facts.
 - The open-fact count is the size of the ledger's open facts, so the ledger grew over the day. Whether that growth shows up in input bytes over 24 hours was not measured: the input for the earlier hours is not in the 20 runs. The `run_input` table holds 2067 documents for 2308 runs across all tabs, so a measurement of the full window is possible. It is a follow-up, not a result here.
 
 ## Next steps
 
 - Measure input bytes per section across every stored run of tab-A and tab-B in the 24-hour window, not only the last 20 (task 2.2 reuses the same method).
+- Decompose `rest` (tab header, agents, tasks, notes, transcripts, candidates) before drawing conclusions about it.
 - Split each document's ledger bytes into open facts and facts closed within two hours, so the closed part of the input can be seen.
 - Name `links` in the Reading when the design is next revised.
 

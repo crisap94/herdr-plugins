@@ -5,6 +5,7 @@ Each experiment answers one question with measurements and ends in a decision. T
 | ID | Question | Status | Decision | Code and raw runs |
 |---|---|---|---|---|
 | [EXP-001](EXP-001-recall-engine/README.md) | Which steps of the 2.1 recall engine (state ruler, anchors and gates, enumeration, ask-back, reconciliation) raise what a recap recalls, at what cost? | concluded | the ruler and the anchors with the gates stay; enumeration and ask-back did not move coverage or the read-back beyond the gated single call at 2.4–2.8× the calls, so the default pipeline is the single call and the steps stay behind a switch | code on `main` (2.1.0); raw outputs on the private branch, see the folder's `REMOVED-ON-MAIN.txt` |
+| [TUNE-001](TUNE-001-writer-input-sections/README.md) | Do `done`, `next` and `decisions` hold most of the writer's input, and does the ledger's growth explain the input rise? | concluded (measurement) | shares confirmed; growth not supported on the measured runs and untested at 24 h | none; metrics only |
 
 ## Conventions
 
