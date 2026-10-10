@@ -406,6 +406,12 @@ sum by (tab_recap_job) (increase(claude_code_cost_usage_USD_total{tab_recap_job=
 sum by (tab_recap_job, type) (increase(claude_code_token_usage_tokens_total{tab_recap_job=~".+"}[1h]))
 ```
 
+Untagged series, such as jobs run with tagging off or other emitters, carry an empty `tab_recap_job` label. Select them by matching the empty value exactly:
+
+```promql
+sum(increase(claude_code_cost_usage_USD_total{tab_recap_job=""}[1h]))
+```
+
 An absent or empty label may select the whole fleet when the collector did not promote the resource attribute. If it exposes `target_info`, join the resource attribute instead; join keys depend on the collector:
 
 ```promql
