@@ -53,9 +53,9 @@ Tests cover the pure content builder, priority truncation, stable ordering, forb
 - **Queue until target becomes idle:** rejected because a later, unobserved state change could cause typing into an unexpected lane. The operator retries after the lane becomes idle.
 - **Persist a handoff row:** rejected for slice 1 because CLI result and ledger suffice, while a new aggregate and migration add durable state without a current reader.
 
-## Open questions for the operator
+## Decisions taken by the operator
 
-- Should `--from` and `--to` accept pane labels in addition to pane identifiers? Recommended default: identifiers only; alternative: resolve a unique label and refuse duplicates.
-- Should recently closed facts use the existing two-hour ledger window? Recommended default: two hours; alternative: include all closed facts under the size bound.
-- Should confirmation require transcript evidence when status becomes `working`? Recommended default: either status or transcript evidence; alternative: require transcript evidence only.
-- Should a completed `done` target be accepted as idle? Recommended default: yes, matching compaction eligibility; alternative: require exactly `idle`.
+- `--from` and `--to` accept pane identifiers only; a label is never resolved (decided 2026-10-10).
+- Recently closed facts use the existing two-hour ledger window (decided 2026-10-10).
+- Delivery is confirmed by the target's status becoming `working` OR by transcript evidence of the submitted text, as the adapter's plan declares (decided 2026-10-10).
+- A target whose status is `done` is accepted like `idle`, matching compaction eligibility (default adopted; confirm at sign-off).
