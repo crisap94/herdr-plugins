@@ -1,24 +1,18 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { registryOf } from '#src/ports/transcripts.ts';
-import type { TranscriptRegistryInput } from '#src/ports/transcripts.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
-import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
-import type { LaneCursor, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import { blankRecap, hasRecap, type LaneCursor, type RecapRecords, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
-import type { Chunk, Transcripts } from '#src/ports/transcripts.ts';
+import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import { DEFAULT_PIPELINE } from '#src/recap/domain/pipeline.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
-import { keptGrouping } from '#src/recap/domain/grouping.ts';
-import type { PlacedLane, TaskShape } from '#src/recap/domain/grouping.ts';
-import { CLOSED_SHOWN_MS } from './ledger-input.ts';
-import type { TaskFacts } from './ledger-input.ts';
+import { DEFAULT_PIPELINE, type Pipeline } from '#src/recap/domain/pipeline.ts';
+import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
+import { CLOSED_SHOWN_MS, type TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
@@ -28,7 +22,7 @@ import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
 
 export interface RecapJobDeps {
-    readonly transcripts: TranscriptRegistryInput;
+    readonly transcripts: TranscriptRegistry;
     readonly records: RecapRecords;
     readonly ledger: Ledger;
     readonly repos: LaneRepo;
@@ -116,7 +110,7 @@ export class RecapJob {
 
     private async locate(lane: Lane): Promise<{ reader: Transcripts; source: string } | string> {
         const agent = String(lane.agent);
-        const reader = registryOf(this.deps.transcripts).readerFor(agent);
+        const reader = this.deps.transcripts.readerFor(agent);
         if (reader === undefined) {
             return `no reader for ${agent}`;
         }

@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
+import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
 import assert from 'node:assert/strict';
 import { EditCache, EditCounts, countEdits } from '#src/recap/application/edit-counts.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
@@ -82,21 +84,20 @@ const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?
 });
 
 test('edit calls are counted through each lane\'s own reader; screens, unreadable records and other calls count nothing', async () => {
-    const counts = new EditCounts([
-        reader('claude', [{ role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'shell', text: 'npm test' }, { role: 'agent', text: 'src/a.ts' }]),
-        reader('codex', 'unreadable'),
-        reader('*', [{ role: 'tool', kind: 'edit', text: 'src/b.ts' }]),
-    ]);
+    const counts = new EditCounts(registryWith({
+        claude: reader('claude', [{ role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'shell', text: 'npm test' }, { role: 'agent', text: 'src/a.ts' }]),
+        codex: reader('codex', 'unreadable'),
+    }, reader(SCREEN_READER_ID, [{ role: 'tool', kind: 'edit', text: 'src/b.ts' }])));
     const lanes = [cursor('w1:p1'), { ...cursor('w1:p2'), agent: 'codex' }, { ...cursor('w1:p3'), agent: 'gemini' }, { ...cursor('w1:p4'), transcript: 'screen:w1:p4' }, { ...cursor('w1:p5'), transcript: '' }];
     assert.deepEqual(await counts.of(lanes), [{ path: 'src/a.ts', count: 2 }, { path: 'src/b.ts', count: 1 }]);
-    assert.deepEqual(await new EditCounts([]).of(lanes), []);
+    assert.deepEqual(await new EditCounts(registryWith({})).of(lanes), []);
 });
 
 test('the cache answers at once with what it has and refreshes in the background once a minute', async () => {
     let reads = 0;
     const entries = [{ role: 'tool' as const, kind: 'edit' as const, text: 'src/a.ts' }];
     const counting: Transcripts = { ...reader('claude', entries), read: (...args) => { reads += 1; return reader('claude', entries).read(...args); } };
-    const cache = new EditCache(new EditCounts([counting]), 60_000);
+    const cache = new EditCache(new EditCounts(registryWith({ claude: counting })), 60_000);
     assert.deepEqual(cache.of([cursor('w1:p1')], 0), [], 'the first look does not wait');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
     assert.deepEqual(cache.of([cursor('w1:p1')], 1000), [{ path: 'src/a.ts', count: 1 }]);

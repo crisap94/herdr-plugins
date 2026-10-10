@@ -3,30 +3,35 @@ import { CodexTranscripts } from './codex-transcripts.ts';
 import { OpencodeTranscripts } from './opencode-transcripts.ts';
 import { ScreenTranscripts } from './screen-transcripts.ts';
 import type { Screens } from '#src/ports/screens.ts';
-import { TranscriptRegistry } from '#src/ports/transcripts.ts';
-import type { ReaderKind, Transcripts } from '#src/ports/transcripts.ts';
+import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { Transcripts } from '#src/ports/transcripts.ts';
 
-export { TranscriptRegistry } from '#src/ports/transcripts.ts';
-export type { ReaderKind, TranscriptRegistryInput } from '#src/ports/transcripts.ts';
+export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
-const readers: Readonly<Record<ReaderKind, () => Transcripts>> = {
+const READERS = {
     claude: () => new ClaudeTranscripts(),
     codex: () => new CodexTranscripts(),
     opencode: () => new OpencodeTranscripts(),
-};
+} as const satisfies Readonly<Record<string, () => Transcripts>>;
 
-function registryOf(kinds: readonly ReaderKind[], fallback: Transcripts | null): TranscriptRegistry {
-    return new TranscriptRegistry(Object.fromEntries(kinds.map((kind) => [kind, readers[kind]()])), fallback);
+export type ReaderKind = keyof typeof READERS;
+
+export function readerKindOf(raw: string): ReaderKind | null {
+    return Object.hasOwn(READERS, raw) ? raw as ReaderKind : null;
+}
+
+function registryFrom(readers: Readonly<Record<string, () => Transcripts>>, fallback: Transcripts | null): TranscriptRegistry {
+    return new TranscriptRegistry(Object.fromEntries(Object.entries(readers).map(([kind, make]) => [kind, make()])), fallback);
 }
 
 export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {
-    return registryOf(Object.keys(readers) as ReaderKind[], new ScreenTranscripts(screens, wants));
+    return new TranscriptRegistry(Object.fromEntries(Object.entries(READERS).map(([kind, make]) => [kind, make()])), new ScreenTranscripts(screens, wants));
 }
 
 export function modalTranscriptRegistry(): TranscriptRegistry {
-    return registryOf(Object.keys(readers) as ReaderKind[], null);
+    return registryFrom(READERS, null);
 }
 
 export function replayTranscriptRegistry(): TranscriptRegistry {
-    return registryOf(['claude', 'codex'], null);
+    return new TranscriptRegistry({ claude: READERS.claude(), codex: READERS.codex() }, null);
 }

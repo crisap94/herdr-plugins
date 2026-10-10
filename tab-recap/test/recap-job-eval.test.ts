@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -23,7 +24,7 @@ async function recapWith(keepInput: (() => boolean) | undefined): Promise<Return
     const summarizer: Summarizer = { backend: 'fake', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
     const store = memoryStore();
     const job = new RecapJob({
-        repos: NO_REPOS, transcripts: [transcripts], records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) },
+        repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) },
         summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');

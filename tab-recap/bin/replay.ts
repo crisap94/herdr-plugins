@@ -28,8 +28,6 @@ import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/repla
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
 
-const readers = replayTranscriptRegistry();
-
 const kindOf = (flag: string | null, file: string): string => flag ?? (file.includes('/.codex/') ? 'codex' : 'claude');
 
 const sizeOf = (file: string): number | null => {
@@ -99,6 +97,7 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
 }
 
 export function replayCommand(options: EvalOptions): Promise<number> {
+    const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
     const reader = readers.exact(kindOf(options.kind, file));
     if (reader === undefined) {

@@ -1,16 +1,15 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { registryOf } from '#src/ports/transcripts.ts';
-import type { TranscriptRegistryInput } from '#src/ports/transcripts.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
 const TAIL_BYTES = 256 * 1024;
 const REMEMBERED = 200;
 
 export class LivePrompts {
-    private readonly transcripts: TranscriptRegistryInput;
+    private readonly transcripts: TranscriptRegistry;
     private readonly known = new Map<string, string>();
 
-    constructor(transcripts: TranscriptRegistryInput) {
+    constructor(transcripts: TranscriptRegistry) {
         this.transcripts = transcripts;
     }
 
@@ -20,7 +19,7 @@ export class LivePrompts {
 
     async refresh(lane: Lane): Promise<boolean> {
         const agent = String(lane.agent);
-        const reader = registryOf(this.transcripts).readerFor(agent);
+        const reader = this.transcripts.readerFor(agent);
         if (reader === undefined) {
             return false;
         }

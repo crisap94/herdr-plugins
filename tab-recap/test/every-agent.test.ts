@@ -1,6 +1,9 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
+import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { en } from '#src/i18n/en.ts';
@@ -35,7 +38,7 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
     write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 }); },
 });
 
-async function recapOf(transcripts: readonly Transcripts[], agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
+async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const job = new RecapJob({ repos: NO_REPOS, transcripts, records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): string => 'en', log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
@@ -44,30 +47,30 @@ async function recapOf(transcripts: readonly Transcripts[], agents: readonly str
     return { store, requests };
 }
 
-test('a lane with no reader of its own is read by the `*` reader — the job does not know what a cursor means, it hands it back', async () => {
+test('a lane with no reader of its own is read by the screen reader — the job does not know what a cursor means, it hands it back', async () => {
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'gemini', transcript: 'screen:w1:p1', cursor: 41, tail: 'abc', title: null, lastPrompt: null, claudeRecap: null }] });
-    const screen = recording('*', (pane) => `screen:${pane}`, 'def');
-    const { requests } = await recapOf([recording('claude', (pane) => `/t/${pane}`).reader, screen.reader], ['gemini'], store);
+    const screen = recording(SCREEN_READER_ID, (pane) => `screen:${pane}`, 'def');
+    const { requests } = await recapOf(registryWith({ claude: recording('claude', (pane) => `/t/${pane}`).reader }, screen.reader), ['gemini'], store);
     assert.deepEqual(screen.seen, [{ cursor: 41, tail: 'abc' }], 'the stored cursor and tail went back to the reader as they were');
     assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
     assert.deepEqual(requests[0]?.input.transcripts[0]?.entries.map((entry) => entry.text), ['hello from the screen']);
     assert.deepEqual(requests[0].input.agents.map((agent) => [agent.kind, agent.source]), [['gemini', 'screen']], 'the writer is told the lane is a screen');
 });
 
-test('an agent with a reader of its own never goes to the `*` reader; a source is unique, so a stored cursor of another source is not reused', async () => {
+test('an agent with a reader of its own never goes to the screen reader; a source is unique, so a stored cursor of another source is not reused', async () => {
     const own = recording('claude', (pane) => `/t/${pane}`);
-    const screen = recording('*', (pane) => `screen:${pane}`);
+    const screen = recording(SCREEN_READER_ID, (pane) => `screen:${pane}`);
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/old-session', cursor: 999, tail: null, title: null, lastPrompt: null, claudeRecap: null }] });
-    await recapOf([screen.reader, own.reader], ['claude'], store);
+    await recapOf(registryWith({ claude: own.reader }, screen.reader), ['claude'], store);
     assert.equal(screen.seen.length, 0);
     assert.deepEqual(own.seen, [{ cursor: 0, tail: null }], 'a new session starts from the beginning');
 });
 
 test('a lane nobody can read is reported by name, and does not stop the others', async () => {
     const own = recording('claude', (pane) => `/t/${pane}`);
-    const { store } = await recapOf([own.reader], ['hermes', 'claude']);
+    const { store } = await recapOf(registryWith({ claude: own.reader }), ['hermes', 'claude']);
     assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p1: no reader for hermes/);
     assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => lane.cursor), [0, 1]);
 });

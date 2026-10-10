@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -63,7 +64,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         config: () => configOf(keys),
         awaiting: () => Promise.resolve({ kind: 'clear' }),
         store,
-        transcripts: [transcripts],
+        transcripts: registryWith({ [transcripts.agent]: transcripts }),
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,
         recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,
@@ -91,7 +92,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
         store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
         const service = wireAutocompact({
             config: () => configOf(keys), awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims: new CompactionClaims(),
-            transcripts: [inertTranscripts()],
+            transcripts: registryWith({ claude: inertTranscripts() }),
             contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
             recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,
             informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,

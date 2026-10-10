@@ -7,11 +7,12 @@ import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '
 import { unknown } from '#src/ports/unknowable.ts';
 
 const SCREEN_LINES = 200;
+export const SCREEN_READER_ID = '*';
 
 const hashOf = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 16);
 
 export class ScreenTranscripts implements Transcripts {
-    readonly agent = '*';
+    readonly agent = SCREEN_READER_ID;
     private readonly screens: Screens;
     private readonly wants: (agent: string) => boolean;
 

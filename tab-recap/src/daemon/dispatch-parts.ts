@@ -10,7 +10,7 @@ import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
-import type { TranscriptRegistryInput } from '#src/adapters/transcript-registry.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { loadConfig } from './config.ts';
 
 export interface Box {
@@ -18,7 +18,7 @@ export interface Box {
     autocompact: Autocompact | null;
 }
 
-export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistryInput; readonly webs: LaneWebs; readonly contexts: LaneContexts }, log: (line: string) => void): Dispatch {
+export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistry; readonly webs: LaneWebs; readonly contexts: LaneContexts }, log: (line: string) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
         sizing: (): Sizing => loadConfig().sizing,
