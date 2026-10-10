@@ -102,7 +102,7 @@ function rows(): Row[] {
     out.push({
         kind: 'codex', reader: new CodexTranscripts(codexRoot),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
-        // PINS TODAY: the newest token_count after the compaction is the use and the peak too, so the pre-compaction 17 133 is not kept as a peak (claude keeps it); the window is the one the rollout states
+        // PINS TODAY: codex's peak is the newest token_count, so the pre-compaction 17 133 appears only in the mark, not as a peak (claude's peak takes the boundary's preTokens); the recorded compacted row has no preTokens to read; the window is the one the rollout states
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
         inFlight: false,
@@ -135,10 +135,10 @@ function rows(): Row[] {
         empty: lane('gemini', { pane: 'w1:p8' }), recorded: lane('gemini', { pane: 'w1:p3' }), unplaced: lane('zed'),
         // PINS TODAY: a screen has no context to read, so the method is absent and LaneContexts says "cannot read"
         observed: 'absent',
-        // PINS TODAY: a screen reports no compaction marks, so a compaction read from one can only end `unconfirmed`
+        // PINS TODAY: a screen reports no compaction marks, so a compaction read from one would end `unconfirmed`; screen kinds are not compactable, so the flow cannot reach this today (lane-recent.ts:44 gives no marks)
         marks: 'absent',
         inFlight: false,
-        // PINS TODAY: a screen cannot say what the operator typed (screen-transcripts.ts:35-37 returns null)
+        // PINS TODAY: a screen cannot say what the operator typed (screen-transcripts.ts:34-35 returns null)
         prompt: null,
         compactable: false,
     });
