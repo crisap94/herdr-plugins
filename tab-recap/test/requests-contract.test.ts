@@ -3,13 +3,17 @@ import assert from 'node:assert/strict';
 import type { Requests } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { memoryStore } from './db/support.ts';
+import { MemoryRequests } from './fakes/requests.ts';
 
 interface Subject {
     readonly name: string;
     readonly make: () => Requests;
 }
 
-const subjects: readonly Subject[] = [{ name: 'SQLite', make: () => memoryStore().requests }];
+const subjects: readonly Subject[] = [
+    { name: 'SQLite', make: () => memoryStore().requests },
+    { name: 'in-memory double', make: () => new MemoryRequests() },
+];
 
 const HANDOFF = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: 'the note', refreshFirst: true };
 
@@ -46,5 +50,16 @@ for (const { name, make } of subjects) {
         requests.requestHandoff(HANDOFF);
         assert.equal(requests.takeHandoffs().length, 1);
         assert.deepEqual(requests.takeRequests(), []);
+    });
+}
+
+for (const { name, make } of subjects) {
+    test(`${name}: an answered compaction goes to takeAnswered, and an unanswered one stays for takeCompactions`, () => {
+        const requests = make();
+        requests.requestCompact({ tab: 'w1:t1', pane: paneId('w1:p2'), note: null, answer: 'r9' });
+        requests.requestCompact({ tab: 'w1:t1', pane: paneId('w1:p3'), note: null });
+        assert.deepEqual(requests.takeAnswered(), [{ pane: 'w1:p2', answer: 'r9' }]);
+        assert.deepEqual(requests.takeAnswered(), []);
+        assert.deepEqual(requests.takeCompactions().map((request) => request.pane), ['w1:p3']);
     });
 }

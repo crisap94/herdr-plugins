@@ -4,6 +4,7 @@ import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { memoryStore } from './db/support.ts';
+import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 
 interface Subject {
     readonly name: string;
@@ -13,7 +14,10 @@ interface Subject {
 const STORABLE = new Set(['interrupted', 'source-unreadable']);
 const storable = (reason: string): boolean => STORABLE.has(reason);
 
-const subjects: readonly Subject[] = [{ name: 'SQLite', make: (clock) => memoryStore({ storable, now: () => clock.now }).handoffs }];
+const subjects: readonly Subject[] = [
+    { name: 'SQLite', make: (clock) => memoryStore({ storable, now: () => clock.now }).handoffs },
+    { name: 'in-memory double', make: (clock) => new MemoryHandoffAnswers(storable, () => clock.now) },
+];
 
 for (const { name, make } of subjects) {
     test(`${name}: a delivered answer has no reason and a failed answer keeps its storable reason`, () => {
