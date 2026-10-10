@@ -35,7 +35,7 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
   (opencode's SQLite database is opened read-only). Any other agent herdr recognises can be read from its
   **screen** instead — `TAB_RECAP_SCREEN_AGENTS=gemini,qwen` (or `all`), also a row in the settings; its
   header says `(screen)`, because an agent on the alternate screen shows only what is visible. Reading
-  a screen never types into the pane.
+  a screen types nothing into the pane.
 - **Written at the end of each turn** by any harness — `claude`, `codex`, `opencode`, `hermes` (the
   first one found, or the one you pick), or your own command —
   as operations on the ledger of facts plus only the new part of every agent's transcript (see [How the recap is kept](#how-the-recap-is-kept)). Also on tab focus when
@@ -59,7 +59,8 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
-- **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is [compaction](#compaction), and only when you ask for it.
+- **Read-only, but for what you ask for.** It reads transcripts and does not type into an agent on its own (a lint rule says so). The exceptions are [compaction](#compaction) and `tab-recap handoff`, and only when you ask for them.
+- **Handoff, only when you ask for it.** `tab-recap handoff --from <pane> --to <pane>` sends one task's ledger, its freshness and its worksite snapshot (the directory, repository, branch, last commit, uncommitted paths, most edited files and the names of its tokens, never their values) to another idle agent, once. **Locality:** the text goes only into a lane this daemon watches on this machine, and the command makes no network request; it writes nothing outside the state directory except that one delivery, and it never writes the text to a log. **A handoff can contain anything the lane saw:** its facts, its prompts, file paths, commit subjects and whatever else the transcript held. You are choosing to send it. `--print` shows the same text on stdout and types nothing, so read it first.
 
 ## What the recap is
 
