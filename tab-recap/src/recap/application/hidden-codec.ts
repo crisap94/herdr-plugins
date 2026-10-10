@@ -1,5 +1,6 @@
 import { SECTION_IDS, isSection } from '#src/recap/domain/fact.ts';
 import type { Section } from '#src/recap/domain/fact.ts';
+import type { PositiveCount } from '#src/recap/domain/writer-view.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import type { HiddenCounts } from '#src/recap/domain/writer-view.ts';
 import { element } from './xml.ts';
@@ -9,7 +10,7 @@ export function serializeHidden(counts: HiddenCounts): string {
 }
 
 export function parseHidden(document: string): HiddenCounts {
-    const counts = new Map<Section, ReturnType<typeof positiveCount>>();
+    const counts = new Map<Section, PositiveCount>();
     for (const match of document.matchAll(/<hidden section="([^"]+)" count="(\d+)"\/>/gu)) {
         const section = match[1];
         const count = Number(match[2]);

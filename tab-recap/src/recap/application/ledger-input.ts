@@ -1,8 +1,8 @@
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import type { Fact, Section } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
-import type { WriterView } from '#src/recap/domain/writer-view.ts';
+import type { HiddenCounts, PositiveCount, WriterView } from '#src/recap/domain/writer-view.ts';
 
 export const CLOSED_SHOWN_MS = 2 * 3_600_000;
 
@@ -24,7 +24,7 @@ const agentIdOf = (fact: Fact, agents: readonly InputAgent[]): string | null =>
 
 interface ViewedFacts {
     readonly shown: readonly Fact[];
-    readonly hidden: ReadonlyMap<Fact['section'], ReturnType<typeof positiveCount>>;
+    readonly hidden: HiddenCounts;
 }
 
 export function writerFacts(open: readonly Fact[], view: WriterView, now: number): ViewedFacts {
@@ -33,7 +33,7 @@ export function writerFacts(open: readonly Fact[], view: WriterView, now: number
         return { shown: sorted, hidden: new Map() };
     }
     const shown = new Set<Fact>();
-    const hidden = new Map<Fact['section'], ReturnType<typeof positiveCount>>();
+    const hidden = new Map<Section, PositiveCount>();
     for (const section of SECTION_IDS) {
         const facts = sorted.filter((fact) => fact.section === section);
         const candidates = section === 'next' ? facts.filter((fact) => fact.lastAt >= now - view.nextHours * 3_600_000) : facts;
