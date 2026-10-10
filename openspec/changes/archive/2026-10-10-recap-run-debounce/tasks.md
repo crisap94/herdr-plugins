@@ -45,5 +45,5 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
 
 ## 7. Archive
 
-- [ ] 7.1 `openspec archive recap-run-debounce` in this merge request, once every other task is checked and the gates pass. Do
+- [x] 7.1 `openspec archive recap-run-debounce` in this merge request, once every other task is checked and the gates pass. Do
   not archive before implementation.
