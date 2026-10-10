@@ -1,7 +1,9 @@
 // The part of a compaction that types into the agent and waits for it: the command, the confirmation from its records, the restore message.
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Prompted } from '#src/ports/agents.ts';
-import { saying } from '#src/ports/unknowable.ts';
+import { saying, unknown } from '#src/ports/unknowable.ts';
+import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { outcomeOf } from './compaction-outcome.ts';
 import type { OutcomeDeps, Verdict } from './compaction-outcome.ts';
@@ -36,10 +38,29 @@ export class Sender {
         this.deps = deps;
     }
 
+    /** Typed into the pane under the typing lease, around the send only: held back while another tool's lease is live, and cleared once typed. Without herdr's tokens the line is typed anyway. */
+    private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
+        const typing = this.deps.typing;
+        if (typing === undefined) {
+            return type();
+        }
+        const acquired = await typing.acquire(pane);
+        if (acquired === 'busy') {
+            return unknown({ why: 'lease', after: duration(LEASE_TTL_MS) });
+        }
+        try {
+            return await type();
+        } finally {
+            if (acquired === 'taken') {
+                await typing.release(pane);
+            }
+        }
+    }
+
     /** One go at the compaction command: typed, then confirmed on herdr's push from the agent's own records. */
     private async attempt(lane: Lane, command: () => Promise<Prompted>): Promise<Tried> {
         const since = this.deps.now();
-        const sent = await command();
+        const sent = await this.typed(String(lane.pane), command);
         if (sent.kind !== 'sent') {
             return { sent, verdict: null };
         }
@@ -88,10 +109,13 @@ export class Sender {
     private async restore(lane: Lane, text: Text, trail: Trail): Promise<void> {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
+        const pane = String(lane.pane);
         const since = this.deps.now();
-        const sent = await this.deps.agents.prompt(String(lane.pane), message, { until: ['idle', 'done'], timeoutMs: RESTORING_MS });
+        // the message is typed under the typing lease; the wait for the agent to answer is outside it
+        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message));
         if (sent.kind === 'sent') {
-            await this.deps.settling.settled(String(lane.pane), since, RESTORE_SETTLE_MS);
+            await this.deps.settling.settled(pane, since, RESTORING_MS);
+            await this.deps.settling.settled(pane, since, RESTORE_SETTLE_MS);
         }
     }
 

@@ -4,6 +4,7 @@ import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import type { Store } from '#src/adapters/db/database.ts';
+import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
@@ -26,6 +27,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
+import { lanesOf } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
@@ -48,6 +50,12 @@ import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
+import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
+import { TypingLease } from '#src/recap/application/typing-lease.ts';
+import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
+import { factsOf } from '#src/recap/application/lane-facts.ts';
+import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
@@ -57,6 +65,12 @@ const CHECKPOINT_EVERY = 10;
 const RETENTION_EVERY = 1440;
 /** an intent is a handful of herdr requests of at most 10 s each */
 const INTENT_MS = 90_000;
+/** the compaction requests from other tools are remembered this long (a request older than that is no risk of being acted on again) */
+const ASK_KEEP_MS = 30 * 24 * 60 * 60_000;
+
+const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
+/** the daemon's stop event goes to every workspace, but the stop does not wait for it longer than this */
+const EVENT_STOP_MS = 2_000;
 
 const log = (line: string): void => {
     console.error(`${new Date().toISOString()} ${line}`);
@@ -72,7 +86,27 @@ interface Wired {
     readonly retention: InputRetention;
     readonly curate: Curate;
     readonly sweep: AutocompactSweep;
+    readonly laneTokens: LaneTokenPublisher;
+    readonly answers: CompactRequests;
+    readonly events: EventStream;
 }
+
+/** A recap run wrote a tab's ledger: the curator looks at it, and each lane of the tab gets its `recap-written` event (`imported` runs are not new recaps). */
+function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: (line: string) => void): void {
+    curate.afterRun(event).catch((error: unknown) => { say(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); });
+    recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
+}
+
+/** The requests a restart interrupts are answered, none is run; the count of compactions it found in progress. */
+function answerRestart(store: Store, answers: CompactRequests): number {
+    const interrupted = [...store.compactions.unfinishedAsks(), ...store.requests.takeAnswered()];
+    const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
+    answers.answerInterrupted(interrupted);
+    return restarted;
+}
+
+/** `TAB_RECAP_HERDR_EVENTS` is on: read on every use, so the setting applies without a restart. */
+const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
 
 /** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
 function wantsScreen(agent: string): boolean {
@@ -83,6 +117,8 @@ function wantsScreen(agent: string): boolean {
 function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const config = loadConfig();
     const clock = new SystemClock();
+    /** the daemon's start, epoch ms: the base of the event sequence numbers */
+    const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
     const repos = new GitLaneRepo(clock);
@@ -95,12 +131,16 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
         pipeline: (): Pipeline => loadConfig().pipeline,
         enumerator: (): Enumerators | null => backends.enumerator(),
-        ran: (event): void => { curate.afterRun(event).catch((error: unknown) => { log(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); }); },
+        ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
     const box: { informer: Informer | null; autocompact: Autocompact | null } = { informer: null, autocompact: null };
+    const board = (): Board => box.informer?.current ?? emptyBoard();
+    const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, new LocalCatalogue(), () => loadConfig().compaction.window);
+    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), now: (): number => Date.now(), log, events });
+
     const dispatch = new Dispatch({
         columns: fleet, views: store.views, visibility: store.visibility, recaps, log, prompts: new LivePrompts(transcripts), webs, contexts,
         sizing: (): Sizing => loadConfig().sizing,
@@ -128,20 +168,24 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onUnknownKind: (): void => { /* herdr has more events than we map; that is expected */ },
         onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
+        onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts);
-    box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log });
+    box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
-    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact });
+    const compaction = wireCompaction({ fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log, briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, answers, events, typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }) });
     const retention = new InputRetention({ inputs: store.inputs, clock, days: (): number => loadConfig().keepInputDays, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }
 
 /** Every second: beat, and hand the daemon what the columns and commands asked for since. */
-function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate'>): void {
-    const { store, informer, compaction, curate } = wired;
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events'>): void {
+    const { store, informer, compaction, curate, laneTokens, answers, events } = wired;
     pidfile.beat();
+    laneTokens.tick();
+    answers.tick();
+    events.tick();
     for (const tab of store.requests.takeRequests()) {
         informer.push({ kind: 'requested', tab });
     }
@@ -181,18 +225,18 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep } = booted;
+    const { informer, fleet, backends, extensions, store, retention, sweep, answers, events } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
             return;
         }
         stopping = true;
-        void shutDown(fleet, informer, log).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void bounded(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), EVENT_STOP_MS).then(() => shutDown(fleet, informer, log)).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop);
     process.on('SIGINT', stop);
-    const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
+    const restarted = answerRestart(store, answers);
     if (restarted > 0) {
         log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
     }
@@ -208,6 +252,8 @@ async function start(): Promise<number> {
             forgetClosedTabs(store, log);
         }
         informer.tick();
+        store.asks.prune(Date.now() - ASK_KEEP_MS);
+        events.prune(Date.now());
         sweep.tick();
         retention.tick();
         void backends.refresh();
@@ -215,6 +261,7 @@ async function start(): Promise<number> {
     }, RESYNC_MS).unref();
     await backends.refresh();
     log(`daemon ${process.pid} up, state in ${root}`);
+    void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
     await informer.run();
     pidfile.release(process.pid);

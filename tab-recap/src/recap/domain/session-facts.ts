@@ -1,3 +1,4 @@
+import type { Origin } from './origin.ts';
 // The facts of a session that need no model: counted and measured from what the store already holds. Pure.
 // A line whose inputs are missing is left out — never a guess.
 import { shareOf } from './compaction.ts';
@@ -14,7 +15,7 @@ export interface SessionInputs {
     /** runs per cause, as the store counts them */
     readonly runs: Readonly<Record<string, number>>;
     /** the compactions that finished, in the order they happened */
-    readonly compactions: readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: 'operator' | 'auto' }[];
+    readonly compactions: readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin }[];
     readonly lanes: readonly { readonly agent: string; readonly label: string | null; readonly context: ContextUse | null }[];
     /** the lanes' repositories on the web, `https://host/group/repo`, and the branch each lane is on */
     readonly webs: readonly ({ readonly base: string; readonly branch: string | null } | null)[];

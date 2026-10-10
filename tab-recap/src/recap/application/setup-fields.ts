@@ -36,6 +36,7 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     curateEffort: choice(EFFORT_CHOICES, (draft) => draft.curate.effort, (draft, effort) => ({ ...draft, curate: { ...draft.curate, effort } })),
     autocompact: choice(MODE_CHOICES, (draft) => draft.autocompact, (draft, autocompact) => ({ ...draft, autocompact })),
     decideBy: choice(DECIDER_BY_OPTIONS, (draft) => draft.decide.by, (draft, by) => ({ ...draft, decide: { ...draft.decide, by } })),
+    herdrEvents: choice(SWITCH_CHOICES, (draft) => draft.herdrEvents, (draft, herdrEvents) => ({ ...draft, herdrEvents })),
     decideEffort: choice(EFFORT_CHOICES, (draft) => draft.decide.effort, (draft, effort) => ({ ...draft, decide: { ...draft.decide, effort } })),
 };
 

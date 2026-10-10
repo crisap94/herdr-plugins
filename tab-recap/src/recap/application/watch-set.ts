@@ -8,6 +8,7 @@ import type { Topic } from '#src/ports/fleet-source.ts';
  */
 export const GLOBAL_TOPICS = [
     'pane.created',
+    'pane.updated',
     'pane.closed',
     'pane.moved',
     'pane.agent_detected',

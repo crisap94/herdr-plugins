@@ -1,4 +1,5 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
+import type { Origin } from '#src/recap/domain/origin.ts';
 
 /** Something the operator asked for: one tab's column, or every column, hidden, shown or `toggle`d (the daemon flips what it holds at that moment). */
 export interface VisibilityRequest {
@@ -12,8 +13,10 @@ export interface CompactRequest {
     readonly tab: string;
     readonly pane: string | null;
     readonly note: string | null;
-    /** who asked: the operator (the default), or autocompact */
-    readonly origin?: 'operator' | 'auto';
+    /** who asked: the operator (the default), autocompact, or another tool (`request`) */
+    readonly origin?: Origin;
+    /** a request from another tool: its id, which tab-recap answers on the pane (`tab-recap-compact`) */
+    readonly answer?: string;
 }
 
 /** What the columns and commands ask of the daemon: a queue the daemon empties. */
@@ -27,4 +30,6 @@ export interface Requests {
     takeVisibility(): readonly VisibilityRequest[];
     takeCompactions(): readonly CompactRequest[];
     takeCurations(): readonly TabId[];
+    /** the compaction requests from other tools still queued (not yet taken): removed, each with its pane and answer id */
+    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[];
 }

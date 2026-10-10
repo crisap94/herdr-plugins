@@ -42,6 +42,16 @@ export function seenFrom(data: Readonly<Record<string, unknown>>): SeenLane | nu
     };
 }
 
+/** A `pane.updated` frame's pane and its merged tokens: herdr's flat map, name → value (other values are left out). */
+export function tokensOf(data: Readonly<Record<string, unknown>>): { readonly pane: string; readonly tokens: Readonly<Record<string, string>> } | null {
+    const pane = field(data, 'pane_id');
+    const raw = nested(data, 'pane')['tokens'] ?? data['tokens'];
+    if (pane === null || typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+        return null;
+    }
+    return { pane, tokens: Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
+}
+
 /** Structural changes: re-read the snapshot. `layout_updated` is how a phone attaching (a narrower tab) is noticed. */
 const RESYNC = new Set(['pane_created', 'pane_moved', 'tab_closed', 'tab_created', 'layout_updated']);
 

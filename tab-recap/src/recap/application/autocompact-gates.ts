@@ -12,6 +12,8 @@ export const ASKED_FOR_MS = 5 * 60_000;
 export interface FlightAnswer {
     readonly count: number | 'unknown';
     readonly why: string;
+    /** the skip's detail when it is not the count's (an `awaiting` token names what the lane waits for) */
+    readonly detail?: string;
 }
 
 export interface BusyReads {
@@ -51,6 +53,8 @@ export function detailOf(gate: Gate, facts: DetailFacts): string | null {
     if (gate === 'below-minimum') return `below ${facts.minimum} %`;
     if (gate === 'cooldown') return `${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`;
     if (gate === 'unchanged') return 'same tokens and mode as the last decision';
-    if (gate !== 'in-flight' || facts.flight === null) return null;
-    return facts.flight.count === 'unknown' ? facts.flight.why : `${facts.flight.count} running`;
+    return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight) : null;
 }
+
+/** An `awaiting` token names what the lane waits for; otherwise the reader's count, or why it cannot tell. */
+const flightDetail = (flight: FlightAnswer): string => flight.detail ?? (flight.count === 'unknown' ? flight.why : `${flight.count} running`);
