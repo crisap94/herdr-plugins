@@ -1,4 +1,3 @@
-// The Boundaries repository: queries only.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Boundaries, Break } from '#src/ports/boundaries.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';

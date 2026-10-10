@@ -1,4 +1,3 @@
-// What the daemon does with herdr's status pushes besides folding them: wake whoever waits for the lane, and end the showing of its compaction when its next turn starts.
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';

@@ -1,4 +1,3 @@
-// `tab-recap eval`: judge stored recaps, label items, compare the judge with the operator, count the gates. Exit: 0 done · 1 no judge, every run failed or the state is unusable · 2 usage.
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
@@ -13,7 +12,6 @@ import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';
 import { replayCommand } from './replay.ts';
 
-/** The operator's lines, one at a time; null once the input has ended (readline's own question would wait forever then). */
 function lines(): { ask(prompt: string): Promise<string | null>; close(): void } {
     const reader = createInterface({ input: process.stdin });
     const queue: string[] = [];

@@ -1,4 +1,3 @@
-// Claude Code's JSONL rows → entries, notes and the few things the column shows (title, last prompt, away summary).
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
@@ -44,7 +43,6 @@ function userEntry(row: Row): Entry | null {
     return text === '' || NOISE.some((noise) => head.startsWith(noise)) ? null : { role: 'user', text, ...(at === undefined ? {} : { at }) };
 }
 
-/** A prompt the operator typed while Claude was busy: it arrives as an attachment, not as a user row. */
 function queuedEntry(row: Row): Entry | null {
     const attachment = obj(row['attachment']);
     const text = str(attachment['prompt']);
@@ -55,7 +53,6 @@ function queuedEntry(row: Row): Entry | null {
     return NOISE.some((noise) => text.trimStart().startsWith(noise)) ? null : { role: 'user', text, queued: true, ...(at === undefined ? {} : { at }) };
 }
 
-/** Claude's own summaries: the one it leaves when the operator is away, and the one that carries a compacted session on. */
 function noteOf(row: Row): AgentNote | null {
     const at = timeOf(row) ?? null;
     if (row['type'] === 'system' && row['subtype'] === 'away_summary') {
@@ -68,7 +65,6 @@ function noteOf(row: Row): AgentNote | null {
 
 const figure = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined);
 
-/** What `compactMetadata` says (`preTokens`, `postTokens`, `durationMs`); a number it does not give is left out. */
 function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter' | 'tookMs' | 'trigger'> {
     const [before, after, took] = [figure(metadata['preTokens']), figure(metadata['postTokens']), figure(metadata['durationMs'])];
     const trigger = metadata['trigger'];
@@ -78,7 +74,6 @@ function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter
     };
 }
 
-/** Claude Code's record of a compaction: a `compact_boundary` row when it ran, a local-command error row when its own summarizer failed. */
 function markOf(row: Row): Mark | null {
     const at = timeOf(row) ?? null;
     if (row['type'] === 'system' && row['subtype'] === 'compact_boundary') {

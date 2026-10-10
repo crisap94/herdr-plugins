@@ -1,5 +1,3 @@
-// The legacy files, written as rows. Each piece runs in a savepoint: one that the schema refuses (a list over its cap, say)
-// is reported by name instead of stopping the others from being looked at.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
@@ -18,7 +16,6 @@ import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
 
-/** `work`'s writes stay, or none of them do; the answer is the message when the schema refused. */
 export function attempt(db: DatabaseSync, name: string, work: () => void): string | null {
     db.exec('SAVEPOINT piece');
     try {
@@ -54,7 +51,6 @@ export class RowsWriter {
         this.state = db.prepare('UPDATE tab SET running = ?, backend = ?, error = ? WHERE id = ?');
     }
 
-    /** The run's tasks, and each recap stored as sections as the adds that make its facts. */
     private tasks(run: Uint8Array, file: TabRecap, tasks: readonly RecapTask[]): void {
         const facts = { tab: file.tab, at: file.at ?? 0, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
         this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
@@ -64,7 +60,6 @@ export class RowsWriter {
         }
     }
 
-    /** One run (cause `imported`) holds what the file's last good write said; a recap that never succeeded keeps its error, cost and writer in a failed one. */
     recap(file: TabRecap, now: number): void {
         const at = file.at ?? now;
         this.tabs.ensure(file.tab, at);

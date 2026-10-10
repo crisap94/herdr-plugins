@@ -1,4 +1,3 @@
-// No way the plugin starts node needs a flag: node:sqlite prints no ExperimentalWarning on the Node floor.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';

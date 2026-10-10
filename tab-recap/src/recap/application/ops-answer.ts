@@ -1,4 +1,3 @@
-// The writer's answer, `{"ops":[…]}`, as operations. Tolerant of a fence or a sentence around the JSON; strict about what an operation is.
 import type { InputAgent } from '#src/ports/recap-input.ts';
 import { WRITER_CLOSES, isSection } from '#src/recap/domain/fact.ts';
 import { ANCHOR_CHARS } from '#src/recap/domain/gates/g11-anchor.ts';
@@ -7,12 +6,9 @@ import type { Operation } from '#src/recap/domain/ops.ts';
 import { localTime } from './local-time.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 
-/** The most words a why may hold. */
 export const WHY_WORDS = 24;
-/** The keys of the 1.x recap answer: one of them with no `ops` is the old contract. */
 const OLD_SHAPE = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'tasks', 'regroup'];
 
-/** An operation and the task it is for (the key of a task of the tab). */
 export interface Tasked {
     readonly task: string;
     readonly op: Operation;
@@ -23,14 +19,10 @@ export type Answer =
     | { readonly kind: 'old-shape' }
     | { readonly kind: 'invalid'; readonly why: string };
 
-/** What an answer's references resolve against. */
 export interface Resolving {
-    /** the keys of the tab's tasks; the first is where an operation with no task goes */
     readonly tasks: readonly string[];
     readonly agents: readonly InputAgent[];
-    /** the task a document id belongs to */
     readonly taskOf: ReadonlyMap<string, string>;
-    /** the times of the turns in the run's window (epoch ms), to resolve an `at` */
     readonly turns: readonly number[];
     readonly clock: { readonly now: number; readonly zone: string };
 }
@@ -41,7 +33,6 @@ const maybe = (value: unknown, words = 16): string | null => {
     return one === '' ? null : one;
 };
 
-/** The turn whose local time reads as `label` (the latest such); null when the writer's time matches none. */
 function resolveAt(label: unknown, resolving: Resolving): number | null {
     if (typeof label !== 'string' || label.trim() === '') {
         return null;
@@ -50,7 +41,6 @@ function resolveAt(label: unknown, resolving: Resolving): number | null {
     return resolving.turns.findLast((at) => localTime(at, now, zone) === label.trim()) ?? null;
 }
 
-/** A quote from the input, at most `ANCHOR_CHARS` characters: cut back to the last whole word when it is longer, so it still matches its source. */
 function anchorOf(value: unknown): string | null {
     const line = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
     if (line.length <= ANCHOR_CHARS) {

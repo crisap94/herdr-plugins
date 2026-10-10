@@ -1,4 +1,3 @@
-// Autocompact's configuration: the policy, the decider's job, the Jev settings, and which decider they build.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -66,7 +65,6 @@ test('the Jev URL: https to any host, http only to loopback; anything else (clea
     }
 });
 
-/** Runs `body` with these environment variables set (and an empty config folder), then puts everything back. */
 function withEnv(values: Readonly<Record<string, string>>, body: () => void): void {
     const dir = mkdtempSync(join(tmpdir(), 'recap-autocompact-'));
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', ...Object.keys(values)];
@@ -80,7 +78,6 @@ function withEnv(values: Readonly<Record<string, string>>, body: () => void): vo
     }
 }
 
-/** `withEnv` for a body that awaits: the variables stay set until it settles. */
 async function withEnvAsync(values: Readonly<Record<string, string>>, body: () => Promise<void>): Promise<void> {
     const dir = mkdtempSync(join(tmpdir(), 'recap-autocompact-'));
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', ...Object.keys(values)];
@@ -122,7 +119,6 @@ test('the brief coverage decider: auto (the default), jev or decider; anything e
     assert.equal(loadConfig().coverage, 'auto');
 });
 
-/** Runs `body` with a home folder of its own (so no `~/.config/typesafe-api-key` is read), then removes it. */
 function withHome(body: () => void): void {
     const home = mkdtempSync(join(tmpdir(), 'recap-home-'));
     const was = process.env['HOME'];

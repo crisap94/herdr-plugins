@@ -1,4 +1,3 @@
-// Opening the database file: a fresh one is set up once, an old one is backed up and migrated, a newer one is left alone.
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
@@ -8,19 +7,16 @@ import { latestVersion, migrate, versionOf } from './migrate.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 
-/** The database was written by a newer plugin: it is opened read-only and never written. */
 export interface NewerDatabase {
     readonly kind: 'newer-db';
     readonly db: DatabaseSync;
     readonly found: number;
     readonly known: number;
-    /** the newest backup next to it, to restore, when there is one */
     readonly backup: string | null;
 }
 
 export type Opened = { readonly kind: 'ready'; readonly db: DatabaseSync } | NewerDatabase;
 
-/** `auto_vacuum` only takes effect before the first table exists; WAL is kept in the file, so it is set once, here, outside any transaction. */
 function createFresh(db: DatabaseSync, path: string): void {
     db.exec('PRAGMA auto_vacuum = INCREMENTAL');
     if (path !== MEMORY) {

@@ -1,4 +1,3 @@
-// The item gates (G1, G3, G4, G5, G8, G9) over operations, and the extract job's flow with them: refused go back once, the rest is kept.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { extract } from '#src/recap/application/extract-job.ts';
@@ -22,7 +21,6 @@ const groundOf = (over: { readonly language?: string; readonly agents?: readonly
     grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], source: 'go', language: over.language ?? 'en', agents: over.agents ?? ['claude', 'a1'] }],
 });
 
-/** A writer that gives these answers in turn (the last one again after that) and remembers what it was asked. */
 function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: RecapRequest[] } {
     const asked: RecapRequest[] = [];
     const summarizer: Summarizer = {
@@ -35,7 +33,6 @@ function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: R
     return { summarizer, asked };
 }
 
-/** The document the retry was given: only the refused operations, with their reasons. */
 const retryDoc = (request: RecapRequest | undefined): string => (request === undefined ? '' : writerContext(request));
 
 const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> => extract(summarizer, requestOf({ entries: [{ role: 'user', text: 'go' }] }), ground);

@@ -1,10 +1,8 @@
-// What the judge is told, per task. The rubric's item and section checks are quoted from the file, as the writer's instructions quote them.
 import { READBACK as QUESTIONS } from '#src/recap/domain/questions.ts';
 import { RUBRIC } from './rubric.ts';
 import type { CheckAnchor, CheckAnchors, JudgeTask } from '#src/ports/judge.ts';
 import { ANCHORS_PER_CHECK } from '#src/recap/application/judge-anchors.ts';
 
-/** The six fixed questions of the read-back, in the order they are graded as `readback-1` … `readback-6`: the domain's list, the one the ask-back reads too. */
 export const READBACK_QUESTIONS: readonly string[] = QUESTIONS.map((question) => question.text);
 
 const SCORE = [
@@ -70,11 +68,9 @@ const GRADE = [
 
 export const JUDGE_INSTRUCTIONS: Readonly<Record<JudgeTask, string>> = { score: SCORE, readback: READBACK, grade: GRADE, cover: COVER };
 
-/** The operator's corrections of one check, as lines: what the item said and what the operator decided. */
 const anchorLines = (check: string, anchors: readonly CheckAnchor[]): readonly string[] =>
     [`${check}:`, ...anchors.map((anchor) => `- "${anchor.item}" — the operator ruled ${anchor.pass ? 'PASS' : 'FAIL'}${anchor.reason === '' ? '' : `: ${anchor.reason}`}`)];
 
-/** The instructions of a task. The scoring one carries, per check, the operator's corrections (at most five each, newest first) as anchors. */
 export function judgeInstructions(task: JudgeTask, anchors: CheckAnchors = new Map()): string {
     const given = [...anchors].filter(([, list]) => list.length > 0);
     if (task !== 'score' || given.length === 0) {

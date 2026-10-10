@@ -1,4 +1,3 @@
-// The writer's document: its content rules, and every shape of it validated against schema/recap-input.dtd.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputFact } from '#src/ports/recap-input.ts';

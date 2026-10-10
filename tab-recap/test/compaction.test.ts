@@ -21,7 +21,6 @@ const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'g
 
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
 
-/** A fleet of fake agents: what each reports, what was typed into it, and what happened around it. */
 function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
@@ -47,13 +46,12 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new CompactionClaims(), refreshFails: false };
 }
 
-interface Briefing { readonly documents: string[]; readonly answer: string | null; /** where the agent's session last broke, when it did */ readonly lastBreak?: number; /** an automatic compaction's coverage check keeps every fact */ readonly covered?: boolean }
+interface Briefing { readonly documents: string[]; readonly answer: string | null; readonly lastBreak?: number; readonly covered?: boolean }
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-/** `reads`: what the agent's own records show each time they are looked at; the last one repeats. */
 function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
@@ -79,7 +77,6 @@ function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: str
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve(); },
-        // an automatic compaction waits without a coverage check; `covered` gives one that keeps every fact
         coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], answers: {}, unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),
@@ -387,11 +384,8 @@ test('herdr cannot take the lease: the brief is typed all the same', async () =>
     assert.equal(world.typed.length, 1, 'typed without a lease');
 });
 
-// The live bug (2.3.0, 01:46:12): a token request and an automatic compaction of one pane started in the same second. Both passed the
-// status check before either wrote a record, so both typed `/compact` and the requested one ended unconfirmed.
 test('one compaction per lane: a request and an automatic one at the same instant start one compaction; the second joins it', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    // an automatic compaction needs a written brief and a coverage check before it types (a template waits)
     const compaction = flow(world, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
     await Promise.all([
         compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
@@ -414,8 +408,6 @@ test('a request that joins a compaction the agent refuses is answered with that 
     assert.deepEqual([world.answered[0], world.answered.at(-1)?.startsWith('r1 w1:p1 failed-')], ['r1 w1:p1 queued', true]);
 });
 
-// The claim is released on every path. A release that never happens, or one that happens only on success, leaves the pane held: each test here
-// fails in that case, because the second request on the pane either joins a compaction that is over or is never typed.
 test('released when the compaction is done: a second request on the same pane compacts again', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);

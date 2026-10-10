@@ -1,4 +1,3 @@
-// Stored inputs, gate counts and verdicts through the real repositories: the round trip, the retention, the pairs the agreement is made of.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';

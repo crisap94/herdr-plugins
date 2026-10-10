@@ -1,4 +1,3 @@
-// The gates and the verdict, one row per scenario of the spec ("Gates come before any model call", "The decider answers typed questions").
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gateOf } from '#src/recap/domain/autocompact.ts';

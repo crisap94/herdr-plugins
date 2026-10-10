@@ -1,7 +1,3 @@
-/**
- * What the enumeration is told. It lists candidate facts, not facts: it decides nothing about the ledger, which it never sees. Every candidate
- * quotes its source, because a quote that is not in the input is how an invention is caught.
- */
 export const ENUMERATE_INSTRUCTIONS = [
     'You read a piece of what AI coding agents and their operator did in a terminal tab, and list every fact worth keeping from it.',
     '',

@@ -1,4 +1,3 @@
-// The RecapRecords repository: a run's writes land in one transaction — the run, what it read, its tasks, the cursors it advanced.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Advance, FailedRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
@@ -67,7 +66,6 @@ export class RecapRecordsRepository implements RecapRecords {
         });
     }
 
-    /** The cursors stay where the caller says (the old ones); only what the lanes say about themselves moves. */
     failRun(run: FailedRun): void {
         writeTx(this.db, () => {
             this.tabs.ensure(run.tab, run.at);

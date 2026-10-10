@@ -27,7 +27,6 @@ const SHAPE = [
     ']}',
 ];
 
-/** With two or more agents the writer says which task a new fact belongs to. */
 const groups = (request: Pick<RecapRequest, 'input'>): boolean => request.input.ledgers.length > 1;
 
 const sectionLine = (section: { id: SectionId; hint: string }): string => {
@@ -35,7 +34,6 @@ const sectionLine = (section: { id: SectionId; hint: string }): string => {
     return `${section.id.padEnd(10)}— ${section.hint} (${size})`;
 };
 
-/** The writer's fixed contract: operations on the ledger, as one JSON object. Every backend gets the same instructions, after the data. */
 export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry'>): string {
     if (request.retry !== undefined) {
         return correctionInstructions(request);
@@ -87,7 +85,6 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
     ].join('\n');
 }
 
-/** What the retry is told: only the refused operations come back, and only their replacements are wanted. */
 function correctionInstructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry'>): string {
     return [
         'Some operations you answered on the ledger of a terminal tab were refused by rules checked in code. Input: one <correction_input>.',

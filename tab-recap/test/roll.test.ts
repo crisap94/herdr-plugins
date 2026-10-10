@@ -50,7 +50,6 @@ test('shutDown: singular, failures, an unreachable herdr and a batch that takes 
     assert.match(await run(() => new Promise<ClosedAll>(() => undefined), 30), /took more than 0.03 s; leaving/);
 });
 
-/** util-linux `script` runs a command in a pty. (BSD script on macOS gives the child no tty when stdin is a pipe, so the real-pty test is Linux's.) */
 function scriptArgs(command: string): string[] {
     return ['-qec', command, '/dev/null'];
 }
@@ -64,7 +63,6 @@ function hasScript(): boolean {
     }
 }
 
-/** The node process running `entry`: found by its command line, so it does not matter whether `script` put a shell in between. */
 function pidOfNode(entry: string): string {
     const listing = execFileSync('ps', ['-axo', 'pid=,args='], { encoding: 'utf8' });
     const found = listing.split('\n').map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).find((match) => {
@@ -78,7 +76,6 @@ test('the in-place roll is possible on this platform: process.execve exists', ()
     assert.equal(typeof process.execve, 'function');
 });
 
-/** The real thing: a column process in a pty replaces itself in place when the code on disk changes version. */
 test('a column process rolls to the new version in place: same pid, same terminal, the new code is what draws', { skip: hasScript() ? false : 'the `script` command (a pty) is not installed' }, async (t) => {
     if (process.platform === 'darwin') {
         t.skip('BSD script gives the column no tty when stdin is a pipe; covered on Linux');
@@ -129,7 +126,7 @@ test('a column process rolls to the new version in place: same pid, same termina
         assert.ok(script.exitCode === null, 'and the terminal session is still there');
     } finally {
         script?.kill('SIGKILL');
-        try { execFileSync('pkill', ['-f', join(dir, 'code')]); } catch { /* none left */ }
+        try { execFileSync('pkill', ['-f', join(dir, 'code')]); } catch { }
         rmSync(dir, { recursive: true });
     }
 });

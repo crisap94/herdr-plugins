@@ -1,4 +1,3 @@
-// A rig for the eval's tests: the real repositories, a scripted judge and the operator's scripted lines.
 import assert from 'node:assert/strict';
 import { parseEval } from '#src/recap/application/eval-options.ts';
 import type { EvalOptions } from '#src/recap/application/eval-options.ts';

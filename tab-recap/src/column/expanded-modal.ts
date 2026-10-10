@@ -1,4 +1,3 @@
-// What the modal draws: the expanded view of its tab, from the store. Composition for the column process; no model call.
 import type { Store } from '#src/adapters/db/database.ts';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
@@ -10,7 +9,6 @@ import { expanded } from '#src/recap/render/expanded.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { coloured, wrap } from '#src/recap/render/wrap.ts';
 
-/** The expanded view as lines for `width` cells; `store` is null when the database is newer than the plugin (only its warning is drawn). */
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly string[] {
     const edits = new EditCache(new EditCounts([new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts()]));
     const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, autocompact: store.autocompact, boundaries: store.boundaries, requests: store.requests, edits: (lanes, now): readonly FileCount[] => edits.of(lanes, now) });

@@ -1,4 +1,3 @@
-/** What the writer is told more when the document holds <candidates>: its reconcile step. Lines to put among the writer's instructions. */
 export const RECONCILE_LINES: readonly string[] = [
     '<candidates> lists what an earlier pass read in the new turns: each <candidate> has a section, a text and the anchor it came from (a piece',
     'of the input, copied), and often a why, a reference, a time and an agent. flagged="yes" means a commit, an edit, an error or a question',

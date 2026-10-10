@@ -1,4 +1,3 @@
-// Turns a git remote into the repository's web address. Pure; a remote's credentials never leave this function.
 import type { WebBase } from '#src/ports/lane-repo.ts';
 
 const SCP_LIKE = /^(?:[^@/:\s]+@)?([^/:\s]+):(?!\/)(.+)$/u;
@@ -25,7 +24,6 @@ function viaUrl(remote: string): WebBase | null {
     }
 }
 
-/** `git@host:group/repo.git`, `ssh://git@host:22/group/repo.git` and `https://user:token@host/group/repo.git` all become `https://host/group/repo`. */
 export function webOf(remote: string): WebBase | null {
     const text = remote.trim();
     if (/^(?:https?|ssh|git|git\+ssh|ssh\+git):\/\//u.test(text)) {

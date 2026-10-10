@@ -1,4 +1,3 @@
-// The typing lease against herdr's measured token rules (FakePanes): an earlier live lease holds tab-recap back, an expired one does not, and tab-recap's is cleared after typing.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
@@ -9,7 +8,6 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 
-/** One fake herdr, seen through the two ports: tab-recap's writes under its own source, and reads of the merged map. */
 function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens; panes: PaneTokens } {
     const herdr = new FakePanes(() => clock.at);
     const tokens: LaneTokens = {

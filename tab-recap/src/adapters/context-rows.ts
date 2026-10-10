@@ -1,4 +1,3 @@
-// What the agents' own records say about how full their context is. Pure over lines; the readers read the files.
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
@@ -7,7 +6,6 @@ const rowsOf = (lines: readonly string[]): readonly Row[] => lines.map((line) =>
 
 const count = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0);
 
-/** Claude: the newest assistant row's usage is what the last request sent (input + cache); `preTokens` of a compaction is the most seen before it, and its `postTokens` is the use until a newer usage row. */
 export function claudeObserved(lines: readonly string[]): Observed | null {
     let latest: { tokens: number; model: string | null } | null = null as { tokens: number; model: string | null } | null;
     let peak = 0;
@@ -25,7 +23,6 @@ export function claudeObserved(lines: readonly string[]): Observed | null {
     return latest === null ? null : { tokens: latest.tokens, peak: Math.max(peak, latest.tokens), window: null, model: latest.model };
 }
 
-/** Codex: the newest `token_count` (the last request's total and the model's window) and the model of the newest turn. */
 export function codexObserved(lines: readonly string[]): Observed | null {
     let counted: { tokens: number; window: number | null } | null = null;
     let model: string | null = null;
@@ -43,7 +40,6 @@ export function codexObserved(lines: readonly string[]): Observed | null {
     return counted === null ? null : { tokens: counted.tokens, peak: counted.tokens, window: counted.window, model };
 }
 
-/** opencode: an assistant message's `tokens` (input + cache read + cache write) and its `providerID/modelID`. */
 export function opencodeObserved(data: Row): Observed | null {
     const tokens = obj(data['tokens']);
     const cache = obj(tokens['cache']);

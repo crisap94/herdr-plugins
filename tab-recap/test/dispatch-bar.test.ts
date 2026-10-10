@@ -19,7 +19,6 @@ const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promi
 const noBoard = (): Board => emptyBoard();
 const sizing = (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 });
 
-/** A herdr that records every call the dispatcher makes on columns; its layout is a 60 x 40 tab with an agent on top and one below. */
 function fakeColumns(): { columns: Columns; calls: string[] } {
     const calls: string[] = [];
     let opened = false;

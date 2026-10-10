@@ -1,6 +1,3 @@
-// EXP-002 labels: the labeller (Codex gpt-6.1-sol, high effort) answers the six questions for every corpus point with the hindsight in view,
-// the deterministic cross-check of `needs_verbatim` runs beside it, and `--briefs` labels regenerated briefs against their facts.
-// `node bin/autocompact-label.ts --dir <exp002 dir> [--briefs] [--crosscheck] [--kappa] [--limit n] [--operator n]`.
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment-data.ts';

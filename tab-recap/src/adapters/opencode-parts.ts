@@ -1,4 +1,3 @@
-// opencode's message and part rows → entries; its compaction answer is a note, not a turn.
 import type { DatabaseSync } from 'node:sqlite';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
 import { opencodeObserved } from './context-rows.ts';
@@ -10,7 +9,6 @@ export interface MessageRow { readonly id: string; readonly time_updated: number
 
 const millis = (value: unknown): number | undefined => (typeof value === 'number' && value > 0 ? value : undefined);
 
-/** The time of a part (its own start, else when its message was created). */
 const partTime = (part: Row, message: Row): number | undefined => millis(obj(part['time'])['start']) ?? millis(obj(message['time'])['created']);
 
 function partEntry(role: string, part: Row, at: number | undefined): Entry | null {
@@ -22,10 +20,8 @@ function partEntry(role: string, part: Row, at: number | undefined): Entry | nul
     return part['type'] === 'tool' ? toolEntry(namedCall(str(part['tool']) ?? 'tool', obj(obj(part['state'])['input'])), at) : null;
 }
 
-/** The answer of opencode's compaction turn: the session's own summary, not part of the conversation. */
 const isCompaction = (message: Row): boolean => message['summary'] === true && message['mode'] === 'compaction';
 
-/** The compaction answer as a mark: its tokens (what the summary was made from) and how long it took, when the message says. */
 function markOf(data: Row): Mark {
     const [created, completed] = [millis(obj(data['time'])['created']), millis(obj(data['time'])['completed'])];
     const tokens = opencodeObserved({ ...data, role: 'assistant' })?.tokens;

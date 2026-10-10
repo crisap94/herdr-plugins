@@ -1,4 +1,3 @@
-// The TabViews repository: a tab's row (where its column is, when it was published) and its lanes, replaced on each write.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
@@ -38,7 +37,6 @@ export class TabViewsRepository implements TabViews {
     private readonly clear: StatementSync;
     private readonly insert: StatementSync;
 
-    /** `daemonVersion` is only given by the daemon: every view it writes says which version it is running. */
     constructor(db: DatabaseSync, daemonVersion: string | null = null) {
         this.db = db;
         this.daemonVersion = daemonVersion;

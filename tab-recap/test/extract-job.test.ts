@@ -1,4 +1,3 @@
-// Asking for operations: shape, gates, one retry, drop what is still refused, the 1.x answer refused for a custom writer.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
@@ -34,7 +33,6 @@ const run = (answers: readonly string[], backend = 'fake'): Promise<{ done: Extr
     return extract(summarizer, requestOf(), ground).then((done) => ({ done, calls }));
 };
 
-/** The document the retry was given: the refused operations with their reasons and the facts they name, never the transcript. */
 const retryDoc = (request: RecapRequest | undefined): string => (request === undefined ? '' : writerContext(request));
 
 const kept = (done: Extracted): unknown => (done.kind === 'ops' ? done.tasks.map((each) => each.ops.map((op) => (op.op === 'add' ? op.text : `${op.op} ${op.id}`))) : done);

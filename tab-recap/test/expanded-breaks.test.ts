@@ -28,7 +28,6 @@ const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleV
     }),
 });
 
-/** Compared with the file; `UPDATE_GOLDEN=1` rewrites it (and the diff is then read by a person). */
 function golden(name: string, lines: readonly string[]): void {
     const path = join(import.meta.dirname, 'fixtures', name);
     const text = `${lines.map((line) => stripVTControlCharacters(line)).join('\n')}\n`;

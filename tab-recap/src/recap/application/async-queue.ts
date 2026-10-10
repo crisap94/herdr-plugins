@@ -1,4 +1,3 @@
-/** An unbounded async queue: producers push, one consumer iterates. */
 export class AsyncQueue<T> implements AsyncIterable<T> {
     private readonly items: T[] = [];
     private readonly waiters: ((result: IteratorResult<T>) => void)[] = [];

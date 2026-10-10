@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ExperimentStore } from '#src/adapters/experiment-store.ts';
 
-/** Runs `body` in a fresh folder, then removes it. */
 function inTempDir(body: (dir: string) => void): void {
     const dir = mkdtempSync(join(tmpdir(), 'recap-experiment-store-'));
     try {
@@ -43,7 +42,6 @@ test('the experiment store opens any other path (a copy is not refused)', () => 
         const live = join(dir, 'tab-recap.db');
         const copy = join(dir, 'copy.db');
         writeFileSync(copy, '');
-        // An empty file has no tables, so the queries fail after the guard: the refusal is the only thing this test checks.
         assert.throws(() => new ExperimentStore(copy, live), (error: unknown) => !(error instanceof Error && /live store/.test(error.message)));
     });
 });

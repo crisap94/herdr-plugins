@@ -1,4 +1,3 @@
-// A compaction asked through a `compact-req-<tool>` token: parsed, queued with origin `request`, answered in `tab-recap-compact`, each id once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -15,7 +14,6 @@ import { MemoryAsks } from './fakes/ask-records.ts';
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 
-/** A frame as herdr's `pane.updated` carries it: the pane and its merged tokens. */
 const frame = (pane: string, tokens: Record<string, string>): { readonly pane: { readonly pane_id: string; readonly tokens: Record<string, string> } } => ({ pane: { pane_id: pane, tokens } });
 
 interface Harness {

@@ -1,5 +1,3 @@
-// EXP-002 operator labels: `node bin/autocompact-label.ts --dir <exp002 dir> --operator <n>` shows n points (state, then what followed) one at a time and
-// reads one line per point from stdin: the six answers as 0/1 digits, in the order printed. `s` skips, `q` quits. Answers go to operator-labels.jsonl.
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import { readPoints } from '#src/adapters/experiment-data.ts';

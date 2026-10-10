@@ -1,4 +1,3 @@
-// The settings of the pipeline and the reconciliation, and the enumeration's job on a harness.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';

@@ -1,4 +1,3 @@
-// The eval's report on a sample of judged runs: pass rate per check, the failing items, coverage, no-filler and read-back per run. Pure.
 import type { StoredRun } from '#src/ports/run-inputs.ts';
 import type { Grade } from './judge-answer.ts';
 import { plus } from './judge-coverage.ts';
@@ -19,7 +18,6 @@ export interface Failure {
     readonly critique: string;
 }
 
-/** What the report says of one sampled run. */
 export type RunLine =
     | {
         readonly kind: 'judged'; readonly run: StoredRun; readonly coverage: Share; readonly filler: Share; readonly added: Measured['added']; readonly stateSize: number
@@ -27,12 +25,10 @@ export type RunLine =
     }
     | { readonly kind: 'not-judged'; readonly run: StoredRun; readonly why: string };
 
-/** The sampled runs together: the state numbers, the numbers over what the runs added, and the middle read-back. */
 export interface Totals {
     readonly coverage: Share;
     readonly filler: Share;
     readonly added: Measured['added'];
-    /** the median of the runs' read-back passes out of six; null when no run has one */
     readonly readback: number | null;
 }
 
@@ -40,7 +36,6 @@ export interface EvalReport {
     readonly judge: string;
     readonly rates: readonly Rate[];
     readonly failures: readonly Failure[];
-    /** facts whose anchor was found in the input and that the judge called unsupported (I4): either the judge or the rubric is wrong there */
     readonly judgeVsAnchor: readonly Failure[];
     readonly totals: Totals;
     readonly runs: readonly RunLine[];
@@ -51,7 +46,6 @@ const ITEM_CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
 const SECTION_CHECKS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'rules', 'links'].map((section) => `S-${section}`);
 const RUN_CHECKS = ['coverage', 'filler', ...[1, 2, 3, 4, 5, 6].map((n) => `readback-${n}`)];
 
-/** The order checks are listed in: item checks, section checks, then the whole recap's. */
 export const CHECK_ORDER: readonly string[] = [...ITEM_CHECKS, ...SECTION_CHECKS, ...RUN_CHECKS];
 
 export const rankOf = (check: string): number => {
@@ -122,7 +116,6 @@ function anchoredFailures(results: readonly RunResult[]): readonly Failure[] {
     });
 }
 
-/** The report for the results of one eval, by the judge named `judge`. */
 export function reportOf(judge: string, results: readonly RunResult[]): EvalReport {
     return {
         judge,

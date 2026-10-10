@@ -10,7 +10,6 @@ import { opencodeFixture } from '#test/opencode-fixture.ts';
 
 const line = (row: object): string => JSON.stringify(row);
 
-// the shapes Claude Code writes today (invented content): assistant rows carry message.usage, a compaction carries compactMetadata.preTokens
 const assistant = (model: string, usage: object, extra: object = {}): string => line({ type: 'assistant', isSidechain: false, message: { model, role: 'assistant', content: [], usage }, ...extra });
 
 test('claude: the newest assistant usage is input + cache read + cache creation; sidechains and synthetic rows are ignored; a compaction raises the peak', () => {

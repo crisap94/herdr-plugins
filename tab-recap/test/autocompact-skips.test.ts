@@ -1,4 +1,3 @@
-// Every gate that stops a lane leaves its latest skip: the gate, the share when known and a detail; a decision removes it; `off` records nothing.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';

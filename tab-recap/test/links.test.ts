@@ -7,7 +7,6 @@ const GITLAB: LaneWeb = { base: 'https://gitlab.example/acme/shop', forge: 'gitl
 const GITHUB: LaneWeb = { base: 'https://github.com/acme/shop', forge: 'github', branch: 'feat/cart' };
 const SHA = 'a1b2c3d4';
 
-/** `[shown, url]` for every reference, in order; plain text is left out. */
 const refs = (text: string, web: LaneWeb | null = GITLAB): [string, string][] =>
     linkify(text, [web]).flatMap((piece) => (piece.url === undefined ? [] : [[piece.text, piece.url] as [string, string]]));
 
@@ -86,8 +85,6 @@ test('one context per task: lanes of one repository share it, two repositories g
     assert.deepEqual(linkify('!7 https://example.org/z', [GITLAB, other]).flatMap((piece) => (piece.url === undefined ? [] : [piece.url])), ['https://example.org/z']);
 });
 
-// Regression (1.8.1): the lane's branch is matched with a `u` regular expression, where `\-` is a syntax error;
-// a branch with a dash (most of them) made every recap line of that lane throw while being drawn.
 test('links: a lane branch with dashes, dots and plus signs is linked bare and backticked, and never throws', () => {
     for (const branch of ['feat/payments-v2', 'release-1.8.x', 'fix/a+b', 'docs/0013-absorb-openrig']) {
         const web: LaneWeb = { ...GITLAB, branch };

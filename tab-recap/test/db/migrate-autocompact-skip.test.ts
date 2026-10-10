@@ -1,4 +1,3 @@
-// Migration 11, the autocompact skips: from a version 10 database with a lane in it, through the real migrations; one row per lane, cascading with its tab.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

@@ -31,10 +31,6 @@ export function claudeArgs(model: string, instructions: string, effort: Effort =
     ];
 }
 
-/**
- * Headless Claude Code on the operator's subscription (`--bare` would need an API key).
- * No tools, no settings (so no hooks), no MCP, and no transcript of its own.
- */
 export class ClaudeHarness implements Harness {
     readonly id = 'claude';
     readonly limit = null;

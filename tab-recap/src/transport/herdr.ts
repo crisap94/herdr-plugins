@@ -1,6 +1,3 @@
-// herdr's socket wire: newline-delimited JSON. One connection per RPC; one long-lived
-// connection per subscription — herdr accepts exactly ONE events.subscribe per
-// connection (a second one resets the socket, measured on 0.9.0).
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { homedir } from 'node:os';
@@ -38,7 +35,6 @@ function asJson(line: string): Json | null {
 
 function onLines(sock: Socket, handle: (message: Json) => void): void {
     const lines = createInterface({ input: sock, crlfDelay: Infinity });
-    // the interface re-emits the socket's errors; the callers already handle them on the socket itself
     lines.on('error', () => undefined);
     lines.on('line', (line) => {
         const message = asJson(line);
@@ -48,7 +44,6 @@ function onLines(sock: Socket, handle: (message: Json) => void): void {
     });
 }
 
-/** An empty id in a reply means herdr could not parse the request: still ours. */
 const isReplyTo = (message: Json, id: string): boolean => message['id'] === id || message['id'] === '';
 
 function errorOf(method: string, message: Json): HerdrError | null {
@@ -100,7 +95,6 @@ export interface Live {
     close(): void;
 }
 
-/** herdr acks a subscription at once; no ack in this long means the connection is not going to work. */
 export const ACK_TIMEOUT_MS = 10_000;
 
 export function subscribe(topics: readonly Json[], onPush: (pushed: Pushed) => void, onEnd: () => void, ackTimeoutMs = ACK_TIMEOUT_MS): Promise<Live> {

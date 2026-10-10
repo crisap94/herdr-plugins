@@ -1,4 +1,3 @@
-// ProcessControl on Linux and macOS: the program runs in its own process group, so a timeout takes its children with it.
 import { spawn } from 'node:child_process';
 import type { ProcessControl } from '#src/ports/process-control.ts';
 import { runIn } from './process-core.ts';

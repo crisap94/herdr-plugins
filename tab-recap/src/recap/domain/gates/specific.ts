@@ -1,4 +1,3 @@
-// G8 not specific (flag): the item names nothing concrete — no file, command, reference, number, version, error or person-role (I3).
 import { LISTED, said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 import { hasReference } from './link.ts';
@@ -16,7 +15,6 @@ const SIGNS = [
     ROLES,
 ];
 
-/** A capitalised word that does not open the sentence: a name (Paris, Oslo). */
 const hasName = (text: string): boolean => wordsOf(text).slice(1).some((word) => /^\p{Lu}\p{L}+$/u.test(word));
 
 export const isSpecific = (text: string): boolean => SIGNS.some((sign) => sign.test(text)) || hasName(text) || hasReference(text);

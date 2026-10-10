@@ -1,4 +1,3 @@
-// Mandatory candidates found with no model: commits, edits, errors and questions, in English and Spanish.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Entry } from '#src/ports/transcripts.ts';

@@ -20,7 +20,6 @@ import { cursor, memoryStore, must, scratchDir } from './support.ts';
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 
-/** The shape of a schema as SQLite keeps it, whitespace folded. */
 const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.sql.replaceAll(/\s+/g, ' ').replace(/ALTER|"/g, '').replaceAll(/\s*[(),]\s*/g, (match) => match.trim()).trim()}`);
 
@@ -71,7 +70,6 @@ const T1 = { tab: 'w1:t1', key: 't1' };
 const SHAPE = [{ id: 't1', name: '', lanes: ['w1:p1'] }];
 const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text, why: section === 'decisions' ? 'a reason' : null, ref: null, at: null, agent: null });
 
-/** A run of the writer that applies `ops` to task t1. */
 function writerRun(store: ReturnType<typeof memoryStore>, at: number, ops: readonly Operation[]): void {
     store.records.recordRun({ tab: 'w1:t1', at, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
 }

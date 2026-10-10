@@ -1,4 +1,3 @@
-// What the readers carry for the writer: times, notes, queued prompts, noise left out, readable tool calls. Row shapes are the real ones, with invented content.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';

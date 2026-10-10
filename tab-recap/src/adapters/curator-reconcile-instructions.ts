@@ -1,9 +1,5 @@
 import { EVIDENCE_CHARS } from '#src/recap/domain/reconciliation.ts';
 
-/**
- * What the curator is told when it reconciles. It may change what is in the ledger, never add; and it may only change what the newest turns
- * show: a quote of them is the proof, so a fact is never closed for what a summary leaves out.
- */
 export const RECONCILE_CURATOR_INSTRUCTIONS = [
     'You check the ledger of facts kept about one piece of work done by AI coding agents against what was said and done last.',
     '',

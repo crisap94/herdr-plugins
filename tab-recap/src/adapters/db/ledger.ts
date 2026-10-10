@@ -1,4 +1,3 @@
-// The Ledger repository: the facts of a tab's tasks. A read that finds a bad row or a locked file answers empty (a column must still draw).
 import type { DatabaseSync } from 'node:sqlite';
 import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
@@ -40,7 +39,6 @@ export class LedgerRepository implements Ledger {
         return guarded(() => this.history.read(tab, pane), []);
     }
 
-    /** One transaction: if any write is refused by the schema, none of the answer is kept and the error is thrown. */
     apply(run: RunRef, ops: readonly Operation[]): Applied {
         const id = idOf('run', run.id);
         if (id === null) {

@@ -1,4 +1,3 @@
-// Calibration: Cohen's kappa against the 0.6 bar, the operator's corrections as the judge's anchors, and `--label --check`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HarnessJudge } from '#src/adapters/harness-judge.ts';
@@ -35,7 +34,6 @@ test('the bar is 0.6: a check at 0.62 is trusted, one at 0.45 is not, and one wi
     assert.deepEqual([row?.percent, row?.kappa, row ? trusted(row) : null], [90, 0.45, false]);
 });
 
-/** `count` items the judge passed and the operator failed on I5 (the run holds none of them), then the run's own "Worked on it.", newest last. */
 function seeded(count: number): ReturnType<typeof rig> {
     const found = rig();
     seed(found.store, 1);

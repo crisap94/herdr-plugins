@@ -1,17 +1,13 @@
-// Who is waiting for a lane to settle: herdr's `pane.agent_status_changed` push, fed by the informer, wakes them. While the
-// informer is blind (no subscription) the lane's status is polled instead, as the flow always did.
 import type { Agents } from '#src/ports/agents.ts';
 import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 const READY = new Set(['idle', 'done']);
-/** Time for the agent to start working on what was typed before it is first asked how it stands (polling only). */
 const SETTLE_MS = 4000;
 const POLL_MS = 2000;
 
 export interface SettleHubDeps {
     readonly agents: Pick<Agents, 'status'>;
-    /** whether herdr's pushes are arriving */
     listening(): boolean;
     pause(ms: number): Promise<void>;
     now(): number;
@@ -31,7 +27,6 @@ export class SettleHub implements LaneSettling {
         this.deps = deps;
     }
 
-    /** The informer's feed: herdr said `status` for `pane`. */
     heard(pane: string, status: string): void {
         const at = this.deps.now();
         this.last.set(pane, { status, at });
@@ -73,7 +68,6 @@ export class SettleHub implements LaneSettling {
         });
     }
 
-    /** One look at the status, for the lane that may have settled while nothing was heard. */
     private async once(pane: string): Promise<Settled> {
         const state = await this.deps.agents.status(pane);
         return !isUnknown(state) && READY.has(state.status) ? { kind: 'settled', status: state.status } : { kind: 'timeout' };

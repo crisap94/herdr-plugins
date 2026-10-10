@@ -1,5 +1,3 @@
-// G4 link: a "links" item should be a reference that resolves — `!n`, `#n`, a hex SHA of 7+ digits, name/with-slash, a path, a file name with an extension or a URL.
-// One that is not is flagged and kept (drawn as plain text, without a hyperlink): refusing it deleted a fact for a matter of form.
 import { said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 
@@ -14,7 +12,6 @@ const REFERENCE = [
 
 const bare = (token: string): string => token.replaceAll('`', '').replace(/^[("'[]+|[)"'\],;:]+$/gu, '').replace(/(?<=[^.])\.$/u, '');
 
-/** Whether any whitespace-separated token of `text` is a reference. */
 export const hasReference = (text: string): boolean => text.split(/\s+/u).map(bare).some((token) => REFERENCE.some((form) => form.test(token)));
 
 export const unresolved: Gate = {

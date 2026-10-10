@@ -1,4 +1,3 @@
-// `tab-recap autocompact [--all]`: the newest autocompact decisions, read-only. Exit: 0 listed · 1 the state is unusable · 2 usage.
 import { stateStore } from '#src/adapters/db/database.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { AUTOCOMPACT_USAGE, LISTED, listing, parseListing, styleLine } from '#src/recap/application/autocompact-listing.ts';

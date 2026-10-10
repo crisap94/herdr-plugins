@@ -11,7 +11,6 @@ import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts
 
 export { extractClaude };
 
-/** The in-flight answer of a transcript's tail: read back (doubling the budget) while the tail ends work it never saw launched, up to the bound. */
 function answerAt(source: string, budget: number): InFlightResult {
     let bytes = budget;
     let tail = tailOf(source, bytes);
@@ -24,14 +23,11 @@ function answerAt(source: string, budget: number): InFlightResult {
     return answerOf(scan, tail.truncated);
 }
 
-/** How many transcripts' unknown answers are kept (the oldest is forgotten first). */
 export const KEPT_UNKNOWN_MAX = 256;
 
-/** Claude Code transcripts. Never derive the project slug: sessions move with /cd. */
 export class ClaudeTranscripts implements Transcripts {
     readonly agent = 'claude';
     private readonly root: string;
-    /** the unknown answer each transcript gave at its size: an unchanged size gives the same answer, so it is not read again */
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
 
     constructor(root = join(homedir(), '.claude', 'projects')) {
@@ -54,7 +50,7 @@ export class ClaudeTranscripts implements Transcripts {
             try {
                 const stat = statSync(path);
                 if (best === null || stat.mtimeMs > best.mtime) { best = { path, mtime: stat.mtimeMs }; }
-            } catch { /* not in this project */ }
+            } catch { }
         }
         return best === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: best.path };
     }
@@ -76,9 +72,6 @@ export class ClaudeTranscripts implements Transcripts {
         }
     }
 
-    /** The answer from the tail; while it ends work it never saw launched, it reads back with a doubled budget, up to the bound.
-     * An unknown answer is kept with the file's size: while the size is the same, it is answered without a read. */
-    /** Keeps an unknown answer as the newest entry, and forgets the oldest entries beyond `KEPT_UNKNOWN_MAX`. */
     private keep(source: string, kept: { readonly size: number; readonly answer: InFlightResult }): void {
         this.unknownAt.delete(source);
         this.unknownAt.set(source, kept);

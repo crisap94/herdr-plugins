@@ -1,4 +1,3 @@
-// What a lane's pane carries, read from the store and the lane's own records: the context share, the tab's last recap and its open needs. No model call.
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -12,7 +11,6 @@ export interface FactsDeps {
     readonly ledger: Pick<Ledger, 'openOf'>;
 }
 
-/** The needs are the open facts of the tab's tasks in the `needs` section. */
 export function factsOf(lane: Lane, deps: FactsDeps): LaneFacts {
     const tab = String(lane.tab);
     const use = deps.contexts.of(String(lane.pane));

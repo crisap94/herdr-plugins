@@ -1,4 +1,3 @@
-// The reconcile step's request and document: candidates in a `candidates` element (DTD-valid), the transcript clipped, the instructions told.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { instructions } from '#src/adapters/recap-instructions.ts';

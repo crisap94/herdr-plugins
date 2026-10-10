@@ -1,4 +1,3 @@
-// An in-memory `Ledger`, for tests of everything that reads or writes facts without a database.
 import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
 import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { sameTask } from '#src/recap/domain/fact.ts';
@@ -12,16 +11,13 @@ export class MemoryLedger implements Ledger {
     private readonly holders = new Map<string, Set<string>>();
     private counter = 0;
 
-    /** a fact id as the fake mints them: `fct_1`, `fct_2`, … */
     mint = (): FactId => `fct_${(this.counter += 1)}` as FactId;
 
-    /** put facts in directly (a task that already has a ledger) */
     seed(...facts: readonly Fact[]): this {
         this.facts = [...this.facts, ...facts];
         return this;
     }
 
-    /** the panes that work on `task`, for `historyOf` */
     holds(task: TaskId, ...panes: readonly string[]): this {
         const key = `${task.tab}\u001f${task.key}`;
         this.holders.set(key, new Set([...(this.holders.get(key) ?? []), ...panes]));

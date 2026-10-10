@@ -1,5 +1,3 @@
-// Replaying a stored transcript: the extractor is run for every turn of it, from an empty ledger, as it would have been live.
-// Everything goes into the store it is given (a scratch one); the live state is never named here.
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
@@ -17,7 +15,6 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import { RecapJob } from './recap-job.ts';
 import type { RecapJobDeps } from './recap-job.ts';
 
-/** One turn: a prompt of the operator and everything up to the next one (the first window also holds what came before the first prompt). */
 export function windowsOf(entries: readonly Entry[]): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
     for (const entry of entries) {
@@ -32,16 +29,13 @@ export function windowsOf(entries: readonly Entry[]): readonly (readonly Entry[]
 }
 
 export interface ReplayDeps {
-    /** the real reader of the transcript's kind */
     readonly reader: Transcripts;
     readonly summarizer: () => Summarizer;
-    /** the scratch store: where the facts of the replay go */
     readonly records: RecapRecords;
     readonly ledger: Ledger;
     readonly repos: LaneRepo;
     readonly language: string;
     readonly log: (line: string) => void;
-    /** the steps each turn's run takes (the job's default when not given) and the enumeration's model for the steps that need one */
     readonly pipeline?: Pipeline;
     readonly enumerator?: () => Enumerators | null;
 }
@@ -49,11 +43,9 @@ export interface ReplayDeps {
 export interface Replayed {
     readonly windows: number;
     readonly facts: readonly Fact[];
-    /** what every model call of the replay's runs cost, in US dollars */
     readonly costUsd: number;
 }
 
-/** Where the replay stands: the turn being run and the instant it is at. */
 interface Position {
     turn: number;
     now: number;
@@ -61,10 +53,8 @@ interface Position {
 
 const noPrompt = (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null });
 
-/** The instant a turn ended at: the time of its last entry that has one, but never before the instant it started from. */
 const endOf = (window: readonly Entry[] | undefined, from: number): number => Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1);
 
-/** A reader that serves the window of the turn being run, as if the transcript had just grown by it. */
 function windowed(base: Transcripts, file: string, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
     const read = (): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: at.turn + 1, tail: null }, grew: true,
@@ -73,13 +63,11 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
     return { agent: base.agent, locate, latestPrompt: noPrompt, read };
 }
 
-/** The job's pipeline and enumeration, when the replay names them. */
 function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator'> {
     const chosen = deps.pipeline;
     return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }) };
 }
 
-/** Read `file` from the start, then one extractor run per turn, then the facts that are left. Throws a sentence when the file cannot be read. */
 export async function replay(deps: ReplayDeps, file: string, label: string, size: number): Promise<Replayed> {
     const whole = await deps.reader.read(file, UNREAD, size);
     if (isUnknown(whole)) {

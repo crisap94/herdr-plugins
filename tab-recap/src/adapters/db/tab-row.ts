@@ -1,6 +1,5 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 
-/** Every aggregate hangs off a tab: make sure its row exists, and remember when it was last touched (retention reads this). */
 export class TabRow {
     private readonly upsert: StatementSync;
 

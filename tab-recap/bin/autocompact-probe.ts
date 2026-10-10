@@ -1,5 +1,3 @@
-// EXP-002 probe: one arm answers the six questions on every corpus point and the coverage questions on every brief fact.
-// `node bin/autocompact-probe.ts --dir <exp002 dir> --arm jev|haiku-low|haiku-medium|luna-low --rep 1|2`. Answers go to answers-<arm>-<rep>.jsonl (resumable).
 import { join } from 'node:path';
 import { deciderOf, isArm } from '#src/adapters/experiment-arms.ts';
 import { readPoints } from '#src/adapters/experiment-data.ts';
@@ -22,7 +20,6 @@ interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly
 
 interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly CoverageFact[] }
 
-/** Every point of the corpus (and of the outcome set), then every brief: one ask over all its facts, as the live flow makes it. */
 export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(join(dir, 'corpus.jsonl')), ...readPoints(join(dir, 'outcome-points.jsonl'))];
     const briefs = readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[];

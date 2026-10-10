@@ -1,4 +1,3 @@
-// G11 (an added fact quotes its input) and G12 (answered fits a question only): the spec's scenarios, and the folding the quote is matched with.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { anchoredLine } from '#src/recap/application/replay-report.ts';

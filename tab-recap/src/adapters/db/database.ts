@@ -1,4 +1,3 @@
-// The composition: one connection, the repositories. Each consumer takes the port it uses.
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
@@ -41,26 +40,19 @@ export interface Store {
     readonly visibility: ColumnVisibility;
     readonly requests: Requests & CompactionQueue;
     readonly compactions: CompactionRecords;
-    /** the compaction requests other tools made, accepted once per (tool, id) */
     readonly asks: AskRecords;
-    /** what autocompact decided, lane by lane */
     readonly autocompact: AutocompactRecords;
     readonly inputs: RunInputs;
     readonly verdicts: Verdicts;
-    /** the curator's paragraph per task; its merges go through `ledger` */
     readonly stories: Stories;
-    /** what the expanded view counts: when the tab began, its runs, its compactions */
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
     readonly retention: Retention;
-    /** the daemon's upkeep: fold the write-ahead log back into the file and truncate it */
     checkpoint(): void;
-    /** the daemon, on shutdown */
     close(): void;
 }
 
 export interface StoreOptions {
-    /** only the daemon gives it: every view it writes says which version it runs */
     readonly daemonVersion?: string | null;
     readonly now?: () => number;
 }
@@ -78,7 +70,6 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     };
 }
 
-/** The store at `path`, or `newer-db` when a newer plugin wrote it (then it is read-only and nothing here writes). */
 export const databasePath = (stateDir: string): string => join(stateDir, 'tab-recap.db');
 
 export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
@@ -86,5 +77,4 @@ export function openStore(path: string, options: StoreOptions = {}): Store | New
     return opened.kind === 'ready' ? storeOver(opened.db, options) : opened;
 }
 
-/** The store in the plugin's state directory — what every process (CLI, setup, column, daemon) opens. */
 export const stateStore = (stateDir: string, options: StoreOptions = {}): Store | NewerDatabase => openStore(databasePath(stateDir), options);

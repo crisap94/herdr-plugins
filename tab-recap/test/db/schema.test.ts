@@ -5,7 +5,6 @@ import { memoryStore, newId } from './support.ts';
 
 const fresh = (): DatabaseSync => memoryStore().db;
 
-/** A run with one task, ready for item rows. */
 function withRun(db: DatabaseSync): { run: Uint8Array; task: Uint8Array; transcript: Uint8Array; chapter: Uint8Array } {
     const [run, task, transcript, chapter] = [newId(), newId(), newId(), newId()];
     db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('t', 1, 1)").run();
@@ -23,7 +22,6 @@ const item = (db: DatabaseSync, ids: { run: Uint8Array; task: Uint8Array }, bull
     db.prepare('INSERT INTO item (run_id, task_id, view, section, position, text) VALUES (?, ?, ?, ?, ?, ?)').run(ids.run, ids.task, bullet.view, bullet.section, bullet.position, bullet.text ?? 'x');
 };
 
-/** A row as a plain object (node:sqlite hands back null-prototype ones). */
 const plain = (row: object): Record<string, unknown> => Object.fromEntries(Object.entries(row));
 
 test('a fresh database passes integrity_check and foreign_key_check', () => {

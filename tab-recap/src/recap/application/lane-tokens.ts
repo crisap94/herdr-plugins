@@ -1,6 +1,3 @@
-// Publishes the lane tokens on each lane's pane while herdr events are on: when a value changes, or half the time to live has passed. A fact that
-// became unknown is written as `null`. A lane that leaves the board is closed on its workspace, and has its names cleared. A pane whose writes fail
-// waits (doubling, up to a minute) and is logged once per outage. Runs at most every TICK_MS.
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { OWNED_TOKENS, STATE_TOKENS, NEEDS_TOKEN, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
@@ -11,7 +8,6 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export const TICK_MS = 2_000;
-/** a token lives twice the resync interval (a minute): it expires on its own if the daemon stops */
 export const TTL_MS = 120_000;
 
 export interface LaneTokenDeps {
@@ -24,7 +20,6 @@ export interface LaneTokenDeps {
     readonly events?: LaneEvents;
 }
 
-/** what was last written on a pane, when, and on which workspace (where its `lane-closed` goes) */
 interface Held {
     readonly values: TokenValues;
     readonly at: number;
@@ -33,9 +28,7 @@ interface Held {
 
 export class LaneTokenPublisher {
     private readonly deps: LaneTokenDeps;
-    /** pane → what was last written there (set when the write is sent; dropped again if it fails, so a later tick retries) */
     private readonly written = new Map<string, Held>();
-    /** pane → consecutive failures and the time before which nothing is written there */
     private readonly failing = new Map<string, { readonly count: number; readonly until: number }>();
     private lastTick = Number.NEGATIVE_INFINITY;
 
@@ -78,7 +71,6 @@ export class LaneTokenPublisher {
         void this.send(pane, { ...due, ...clearing(STATE_TOKENS.filter((name) => !(name in due))) }, now);
     }
 
-    /** A change of the open needs is an event: raised when it grows, cleared when it shrinks. */
     private announceNeeds(lane: Lane, was: TokenValues | undefined, now: TokenValues): void {
         const before = was?.[NEEDS_TOKEN];
         const count = now[NEEDS_TOKEN];

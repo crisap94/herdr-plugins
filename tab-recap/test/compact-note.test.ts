@@ -1,4 +1,3 @@
-// `TAB_RECAP_COMPACT_NOTE` and `compact --note`: the note popup opens only when the setting says `ask` and no note is given; otherwise the request is queued at once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
@@ -15,7 +14,6 @@ const TAB = 'w1:t1';
 const PANE = 'w1:p2';
 const models = { claude: '', codex: '', opencode: '', hermes: '', custom: '' };
 
-/** The two effects, recorded; `done` is what both answer. */
 function recorder(done: Done = { kind: 'done' }): { asked: [string, string | null][]; queued: CompactRequest[]; start: CompactStart } {
     const asked: [string, string | null][] = [];
     const queued: CompactRequest[] = [];
@@ -77,7 +75,6 @@ test('a --note is one line and at most as long as the popup allows', () => {
 });
 
 test('a 280-character cut that lands on a space leaves no trailing space', () => {
-    // 279 letters, a space (the 280th character of the cut) and more text: the cut keeps the space, so it must be trimmed
     assert.equal(requestNoteOf(`${'x'.repeat(NOTE_LIMIT - 1)} tail`), 'x'.repeat(NOTE_LIMIT - 1));
 });
 

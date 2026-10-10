@@ -1,4 +1,3 @@
-// The experiment's JSON-lines files with the shapes the tools write them in.
 import type { Labelled } from '#src/experiment/kappa-report.ts';
 import { readJsonl } from './experiment-io.ts';
 import type { Point } from './experiment-point.ts';

@@ -1,6 +1,5 @@
 import { originOf } from '#src/recap/domain/origin.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-// The SessionSource repository: what the store knows of a tab's session — when it began, how many runs of each cause, the compactions.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import { all, guarded, maybeWhole, one, text, whole } from './rows.ts';

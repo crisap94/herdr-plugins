@@ -1,4 +1,3 @@
-// Chunking a run's new turns for the enumeration: at most 6 000 characters of markup, between turns, inside a turn only between bursts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Entry } from '#src/ports/transcripts.ts';

@@ -1,4 +1,3 @@
-// The Requests repository: what the columns and commands ask of the daemon, as rows it takes with `DELETE … RETURNING`.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
@@ -20,7 +19,6 @@ function compactionOf(row: Row): CompactRequest | null {
     return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note'), origin: originOf(text(row, 'origin')), ...(answer === null ? {} : { answer }) };
 }
 
-/** The word the table keeps for a visibility request. */
 function wordOf(hidden: boolean | 'toggle'): string {
     if (hidden === 'toggle') {
         return 'toggle';
@@ -55,7 +53,6 @@ export class RequestsRepository implements Requests, CompactionQueue {
         this.queuedCompact = db.prepare("SELECT 1 FROM request WHERE kind = 'compact' AND target = ? AND (pane = ? OR pane IS NULL) LIMIT 1");
     }
 
-    /** Whether a compaction request for the pane is still queued, or one for the tab's focused pane (no pane given). */
     compactQueued(tab: string, pane: string): boolean {
         return guarded(() => this.queuedCompact.get(tab, pane) !== undefined, false);
     }
@@ -76,27 +73,22 @@ export class RequestsRepository implements Requests, CompactionQueue {
         this.curate.run(ids.next(), this.now(), tab);
     }
 
-    /** Queued requests from other tools, taken away: the daemon answers each one, since it will not run them. */
     takeAnswered(): readonly { readonly pane: string; readonly answer: string }[] {
         return guarded(() => all(this.takeAnsweredRows).flatMap((row) => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
     }
 
-    /** One tab asked twice is one request. */
     takeCurations(): readonly TabId[] {
         return guarded(() => [...new Set(all(this.takeCurate).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
     }
 
-    /** In the order they were asked; each one is its own (two notes are two messages). */
     takeCompactions(): readonly CompactRequest[] {
         return guarded(() => all(this.takeCompact).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => compactionOf(row) ?? []), []);
     }
 
-    /** One tab asked twice is one request. */
     takeRequests(): readonly TabId[] {
         return guarded(() => [...new Set(all(this.takeRefresh).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
     }
 
-    /** In the order they were asked. */
     takeVisibility(): readonly VisibilityRequest[] {
         return guarded(() => all(this.takeHidden).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => visibilityOf(row) ?? []), []);
     }

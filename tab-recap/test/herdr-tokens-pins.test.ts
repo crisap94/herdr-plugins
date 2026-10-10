@@ -1,4 +1,3 @@
-// Pins the herdr behaviour the pane-token protocol relies on, against the fake herdr: if herdr's measured rules change, these fail first.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FakePanes, PER_SOURCE, TTL_MAX_MS, VALUE_MAX } from './fakes/herdr-panes.ts';

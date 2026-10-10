@@ -1,4 +1,3 @@
-// Old-layout state directories for the import tests: one writer per historical shape of a file.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileKey } from '#src/adapters/db/import/legacy-files.ts';
@@ -13,7 +12,6 @@ export function put(root: string, kind: string, name: string, body: unknown): vo
     writeFileSync(join(root, kind, name), typeof body === 'string' ? body : JSON.stringify(body));
 }
 
-/** One of each shape a recap or a view was ever stored in. */
 export function everyShape(root: string): void {
     const recap = (tab: string, body: object): void => { put(root, 'recaps', `${fileKey(tab)}.json`, { tab, ...body }); };
     recap('w1:t1', { ...base, lanes: [lane], at: 1000, tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections, markdown: renderRecap(sections, 'en') }] });

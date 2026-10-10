@@ -1,4 +1,3 @@
-// The CompactionRecords repository: one row per compaction of a lane; every write is one transaction, every read answers [] when it cannot.
 import { originOf } from '#src/recap/domain/origin.ts';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
@@ -34,7 +33,6 @@ function recordOf(row: Row): CompactionRecord {
     };
 }
 
-/** The newest record of each lane (by start, then by id), unless the agent's next turn has dismissed it. */
 const SHOWN = `SELECT * FROM compaction c WHERE tab_id = ? AND dismissed_at IS NULL AND id = (
   SELECT id FROM compaction WHERE tab_id = c.tab_id AND pane = c.pane ORDER BY started_at DESC, id DESC LIMIT 1) ORDER BY started_at, id`;
 
