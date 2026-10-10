@@ -34,7 +34,7 @@ test('lastDecision: the lane\'s newest decision with its tokens and mode; null w
     assert.equal(store.autocompact.lastDecision('w1:t1', 'w1:p1'), null);
     store.autocompact.record(decision({ at: 100, tokens: 1, mode: 'shadow' }));
     store.autocompact.record(decision({ at: 400, tokens: 120_000, mode: 'on', verdict: 'wait' }));
-    assert.deepEqual(store.autocompact.lastDecision('w1:t1', 'w1:p1'), { at: 400, tokens: 120_000, mode: 'on', verdict: 'wait' });
+    assert.deepEqual(store.autocompact.lastDecision('w1:t1', 'w1:p1'), { at: 400, tokens: 120_000, mode: 'on', verdict: 'wait', gate: 'ask' });
 });
 
 test('unlinkedCompactAny: an on-mode compact of any lane, not yet begun, at or after the instant', () => {
