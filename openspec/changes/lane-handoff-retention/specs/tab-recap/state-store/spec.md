@@ -91,6 +91,12 @@ The fold SHALL treat a lane as closed whenever it leaves the board by any of the
 - **WHEN** a pane-closed event arrives for a pane no longer on the board
 - **THEN** the fold SHALL emit no `lane-closed` intent
 
+#### Scenario: Snapshots that keep lacking the lane
+
+- **WHEN** two successive authoritative reconciliations both lack a lane that left the board at the first
+- **THEN** the fold SHALL emit `lane-closed` only at the first
+- **AND** the second SHALL emit no intent for that lane
+
 #### Scenario: A session change in a surviving pane
 
 - **WHEN** a session observation arrives for a lane on the board, including after `/clear`
@@ -167,12 +173,18 @@ The application SHALL resolve a closed-lane identity of tab id, pane id, and clo
 
 ### Requirement: Retained closed lanes are listed newest first
 
-The store SHALL list the closure records of a tab whose close instant lies inside the window, newest first, each with its pane, agent kind, close instant, and task name when known. Records outside the window SHALL NOT be listed.
+The store SHALL list the closure records of a tab whose close instant lies inside the window, newest first, each with its pane, agent kind, close instant, and task name when known. Records outside the window SHALL NOT be listed. The store SHALL also return the newest in-window record of one pane as its exact identity, so that an operator can copy the close instant. That lookup is for display only: the handoff selector SHALL NOT use it to choose a source.
 
 #### Scenario: Two closures of one pane
 
 - **WHEN** a tab holds two closure records for the same pane id
 - **THEN** the listing SHALL show both, newest first, as distinct identities
+
+#### Scenario: Newest closure of a pane for display
+
+- **WHEN** the newest in-window record of a pane is requested
+- **THEN** the store SHALL return its exact identity with its close instant
+- **AND** the handoff selector SHALL still require the exact close instant
 
 #### Scenario: Empty tab
 

@@ -12,7 +12,7 @@ Tasks, facts, and runs hang off the tab. Retention is tab-wide: `RetentionReposi
 
 ### 1. What counts as a closure
 
-A closure is a lane leaving the board by any observation. Four observations cause it:
+A lane is **on the board** when the fold holds it in `Board.lanes`. A closure is a lane leaving the board by any observation. Four observations cause it:
 
 - an explicit `pane.closed` event for a pane on the board;
 - an authoritative reconciliation whose lanes no longer contain a pane on the board, including a reconciliation after a subscription reconnect;
@@ -88,7 +88,8 @@ Closure records belong to a new aggregate with its own port and repository:
 ClosedLanes
   record(closed: ClosedLane): void                             // one writeTx; INSERT OR IGNORE; the association is selected in the same statement
   resolve(identity: ClosedLaneIdentity): ClosedLaneRead        // row lookup only
-  listOf(tab: string, cutoff: number): readonly ClosedLaneRow[] | Unknown
+  listOf(tab: string, cutoff: number): readonly ClosedLaneRow[] | Unknown   // newest first, inside the window
+  latestOf(tab: string, pane: string, cutoff: number): ClosedLaneRow | null  // newest in-window row for one pane, as its exact identity; for display and copying only
   expiredTabs(cutoff: number): readonly string[]
   pruneTab(tab: string, cutoff: number): number               // one writeTx per tab
 ```

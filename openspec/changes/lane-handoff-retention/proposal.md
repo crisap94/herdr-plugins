@@ -29,8 +29,6 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 
 Migration 15 is forward-only and follows migration 14, which the lane-handoff change owns. It adds two nullable lane columns (`since`, `session`), one nullable request column (`closed_at`), and the `closed_lane` table. The Retention port gains a closed-lane protection input and a closed-lane removal count. A ClosedLanes port with its own repository owns closure records. Pure settings parsing is added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
 
-The implementation changes when tab data becomes eligible for deletion, adds a configurable retention rule, and adds a handoff selector, so the implementation MR carries `changelog::changed`. The spec-only MR carries `changelog::internal`.
-
 ## Out of scope
 
 - Changing the tab-wide retention default (30 days), the eligibility rule for tabs without a column, or the handling of open columns.
