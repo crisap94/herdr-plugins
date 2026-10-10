@@ -15,8 +15,8 @@ Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash 
   slot keeps the strongest cause while a window is on, so a forced cause is never replaced by `turn-ended`. Verify: the scenarios of "Turn endings inside
   a window merge into one run per tab" (with the settle floor), "Runs that another flow or the operator asked for start at once"
   and the `again` scenario (new test/recap-job-window.test.ts, with a fake clock).
-- [x] 2.2 `daemon/config.ts`: `TAB_RECAP_RUN_DEBOUNCE_MS` parsed once into `Debounce = off | window(Milliseconds)`, read on every
-  request, `0` or 5 000 to 300 000, else off. Verify: `an invalid window falls back to off` (test/recap-job-window.test.ts).
+- [x] 2.2 `daemon/config.ts`: `TAB_RECAP_RUN_DEBOUNCE_MS` parsed once into `Debounce = off | window(Duration)`, read on every
+  request, `0` or a whole number from 5 000 to 300 000, else off. Verify: `an invalid window falls back to off` (test/recap-job-window.test.ts).
 
 ## 3. Measurement (design D5)
 

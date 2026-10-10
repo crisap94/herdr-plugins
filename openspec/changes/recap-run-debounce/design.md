@@ -70,9 +70,9 @@ sets `lastStart` when it calls the writer.
 ### D3. The default is 0, the recommended value is 60 000 ms, pending a replay
 
 `TAB_RECAP_RUN_DEBOUNCE_MS` is `0` (today's behaviour) by default. It is read on every request, so a change applies without
-a restart. The config edge parses it once into a typed value, `Debounce = off | window(Milliseconds)`, with the accepted
-values `0` (off) and 5 000 to 300 000 ms; anything else is `off`. Milliseconds is a branded number, so a raw number never
-reaches the job.
+a restart. The config edge parses it once into a typed value, `Debounce = off | window(Duration)`, with the accepted
+values `0` (off) and the whole numbers from 5 000 to 300 000 ms; anything else is `off`. `Duration` is the plugin's existing
+branded time value, so a raw number never reaches the job.
 
 The recommended value is 60 000 ms: it covers the measured burst spacing (under 60 s) and is one minute of recap age at
 most. It is not made the default until the replay (D5) keeps the EXP-001 bar.
