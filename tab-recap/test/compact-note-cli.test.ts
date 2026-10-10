@@ -3,21 +3,31 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { stateStore } from '#src/adapters/db/database.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 const CONTEXT = JSON.stringify({ tab_id: 'w1:t1', pane_id: 'w1:p2' });
 
-/** Runs the entry with `args` (the command first); `setting` is `TAB_RECAP_COMPACT_NOTE` when given. */
-function run(args: readonly string[], setting?: string): { status: number | null; stdout: string; stderr: string; queued: unknown[]; done: () => void } {
+/**
+ * Runs the entry with `args` (the command first); `setting` is `TAB_RECAP_COMPACT_NOTE` when given. `newer` writes a
+ * database from a later plugin into the state directory, so the state store is not ready and nothing can be queued.
+ */
+function run(args: readonly string[], setting?: string, newer = false): { status: number | null; stdout: string; stderr: string; queued: unknown[]; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-compact-'));
     const state = join(root, 'state');
     const env: Record<string, string> = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', HERDR_PLUGIN_CONTEXT_JSON: CONTEXT };
     if (setting !== undefined) {
         env['TAB_RECAP_COMPACT_NOTE'] = setting;
+    }
+    if (newer) {
+        mkdirSync(state, { recursive: true });
+        const db = new DatabaseSync(join(state, 'tab-recap.db'));
+        db.exec('PRAGMA user_version = 9999');
+        db.close();
     }
     const ran = spawnSync(process.execPath, [entry, ...args], { encoding: 'utf8', env });
     const store = stateStore(state);
@@ -60,6 +70,28 @@ test('compact --note "<text>": queued at once with that note, no popup, whatever
         } finally {
             ran.done();
         }
+    }
+});
+
+test('a multi-line --note is queued as one line', () => {
+    const ran = run(['compact', '--note', 'line one\nline two\tend']);
+    try {
+        assert.equal(ran.status, 0, ran.stderr);
+        assert.deepEqual(ran.queued, [{ tab: 'w1:t1', pane: 'w1:p2', note: 'line one line two end' }]);
+    } finally {
+        ran.done();
+    }
+});
+
+test('a request the state store cannot take says it was not requested, with the reason', () => {
+    const ran = run(['compact'], 'skip', true);
+    try {
+        assert.equal(ran.status, 1, ran.stdout);
+        assert.match(ran.stderr, /the compaction was not requested \(unreadable: the state store is not ready\)/);
+        assert.doesNotMatch(ran.stderr, /modal/, 'no popup was asked for');
+        assert.deepEqual(ran.queued, []);
+    } finally {
+        ran.done();
     }
 });
 

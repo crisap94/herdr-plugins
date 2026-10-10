@@ -12,10 +12,13 @@ export interface CompactStart {
     queue(request: CompactRequest): Done;
 }
 
-/** A `--note` text as the popup would send it: one line, trimmed, at most NOTE_LIMIT characters; nothing left is no note. */
+/**
+ * A `--note` text as the popup would send it: control characters out (a tab or a newline becomes a space, the rest is
+ * dropped), one line, trimmed, at most NOTE_LIMIT characters with no space left at the cut; nothing left is no note.
+ */
 export function requestNoteOf(text: string): string | null {
-    const note = noteOf(text);
-    return note === null ? null : Array.from(note).slice(0, NOTE_LIMIT).join('');
+    const note = noteOf(text.replaceAll(/\p{Cc}/gu, (char) => (/\s/u.test(char) ? ' ' : '')));
+    return note === null ? null : Array.from(note).slice(0, NOTE_LIMIT).join('').trimEnd();
 }
 
 /**

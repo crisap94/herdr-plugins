@@ -8,7 +8,8 @@ message; Enter on an empty note SHALL send without any trace of it; Esc SHALL ca
 `skip`, the compaction SHALL be queued at once with no note and no popup. A `--note` SHALL queue it at once with
 that note, whatever the setting says, and open no popup; `--note ""` SHALL queue it with no note. Both SHALL
 queue the request the popup sends. A note given on the command line SHALL be kept as the popup keeps one: one
-line, trimmed, at most 280 characters. `TAB_RECAP_COMPACT_NOTE` is `ask` when unset or set to anything other
+line, trimmed, at most 280 characters, with no control characters (a tab or a newline becomes a space, the rest
+is dropped) and no space left at the end of the cut. `TAB_RECAP_COMPACT_NOTE` is `ask` when unset or set to anything other
 than `skip`, and it SHALL be read on every use, without a restart.
 
 #### Scenario: Skipped note
@@ -43,8 +44,8 @@ than `skip`, and it SHALL be read on every use, without a restart.
 
 #### Scenario: The note on the command line is cut as the popup cuts it
 
-- **WHEN** the `--note` text is longer than 280 characters or spans several lines
-- **THEN** it SHALL be queued as one line, trimmed, at most 280 characters
+- **WHEN** the `--note` text is longer than 280 characters, spans several lines or contains control characters
+- **THEN** it SHALL be queued as one line, trimmed, at most 280 characters, with no control characters and no space at its end
 
 #### Scenario: The settings row
 

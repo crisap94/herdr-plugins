@@ -76,6 +76,18 @@ test('a --note is one line and at most as long as the popup allows', () => {
     assert.equal(Array.from(requestNoteOf('x'.repeat(NOTE_LIMIT + 50)) ?? '').length, NOTE_LIMIT);
 });
 
+test('a 280-character cut that lands on a space leaves no trailing space', () => {
+    // 279 letters, a space (the 280th character of the cut) and more text: the cut keeps the space, so it must be trimmed
+    assert.equal(requestNoteOf(`${'x'.repeat(NOTE_LIMIT - 1)} tail`), 'x'.repeat(NOTE_LIMIT - 1));
+});
+
+test('control characters are not sent: a tab or a newline is a space, an escape or a bell is dropped', () => {
+    assert.equal(requestNoteOf('a\tb\u001b[31mred\u0007 x'), 'a b[31mred x');
+    assert.equal(requestNoteOf('line one\r\nline two'), 'line one line two');
+    assert.equal(requestNoteOf('\u0007\u001b'), null, 'nothing left is no note');
+    assert.doesNotMatch(requestNoteOf('keep\u0000\u009b this') ?? '', /\p{Cc}/u);
+});
+
 test('a request that cannot be queued, or a popup that does not open, is reported as unknown', async () => {
     const queueFails = recorder(unknown({ why: 'unreadable', detail: 'the state store is not ready' }));
     const queued = await startCompact(TAB, PANE, undefined, 'skip', queueFails.start);

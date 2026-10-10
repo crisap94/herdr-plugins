@@ -22,8 +22,9 @@ variable when the row changes.
 
 `parseArguments` (already `node:util` `parseArgs`, strict) gains a `note` string option. `--note` on any other
 command is a usage error (exit 2), and `--note` without a value is the `parseArgs` usage error. The text goes
-through `requestNoteOf`, the popup's own `noteOf` (one line, trimmed, blank is no note) and the popup's
-280-character limit, so a note from the command line is kept exactly as a typed one is.
+through `requestNoteOf`: control characters are removed (a tab or a newline becomes a space), then the popup's own
+`noteOf` (one line, trimmed, blank is no note), then the popup's 280-character limit, with any space left at the
+cut trimmed. A note from the command line is kept as a typed one is.
 
 ## 4. No new dependency
 
