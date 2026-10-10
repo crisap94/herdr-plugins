@@ -5,6 +5,7 @@ import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
 import { duration, elapsed, instant } from './time.ts';
 import type { Duration, Instant } from './time.ts';
+import { kindsWith } from './agent-kinds.ts';
 
 export const ANY_KIND = '*';
 
@@ -19,7 +20,7 @@ export interface Policy {
 }
 
 export const DEFAULT_POLICY: Policy = {
-    kinds: ['claude', 'codex', 'opencode'],
+    kinds: kindsWith('defaultPolicy'),
     minTabCols: 110,
     reopenLimit: 3,
     reopenWindow: duration(120_000),

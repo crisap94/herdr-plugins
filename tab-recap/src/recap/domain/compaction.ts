@@ -1,4 +1,6 @@
-export const COMPACTABLE: readonly string[] = ['claude', 'codex', 'opencode'];
+import { kindsWith } from './agent-kinds.ts';
+
+export const COMPACTABLE = kindsWith('compactable');
 
 export type CompactTarget = { readonly kind: 'focused' } | { readonly kind: 'all' } | { readonly kind: 'kinds'; readonly kinds: readonly string[] };
 

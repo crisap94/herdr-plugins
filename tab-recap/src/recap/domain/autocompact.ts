@@ -1,4 +1,5 @@
 import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import { kindsWith } from './agent-kinds.ts';
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
@@ -15,7 +16,7 @@ export const MINIMUM_MIN = 10;
 export const MINIMUM_MAX = 95;
 export const CEILING_DEFAULT = STYLE_NUMBERS.balanced.ceiling;
 export const COOLDOWN_DEFAULT_MS = STYLE_NUMBERS.balanced.cooldownMs;
-export const KINDS_DEFAULT: readonly string[] = ['claude'];
+export const KINDS_DEFAULT = kindsWith('autocompactDefault');
 export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
