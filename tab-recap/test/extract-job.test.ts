@@ -22,14 +22,14 @@ const ground: Ground = {
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'go' });
 const ops = (...list: readonly Record<string, unknown>[]): string => JSON.stringify({ ops: list });
 
-function writer(answers: readonly string[], backend = 'fake'): { summarizer: Summarizer; calls: RecapRequest[] } {
+function writer(answers: readonly string[], backend = 'fake', contract: 'strict' | 'free-text' = 'strict'): { summarizer: Summarizer; calls: RecapRequest[] } {
     const calls: RecapRequest[] = [];
-    const summarizer: Summarizer = { backend, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 }); } };
+    const summarizer: Summarizer = { backend, contract, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 }); } };
     return { summarizer, calls };
 }
 
-const run = (answers: readonly string[], backend = 'fake'): Promise<{ done: Extracted; calls: RecapRequest[] }> => {
-    const { summarizer, calls } = writer(answers, backend);
+const run = (answers: readonly string[], backend = 'fake', contract: 'strict' | 'free-text' = 'strict'): Promise<{ done: Extracted; calls: RecapRequest[] }> => {
+    const { summarizer, calls } = writer(answers, backend, contract);
     return extract(summarizer, requestOf(), ground).then((done) => ({ done, calls }));
 };
 
@@ -93,7 +93,7 @@ test('the 1.x recap shape: a built-in writer is told to answer operations; a cus
     const builtin = await run([old, ops(add('next', 'Tag it'))]);
     assert.match(builtin.calls[1]?.correction ?? '', /answer operations on the ledger only/);
     assert.deepEqual(kept(builtin.done), [['Tag it']]);
-    const custom = await run([old], 'custom/mine');
+    const custom = await run([old], 'custom/mine', 'free-text');
     assert.equal(custom.calls.length, 1, 'no retry');
     assert.deepEqual(custom.done, { kind: 'failed', error: OLD_CONTRACT, cost: 0.5 });
     assert.equal(OLD_CONTRACT, 'custom writer must answer operations (see README)');

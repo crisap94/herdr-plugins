@@ -4,9 +4,12 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
 import { instructions } from './recap-instructions.ts';
 import { fittedCall, unfenced } from './recap-prompt.ts';
+import { jobContractOf } from '#src/recap/domain/backend.ts';
+import type { JobContract } from '#src/recap/domain/backend.ts';
 
 export class RecapWriter implements Summarizer {
     readonly backend: string;
+    readonly contract: JobContract;
     private readonly harness: Harness;
     private readonly settings: HarnessSettings;
 
@@ -14,6 +17,7 @@ export class RecapWriter implements Summarizer {
         this.harness = harness;
         this.settings = settings;
         this.backend = harness.label(settings);
+        this.contract = jobContractOf(harness.id);
     }
 
     async write(request: RecapRequest): Promise<Written> {

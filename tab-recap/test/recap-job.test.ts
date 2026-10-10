@@ -191,7 +191,7 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
     assert.match(fixed.calls[1]?.correction ?? '', /answer operations on the ledger only/);
     assert.equal(firstTask(fixed.recap).sections?.goal, 'ops now');
     const calls: RecapRequest[] = [];
-    const custom: Summarizer = { backend: 'custom/mine', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'x' }), costUsd: 0 }); } };
+    const custom: Summarizer = { backend: 'custom/mine', contract: 'free-text', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'x' }), costUsd: 0 }); } };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     new RecapJob({ repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => custom, language: (): string => 'en', log: (): void => undefined })

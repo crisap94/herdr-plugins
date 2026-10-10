@@ -33,7 +33,7 @@ const queryOf = (options: EvalOptions, deps: EvalDeps, limit: number, withInput:
 async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     const judge = deps.judge();
     if (judge === null) {
-        deps.err('tab-recap: 1 — no harness is available for the judge job: install claude, codex, opencode or hermes, or set TAB_RECAP_JUDGE_BY');
+        deps.err(`tab-recap: 1 — no harness is available for the judge job: install ${installableHarnessSentence()}, or set TAB_RECAP_JUDGE_BY`);
         return 1;
     }
     const runs = deps.inputs.runs(queryOf(options, deps, options.count, true));
@@ -106,3 +106,4 @@ export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<num
         }
     }
 }
+import { installableHarnessSentence } from '#src/recap/domain/backend.ts';

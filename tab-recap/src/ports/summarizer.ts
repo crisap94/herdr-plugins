@@ -1,6 +1,7 @@
 import type { Operation } from '#src/recap/domain/ops.ts';
 import type { InputFact, RecapInput } from './recap-input.ts';
 import type { Unknown } from './unknowable.ts';
+import type { JobContract } from '#src/recap/domain/backend.ts';
 
 export interface RefusedOperation {
     readonly task: string;
@@ -27,5 +28,6 @@ export type Written = { readonly kind: 'written'; readonly text: string; readonl
 
 export interface Summarizer {
     readonly backend: string;
+    readonly contract?: JobContract;
     write(request: RecapRequest): Promise<Written>;
 }

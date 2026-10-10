@@ -9,6 +9,7 @@ import { parseAnswer } from './ops-answer.ts';
 import type { Resolving, Tasked } from './ops-answer.ts';
 import { forTask, judge, keptOf, refusedIn, retryFor } from './ops-gating.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
+import type { JobContract } from '#src/recap/domain/backend.ts';
 
 const ATTEMPTS = 2;
 
@@ -29,10 +30,10 @@ export interface Ground {
 
 const OLD_HINT = 'you answered a recap; answer operations on the ledger only: {"ops":[{"op":"add",…},{"op":"update",…},{"op":"close",…}]}';
 
-const gatesFor = (ground: Ground, custom: boolean): readonly Gate[] => (custom ? ground.gates.filter((gate) => gate.id !== 'G11') : ground.gates);
+const gatesFor = (ground: Ground, contract: JobContract): readonly Gate[] => (contract === 'free-text' ? ground.gates.filter((gate) => gate.id !== 'G11') : ground.gates);
 
-function judged(ground: Ground, ops: readonly Tasked[], custom: boolean): readonly Judged[] {
-    return ground.grounds.map((each) => judge(gatesFor(ground, custom), forTask(ops, each.key), each, ground.now));
+function judged(ground: Ground, ops: readonly Tasked[], contract: JobContract): readonly Judged[] {
+    return ground.grounds.map((each) => judge(gatesFor(ground, contract), forTask(ops, each.key), each, ground.now));
 }
 
 interface Outcome {
@@ -48,7 +49,7 @@ type Round =
     | { readonly kind: 'failed'; readonly error: string };
 
 interface Turn {
-    readonly custom: boolean;
+    readonly contract: JobContract;
     readonly retryLeft: boolean;
     readonly stats: GateStats;
     readonly keep: readonly Tasked[];
@@ -64,13 +65,13 @@ function followOf(each: readonly Judged[], ground: Ground, problems: readonly st
 
 function round(text: string, ground: Ground, turn: Turn): Round {
     const answer = parseAnswer(text, ground.resolving);
-    if (answer.kind === 'old-shape' && turn.custom) {
+    if (answer.kind === 'old-shape' && turn.contract === 'free-text') {
         return { kind: 'failed', error: OLD_CONTRACT };
     }
     if (answer.kind !== 'ops') {
         return { kind: 'retry', follow: { correction: answer.kind === 'old-shape' ? OLD_HINT : answer.why }, stats: turn.stats, fallback: null };
     }
-    const each = judged(ground, [...turn.keep, ...answer.ops], turn.custom);
+    const each = judged(ground, [...turn.keep, ...answer.ops], turn.contract);
     const final: Outcome = {
         tasks: each.map((one, at) => ({ task: ground.grounds[at]?.key ?? '', ops: one.kept })).filter((one) => one.ops.length > 0),
         stats: each.reduce((all, one) => addStats(all, one.gated, one.refused.length), turn.stats),
@@ -102,7 +103,7 @@ export async function extract(summarizer: Summarizer, request: RecapRequest, gro
             return fallback === null ? { kind: 'failed', error: saying(written.why), cost } : settled(fallback, cost);
         }
         cost += written.costUsd;
-        const next = round(written.text, ground, { custom: summarizer.backend.startsWith('custom'), retryLeft: attempt < ATTEMPTS - 1, stats, keep: keepOf(follow) });
+        const next = round(written.text, ground, { contract: summarizer.contract ?? 'strict', retryLeft: attempt < ATTEMPTS - 1, stats, keep: keepOf(follow) });
         if (next.kind === 'failed') {
             return { kind: 'failed', error: next.error, cost };
         }

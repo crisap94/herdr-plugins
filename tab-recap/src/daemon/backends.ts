@@ -16,7 +16,7 @@ import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import { coverageDeciderFor, deciderFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
-import { pick } from '#src/recap/domain/backend.ts';
+import { enumeratesJob, installableHarnessSentence, pick } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import type { Config } from './config.ts';
 
@@ -29,7 +29,7 @@ export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult)
     return isUnknown(fromHerdr) ? fromPath : { kind: 'available', ids: fromPath.ids.filter((id) => fromHerdr.ids.includes(id)) };
 }
 
-const NONE = 'a coding agent to write recaps: install claude, codex, opencode or hermes (or set TAB_RECAP_BACKEND / TAB_RECAP_CUSTOM_CMD)';
+const NONE = `a coding agent to write recaps: install ${installableHarnessSentence()} (or set TAB_RECAP_BACKEND / TAB_RECAP_CUSTOM_CMD)`;
 
 class Nothing implements Summarizer {
     readonly backend = 'none';
@@ -45,7 +45,7 @@ export function summarizerFor(config: Config, available: readonly string[], work
 
 export function enumeratorFor(config: Config, available: readonly string[], work: string): Enumerators | null {
     const id = pick(config.backend, available);
-    return id === null || id === 'custom' ? null : new HarnessEnumerator(MAKERS[id](config, work), { model: config.models[id], effort: 'low' });
+    return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work), { model: config.models[id], effort: 'low' });
 }
 
 export function briefFor(config: Config, available: readonly string[], work: string): CompactionBriefs | null {

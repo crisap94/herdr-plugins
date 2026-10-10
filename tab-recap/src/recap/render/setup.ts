@@ -3,7 +3,7 @@ import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OP
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
 import type { DeciderJob } from '#src/recap/domain/job.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
-import { AUTO_ORDER, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
+import { AUTO_ORDER, hasModel, JOB_HARNESSES, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import { coloured, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
@@ -82,7 +82,7 @@ function markOf(choice: BackendChoice, state: Setup): string {
     if (state.draft.backend === choice) {
         return '✓';
     }
-    if (choice === 'auto' || choice === 'custom' || state.available === null) {
+    if (choice === 'auto' || !hasModel(choice) || state.available === null) {
         return ' ';
     }
     return state.available.includes(choice) ? '●' : '○';
@@ -90,7 +90,10 @@ function markOf(choice: BackendChoice, state: Setup): string {
 
 function harnessChoices(state: Setup, m: Messages, width: number, style: Style): string[] {
     const editing = state.editing?.kind === 'choice' && fieldOf(state) === 'harness' ? state.editing.at : -1;
-    const notes: Readonly<Partial<Record<BackendChoice, string>>> = { auto: m.setup.auto(AUTO_ORDER.join(' → ')), custom: m.setup.custom };
+    const notes: Readonly<Partial<Record<BackendChoice, string>>> = {
+        auto: m.setup.auto(AUTO_ORDER.join(' → ')),
+        ...Object.fromEntries(JOB_HARNESSES.flatMap(({ id, setupNote }) => setupNote === null ? [] : [[id, m.setup.custom]])),
+    };
     const lines = HARNESS_CHOICES.flatMap((choice, at) => {
         const note = notes[choice];
         const text = `${choice}${note === undefined ? '' : ` — ${note}`}`;
