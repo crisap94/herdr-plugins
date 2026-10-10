@@ -1,10 +1,10 @@
-import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, LEGACY_MODEL_KEYS } from '#src/recap/domain/backend.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
-    model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), 'TAB_RECAP_CLAUDE_MODEL', 'TAB_RECAP_CODEX_MODEL'],
+    model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), ...LEGACY_MODEL_KEYS],
     locale: ['TAB_RECAP_LOCALE'],
     recapLanguage: ['TAB_RECAP_RECAP_LANG'],
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],

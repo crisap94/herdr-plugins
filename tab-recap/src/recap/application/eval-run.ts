@@ -11,6 +11,7 @@ import { agreementOf, gateReportOf } from './eval-stats.ts';
 import { withText } from './judge-anchors.ts';
 import { judgeRuns } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
+import { installableHarnessSentence } from '#src/recap/domain/backend.ts';
 
 const DAY_MS = 86_400_000;
 const LABEL_RUNS = 200;
@@ -33,7 +34,7 @@ const queryOf = (options: EvalOptions, deps: EvalDeps, limit: number, withInput:
 async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     const judge = deps.judge();
     if (judge === null) {
-        deps.err('tab-recap: 1 — no harness is available for the judge job: install claude, codex, opencode or hermes, or set TAB_RECAP_JUDGE_BY');
+        deps.err(`tab-recap: 1 — no harness is available for the judge job: install ${installableHarnessSentence()}, or set TAB_RECAP_JUDGE_BY`);
         return 1;
     }
     const runs = deps.inputs.runs(queryOf(options, deps, options.count, true));

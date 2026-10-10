@@ -34,7 +34,7 @@ const OPS = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added re
 
 function writer(): { summarizer: Summarizer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
-    return { seen, summarizer: { backend: 'fake', write: (asked): Promise<Written> => { seen.push(asked); return Promise.resolve({ kind: 'written', text: OPS, costUsd: 0.5 }); } } };
+    return { seen, summarizer: { backend: 'fake', contract: 'strict', write: (asked): Promise<Written> => { seen.push(asked); return Promise.resolve({ kind: 'written', text: OPS, costUsd: 0.5 }); } } };
 }
 
 interface Ran {
@@ -110,7 +110,7 @@ test('enumerate on the same long turn takes no ask-back; full on a short, rich t
 test('the writer\'s targeted retry is the short document: no transcript and no candidates, only the refused operation; the cost is the sum', async () => {
     const calls: RecapRequest[] = [];
     const bad = JSON.stringify({ ops: [{ op: 'close', id: 'f99', why: 'done' }] });
-    const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
+    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
     const { enumerator } = scripted([talk]);
     const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'enumerate+gates', enumerator, log: () => undefined });
     assert.equal(calls.length, 2);
@@ -135,7 +135,7 @@ test('enumerate adds a fact with no anchor (the 2.0 gates); enumerate+gates refu
     const noAnchor = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added retry with backoff' }] });
     for (const pipeline of ['enumerate', 'enumerate+gates'] as const) {
         const calls: RecapRequest[] = [];
-        const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? noAnchor : OPS, costUsd: 0.5 }); } };
+        const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? noAnchor : OPS, costUsd: 0.5 }); } };
         const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline, enumerator: scripted([talk]).enumerator, log: () => undefined });
         assert.ok(done.kind === 'ops' && done.tasks[0]?.ops.length === 1, pipeline);
         assert.equal(calls.length, pipeline === 'enumerate' ? 1 : 2, pipeline);
@@ -148,7 +148,7 @@ test('enumerate adds a fact with no anchor (the 2.0 gates); enumerate+gates refu
 test('enumerate retries with the whole document and a line per refusal, as 2.0 did', async () => {
     const calls: RecapRequest[] = [];
     const bad = JSON.stringify({ ops: [{ op: 'close', id: 'f99', why: 'done' }] });
-    const summarizer: Summarizer = { backend: 'fake', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
+    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? bad : OPS, costUsd: 0.5 }); } };
     await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'enumerate', enumerator: scripted([talk]).enumerator, log: () => undefined });
     assert.equal(calls.length, 2);
     assert.match(calls[1]?.correction ?? '', /G6/);

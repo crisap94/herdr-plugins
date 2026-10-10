@@ -13,8 +13,8 @@ export interface HarnessSettings {
 
 export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number } | Unknown;
 
-export interface Harness {
-    readonly id: string;
+export interface Harness<Id extends string = string> {
+    readonly id: Id;
     label(settings: HarnessSettings): string;
     readonly limit: number | null;
     run(call: HarnessCall, settings: HarnessSettings): Promise<Ran>;

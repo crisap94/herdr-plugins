@@ -1,5 +1,5 @@
 import { languageSetting } from '#src/i18n/index.ts';
-import { BACKEND_IDS, pick } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, hasModel, pick } from '#src/recap/domain/backend.ts';
 import { EFFORTS, effortOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
@@ -115,5 +115,6 @@ export const fieldOf = (state: Setup): FieldId => {
 };
 
 export function modelTarget(draft: Draft, available: readonly string[] | null): BackendId | null {
-    return draft.backend === 'custom' ? null : pick(draft.backend, available ?? []);
+    const backend = pick(draft.backend, available ?? []);
+    return backend === null || !hasModel(backend) ? null : backend;
 }

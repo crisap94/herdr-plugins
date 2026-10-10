@@ -21,7 +21,7 @@ const transcripts: Transcripts = {
 async function recapWith(keepInput: (() => boolean) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'Migrate the metrics store', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'Metrics are copied to `victoria`.', anchor: 'migrate victoria' }] });
     const narrator = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }] });
-    const summarizer: Summarizer = { backend: 'fake', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
+    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
     const store = memoryStore();
     const job = new RecapJob({
         repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) },
