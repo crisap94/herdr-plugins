@@ -38,7 +38,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob' | 'herdrEvents', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactJob' | 'herdrEvents', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -54,6 +54,8 @@ export interface Messages {
         readonly recapLanguageHint: string;
         readonly screenAgentsHint: string;
         readonly compactTargetHint: string;
+        readonly compactNoteChoices: { readonly ask: string; readonly skip: string };
+        readonly compactNoteHint: string;
         readonly compactHintHint: string;
         readonly compactHintOff: string;
         /** the heading over the job rows */
@@ -165,6 +167,7 @@ export interface Messages {
         readonly modalFailed: (why: string) => string;
         readonly requested: (tab: string) => string;
         readonly compactAsked: string;
+        readonly compactNotQueued: (why: string) => string;
         readonly columnToggled: (tab: string) => string;
         readonly columnsToggled: string;
         readonly setupBusy: (command: string) => string;

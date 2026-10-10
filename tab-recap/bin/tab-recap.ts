@@ -21,6 +21,7 @@ import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { autocompactCommand } from './autocompact.ts';
+import { compactCommand } from './compact.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 
@@ -171,22 +172,14 @@ function toggle(all: boolean): number {
     return OK;
 }
 
-/** The compaction popup (its note, then the request): the one place the operator is asked before anything is sent. */
+/** The compaction request for this tab and its focused pane: the note popup, or queued at once (`bin/compact.ts` decides). */
 async function compact(): Promise<number> {
     const tab = currentTab();
     if (tab === null) {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    // a modal that asked for this is closing: herdr shows one popup at a time
-    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0); });
-    const opened = await new HerdrFleet(stateDir()).agents().askNote(tab, currentPane());
-    if (isUnknown(opened)) {
-        console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
-        return FAILED;
-    }
-    console.log(`tab-recap: ${m().cli.compactAsked}`);
-    return OK;
+    return compactCommand(tab, currentPane(), noteArg);
 }
 
 async function show(): Promise<number> {
@@ -252,10 +245,14 @@ const HELP_FLAGS = new Set(['--help', '-h']);
 const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
 
-/** `<command> [argument] [model]`; an option other than --help/-h is a usage error naming it. */
-function parseArguments(argv: readonly string[]): { positionals: string[] } | { problem: string } {
+/** `<command> [argument] [model]`, and `compact --note <text>`; an option other than --help/-h/--note is a usage error naming it. */
+function parseArguments(argv: readonly string[]): { positionals: string[]; note: string | undefined } | { problem: string } {
     try {
-        return { positionals: parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' } } }).positionals };
+        const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' }, note: { type: 'string' } } });
+        if (values.note !== undefined && positionals[0] !== 'compact') {
+            return { problem: '--note applies to compact only' };
+        }
+        return { positionals, note: values.note };
     } catch (error) {
         return { problem: error instanceof Error ? error.message : String(error) };
     }
@@ -263,8 +260,10 @@ function parseArguments(argv: readonly string[]): { positionals: string[] } | { 
 
 const usage = (): string => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT].join('|'));
 const argv = process.argv.slice(2);
-const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]] } : parseArguments(argv);
+const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]], note: undefined } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
+/** `compact --note <text>`: the note to queue with, at once; absent, the setting decides */
+const noteArg = 'positionals' in parsed ? parsed.note : undefined;
 
 function commandOf(word: string | undefined): ((arg: string | undefined) => number | Promise<number>) | undefined {
     const own: Readonly<Record<string, () => number | Promise<number>>> = { [EVAL]: () => evalCommand(argv.slice(1)), [AUTOCOMPACT]: () => autocompactCommand(argv.slice(1)) };

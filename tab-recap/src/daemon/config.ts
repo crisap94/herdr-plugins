@@ -23,6 +23,8 @@ import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
+import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -73,6 +75,8 @@ export interface Config {
     readonly timeoutMs: number;
     /** `TAB_RECAP_HERDR_EVENTS`: whether lanes are shared on herdr's event stream and compaction requests answered (`off` unless set) */
     readonly herdrEvents: HerdrEvents;
+    /** `TAB_RECAP_COMPACT_NOTE`: `ask` (the note popup first, the default) or `skip` (queue the compaction at once) */
+    readonly compactNote: CompactNote;
 }
 
 /** where the plugin keeps things when herdr does not say: by the OS family (the composition root picks the adapter) */
@@ -199,5 +203,6 @@ export function loadConfig(): Config {
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
         herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),
+        compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
     };
 }
