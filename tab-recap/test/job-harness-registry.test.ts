@@ -25,6 +25,6 @@ test('custom declares the free-text contract, no model and no enumerator', () =>
         automatic: false,
         availabilityMark: false,
         customCommand: true,
-        job: { contract: 'free-text', enumerates: false },
+        job: { contract: 'free-text', enumerates: false, envScrub: [] },
     });
 });

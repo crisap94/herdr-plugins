@@ -10,4 +10,4 @@ The registry and adapters own the moved behavior. Golden tests pin existing envi
 
 ## Out of Scope
 
-Changing any environment boundary, screen filtering rule, session value, transcript interpretation, or tool-call classification.
+Changing any environment boundary, screen filtering rule, session value, or transcript interpretation. A tool name outside an adapter's own vocabulary intentionally classifies as `other`, including names native to another harness.

@@ -11,7 +11,7 @@ import type { Hindsight } from '#src/experiment/hindsight.ts';
 import { claudeWindowOf } from './context-window.ts';
 import { extractClaude } from './claude-rows.ts';
 import { claudeInFlight } from './claude-in-flight.ts';
-import { claudeObserved } from './context-rows.ts';
+import { claudeObserved } from './claude-context.ts';
 import { linesAfter, linesBefore } from './transcript-slice.ts';
 import type { ExperimentStore, StoredPoint } from './experiment-store.ts';
 

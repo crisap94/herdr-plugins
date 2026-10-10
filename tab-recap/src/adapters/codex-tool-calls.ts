@@ -5,13 +5,13 @@ import type { ToolCall } from './tool-calls.ts';
 
 const CODEX_TOOL_KINDS: Readonly<Record<string, CallKind>> = { apply_patch: 'edit' };
 
-const unquote = (literal: string): string => {
+function unquote(literal: string): string {
     try {
         return JSON.parse(literal) as string;
     } catch {
         return literal.slice(1, -1).replaceAll("\\'", "'").replaceAll('\\n', '\n').replaceAll('\\"', '"').replaceAll('\\\\', '\\');
     }
-};
+}
 
 const EXEC = /exec_command\(\{[^]{0,200}?\bcmd\s*:\s*("(?:[^"\\]|\\.)*")/g;
 const PATCHED = /\*\*\* (?:Add|Update|Delete) File: ([^\n"\\]+)/g;
@@ -35,7 +35,7 @@ export function execCalls(source: string): readonly ToolCall[] {
     return calls.length > 0 ? calls : [{ kind: 'other', text: 'exec' }];
 }
 
-const namedCall = (name: string, input: Row): ToolCall => callBuilders[CODEX_TOOL_KINDS[name] ?? 'other'](name, input);
+export const namedCall = (name: string, input: Row): ToolCall => callBuilders[CODEX_TOOL_KINDS[name] ?? 'other'](name, input);
 
 export function codexCalls(name: string, raw: unknown, input: Row): readonly ToolCall[] {
     if (name === 'exec' && typeof raw === 'string') {

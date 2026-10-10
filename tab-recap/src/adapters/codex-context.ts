@@ -1,10 +1,7 @@
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import { obj, parse, str } from './jsonl.ts';
+import { obj, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
-
-const rowsOf = (lines: readonly string[]): readonly Row[] => lines.map((line) => parse(line)).filter((row): row is Row => row !== null);
-
-const count = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0);
+import { count, rowsOf } from './context-values.ts';
 
 export function codexObserved(lines: readonly string[]): Observed | null {
     let counted: { tokens: number; window: number | null } | null = null;

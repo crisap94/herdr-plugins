@@ -37,8 +37,16 @@ export function sessionId(raw: string): SessionId {
     return nonEmpty(raw, 'a session id') as SessionId;
 }
 
+export function sessionIdFromAgentValue(raw: string): SessionId {
+    return raw as SessionId;
+}
+
 export function sessionPath(raw: string): SessionPath {
     return nonEmpty(raw, 'a session path') as SessionPath;
+}
+
+export function sessionPathFromAgentValue(raw: string): SessionPath {
+    return raw as SessionPath;
 }
 
 export function agentKind(raw: string): AgentKind {

@@ -9,18 +9,23 @@ export function environmentName(raw: string): EnvironmentName {
     return raw as EnvironmentName;
 }
 
-function harnessJob<const Job extends { readonly contract: string; readonly enumerates: boolean }>(job: Job, envScrub: readonly EnvironmentName[]): Job & { readonly envScrub: readonly EnvironmentName[] } {
-    Object.defineProperty(job, 'envScrub', { value: envScrub });
-    return job as Job & { readonly envScrub: readonly EnvironmentName[] };
+interface JobHarness {
+    readonly id: string;
+    readonly label: string;
+    readonly model: { readonly default: string; readonly legacyEnv: string | null } | null;
+    readonly automatic: boolean;
+    readonly availabilityMark: boolean;
+    readonly customCommand: boolean;
+    readonly job: { readonly contract: 'strict' | 'free-text'; readonly enumerates: boolean; readonly envScrub: readonly EnvironmentName[] };
 }
 
 export const JOB_HARNESSES = [
-    { id: 'claude', label: 'claude', model: { default: 'haiku', legacyEnv: 'TAB_RECAP_CLAUDE_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: harnessJob({ contract: 'strict', enumerates: true }, [environmentName('CLAUDECODE'), environmentName('CLAUDE_CODE_ENTRYPOINT')]) },
-    { id: 'codex', label: 'codex', model: { default: '', legacyEnv: 'TAB_RECAP_CODEX_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: harnessJob({ contract: 'strict', enumerates: true }, []) },
-    { id: 'opencode', label: 'opencode', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: harnessJob({ contract: 'strict', enumerates: true }, []) },
-    { id: 'hermes', label: 'hermes', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: harnessJob({ contract: 'strict', enumerates: true }, []) },
-    { id: 'custom', label: 'custom', model: null, automatic: false, availabilityMark: false, customCommand: true, job: harnessJob({ contract: 'free-text', enumerates: false }, []) },
-] as const;
+    { id: 'claude', label: 'claude', model: { default: 'haiku', legacyEnv: 'TAB_RECAP_CLAUDE_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [environmentName('CLAUDECODE'), environmentName('CLAUDE_CODE_ENTRYPOINT')] } },
+    { id: 'codex', label: 'codex', model: { default: '', legacyEnv: 'TAB_RECAP_CODEX_MODEL' }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'opencode', label: 'opencode', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'hermes', label: 'hermes', model: { default: '', legacyEnv: null }, automatic: true, availabilityMark: true, customCommand: false, job: { contract: 'strict', enumerates: true, envScrub: [] } },
+    { id: 'custom', label: 'custom', model: null, automatic: false, availabilityMark: false, customCommand: true, job: { contract: 'free-text', enumerates: false, envScrub: [] } },
+] as const satisfies readonly JobHarness[];
 
 export type BackendId = (typeof JOB_HARNESSES)[number]['id'];
 export type BackendChoice = BackendId | 'auto';
@@ -58,8 +63,8 @@ export function jobContractOf(id: BackendId): JobContract {
     return HARNESS_BY_ID[id].job.contract;
 }
 
-export function jobEnvironmentNames(): readonly JobEnvironmentName[] {
-    return [...new Set(JOB_HARNESSES.flatMap(({ job }) => job.envScrub))];
+export function jobEnvironmentNames(harnesses: readonly { readonly job: { readonly envScrub: readonly EnvironmentName[] } }[]): readonly EnvironmentName[] {
+    return [...new Set(harnesses.flatMap(({ job }) => job.envScrub))];
 }
 
 export function harnessLabels<Value>(valueOf: (id: BackendId) => Value): Readonly<Record<BackendId, Value>> {

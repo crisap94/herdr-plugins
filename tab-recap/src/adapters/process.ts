@@ -1,7 +1,7 @@
 import { nodeHost } from '#src/host/node-host.mjs';
 import type { Platform } from '#src/ports/host.ts';
 import type { ProcessControl, Runner } from '#src/ports/process-control.ts';
-import { jobEnvironmentNames } from '#src/recap/domain/backend.ts';
+import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
 import { posixProcess } from './process-posix.ts';
 import { windowsProcess } from './process-windows.ts';
@@ -15,7 +15,7 @@ export const hostProcess: ProcessControl = processFor(nodeHost().platform);
 
 export const run: Runner = hostProcess.run;
 
-const SCRUBBED_ENV_NAMES = jobEnvironmentNames();
+const SCRUBBED_ENV_NAMES = jobEnvironmentNames(JOB_HARNESSES);
 
 export function scrubEnvironment(source: NodeJS.ProcessEnv, names: readonly EnvironmentName[]): NodeJS.ProcessEnv {
     const env: NodeJS.ProcessEnv = {};

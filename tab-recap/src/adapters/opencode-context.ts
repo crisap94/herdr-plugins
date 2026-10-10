@@ -1,8 +1,7 @@
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { obj, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
-
-const count = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0);
+import { count } from './context-values.ts';
 
 export function opencodeObserved(data: Row): Observed | null {
     const tokens = obj(data['tokens']);

@@ -1,6 +1,5 @@
-import { paneId, sessionId, sessionPath, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, sessionIdFromAgentValue, sessionPathFromAgentValue, tabId } from '#src/recap/domain/ids.ts';
 import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
-import { fallbackSessionIdentity } from '#src/recap/domain/session-identity.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
@@ -24,7 +23,7 @@ function field(data: Readonly<Record<string, unknown>>, key: string): string | n
     return text(data[key]) ?? text(nested(data, 'pane')[key]);
 }
 
-export function seenFrom(data: Readonly<Record<string, unknown>>, identity: SessionIdentity = fallbackSessionIdentity): SeenLane | null {
+export function seenFrom(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): SeenLane | null {
     const pane = field(data, 'pane_id');
     const tab = field(data, 'tab_id');
     const workspace = field(data, 'workspace_id');
@@ -38,7 +37,7 @@ export function seenFrom(data: Readonly<Record<string, unknown>>, identity: Sess
         workspaceId: workspace,
         agent,
         status: field(data, 'agent_status'),
-        session: sessionOf(data, identity, agent),
+        session: sessionOf(data, identity),
         cwd: field(data, 'foreground_cwd') ?? field(data, 'cwd'),
         title: field(data, 'terminal_title_stripped'),
     };
@@ -50,12 +49,13 @@ function agentSessionOf(info: Readonly<Record<string, unknown>>): AgentSession |
         return null;
     }
     if (info['kind'] === 'id') {
-        return { kind: 'id', value: sessionId(value) };
+        return { kind: 'id', value: sessionIdFromAgentValue(value) };
     }
-    return info['kind'] === 'path' ? { kind: 'path', value: sessionPath(value) } : null;
+    return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(value) } : null;
 }
 
-export function sessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity = fallbackSessionIdentity, agent = field(data, 'agent')): SessionId | null {
+export function sessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): SessionId | null {
+    const agent = field(data, 'agent');
     for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
         const session = agentSessionOf(info);
         if (session !== null) {
@@ -65,7 +65,7 @@ export function sessionOf(data: Readonly<Record<string, unknown>>, identity: Ses
     return null;
 }
 
-export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity = fallbackSessionIdentity): { readonly pane: string; readonly session: string } | null {
+export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionIdentity): { readonly pane: string; readonly session: string } | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data, identity);
     return pane === null || session === null ? null : { pane, session };
@@ -102,7 +102,7 @@ function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, iden
     return null;
 }
 
-export function decode(frame: Frame, identity: SessionIdentity = fallbackSessionIdentity): Decoded {
+export function decode(frame: Frame, identity: SessionIdentity): Decoded {
     const kind = frame.event.replaceAll('.', '_');
     const known = decodeKnown(kind, frame.data, identity);
     if (known !== null) {
