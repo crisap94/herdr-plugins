@@ -32,4 +32,4 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 5. Archive
 
-- [ ] 5.1 `openspec archive compaction-confirm-current-session` in this merge request, once every other task is checked and the gates pass.
+- [x] 5.1 `openspec archive compaction-confirm-current-session` in this merge request, once every other task is checked and the gates pass.

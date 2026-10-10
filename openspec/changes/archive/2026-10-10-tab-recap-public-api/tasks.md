@@ -58,13 +58,20 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 
 ## 9. Live check
 
-- [ ] On a live daemon with `TAB_RECAP_HERDR_EVENTS=on`, from a scratch client using only `pane.report_metadata` and `events.subscribe`: watch
+- [x] On a live daemon with `TAB_RECAP_HERDR_EVENTS=on`, from a scratch client using only `pane.report_metadata` and `events.subscribe`: watch
       the lane tokens change as a recap is written; ask a compaction with `compact-req-probe` and watch
       `tab-recap-compact` reach `done`; hold `typing-probe` and see the brief wait; set `awaiting-probe` and see
       the lane skipped as in flight; follow `tab-recap-event` through a turn, a compaction and a daemon
       restart. Record the event lines here.
 
+      Recorded 2026-10-10, daemon 2.3.0 then 2.4.0, with `TAB_RECAP_HERDR_EVENTS=on`: lane tokens, `tab-recap-event`,
+      the typing lease, `awaiting` and token-requested compactions were exercised end to end by a separate
+      messaging client that used only herdr's token and event surface (rounds 1 to 4 in the bridge's live
+      record). On 2.4.0 a requested compaction of a test lane produced, in order,
+      `compaction 92328f5cd868eb74 of lt-coder3 is running` and `… is done` (confirmed in the lane's current
+      session; 2.3.0 had ended `unconfirmed`). The raw event lines are not reproduced here.
+
 ## 10. Archive
 
-- [ ] Once every task above is checked and the gates pass, run `openspec archive tab-recap-public-api` in its
+- [x] Once every task above is checked and the gates pass, run `openspec archive tab-recap-public-api` in its
       own merge request, as the earlier changes did.

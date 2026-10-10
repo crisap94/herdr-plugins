@@ -41,4 +41,4 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 7. Archive
 
-- [ ] 7.1 `openspec archive one-compaction-per-lane` in this merge request, once every other task is checked and the gates pass.
+- [x] 7.1 `openspec archive one-compaction-per-lane` in this merge request, once every other task is checked and the gates pass.

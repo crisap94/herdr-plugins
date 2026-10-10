@@ -45,4 +45,4 @@ Paths are under `tab-recap/`, and every group ends with `bash ci/lint.sh` and `b
 
 ## 6. Archive
 
-- [ ] 6.1 `openspec archive compact-without-note` in this merge request, once every other task is checked and the gates pass.
+- [x] 6.1 `openspec archive compact-without-note` in this merge request, once every other task is checked and the gates pass.
