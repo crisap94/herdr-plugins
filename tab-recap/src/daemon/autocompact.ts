@@ -4,6 +4,7 @@ import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { FlightAnswer } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
+import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -53,12 +54,14 @@ export function wireAutocompact(parts: {
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
+    /** the compactions queued or running in this daemon: shared with the compaction flow, so a lane has one at a time */
+    readonly claims: CompactionClaims;
     log(line: string): void;
 }): Autocompact {
     const { store } = parts;
     return new Autocompact({
         policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: (pane) => awaitingNow(pane), events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
-        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests,
+        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },
         lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => Date.now(), log: (line) => { parts.log(line); },

@@ -133,6 +133,8 @@ export interface Messages {
         /** an automatic compaction whose brief still misses a fact that matters is not typed */
         readonly coverageMissed: (agent: string) => string;
         readonly skipped: (agent: string, status: string) => string;
+        /** a request for a lane that is already queued or compacting: it joins that compaction, starts none */
+        readonly joined: (agent: string) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;
     };

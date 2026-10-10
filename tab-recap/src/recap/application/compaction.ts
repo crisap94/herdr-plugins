@@ -58,10 +58,36 @@ export class Compaction {
     }
 
     /** The request's answer on its pane, when it came from another tool. */
-    private answer(request: CompactRequest | null, pane: string, stage: string): void {
+    private answerOne(request: CompactRequest | null, pane: string, stage: string): void {
         if (request?.answer !== undefined && pane !== '') {
             this.deps.answer?.(request.answer, pane, stage);
         }
+    }
+
+    /** A stage of the pane's compaction: the owner's answer, and the answer of every request that joined it. */
+    private answer(request: CompactRequest | null, pane: string, stage: string): void {
+        this.answerOne(request, pane, stage);
+        for (const joined of this.deps.claims.joinedOf(pane)) {
+            this.answerOne(joined, pane, stage);
+        }
+    }
+
+    /** A request for a lane that is already queued or compacting joins that compaction: `queued` now, then the running one's stages. */
+    private joinRunning(lane: Lane, request: CompactRequest): void {
+        const [pane, agent] = [String(lane.pane), String(lane.agent)];
+        const { compaction } = this.deps.messages();
+        this.deps.claims.join(pane, request);
+        this.answerOne(request, pane, 'queued');
+        void this.tell(compaction.title(agent), compaction.joined(agent));
+    }
+
+    /** Claims the lane's pane for this request, or joins the compaction that holds it; true when the request owns the lane. */
+    private claimed(lane: Lane, request: CompactRequest): boolean {
+        if (this.deps.claims.claim(String(lane.pane))) {
+            return true;
+        }
+        this.joinRunning(lane, request);
+        return false;
     }
 
     /** A lane that is not free is recorded and said, once, and left alone. */
@@ -164,11 +190,23 @@ export class Compaction {
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        const ready = (await Promise.all(targets.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator', request)) ? [] : [lane])))).flat();
-        if (ready.length === 0) {
+        // the claim is made here, after the last await before the flow starts, in one synchronous step: a lane that is already queued or compacting
+        // is joined, never compacted a second time (the same check-then-record shape autocompact uses)
+        const owned = targets.filter((lane) => this.claimed(lane, request));
+        if (owned.length === 0) {
             return;
         }
-        await this.deps.refresh(tab, lanes);
-        await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
+        try {
+            const ready = (await Promise.all(owned.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator', request)) ? [] : [lane])))).flat();
+            if (ready.length === 0) {
+                return;
+            }
+            await this.deps.refresh(tab, lanes);
+            await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
+        } finally {
+            for (const lane of owned) {
+                this.deps.claims.release(String(lane.pane));
+            }
+        }
     }
 }
