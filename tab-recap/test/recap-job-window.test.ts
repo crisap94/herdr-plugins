@@ -206,6 +206,7 @@ test('a refresh behind a run in progress runs next and resolves its caller after
     assert.equal(created.callCount(), 1, 'the refresh waits for the run in progress');
     release?.(written);
     await settle();
+    assert.equal(refreshed, false, 'the caller is resolved after the refresh, not after the run in progress');
     t.mock.timers.tick(0);
     await settle();
     assert.deepEqual(causes, ['turn-ended', 'requested']);
