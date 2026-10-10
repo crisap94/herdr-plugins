@@ -460,7 +460,7 @@ The application SHALL claim source and target lanes as handoff claims in one all
 
 ### Requirement: The daemon flow has a fixed order
 
-The daemon SHALL run a handoff in this order: refuse `source-equals-target`; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state; take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
+The daemon SHALL run a handoff in this order: refuse `source-equals-target`; resolve what a refresh cannot change (the source pane is a lane of its tab, the target's readiness, and a peek at both lanes' claims); run the refresh when requested; resolve the source's task and render; take the lane claims; re-check the target's status and in-flight state and require it to stay ready for `HANDOFF_SETTLE_MS` (5 000); take the typing lease; send; confirm; release the lease and the claims. A refusal at any step SHALL end the flow without running a later step. A throw from the send call SHALL be `failed{transport}`, a throw while reading confirmation evidence SHALL be `failed{unconfirmed}`, and any other throw SHALL be `failed{internal-error}`.
 
 #### Scenario: A refused target starts no refresh
 
@@ -471,6 +471,16 @@ The daemon SHALL run a handoff in this order: refuse `source-equals-target`; res
 
 - **WHEN** the target becomes `working` while a refresh runs
 - **THEN** the re-check SHALL refuse `status-not-ready` and nothing SHALL be typed
+
+#### Scenario: A target that is ready only for a moment
+
+- **WHEN** the target is `idle` at the first observation and not `idle` or `done` at the second, 5 seconds later
+- **THEN** the command SHALL return `status-not-ready` and type nothing
+
+#### Scenario: A freshly started target
+
+- **WHEN** the target became `idle` less than 5 seconds before the flow reached the readiness hold
+- **THEN** the sender SHALL wait until the target has stayed ready for 5 seconds before typing
 
 #### Scenario: A throw while sending
 
