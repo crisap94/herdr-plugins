@@ -3,6 +3,7 @@ import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { SetupNote } from '#src/recap/domain/setup-note.ts';
+import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 
 export type Locale = 'en' | 'es';
 
@@ -167,6 +168,7 @@ export interface Messages {
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;
         readonly statusConfig: string;
+        readonly handoff: Readonly<Record<HandoffMessageKey, string>>;
         readonly none: string;
     };
 }
