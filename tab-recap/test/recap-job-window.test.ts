@@ -11,12 +11,14 @@ import { debounceOf } from '#src/recap/domain/debounce.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 
 const WINDOW_60S: Debounce = debounceOf('60000');
 
 interface Settings {
     debounce: Debounce;
+    grew?: boolean;
+    entries?: boolean;
 }
 
 interface Harness {
@@ -41,7 +43,8 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
         read: (source, from): Promise<ChunkResult> => {
             reads.push(from.cursor);
             sources.push(source);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'migrate victoria' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: reads.length, tail: null }, grew: true });
+            const entries: Entry[] = settings.entries === false ? [] : [{ role: 'user', text: 'migrate victoria' }];
+            return Promise.resolve({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: reads.length, tail: null }, grew: settings.grew ?? true });
         },
     };
     const store = memoryStore();
@@ -295,6 +298,48 @@ test('a forced request kept in the again slot runs the lanes of the turn ending 
     await settle();
     assert.deepEqual(causes, ['turn-ended', 'requested']);
     assert.deepEqual(created.sources.slice(2), ['/t/w1:p1', '/t/w1:p2'], 'the kept request reads the joined lane too');
+});
+
+test('a focused request with no new turn does not consume the window', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    const created = harness({ debounce: WINDOW_60S }, causes);
+    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 1);
+    created.settings.grew = false;
+    t.mock.timers.setTime(30_000);
+    created.job.request(tabId('w1:t1'), [lane], 'focused');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 1, 'a focused request that finds no new turn writes nothing');
+    created.settings.grew = true;
+    t.mock.timers.setTime(30_001);
+    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.setTime(59_999);
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 1, 'the window still runs from the run at 0 ms');
+    t.mock.timers.tick(1);
+    await settle();
+    assert.equal(causes.length, 2);
+});
+
+test('a request whose turns hold no entries does not consume the window', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    const created = harness({ debounce: WINDOW_60S, entries: false }, causes);
+    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 0, 'no writer run for a request with no entries');
+    created.settings.entries = true;
+    t.mock.timers.setTime(10_000);
+    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(causes.length, 1, 'the window was not consumed, so this ending runs at once');
 });
 
 test('a changed lane set starts at once inside a run window', async (t) => {
