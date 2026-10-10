@@ -19,13 +19,13 @@ typed values; one serializer per token.
   second result union outside `src/protocol/` is reported.
 - [x] 2.3 `src/protocol/exchange.ts` and `registry.ts`: the descriptor type, `EXCHANGES`, the registry build with its checks
   (unique names and prefixes, every value fits, own names per pane at most 10). Verify: one test per refused registry.
-- [ ] 2.4 `src/protocol/requester.ts` and `responder.ts`: pure reducers over a token map, an ask ledger and an instant
+- [x] 2.4 `src/protocol/requester.ts` and `responder.ts`: pure reducers over a token map, an ask ledger and an instant
   (`take`, `answer`, `observe`, `withdraw`), with the foreign-id rule. Verify: trace tests on an in-memory token map with
   the measured fault modes (unchanged rewrite with no event, collapsed burst, time-to-live expiry, clear before take,
   foreign answer, restart mid-flight).
-- [ ] 2.5 `src/protocol/capability.ts` and `owners.ts`: the capability value and the derived owner table. Verify: the
+- [x] 2.5 `src/protocol/capability.ts` and `owners.ts`: the capability value and the derived owner table. Verify: the
   capability value for compact alone is `compact1,kinds1`.
-- [ ] 2.6 `rules/recap-protocol-self-contained.yml` with bad and good probes: `src/protocol/` imports only its own files and
+- [x] 2.6 `rules/recap-protocol-self-contained.yml` with bad and good probes: `src/protocol/` imports only its own files and
   no `node:` module. Verify: `bash ci/lint.sh` shows the bad probe failing.
 
 ## 3. Compaction becomes the first exchange

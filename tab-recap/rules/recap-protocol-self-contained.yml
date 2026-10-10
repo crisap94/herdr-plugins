@@ -1,0 +1,18 @@
+id: recap-protocol-self-contained
+language: typescript
+severity: error
+message: >-
+  The token protocol is a PURE, SELF-CONTAINED module: it imports only its own files, with './', and
+  never a 'node:' built-in or a '#src/' alias. A copy another tool carries verbatim must compile on its own.
+note: >-
+  One prefix test: an import whose string does not start with './' is the leak. The manifest (D7) depends on this.
+files:
+  - "**/src/protocol/**"
+  - "**/probes/recap-protocol-self-contained/**"
+rule:
+  kind: string_fragment
+  inside:
+    kind: import_statement
+    stopBy: end
+  not:
+    regex: "^\\./"

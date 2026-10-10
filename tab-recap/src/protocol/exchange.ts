@@ -27,10 +27,21 @@ export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => t
 
 export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => tokenName(`${exchange.requestPrefix}${tool}`);
 
+const ANSWER_SEPARATOR = ':';
+
+const answerText = (id: string, stage: string): string => `${id}${ANSWER_SEPARATOR}${stage}`;
+
 export function answerValue(exchange: Exchange, id: RequestId, stage: string): Result<TokenValue, Refusal> {
-    const text = `${id}:${stage}`;
+    const text = answerText(id, stage);
     return tokenValue(exchange.truncatesAnswer ? text.slice(0, LIMITS.valueMax) : text);
 }
+
+export const badIdValue = (rawId: string): TokenValue => answerText(rawId.slice(0, LIMITS.idMax), failureStage('bad-id')) as TokenValue;
+
+export const splitAnswer = (raw: string): { readonly id: string; readonly stage: string } | null => {
+    const cut = raw.indexOf(ANSWER_SEPARATOR);
+    return cut < 0 ? null : { id: raw.slice(0, cut), stage: raw.slice(cut + ANSWER_SEPARATOR.length) };
+};
 
 export const parseRequest = (exchange: Exchange, raw: string): Result<ParsedValue, Refusal> => parseValue(exchange.request, raw);
 

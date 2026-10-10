@@ -97,17 +97,27 @@ function readField(field: Field, segments: readonly string[], at: number): Resul
     return text.kind === 'ok' ? ok({ value: text.value, at: segments.length }) : text;
 }
 
+export function idGrammarOf(specs: readonly FieldSpec[]): Result<IdGrammar, Refusal> {
+    const layout = layoutOf(specs);
+    return layout.kind === 'err' ? layout : ok(layout.value.grammar);
+}
+
+export const idTextOf = (raw: string): string => {
+    const cut = raw.indexOf(':');
+    return cut < 0 ? raw : raw.slice(0, cut);
+};
+
 export function parseValue(specs: readonly FieldSpec[], raw: string): Result<ParsedValue, Refusal> {
     const layout = layoutOf(specs);
     if (layout.kind === 'err') {
         return layout;
     }
-    const cut = raw.indexOf(':');
-    const id = requestId(cut < 0 ? raw : raw.slice(0, cut), layout.value.grammar);
+    const idText = idTextOf(raw);
+    const id = requestId(idText, layout.value.grammar);
     if (id.kind === 'err') {
         return id;
     }
-    const segments = cut < 0 ? [] : raw.slice(cut + 1).split(':');
+    const segments = raw.length === idText.length ? [] : raw.slice(idText.length + 1).split(':');
     const fields: Record<string, string | boolean | null> = {};
     let at = 0;
     for (const field of layout.value.fields) {
