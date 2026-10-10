@@ -90,20 +90,34 @@ function sameLanes(left: ReadonlySet<Lane['pane']>, right: ReadonlySet<Lane['pan
 }
 
 function pendingOf(slot: Slot, lanes: readonly Lane[], cause: RecapCause, debounce: Debounce, clock: () => number): Pending {
-    if (debounce.kind === 'off') {
-        return { lanes, cause, forced: forcedCause(cause), start: { kind: 'after', delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0 } };
+    switch (debounce.kind) {
+        case 'off':
+            return { lanes, cause, forced: forcedCause(cause), start: { kind: 'after', delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0 } };
+        case 'window': {
+            const now = clock();
+            const lastStart = slot.lastStart;
+            const forced = forcedCause(cause) || lastStart === null || !sameLanes(slot.lastLanes, laneSet(lanes));
+            const deadline = lastStart === null || forced ? now : Math.max(lastStart + debounce.window, now + TURN_SETTLE_MS);
+            return stronger(slot.pending, { lanes, cause, forced, start: { kind: 'at', deadline } });
+        }
+        default: {
+            const exhaustive: never = debounce;
+            return exhaustive;
+        }
     }
-    const now = clock();
-    const lastStart = slot.lastStart;
-    const forced = forcedCause(cause) || lastStart === null || !sameLanes(slot.lastLanes, laneSet(lanes));
-    if (lastStart === null || forced) {
-        return { lanes, cause, forced, start: { kind: 'at', deadline: now } };
-    }
-    return { lanes, cause, forced, start: { kind: 'at', deadline: Math.max(lastStart + debounce.window, now + TURN_SETTLE_MS) } };
 }
 
 function delayOf(start: Start, clock: () => number): number {
-    return start.kind === 'after' ? start.delay : Math.max(0, start.deadline - clock());
+    switch (start.kind) {
+        case 'after':
+            return start.delay;
+        case 'at':
+            return Math.max(0, start.deadline - clock());
+        default: {
+            const exhaustive: never = start;
+            return exhaustive;
+        }
+    }
 }
 
 export class RecapJob {
@@ -119,8 +133,7 @@ export class RecapJob {
         const slot = this.slots.get(key) ?? { timer: null, running: false, pending: null, lastStart: null, lastLanes: new Set(), waiting: [] };
         this.slots.set(key, slot);
         const debounce = this.deps.debounce?.() ?? DEBOUNCE_OFF;
-        const requested = pendingOf(slot, lanes, cause, debounce, () => Number(this.deps.clock.now()));
-        slot.pending = debounce.kind === 'off' ? requested : stronger(slot.pending, requested);
+        slot.pending = pendingOf(slot, lanes, cause, debounce, () => Number(this.deps.clock.now()));
         this.arm(slot, tab);
     }
 
