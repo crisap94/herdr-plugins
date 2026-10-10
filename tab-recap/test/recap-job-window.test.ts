@@ -213,6 +213,40 @@ test('a refresh behind a run in progress runs next and resolves its caller after
     assert.equal(refreshed, true);
 });
 
+test('a refresh caller is resolved when its own run ends, not behind a debounced run that follows it', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
+    const causes: string[] = [];
+    let release: ((result: Written) => void) | undefined;
+    let answers = 0;
+    const blocked = new Promise<Written>((resolve) => { release = resolve; });
+    const created = harness({ debounce: WINDOW_60S }, causes, () => {
+        answers += 1;
+        return answers === 2 ? blocked : Promise.resolve(written);
+    });
+    const job = created.job;
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    t.mock.timers.tick(0);
+    await settle();
+    t.mock.timers.setTime(10_000);
+    let refreshed = false;
+    void job.refreshNow(tabId('w1:t1'), [lane]).then(() => (refreshed = true));
+    t.mock.timers.tick(0);
+    await settle();
+    assert.equal(created.callCount(), 2, 'the refresh runs at once');
+    t.mock.timers.setTime(11_000);
+    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    release?.(written);
+    await settle();
+    assert.equal(refreshed, true, 'the caller is resolved when the refresh run ends');
+    assert.deepEqual(causes, ['turn-ended', 'requested']);
+    t.mock.timers.tick(58_999);
+    await settle();
+    assert.equal(causes.length, 2, 'the ending that arrived during the refresh waits for the window from the refresh start');
+    t.mock.timers.tick(1);
+    await settle();
+    assert.equal(causes.length, 3);
+});
+
 test('a changed lane set starts at once inside a run window', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];

@@ -131,25 +131,26 @@ export class RecapJob {
         if (pending === null) return;
         slot.timer = setTimeout(() => {
             slot.pending = null;
-            void this.fly(slot, tab, pending.lanes, pending.cause);
+            void this.fly(slot, tab, pending);
         }, delayOf(pending.start, () => Number(this.deps.clock.now())));
     }
 
-    private async fly(slot: Slot, tab: TabId, lanes: readonly Lane[], cause: RecapCause): Promise<void> {
+    private async fly(slot: Slot, tab: TabId, pending: Pending): Promise<void> {
         slot.timer = null;
         slot.running = true;
+        const covered = pending.start.kind === 'at' ? slot.waiting.splice(0) : [];
         try {
-            await this.recap(tab, lanes, cause, (at) => { slot.lastStart = Number(at); slot.lastLanes = laneSet(lanes); });
+            await this.recap(tab, pending.lanes, pending.cause, (at) => { slot.lastStart = Number(at); slot.lastLanes = laneSet(pending.lanes); });
         } catch (error) {
             this.deps.log(`recap ${tab}: ${error instanceof Error ? error.message : String(error)}`);
         }
         slot.running = false;
+        const done = slot.pending === null ? [...covered, ...slot.waiting.splice(0)] : covered;
+        for (const finish of done) {
+            finish();
+        }
         if (slot.pending !== null) {
             this.arm(slot, tab);
-            return;
-        }
-        for (const done of slot.waiting.splice(0)) {
-            done();
         }
     }
 
