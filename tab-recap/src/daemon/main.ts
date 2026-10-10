@@ -1,3 +1,4 @@
+import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -155,7 +156,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): import('#src/recap/domain/autocompact.ts').BriefRetention => loadConfig().keepBrief, log });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }
 

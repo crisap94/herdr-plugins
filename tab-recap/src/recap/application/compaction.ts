@@ -27,7 +27,7 @@ export type { CompactionDeps } from './compaction-deps.ts';
 const READY = new Set(['idle', 'done']);
 const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
 
-function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly import('#src/recap/domain/autocompact.ts').CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
+function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
     const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
     const lines = ordered.map((fact) => `${fact.section}: ${fact.text}${fact.section === 'decisions' && fact.why !== null ? ` — ${fact.why}` : ''}`);
     const picked = lines.map((_, at) => at);
@@ -49,7 +49,7 @@ function coverageWhy(outcome: Checked['outcome'], why: string | null, messages: 
     switch (outcome.kind) {
         case 'passed': return why;
         case 'missed': return messages.compaction.coverageCeiling(outcome.facts.length);
-        case 'unchecked': return messages.compaction.coverageUnchecked(outcome.reason);
+        case 'unchecked': return messages.compaction.coverageUnchecked[outcome.reason];
         default: return unreachable(outcome);
     }
 }
@@ -58,7 +58,7 @@ function coverageLog(outcome: Checked['outcome'], messages: Messages): string | 
     switch (outcome.kind) {
         case 'passed': return null;
         case 'missed': return messages.compaction.coverageCeiling(outcome.facts.length);
-        case 'unchecked': return messages.compaction.coverageUnchecked(outcome.reason);
+        case 'unchecked': return messages.compaction.coverageUnchecked[outcome.reason];
         default: return unreachable(outcome);
     }
 }

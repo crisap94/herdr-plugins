@@ -1,3 +1,4 @@
+import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
@@ -114,7 +115,7 @@ export interface Messages {
         readonly auto: (text: string) => string;
         readonly coverageMissed: (agent: string) => string;
         readonly coverageCeiling: (count: number) => string;
-        readonly coverageUnchecked: (reason: string) => string;
+        readonly coverageUnchecked: Readonly<Record<UncheckedReason, string>>;
         readonly coveragePassed: string;
         readonly skipped: (agent: string, status: string) => string;
         readonly joined: (agent: string, noted: boolean) => string;

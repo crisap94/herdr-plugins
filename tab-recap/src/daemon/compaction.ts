@@ -1,3 +1,4 @@
+import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
@@ -45,7 +46,7 @@ export function wireCompaction(parts: {
     readonly recent: LaneRecent;
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
-    readonly checkedBriefs: import('#src/ports/autocompact-briefs.ts').AutocompactBriefs;
+    readonly checkedBriefs: AutocompactBriefs;
     readonly answers: { answer(id: string, pane: string, stage: string): void };
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;

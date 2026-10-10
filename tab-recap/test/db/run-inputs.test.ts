@@ -1,3 +1,4 @@
+import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
@@ -79,7 +80,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     let clock = now;
     const lines: string[] = [];
     const days = { value: 14 };
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): import('#src/recap/domain/autocompact.ts').BriefRetention => ({ kind: 'days', value: 14 }), log: (line: string): void => { lines.push(line); } });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: 14 }), log: (line: string): void => { lines.push(line); } });
     assert.equal(retention.tick(), 1);
     assert.deepEqual(store.inputs.runs(QUERY).map((r) => [r.at, r.hasInput]), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0, 'the checked brief is past its retention');
@@ -126,7 +127,7 @@ test('retention: a brief retention of none deletes every checked brief at the da
     const decision = store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now, mode: 'shadow', share: 50, tokens: 5, window: 10, gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: null, costUsd: 0, tookMs: null, why: null });
     store.autocompactBriefs.put(decision, 'fresh brief', [], [], now);
     let clock = now;
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): import('#src/recap/domain/autocompact.ts').BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
     retention.tick();
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0);
 });
