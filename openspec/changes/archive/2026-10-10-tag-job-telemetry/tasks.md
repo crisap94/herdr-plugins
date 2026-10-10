@@ -37,5 +37,5 @@ Implementation paths are under `tab-recap/`. Check each task when its Verify pas
 
 ## 6. Archive
 
-- [ ] 6.1 In the implementation merge request, after every implementation task is checked and the plugin gates pass, run `openspec archive tag-job-telemetry`. Do not archive this specification-only change.
-- [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
+- [x] 6.1 In the implementation merge request, after every implementation task is checked and the plugin gates pass, run `openspec archive tag-job-telemetry`. Do not archive this specification-only change.
+- [x] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
