@@ -114,7 +114,7 @@ export class RecapJob {
         const agent = String(lane.agent);
         const reader = this.deps.transcripts.readerFor(agent);
         if (reader === undefined) {
-            return `no reader for ${agent}`;
+            return this.deps.transcripts.unavailableReason(agent);
         }
         const located = await reader.locate(lane);
         return isUnknown(located) ? saying(located.why) : { reader, source: located.source };
