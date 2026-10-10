@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contextOf, familyWindow, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
+import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
+import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
+import { WINDOW_SIZES, windowOfKind } from '#src/adapters/context-window.ts';
 
 test('target: focused by default, all, or kinds', () => {
     assert.deepEqual(targetOf(undefined), { kind: 'focused' });
@@ -30,29 +32,28 @@ test('window setting: a sensible number overrides; empty or nonsense means detec
     assert.equal(windowOf('12'), null);
 });
 
-test('family table: haiku and older 200k, Opus/Sonnet 4.6 and later 1M, [1m] 1M, a dated id is not a minor version', () => {
-    for (const [model, window] of [['claude-haiku-4-5', 200_000], ['claude-opus-4-5-20251101', 200_000], ['claude-sonnet-4-5', 200_000], ['claude-opus-4-20250514', 200_000], ['claude-sonnet-4-6', 1_000_000], ['claude-opus-4-7', 1_000_000], ['claude-opus-5-5', 1_000_000], ['claude-sonnet-5-5', 1_000_000], ['claude-sonnet-4-5[1m]', 1_000_000], ['mystery', 200_000]] as const) {
-        assert.equal(familyWindow(model), window, model);
-    }
-});
-
 const use = (tokens: number): { tokens: number; window: number; source: 'agent' } => ({ tokens, window: 200_000, source: 'agent' });
 const seen = { tokens: 90_000, peak: 0, window: null, model: 'claude-opus-4-7' } as const;
+const context = (observed: Observed, kind: string, setting: number | null, catalogued: number | null): ContextUse | null => contextOf(
+    { observed, setting },
+    windowOfKind(kind, { windowOf: () => catalogued }),
+    WINDOW_SIZES,
+);
 
 test('context window, runtime first: setting, agent, catalogue, family table — in that order', () => {
-    assert.deepEqual(contextOf({ observed: seen, agent: 'claude', setting: 500_000, catalogued: 200_000 }), { tokens: 90_000, window: 500_000, source: 'setting' });
-    assert.deepEqual(contextOf({ observed: { ...seen, window: 258_400 }, agent: 'codex', setting: null, catalogued: 1_000_000 }), { tokens: 90_000, window: 258_400, source: 'agent' });
-    assert.deepEqual(contextOf({ observed: seen, agent: 'opencode', setting: null, catalogued: 128_000 }), { tokens: 90_000, window: 128_000, source: 'catalogue' });
-    assert.deepEqual(contextOf({ observed: seen, agent: 'claude', setting: null, catalogued: null }), { tokens: 90_000, window: 1_000_000, source: 'table' });
-    assert.equal(contextOf({ observed: seen, agent: 'opencode', setting: null, catalogued: null }), null, 'nothing says what an unknown model holds');
+    assert.deepEqual(context(seen, 'claude', 500_000, 200_000), { tokens: 90_000, window: 500_000, source: 'setting' });
+    assert.deepEqual(context({ ...seen, window: 258_400 }, 'codex', null, 1_000_000), { tokens: 90_000, window: 258_400, source: 'agent' });
+    assert.deepEqual(context(seen, 'opencode', null, 128_000), { tokens: 90_000, window: 128_000, source: 'catalogue' });
+    assert.deepEqual(context(seen, 'claude', null, null), { tokens: 90_000, window: 1_000_000, source: 'table' });
+    assert.equal(context(seen, 'opencode', null, null), null, 'nothing says what an unknown model holds');
 });
 
 test('observed use raises a window that was too small: 200k → 1M, by tokens or by the size before a compaction; a setting is never raised', () => {
     const small = { tokens: 250_000, peak: 0, window: null, model: 'claude-opus-4-5' } as const;
-    assert.deepEqual(contextOf({ observed: small, agent: 'claude', setting: null, catalogued: 200_000 }), { tokens: 250_000, window: 1_000_000, source: 'observed' });
-    assert.deepEqual(contextOf({ observed: { ...small, tokens: 30_000, peak: 554_888 }, agent: 'claude', setting: null, catalogued: null }), { tokens: 30_000, window: 1_000_000, source: 'observed' });
-    assert.equal(contextOf({ observed: small, agent: 'claude', setting: 200_000, catalogued: null })?.window, 200_000);
-    assert.equal(contextOf({ observed: { ...small, tokens: 2_500_000 }, agent: 'claude', setting: null, catalogued: 200_000 })?.window, 2_500_000);
+    assert.deepEqual(context(small, 'claude', null, 200_000), { tokens: 250_000, window: 1_000_000, source: 'observed' });
+    assert.deepEqual(context({ ...small, tokens: 30_000, peak: 554_888 }, 'claude', null, null), { tokens: 30_000, window: 1_000_000, source: 'observed' });
+    assert.equal(context(small, 'claude', 200_000, null)?.window, 200_000);
+    assert.equal(context({ ...small, tokens: 2_500_000 }, 'claude', null, 200_000)?.window, 2_500_000);
 });
 
 test('sizes read as words', () => {

@@ -5,6 +5,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { present } from '#src/recap/render/present.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
+import { contextWindows } from '#src/adapters/context-window.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
@@ -42,17 +43,17 @@ function reader(agent: string, model: string | null, tokens: number, window: num
 const catalogue = (windows: Record<string, number>): ModelCatalogue => ({ windowOf: (model) => windows[model] ?? null });
 
 test('lane contexts: runtime window first, the setting overrides, a change is reported once', async () => {
-    const claude = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), catalogue({ 'claude-opus-5-5': 1_000_000 }), () => null);
+    const claude = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), contextWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })), () => null);
     assert.equal(await claude.refresh(lane('claude')), true);
     assert.deepEqual(claude.of('w1:p1'), { tokens: 450_000, window: 1_000_000, source: 'catalogue' });
     assert.equal(await claude.refresh(lane('claude')), false, 'the same answer is no change');
-    const codex = new LaneContexts(registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }), catalogue({}), () => null);
+    const codex = new LaneContexts(registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }), contextWindows(catalogue({})), () => null);
     await codex.refresh(lane('codex'));
     assert.equal(codex.of('w1:p1')?.source, 'agent');
-    const set = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), catalogue({}), () => 500_000);
+    const set = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), contextWindows(catalogue({})), () => 500_000);
     await set.refresh(lane('claude'));
     assert.deepEqual(set.of('w1:p1'), { tokens: 450_000, window: 500_000, source: 'setting' });
-    const unknownModel = new LaneContexts(registryWith({ opencode: reader('opencode', 'acme/new', 1000, null) }), catalogue({}), () => null);
+    const unknownModel = new LaneContexts(registryWith({ opencode: reader('opencode', 'acme/new', 1000, null) }), contextWindows(catalogue({})), () => null);
     assert.equal(await unknownModel.refresh(lane('opencode')), false);
     assert.equal(unknownModel.of('w1:p1'), null, 'a model nothing knows has no hint');
 });

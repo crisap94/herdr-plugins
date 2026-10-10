@@ -12,6 +12,10 @@ export const REGISTERED_KINDS = {
 
 export type RegisteredKind = keyof typeof REGISTERED_KINDS;
 
+export function registeredKindOf(raw: string): RegisteredKind | null {
+    return Object.hasOwn(REGISTERED_KINDS, raw) ? raw as RegisteredKind : null;
+}
+
 export type RegisteredKindTable = Readonly<Record<string, RegisteredKindCapabilities>>;
 
 export function kindsWith<const T extends RegisteredKindTable>(table: T, capability: keyof RegisteredKindCapabilities): readonly (keyof T)[] {

@@ -62,46 +62,27 @@ export interface Observed {
     readonly model: string | null;
 }
 
-const SIZES: readonly number[] = [200_000, 1_000_000];
-
-export function familyWindow(model: string): number {
-    const id = model.toLowerCase();
-    if (id.includes('[1m]')) {
-        return 1_000_000;
-    }
-    const version = /(?:opus|sonnet)-(\d+)(?:[-.](\d{1,2})(?!\d))?/.exec(id);
-    if (version === null) {
-        return 200_000;
-    }
-    const [major, minor] = [Number(version[1]), Number(version[2] ?? 0)];
-    return major > 4 || (major === 4 && minor >= 6) ? 1_000_000 : 200_000;
+export interface WindowBasis {
+    readonly window: number;
+    readonly source: WindowSource;
 }
 
-function raised(window: number, seen: number): number {
-    return seen <= window ? window : (SIZES.find((size) => size >= seen) ?? seen);
+export type WindowOf = (observed: Observed) => WindowBasis | null;
+
+function raised(window: number, seen: number, sizes: readonly number[]): number {
+    return seen <= window ? window : (sizes.find((size) => size >= seen) ?? seen);
 }
 
-function baseWindow(found: { readonly observed: Observed; readonly agent: string; readonly catalogued: number | null }): { readonly window: number; readonly source: WindowSource } | null {
-    const { observed, agent, catalogued } = found;
-    if (observed.window !== null) {
-        return { window: observed.window, source: 'agent' };
-    }
-    if (catalogued !== null) {
-        return { window: catalogued, source: 'catalogue' };
-    }
-    return agent === 'claude' ? { window: familyWindow(observed.model ?? ''), source: 'table' } : null;
-}
-
-export function contextOf(found: { readonly observed: Observed; readonly agent: string; readonly setting: number | null; readonly catalogued: number | null }): ContextUse | null {
+export function contextOf(found: { readonly observed: Observed; readonly setting: number | null }, resolveWindow: WindowOf, sizes: readonly number[]): ContextUse | null {
     const { observed, setting } = found;
     if (setting !== null) {
         return { tokens: observed.tokens, window: setting, source: 'setting' };
     }
-    const base = baseWindow(found);
+    const base = resolveWindow(observed);
     if (base === null) {
         return null;
     }
-    const window = raised(base.window, Math.max(observed.tokens, observed.peak));
+    const window = raised(base.window, Math.max(observed.tokens, observed.peak), sizes);
     return { tokens: observed.tokens, window, source: window === base.window ? base.source : 'observed' };
 }
 
