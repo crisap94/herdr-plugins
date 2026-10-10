@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
 import { CodexHarness } from '#src/adapters/codex-harness.ts';
-import { mergeResourceAttributes, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/process.ts';
-import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
+import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/process.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import type { RunOptions, RunResult, Runner } from '#src/ports/process-control.ts';
@@ -28,15 +27,30 @@ test('the resource merge preserves unrelated entries and replaces only the exact
     assert.equal(mergeResourceAttributes('tab_recap.job-other=x, tab_recap.job=old', { 'tab_recap.job': 'judge' }), 'tab_recap.job-other=x,tab_recap.job=judge');
 });
 
-test('tagging off returns the same scrubbed environment and leaves the parent unchanged', () => {
+test('tagging off returns the scrubbed environment and leaves the parent unchanged', () => {
+    const probes = ['HERDR_PROBE', 'TAB_RECAP_PROBE', ...SCRUBBED_ENV_NAMES.slice(0, 1)];
+    const saved = [...probes, 'OTEL_RESOURCE_ATTRIBUTES'].map((key) => [key, process.env[key]] as const);
+    try {
+        for (const key of probes) { process.env[key] = 'probe'; }
+        process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,tab_recap.job=parent';
+        const before = { ...process.env };
+        const expected = scrubEnvironment(process.env, SCRUBBED_ENV_NAMES);
+        assert.equal(probes.every((key) => expected[key] === undefined), true);
+        assert.deepEqual(scrubbedEnv(), expected);
+        assert.deepEqual(scrubbedEnv(undefined), expected);
+        assert.deepEqual({ ...process.env }, before);
+    } finally {
+        for (const [key, value] of saved) { if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } }
+    }
+});
+
+test('tagging on leaves the parent environment unchanged', () => {
     const inherited = process.env['OTEL_RESOURCE_ATTRIBUTES'];
     try {
         process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,tab_recap.job=parent';
         const before = { ...process.env };
-        const kept = new Set<string>(jobEnvironmentNames(JOB_HARNESSES));
-        const expected = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('HERDR_') && !key.startsWith('TAB_RECAP_') && !kept.has(key)));
-        assert.equal(JSON.stringify(scrubbedEnv()) === JSON.stringify(scrubEnvironment(expected, [])), true);
-        assert.equal(JSON.stringify(process.env) === JSON.stringify(before), true);
+        assert.equal(scrubbedEnv('judge')['OTEL_RESOURCE_ATTRIBUTES'], 'service.name=parent,tab_recap.job=judge');
+        assert.deepEqual({ ...process.env }, before);
     } finally {
         if (inherited === undefined) { delete process.env['OTEL_RESOURCE_ATTRIBUTES']; } else { process.env['OTEL_RESOURCE_ATTRIBUTES'] = inherited; }
     }

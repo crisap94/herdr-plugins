@@ -17,7 +17,7 @@ export const hostProcess: ProcessControl = processFor(nodeHost().platform);
 
 export const run: Runner = hostProcess.run;
 
-const SCRUBBED_ENV_NAMES = jobEnvironmentNames(JOB_HARNESSES);
+export const SCRUBBED_ENV_NAMES = jobEnvironmentNames(JOB_HARNESSES);
 
 export function scrubEnvironment(source: NodeJS.ProcessEnv, names: readonly EnvironmentName[]): NodeJS.ProcessEnv {
     const env: NodeJS.ProcessEnv = {};
