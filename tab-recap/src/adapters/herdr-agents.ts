@@ -37,13 +37,13 @@ export class HerdrAgents implements Agents {
         }
     }
 
-    async prompt(pane: string, text: string, wait?: PromptWait, behavior?: PromptBehavior): Promise<Prompted> {
+    async prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> {
         const params: Json = wait === undefined ? { target: pane, text } : { target: pane, text, wait: { until: wait.until, timeout_ms: wait.timeoutMs } };
         try {
             await this.wire('agent.prompt', params, (wait?.timeoutMs ?? 0) + WIRE_MARGIN_MS);
             return { kind: 'sent' };
         } catch (error) {
-            if (codeOf(error) === 'agent_prompt_stalled' && behavior?.acceptsStall === true) {
+            if (codeOf(error) === 'agent_prompt_stalled' && behavior.acceptsStall) {
                 return { kind: 'sent' };
             }
             return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: detail(error) });

@@ -1,8 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { CompactionPlan, CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
+import type { CompactionPlan, CompactionPlanResult, Unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
-import type { Unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
@@ -56,7 +55,7 @@ export class Sender {
         const pane = String(lane.pane);
         const sent = await this.typed(pane, async () => {
             for (const line of plan.lines) {
-                const typed = await this.deps.agents.typeLine(pane, line, { enterDelay: plan.enterDelay, acceptsStall: plan.acceptsStall });
+                const typed = await this.deps.agents.typeLine(pane, line, { enterDelay: plan.enterDelay });
                 if (typed.kind !== 'sent') {
                     return typed;
                 }
@@ -104,22 +103,15 @@ export class Sender {
     }
 
     private async restore(lane: Lane, text: Text, plan: CompactionPlan, trail: Trail): Promise<void> {
-        switch (plan.followUp.kind) {
-            case 'none':
-                return;
-            case 'restore-message':
-                break;
-            default: {
-                const exhaustive: never = plan.followUp;
-                String(exhaustive);
-                return;
-            }
+        const followUp = plan.followUp;
+        if (followUp.kind === 'none') {
+            return;
         }
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const pane = String(lane.pane);
         const since = this.deps.now();
-        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: plan.acceptsStall }));
+        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: followUp.acceptsStall }));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(pane, since, RESTORING_MS);
             await this.deps.settling.settled(pane, since, RESTORE_SETTLE_MS);

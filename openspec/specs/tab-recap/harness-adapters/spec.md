@@ -37,10 +37,11 @@ compaction targets.
 - **THEN** the sender SHALL inspect it 20 times, with 19 one-second pauses and 60 additional 300 ms record reads, and SHALL still send the restore message
 - **AND** a failed verdict SHALL skip the restore message
 
-#### Scenario: An unknown kind reaches the sender
+#### Scenario: An unregistered kind reaches the sender
 
-- **WHEN** an unknown kind reaches `Sender` directly
-- **THEN** it SHALL take the Codex send path; current target selection filters by `COMPACTABLE` first, so the case is latent until an unknown kind is added there
+- **WHEN** an unregistered kind reaches `Sender` directly
+- **THEN** it SHALL return `Unsupported{why}` and type nothing
+- **AND** current target selection SHALL continue to filter through the registered compactable kinds
 
 #### Scenario: A screen lane is checked for in-flight work
 
@@ -159,7 +160,7 @@ Each registered kind SHALL provide a context-window function, and the domain SHA
 
 ### Requirement: Registered kinds own typed compaction plans
 
-Each registered kind that supports compaction SHALL expose `plan(guidance)` as a typed plan value from its adapter. The plan SHALL represent typed lines as ordered value objects with pieces, delays as duration values, stall acceptance, confirmation as the sum `turn-end | poll{reads, every}`, retry-on-self-failure, follow-up as `restore-message | none`, and whether the command takes guidance. Plan lookup for a kind without a plan SHALL return `Unsupported{why}`, distinct from `Unknown`, and SHALL NOT select another kind's plan by default. Core plan execution SHALL handle plan and confirmation sums exhaustively and SHALL NOT branch on a harness kind literal.
+Each registered kind that supports compaction SHALL expose `plan(guidance)` as a typed plan value from its adapter. The plan SHALL represent typed lines as ordered value objects with pieces, line delays as duration values, restore-prompt stall acceptance, confirmation as the sum `turn-end | poll{reads, every}`, retry-on-self-failure, and follow-up as `restore-message | none`. Plan lookup for a kind without a plan SHALL return `Unsupported{why}`, distinct from `Unknown`, and SHALL NOT select another kind's plan by default. Core plan execution SHALL handle plan and confirmation sums exhaustively and SHALL NOT branch on a harness kind literal.
 
 #### Scenario: A registered adapter supplies its plan
 

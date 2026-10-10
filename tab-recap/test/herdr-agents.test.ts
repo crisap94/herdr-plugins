@@ -14,9 +14,11 @@ function agents(fail: string | null = null): { agents: HerdrAgents; calls: { met
     return { agents: new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }), calls };
 }
 
+const stalledWire: Wire = () => Promise.reject(Object.assign(new Error('stalled'), { code: 'agent_prompt_stalled' }));
+
 test('typeLine types each piece, then presses Enter — in that order, never as a prompt', async () => {
     const { agents: fake, calls } = agents();
-    assert.deepEqual(await fake.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('(1) keep this')), { enterDelay: duration(300), acceptsStall: false }), { kind: 'sent' });
+    assert.deepEqual(await fake.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('(1) keep this')), { enterDelay: duration(300) }), { kind: 'sent' });
     assert.deepEqual(calls, [
         { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: '/compact ' } },
         { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: '(1) keep this' } },
@@ -26,16 +28,16 @@ test('typeLine types each piece, then presses Enter — in that order, never as 
 
 test('typeLine refuses a line with a line break and sends nothing; a failed call is Unknown, and Enter is not pressed after a failed type', async () => {
     const refused = agents();
-    assert.equal((await refused.agents.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('a\nb')), { enterDelay: duration(300), acceptsStall: false })).kind, 'unknown');
+    assert.equal((await refused.agents.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('a\nb')), { enterDelay: duration(300) })).kind, 'unknown');
     assert.deepEqual(refused.calls, []);
     const failed = agents('pane.send_text');
-    assert.equal((await failed.agents.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('a')), { enterDelay: duration(300), acceptsStall: false })).kind, 'unknown');
+    assert.equal((await failed.agents.typeLine('w1:p1', compactionLine(compactionPiece('/compact '), compactionPiece('a')), { enterDelay: duration(300) })).kind, 'unknown');
     assert.equal(failed.calls.length, 1);
 });
 
 test('prompt keeps agent.prompt for codex and opencode: target, text, and the wait', async () => {
     const { agents: fake, calls } = agents();
-    await fake.prompt('w1:p2', '/compact', { until: ['idle', 'done'], timeoutMs: 600_000 });
+    await fake.prompt('w1:p2', '/compact', { until: ['idle', 'done'], timeoutMs: 600_000 }, { acceptsStall: true });
     assert.deepEqual(calls, [{ method: 'agent.prompt', params: { target: 'w1:p2', text: '/compact', wait: { until: ['idle', 'done'], timeout_ms: 600_000 } } }]);
 });
 
@@ -50,10 +52,15 @@ test('prompt counts a stalled prompt as sent: the text went in, the agent just r
     assert.equal(calls.length, 1);
 });
 
+test('prompt does not count a stalled prompt as sent when the plan rejects stalls', async () => {
+    const fake = new HerdrAgents(stalledWire, { id: 'tab-recap', stateDir: '/s' });
+    assert.equal((await fake.prompt('w1:p2', 'restore', undefined, { acceptsStall: false })).kind, 'unknown');
+});
+
 test('typeLine waits a moment before Enter: an agent\'s slash-command popup swallows an Enter that comes at once', async () => {
     const order: string[] = [];
     const wire: Wire = (method) => { order.push(method); return Promise.resolve({}); };
     const fake = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, (ms) => { order.push(`pause ${ms}`); return Promise.resolve(); });
-    await fake.typeLine('w1:p2', compactionLine(compactionPiece('/compact')), { enterDelay: duration(300), acceptsStall: false });
+    await fake.typeLine('w1:p2', compactionLine(compactionPiece('/compact')), { enterDelay: duration(300) });
     assert.deepEqual(order, ['pane.send_text', 'pause 300', 'pane.send_keys']);
 });

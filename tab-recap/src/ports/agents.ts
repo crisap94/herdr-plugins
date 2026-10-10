@@ -17,13 +17,13 @@ export interface PromptBehavior {
     readonly acceptsStall: boolean;
 }
 
-export interface LineBehavior extends PromptBehavior {
+export interface LineBehavior {
     readonly enterDelay: Duration;
 }
 
 export interface Agents {
     status(pane: string): Promise<AgentState>;
-    prompt(pane: string, text: string, wait?: PromptWait, behavior?: PromptBehavior): Promise<Prompted>;
+    prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted>;
     typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
     askNote(tab: string, pane: string | null): Promise<Done>;
 }

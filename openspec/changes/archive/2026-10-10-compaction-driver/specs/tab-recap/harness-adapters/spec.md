@@ -6,7 +6,7 @@ Keep compaction behavior with each registered agent adapter and make the sender 
 
 ### Requirement: Registered kinds own typed compaction plans
 
-Each registered kind that supports compaction SHALL expose `plan(guidance)` as a typed plan value from its adapter. The plan SHALL represent typed lines as ordered value objects with pieces, delays as duration values, stall acceptance, confirmation as the sum `turn-end | poll{reads, every}`, retry-on-self-failure, follow-up as `restore-message | none`, and whether the command takes guidance. Plan lookup for a kind without a plan SHALL return `Unsupported{why}`, distinct from `Unknown`, and SHALL NOT select another kind's plan by default. Core plan execution SHALL handle plan and confirmation sums exhaustively and SHALL NOT branch on a harness kind literal.
+Each registered kind that supports compaction SHALL expose `plan(guidance)` as a typed plan value from its adapter. The plan SHALL represent typed lines as ordered value objects with pieces, line delays as duration values, restore-prompt stall acceptance, confirmation as the sum `turn-end | poll{reads, every}`, retry-on-self-failure, and follow-up as `restore-message | none`. Plan lookup for a kind without a plan SHALL return `Unsupported{why}`, distinct from `Unknown`, and SHALL NOT select another kind's plan by default. Core plan execution SHALL handle plan and confirmation sums exhaustively and SHALL NOT branch on a harness kind literal.
 
 #### Scenario: A registered adapter supplies its plan
 

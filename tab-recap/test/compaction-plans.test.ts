@@ -6,11 +6,9 @@ import type { CompactionPlan } from '#src/recap/domain/compaction-plan.ts';
 const plain = (raw: CompactionPlan): unknown => ({
     lines: raw.lines.map((line) => line.pieces.map(String)),
     enterDelay: Number(raw.enterDelay),
-    acceptsStall: raw.acceptsStall,
     confirm: raw.confirm.kind === 'turn-end' ? raw.confirm : { ...raw.confirm, reads: Number(raw.confirm.reads), every: Number(raw.confirm.every) },
     retryOnSelfFailure: raw.retryOnSelfFailure,
     followUp: raw.followUp,
-    takesGuidance: raw.takesGuidance,
 });
 
 const registeredPlan = (kind: 'claude' | 'codex' | 'opencode', guidance: string): CompactionPlan => {
@@ -21,13 +19,13 @@ const registeredPlan = (kind: 'claude' | 'codex' | 'opencode', guidance: string)
 
 test('registered kinds expose their current behavior as typed plans', () => {
     assert.deepEqual(plain(registeredPlan('claude', 'guidance')), {
-        lines: [['/compact ', 'guidance']], enterDelay: 300, acceptsStall: true, confirm: { kind: 'turn-end' }, retryOnSelfFailure: true, followUp: { kind: 'none' }, takesGuidance: true,
+        lines: [['/compact ', 'guidance']], enterDelay: 300, confirm: { kind: 'turn-end' }, retryOnSelfFailure: true, followUp: { kind: 'none' },
     });
     assert.deepEqual(plain(registeredPlan('codex', 'unused')), {
-        lines: [['/compact']], enterDelay: 300, acceptsStall: true, confirm: { kind: 'poll', reads: 20, every: 1000 }, retryOnSelfFailure: false, followUp: { kind: 'restore-message' }, takesGuidance: false,
+        lines: [['/compact']], enterDelay: 300, confirm: { kind: 'poll', reads: 20, every: 1000 }, retryOnSelfFailure: false, followUp: { kind: 'restore-message', acceptsStall: true },
     });
     assert.deepEqual(plain(registeredPlan('opencode', 'unused')), {
-        lines: [['/compact']], enterDelay: 300, acceptsStall: true, confirm: { kind: 'poll', reads: 20, every: 1000 }, retryOnSelfFailure: false, followUp: { kind: 'restore-message' }, takesGuidance: false,
+        lines: [['/compact']], enterDelay: 300, confirm: { kind: 'poll', reads: 20, every: 1000 }, retryOnSelfFailure: false, followUp: { kind: 'restore-message', acceptsStall: true },
     });
 });
 

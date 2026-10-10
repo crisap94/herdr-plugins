@@ -18,7 +18,7 @@ import { oneTask } from '#test/support.ts';
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 
-export interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
+export interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
 export interface Fleet {
     readonly agents: Agents;
@@ -45,15 +45,15 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
         status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
-        prompt: (pane, text, wait, _behavior?: PromptBehavior): Promise<Prompted> => {
+        prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
-            typed.push({ pane, text, wait });
+            typed.push({ pane, text, wait, promptBehavior: behavior });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
-        typeLine: (pane, line, _behavior: LineBehavior): Promise<Prompted> => {
+        typeLine: (pane, line, behavior): Promise<Prompted> => {
             events.push(`type ${pane}`);
             const pieces = line.pieces.map(String);
-            typed.push({ pane, text: pieces.join(''), pieces, typed: true });
+            typed.push({ pane, text: pieces.join(''), pieces, lineBehavior: behavior, typed: true });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
         askNote: () => Promise.resolve({ kind: 'done' }),

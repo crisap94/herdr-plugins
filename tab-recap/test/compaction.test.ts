@@ -9,8 +9,9 @@ import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
-import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
@@ -20,7 +21,7 @@ import { oneTask } from './support.ts';
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 
-interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
+interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
 function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
@@ -32,15 +33,15 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
         status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
-        prompt: (pane, text, wait): Promise<Prompted> => {
+        prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
-            typed.push({ pane, text, wait });
+            typed.push({ pane, text, wait, promptBehavior: behavior });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
-        typeLine: (pane, line, _behavior): Promise<Prompted> => {
+        typeLine: (pane, line, behavior): Promise<Prompted> => {
             const pieces = line.pieces.map(String);
             events.push(`type ${pane}`);
-            typed.push({ pane, text: pieces.join(''), pieces, typed: true });
+            typed.push({ pane, text: pieces.join(''), pieces, lineBehavior: behavior, typed: true });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
@@ -219,6 +220,7 @@ test('claude: a compaction its records confirm is announced with the numbers the
     const world = fleet({ 'w1:p1': 'idle' });
     await flow(world, 'focused', 'w1:p1', null, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
+    assert.deepEqual(world.typed[0]?.lineBehavior, { enterDelay: duration(300) });
     assert.equal(world.toasts.at(-1), 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s');
     assert.equal(world.toasts.length, 2, 'two toasts: when it starts, when it ends');
 });
