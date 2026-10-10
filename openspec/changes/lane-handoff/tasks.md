@@ -34,7 +34,7 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 - [x] Add the narrow ports `HandoffRequester` (`requestHandoff`, `withdrawHandoff`) and `HandoffResponder` (`takeHandoffs`, taking only `handoff` rows); `Requests` extends both and `RequestsRepository` implements them. Add the `HandoffAnswers` port (`answerHandoff` in `writeTx`, `handoffAnswer` which never deletes) with its own repository, and a prune function for answers older than `HANDOFF_ANSWER_TTL_MS` called from the daemon tick. `withdrawHandoff` returns whether a row was removed. Map NULL `reason` to `delivered` in the row mapper so the union is returned.
 - [x] Add a read for the ledger's last good run (`lastRunOf(tab)`: time and cause, the run whose tasks the recap shows) to the records port, and a `tabOf(pane)` read over the `lane` rows to the views port; give both a contract test.
 - [x] Add an in-memory `Requests` fake and a shared contract test (`test/requests-contract.test.ts`) that runs the same cases against `RequestsRepository` on SQLite and the fake, including that each kind's taker takes only its own rows; add the same for `HandoffAnswers`.
-- [ ] Add the read-only print path: reuse `connectReadOnly` (it carries the `{ readOnly: true }` literal), build only the ledger, records and view repositories, and prove it renders on a database not yet upgraded and writes no row.
+- [x] Add the read-only print path: reuse `connectReadOnly` (it carries the `{ readOnly: true }` literal), build only the ledger, records and view repositories, and prove it renders on a database not yet upgraded and writes no row.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 5. Daemon flow: resolution, claims, delivery and rules
