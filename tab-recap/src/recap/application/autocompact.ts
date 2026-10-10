@@ -132,8 +132,9 @@ export class Autocompact {
         const lastBreakAt = deps.boundaries.lastBreakAt(tab, pane);
         const lastDecisionAt = deps.decisions.lastDecisionAt(tab, pane);
         // the re-check: an unchanged lane idle for the style's interval since its last decision is let through again
-        const same = unchangedOf(deps.decisions.lastDecision(tab, pane), deps.startedAt, use.tokens, policy.mode);
-        const recheck = same && recheckDue(tuning.recheckIdleMs, lastDecisionAt, now);
+        const last = deps.decisions.lastDecision(tab, pane);
+        const same = unchangedOf(last, deps.startedAt, use.tokens, policy.mode);
+        const recheck = same && recheckDue(tuning.recheckIdleMs, last, now);
         const facts = {
             kind: String(lane.agent), kinds: policy.kinds, busy: busy.busy, share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt, lastDecisionAt, cooldownMs: policy.cooldownMs,

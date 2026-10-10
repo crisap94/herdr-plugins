@@ -47,6 +47,11 @@ acts as `wait`. Every other outcome SHALL be `wait`.
 - **WHEN** `needs_verbatim` is 0.48 and every other answer is decisive for compacting
 - **THEN** the verdict SHALL be `undecided` and nothing SHALL be requested
 
+#### Scenario: A compact decision is not re-asked
+
+- **WHEN** the style is `eager`, a lane's last decision was `compact` thirty-five minutes ago at the same tokens and mode
+- **THEN** no model SHALL be asked, and the lane's skip SHALL be `unchanged`
+
 #### Scenario: The same answers under two styles
 
 - **WHEN** the answers are closes 0.65, every warning at most 0.25 and the style is `eager`
@@ -99,8 +104,8 @@ this order, before asking any model:
   verdict. The cooldown is `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS` when set, else the style's: ten minutes with
   `balanced`, twenty with `gentle`, five with `eager`;
 - something changed since the lane's last decision: its tokens, the mode, or the daemon started after it. When
-  the style sets a re-check interval, a lane idle for at least that long since its last decision counts as changed
-  (the re-check), and the decision log says `unchanged → recheck`;
+  the style sets a re-check interval, a lane whose last decision was a `wait` or `undecided`, idle for at least that
+  long since it, counts as changed (the re-check), and the decision log says `unchanged → recheck`;
 - nothing is in flight inside the agent, and a reader that cannot tell counts as in flight.
 
 A share at or above the ceiling SHALL give the verdict `compact` without a model call. The ceiling is
@@ -180,7 +185,9 @@ SHALL override the style's ceiling and cooldown when they hold a valid value. Th
 `TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST` (0.05–0.50), `TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST` (0.50–0.95),
 `TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST` (0.30–0.95) and `TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` (60 000 to
 86 400 000) SHALL override the style's warning, close, pass-mark and re-check numbers. A value outside its range,
-or not a number, SHALL fall back to the style's number. The undecided band SHALL follow the style alone.
+or not a number, SHALL fall back to the style's number. The warning number SHALL stay below the undecided band's
+start and the close number SHALL stay above its end; a value that does not, SHALL fall back too, so no answer inside
+the band can be `compact`. The undecided band SHALL follow the style alone.
 
 #### Scenario: The default is today's numbers
 
@@ -197,6 +204,11 @@ or not a number, SHALL fall back to the style's number. The undecided band SHALL
 
 - **WHEN** the style is `eager` and `TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST` is 0.9
 - **THEN** the warning number SHALL be 0.40, the style's
+
+#### Scenario: A key that would contradict the band
+
+- **WHEN** the style is `balanced` and `TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST` is 0.5 and `TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST` is 0.5
+- **THEN** the warning number SHALL be 0.30 and the close number 0.70, the style's, and every answer of 0.5 SHALL be `undecided`
 
 #### Scenario: An unknown style is balanced
 

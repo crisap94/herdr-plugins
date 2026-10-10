@@ -72,9 +72,11 @@ test('the cooldown: gentle twenty minutes, balanced ten, eager five; an explicit
 
 test('the advanced keys: an explicit value in range wins; out of range or not a number falls back to the style\'s', () => {
     const verdict = (keys: Record<string, string>): Thresholds => tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager', ...keys })).verdict;
-    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.45' }).safe, 0.45);
+    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.44' }).safe, 0.44, 'below eager\'s band start (0.45)');
+    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.45' }).safe, 0.40, 'at the band start: the style\'s');
     assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.9' }).safe, 0.40, 'above 0.50 falls back');
-    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.5' }).closes, 0.5);
+    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.57' }).closes, 0.57, 'above eager\'s band end (0.55)');
+    assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.55' }).closes, 0.60, 'at the band end: the style\'s');
     assert.equal(verdict({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: 'high' }).closes, 0.60);
     assert.equal(tuningOf(env({ TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST: '0.2' })).coverageAtLeast, 0.70, 'below 0.30 falls back to balanced');
     assert.equal(tuningOf(env({ TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST: '0.85' })).coverageAtLeast, 0.85);
@@ -148,4 +150,19 @@ test('the listing header names the style and its numbers in force', () => {
     assert.equal(styleLine(policyOf(env(eagerKeys)), tuningOf(env(eagerKeys))), 'style eager · warnings at most 0.40 · closes at least 0.60 · undecided 0.45–0.55 · pass mark 0.60 · ceiling 65 % · cooldown 5 min · re-check 30 min');
     const seconds = { ...eagerKeys, TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS: '90000', TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS: '150000' };
     assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds))), /cooldown 90 s · re-check 150 s$/);
+});
+
+/** The balanced style's verdict numbers with the given keys. */
+const balancedWith = (keys: Record<string, string>): Thresholds => tuningOf(env(keys)).verdict;
+
+test('the advanced keys cannot contradict the band: a safe number at or above the band start, or a close at or below its end, falls back', () => {
+    assert.deepEqual([balancedWith({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.5' }).safe, balancedWith({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.35' }).safe, balancedWith({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.34' }).safe], [0.30, 0.30, 0.34]);
+    assert.deepEqual([balancedWith({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.5' }).closes, balancedWith({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.65' }).closes, balancedWith({ TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.66' }).closes], [0.70, 0.70, 0.66]);
+});
+
+test('no answer sheet inside the band compacts: every answer at 0.5 is undecided under balanced even with both keys at 0.5', () => {
+    const middling = { closes_request: 0.5, announces_continuation: 0.5, asks_detailed_choice: 0.5, needs_verbatim: 0.5, changes_subject: 0.5, stuck: 0.5 };
+    const verdict = tuningOf(env({ TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.5', TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST: '0.5' })).verdict;
+    assert.notEqual(verdictOf(middling, verdict), 'compact');
+    assert.equal(verdictOf(middling, verdict), 'undecided');
 });

@@ -1,6 +1,8 @@
 // The composition of compaction: the daemon's parts, handed to the one service that types into an agent.
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { covered } from '#src/recap/application/brief-coverage.ts';
+import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
@@ -24,6 +26,11 @@ import { loadConfig, messagesOf } from './config.ts';
 
 /** the recap a compaction waits for is given up on after this long (the last good one is used) */
 const RECAP_WAIT_MS = 90_000;
+
+/** The brief check of an automatic compaction: `null` when no decider is set up. The pass mark is read from `tuning` at each check. */
+export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
+    return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
+}
 
 export function wireCompaction(parts: {
     readonly fleet: HerdrFleet;
@@ -60,10 +67,7 @@ export function wireCompaction(parts: {
         refresh: async (tab, lanes) => {
             await bounded(recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS);
         },
-        coverage: () => {
-            const decider = parts.coverageDecider();
-            return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, loadConfig().tuning.coverageAtLeast) };
-        },
+        coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
         typing: parts.typing,

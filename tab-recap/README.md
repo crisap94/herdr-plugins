@@ -307,13 +307,22 @@ above; `gentle` waits for a clearer moment; `eager` acts sooner and asks an idle
 | brief check pass mark | 0.75 | 0.70 | 0.60 |
 | ceiling (when `TAB_RECAP_AUTOCOMPACT_CEILING` is unset) | 85 | 80 | 65 |
 | cooldown (when `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS` is unset) | 20 min | 10 min | 5 min |
-| ask a `wait` lane again after it stays idle, even unchanged | never | never | after 30 min |
+| ask a `wait` (or `undecided`) lane again after it stays idle, even unchanged | never | never | after 30 min |
+
+The re-check asks an idle lane again after its last decision was a `wait` (or `undecided`) and its tokens have not
+changed. A `compact` decision is never re-asked. Every re-check is one decider call, in `shadow` too: an eager lane
+left idle for an hour is asked twice, and keeps being asked every 30 minutes for as long as it stays idle. That is
+the cost of `eager`; the default styles never re-check unless `TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` is set.
 
 An explicit key always wins over the style. Four advanced keys set the numbers themselves, each in its range, and an
 out-of-range or invalid value is the style's number: `TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST` (0.05–0.50),
 `TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST` (0.50–0.95), `TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST` (0.30–0.95) and
-`TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` (60000–86400000; the re-check interval, which any style may set). The
-undecided band follows the style. `tab-recap autocompact` prints the style and its numbers before the decisions.
+`TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` (60000–86400000; the re-check interval, which any style may set). The two
+verdict keys must stay outside the undecided band: `SAFE_AT_MOST` below the band's start and `CLOSES_AT_LEAST` above its
+end. Otherwise the style's number is used, so no answer inside the band can be `compact`. The band itself follows the
+style. `tab-recap autocompact` prints the style and its numbers before the decisions. The settings modal cannot show
+an explicit `TAB_RECAP_AUTOCOMPACT_CEILING` or `_COOLDOWN_MS` in `config.env`, and such a line overrides the row's
+style: if the row seems to do nothing, check those two lines.
 
 **Shadow first.** `TAB_RECAP_AUTOCOMPACT` is `shadow` by default: every decision is recorded and logged, nothing is
 ever typed. Read what it would have done with `tab-recap autocompact` (the newest twenty decisions, with the last

@@ -42,15 +42,21 @@ export function numberIn(raw: string | undefined, min: number, max: number, whol
     return usable && value >= min && value <= max ? value : null;
 }
 
-/** The tuning from the configuration: each advanced key in its range, else the style's number. */
+/**
+ * The tuning from the configuration. Each advanced key is in its range and keeps the verdict coherent with the undecided band: `safe` must stay
+ * below the band's start and `closes` above its end, so no answer inside the band can be `compact`. Otherwise the style's number.
+ */
 export function tuningOf(get: (key: string) => string | undefined): AutocompactTuning {
     const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const numbers = STYLE_NUMBERS[style];
-    const safe = numberIn(get('TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST'), 0.05, 0.50) ?? numbers.verdict.safe;
-    const closes = numberIn(get('TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST'), 0.50, 0.95) ?? numbers.verdict.closes;
+    const band = numbers.verdict;
+    const safeKey = numberIn(get('TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST'), 0.05, 0.50);
+    const closesKey = numberIn(get('TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST'), 0.50, 0.95);
+    const safe = safeKey !== null && safeKey < band.undecidedFrom ? safeKey : band.safe;
+    const closes = closesKey !== null && closesKey > band.undecidedTo ? closesKey : band.closes;
     return {
         style,
-        verdict: { ...numbers.verdict, safe, closes },
+        verdict: { ...band, safe, closes },
         coverageAtLeast: numberIn(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST'), 0.30, 0.95) ?? numbers.coverageAtLeast,
         recheckIdleMs: numberIn(get('TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS'), 60_000, 86_400_000, true) ?? numbers.recheckIdleMs,
     };

@@ -50,5 +50,5 @@ test('the row shows its value and its three choices in English and Spanish, with
     assert.match(choosing, /eager — acts sooner; asks an idle lane again every 30 min/);
     const spanish = setupView(typed(focused, ['\r']), es, 140).join('\n');
     assert.match(spanish, /eager — actúa antes; vuelve a mirar un agente libre cada 30 min/);
-    assert.match(setupView(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), es, 140).join('\n'), /Estilo de autocompactar\s+balanced — los números de siempre/);
+    assert.match(setupView(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), es, 140).join('\n'), /Estilo autocomp\.\s+balanced — los números de siempre/);
 });

@@ -26,7 +26,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactStyle: 'Estilo de autocompactar', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
+        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactStyle: 'Estilo autocomp.', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',

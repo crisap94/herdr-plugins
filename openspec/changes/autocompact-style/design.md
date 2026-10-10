@@ -35,7 +35,9 @@ interval and the last decision is at least that old, the lane is not `unchanged`
 
 Idle time is measured from the last decision (`lastDecisionAt`), not from the last token change: the operator's
 words are "idle that long since its last decision", and a lane whose tokens keep changing is not `unchanged` in
-the first place. The re-check never bypasses `busy`, `below-minimum`, `cooldown` or `in-flight`.
+the first place. Only a last decision of `wait` or `undecided` is re-checked: a `compact` decision is never asked
+again, in `shadow` either, because the answer would only repeat a request nobody made. The re-check never bypasses
+`busy`, `below-minimum`, `cooldown` or `in-flight`. Each re-check is one decider call, and the README says so.
 
 `gateOf`'s signature and its returned shape do not change, so the existing gate tests and the experiment's gate
 call stay as they are.
@@ -48,6 +50,11 @@ call stay as they are.
 | `TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST` | 0.50 – 0.95 | the style's close number |
 | `TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST` | 0.30 – 0.95 | the style's pass mark |
 | `TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` | 60 000 – 86 400 000 | the style's re-check (never, or 30 min for eager) |
+
+The verdict keys are also checked against the undecided band of the style: `safe` must be below the band's start
+and `closes` above its end. Without that, `safe` 0.50 with `closes` 0.50 under `balanced` makes every answer of 0.50
+`compact` even though it lies inside the band. A key that breaks the rule falls back to the style's number, as an
+out-of-range one does.
 
 The fractions parse with `Number`, with the same empty-string guard the existing `word` helper gives. No
 hand-written parser is kept: a number in a range is one comparison, and no Node built-in does range validation
