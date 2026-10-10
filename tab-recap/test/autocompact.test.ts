@@ -52,12 +52,13 @@ test('below the minimum (8 %): no model, no decision; the lane keeps one skip, l
     assert.deepEqual(w.logs, ['autocompact w1:p1: 8 % → skip below-minimum (below 10 %)']);
 });
 
-test('something in flight (or a reader that cannot tell): no model, no decision, no request', async () => {
+test('known and unknown in-flight work block an idle lane: no model, decision or request', async () => {
     for (const inFlight of [1, 'unknown'] as const) {
         const w = world();
         w.inFlight = inFlight;
         await w.service.consider(lane());
         assert.deepEqual([w.asked.length, rows(w).length, w.requests.length], [0, 0, 0], String(inFlight));
+        assert.equal(w.store.autocompact.skips()[0]?.gate, 'in-flight');
     }
 });
 

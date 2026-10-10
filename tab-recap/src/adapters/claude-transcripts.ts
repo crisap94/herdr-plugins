@@ -2,7 +2,7 @@ import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
 import { claudeObserved } from './claude-context.ts';
@@ -29,6 +29,7 @@ export class ClaudeTranscripts implements Transcripts {
     readonly agent = 'claude';
     private readonly root: string;
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
+    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
 
     constructor(root = join(homedir(), '.claude', 'projects')) {
         this.root = root;
@@ -81,7 +82,7 @@ export class ClaudeTranscripts implements Transcripts {
         }
     }
 
-    inFlight(source: string, budget: number): Promise<InFlightResult> {
+    private readInFlight(source: string, budget: number): Promise<InFlightResult> {
         try {
             const size = statSync(source).size;
             const kept = this.unknownAt.get(source);

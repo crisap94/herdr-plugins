@@ -31,6 +31,7 @@ import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
@@ -93,7 +94,7 @@ function rows(): Row[] {
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
         marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
-        inFlight: false,
+        inFlight: true,
         prompt: 'keep going',
         compactable: true,
     });
@@ -108,7 +109,7 @@ function rows(): Row[] {
         empty: lane('opencode', { cwd: '/elsewhere' }), recorded: lane('opencode', { cwd: '/repo' }), unplaced: lane('opencode'),
         observed: { tokens: 1020, peak: 1020, window: null, model: 'acme/big-1' },
         marks: [{ kind: 'compacted', at: created, tokensBefore: 1020, tookMs: 7000 }],
-        inFlight: false,
+        inFlight: true,
         prompt: 'keep going',
         compactable: true,
     });
@@ -218,15 +219,17 @@ for (const row of ROWS) {
         assert.deepEqual(chunk.marks, row.marks);
     });
 
-    test(`${row.kind}: inFlight is present for claude only; with the kind enabled for autocompact, where it is absent autocompact says why it stopped${row.kind === 'gemini' ? '; pins today: screen lane says no reader for gemini although the screen reader exists' : ''}`, async () => {
+    test(`${row.kind}: inFlight capability is explicit and autocompact reports its reason`, async () => {
         if (!row.inFlight) {
-            assert.equal(typeof row.reader.inFlight, 'undefined');
-            const skip = await skipOf(registryWith({ [row.reader.agent]: row.reader }), row.recorded, row.kind);
-            assert.deepEqual(skip, { gate: 'in-flight', detail: `no reader for ${row.kind}` });
+            const capability = row.reader.inFlight;
+            if (capability.kind !== 'unsupported') throw new Error('the screen reader must declare unsupported in-flight work');
+            const skip = await skipOf(row.kind === 'gemini' ? registryWith({}, row.reader) : registryWith({ [row.reader.agent]: row.reader }), row.recorded, row.kind);
+            assert.deepEqual(skip, { gate: 'in-flight', detail: 'screen transcripts do not contain in-flight work' });
             return;
         }
-        assert.equal(typeof row.reader.inFlight, 'function');
-        const found = await row.reader.inFlight?.(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
+        const capability = row.reader.inFlight;
+        if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
+        const found = await capability.read(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
         assert.deepEqual(found, { kind: 'in-flight', count: 0 });
     });
 
@@ -240,6 +243,17 @@ for (const row of ROWS) {
 test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen kinds are not offered', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);
     assert.deepEqual(compactable([lane('hermes'), lane('gemini'), lane('custom')]), []);
+});
+
+test('a registered transcript reader without in-flight support shows its declared reason', async () => {
+    const base = ROWS.find((row) => row.kind === 'codex');
+    assert.ok(base);
+    const why: InFlightReason = 'unregistered-reader';
+    const reader: Transcripts = {
+        agent: 'codex', inFlight: { kind: 'unsupported', why }, locate: (placed) => base.reader.locate(placed),
+        read: (source, was, budget) => base.reader.read(source, was, budget), latestPrompt: (source, budget) => base.reader.latestPrompt(source, budget),
+    };
+    assert.deepEqual(await skipOf(registryWith({ codex: reader }), base.recorded, 'codex'), { gate: 'in-flight', detail: 'no transcript reader for codex' });
 });
 
 test('every BACKEND_IDS id has a maker that names itself; custom has no model or enumerator; pins today: custom label ignores model setting', () => {
@@ -275,5 +289,5 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
     await job.refreshNow(tabId('w1:t1'), [hermes]);
     assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for hermes/);
 
-    assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no reader for hermes' });
+    assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
 });

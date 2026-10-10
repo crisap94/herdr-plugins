@@ -3,13 +3,14 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Chunk, ChunkResult, Entry, Located, ObservedResult, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { opencodeObserved } from './opencode-context.ts';
 import { parse, str } from './jsonl.ts';
 import { entriesOf, partsOf } from './opencode-parts.ts';
 import type { MessageRow } from './opencode-parts.ts';
+import { opencodeInFlight } from './opencode-in-flight.ts';
 
 const MESSAGES = 400;
 const PROMPT_LOOKBACK = 30;
@@ -32,6 +33,7 @@ function newest(entries: readonly Entry[], budget: number): readonly Entry[] {
 
 export class OpencodeTranscripts implements Transcripts {
     readonly agent = 'opencode';
+    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source) => this.readInFlight(source) };
     private readonly database: string;
 
     constructor(database = opencodeDatabase()) {
@@ -74,6 +76,15 @@ export class OpencodeTranscripts implements Transcripts {
         const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
         try {
             return Promise.resolve(this.withDatabase((db) => this.observedIn(db, session)));
+        } catch (error) {
+            return Promise.resolve(this.unreadable(error));
+        }
+    }
+
+    private readInFlight(source: string): Promise<InFlightResult> {
+        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
+        try {
+            return Promise.resolve(this.withDatabase((db) => opencodeInFlight(db, session, MESSAGES)));
         } catch (error) {
             return Promise.resolve(this.unreadable(error));
         }

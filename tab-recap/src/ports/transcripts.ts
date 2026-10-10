@@ -1,6 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { Unknown } from './unknowable.ts';
+import type { InFlightReason } from './autocompact-reasons.ts';
 
 export type CallKind = 'shell' | 'edit' | 'web' | 'agent' | 'other' | 'read';
 
@@ -57,11 +58,17 @@ export type ObservedResult = { readonly kind: 'observed'; readonly observed: Obs
 
 export type InFlightResult = { readonly kind: 'in-flight'; readonly count: number } | Unknown;
 
+export type InFlightCapability =
+    | { readonly kind: 'supported'; readonly read: (source: string, budget: number) => Promise<InFlightResult> }
+    | { readonly kind: 'unsupported'; readonly why: InFlightReason };
+
+export type SupportedInFlight = Extract<InFlightCapability, { readonly kind: 'supported' }>;
+
 export interface Transcripts {
     readonly agent: string;
     locate(lane: Lane): Promise<Located>;
     read(source: string, was: Position, budget: number): Promise<ChunkResult>;
     latestPrompt(source: string, budget: number): Promise<PromptResult>;
     observed?(source: string, budget: number): Promise<ObservedResult>;
-    inFlight?(source: string, budget: number): Promise<InFlightResult>;
+    readonly inFlight: InFlightCapability;
 }
