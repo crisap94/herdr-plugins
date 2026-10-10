@@ -1,65 +1,60 @@
 # Tasks
 
-Implementation paths are under `tab-recap/`. This change specifies work only; do not implement these tasks in the specification merge request. No code or test file may contain comments. Implementation starts only after the lane-handoff change (slice 1) is implemented; its requirements and migration 14 are preconditions.
+Implementation paths are under `tab-recap/`. This change specifies work only; do not implement these tasks in the specification merge request. No code or test file may contain comments. Every new test is mutation-checked. Run the plugin gates one at a time. Implementation starts only after the lane-handoff change (slice 1) is implemented and archived; its requirements, its source seam and its migration are preconditions.
 
 ## 1. Vocabulary and documentation
 
-- [ ] Add these nouns to `tab-recap/CONTEXT.md` before code: **Closed lane** (a lane that left the board, at its observed close instant), **Closed lane identity** (tab, pane, close instant), **Closed-lane retention** (the window and its relation to tab Retention), **Lane closed** (the `lane-closed` intent), and **Closed-lane source** (the handoff source selected by `--from-closed`). Check each against `rules/recap-vocabulary.yml`.
-- [ ] Update the **Retention** row of `tab-recap/CONTEXT.md` (line 32) to state that a tab with a closed lane inside the window is kept, and that expired closure records are pruned.
-- [ ] Update the retention text in `tab-recap/README.md` (the Chapters and retention section, line 132) and the keys list (line 601) with `TAB_RECAP_CLOSED_LANE_DAYS`, its default and `0` meaning, and the known limit that runs finishing after a close are not attributed.
-- [ ] Add `TAB_RECAP_CLOSED_LANE_DAYS` next to `TAB_RECAP_KEEP_DAYS` in `tab-recap/config.example.env` (line 134).
-- [ ] Add `ClosedLanes` to the port list in `tab-recap/CLAUDE.md`, and add the `Retention` port description there.
+- [ ] Add to `tab-recap/CONTEXT.md` before code: **Closed lane**, **Closed lane identity** (tab, pane, close instant), **Closure record**, **Closed-lane retention**, **Lane closed** (the `lane-closed` intent), **Incarnation** (`since`), **Restored lane** and **Closed-lane source**. State in the glossary which sense of "closed" each means (a fact state and a pane event also use the word). Check each name against `rules/recap-vocabulary.yml`.
+- [ ] Update the **Retention** row of `tab-recap/CONTEXT.md` (line 32) and the **Repo** row if it needs the stored directory; update the retention text in `tab-recap/README.md` (the Chapters and retention section and the keys list) with `TAB_RECAP_CLOSED_LANE_DAYS`, its default and `0` meaning, and the known limits (a run finishing after the close, a `/clear`, a crash that leaves a live shell).
+- [ ] Add `TAB_RECAP_CLOSED_LANE_DAYS` next to `TAB_RECAP_KEEP_DAYS` in `tab-recap/config.example.env`; add `ClosedLanes` to the port list in `tab-recap/CLAUDE.md` and update (not add) the `Retention` description there.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
-## 2. Domain: the closure, the window, and the fold
+## 2. Domain: the closure, the window, the fold
 
-- [ ] Add `closedLaneDaysOf(raw)` to `src/recap/domain/retention.ts`, beside `tabKeepDaysOf`, with the parser of the state-store requirement: trim, ASCII digits, at most nine characters, else 14. `loadConfig()` only calls it.
-- [ ] Add the `ClosedLane` value (tab, pane, agent, session, since, cwd, closedAt) and the `RestoredLane` value to the domain.
-- [ ] Add the `lane-closed` member to the `Intent` union and the `restored` member to `Observation`. `Dispatch.send` fails to compile until the new intent is handled (task 4).
-- [ ] Add `since` and `persisted` to `Board` in `src/recap/domain/board.ts`, set and cleared by the fold as the decisions describe.
-- [ ] Implement the fold rules in `src/recap/domain/fold.ts`: `onClosed` and `onReconciled` emit `lane-closed` before any other intent; the restart comparison consumes `persisted` on the first reconciliation; a reconciliation that removes a tab's last lane publishes that tab.
-- [ ] Add the seven golden sequences to `test/fold.test.ts`: explicit close; reconciliation drop; agent exit with pane surviving; restart absent and present; repeated close of a removed pane (no intent); session change (no intent); last lane of a tab removed (publish).
-- [ ] Test `closedLaneDaysOf` for every input class in the state-store requirement and for `1234567890`.
+- [ ] Add `closedLaneDaysOf(raw)` to `src/recap/domain/retention.ts` beside `tabKeepDaysOf`, with `DEFAULT_CLOSED_LANE_DAYS` and `CLOSED_LANE_DAYS_MAX_DIGITS`; `loadConfig()` only calls it. Add the pure `inWindow(closedAt, now, days)`.
+- [ ] Add the `ClosedLane` value (tab, pane, agent, since, cwd, closedAt) and `ClosedLaneIdentity`; put `since` on `Lane`, extend `TabLane` with `since`, and define `RestoredLane` as `TabLane` plus its `tab`. Add the `lane-closed` intent and the `restored` observation. `Dispatch.send` fails to compile until the intent is handled.
+- [ ] Add `recap/domain/closures.ts` with `closuresBetween(before, after, persisted, now)` and call it from `onClosed`, `onReconciled` and `onDetected` (which receives `now`). Set `since` when a lane enters the board, keep it for a surviving lane, drop it with the pane. Emit `lane-closed` before any other intent, and publish the tab of every lane that closes, board or persisted.
+- [ ] Add the golden sequences of the design to `test/fold.test.ts`.
+- [ ] Test `closedLaneDaysOf` for every input class, `1234567890`, and `inWindow` at the cutoff, one millisecond before, and `days = 0`.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
-## 3. Migration 15 and the repositories
+## 3. Migration, repositories and old-schema safety
 
-- [ ] Add `src/adapters/db/schema/015-closed-lane-retention.ts` and register it in `schema/index.ts`. Include: the two nullable `lane` columns, the `closed_at` column on `request` with its CHECK, the recreated `request_readable` view, the `closed_lane` table (including the nullable `cwd`) and its two indexes. Do not edit released migrations. Do not backfill.
-- [ ] Add the `ClosedLanes` port in `src/ports/closed-lanes.ts` (record, resolve, listOf, latestOf, expiredTabs, pruneTab) with the closed union for the lookup, and its `ClosedLanesRepository` in `src/adapters/db/closed-lanes.ts`. `record` runs in `writeTx` and selects the association in one statement: the newest `run_task_lane` over the tab and pane transcripts with `first_seen` in `[since, closedAt]`, ordered by `run.at` and `run.id`, returning the task id and `run_task.name`.
-- [ ] Extend `Retention` (`src/ports/retention.ts`) with `expired(cutoff, closedCutoff)` and the `closedLanes` count in `Removed`, and update `RetentionRepository` (`src/adapters/db/retention.ts`) with the `NOT EXISTS` protection clause and the count.
-- [ ] Extend `TabViews` with `liveLanes()` and write `since` and `session` in `writeTab`; extend `TabLane` and `viewOf` accordingly.
-- [ ] Add the boot push of `restored` in `src/daemon/main.ts`, beside `hidden-restored`, before `enterSubscription`, with the read-failure log.
-- [ ] Add a `ClosedLanes` contract test (`test/closed-lanes-contract.test.ts`) run against `ClosedLanesRepository` on SQLite and an in-memory fake, mutation-checked; split the port into narrow role interfaces for the sweep, the resolver and the listing.
-- [ ] Test: fresh install and upgrade from 14 end with the same schema; the backup is `tab-recap.db.v14.bak`; the association query (pane reuse in one tab, and in two tabs; lower and upper bounds; no session; no `since`); `INSERT OR IGNORE` at one millisecond; the protection clause; the removed count.
+- [ ] Add the migration at the next free number at implementation time, after the handoff migration, as `NNN-closed-lane-retention.ts` registered in `schema/index.ts`: `lane.since`, `request.closed_at` with its column CHECK, the recreated `request_readable`, the `closed_lane` table (with `cwd` and the name-requires-task CHECK), its readable view and two indexes. No comments until released; no backfill; no edit of a released migration.
+- [ ] Add the `ClosedLanes` port in `src/ports/closed-lanes.ts` as three role interfaces (`ClosureRecorder`, `ClosureReader`, `ClosureSweep`) over `TabId`, `PaneId`, `Instant`, `Unknown` and the association value, and `ClosedLanesRepository` in `src/adapters/db/closed-lanes.ts`. `record` runs in `writeTx` and selects the association with a CTE and `LEFT JOIN`, so the row is written even with no run.
+- [ ] Change `Retention` to `expired(cutoff, protectedTabs)` and update `RetentionRepository`; it no longer touches the closure table. Extend `TabViews` with `liveLanes()` as its own role and write `since` in `writeTab`; extend `TabLane` and `viewOf`.
+- [ ] Prepare every statement that names `since` or `closed_lane` lazily or behind a schema probe (the pattern of `RetentionRepository` for `fact`), and keep `readTab` free of `since`.
+- [ ] Add the boot push of `restored` in `src/daemon/main.ts` beside `hidden-restored`, before `enterSubscription`, with the read-failure log.
+- [ ] Add a `ClosedLanes` contract test (`test/closed-lanes-contract.test.ts`) run against SQLite and an in-memory fake, and contract runs for the changed `Retention` and for `TabViews.liveLanes`, all mutation-checked.
+- [ ] Test: fresh install and upgrade end with the same schema; the backup name derives from the prior version; the association query (pane reuse in one tab and in two, the bounds, no `since`, a resumed older session, a closure with no run); `INSERT OR IGNORE` at one millisecond; a name without a task rejected; the protected tabs; a read-only open of an older schema (listing empty, resolve `never-seen`, `--print` renders).
+- [ ] Update the tests that change with the signatures: `test/retention.test.ts`, `test/db/retention.test.ts`, `test/db/tab-views.test.ts`, `test/fold.test.ts`.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
-## 4. Dispatch, sweep, and the resolver
+## 4. Dispatch, sweep and the resolver
 
-- [ ] Add a `lane-closed` case to `Dispatch.send` (`src/recap/application/dispatch.ts`): when `closedLaneDays() > 0`, call `ClosedLanes.record`; on failure, log and continue. The case runs before the next intent, which is the publish.
-- [ ] Restructure `sweep` (`src/recap/application/retention.ts`): pass 1 removes eligible tabs when `TAB_RECAP_KEEP_DAYS` is non-zero, with the closed-lane cutoff; pass 2 prunes expired closure rows for `expiredTabs(closedCutoff)` regardless of the tab window. Each tab has its own try/catch. `SweepDeps` gains `closedDays()`. `daemon/retention.ts` passes `loadConfig().closedLaneDays`.
-- [ ] Add boundary probes under `rules/probes/` showing that `recap-domain-pure` rejects a fold or intent module importing an adapter or the clock directly, and that `recap-write-transactions` rejects a bare `BEGIN` in the closure recorder.
-- [ ] Add the resolver (`src/recap/application/closed-lane-source.ts`): lookup, window, association, ledger; the fact filter over `Ledger.allOf` using `CLOSED_SHOWN_MS` from `ledger-input.ts`. Return `found | expired | never-seen | unknown{store-unreadable | ledger-unreadable}`.
-- [ ] Test the resolver with fake ports for every outcome, the fact filter at exactly `closedAt - CLOSED_SHOWN_MS`, the expired-then-never-seen sequence after a prune, and the sweep with `TAB_RECAP_KEEP_DAYS=0`, per-tab failure, and the removed count.
+- [ ] Add a `lane-closed` case to `Dispatch.send` (`src/recap/application/dispatch.ts`): when the window is above zero, call `ClosureRecorder.record`; on failure log and continue. Wire `closedLanes` into `Store`/`storeOver` (`src/adapters/db/database.ts`), `daemon/dispatch-parts.ts`, `DispatchDeps` and `daemon/retention.ts`.
+- [ ] Split `sweep` (`src/recap/application/retention.ts`) into `removeExpiredTabs` and `pruneClosures` composed by `forgetClosedTabs`; pass 1 uses `ClosureSweep.protectedTabs`, pass 2 runs even when `TAB_RECAP_KEEP_DAYS` is `0`; each tab has its own try/catch; log the closure count of a removed tab. `SweepDeps` gains `closedDays()`.
+- [ ] Add the resolver (`src/recap/application/closed-lane-source.ts`): lookup, window (`inWindow`), association, ledger; the fact filter as of the close with `CLOSED_SHOWN_MS` imported from `ledger-input.ts`; `unknown{store-unreadable | ledger-unreadable}` mapped from `Unknown` and from a ledger throw. Register it as the closed entry of slice 1's `SourceResolver` registry; both entries return `found{task, facts}`.
+- [ ] Add boundary probes: `recap-domain-pure` rejects a fold or intent module importing an adapter or the clock; `recap-write-transactions` rejects a bare `BEGIN` in the recorder; `recap-sqlite-readonly` covers the read-only opens used by `--list-closed` and `--print --from-closed`; `recap-layers-no-io` rejects an `fs` check in the resolver (the stored-directory check goes through slice 1's `WorksiteReader`).
+- [ ] Test the resolver with fake ports for every outcome, the fact filter at exactly two hours, `days = 0`, the expired-then-never-seen sequence after a prune, and the sweep with `TAB_RECAP_KEEP_DAYS=0`, per-tab failure, the logged counts, and a restart closure for a tab last seen 31 days ago.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 5. Handoff closed source
 
-- [ ] Parse `--from-closed`, `--tab`, `--closed-at` as an all-or-none tuple into `ClosedLaneIdentity` at the CLI edge (`bin/tab-recap.ts`, `node:util` `parseArgs`); usage error exit 2 for `--from` with `--from-closed` and for a partial tuple.
-- [ ] Write the `handoff` request row with `closed_at` in the CLI path; keep the daemon-running check and skip the herdr lookup for a closed source.
-- [ ] Route a closed source in the daemon handoff flow: resolver outcomes map to `found` (content builder with the resolver's facts), `refused` `source-unavailable`, or `failed` `source-unreadable`; feed the closed source's close instant and stored directory into slice 1's Freshness block and Workspace section.
-- [ ] Add `--list-closed --tab <tab-id>` (read-only store, newest first, one line per identity).
-- [ ] Add `--print` support for `--from-closed` through the read-only store.
-- [ ] Add the `failed.sourceUnreadable` message key to the English and Spanish catalogs with parity.
-- [ ] Test: tuple parsing and exit 2 cases; `source-equals-target` for a reused pane; `delivered`, `source-unavailable`, `source-unreadable`; the Freshness block saying `closed at` for a closed source and unchanged for a live one, the Workspace section from the stored directory and `workspace unavailable` when it is gone; `--list-closed` ordering and empty tab; `--print` read-only with zero writes.
+- [ ] Parse `--from-closed`, `--tab`, `--closed-at`, `--list-closed` at the CLI edge with `node:util` `parseArgs`: the tuple parses into `ClosedLaneIdentity` (`--closed-at` a non-negative integer); the usage matrix of the design returns exit 2 with no row written.
+- [ ] Write the `handoff` request row with `closed_at` and return a `HandoffSource` union from the repository; keep the daemon checks; skip the live-lane lookup for a closed source; do not apply `source-equals-target` to it.
+- [ ] Route a closed source in the daemon through slice 1's resolver registry (no `if` on `closed_at` in the flow): `found` feeds the content builder, `expired` and `never-seen` are `source-unavailable`, `unknown` is `failed{source-unreadable}`; take the target's claim only; feed the close instant into the Freshness block (`closed at`, ledger run at or before the close, newer prompts `unknown`) and the stored directory into the Worksite section, without edited files and token names.
+- [ ] Add `--list-closed --tab <tab-id>` (read-only store, newest first, tab-separated, sanitized through slice 1's shared function) and `--print --from-closed` through the read-only store.
+- [ ] Test: the tuple and usage matrix; a reused pane id that is also the target's pane is delivered; `delivered`, `source-unavailable`, `source-unreadable`; the Freshness and Worksite text for a closed source and its absence for a live one; the listing order, the sanitizing of a name with an escape sequence, and an empty tab; `--print` and `--list-closed` read-only with zero writes and on an older schema.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 6. Real-herdr proof
 
-- [ ] Before any reuse claim, establish whether herdr reuses pane identifiers: close a pane, create another in the same tab, and compare identifiers. Record the result and the herdr version. If herdr does not reuse them, verify the reuse scenarios with a fake wire and state that in the evidence.
-- [ ] On a real herdr session, observe a tracked lane close, then resolve its `(pane, tab, closed-at)` identity to the recorded task with `--from-closed`. Record evidence without secrets or transcript content.
+- [ ] Establish whether herdr reuses pane identifiers: close a pane, create another in the same tab, compare identifiers; record the result and the herdr version; if it does not reuse them, verify the reuse scenarios with a fake wire and say so.
+- [ ] On a real herdr session, observe a tracked lane close, list it with `--list-closed`, and hand it over with `--from-closed`; observe a restart closure. Record evidence without secrets or transcript content.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
 
 ## 7. Archive
 
-- [ ] After every implementation task is checked and the gates pass, run `openspec archive lane-handoff-retention` in the implementation merge request, after the lane-handoff change has been archived. The archive updates `session-chapters`, `state-store`, `state-migrations`, and `lane-handoff`. Do not archive this specification-only change.
+- [ ] After every implementation task is checked and the gates pass, run `openspec archive lane-handoff-retention` in the implementation merge request, after the lane-handoff change has been archived. Re-sync the restated slice-1 requirements with the archived text first. The archive updates `session-chapters`, `state-store`, `state-migrations`, `cli` and `lane-handoff`. Do not archive this specification-only change.
 - [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
