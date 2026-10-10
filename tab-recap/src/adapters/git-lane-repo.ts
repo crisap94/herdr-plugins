@@ -1,7 +1,7 @@
 import { duration } from '#src/recap/domain/time.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { webOf } from './remote-web.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner, RunResult } from './process.ts';
@@ -11,7 +11,7 @@ export const TIMEOUT_MS = 1500;
 const NOT_A_REPOSITORY = 128;
 const ENOENT = 127;
 
-const GIT = ['-c', 'core.fsmonitor=false'];
+export const GIT = ['-c', 'core.fsmonitor=false'];
 export const ROOT_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel'];
 export const BRANCH_ARGS: readonly string[] = [...GIT, 'symbolic-ref', '--short', '-q', 'HEAD'];
 
@@ -21,7 +21,7 @@ export function gitEnv(): NodeJS.ProcessEnv {
     return { ...scrubbedEnv(), GIT_OPTIONAL_LOCKS: '0' };
 }
 
-function failure(result: RunResult): RepoResult {
+export function failure(result: RunResult): Unknown {
     if (result.timedOut) {
         return unknown({ why: 'timeout', after: duration(TIMEOUT_MS) });
     }
