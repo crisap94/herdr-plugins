@@ -281,7 +281,7 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
 
     const store = memoryStore();
     const writer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: '{"ops":[]}', costUsd: 0 }) };
-    const job = new RecapJob({
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }),
         repos: NO_REPOS, transcripts: registryWith({}), records: store.records, ledger: store.ledger,
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,

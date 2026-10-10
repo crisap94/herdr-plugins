@@ -117,7 +117,7 @@ const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ?
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
-    const job = new RecapJob({ transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };

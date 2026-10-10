@@ -13,7 +13,7 @@ import { requestOf } from './support.ts';
 const ground: Ground = {
     gates: LEDGER_GATES, now: 1, facts: new Map(),
     resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], source: 'go', language: 'en', agents: [] }],
+    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: 'en', agents: [] }],
 };
 
 async function through(script: string): Promise<Extracted> {

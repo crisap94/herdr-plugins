@@ -36,8 +36,12 @@
      one ledger per task (task = the id of a task in current_tasks); an empty ledger means the task has no facts yet.
      first / last = when the fact was first and last seen (HH:MM in the tab's zone, or a date when older); why = the reason a
      decision or a close carries; ref = a reference the text is about; anchor = the quote from an earlier input that the fact was added with; agent = the agent whose work the fact is. -->
-<!ELEMENT ledger (fact*)>
+<!ELEMENT ledger (hidden*, fact*)>
 <!ATTLIST ledger task CDATA #IMPLIED>
+<!ELEMENT hidden EMPTY>
+<!ATTLIST hidden
+  section (goal|now|needs|done|decisions|next|links|rules) #REQUIRED
+  count   NMTOKEN #REQUIRED>
 <!ELEMENT fact (#PCDATA)>
 <!ATTLIST fact
   id      ID    #REQUIRED

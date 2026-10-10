@@ -30,6 +30,8 @@ import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
+import { FULL_WRITER_VIEW, KEEP_NEWEST_RANGE, NEXT_HOURS_RANGE, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
+import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view.ts';
 
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 export type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -61,6 +63,8 @@ export interface Config {
     readonly timeoutMs: number;
     readonly herdrEvents: HerdrEvents;
     readonly compactNote: CompactNote;
+    readonly writerView: WriterView;
+    readonly writerViewSettings: PrunedWriterView;
 }
 
 const defaults = configPathsFor(nodeHost().platform, homedir(), process.env);
@@ -99,6 +103,11 @@ export function parseEnv(text: string): ReadonlyMap<string, string> {
 function number(raw: string | undefined, fallback: number): number {
     const parsed = Number(raw);
     return raw !== undefined && Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function rangedInteger(raw: string | undefined, fallback: number, min: number, max: number): number {
+    const parsed = Number(raw);
+    return raw !== undefined && Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
 }
 
 export function localeOf(setting: string | undefined, env: Readonly<Record<string, string | undefined>>): Locale {
@@ -143,6 +152,10 @@ export function loadConfig(): Config {
     const file = readFile();
     const get = (key: string): string | undefined => given(key) ?? file.get(key);
     const glow = get('TAB_RECAP_GLOW');
+    const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
+    const keepNewest = rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max);
+    const nextHours = rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max);
+    const writerViewSettings = prunedWriterView(keepNewestOf(keepNewest), nextHoursOf(nextHours));
     const kinds = get('TAB_RECAP_AGENTS');
     const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');
@@ -186,5 +199,7 @@ export function loadConfig(): Config {
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
         herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
+        writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
+        writerViewSettings,
     };
 }

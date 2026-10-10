@@ -18,6 +18,7 @@ import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
 import type { RunEvent } from './ledger-reconcile.ts';
 import { marksOf } from './boundaries.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
 
@@ -31,6 +32,7 @@ export interface RecapJobDeps {
     language(): string;
     keepInput?(): boolean;
     pipeline?(): Pipeline;
+    writerView(): WriterView;
     enumerator?(): Enumerators | null;
     ran?(event: RunEvent): void;
     log(line: string): void;
@@ -164,7 +166,8 @@ export class RecapJob {
     private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
         const now = this.deps.clock.now();
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
-        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now) });
+        const writerView = this.deps.writerView();
+        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now), writerView });
         const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
         return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
     }

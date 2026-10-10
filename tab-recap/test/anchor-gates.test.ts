@@ -12,7 +12,7 @@ import { factOf } from './fakes/facts.ts';
 const INPUT = foldedOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed');
 const decision = factOf('decisions', 'Keep SQLite', { why: 'one file to back up' });
 const question = factOf('needs', 'Should guests keep their basket?');
-const context: GateContext = { now: 1, language: 'en', agents: [], shown: new Map([['f3', decision], ['f4', question]]), closedLately: [], source: INPUT };
+const context: GateContext = { now: 1, language: 'en', agents: [], shown: new Map([['f3', decision], ['f4', question]]), open: [decision, question], closedLately: [], source: INPUT };
 const add = (anchor: string | null | undefined): Operation => ({ op: 'add', section: 'done', text: 'Merged !256', why: null, ref: null, at: null, agent: null, ...(anchor === undefined ? {} : { anchor }) });
 const gates = [anchorGate, answeredGate];
 const update = (anchor?: string): Operation => ({ op: 'update', id: 'f3', text: 'Keep SQLite for 2.0', why: null, ...(anchor === undefined ? {} : { anchor }) });

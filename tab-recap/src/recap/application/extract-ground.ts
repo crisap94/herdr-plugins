@@ -20,6 +20,7 @@ export function groundOf(world: { readonly tab: string; readonly tasks: readonly
         },
         grounds: tasks.map((task) => ({
             key: task.id, tab, shown: built.numbering.shown.get(task.id) ?? new Map(),
+            open: world.ledger.openOf({ tab, key: task.id }),
             closedLately: world.ledger.recentlyClosed({ tab, key: task.id }, now - REPEAT_WINDOW_MS), source, language: world.language, agents,
         })),
     };

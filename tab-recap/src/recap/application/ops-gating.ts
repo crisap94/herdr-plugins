@@ -12,6 +12,7 @@ export interface TaskGround {
     readonly key: string;
     readonly tab: string;
     readonly shown: ReadonlyMap<string, Fact>;
+    readonly open: readonly Fact[];
     readonly closedLately: readonly Fact[];
     readonly source: string;
     readonly language: string;
@@ -30,7 +31,7 @@ const asFact = (op: Operation, shown: ReadonlyMap<string, Fact>): Operation => (
 const DRY = { id: 'dry-run' as RunId, language: 'en' };
 
 export function judge(gates: readonly Gate[], ops: readonly Operation[], ground: TaskGround, now: number): Judged {
-    const gated = gatekeeper(gates, ops, { now, shown: ground.shown, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents });
+    const gated = gatekeeper(gates, ops, { now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents });
     const resolved = gated.kept.map((op) => asFact(op, ground.shown));
     let made = 0;
     const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { tab: ground.tab, key: ground.key }, at: now, mint: () => `dry-${(made += 1)}` as FactId });
