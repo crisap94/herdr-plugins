@@ -127,7 +127,7 @@ A `--note` value SHALL be normalized with the same function the compaction note 
 
 ### Requirement: Handoff size is a byte budget with whole-fact pruning
 
-The delivered text SHALL be at most `HANDOFF_BUDGET_BYTES` (16 384) bytes of UTF-8, counting the whole message. The preamble, the reference line, the note, the Freshness block, the goal, the needs, the decisions and the rules SHALL always be rendered whole. The `done` group SHALL show its newest `HANDOFF_DONE_SHOWN` (15) facts, the `links` group its newest `HANDOFF_LINKS_SHOWN` (15), and the recently closed group its newest `HANDOFF_CLOSED_SHOWN` (15), newest by last-seen time. When the text still exceeds the budget, the oldest `now` and `next` facts SHALL be dropped whole, one at a time; if it still exceeds the budget, the oldest `done`, `links` and closed facts SHALL be dropped whole, one at a time by last-seen time. The intent sections SHALL never be dropped, and the process SHALL terminate. A fact SHALL NOT be cut midway. Every omission SHALL be counted: the ledger part SHALL end with a line `N facts omitted (done D, links L, closed C, now W, next X, withheld V)` whenever N is above zero, where V counts facts dropped by vetting, the line SHALL NOT name any forbidden word, and it SHALL count toward the budget. The Worksite section SHALL be capped at 2 048 bytes. When the always-whole parts and the capped Worksite section alone exceed the budget, the command SHALL return `too-large` and send no text. All limits SHALL be defined in one module under `recap/application/` that imports only from `recap/` and `ports/`; the recap wait SHALL be defined once and shared with the compaction flow.
+The delivered text SHALL be at most `HANDOFF_BUDGET_BYTES` (16 384) bytes of UTF-8, counting the whole message. The preamble, the reference line, the note, the Freshness block, the goal, the needs, the decisions and the rules SHALL always be rendered whole. The `done` group SHALL show its newest `HANDOFF_DONE_SHOWN` (15) facts, the `links` group its newest `HANDOFF_LINKS_SHOWN` (15), and the recently closed group its newest `HANDOFF_CLOSED_SHOWN` (15), newest by last-seen time. When the text still exceeds the budget, the oldest `now` and `next` facts SHALL be dropped whole, one at a time; if it still exceeds the budget, the oldest `done`, `links` and closed facts SHALL be dropped whole, one at a time by last-seen time. The goal, needs, decisions and rules SHALL never be dropped, and the process SHALL terminate. A fact SHALL NOT be cut midway. Every omission SHALL be counted: the ledger part SHALL end with a line `N facts omitted (done D, links L, closed C, now W, next X, withheld V)` whenever N is above zero, with N equal to D + L + C + W + X + V, where V counts facts dropped by vetting, the line SHALL NOT name any forbidden word, and it SHALL count toward the budget. The Worksite section SHALL be capped at 2 048 bytes. When the always-whole parts and the capped Worksite section alone exceed the budget, the command SHALL return `too-large` and send no text. All limits SHALL be defined in one module under `recap/application/` that imports only from `recap/` and `ports/`; the recap wait SHALL be defined once and shared with the compaction flow.
 
 #### Scenario: A long-lived lane
 
@@ -170,7 +170,7 @@ The delivered text SHALL be at most `HANDOFF_BUDGET_BYTES` (16 384) bytes of UTF
 
 ### Requirement: The handoff states how fresh the ledger is
 
-The text SHALL carry a Freshness block before the ledger with: the time and run cause of the ledger's last recap run; the source lane's current status; the newer user prompts; and the refresh result. The newer user prompts SHALL be counted by reading the lane's transcript from the recap's cursor through the lane's reader, and SHALL be shown as `none` when the read reports no growth, `at least N` when it found N user prompts, and `unknown` when the transcript cannot be read; `none` means no user prompt was found, and the count is a lower bound because the reader may skip the oldest part of an over-budget span. The refresh field SHALL be one of `not-requested`, `refreshed`, `failed` and `timed-out`. The daemon SHALL locate the transcript with the lane's current session; the CLI SHALL read the transcript the daemon last stored in the lane's cursor and SHALL NOT locate one. A lane that has never had a recap run SHALL be refused as `ledger-empty`. The source lane MAY be working; only the target is required to be idle.
+The text SHALL carry a Freshness block before the ledger with: the time of the ledger's last good run and how it came to run, in the words `after a turn`, `when the tab was focused`, `on request` or `imported` (the last good run is the one whose tasks and facts the handoff renders); the source lane's current status; the newer user prompts; and the refresh result. The newer user prompts SHALL be counted by reading the lane's transcript from the recap's cursor through the lane's reader, and SHALL be shown as `newer prompts: none` when no user prompt was found (including when the transcript grew with agent output only), `newer prompts: at least N` when it found N user prompts, and `newer prompts: unknown` when the transcript cannot be read; the count is a lower bound because the reader may skip the oldest part of an over-budget span. The refresh field SHALL be rendered literally as `refresh not requested`, `refreshed`, `refresh failed` or `refresh timed out`. The daemon SHALL locate the transcript with the lane's current session; the CLI SHALL read the transcript the daemon last stored in the lane's cursor and SHALL NOT locate one. A lane that has never had a recap run, when none was made by `--refresh`, SHALL be refused as `ledger-empty`; when the refresh produced the only run, the Freshness time and cause SHALL be that run's. The Freshness labels SHALL contain no forbidden word. The source lane MAY be working; only the target is required to be idle.
 
 #### Scenario: The lane has newer prompts than the ledger
 
@@ -377,7 +377,7 @@ The command SHALL require `--from <pane>`, a pane identifier; a label SHALL NOT 
 
 ### Requirement: Target is an explicitly selected idle lane
 
-The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared function: for a lane whose session is known, a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's session is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
+The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an existing registered agent lane with a handoff plan. `--from` and `--to` SHALL NOT name the same pane; that case SHALL be refused as `source-equals-target` before any other resolution. The target status SHALL be `idle` or `done`. The in-flight state SHALL be read by one shared function: for a lane whose locating key is known (the session identifier for Claude, the working directory for Codex and OpenCode), a transcript that does not exist yet (the locate answer is `not-found`) SHALL mean nothing is in flight, an unreadable transcript or an unsupported reader SHALL be refused as `in-flight`, and a live `awaiting` token SHALL be refused as `in-flight`. A transcript SHALL count as the target's own only when it is not also the located transcript of another lane of the board with the same kind and directory and the target's locating key is known; otherwise the in-flight check and the confirmation SHALL use the status and the `awaiting` token only. `working`, `blocked`, or unknown status SHALL be refused as `status-not-ready`. A pane the daemon has not discovered SHALL be refused as `not-a-lane`. The plugin SHALL NOT create, close, resize, move, swap, or focus a pane, and SHALL NOT queue a handoff for later delivery.
 
 #### Scenario: Handoff to a fresh operator-created lane
 
@@ -390,9 +390,9 @@ The command SHALL require `--to <pane>` for delivery and SHALL resolve it to an 
 - **THEN** the source's transcript SHALL NOT be read as the target's
 - **AND** readiness SHALL be decided by the status and the `awaiting` token only, and confirmation by the status only
 
-#### Scenario: The target's session is not known yet
+#### Scenario: The target's locating key is not known yet
 
-- **WHEN** the target's session identifier is not known to the daemon
+- **WHEN** the target's session identifier (Claude) or working directory (Codex, OpenCode) is not known to the daemon
 - **THEN** a missing transcript SHALL NOT mean nothing is in flight, and readiness SHALL be decided by the status and the `awaiting` token only
 
 #### Scenario: A done target
@@ -527,7 +527,7 @@ A non-print handoff SHALL run only in the daemon, from a `handoff` request row t
 
 ### Requirement: Delivery is confirmed by named readers
 
-The handoff plan SHALL declare its delivery mode (`prompt`), its confirmation evidence (`transcript`, `status`, or either), and no automatic retry. The sender SHALL read the target's latest prompt before sending as a baseline, and SHALL observe confirmation at most `HANDOFF_OBSERVATIONS` (20) times, `HANDOFF_OBSERVE_MS` (1 000) apart, re-locating the target's transcript and re-reading its session on every observation. Transcript evidence SHALL be `Transcripts.latestPrompt` read with a tail budget of `HANDOFF_PROMPT_TAIL_BYTES` (65 536): it matches when the latest prompt differs from the baseline AND the first 400 code points of the handoff, whitespace collapsed, are a prefix of the collapsed latest prompt. Status evidence SHALL be `Agents.status` reporting `working` at an observation; when the transcript is not the target's own (see the target requirement) only status evidence SHALL apply, and status-only confirmation SHALL be accepted as a known risk. Only confirmed delivery SHALL return `delivered`. A send error SHALL return `failed{transport}`; a read error while confirming SHALL return `failed{unconfirmed}`. A target reporting `blocked` when the prompt is sent SHALL return `refused{status-not-ready}`. A send that is not confirmed within the bound SHALL return `failed{unconfirmed}`. The sender SHALL NOT retry automatically.
+The handoff plan SHALL declare its delivery mode (`prompt`), its confirmation evidence (`transcript`, `status`, or either), and no automatic retry. The sender SHALL read the target's latest prompt before sending as a baseline, and SHALL observe confirmation at most `HANDOFF_OBSERVATIONS` (20) times, `HANDOFF_OBSERVE_MS` (1 000) apart, re-locating the target's transcript and re-reading its session on every observation. Transcript evidence SHALL be `Transcripts.latestPrompt` read with a tail budget of `HANDOFF_PROMPT_TAIL_BYTES` (65 536): it matches when the latest prompt differs from the baseline AND the first 400 code points of the handoff, whitespace collapsed, are a prefix of the collapsed latest prompt. Status evidence SHALL be `Agents.status` reporting `working` at an observation; when the transcript is not the target's own (see the target requirement) only status evidence SHALL apply, and status-only confirmation SHALL be accepted as a known risk. Only confirmed delivery SHALL return `delivered`. A send error SHALL return `failed{transport}`; a read error while confirming SHALL return `failed{unconfirmed}`, except that a session re-read that answers unknown or null SHALL keep the previous session for that observation and SHALL NOT be a failure. The `failed.unconfirmed` message SHALL say the handoff may have been delivered and that the pane should be checked before retrying. A target reporting `blocked` when the prompt is sent SHALL return `refused{status-not-ready}`. A send that is not confirmed within the bound SHALL return `failed{unconfirmed}`. The sender SHALL NOT retry automatically.
 
 #### Scenario: Delivery is confirmed by transcript
 
@@ -628,7 +628,7 @@ The daemon SHALL answer each taken handoff with exactly one closed outcome: `del
 
 ### Requirement: The handoff request runs once in the daemon
 
-The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note and whether `--refresh` was given, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row older than `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) when taken SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` without writing a row, and SHALL refuse `daemon-outdated` when the running daemon is older than the CLI. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
+The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note and whether `--refresh` was given, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or when the source pane's tab cannot be resolved. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL NOT be replayed after a daemon restart.
 
 #### Scenario: A handoff is queued and answered
 
@@ -648,7 +648,7 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 #### Scenario: The daemon is older than the CLI
 
-- **WHEN** the running daemon recorded an older code version than the CLI
+- **WHEN** the running daemon recorded a code version that differs from the CLI's, or either version is unknown
 - **THEN** the CLI SHALL write no row and report `refused{daemon-outdated}`
 
 #### Scenario: The daemon is not running
@@ -660,13 +660,13 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 #### Scenario: No answer and the request was not taken
 
 - **WHEN** no answer appears within the wait bound and the CLI's withdrawal removes its request row
-- **THEN** the outcome SHALL be `failed{not-answered}` with the withdrawn message
+- **THEN** the outcome SHALL be `failed{not-answered-withdrawn}` with the withdrawn message
 - **AND** nothing SHALL be typed
 
 #### Scenario: No answer and the request was taken
 
 - **WHEN** no answer appears within the wait bound, the withdrawal removes no row, and a second read finds no answer
-- **THEN** the outcome SHALL be `failed{not-answered}` with the may-still-deliver message
+- **THEN** the outcome SHALL be `failed{not-answered-taken}` with the may-still-deliver message
 - **AND** the CLI SHALL NOT state that nothing was typed
 
 #### Scenario: The answer lands between the last poll and the withdrawal
@@ -683,4 +683,4 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 - **WHEN** the daemon restarts after taking a handoff and before writing its answer
 - **THEN** the handoff SHALL NOT be replayed
-- **AND** the CLI SHALL report `failed{not-answered}`
+- **AND** the CLI SHALL report `failed{not-answered-taken}`
