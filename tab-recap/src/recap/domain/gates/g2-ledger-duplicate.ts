@@ -10,10 +10,13 @@ const HOUR = 3_600_000;
 
 function against(op: AddOp, at: number, ops: readonly Operation[], context: GateContext): Finding | null {
     const closing = new Set(ops.flatMap((each) => (each.op === 'close' ? [context.shown.get(each.id)?.id] : [])));
-    const open = [...context.shown.values()].filter((fact) => fact.state === 'open' && !closing.has(fact.id));
+    const open = (context.open ?? [...context.shown.values()]).filter((fact) => fact.state === 'open' && !closing.has(fact.id));
     const twin = open.find((fact) => jaccard(fact.text, op.text) >= OPEN_ALIKE);
     if (twin !== undefined) {
-        return { at, gate: 'G2', outcome: 'refuse', reason: `it repeats ${docIdOf(twin, context.shown) ?? 'an open fact'} ("${twin.text}"): update ${docIdOf(twin, context.shown) ?? 'it'} instead of adding it` };
+        const id = docIdOf(twin, context.shown);
+        return { at, gate: 'G2', outcome: 'refuse', reason: id === null
+            ? `it repeats a fact already recorded and hidden ("${twin.text}"): drop the add`
+            : `it repeats ${id} ("${twin.text}"): update ${id} instead of adding it` };
     }
     const shut = context.closedLately.find((fact) => !closing.has(fact.id) && jaccard(fact.text, op.text) >= CLOSED_ALIKE);
     if (shut !== undefined) {

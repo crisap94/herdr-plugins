@@ -6,6 +6,7 @@ export interface GateContext {
     readonly language: string;
     readonly agents: readonly string[];
     readonly shown: ReadonlyMap<string, Fact>;
+    readonly open?: readonly Fact[];
     readonly closedLately: readonly Fact[];
     readonly source: string;
 }

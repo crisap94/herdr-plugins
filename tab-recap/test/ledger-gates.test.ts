@@ -29,6 +29,16 @@ test('G2 refuses an add that repeats an open fact and names the one to update', 
     assert.match(correctionOf([add('Released tab-recap 1.10.0 through the pipeline today')], found.refused), /G2: add done "Released[^"]*" — it repeats f4 .*update f4 instead/);
 });
 
+test('G2 refuses a hidden open twin and quotes it without inventing an id', () => {
+    const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
+    const hiddenContext: GateContext = { ...context, shown: new Map(), open: [hidden] };
+    const operation = add('Released tab-recap 1.10.0 through the pipeline today');
+    const found = gatekeeper(gates, [operation], hiddenContext);
+    assert.equal(found.refused.length, 1);
+    assert.match(correctionOf([operation], found.refused), /already recorded and hidden \("Released tab-recap 1\.10\.0 through the pipeline"\): drop the add/);
+    assert.doesNotMatch(found.refused[0]?.reason ?? '', /f\d+/);
+});
+
 test('G2 against facts closed in the last day needs 0.8, and the fact itself is not named by an id', () => {
     const near = gatekeeper(gates, [add('Fixed the flaky lint job on main branch')], context);
     assert.equal(near.refused.length, 1);
@@ -49,4 +59,12 @@ test('G6 refuses an unknown id and G10 a close without a why; the rest of the an
     assert.deepEqual(found.refused.map((f) => [f.gate, f.at]), [['G6', 0], ['G10', 1]]);
     assert.deepEqual(found.kept, [ops[2]]);
     assert.match(correctionOf(ops, found.refused), /G6: close f99 — f99 is not in the ledger\nG10: close f5 — closing f5 needs a why/);
+});
+
+test('an operation cannot use the id of an open fact that the writer was not shown', () => {
+    const hidden = factOf('done', 'An open fact hidden by the view');
+    const hiddenContext: GateContext = { ...context, shown: new Map(), open: [hidden] };
+    const close: Operation = { op: 'close', id: 'f99', why: 'done' };
+    const found = gatekeeper(gates, [close], hiddenContext);
+    assert.deepEqual(found.refused.map((finding) => [finding.gate, finding.reason]), [['G6', 'f99 is not in the ledger']]);
 });

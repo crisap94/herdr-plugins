@@ -11,7 +11,6 @@ test('config.env: comments, blanks and quotes', () => {
     assert.equal(values.get('TAB_RECAP_MODEL'), 'gpt-5-mini');
     assert.equal(values.size, 2);
 });
-
 test('configGetter: the environment wins over config.env, and the file is re-read on every call', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
     const before = process.env['HERDR_PLUGIN_CONFIG_DIR'];

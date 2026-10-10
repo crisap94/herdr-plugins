@@ -16,6 +16,7 @@ export interface EvalOptions {
     readonly compareImported: string | null;
     readonly pipeline: Pipeline | null;
     readonly check: string | null;
+    readonly prune: boolean;
 }
 
 const SECTIONS: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules']);
@@ -24,7 +25,7 @@ export const isItemCheck = (check: string): boolean => /^I[1-7]$/u.test(check) |
 
 export type ParsedEval = { readonly kind: 'options'; readonly options: EvalOptions } | { readonly kind: 'usage'; readonly why: string };
 
-export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> [--check <I1…I7|S-section>] | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full]';
+export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> [--check <I1…I7|S-section>] | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full] [--prune]';
 
 export const DEFAULT_SAMPLE = 20;
 
@@ -42,7 +43,7 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
     try {
         return parseArgs({
             args: [...argv], allowPositionals: false, strict: true,
-            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' }, pipeline: { type: 'string' }, check: { type: 'string' } },
+            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' }, pipeline: { type: 'string' }, check: { type: 'string' }, prune: { type: 'boolean' } },
         }).values;
     } catch (error) {
         return error instanceof Error ? error.message : String(error);
@@ -66,6 +67,7 @@ const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOpt
         mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true,
         replay: textOf(values, 'replay') ?? null, kind: textOf(values, 'kind') ?? null, compareImported: textOf(values, 'compare-imported') ?? null,
         pipeline: PIPELINES.find((each) => each === textOf(values, 'pipeline')) ?? null, check: textOf(values, 'check') ?? null,
+        prune: values['prune'] === true,
     });
 
 function replayProblem(values: ReturnType<typeof parseArgs>['values']): string | null {
@@ -75,7 +77,7 @@ function replayProblem(values: ReturnType<typeof parseArgs>['values']): string |
         return `--pipeline takes ${PIPELINES.join(', ')}`;
     }
     if (values['replay'] === undefined) {
-        return values['kind'] === undefined && values['compare-imported'] === undefined && pipeline === undefined ? null : '--kind, --compare-imported and --pipeline go with --replay';
+        return values['kind'] === undefined && values['compare-imported'] === undefined && pipeline === undefined && values['prune'] === undefined ? null : '--kind, --compare-imported, --pipeline and --prune go with --replay';
     }
     return others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null;
 }

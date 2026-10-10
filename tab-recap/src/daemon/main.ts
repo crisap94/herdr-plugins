@@ -117,6 +117,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         language: (): string => loadConfig().recapLanguage,
         keepInput: (): boolean => loadConfig().keepInputDays > 0,
         pipeline: (): Pipeline => loadConfig().pipeline,
+        writerView: (): ReturnType<typeof loadConfig>['writerView'] => loadConfig().writerView,
         enumerator: (): Enumerators | null => backends.enumerator(),
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });

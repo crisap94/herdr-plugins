@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
+import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import { agentOf, requestOf } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 
@@ -85,6 +86,14 @@ dtdTest('DTD: broken documents fail — an agent the tab does not list, a task n
     assert.ok(!validate(good.replace('section="goal"', 'section="mood"')).valid, 'a section that does not exist');
     assert.ok(!validate(good.replace(/<ledger>[^]*?<\/ledger>/, '')).valid, 'no ledger');
     assert.ok(!validate(good.replace('role="user"', 'role="robot"')).valid, 'an unknown role');
+});
+
+dtdTest('DTD: hidden section counts validate and appear before the facts', () => {
+    const request = requestOf({ ledgers: [{ task: null, facts: [fact('f1', 'done', 'Recent fact')], hidden: new Map([['done', positiveCount(20)]]) }] });
+    const document = writerContext(request);
+    assert.ok(validate(document).valid);
+    assert.match(document, /<ledger>\s*<hidden section="done" count="20"\/>\s*<fact id="f1"/);
+    assert.ok(validate(writerContext(requestOf({ ledgers: [{ task: null, facts: [fact('f1', 'done', 'Recent fact')] }] }))).valid);
 });
 
 test('the tab states the time now (UTC) and the zone; turns carry HH:MM in that zone, with the date when it is not today', () => {
