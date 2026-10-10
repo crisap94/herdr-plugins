@@ -26,7 +26,7 @@ export const es: Messages = {
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
-        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
+        rows: { recapJob: 'Redactor del resumen', compactJob: 'Guion de compactar', judgeJob: 'Juez del resumen', curatorJob: 'Curador', locale: 'Interfaz', recapLanguage: 'Idioma del resumen', screenAgents: 'Leer pantalla', gitNote: 'Nota de git', compactTarget: 'Compactar', compactNote: 'Nota de compactar', compactHint: 'Aviso de compactar', contextWindow: 'Ventana de contexto', autocompact: 'Autocompactar', autocompactAt: 'Autocompactar desde', autocompactStyle: 'Estilo autocomp.', autocompactJob: 'Decisor de autocompactar', herdrEvents: 'Eventos de herdr' },
         loading: 'buscando agentes…',
         auto: (order) => `el primero que haya: ${order}`,
         custom: 'tu propio comando, TAB_RECAP_CUSTOM_CMD',
@@ -57,6 +57,8 @@ export const es: Messages = {
         autocompactChoices: { off: 'off — nunca decide', shadow: 'shadow — decide y registra, nunca compacta', on: 'on — compacta en un buen momento por encima del límite' },
         autocompactHint: 'compacta solo a un agente libre cuando su contexto está lleno y no hay nada a medias; empieza con shadow y mira `tab-recap autocompact`',
         autocompactAtHint: 'la parte del contexto desde la que se evalúa un agente libre: de 10 a 95',
+        autocompactStyleChoices: { gentle: 'gentle — espera a un momento más claro', balanced: 'balanced — los números de siempre', eager: 'eager — actúa antes; vuelve a mirar un agente libre cada 30 min' },
+        autocompactStyleHint: 'cuánto se adelanta: los números del veredicto, la comprobación del resumen, el techo, la espera y la revisión (claves avanzadas en config.example.env)',
         autocompactJobHint: 'responde unas preguntas de sí o no sobre los últimos turnos; una llamada corta, una fracción de centavo',
         deciderOff: 'off — autocompactar no consulta a nadie y solo decide por el techo',
         compactJobHint: 'escribe qué conserva el agente al compactar; vale la pena un esfuerzo alto, corre una vez por compactación',

@@ -20,6 +20,7 @@ import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { loadConfig } from './config.ts';
+import type { Config } from './config.ts';
 
 /** a lane's recap is given up on after this long (the decision goes on without) */
 const RECAP_WAIT_MS = 90_000;
@@ -46,6 +47,10 @@ async function awaitingNow(pane: string): Promise<Waiting> {
 }
 
 export function wireAutocompact(parts: {
+    /** the configuration, read on each consideration; the composition root's `loadConfig` by default */
+    readonly config?: () => Config;
+    /** the pane's `awaiting` tokens; herdr's by default */
+    readonly awaiting?: (pane: string) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: readonly Transcripts[];
     readonly contexts: LaneContexts;
@@ -59,8 +64,9 @@ export function wireAutocompact(parts: {
     log(line: string): void;
 }): Autocompact {
     const { store } = parts;
+    const read = parts.config ?? loadConfig;
     return new Autocompact({
-        policy: () => loadConfig().autocompact, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: (pane) => awaitingNow(pane), events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
+        policy: () => read().autocompact, tuning: () => read().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => inFlightOf(parts.transcripts, lane), awaiting: parts.awaiting ?? awaitingNow, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
         refresh: async (tab, lanes) => { await bounded(parts.recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS); },

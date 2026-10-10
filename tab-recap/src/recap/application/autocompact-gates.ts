@@ -43,6 +43,12 @@ export function unchangedOf(last: LastDecision | null, startedAt: number, tokens
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode;
 }
 
+/** The verdicts a re-check asks again: a `wait`, and an `undecided` (which acts as one). A compact decision is never re-asked. */
+const WAITING: ReadonlySet<string> = new Set(['wait', 'undecided']);
+
+/** The re-check: the lane's last decision was a wait and the style's interval has passed since it, so an unchanged lane is asked again. Never when `interval` is null. */
+export const recheckDue = (interval: number | null, last: LastDecision | null, now: number): boolean => interval !== null && last !== null && WAITING.has(last.verdict) && now - last.at >= interval;
+
 export interface DetailFacts {
     readonly now: number;
     readonly minimum: number;

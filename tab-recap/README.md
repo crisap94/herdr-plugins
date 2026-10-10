@@ -297,13 +297,42 @@ table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_
 **What it does.** When an agent becomes idle or done and its context is at least `TAB_RECAP_AUTOCOMPACT_AT` percent
 full (10 by default), autocompact decides in code whether anything stops it — a compaction already under way, work the
 agent started and has not finished (a background shell, a launched agent or monitor), the cooldown
-(`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, ten minutes) — and only then asks a **decider** six yes/no questions about the
+(`TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS`, ten minutes with the default style) — and only then asks a **decider** six yes/no questions about the
 last turns (does the reply close the request, does it announce more work, does it ask you to choose between options only
 it describes, would the next steps need exact output only the last turns hold, did the subject change, is it stuck).
-Every safe moment above the limit compacts; anything else waits and is asked again after the cooldown. At
-`TAB_RECAP_AUTOCOMPACT_CEILING` (80) the answer is yes without asking anyone. Before an automatic compaction types
+Every safe moment above the limit compacts; anything else waits and is asked again after the cooldown. At the ceiling
+(`TAB_RECAP_AUTOCOMPACT_CEILING`, 80 with the default style) the answer is yes without asking anyone. Before an automatic compaction types
 anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite, and
 a brief that still loses one is not typed.
+
+**Styles.** `TAB_RECAP_AUTOCOMPACT_STYLE` sets how eagerly autocompact acts. `balanced` (the default) is the numbers
+above; `gentle` waits for a clearer moment; `eager` acts sooner and asks an idle lane again. The settings modal's
+«Autocompact style» row writes it.
+
+| | `gentle` | `balanced` (default) | `eager` |
+| --- | --- | --- | --- |
+| verdict: warnings at most | 0.20 | 0.30 | 0.40 |
+| verdict: closes / changes subject at least | 0.80 | 0.70 | 0.60 |
+| undecided band | 0.30–0.70 | 0.35–0.65 | 0.45–0.55 |
+| brief check pass mark | 0.75 | 0.70 | 0.60 |
+| ceiling (when `TAB_RECAP_AUTOCOMPACT_CEILING` is unset) | 85 | 80 | 65 |
+| cooldown (when `TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS` is unset) | 20 min | 10 min | 5 min |
+| ask a `wait` (or `undecided`) lane again after it stays idle, even unchanged | never | never | after 30 min |
+
+The re-check asks an idle lane again after its last decision was a `wait` (or `undecided`) and its tokens have not
+changed. A `compact` decision is never re-asked. Every re-check is one decider call, in `shadow` too: an eager lane
+left idle for an hour is asked twice, and keeps being asked every 30 minutes for as long as it stays idle. That is
+the cost of `eager`; the default styles never re-check unless `TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` is set.
+
+An explicit key always wins over the style. Four advanced keys set the numbers themselves, each in its range, and an
+out-of-range or invalid value is the style's number: `TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST` (0.05–0.50),
+`TAB_RECAP_AUTOCOMPACT_CLOSES_AT_LEAST` (0.50–0.95), `TAB_RECAP_AUTOCOMPACT_COVERAGE_AT_LEAST` (0.30–0.95) and
+`TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS` (60000–86400000; the re-check interval, which any style may set). The two
+verdict keys must stay outside the undecided band: `SAFE_AT_MOST` below the band's start and `CLOSES_AT_LEAST` above its
+end. Otherwise the style's number is used, so no answer inside the band can be `compact`. The band itself follows the
+style. `tab-recap autocompact` prints the style and its numbers before the decisions. The settings modal cannot show
+an explicit `TAB_RECAP_AUTOCOMPACT_CEILING` or `_COOLDOWN_MS` in `config.env`, and such a line overrides the row's
+style: if the row seems to do nothing, check those two lines.
 
 **Shadow first.** `TAB_RECAP_AUTOCOMPACT` is `shadow` by default: every decision is recorded and logged, nothing is
 ever typed. Read what it would have done with `tab-recap autocompact` (the newest twenty decisions, with the last

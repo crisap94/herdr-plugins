@@ -1,6 +1,8 @@
 // `tab-recap autocompact`: the newest decisions as a table, read-only. Pure: decisions in, lines out.
 import { parseArgs } from 'node:util';
 import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
 
 export const AUTOCOMPACT_USAGE = 'USAGE: tab-recap autocompact [--all]';
@@ -35,6 +37,24 @@ const SKIPPED = ['time', 'tab', 'pane', 'share', 'gate', 'detail'] as const;
 const skippedRow = (found: Skip, zone: string): readonly string[] => [
     stamp(found.at, zone), found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—',
 ];
+
+/** A cooldown or a re-check interval: whole minutes, else seconds. */
+const everyOf = (ms: number): string => (ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`);
+
+/** The style in force and its numbers, the listing's first line: `style eager · warnings at most 0.40 · … · re-check 30 min`. */
+export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning): string {
+    const { verdict } = tuning;
+    return [
+        `style ${tuning.style}`,
+        `warnings at most ${verdict.safe.toFixed(2)}`,
+        `closes at least ${verdict.closes.toFixed(2)}`,
+        `undecided ${verdict.undecidedFrom.toFixed(2)}–${verdict.undecidedTo.toFixed(2)}`,
+        `pass mark ${tuning.coverageAtLeast.toFixed(2)}`,
+        `ceiling ${policy.ceiling} %`,
+        `cooldown ${everyOf(policy.cooldownMs)}`,
+        `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(tuning.recheckIdleMs)}`,
+    ].join(' · ');
+}
 
 /** The rows under their head, each column padded to its widest cell. */
 function table(head: readonly string[], rows: readonly (readonly string[])[]): readonly string[] {
