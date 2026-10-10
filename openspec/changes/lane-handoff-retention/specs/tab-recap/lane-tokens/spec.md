@@ -44,3 +44,8 @@ the current truth; an event says that something happened, and a subscriber that 
 - **WHEN** a lane leaves the board by any closure observation, including the first reconciliation after a restart and an
   agent-kind change in a surviving pane
 - **THEN** exactly one `lane-closed` event SHALL be written for it on the lane's workspace
+
+#### Scenario: Retention off still announces closures
+
+- **WHEN** `TAB_RECAP_CLOSED_LANE_DAYS` is `0` and a lane closes
+- **THEN** exactly one `lane-closed` event SHALL still be written, and no closure record SHALL be kept

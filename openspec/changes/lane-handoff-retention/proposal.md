@@ -4,7 +4,7 @@
 
 A lane leaves the board when its pane closes, when a reconciliation no longer finds it (including an agent that exits while its pane survives), when a different agent appears in its pane, or when a restart finds a persisted lane missing. Its task's facts stay in the ledger, but the store keeps no close time and no link from the closed lane to its task. The retention sweep judges a tab only by its last-seen clock, so it can remove a tab, and the facts of a lane that closed days earlier, while that lane is still recent.
 
-A typed closure record kept for 14 days lets the proposed handoff command continue a recently closed lane. A closed lane is identified by tab, pane and close instant, never by pane alone, because herdr can reuse a pane identifier.
+A typed closure record kept for 14 days lets the proposed handoff command continue a recently closed lane. A closed lane is identified by tab, pane and close instant, never by pane alone, because herdr may reuse a pane identifier (UNMEASURED: the real-herdr task in group 6 establishes it).
 
 Not every disappearance is a closure. A `/clear` or a new session in a surviving pane records nothing, and its ledger is reachable through the live path. A shell left in a pane after a crash records nothing while herdr still reports the pane as a lane. This change does not cover those cases.
 
@@ -28,7 +28,7 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 
 ## Impact
 
-The migration is forward-only and follows the handoff migration: it is migration 017 in the numbering table (015 is the token protocol's ask ledger, 016 the handoff migration). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
+The migration is forward-only and follows the handoff migration: it is migration 017, after the token protocol's ask ledger (015) and the handoff migration (016). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
 
 ## Out of scope
 
@@ -49,16 +49,15 @@ The spec-only MR carries `changelog::internal`. The implementation MR carries `c
 
 token-protocol → lane-handoff (slice 1) → lane-handoff-retention (this change) → lane-handoff-exchange (slice 3). Archiving this change before slice 1 creates `tab-recap/lane-handoff` with a placeholder Purpose and `openspec validate --specs --strict` then fails (checked in a scratch copy); archiving slice 1 first, then this change, passes.
 
-## Reconciliation (2026-10-10)
+## History (2026-10-10)
 
-This change was rebuilt against the factory reconciliation plan. What changed from the reviewed head d15911b:
+What changed from the reviewed head d15911b:
 
 - The migration is 017, not 016: the token protocol's ask ledger takes 015 and the handoff 016, in landing order.
 - One closure detector: the fold's `lane-closed` intent also drives the `lane-closed` event (lane-tokens modified), so the
   publisher's own diff no longer decides closures and the two can never disagree.
-- The restated handoff requirements follow the reconciled slice 1: a handoff interrupted by a restart is answered
-  `failed{interrupted}` from the token protocol's ask ledger, and the readiness hold is the settle time the target's agent
-  kind declares.
-- Two inconsistencies of the restated text are fixed: a closed source's task is the association stored with its closure
-  (not the live lanes of `readRecap`), and a closed source supplies its tab (the "tab cannot be resolved" refusal applies to a
-  live source only).
+- The restated handoff requirements follow slice 1: a handoff interrupted by a restart is answered `failed{interrupted}`
+  from the token protocol's ask ledger, the readiness hold is the settle time the target's agent kind declares, and a row
+  runs only within slice 1's deadline.
+- A closed source's task is the association stored with its closure, and a closed source supplies its tab.
+- `--tab` stays an option of `eval` as well; the listing form takes no source.

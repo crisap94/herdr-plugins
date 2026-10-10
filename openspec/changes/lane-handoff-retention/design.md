@@ -22,7 +22,7 @@ A lane is **on the board** when the fold holds it in `Board.lanes`. A closure is
 
 These do not close a lane. A `session` observation (a `/clear`, or a new agent session in the same pane) updates the session and emits nothing, because the pane and its lane remain. A shell that stays in a pane after the agent crashed is not closed while herdr still reports the pane as a lane. The retention window therefore covers lanes whose pane closed or whose agent left the board; it does not cover a crash that leaves the pane a live shell, and it does not cover `/clear`, whose ledger is still reachable through the live path.
 
-`closedAt` is the daemon clock instant at which the fold observes the closure, not the agent's exit time. The record claims only that the plugin first knew the lane was closed. One cost is accepted and stated: a snapshot taken while herdr is still detecting agents (after a reboot) lacks lanes that exist a moment later, so each persisted lane is recorded closed and then re-detected as a new incarnation with a new `since`; the earlier incarnation's record stays resolvable.
+`closedAt` is the daemon clock instant at which the fold observes the closure, not the agent's exit time. The record claims only that the plugin first knew the lane was closed. One cost is accepted and stated: a snapshot taken while herdr is still detecting agents (after a reboot) can lack lanes that exist a moment later (UNMEASURED: observed once, not timed; the real-herdr proof of group 6 records it), so each persisted lane is recorded closed and then re-detected as a new incarnation with a new `since`; the earlier incarnation's record stays resolvable.
 
 ### 2. The fold stays pure: one intent, one small module
 
@@ -103,7 +103,7 @@ A closure recorded at restart for a tab last seen long ago is protected by the s
 
 ### 10. Migration
 
-The migration is 017, assigned by the numbering table, after the token protocol's ask ledger (015) and the handoff migration (016) (it must run after them; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
+The migration is 017, after the token protocol's ask ledger (015) and the handoff migration (016) (it must run after them; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
 
 ```sql
 CREATE TABLE closed_lane (
@@ -175,18 +175,15 @@ The real-herdr proof establishes first whether herdr reuses pane identifiers, by
 - **`--list-closed` shape:** a flag on the handoff command with tab-separated output (default) or a separate command.
 - **Pre-migration lanes:** a lane persisted before the migration and closed after it is recorded with no association and resolves `never-seen` (default), or the first boot after the upgrade is skipped entirely.
 
-## Reconciliation with the factory plan (2026-10-10)
+## Decisions and history (2026-10-10)
 
-- Numbering: 015 token protocol ask ledger, 016 lane-handoff, 017 this change, in landing order.
-- Decision 7 of the plan: one closure detector (decision 2 above, "One closure detector"); `lane-tokens` is modified for it.
-- The restated slice-1 requirements follow the plan's decisions for slice 1: asks are kept in the token protocol's ask
-  ledger, so a handoff a restart interrupts is answered `failed{interrupted}` (aligned with compaction) instead of being left
-  unanswered; the readiness hold uses the settle time each agent kind declares (Claude 10 000 ms, from the measurement of
-  2026-10-10: input typed 0 to 3 s after an agent start was lost 6 of 6 times, taken at 4 to 5 s, worst case near 10 s, on a
-  loaded host with a small sample; Codex and OpenCode are UNMEASURED and use 10 000 ms until slice 1's real-herdr task
-  measures them).
-- The restated requirements were re-synced, by a three-way merge per requirement, onto the rebuilt slice-1 text (commit
-  8eb9d3b of `docs/lane-handoff-spec`): slice 1's wording governs, and each restated requirement differs from it only by
-  the closed-source additions. The archive task repeats that check against the archived slice-1 text.
-- Slice 1 keeps handoff work rows in `request` (kind `handoff`, migration 016), so `request.closed_at` stays the
-  closed-source column.
+- Migration 017 follows the token protocol's ask ledger (015) and the handoff migration (016), in landing order.
+- One closure detector (decision 2 above): the fold's `lane-closed` intent also drives the `lane-closed` event; `lane-tokens`
+  is modified for it.
+- The restated slice-1 requirements follow slice 1's text: asks are kept in the token protocol's ask ledger, so a handoff a
+  restart interrupts is answered `failed{interrupted}`; the readiness hold uses the settle time each agent kind declares
+  (Claude 10 000 ms, measured 2026-10-10 on a loaded host with a small sample; Codex and OpenCode UNMEASURED, 10 000 ms
+  until slice 1's real-herdr task); a row is run only within the deadline slice 1 states.
+- The restated requirements were re-synced onto slice 1's text: slice 1's wording governs, and each restated requirement
+  differs from it only by the closed-source additions. The archive task repeats that check against the archived text.
+- The 14-day default of `TAB_RECAP_CLOSED_LANE_DAYS` is DECIDED (the maintainer, 2026-10-10).

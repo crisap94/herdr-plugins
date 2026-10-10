@@ -295,7 +295,7 @@ After the ledger the text SHALL carry a Worksite section with the values that ca
 
 ### Requirement: The handoff request runs once in the daemon
 
-The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or, for a live source, when the source pane's tab cannot be resolved; a closed source supplies its tab. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken is at least `HANDOFF_ROW_MAX_AGE_MS` (`HANDOFF_WAIT_REFRESH_MS` plus 30 seconds) SHALL be answered `failed{expired}` without running the flow. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL be recorded as an ask before it runs; after a daemon restart every handoff ask with no answer SHALL be answered `failed{interrupted}` and SHALL NOT be replayed.
+The CLI SHALL write one `handoff` request row carrying the source pane, the tab that holds it, the target pane, the optional note, whether `--refresh` was given and, for a closed source, the close instant, and SHALL return the row's `HandoffId`. It SHALL NOT write a row when no daemon is running or, for a live source, when the source pane's tab cannot be resolved; a closed source supplies its tab. The daemon SHALL take each handoff row once, run the flow, and write one answer row keyed by `HandoffId`. A row whose age when taken exceeds `HANDOFF_TAKE_MAX_AGE_MS` (the deadline `HANDOFF_DEADLINE_MS`, 150 seconds, minus the longest flow `HANDOFF_FLOW_MAX_MS`, 120 seconds) SHALL be answered `failed{expired}` without running the flow, so nothing is typed after the deadline. Each taken row SHALL be recorded as an ask whose pane is the source pane and whose local record is the `HandoffId`, and writing the answer row SHALL settle that ask in the same transaction. The daemon SHALL take only `handoff` rows with this call, and the takers of other kinds SHALL NOT take them. The CLI SHALL poll the answer for at most `HANDOFF_WAIT_MS`, or `HANDOFF_WAIT_REFRESH_MS` when `--refresh` was given, reading it every `HANDOFF_POLL_MS` (500 ms). It SHALL refuse `source-equals-target` for a live source without writing a row, and SHALL refuse `daemon-outdated` when the code version the running daemon recorded in its pidfile differs from the CLI's, or when either version is unknown. On timeout the CLI SHALL withdraw its request by id and read the answer once more before choosing its message. A taken handoff SHALL be recorded as an ask before it runs; after a daemon restart every handoff ask with no answer SHALL be answered `failed{interrupted}` and SHALL NOT be replayed.
 
 #### Scenario: A handoff is queued and answered
 
@@ -343,8 +343,13 @@ The CLI SHALL write one `handoff` request row carrying the source pane, the tab 
 
 #### Scenario: A stale row is not delivered
 
-- **WHEN** the CLI was killed before withdrawing and the daemon takes the row after 180 seconds
+- **WHEN** the CLI was killed before withdrawing and the daemon takes the row 31 seconds after it was queued
 - **THEN** the daemon SHALL answer `failed{expired}` and type nothing
+
+#### Scenario: Nothing is typed after the deadline
+
+- **WHEN** a row is taken at the latest age that still runs and the flow takes its longest time
+- **THEN** the terminal answer SHALL be written at most `HANDOFF_DEADLINE_MS` after the row was queued
 
 #### Scenario: The daemon restarts after taking a request
 
