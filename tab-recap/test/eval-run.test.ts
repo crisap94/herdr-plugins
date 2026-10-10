@@ -1,4 +1,3 @@
-// `tab-recap eval` sampling: the newest runs with a stored input, the report, no judge, an unusable answer.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';

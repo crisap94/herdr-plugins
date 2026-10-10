@@ -1,4 +1,3 @@
-// The lane tokens: the pure decisions (what a lane carries, when it is written, what is cleared) and the publisher that applies them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -35,7 +34,6 @@ test('clearing names only the names tab-recap owns, each set to null', () => {
     assert.ok(OWNED_TOKENS.every((name) => name.startsWith('tab-recap-')), 'no name outside tab-recap-* is ever written or cleared');
 });
 
-/** A publisher over a fake herdr: `at` sets the clock and ticks; `flush` lets the writes it sent settle. */
 interface Run {
     readonly tokens: RecordingTokens;
     readonly logged: string[];
@@ -53,7 +51,6 @@ function publisher(board: { current: Board }, recap: { value: LaneFacts }, enabl
     return { tokens, logged, at: (ms: number): void => { now = ms; lane.tick(); }, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
 
-/** The report at `n`: the test wrote it, so it is there. */
 const reportAt = (reports: readonly Report[], n: number): Report => {
     const found = reports.at(n);
     assert.ok(found, `report ${n} exists`);

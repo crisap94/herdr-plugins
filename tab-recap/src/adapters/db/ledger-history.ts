@@ -1,12 +1,9 @@
-// What an agent's tasks have been through, from the ledger: every fact, open and closed, with its why and dates (queries only).
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { all, maybeText, maybeWhole, text, whole } from './rows.ts';
 
-/** The most facts handed back. */
 export const HISTORY_LIMIT = 300;
 
-/** What is cut last: open goal, decisions and questions; then those closed and the standing rules; then what is under way; finished and referring facts go first. */
 const KEEP_RANK = `CASE
   WHEN f.section IN ('goal','decisions','needs') AND f.state = 'open' THEN 0
   WHEN f.section IN ('goal','decisions','needs') OR (f.section = 'rules' AND f.state = 'open') THEN 1
@@ -22,7 +19,6 @@ export class LedgerHistory {
           ORDER BY ${KEEP_RANK}, f.last_at DESC, f.id LIMIT ${HISTORY_LIMIT}`);
     }
 
-    /** Newest last seen first, whatever was kept. */
     read(tab: string, pane: string): readonly HistoryFact[] {
         return all(this.facts, tab, pane).map((row): HistoryFact => ({
             section: text(row, 'section'), text: text(row, 'text'), why: maybeText(row, 'why'), state: text(row, 'state') === 'open' ? 'open' : 'closed',

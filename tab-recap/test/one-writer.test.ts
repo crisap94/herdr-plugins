@@ -1,5 +1,3 @@
-// The one-writer rule, over every writer at once: the lane publisher, the event stream, the request answers and the typing lease write only names
-// tab-recap owns; a name outside that list is refused at the adapter's edge.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';

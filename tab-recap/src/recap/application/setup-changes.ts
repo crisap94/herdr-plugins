@@ -1,5 +1,3 @@
-// What the modal writes: the lock table (row -> environment variables) and the config.env entries a draft changes.
-// A new setup row adds its lock keys and its entry here.
 import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
@@ -34,7 +32,6 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     herdrEvents: ['TAB_RECAP_HERDR_EVENTS'],
 };
 
-/** A row an environment variable overrides cannot be changed from the file; the row names the variable. */
 export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
     const locks: Partial<Record<FieldId, string>> = {};
     for (const row of FIELDS) {
@@ -48,11 +45,9 @@ export function locksOf(env: Readonly<Record<string, string | undefined>>): Lock
 
 type Entry = readonly [FieldId, string, string];
 
-/** A job's three entries. */
 const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: string }): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
 
 
-/** Every config.env entry a draft holds, by the row it belongs to (the recap writer's models, one per harness). */
 function entriesOf(draft: Draft): readonly Entry[] {
     return [
         ['harness', 'TAB_RECAP_BACKEND', draft.backend],
@@ -70,7 +65,6 @@ function entriesOf(draft: Draft): readonly Entry[] {
     ];
 }
 
-/** The config.env entries that differ from what is stored; a locked row is never written. */
 export function changes(state: Setup): ReadonlyMap<string, string> {
     const was = new Map(entriesOf(state.stored).map(([, key, value]) => [key, value]));
     return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [string, string][] => (now !== was.get(key) && state.locks[row] === undefined ? [[key, now]] : [])));

@@ -1,9 +1,7 @@
-// `eval --label`: which items the operator is asked about, how an answer line is read, and the verdicts it makes. Pure; the terminal is the CLI's.
 import type { RunInputs, StoredRun } from '#src/ports/run-inputs.ts';
 import type { Verdict } from '#src/ports/verdicts.ts';
 import { ITEM_CHECKS } from './judge-answer.ts';
 
-/** One item shown to the operator, with where it came from. */
 export interface Candidate {
     readonly run: StoredRun;
     readonly key: string;
@@ -11,7 +9,6 @@ export interface Candidate {
     readonly text: string;
 }
 
-/** The newest `count` items no operator verdict names yet (for `check`: none that answers that check, and only items the check applies to), from the newest runs first. `labelled` is `<run>|<item>` of the items already done. */
 export function candidatesOf(runs: readonly StoredRun[], inputs: Pick<RunInputs, 'itemsOf'>, labelled: ReadonlySet<string>, count: number, check: string | null = null): readonly Candidate[] {
     const found: Candidate[] = [];
     for (const run of runs) {
@@ -31,19 +28,12 @@ export type Answer =
     | { readonly kind: 'quit' }
     | { readonly kind: 'again'; readonly why: string };
 
-/** The checks an item is judged on: the seven item checks and its own section's. */
 export const checksFor = (section: string): readonly string[] => [...ITEM_CHECKS, `S-${section}`];
 
-/** A check as the operator typed it: `i3`, `S-done`, or just `done`. */
 const checkNamed = (part: string): string => (/^i\d$/u.test(part) ? part.toUpperCase() : `S-${part.replace(/^s-/u, '')}`);
 
 const WORDS: Readonly<Record<string, Answer>> = { ok: { kind: 'pass' }, skip: { kind: 'skip' }, s: { kind: 'skip' }, quit: { kind: 'quit' }, q: { kind: 'quit' } };
 
-/**
- * `ok` · `fail` (every check fails) · `fail I3 S-done` (those fail, the rest pass; a bare section name works) · `skip` · `quit`.
- * With `only` (a single check being labelled), `fail` is that check failing and naming another is asked again.
- * Whatever else is asked again, saying why.
- */
 export function answerOf(line: string, section: string, only: string | null = null): Answer {
     const [word = '', ...rest] = line.trim().toLowerCase().split(/[\s,]+/u).filter((part) => part !== '');
     const valid = only === null ? checksFor(section) : [only];
@@ -57,7 +47,6 @@ export function answerOf(line: string, section: string, only: string | null = nu
     return failedChecks(rest.map(checkNamed), valid);
 }
 
-/** The checks a `fail` names (all of `valid` when it names none), or why it is asked again. */
 function failedChecks(named: readonly string[], valid: readonly string[]): Answer {
     const wrong = named.find((check) => !valid.includes(check));
     return wrong === undefined ? { kind: 'fail', checks: named.length === 0 ? valid : named } : { kind: 'again', why: `${wrong} is not a check of this item (${valid.join(' ')})` };
@@ -65,7 +54,6 @@ function failedChecks(named: readonly string[], valid: readonly string[]): Answe
 
 const reasonOr = (reason: string): string => (reason === '' ? '(no reason given)' : reason);
 
-/** One operator verdict per check of the item: the named ones fail with the reason, the others pass. */
 export function labelVerdicts(candidate: Candidate, answer: Extract<Answer, { kind: 'pass' | 'fail' }>, reason: string, at: number, only: string | null = null): readonly Verdict[] {
     const failing = answer.kind === 'fail' ? answer.checks : [];
     return (only === null ? checksFor(candidate.section) : [only]).map((check): Verdict => ({

@@ -29,8 +29,6 @@ const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof 
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id, name, lanes, sections: sections(goal), markdown: `## Goal\n${goal}` });
 const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id, name, lanes });
 
-// ── the grouping ─────────────────────────────────────────────────────────────────────────────────
-
 const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane, place }));
 const PAY = '/work/pay';
 const DOCS = '/work/docs';
@@ -77,8 +75,6 @@ test('grouping: a key that has ever held a ledger is not given to another task, 
 test('grouping: a tab that had one unnamed task and gets a lane elsewhere names both tasks', () => {
     assert.deepEqual(keptGrouping([shape('t1', '', ['w1:p1'])], [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2')]), [shape('t1', 'pay', ['w1:p1']), shape('t2', 'docs', ['w1:p2'])]);
 });
-
-// ── the prompt and the job ───────────────────────────────────────────────────────────────────────
 
 test('the document lists the current tasks only when the tab has several lanes, and carries the hints and one ledger per task', () => {
     const one = requestOf({ entries: [{ role: 'user', text: 'x' }] });
@@ -158,8 +154,6 @@ test('the second run: the grouping is kept and goes back to the writer; an add n
     const recap = store.records.readRecap('w1:t1');
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
-
-// ── the column ───────────────────────────────────────────────────────────────────────────────────
 
 const lane = (pane: string, agent: string, status = 'idle'): TabLane => ({ pane, agent, status, title: null, cwd: null });
 const tab = (lanes: readonly TabLane[]): TabView => ({ tab: 'w1:t1', column: null, at: 0, lanes });

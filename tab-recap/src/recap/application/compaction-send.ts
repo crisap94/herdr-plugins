@@ -1,4 +1,3 @@
-// The part of a compaction that types into the agent and waits for it: the command, the confirmation from its records, the restore message.
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
@@ -12,15 +11,11 @@ import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
 import type { Trail } from './compaction-trail.ts';
 
-/** codex and opencode compact at once, with no turn herdr can see: their records are read this many times, a second apart, until they say. */
 const CONFIRM_READS = 20;
 const CONFIRM_MS = 1000;
-/** The restore message's answer is waited for this long; the compaction is finished after it anyway. */
 const RESTORING_MS = 2 * 60_000;
-/** After the restore message went in, the lane's own turn for it (herdr's working → done pushes) is waited for this long, so that it cannot count as the operator's next turn. */
 const RESTORE_SETTLE_MS = 15_000;
 
-/** What is sent: the material the template is built from, and the written brief when there is one. */
 export interface Text {
     readonly material: Material;
     readonly brief: string | null;
@@ -38,7 +33,6 @@ export class Sender {
         this.deps = deps;
     }
 
-    /** Typed into the pane under the typing lease, around the send only: held back while another tool's lease is live, and cleared once typed. Without herdr's tokens the line is typed anyway. */
     private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
         const typing = this.deps.typing;
         if (typing === undefined) {
@@ -57,7 +51,6 @@ export class Sender {
         }
     }
 
-    /** One go at the compaction command: typed, then confirmed on herdr's push from the agent's own records. */
     private async attempt(lane: Lane, command: () => Promise<Prompted>): Promise<Tried> {
         const since = this.deps.now();
         const sent = await this.typed(String(lane.pane), command);
@@ -67,7 +60,6 @@ export class Sender {
         return { sent, verdict: await this.confirmed(lane, since) };
     }
 
-    /** claude's compaction is a turn herdr pushes the end of; the others' happens on the spot, so their records are simply read until they say. */
     private async confirmed(lane: Lane, since: number): Promise<Verdict> {
         const deps: OutcomeDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms) };
         if (String(lane.agent) === 'claude') {
@@ -88,7 +80,6 @@ export class Sender {
         }
     }
 
-    /** Typing refused or failed: the record says why, once. */
     private async refused(lane: Lane, trail: Trail, sent: Exclude<Prompted, { kind: 'sent' }>): Promise<void> {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
@@ -96,7 +87,6 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.failed(String(lane.agent), why));
     }
 
-    /** claude takes `/compact ` and then its guidance, typed in two pieces; the others take their own `/compact`, typed too: sent as a prompt it is a message to them, not a command. */
     private commandOf(lane: Lane, text: Text): () => Promise<Prompted> {
         const pane = String(lane.pane);
         if (String(lane.agent) === 'claude') {
@@ -105,13 +95,11 @@ export class Sender {
         return () => this.deps.agents.typeLine(pane, ['/compact']);
     }
 
-    /** What the others are told once compacted: where things stand. Waited for, so that the record ends after the answer. */
     private async restore(lane: Lane, text: Text, trail: Trail): Promise<void> {
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const pane = String(lane.pane);
         const since = this.deps.now();
-        // the message is typed under the typing lease; the wait for the agent to answer is outside it
         const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(pane, since, RESTORING_MS);
@@ -119,7 +107,6 @@ export class Sender {
         }
     }
 
-    /** The record's end and the toast, with the numbers the agent's records gave (the time is the stage time when they did not). */
     private async conclude(lane: Lane, trail: Trail, ended: { readonly verdict: Verdict; readonly retried: boolean; readonly began: number }): Promise<void> {
         const { verdict, retried } = ended;
         const { compaction } = this.deps.messages();
@@ -129,7 +116,6 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }));
     }
 
-    /** The one place anything is typed into an agent: the compaction command (once more for claude when its own summarizer failed), then, for the others, the reminder. */
     async send(lane: Lane, text: Text, trail: Trail): Promise<void> {
         const claude = String(lane.agent) === 'claude';
         const command = this.commandOf(lane, text);

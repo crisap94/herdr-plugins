@@ -1,5 +1,3 @@
-// The part of running a program that does not depend on the OS: stdin, the timeout, the two-step kill, the pipes. What
-// does (how the program is spawned, how its tree is ended) arrives as a `Flavour`.
 import type { spawn } from 'node:child_process';
 import type { ProcessControl, RunOptions, RunResult } from '#src/ports/process-control.ts';
 
@@ -7,22 +5,15 @@ export type Spawner = typeof spawn;
 
 export interface Flavour {
     readonly spawner: Spawner;
-    /** POSIX: its own process group, so the tree can be signalled as one */
     readonly detached: boolean;
     readonly windowsHide: boolean;
     readonly killTree: ProcessControl['killTree'];
 }
 
-/** After the polite end, how long a program gets before its whole tree is killed for good. */
 export const KILL_AFTER_MS = 5000;
-/** After the program exits, how long a grandchild holding its pipes open may keep us waiting. */
 const EXIT_GRACE_MS = 1000;
 const KILLED = 137;
 
-/**
- * A timeout ends the tree politely, then for good after `killAfterMs`. The promise always resolves: a grandchild that
- * keeps stdout open can no longer hold it forever.
- */
 export function runIn(flavour: Flavour, command: string, args: readonly string[], options: RunOptions): Promise<RunResult> {
     return new Promise<RunResult>((resolve) => {
         const child = flavour.spawner(command, [...args], { cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'], detached: flavour.detached, windowsHide: flavour.windowsHide });

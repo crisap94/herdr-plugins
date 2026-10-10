@@ -1,4 +1,3 @@
-// The compaction popup: a pane process. It asks for an optional note and queues the request; the daemon does the rest.
 import { stateStore } from '#src/adapters/db/database.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
@@ -58,7 +57,6 @@ if (process.stdin.isTTY) {
 }
 draw();
 
-/** The popup's title names the agent it is for. */
 async function name(): Promise<void> {
     const found = await new HerdrFleet(stateDir()).agents().status(pane);
     agent = isUnknown(found) ? agent : found.agent;

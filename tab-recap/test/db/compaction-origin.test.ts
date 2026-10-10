@@ -1,4 +1,3 @@
-// A compaction another tool asked for is recorded with origin `request`, and read back so: the column and the session see it as their own kind.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { memoryStore } from './support.ts';

@@ -1,4 +1,3 @@
-// The six questions a recap must let a stranger answer, and the sections whose facts answer each. Pure.
 import type { Section } from './fact.ts';
 
 export interface ReadbackQuestion {
@@ -6,7 +5,6 @@ export interface ReadbackQuestion {
     readonly sections: readonly Section[];
 }
 
-/** In the order they are graded as `readback-1` … `readback-6`. */
 export const READBACK: readonly ReadbackQuestion[] = [
     { text: 'What is the goal?', sections: ['goal'] },
     { text: 'What has finished?', sections: ['done'] },

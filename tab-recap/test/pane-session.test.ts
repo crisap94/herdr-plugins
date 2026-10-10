@@ -1,5 +1,3 @@
-// `readPaneSession` asks herdr's `pane.get` for the pane's session, the one the transcripts are named by. Asked of a fake herdr socket, so the
-// reply's real shape is the one read: a wrong key would make it fall back to the lane's old session, which is the bug this reads around.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
@@ -9,7 +7,6 @@ import { join } from 'node:path';
 import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
-/** A herdr that answers each request with `reply(method)` and records the methods it was asked. */
 async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: string; calls: string[]; done: () => void }> {
     const dir = mkdtempSync(join(tmpdir(), 'pane-session-'));
     const path = join(dir, 'herdr.sock');
@@ -28,7 +25,6 @@ async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: st
     return { path, calls, done: (): void => { server.close(); rmSync(dir, { recursive: true }); } };
 }
 
-/** Runs `body` with herdr at `path` (the socket the transport reads), restoring the environment after. */
 async function withHerdr<T>(path: string, body: () => Promise<T>): Promise<T> {
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = path;

@@ -1,5 +1,3 @@
-// The one-time move from files to the database. Daemon-only (the schema may be created by any process; this is not a migration):
-// one transaction, every tab read back and compared with what the file reader says, files moved aside only after the commit.
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeTx } from '../connection.ts';
@@ -14,7 +12,6 @@ export interface ImportReport {
     readonly requests: number;
     readonly visibility: number;
     readonly hidden: boolean;
-    /** what the schema refused or the read-back did not match; any entry stops a real import */
     readonly differences: readonly string[];
 }
 
@@ -26,13 +23,11 @@ export type ImportOutcome =
 
 export interface ImportOptions {
     readonly now: () => number;
-    /** a test's way to stop between the inserts and the commit */
     readonly afterInsert?: () => void;
 }
 
 const FILES = ['recaps', 'tabs', 'requests', 'visibility', 'hidden.json'];
 
-/** Insert everything, then read it all back through the repositories and compare. Never commits: the caller decides. */
 export function loadAndCompare(store: Store, legacy: LegacyFiles, now: number): ImportReport {
     const writer = new RowsWriter(store.db);
     const recaps = legacy.recaps().map(canonicalRecap).filter(holdsAnything);
@@ -66,7 +61,6 @@ function moveAside(root: string, now: number): string {
 
 const importedAt = (store: Store): number | null => (store.db.prepare('SELECT files_imported_at AS at FROM store_meta WHERE id = 1').get() as { at: number | null } | undefined)?.at ?? null;
 
-/** Import once. A failure leaves the files where they are and the database as it was (the next start tries again). */
 export function importFiles(store: Store, legacy: LegacyFiles, options: ImportOptions): ImportOutcome {
     if (importedAt(store) !== null) {
         return { kind: 'already' };

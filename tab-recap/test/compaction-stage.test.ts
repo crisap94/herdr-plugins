@@ -13,7 +13,6 @@ import type { Messages } from '#src/i18n/messages.ts';
 const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, why: null, origin: 'operator' };
 const done = { finishedAt: 1, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 };
 
-/** [name, the record, how long after the stage began, why in each language (the flow stores it in the operator's)] */
 const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] = [
     ['briefing', { stage: 'briefing' }, 8000],
     ['compacting', { stage: 'compacting' }, 12_000],
@@ -38,7 +37,6 @@ const bar = (m: Messages, record: CompactionRecord, now: number): string[] => {
 
 const WHY = { en: 'working', es: 'trabajando' } as const;
 
-/** Golden: the lane's header (the status line, then the stage) at the column's width, and the bar's one row, for every stage. */
 const GOLDEN = {
     en: {
         column: [

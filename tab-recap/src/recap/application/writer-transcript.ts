@@ -1,10 +1,8 @@
-// One agent's new activity as a <transcript>: turns and bursts of tool use, newest kept when the budget is short.
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clipTurn } from './writer-clip.ts';
 import { localTime } from './local-time.ts';
 import { element, leaf } from './xml.ts';
 
-/** Calls listed per burst; the rest are counted in `more`. */
 const CALLS_SHOWN = 4;
 const INDENT = '  ';
 
@@ -19,7 +17,6 @@ interface Item {
     readonly at: number | undefined;
 }
 
-/** A call with no text (a shell command the agent described) is an empty element: the description says it all. */
 function callOf(call: Entry): string {
     const attrs = { kind: call.kind ?? 'other', what: call.what };
     return call.text === '' ? element('call', attrs) : leaf('call', attrs, call.text);
@@ -43,7 +40,6 @@ function turn(entry: Entry, clock: Clock): Item {
     return { markup: leaf('turn', attrs, kept.text), turn: true, at: entry.at };
 }
 
-/** Consecutive tool entries are one burst; everything else is a turn. */
 export function itemsOf(entries: readonly Entry[], clock: Clock): readonly Item[] {
     const items: Item[] = [];
     let tools: Entry[] = [];
@@ -60,7 +56,6 @@ export function itemsOf(entries: readonly Entry[], clock: Clock): readonly Item[
     return last === null ? items : [...items, last];
 }
 
-/** Where the newest items that fit `budget` characters start: whole items only, never a cut tag. */
 function firstThatFits(items: readonly Item[], budget: number): number {
     let used = 0;
     let from = items.length;
@@ -71,7 +66,6 @@ function firstThatFits(items: readonly Item[], budget: number): number {
     return from;
 }
 
-/** The newest items of `entries` that fit `budget`, as the attributes (`since`, `omitted`) and the markup a transcript-like element holds. */
 export function turnsOf(entries: readonly Entry[], clock: Clock, budget: number): { readonly attrs: Readonly<Record<string, string | number | null>>; readonly body: string } {
     const items = itemsOf(entries, clock);
     const from = firstThatFits(items, budget);

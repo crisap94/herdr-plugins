@@ -1,4 +1,3 @@
-// The judge against a scripted model and the real repositories: verdict rows, coverage, read-back, and every way an answer can be unusable.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { READBACK_QUESTIONS } from '#src/adapters/judge-instructions.ts';
@@ -17,7 +16,6 @@ const CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
 const KEYS = ['t1/goal/0', 't1/done/0', 't1/done/1', 't1/decisions/0', 't1/links/0'];
 const SECTION_OF: Readonly<Record<string, string>> = { 't1/goal/0': 'goal', 't1/done/0': 'done', 't1/done/1': 'done', 't1/decisions/0': 'decisions', 't1/links/0': 'links' };
 
-/** Every check passes, except I3 and S-done of "Spent the morning on it." */
 const SCORE = JSON.stringify({
     verdicts: KEYS.flatMap((item) => [...CHECKS, `S-${SECTION_OF[item] ?? ''}`].map((check) => {
         const failing = item === 't1/done/1' && (check === 'I3' || check === 'S-done');

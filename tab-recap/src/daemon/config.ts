@@ -1,5 +1,3 @@
-// KEY=VALUE lines in $HERDR_PLUGIN_CONFIG_DIR/config.env; real environment variables win.
-// Re-read on every use, so a backend switch applies to the next recap without a restart.
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -40,50 +38,31 @@ export interface Config {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
     readonly customCommand: string;
-    /** `TAB_RECAP_EFFORT`: how hard the writer thinks (`medium` unless set) */
     readonly effort: Effort;
-    /** `TAB_RECAP_PIPELINE`: the steps a run's new turns go through (`one` unless set) */
     readonly pipeline: Pipeline;
-    /** `TAB_RECAP_RECONCILE_EVERY`: the turns between two reconciliations of a tab's ledger by the curator (8 unless set) */
     readonly reconcileEvery: number;
     readonly locale: Locale;
-    /** `en`, `es` or sanitised free text: what new recaps are written in */
     readonly recapLanguage: string;
     readonly sizing: Sizing;
     readonly policy: Policy;
-    /** the kinds whose lanes are read from their screen, not a transcript: names, or `*` for all */
     readonly screenAgents: readonly string[];
-    /** `TAB_RECAP_COMPACT_TARGET`, `TAB_RECAP_COMPACT_HINT` (null = off) and `TAB_RECAP_CONTEXT_WINDOW` (null = found at runtime) */
     readonly compaction: { readonly target: CompactTarget; readonly hint: number | null; readonly window: number | null };
-    /** the compaction brief's job: `TAB_RECAP_COMPACT_BY`, `_MODEL`, `_EFFORT` */
     readonly brief: Job;
-    /** the judge's job: `TAB_RECAP_JUDGE_BY`, `_MODEL`, `_EFFORT` */
     readonly judge: Job;
-    /** `TAB_RECAP_KEEP_INPUT_DAYS`: how long a run's input document is kept for judging (14; 0 = not kept) */
     readonly keepInputDays: number;
-    /** the curator's job: `TAB_RECAP_CURATE_BY`, `_MODEL`, `_EFFORT` */
     readonly curator: Job;
-    /** autocompact: `TAB_RECAP_AUTOCOMPACT` (off · shadow · on), `_AT` (the minimum), `_CEILING`, `_COOLDOWN_MS`, `_KINDS` */
     readonly autocompact: AutocompactPolicy;
-    /** the style's numbers in force: `TAB_RECAP_AUTOCOMPACT_STYLE` and the advanced keys (`_SAFE_AT_MOST`, `_CLOSES_AT_LEAST`, `_COVERAGE_AT_LEAST`, `_RECHECK_IDLE_MS`) */
     readonly tuning: AutocompactTuning;
-    /** the decider's job: `TAB_RECAP_AUTOCOMPACT_BY` (also `jev`), `_MODEL`, `_EFFORT` */
     readonly decider: DeciderJob;
-    /** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: who checks the brief's coverage before an automatic compaction (`auto` by default) */
     readonly coverage: CoverageBy;
-    /** `TAB_RECAP_JEV_URL` and `TAB_RECAP_JEV_MODEL`; the key is never config the plugin shows (see `adapters/jev-key.ts`) */
     readonly jev: JevSettings;
-    /** `TAB_RECAP_KEEP_DAYS`: how long a closed tab's data is kept (30; 0 = for ever) */
     readonly keepDays: number;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
-    /** `TAB_RECAP_HERDR_EVENTS`: whether lanes are shared on herdr's event stream and compaction requests answered (`off` unless set) */
     readonly herdrEvents: HerdrEvents;
-    /** `TAB_RECAP_COMPACT_NOTE`: `ask` (the note popup first, the default) or `skip` (queue the compaction at once) */
     readonly compactNote: CompactNote;
 }
 
-/** where the plugin keeps things when herdr does not say: by the OS family (the composition root picks the adapter) */
 const defaults = configPathsFor(nodeHost().platform, homedir(), process.env);
 
 function given(key: string): string | undefined {
@@ -122,7 +101,6 @@ function number(raw: string | undefined, fallback: number): number {
     return raw !== undefined && Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-/** TAB_RECAP_LOCALE=auto|en|es; auto reads LC_ALL, else LC_MESSAGES, else LANG (the first one set), `es*` → es. */
 export function localeOf(setting: string | undefined, env: Readonly<Record<string, string | undefined>>): Locale {
     if (setting === 'en' || setting === 'es') {
         return setting;
@@ -139,11 +117,6 @@ export function backendOf(raw: string | undefined): BackendChoice {
     return BACKEND_IDS.find((id) => id === raw) ?? 'auto';
 }
 
-/**
- * Each backend keeps its own model, so switching back and forth never loses one:
- * TAB_RECAP_MODEL_<ID>, then the legacy TAB_RECAP_CLAUDE_MODEL / TAB_RECAP_CODEX_MODEL. The legacy
- * TAB_RECAP_MODEL belongs to the one backend that was chosen by name, never to `auto`.
- */
 export function modelsOf(get: (key: string) => string | undefined, choice: BackendChoice): Readonly<Record<BackendId, string>> {
     const legacy: Readonly<Partial<Record<BackendId, string>>> = { claude: get('TAB_RECAP_CLAUDE_MODEL') ?? '', codex: get('TAB_RECAP_CODEX_MODEL') ?? '' };
     const modelOf = (id: BackendId): string => {
@@ -157,7 +130,6 @@ function readFile(): ReadonlyMap<string, string> {
     try { return parseEnv(readFileSync(join(configDir(), 'config.env'), 'utf8')); } catch { return new Map(); }
 }
 
-/** Environment first, then config.env — re-read on every call, so edits apply without a restart. */
 export function configGetter(): (key: string) => string | undefined {
     return (key: string): string | undefined => given(key) ?? readFile().get(key);
 }

@@ -1,4 +1,3 @@
-// Pure text layout for a narrow column. No I/O.
 import { stripVTControlCharacters, styleText } from 'node:util';
 import type { AgoUnit } from '#src/i18n/messages.ts';
 import { CLOSE_LINK, LINK_SEQUENCE, linkAfter } from './hyperlink.ts';
@@ -11,7 +10,6 @@ const FLAG = /^\p{Regional_Indicator}{2}$/u;
 const MARKS_ONLY = /^\p{M}+$/u;
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-/** Cells one user-perceived character takes: emoji presentation (or a flag) 2, combining marks alone 0, else 1. */
 function cellsOf(character: string): number {
     if (MARKS_ONLY.test(character)) {
         return 0;
@@ -19,7 +17,6 @@ function cellsOf(character: string): number {
     return (EMOJI.test(character) && EMOJI_PRESENTATION.test(character)) || FLAG.test(character) ? 2 : 1;
 }
 
-/** Width as the terminal draws it: escapes take no cells, an emoji two, a combining mark none. */
 export function visibleLength(text: string): number {
     let cells = 0;
     for (const { segment } of graphemes.segment(stripVTControlCharacters(text))) {
@@ -28,7 +25,6 @@ export function visibleLength(text: string): number {
     return cells;
 }
 
-/** Splits `text` after the last whole character that fits in `room` cells; escapes ride along and take none. A link the cut goes through is closed on the head and reopened on the tail. */
 function cut(text: string, room: number): [string, string] {
     let cells = 0;
     let head = '';
@@ -51,7 +47,6 @@ function cut(text: string, room: number): [string, string] {
     return [head, ''];
 }
 
-/** Word-wraps plain text; a word longer than the width is cut between characters. `hang` indents continuation lines. */
 export function wrap(text: string, width: number, hang = ''): string[] {
     const room = Math.max(8, width);
     const lines: string[] = [];
@@ -84,15 +79,12 @@ export type Style = Readonly<Record<StyleName, (text: string) => string>>;
 
 const STYLE_NAMES: readonly StyleName[] = ['bold', 'dim', 'italic', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'gray'];
 
-/** Colours and styles; `validateStream: false` keeps rendering pure: the composition root decides whether to use them. */
 export const coloured: Style = Object.fromEntries(
     STYLE_NAMES.map((name) => [name, (text: string): string => styleText(name, text, { validateStream: false })]),
 ) as Style;
 
-/** The same keys with no escape sequences, for a terminal that asks for none. */
 export const plain: Style = Object.fromEntries(STYLE_NAMES.map((name) => [name, (text: string): string => text])) as Style;
 
-/** Draws a line of text with its references as hyperlinks; the backticks around a reference are gone. */
 export type Links = (text: string) => string;
 
 const unlinked: Links = (text) => text.replaceAll('`', '');
@@ -112,7 +104,6 @@ function markdownLine(raw: string, width: number, style: Style, links: Links): s
     return line === '' ? [''] : wrap(links(line.replaceAll('**', '')), width);
 }
 
-/** The renderer used when glow is not installed: headings, bullets, wrapped paragraphs. `links` draws a line's references (default: none, backticks dropped). */
 export function plainMarkdown(markdown: string, width: number, style: Style = coloured, links: Links = unlinked): string[] {
     const lines = markdown.split('\n').flatMap((raw) => markdownLine(raw, width, style, links)).filter((line, at, all) => line !== '' || all[at - 1] !== '');
     while (lines[0] === '') {
@@ -121,7 +112,6 @@ export function plainMarkdown(markdown: string, width: number, style: Style = co
     return lines;
 }
 
-/** How long ago, as an amount and a unit; the catalog says it in words. */
 export function elapsed(ms: number): { amount: number; unit: AgoUnit } {
     const s = Math.max(0, Math.round(ms / 1000));
     if (s < 60) {

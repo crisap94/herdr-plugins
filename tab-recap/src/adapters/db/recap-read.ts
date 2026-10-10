@@ -1,4 +1,3 @@
-// The current recap of a tab: the tasks of the last run that wrote one, each with its open facts drawn under the caps (queries only).
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
@@ -14,7 +13,6 @@ const cursorOf = (row: Row): LaneCursor => ({
     tail: maybeText(row, 'tail'), title: maybeText(row, 'title'), lastPrompt: maybeText(row, 'last_prompt'), claudeRecap: maybeText(row, 'claude_note'),
 });
 
-/** Rows grouped by their task; the TypeID text is the key, so two byte arrays of one id meet. */
 const groupBy = <T>(rows: readonly Row[], make: (row: Row) => T): Map<string, T[]> => {
     const groups = new Map<string, T[]>();
     for (const row of rows) {
@@ -36,7 +34,6 @@ export class RecapReader {
 
     constructor(db: DatabaseSync, ledger: LedgerRows) {
         this.ledger = ledger;
-        // a tab has a recap once anything was written for it: a lane's cursor, a run, a writer in flight, an error line
         this.current = db.prepare(`SELECT t.running, t.backend, t.error FROM tab t WHERE t.id = ? AND (t.running = 1 OR t.error IS NOT NULL OR t.backend IS NOT NULL
           OR EXISTS (SELECT 1 FROM transcript WHERE tab_id = t.id) OR EXISTS (SELECT 1 FROM chapter WHERE tab_id = t.id))`);
         this.good = db.prepare('SELECT r.id, r.at, r.language FROM run r JOIN last_good_run g ON g.run_id = r.id WHERE g.tab_id = ?');
@@ -60,7 +57,6 @@ export class RecapReader {
         });
     }
 
-    /** What the recap says about itself: the last good run's time and language, else the newest run's language. */
     private facts(tab: string): { readonly run: Uint8Array | null; readonly at: number | null; readonly language: string } {
         const good = one(this.good, tab);
         if (good !== null) {
@@ -70,7 +66,6 @@ export class RecapReader {
         return { run: null, at: null, language: newest === null ? 'en' : text(newest, 'language') };
     }
 
-    /** `null` when the tab has never had a recap; a row that is not what the schema promises throws (the repository guards it). */
     read(tab: string): TabRecap | null {
         const row = one(this.current, tab);
         if (row === null) {

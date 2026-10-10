@@ -1,5 +1,3 @@
-// How a run's new turns become operations: the pipeline. `one` is the single call of 2.0 (extract-job.ts); the others read the turns first
-// (enumerate), optionally take one second look (ask-back), then reconcile the candidates with the ledger in the writer's call.
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { gatesOf, retriesTargeted } from '#src/recap/domain/pipeline.ts';
@@ -11,7 +9,6 @@ import { extract } from './extract-job.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { reconcileRequest } from './reconcile.ts';
 
-/** The steps of each pipeline; the gates it judges with and how it retries are `gatesOf` and `retriesTargeted` (domain/pipeline.ts). */
 const STEPS: Readonly<Record<Pipeline, { readonly enumerate: boolean; readonly askBack: boolean }>> = {
     one: { enumerate: false, askBack: false },
     enumerate: { enumerate: true, askBack: false },
@@ -21,14 +18,12 @@ const STEPS: Readonly<Record<Pipeline, { readonly enumerate: boolean; readonly a
 
 export interface PipelineParts {
     readonly pipeline: Pipeline;
-    /** null: there is no harness to enumerate with, and the run takes the single call */
     readonly enumerator: Enumerators | null;
     log(line: string): void;
 }
 
 const costing = (done: Extracted, extra: number): Extracted => ({ ...done, cost: done.cost + extra });
 
-/** The run's operations, by the pipeline: what it cost includes every call it made. */
 export async function extractPiped(summarizer: Summarizer, request: RecapRequest, judging: Ground, parts: PipelineParts): Promise<Extracted> {
     const ground: Ground = parts.pipeline === 'one' ? judging : { ...judging, gates: gatesOf(parts.pipeline), targeted: retriesTargeted(parts.pipeline) };
     const lanes = request.input.transcripts.filter((lane) => lane.entries.length > 0);

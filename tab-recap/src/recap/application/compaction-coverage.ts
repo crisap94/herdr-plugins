@@ -1,9 +1,7 @@
-// An automatic compaction checks its brief before anything is typed: a first check, one rewrite naming what is missing, a second check.
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { correctionOf, factsOf } from './brief-coverage.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
 
-/** A brief as the flow carries it: the text (null: the template is used), why there is none, and the agent's own words. */
 export interface Briefed {
     readonly text: string | null;
     readonly why: string | null;
@@ -12,17 +10,13 @@ export interface Briefed {
 
 export interface Checked {
     readonly brief: Briefed;
-    /** the answers of the last check; null when none ran or the decider could not answer */
     readonly coverage: Readonly<Record<string, number>> | null;
-    /** the brief cannot go ahead (it misses a fact, or could not be checked): an automatic compaction does not type it */
     readonly waited: boolean;
-    /** why it waits, in words for the decision; null when it goes ahead */
     readonly why: string | null;
 }
 
 const waiting = (brief: Briefed, why: string, coverage: Readonly<Record<string, number>> | null = null): Checked => ({ brief, coverage, waited: true, why });
 
-/** `rewrite` writes the brief again with a correction. An automatic compaction fails closed: no decider, the template, or a decider that cannot answer all wait. */
 export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log'>, first: Briefed, history: readonly HistoryFact[], rewrite: (correction: string) => Promise<Briefed>): Promise<Checked> {
     const coverage = deps.coverage();
     if (coverage === null) return waiting(first, 'no decider is set up');

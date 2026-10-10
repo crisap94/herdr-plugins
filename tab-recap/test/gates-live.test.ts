@@ -1,4 +1,3 @@
-// Items shaped like the ones a real database holds (the words are made up), through every gate: what the gates must refuse, flag and let through.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { outcomesOf } from '#src/recap/domain/gates/index.ts';
@@ -6,7 +5,6 @@ import type { GatedSection, Item } from '#src/recap/domain/gates/index.ts';
 
 const CONTEXT = { language: 'en', agents: ['a1', 'a2', 'claude', 'codex'], earlier: [] as readonly Item[] };
 
-/** `refuse:G1` / `flag:G8` for each outcome, in order; empty for an item that passes. */
 const verdictOf = (section: GatedSection, text: string, earlier: readonly Item[] = []): string[] =>
     outcomesOf({ task: 't1', section, position: 0, text }, { ...CONTEXT, earlier }).map((outcome) => `${outcome.kind}:${outcome.gate}`);
 
@@ -21,7 +19,6 @@ const REFUSED: readonly (readonly [GatedSection, string, string])[] = [
     ['decisions', 'Bring PR #1 in as one merge request; close the old PR after it lands.', 'refuse:G3'],
 ];
 
-/** A description where a reference belongs is kept, drawn without a hyperlink, and counted. */
 const FLAGGED: readonly (readonly [GatedSection, string, string])[] = [
     ['links', 'New tab db-1 is unrelated.', 'flag:G4'],
     ['links', 'Herdr tab w17; claude agent review-sources.', 'flag:G4'],

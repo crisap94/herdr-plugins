@@ -1,6 +1,3 @@
-// The compaction side of herdr: ask an agent how it stands, type one prompt into it, open the note popup.
-// It names `agent.prompt`, `pane.send_text` and `pane.send_keys`: nothing else may (rule recap-prompt-boundary).
-// It receives the wire from HerdrFleet (the one module that imports the transport) and is the one module that names `agent.prompt`.
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
 import type { Done } from '#src/ports/columns.ts';
@@ -12,9 +9,7 @@ export type Wire = (method: string, params: Json, timeoutMs?: number) => Promise
 const COMPACT_ENTRYPOINT = 'compact';
 const POPUP_WIDTH = '90%';
 const POPUP_HEIGHT = '30%';
-/** a reply is awaited this much longer than the wait it asked herdr for */
 const WIRE_MARGIN_MS = 15_000;
-/** Between the typed text and Enter: an agent's slash-command popup needs a moment, or Enter is swallowed (measured on codex: 0 ms swallows it, 250 ms runs it). */
 const ENTER_AFTER_MS = 300;
 
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
@@ -50,7 +45,6 @@ export class HerdrAgents implements Agents {
             await this.wire('agent.prompt', params, (wait?.timeoutMs ?? 0) + WIRE_MARGIN_MS);
             return { kind: 'sent' };
         } catch (error) {
-            // `agent_prompt_stalled`: the text went in but no working state followed — a command the agent runs at once (codex's `/compact`) looks like that
             if (codeOf(error) === 'agent_prompt_stalled') {
                 return { kind: 'sent' };
             }
@@ -58,10 +52,6 @@ export class HerdrAgents implements Agents {
         }
     }
 
-    /**
-     * Type one line in pieces and press Enter, as the operator would (no paste): for an agent that takes `/compact <text>` and would
-     * treat a pasted block, or a long single send, as content. A piece with a line break is refused; Enter only follows when every piece went in.
-     */
     async typeLine(pane: string, pieces: readonly string[]): Promise<Prompted> {
         if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: 'a typed line has no line break' });

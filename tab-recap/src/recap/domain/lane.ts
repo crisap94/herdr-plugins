@@ -3,7 +3,6 @@ import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts'
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
 
-/** What an adapter saw of a lane, before it is trusted: plain strings. */
 export interface SeenLane {
     readonly paneId: string;
     readonly tabId: string;

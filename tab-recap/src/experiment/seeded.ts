@@ -1,6 +1,3 @@
-// A seeded random source and the draws an experiment makes with it, so a corpus can be rebuilt. Pure.
-
-/** mulberry32: a 32-bit seeded generator giving numbers in [0, 1). */
 export function seeded(seed: number): () => number {
     let state = seed >>> 0;
     return () => {
@@ -12,7 +9,6 @@ export function seeded(seed: number): () => number {
     };
 }
 
-/** A copy in a seeded random order (Fisher–Yates). */
 export function shuffled<T>(items: readonly T[], random: () => number): T[] {
     const out = [...items];
     for (let i = out.length - 1; i > 0; i -= 1) {

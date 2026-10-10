@@ -1,4 +1,3 @@
-// A live database with a tab of two chapters of 1.x recaps (item rows), for the tests of the fair comparison.
 import assert from 'node:assert/strict';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
@@ -6,7 +5,6 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 export const MIN = 60_000;
 export const T0 = Date.parse('2026-10-04T21:00:00Z');
 
-/** In each chapter a failed run after a good one (the good one is the chapter's 1.x recap), and in the second a run with no items. */
 export function liveDatabase(path: string): void {
     const opened = openDatabase(path);
     assert.equal(opened.kind, 'ready');

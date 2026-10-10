@@ -1,4 +1,3 @@
-// G12 answered: a close with the reason `answered` fits a question (a "needs" fact) and nothing else. A decision, a rule or a result is done, wrong or superseded.
 import type { Gate } from './gate.ts';
 
 export const answeredGate: Gate = {

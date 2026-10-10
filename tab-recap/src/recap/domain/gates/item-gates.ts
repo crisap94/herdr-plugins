@@ -1,15 +1,11 @@
-// The item gates (G1, G3, G4, G5, G8, G9) as a gate over operations: every `add` and `update` becomes the item it would put in the
-// recap, and each gate's outcome becomes a finding (an operation that is refused is counted once, by its first refusal, and its flags are not). The duplicate gate (G2) is not run: the ledger-aware G2 replaces it.
 import type { Fact } from '../fact.ts';
 import type { Operation } from '../ops.ts';
 import type { Finding, Gate, GateContext } from './gate.ts';
 import { GATES } from './index.ts';
 import type { Item } from './index.ts';
 
-/** A decision's text carries its why, as the item gates read a reason clause. */
 const withWhy = (section: Item['section'], text: string, why: string | null): string => (section === 'decisions' && why !== null ? `${text} — ${why}` : text);
 
-/** What an operation puts in the recap, or null when it puts nothing. */
 function itemOf(op: Operation, at: number, shown: ReadonlyMap<string, Fact>): Item | null {
     if (op.op === 'close') {
         return null;

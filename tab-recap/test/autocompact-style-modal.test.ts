@@ -1,5 +1,3 @@
-// The settings modal's «Autocompact style» row: it shows the style, writes TAB_RECAP_AUTOCOMPACT_STYLE when chosen, is never written while locked,
-// and an unknown value in the file is the balanced style.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
@@ -14,10 +12,8 @@ const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined
 const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
-/** The style a configuration file names, as the modal reads it. */
 const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle }).autocompactStyle;
 
-/** The keys pressed in order, the state after each. */
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);
 }

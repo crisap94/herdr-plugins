@@ -1,4 +1,3 @@
-// EXP-002 brief corpus: regenerate the compaction brief of 30 points with the plugin's own brief job, then label each fact against its brief.
 import { join } from 'node:path';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/brief-instructions.ts';
 import { CodexHarness } from '#src/adapters/codex-harness.ts';
@@ -19,12 +18,10 @@ const BRIEFS = 30;
 const MIN_FACTS = 5;
 const SEED = 42;
 
-/** 30 points of the high-share stratum with at least five facts to check, drawn with the seed. */
 export function briefPoints(points: readonly Point[]): readonly Point[] {
     return shuffled(points.filter((point) => point.stratum === 'high' && factsOf(point.history).length >= MIN_FACTS), seeded(SEED)).slice(0, BRIEFS);
 }
 
-/** The document the live flow gives the brief job for this point. */
 const documentOf = (point: Point): string => compactionInput({
     agent: { kind: 'claude', label: '', repo: null, branch: null }, note: null, current: sectionsOf(point.history), history: point.history, lastBreakAt: point.lastBreakAt,
     recent: point.recent, clock: { now: point.at, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },

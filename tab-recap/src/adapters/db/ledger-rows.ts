@@ -1,4 +1,3 @@
-// The `fact` rows: reading a task's facts, and writing what an answer changed. Row ⇄ Fact is here and nowhere else.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Applied } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
@@ -11,7 +10,6 @@ import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
 const SELECT = 'SELECT f.id, f.section, f.text, f.why, f.ref, f.agent, f.anchor, f.first_at, f.last_at, f.state, f.closed_why, f.closed_at, f.language FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ?1 AND k.key = ?2';
-/** A fact closed longer ago than this is not loaded to be folded: an operation on it reads as an unknown id. */
 const FOLD_WINDOW_MS = 24 * 3_600_000;
 
 function closedOf(value: string | null): ClosedWhy | null {
@@ -89,7 +87,6 @@ export class LedgerRows {
         }
     }
 
-    /** Fold `ops` into the task's facts and write what changed; the run row must exist. `sweepNow`: the writer's run, which also closes the `now` facts it did not carry forward. A throw (a CHECK, say) is the caller's rollback. */
     applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow = false): Applied {
         const before = all(this.foldable, at.task.tab, at.task.key, at.at - FOLD_WINDOW_MS).map((row) => this.factOf(row, at.task));
         const folded = apply(before, ops, at, sweepNow);

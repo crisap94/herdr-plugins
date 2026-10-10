@@ -1,4 +1,3 @@
-// What `tab-recap eval` prints. Pure: lines of text, styled by the Style the composition root chose (plain when the terminal wants none).
 import { KAPPA_BAR, trusted } from '#src/recap/application/eval-stats.ts';
 import type { Agreement, GateReport } from '#src/recap/application/eval-stats.ts';
 import { percent } from '#src/recap/application/eval-report.ts';
@@ -23,7 +22,6 @@ const short = (id: string): string => `${id.slice(0, 4)}…${id.slice(-6)}`;
 const row = (cells: readonly string[], widths: readonly number[]): string => cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd();
 
 const figure = (part: { readonly passed: number; readonly total: number }): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
-/** A state number with the same number over what the run added beside it. */
 const share = (label: string, part: { readonly passed: number; readonly total: number }, added: { readonly passed: number; readonly total: number }): string => `${label} ${figure(part)} [added ${figure(added)}]`;
 
 function runLine(line: RunLine, style: Style): string {
@@ -35,7 +33,6 @@ function runLine(line: RunLine, style: Style): string {
     return `${head}  ${share('coverage', line.coverage, line.added.coverage)} · ${share('no-filler', line.filler, line.added.filler)} · ${back}${line.note === null ? '' : style.yellow(` — ${line.note}`)}`;
 }
 
-/** The sampled runs added up: the state numbers are the ruler, the added numbers the second column. */
 export const totalsLines = (totals: Totals, style: Style): readonly string[] => [
     style.bold('all judged runs (state after each run; the facts each run added in brackets)'),
     `coverage ${figure(totals.coverage)} [added ${figure(totals.added.coverage)}]`,
@@ -43,7 +40,6 @@ export const totalsLines = (totals: Totals, style: Style): readonly string[] => 
     `read-back median ${totals.readback === null ? 'n/a' : `${totals.readback}/6`}`,
 ];
 
-/** The report of a sample: pass rates, failing items with their critique, then each run's coverage, no-filler and read-back. */
 export function reportLines(report: EvalReport, style: Style, missing: number): readonly string[] {
     const judged = report.runs.filter((line) => line.kind === 'judged').length;
     const table = report.rates.map((rate) => [rate.check, nameOf(rate.check), `${percent(rate.passed, rate.total)}%`, `${rate.passed}/${rate.total}`]);
@@ -71,7 +67,6 @@ export function reportLines(report: EvalReport, style: Style, missing: number): 
 
 const kappaText = (agreement: Agreement): string => (agreement.kappa === null ? 'kappa n/a' : `kappa ${agreement.kappa.toFixed(2)}`);
 
-/** Per check: how often the judge and the operator agree, Cohen's kappa against the trust bar, in which direction they differ, and the items they disagree on. */
 export function agreeLines(rows: readonly Agreement[], style: Style): readonly string[] {
     if (rows.length === 0) {
         return ['no item has both a judge and an operator verdict yet: run `tab-recap eval --label <n>` after `eval`'];
@@ -89,7 +84,6 @@ export function agreeLines(rows: readonly Agreement[], style: Style): readonly s
     return [style.bold("judge against operator (Cohen's kappa; a check under the bar is yellow)"), ...lines, ...worst];
 }
 
-/** The gates' counts over the runs that have them. */
 export function gateLines(report: GateReport, style: Style): readonly string[] {
     const table = report.rows.map((gate) => [gate.gate, `${gate.refused} refused`, `${gate.flagged} flagged`]);
     const widths = [0, 1, 2].map((column) => Math.max(...table.map((cells) => (cells[column] ?? '').length)));
@@ -100,7 +94,6 @@ export function gateLines(report: GateReport, style: Style): readonly string[] {
     ];
 }
 
-/** An item to label: where it stands, then what it says. */
 export const candidateLines = (candidate: Candidate, position: string, style: Style): readonly string[] => [
     '',
     style.dim(`${position}  ${candidate.run.tab}  ${when(candidate.run.at)}  ${candidate.key}`),

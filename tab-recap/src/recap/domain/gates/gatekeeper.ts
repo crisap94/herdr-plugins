@@ -1,4 +1,3 @@
-// Runs a list of gates over one task's operations: what is refused (with the gate's reason), what is only flagged, what is kept.
 import type { Operation } from '../ops.ts';
 import type { Finding, Gate, GateContext } from './gate.ts';
 import type { GateStats } from './item-gate.ts';
@@ -28,11 +27,9 @@ function count(findings: readonly Finding[], into: Readonly<Record<string, numbe
     return counted;
 }
 
-/** `before` plus what one pass refused (the refusals of every pass count; the flags are those of the last one); `dropped` is added when the retry leaves something refused. */
 export const addStats = (before: GateStats, found: Gated, dropped = 0): GateStats =>
     ({ refused: count(found.refused, before.refused), flagged: count(found.flagged, {}), dropped: before.dropped + dropped });
 
-/** The operation quoted for a correction. */
 export function quoted(op: Operation): string {
     if (op.op === 'add') {
         return `add ${op.section} "${op.text}"`;
@@ -40,7 +37,6 @@ export function quoted(op: Operation): string {
     return op.op === 'update' ? `update ${op.id} "${op.text}"` : `close ${op.id}`;
 }
 
-/** One line per refused operation: the gate, the operation, the reason. */
 export const correctionOf = (ops: readonly Operation[], refused: readonly Finding[]): string =>
     refused.map((finding) => {
         const op = ops[finding.at];

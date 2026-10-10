@@ -1,4 +1,3 @@
-// The composition of the curator: the daemon's store and job, handed to the one service that curates a tab's tasks.
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';

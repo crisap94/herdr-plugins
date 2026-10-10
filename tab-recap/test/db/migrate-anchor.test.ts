@@ -1,4 +1,3 @@
-// Migration 9: a fact keeps its anchor. From a version 8 database with facts in it, through the real migrations.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

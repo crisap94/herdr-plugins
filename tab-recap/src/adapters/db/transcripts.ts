@@ -1,4 +1,3 @@
-// The transcript rows of a tab: one per conversation read in one pane. A run moves the cursors; what is not in the run's lane list stays, detached.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Row } from './rows.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
@@ -10,7 +9,6 @@ export interface Moved {
     readonly pane: string;
     readonly from: number;
     readonly to: number;
-    /** the transcript this one stands in for: a new conversation in a pane that had another */
     readonly replaces: Uint8Array | null;
 }
 
@@ -35,7 +33,6 @@ export class TranscriptRows {
         this.placeholder = db.prepare("INSERT INTO transcript (id, tab_id, pane, agent, source, attached, cursor, first_seen) VALUES (?, ?, ?, 'unknown', '', 0, 0, ?) RETURNING id");
     }
 
-    /** Make `lanes` the tab's attached transcripts, in that order, with these cursors; every other transcript of the tab is detached. */
     attach(tab: string, lanes: readonly LaneCursor[], at: number): readonly Moved[] {
         this.detach.run(tab);
         return lanes.map((lane, position) => {
@@ -46,7 +43,6 @@ export class TranscriptRows {
         });
     }
 
-    /** The transcript a task's lane stands for: the pane's attached one, else its newest, else a detached placeholder (a lane that closed). */
     ofPane(tab: string, pane: string, at: number): Uint8Array {
         const found = one(this.ofPaneStatement, tab, pane);
         return blob(found ?? (this.placeholder.get(ids.next(), tab, pane, at) as Row), 'id');

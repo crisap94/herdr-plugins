@@ -1,5 +1,3 @@
-// G5 language: an item written in English where the recap is Spanish, or the other way round, is flagged and kept (refusing it deleted a fact for its wording).
-// Only en and es are told apart: another language is never flagged.
 import { LISTED, said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 import { wordsOf } from './words.ts';
@@ -11,7 +9,6 @@ const MINIMUM_WORDS = 4;
 
 const hits = (words: readonly string[], list: ReadonlySet<string>): number => words.filter((word) => list.has(word)).length;
 
-/** `en` or `es` when the line clearly is, null when it is too short, mixed or neither. */
 export function languageOfLine(text: string): 'en' | 'es' | null {
     const words = wordsOf(text).map((word) => word.toLowerCase());
     if (words.length < MINIMUM_WORDS) {

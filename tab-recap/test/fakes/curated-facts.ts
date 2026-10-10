@@ -1,4 +1,3 @@
-// The facts of one task the curator looks at: two near-duplicates, a done fact, a decision with its why, a closed fact.
 import { fact } from './fact-at.ts';
 
 export const NOW = Date.parse('2026-10-07T16:30:00Z');

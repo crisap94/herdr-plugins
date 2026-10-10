@@ -4,12 +4,10 @@ import type { Extension, ExtensionFactory, Note } from '#src/ports/extension.ts'
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { FACTORIES } from './index.ts';
 
-/** The registry by default; a caller (a test) may pass its own list. */
 export function loadExtensions(get: (key: string) => string | undefined, factories: readonly ExtensionFactory[] = FACTORIES): readonly Extension[] {
     return factories.flatMap((factory) => factory(get) ?? []);
 }
 
-/** Every extension's notes, merged per pane in factory order; a failing extension adds none. The lanes and locale are offered to those that want them. */
 export function notesOf(extensions: readonly Extension[], lanes?: readonly TabLane[], locale?: Locale): ReadonlyMap<string, readonly Note[]> {
     const merged = new Map<string, readonly Note[]>();
     for (const extension of extensions) {

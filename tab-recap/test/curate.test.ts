@@ -20,7 +20,6 @@ import { oneTask } from '#test/support.ts';
 
 const T1 = { tab: 'w1:t1', key: 't1' };
 
-/** One tab with one task whose ledger the curator will look at. */
 function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger } = {}): { curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
     const ledger = over.ledger ?? new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);

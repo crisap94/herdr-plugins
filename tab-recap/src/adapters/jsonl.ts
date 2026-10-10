@@ -1,5 +1,3 @@
-// Shared by the transcript adapters: read complete lines only — the agent is writing
-// the file while we read it, so the trailing line may be half there.
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
 
 import type { Position } from '#src/ports/transcripts.ts';
@@ -45,7 +43,6 @@ export function str(value: unknown): string | null {
 const clip = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 const BRIEF_KEYS = ['description', 'command', 'file_path', 'path', 'pattern', 'url', 'query', 'skill', 'prompt', 'cmd'];
 
-/** One short line describing a tool call — what was done, never the payload. */
 export function toolBrief(name: string, input: Row): string {
     for (const key of BRIEF_KEYS) {
         const value = str(input[key]);
@@ -56,18 +53,15 @@ export function toolBrief(name: string, input: Row): string {
     return name;
 }
 
-/** The complete lines in the last `budget` bytes of a file (its first line may be cut: it simply fails to parse). */
 export function tailLines(path: string, budget: number): readonly string[] {
     return tailOf(path, budget).lines;
 }
 
-/** The last `budget` bytes as complete lines, and whether the file is longer than that (so the lines are not all of it). */
 export function tailOf(path: string, budget: number): { readonly lines: readonly string[]; readonly truncated: boolean } {
     const size = statSync(path).size;
     return { lines: readLines(path, Math.max(0, size - budget), budget).lines, truncated: size > budget };
 }
 
-/** What a JSONL source gives back: the complete lines after the cursor (never reaching back further than the budget) and the new cursor. */
 export function readJsonl(path: string, was: Position, budget: number): { readonly lines: readonly string[]; readonly position: Position; readonly grew: boolean } {
     const size = statSync(path).size;
     const { lines, end } = readLines(path, Math.max(was.cursor, size - budget, 0), budget);

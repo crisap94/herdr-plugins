@@ -1,4 +1,3 @@
-/** The recap's seven sections: the id is what the code means, `en`/`es` are what the heading says, `hint` is for the model. */
 export interface Section {
     readonly id: SectionId;
     readonly en: string;
@@ -8,7 +7,6 @@ export interface Section {
 
 export type SectionId = 'goal' | 'now' | 'needs' | 'done' | 'decisions' | 'next' | 'links';
 
-/** Always all seven, always in this order. */
 export const SECTIONS: readonly Section[] = [
     { id: 'goal', en: 'Goal', es: 'Objetivo', hint: 'what the operator wants, in one short sentence' },
     { id: 'now', en: 'Now', es: 'Ahora', hint: 'what the agents are doing right now' },
@@ -19,7 +17,6 @@ export const SECTIONS: readonly Section[] = [
     { id: 'links', en: 'Links', es: 'Enlaces', hint: 'files, branches, merge requests, commands, hosts worth keeping' },
 ];
 
-/** Headings of recaps written before the fixed structure; still recognised until such a recap is rewritten. */
 const LEGACY: Readonly<Record<string, SectionId>> = {
     'waiting on you': 'needs',
     'esperando tu respuesta': 'needs',
@@ -28,7 +25,6 @@ const LEGACY: Readonly<Record<string, SectionId>> = {
     'próximos pasos': 'next',
 };
 
-/** The section a Markdown heading names, in any language the plugin writes headings in. */
 export function sectionOf(heading: string): SectionId | null {
     const text = heading.replace(/^#+\s*/, '').trim().toLowerCase();
     const legacy = Object.entries(LEGACY).find(([name]) => text.startsWith(name));

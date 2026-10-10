@@ -12,7 +12,6 @@ const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeo
 const hasScript = ((): boolean => { try { execFileSync('sh', ['-c', 'command -v script'], { stdio: 'ignore' }); return true; } catch { return false; } })();
 const ESC = String.fromCodePoint(0x1b);
 
-/** The modal in a real pty: it draws the expanded view of the store, and `r`, `j`/`k`, `q` and Esc keep their meaning. */
 test('the modal draws the expanded view; r asks for a recap, q and Esc close it', { skip: hasScript ? false : 'the `script` command (a pty) is not installed' }, async (t) => {
     if (process.platform === 'darwin') {
         t.skip('BSD script gives the column no tty when stdin is a pipe; covered on Linux');
@@ -53,7 +52,7 @@ test('the modal draws the expanded view; r asks for a recap, q and Esc close it'
         const first = open();
         assert.ok(await until(() => first.output().includes('SESSION')), 'the session facts are drawn at once');
         const drawn = stripVTControlCharacters(first.output());
-        assert.match(drawn, /started (\d{4}-\d\d-\d\d )?\d\d:\d\d · 1 h( \d+ min)?/u); // the date shows when the hour before now was yesterday
+        assert.match(drawn, /started (\d{4}-\d\d-\d\d )?\d\d:\d\d · 1 h( \d+ min)?/u);
         assert.match(drawn, /turns 1 \(turn 1\)/u);
         assert.match(drawn, /repo shop · branch main/u);
         first.send('r');

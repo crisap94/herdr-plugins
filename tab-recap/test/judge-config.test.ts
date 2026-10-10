@@ -1,4 +1,3 @@
-// The judge's job and the input retention, read from the configuration: defaults, inheritance from the recap writer, overrides.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { JUDGE_DEFAULT, judgeJobOf, KEEP_INPUT_DAYS, keepDaysOf, placementOf } from '#src/recap/domain/job.ts';

@@ -1,4 +1,3 @@
-// What other tools put on a lane's pane, and what tab-recap puts on herdr's stream: the pure rules the daemon and the column apply.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { awaitingOf, notesOf } from '#src/recap/domain/coordination.ts';

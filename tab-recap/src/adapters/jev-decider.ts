@@ -1,20 +1,15 @@
-// The decider that asks TypeSafe's System One (Jev): one POST, one probability per question. The key never leaves `post`.
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { obj } from './jsonl.ts';
 
-/** The most a call may take. */
 export const JEV_TIMEOUT_MS = 10_000;
-/** Dollars per input token (output is free). */
 const USD_PER_INPUT_TOKEN = 0.042 / 1e6;
 
 export interface JevOptions {
     readonly url: string;
     readonly model: string;
-    /** read at call time: null when there is no key */
     readonly key: () => string | null;
-    /** the global `fetch` unless a test gives one */
     readonly fetch?: typeof fetch;
     readonly now?: () => number;
 }
@@ -40,7 +35,6 @@ export class JevDecider implements Decider {
         return answered(sent.body, Object.keys(questions), { model: this.options.model, tookMs: now() - began });
     }
 
-    /** The only place the key is used. Whatever goes wrong is told without it. */
     private async post(key: string, body: string): Promise<{ kind: 'body'; body: unknown } | ReturnType<typeof unknown>> {
         let response: Response;
         try {
@@ -59,14 +53,12 @@ export class JevDecider implements Decider {
     }
 }
 
-/** What a refusal means, in words the log can carry. */
 function failure(status: number): string {
     if (status === 401 || status === 403) return 'refused: the key was not accepted';
     if (status === 429 || status === 529) return 'busy: try again later';
     return `HTTP ${status}`;
 }
 
-/** The probabilities of a reply: `answers[id].noul` for every question asked, each in [0, 1]. */
 function answered(body: unknown, ids: readonly string[], meta: { model: string; tookMs: number }): DecidedResult {
     const [reply, answers] = [obj(body), {} as Record<string, number>];
     for (const id of ids) {

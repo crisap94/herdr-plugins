@@ -1,4 +1,3 @@
-// ConfigPaths on Windows: roaming settings under %APPDATA%, machine-local state under %LOCALAPPDATA%.
 import { join } from 'node:path';
 import type { ConfigPaths } from '#src/ports/config-paths.ts';
 

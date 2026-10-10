@@ -11,7 +11,6 @@ const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
 
 const done = (stdout: string, timedOut = false): ReturnType<Runner> => Promise.resolve({ code: timedOut ? 143 : 0, stdout, stderr: '', timedOut });
 
-/** A scripted opencode: the run is killed by the timeout before it prints a session id, and the session shows up in the list later. */
 function scripted(listings: readonly (readonly string[])[]): { runner: Runner; calls: string[] } {
     const calls: string[] = [];
     let title = '';

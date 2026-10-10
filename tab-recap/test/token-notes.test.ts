@@ -1,4 +1,3 @@
-// The notes other tools write on a lane's pane: read through a cache, labelled by tool, nothing for tab-recap's own tokens, refreshed after the TTL.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TokenNotes, TTL_MS } from '#src/extensions/token-notes.ts';
@@ -48,7 +47,6 @@ test('a lane whose read failed keeps what it had, and is read again once its bac
     const kept = notes.notes([lane('w1:p1')]);
     assert.ok(kept.kind === 'notes');
     assert.equal(kept.byPane.get('w1:p1')?.[0]?.details[0], 'kept');
-    // the failed read backs off: the render that follows waits, and herdr is not asked on every render while it is unreachable
     assert.deepEqual(reads, ['w1:p1', 'w1:p1']);
 });
 

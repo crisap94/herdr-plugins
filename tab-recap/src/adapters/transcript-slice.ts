@@ -1,7 +1,5 @@
-// A transcript cut at a byte position: the complete lines just before it, or just after it. Read-only; for experiments.
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
 
-/** The complete lines of `[end - budget, end)`; the first may be cut (it simply fails to parse). */
 export function linesBefore(path: string, end: number, budget: number): readonly string[] {
     const from = Math.max(0, end - budget);
     const fd = openSync(path, 'r');
@@ -15,7 +13,6 @@ export function linesBefore(path: string, end: number, budget: number): readonly
     }
 }
 
-/** The complete lines of `[start, start + budget)`, up to the last newline in it. */
 export function linesAfter(path: string, start: number, budget: number): readonly string[] {
     const size = statSync(path).size;
     if (start >= size) return [];

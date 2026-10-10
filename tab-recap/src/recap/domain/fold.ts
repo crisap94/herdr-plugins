@@ -19,7 +19,6 @@ export interface SeenColumn {
 
 export interface Reconciliation {
     readonly focusedTab?: string | null;
-    /** when the snapshot was REQUESTED (ms): one asked for before a column was opened cannot show it */
     readonly at?: number;
     readonly lanes: readonly SeenLane[];
     readonly panes: readonly string[];
@@ -31,7 +30,6 @@ export type Observation =
     | { readonly kind: 'detected'; readonly lane: SeenLane }
     | { readonly kind: 'closed'; readonly pane: PaneId }
     | { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
-    /** herdr reports the pane's agent session (a `pane.updated` frame): the lane follows it, a new agent's or a resumed one's */
     | { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
     | { readonly kind: 'reconciled'; readonly seen: Reconciliation }
     | { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
@@ -39,9 +37,7 @@ export type Observation =
     | { readonly kind: 'focused'; readonly tab: TabId }
     | { readonly kind: 'requested'; readonly tab: TabId }
     | { readonly kind: 'switched'; readonly enabled: boolean }
-    /** the operator hid or showed a column (or all of them) */
     | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
-    /** what was saved before the daemon started */
     | { readonly kind: 'hidden-restored'; readonly state: HiddenState };
 
 export interface Outcome {
@@ -60,7 +56,6 @@ const step = (board: Board, intents: readonly Intent[] = [], changed = false): S
 
 const wanted = (seen: SeenLane, policy: Policy): boolean => wantsKind(policy, seen.agent);
 
-/** One recap intent per tab, carrying every lane of that tab. */
 function recapsOf(board: Board, tabs: readonly TabId[], cause: RecapCause): readonly Intent[] {
     return [...new Set(tabs)]
         .map((tab) => ({ tab, lanes: lanesOf(board, tab) }))
@@ -68,7 +63,6 @@ function recapsOf(board: Board, tabs: readonly TabId[], cause: RecapCause): read
         .map(({ tab, lanes }) => ({ kind: 'recap', tab, lanes, cause }));
 }
 
-/** An agent appeared in a pane the board held as a column: it is a lane now, and no column. */
 function withoutColumnAt(board: Board, pane: string): Board {
     const columns = new Map([...board.columns].filter(([, placed]) => String(placed.pane) !== pane));
     return columns.size === board.columns.size ? board : { ...board, columns };
@@ -102,15 +96,10 @@ function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Ste
     return step(spent, intents);
 }
 
-/**
- * A detection frame or a snapshot may carry no session (herdr reports it on the pane's frames): the lane keeps the one it held, but only for the same
- * agent. When the pane's agent changed, the held session is the old agent's, and the new one has not been named yet, so the lane holds none.
- */
 function keepingSession(lane: Lane, held: Lane | undefined): Lane {
     return lane.session === null && held?.session && held.agent === lane.agent ? { ...lane, session: held.session } : lane;
 }
 
-/** herdr's session for a lane, as it reports it now: the board's lane follows, and nothing else changes (no intent, no watch set). */
 function onSession(board: Board, pane: PaneId, session: string): Step {
     const lane = board.lanes.get(pane);
     if (lane === undefined || String(lane.session) === session) {
@@ -141,10 +130,6 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
     return recapsOf(after, tabs, 'turn-ended');
 }
 
-/**
- * A pane that hosts an agent is never a column, whatever it is called (any agent kind, not only the
- * ones we write recaps about): the board drops it if it had taken it for one, and never adopts it.
- */
 function columnsAfter(board: Board, seen: Reconciliation): { readonly columns: ReadonlyMap<TabId, Placement>; readonly extras: readonly SeenColumn[] } {
     const alive = new Set(seen.panes);
     const agents = new Set(seen.lanes.map((lane) => lane.paneId));
@@ -161,10 +146,6 @@ function columnsAfter(board: Board, seen: Reconciliation): { readonly columns: R
     return { columns, extras };
 }
 
-/**
- * A column we opened after the snapshot was requested cannot be in it: its absence says nothing. (A snapshot is
- * folded after the opens that happened while it was on its way — the bug that opened a second column in a tab.)
- */
 function newerThan(placed: Placement, seen: Reconciliation): boolean {
     return seen.at !== undefined && placed.since !== undefined && seen.at < placed.since;
 }
@@ -193,7 +174,6 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
     const published: Intent[] = tabsWithLanes(next).map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
-    /** two of our columns in one tab (a leftover of a race, or of a close that did not happen): keep one, close the rest */
     const closes: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
     return step(next, [...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
 }
@@ -205,7 +185,6 @@ function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
 
 type Operator = Extract<Observation, { kind: 'focused' | 'requested' | 'switched' | 'visibility' | 'hidden-restored' }>;
 
-/** What the operator did (or what they had saved): looking at a tab, asking for a recap, switching on/off, hiding or showing columns. */
 function onOperator(board: Board, observation: Operator): Step {
     switch (observation.kind) {
         case 'focused':
@@ -250,12 +229,10 @@ function route(board: Board, observation: Observation, now: Instant, policy: Pol
     }
 }
 
-/** The last line of defence: no close-column intent ever names a pane the board knows as a lane. */
 function closesLane(intent: Intent, ...boards: readonly Board[]): boolean {
     return intent.kind === 'close-column' && boards.some((board) => board.lanes.has(intent.column));
 }
 
-/** The whole domain: (board, observation, instant) → (board, intents). No I/O, no text. */
 export function observe(board: Board, observation: Observation, now: Instant, policy: Policy): Outcome {
     const routed = route(board, observation, now, policy);
     const [settled, columnIntents] = settle(routed.board, now, policy);

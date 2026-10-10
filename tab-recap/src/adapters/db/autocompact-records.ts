@@ -1,4 +1,3 @@
-// The AutocompactRecords repository: one row per decision of a lane. Writes are one transaction; reads answer empty when they cannot.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AutocompactRecords, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { all, BadRow, blob, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';

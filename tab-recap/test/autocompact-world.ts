@@ -1,4 +1,3 @@
-// The autocompact service's test world: fakes for every port, one lane on one tab, and the helpers the gate tests share.
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -18,7 +17,7 @@ export const NOW = 10_000_000;
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
-export interface World { readonly service: Autocompact; /** the compactions this daemon holds: a test claims a pane to make its lane busy */ readonly claims: CompactionClaims; /** the panes with a request still queued: a test adds one to make its lane busy */ readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
+export interface World { readonly service: Autocompact; readonly claims: CompactionClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; share: number; decide: () => DecidedResult }
 
 export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<AutocompactTuning> = {}): World {
     const store = memoryStore();
@@ -42,7 +41,6 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     return self;
 }
 
-/** The `awaiting` reading the state describes: unreadable, clear, or waiting for a value. */
 function awaitingOf(state: { awaiting: string | null; awaitingUnknown: boolean }): Waiting {
     if (state.awaitingUnknown) return unknown({ why: 'unreachable', detail: 'pane.get' });
     return state.awaiting === null ? { kind: 'clear' } : { kind: 'waiting', value: state.awaiting };

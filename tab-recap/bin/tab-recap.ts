@@ -1,5 +1,3 @@
-// One-shot commands behind the plugin's actions. Exit codes: 0 done · 1 failed ·
-// 2 usage · 3 could not look (the house convention).
 import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -30,13 +28,11 @@ const FAILED = 1;
 const USAGE = 2;
 const NOT_COVERED = 3;
 
-/** The operator's language for what a command prints; read when needed, so a config edit applies at once. */
 const m = (): Messages => messagesOf();
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const pidfile = new Pidfile(stateDir());
 
-/** A daemon that is alive but has not beaten for this long is stuck: it is killed and a new one takes over. */
 const WEDGED_MS = 180_000;
 
 function launch(): number {
@@ -72,7 +68,6 @@ function stop(): number {
     return OK;
 }
 
-/** The pane the action was invoked from, when herdr says (a keybinding names the focused one). */
 function currentPane(): string | null {
     const context = process.env['HERDR_PLUGIN_CONTEXT_JSON'];
     try {
@@ -93,12 +88,11 @@ function currentTab(): string | null {
             if (typeof found === 'string' && found !== '') {
                 return found;
             }
-        } catch { /* fall through */ }
+        } catch { }
     }
     return process.env['HERDR_TAB_ID'] ?? null;
 }
 
-/** `auto` and `custom` have no model to set; anything else must be a known backend. */
 function choiceOf(arg: string | undefined, model: string | undefined): BackendChoice | null {
     const found = arg === 'auto' ? 'auto' : BACKEND_IDS.find((id) => id === arg);
     return found === undefined || (model !== undefined && (found === 'auto' || found === 'custom')) ? null : found;
@@ -126,10 +120,8 @@ function status(): number {
     return OK;
 }
 
-/** The settings modal; when herdr already shows another modal, say how to do the same from the shell. */
 async function configure(): Promise<number> {
     const tab = currentTab();
-    // a modal that asked for this is closing: herdr shows one popup at a time
     await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0); });
     const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
@@ -143,7 +135,6 @@ async function configure(): Promise<number> {
     return OK;
 }
 
-/** What the commands ask of the daemon go through the database; one written by a newer plugin is not ours to write. */
 function requests(): Requests | null {
     const store = stateStore(stateDir());
     if (store.kind === 'ready') {
@@ -153,10 +144,6 @@ function requests(): Requests | null {
     return null;
 }
 
-/**
- * Flip this tab's column (or every column). The CLI only says "toggle": the daemon decides from the board it holds,
- * so two presses in a row always alternate — deciding here from the saved file let two quick calls repeat each other.
- */
 function toggle(all: boolean): number {
     const tab = all ? 'all' : currentTab();
     if (tab === null) {
@@ -172,7 +159,6 @@ function toggle(all: boolean): number {
     return OK;
 }
 
-/** The compaction request for this tab and its focused pane: the note popup, or queued at once (`bin/compact.ts` decides). */
 async function compact(): Promise<number> {
     const tab = currentTab();
     if (tab === null) {
@@ -241,11 +227,9 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
 
 const HELP_FLAGS = new Set(['--help', '-h']);
 
-/** `eval` and `autocompact` have options of their own: they are handed the rest of the line before the plain commands parse theirs. */
 const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
 
-/** `<command> [argument] [model]`, and `compact --note <text>`; an option other than --help/-h/--note is a usage error naming it. */
 function parseArguments(argv: readonly string[]): { positionals: string[]; note: string | undefined } | { problem: string } {
     try {
         const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' }, note: { type: 'string' } } });
@@ -262,7 +246,6 @@ const usage = (): string => m().cli.usage([...Object.keys(commands), EVAL, AUTOC
 const argv = process.argv.slice(2);
 const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]], note: undefined } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
-/** `compact --note <text>`: the note to queue with, at once; absent, the setting decides */
 const noteArg = 'positionals' in parsed ? parsed.note : undefined;
 
 function commandOf(word: string | undefined): ((arg: string | undefined) => number | Promise<number>) | undefined {

@@ -1,4 +1,3 @@
-// The gates, in the order they are run. G6 and G7 are not here: G7 (length) is the clip in `recap-shape.ts`, G6 belongs to the ledger.
 import { duplicate } from './duplicate.ts';
 import type { Context, Gate, GateId, Item, Outcome } from './item-gate.ts';
 import { wrongLanguage } from './language.ts';
@@ -13,7 +12,6 @@ export { itemKey } from './item-gate.ts';
 
 export const GATES: readonly Gate[] = [narrator, duplicate, withoutWhy, unresolved, wrongLanguage, notSpecific, pronounOpener];
 
-/** Every gate's outcome for `item`, refusals first. */
 export function outcomesOf(item: Item, context: Context): readonly Outcome[] {
     const found = GATES.flatMap((gate) => gate.check(item, context) ?? []);
     return found.toSorted((a, b) => Number(b.kind === 'refuse') - Number(a.kind === 'refuse'));

@@ -55,7 +55,6 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
     assert.equal(first.position.cursor, 7);
     assert.match(first.position.tail ?? '', /^[0-9a-f]{16}$/);
     assert.equal(first.entries.length, 2);
-    // a repaint of the same text (new revision, same words) is not news
     screens.next = { kind: 'screen', text: `${SCREEN}\n`, revision: 9, truncated: false };
     const repainted = await reader.read('screen:w1:p3', first.position, 10_000) as Chunk;
     assert.deepEqual([repainted.grew, repainted.entries.length, repainted.position.cursor, repainted.position.tail], [false, 0, 9, first.position.tail]);

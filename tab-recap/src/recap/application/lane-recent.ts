@@ -5,18 +5,11 @@ import type { Entry, Mark, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 
-/** How much of the end of a transcript is looked through for the agent's last turns. */
 const TAIL_BYTES = 256 * 1024;
 const ANY_KIND = '*';
 
-/** herdr's session of a pane now (its `agent_session`, as an id); null when it has none, and unknown when herdr cannot say. */
 export type CurrentSession = (pane: string) => Promise<string | null | Unknown>;
 
-/**
- * The agent's last turns and compactions, read through the lane's own reader; it moves no position: the recap's cursors are the recap job's alone.
- * The transcript read is the session herdr reports for the pane now: a lane's session is what it held when it was detected, and an agent that is new
- * or was resumed has another one. Only when herdr cannot say does the lane's own session serve.
- */
 export class LaneRecent {
     private readonly transcripts: readonly Transcripts[];
     private readonly session: CurrentSession;
@@ -26,7 +19,6 @@ export class LaneRecent {
         this.session = session;
     }
 
-    /** The lane with herdr's session for its pane, when herdr has one. */
     private async now(lane: Lane): Promise<Lane> {
         const current = await this.session(String(lane.pane));
         return typeof current === 'string' ? { ...lane, session: sessionId(current) } : lane;
@@ -48,7 +40,6 @@ export class LaneRecent {
         return (await this.tail(lane)).entries;
     }
 
-    /** The compactions the agent's own records show in their tail, in the session herdr reports for the pane now. */
     async marks(lane: Lane): Promise<readonly Mark[]> {
         return (await this.tail(lane)).marks;
     }

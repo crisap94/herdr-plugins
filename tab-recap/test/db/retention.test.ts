@@ -12,7 +12,6 @@ const DAY = 86_400_000;
 const NOW = Date.parse('2026-10-07T12:00:00Z');
 const MARK = { pane: 'w1:p1', cursor: 5, tokensBefore: 800_000, tokensAfter: 14_000 };
 
-/** a tab last seen `ago` days back, with a run, a boundary (so two chapters), a compaction record and a visibility row */
 function tab(store: Store, id: string, ago: number): void {
     const at = NOW - ago * DAY;
     const sections = { goal: 'ship', now: [], needs: [], done: ['b'], decisions: [], next: [], links: [], rules: [] };

@@ -7,7 +7,6 @@ import { join } from 'node:path';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
-/** Runs the entry in a throw-away config and state directory, so no command can touch the real ones. */
 function run(...args: string[]): { status: number | null; stdout: string; stderr: string; config: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-cli-'));
     const config = join(root, 'config');

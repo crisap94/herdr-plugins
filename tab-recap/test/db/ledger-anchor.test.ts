@@ -1,4 +1,3 @@
-// The anchor of a fact through the real ledger: stored with an add, replaced by an update that carries one, kept by one that does not.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';

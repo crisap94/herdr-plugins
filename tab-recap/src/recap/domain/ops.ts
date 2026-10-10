@@ -1,4 +1,3 @@
-// What the writer answers, and the pure fold that applies it: (ledger, operations, run) → (ledger, refusals).
 import type { ClosedWhy, Fact, FactId, RunId, Section, TaskId } from './fact.ts';
 import { sameTask } from './fact.ts';
 
@@ -8,10 +7,8 @@ export interface AddOp {
     readonly text: string;
     readonly why: string | null;
     readonly ref: string | null;
-    /** when the writer says it happened (epoch ms, already resolved); null: the run's time */
     readonly at: number | null;
     readonly agent: string | null;
-    /** a quote from the input the fact comes from (at most 120 characters); the writer's `add` carries one, gate G11 checks it */
     readonly anchor?: string | null;
 }
 
@@ -20,20 +17,17 @@ export interface UpdateOp {
     readonly id: string;
     readonly text: string;
     readonly why: string | null;
-    /** an update may carry the quote that shows the change; a close never does */
     readonly anchor?: string | null;
 }
 
 export interface CloseOp {
     readonly op: 'close';
     readonly id: string;
-    /** null: the writer gave none or one it may not give (refused) */
     readonly why: ClosedWhy | null;
 }
 
 export type Operation = AddOp | UpdateOp | CloseOp;
 
-/** The operations of one answer that are for one task of the tab (`task` is the task's key within the tab). */
 export interface TaskOps {
     readonly task: string;
     readonly ops: readonly Operation[];
@@ -46,7 +40,6 @@ export interface Refusal {
     readonly reason: Reason;
 }
 
-/** The run an answer belongs to: who made the facts, when, and in which language. `mint` hands out the ids of new facts. */
 export interface RunRef {
     readonly id: RunId;
     readonly task: TaskId;
@@ -58,7 +51,6 @@ export interface RunRef {
 export interface Folded {
     readonly ledger: readonly Fact[];
     readonly refused: readonly Refusal[];
-    /** the facts this answer created or changed */
     readonly changed: readonly Fact[];
 }
 
@@ -107,10 +99,6 @@ function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readon
     return { facts: [...replaced, fact], refusal: null };
 }
 
-/**
- * Closes first, then updates, then adds (so a close and an add of the same line never read as a duplicate); then, for a writer's run (`sweepNow`), the `now` facts it did not carry forward are closed. The curator's merges and the import never sweep. A second `goal` add in one
- * answer is refused; an add of a goal closes the open one as `superseded`.
- */
 export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow = false): Folded {
     let facts = ledger;
     const refused: Refusal[] = [];
@@ -135,10 +123,6 @@ export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: R
     return { ledger: swept, refused, changed: swept.filter((fact, at) => ledger[at] !== fact) };
 }
 
-/**
- * `now` is "in progress at recap time": an open `now` fact the answer did not add, update or close is over, so it is closed `superseded`.
- * `before` is how many facts there were; the ones after are this answer's adds. An answer with no operations at all changes nothing (the caller skips this).
- */
 function supersedeNow(facts: readonly Fact[], seen: { readonly before: number; readonly named: ReadonlySet<string> }, run: RunRef): readonly Fact[] {
     return facts.map((fact, at) => (at < seen.before && fact.section === 'now' && fact.state === 'open' && !seen.named.has(fact.id) ? closedBy(fact, 'superseded', run.at) : fact));
 }

@@ -1,4 +1,3 @@
-// The composition of autocompact: the daemon's parts, handed to the one service that decides (it never types: the compaction flow does).
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { FlightAnswer } from '#src/recap/application/autocompact.ts';
@@ -22,12 +21,9 @@ import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { loadConfig } from './config.ts';
 import type { Config } from './config.ts';
 
-/** a lane's recap is given up on after this long (the decision goes on without) */
 const RECAP_WAIT_MS = 90_000;
-/** the end of a transcript looked through for work still running */
 const TAIL_BYTES = 512 * 1024;
 
-/** The work the lane's agent started and has not ended; `unknown` when its reader cannot tell (that counts as in flight), with the reason. */
 async function inFlightOf(transcripts: readonly Transcripts[], lane: Lane): Promise<FlightAnswer> {
     const agent = String(lane.agent);
     const reader = transcripts.find((candidate) => candidate.agent === agent);
@@ -38,7 +34,6 @@ async function inFlightOf(transcripts: readonly Transcripts[], lane: Lane): Prom
     return isUnknown(found) ? { count: 'unknown', why: saying(found.why) } : { count: found.count, why: `${found.count} running` };
 }
 
-/** The pane's `awaiting` tokens now: clear, waiting for what, or unreadable (herdr could not say). */
 async function awaitingNow(pane: string): Promise<Waiting> {
     const found = await readPaneTokens(pane);
     if (found.kind !== 'tokens') return found;
@@ -47,9 +42,7 @@ async function awaitingNow(pane: string): Promise<Waiting> {
 }
 
 export function wireAutocompact(parts: {
-    /** the configuration, read on each consideration; the composition root's `loadConfig` by default */
     readonly config?: () => Config;
-    /** the pane's `awaiting` tokens; herdr's by default */
     readonly awaiting?: (pane: string) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: readonly Transcripts[];
@@ -59,7 +52,6 @@ export function wireAutocompact(parts: {
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
-    /** the compactions queued or running in this daemon: shared with the compaction flow, so a lane has one at a time */
     readonly claims: CompactionClaims;
     log(line: string): void;
 }): Autocompact {

@@ -5,7 +5,6 @@ import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-
 import { instructions } from './recap-instructions.ts';
 import { fittedCall, unfenced } from './recap-prompt.ts';
 
-/** The recap writer: one job on a harness. It turns a request into instructions and a document, and the answer into text. */
 export class RecapWriter implements Summarizer {
     readonly backend: string;
     private readonly harness: Harness;

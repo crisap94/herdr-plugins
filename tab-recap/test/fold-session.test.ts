@@ -1,5 +1,3 @@
-// A lane's session follows herdr: a detection with no session keeps the one the lane held, and a `session` observation makes the lane hold the
-// session herdr reports now (a new agent's, or a resumed agent's). Neither asks for an intent: the transcript read is what follows.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -13,7 +11,6 @@ import { instant } from '#src/recap/domain/time.ts';
 
 const lane = (session: string | null, agent = 'claude'): SeenLane => ({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session });
 
-/** A snapshot that holds the given lane and nothing else. */
 const snapshot = (only: SeenLane): Observation => ({ kind: 'reconciled', seen: { focusedTab: null, lanes: [only], panes: [only.paneId], columns: [], widths: new Map() } });
 
 function run(observations: readonly Observation[]): { board: Board; outcomes: Outcome[] } {

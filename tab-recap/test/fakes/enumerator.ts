@@ -1,11 +1,8 @@
-// An enumeration model that answers from a script, and keeps the documents it was given.
 import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
-/** A fixed answer, a function of the document and the number of the call, or the model failing. */
 export type Reply = string | ((document: string, call: number) => string);
 
-/** A reply that makes the model fail. */
 export const FAIL = 'fail';
 
 export function scripted(replies: readonly Reply[]): { readonly enumerator: Enumerators; readonly documents: string[] } {

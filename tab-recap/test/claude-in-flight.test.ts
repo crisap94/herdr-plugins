@@ -55,7 +55,6 @@ test('in flight: a sidechain launch and a quoted notice in an assistant row do n
     assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1'), line({ type: 'assistant', message: { content: [{ type: 'text', text: '<task-notification><task-id>b1</task-id><status>completed</status></task-notification>' }] } })]), { kind: 'in-flight', count: 1 });
 });
 
-/** A notice as the transcript queues it: a `queue-operation` enqueue whose content is the notice (the user row that delivers it comes later). */
 const queued = (task: string, tool: string | null, status: string): string => line({ type: 'queue-operation', operation: 'enqueue', timestamp: '2026-10-08T10:05:00.000Z', sessionId: 's', content: `<task-notification>\n<task-id>${task}</task-id>\n${tool === null ? '' : `<tool-use-id>${tool}</tool-use-id>\n`}<status>${status}</status>\n<summary>x</summary>\n</task-notification>` });
 
 test('in flight: a notice queued as a queue-operation ends the launch it names, as a delivered user row does', () => {
@@ -69,7 +68,6 @@ test('in flight: a notice queued and then delivered is one end: the delivery is 
     assert.deepEqual(claudeInFlight(cut, true), { kind: 'in-flight', count: 0 });
 });
 
-/** A row written at `iso`: a Monitor launch, or any other row (here, the agent's own words) that tells the time. */
 const monitorAt = (id: string, iso: string, input: object): string => line({ type: 'assistant', isSidechain: false, timestamp: iso, message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'Monitor', input }] } });
 const wordsAt = (iso: string): string => line({ type: 'assistant', isSidechain: false, timestamp: iso, message: { role: 'assistant', content: [{ type: 'text', text: 'Still watching.' }] } });
 

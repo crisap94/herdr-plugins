@@ -1,9 +1,6 @@
-// Renders Markdown through glow when it is installed; the column falls back to its own
-// renderer otherwise. An explicit style is required: glow prints plain text when captured.
 import { spawnSync } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
 
-/** glow pads every line to the full width with spaces (inside trailing colour codes); drop the padding, keep the codes. */
 export function trimPadding(line: string): string {
     const shown = stripVTControlCharacters(line).trimEnd();
     let end = 0;

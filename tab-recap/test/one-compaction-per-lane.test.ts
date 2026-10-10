@@ -1,4 +1,3 @@
-// One compaction per lane: the claims a daemon holds, the requests still queued, and autocompact's busy gate, which counts both.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';

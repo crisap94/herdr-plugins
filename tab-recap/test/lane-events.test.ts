@@ -1,5 +1,3 @@
-// The event stream: each event written once on its lane's pane (or a workspace), sequence numbers whole and from the daemon's start, never reused
-// (not even after a restart, or after a target is forgotten), cleared when the setting goes off, and nothing while off.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
@@ -31,7 +29,6 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
     };
     const ws: WorkspaceTokens = {
         reportWorkspace: async (workspace, values): Promise<Done> => {
-            // a write takes a moment: it is recorded only once it has landed, so a caller that does not wait for it sees nothing
             await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
             rig.spaces.push({ target: workspace, value: values[EVENT_TOKEN] ?? null });
             return rig.failing ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'done' };

@@ -1,4 +1,3 @@
-// The enumeration: its document (DTD-valid), its answer (anchors checked against the chunk), stubs filled or skipped or flagged, dedup.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputCandidate } from '#src/ports/recap-input.ts';

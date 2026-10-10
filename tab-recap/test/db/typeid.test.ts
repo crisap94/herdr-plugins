@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import { compareIds, Uuid7Generator } from '#src/adapters/db/uuid7.ts';
 import { decodeSuffix, encodeSuffix, idOf, typeIdOf } from '#src/adapters/db/typeid.ts';
 
-// The TypeID spec (github.com/jetify-com/typeid, spec/) encodes the 128 bits as 26 Crockford base32 characters, the first at most `7`:
-// the all-zero UUID is `00000000000000000000000000` and the all-ones one `7zzzzzzzzzzzzzzzzzzzzzzzzz`; `8zzzzzzzzzzzzzzzzzzzzzzzzz` overflows.
 test('typeid: the spec\'s zero and maximum suffixes', () => {
     assert.equal(encodeSuffix(new Uint8Array(16)), '00000000000000000000000000');
     assert.equal(encodeSuffix(new Uint8Array(16).fill(255)), '7zzzzzzzzzzzzzzzzzzzzzzzzz');

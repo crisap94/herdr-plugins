@@ -5,7 +5,6 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { run, scrubbedEnv } from './process.ts';
 
-/** Splits a command line into argv — whitespace, single and double quotes — with no shell involved. */
 export function splitArgv(line: string): string[] {
     const argv: string[] = [];
     let word = '';
@@ -29,10 +28,6 @@ export function splitArgv(line: string): string[] {
     return started ? [...argv, word] : argv;
 }
 
-/**
- * `TAB_RECAP_CUSTOM_CMD`: any program that reads the prompt on stdin and prints the answer on
- * stdout. Whether it is tool-less and ephemeral is the operator's to guarantee. It has no model or effort of its own.
- */
 export class CustomHarness implements Harness {
     readonly id = 'custom';
     readonly limit = null;

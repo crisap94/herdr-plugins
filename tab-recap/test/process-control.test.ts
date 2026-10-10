@@ -10,7 +10,6 @@ import { windowsProcess } from '#src/adapters/process-windows.ts';
 interface Call { readonly command: string; readonly args: readonly string[]; readonly options: Record<string, unknown> }
 type Fake = EventEmitter & { stdout: PassThrough; stderr: PassThrough };
 
-/** A spawner that never starts anything: `program` hangs until told, `taskkill` is just recorded. */
 function fakeSpawner(): { spawner: Spawner; calls: Call[]; program: () => Fake } {
     const calls: Call[] = [];
     let latest: Fake | null = null;

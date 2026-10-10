@@ -1,4 +1,3 @@
-// `eval --replay --pipeline`: the same transcript through each pipeline; the replay says what ran and what it cost.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync } from 'node:fs';
@@ -18,7 +17,6 @@ const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const NUMBERS = ['one', 'two', 'three', 'four', 'five', 'six'];
 const candidateFor = (document: string, call: number): string => answer([{ section: 'done', text: `Candidate number ${NUMBERS[call - 1] ?? 'more'}`, anchor: /<turn[^>]*>([^<.]{8,60})/.exec(document)?.[1] ?? '' }]);
 
-/** A writer that adds one fact per call from the first candidate it is given (or a plain one with none), and remembers its requests. */
 function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
     const summarizer: Summarizer = {

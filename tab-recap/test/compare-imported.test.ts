@@ -1,4 +1,3 @@
-// The fair 1.x comparison: per chapter of a tab, the last good 1.x recap against the replay's ledger state at the same time, with the same key facts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareImported, withoutLedgers } from '#src/recap/application/compare-imported.ts';
@@ -13,7 +12,6 @@ import { MIN, T0 } from './imported-fixture.ts';
 
 const add = (section: 'goal' | 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
 
-/** The replay side: three runs in the scratch store, each with the document the writer was given (a ledger and a turn). */
 function replayStore(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
     const run = (minutes: number, ops: readonly Operation[], turn: string): void => {
@@ -28,7 +26,6 @@ function replayStore(): ReturnType<typeof memoryStore> {
     return store;
 }
 
-/** A judge that finds three key facts in the replay's state (the first two open facts carry the first two), and records every cover and read-back call. */
 function judgeOf(seen: { task: JudgeTask; document: string }[]): Judge {
     let recapSize = 0;
     return {
@@ -53,7 +50,6 @@ const chapter = (n: number, minutes: number, texts: readonly string[]): Imported
     items: texts.map((text, at) => ({ key: `state/t1/done/${at}`, section: 'done', text, fact: `state/t1/done/${at}`, born: false, anchor: null })),
 });
 
-/** Three chapters against the replay: the first within its reach, the second too, the third long after it ends. */
 async function compareAll(): Promise<{ readonly compared: Awaited<ReturnType<typeof compareImported>>; readonly seen: { task: JudgeTask; document: string }[] }> {
     const store = replayStore();
     const seen: { task: JudgeTask; document: string }[] = [];

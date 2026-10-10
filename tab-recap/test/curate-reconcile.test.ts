@@ -1,4 +1,3 @@
-// The curator reconciling the open ledger with the newest turns: updates, closes and merges grounded in a quote, never an add; when it runs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RUBRIC } from '#src/adapters/rubric.ts';

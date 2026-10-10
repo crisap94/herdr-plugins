@@ -7,7 +7,6 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
-/** A herdr that counts how often it is asked, and lets a test push frames into the live stream or end it. */
 class CountingHerdr implements FleetSource {
     live = new Set<string>(['w1:p1']);
     snapshots = 0;
@@ -43,7 +42,6 @@ async function until(condition: () => boolean, ms = 2000): Promise<void> {
     }
 }
 
-/** Started and settled: subscribed with the lane watched. */
 async function settled(): Promise<{ herdr: CountingHerdr; informer: Informer }> {
     const herdr = new CountingHerdr();
     const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
@@ -111,7 +109,6 @@ test('a changed watch set resubscribes; an unchanged one does not', async () => 
     informer.stop();
 });
 
-/** The stream can end at any point of start-up; the informer must come out of each of them subscribed again. */
 async function recoversFrom(endAt: 'before-snapshot' | 'during-snapshot' | 'right-after'): Promise<{ herdr: CountingHerdr; informer: Informer }> {
     const herdr = new CountingHerdr();
     let releaseFirst: (() => void) | null = null;

@@ -1,4 +1,3 @@
-// The pre-registered rule of design decision 9, applied to the numbers. Pure.
 import type { ArmName } from '#src/adapters/experiment-arms.ts';
 
 export const WITHIN_POINTS = 0.03;
@@ -14,11 +13,6 @@ function whyOf(harness: ArmScore | undefined, other: ArmScore | undefined, best:
     return `${other.arm}: no recap-writer harness is within ${WITHIN_POINTS * 100} points of the best precision with drift ≤ ${MAX_DRIFT}`;
 }
 
-/**
- * The default decider is the arm needing nothing beyond the recap writer's harness whose policy precision is within 3 points of the best and
- * whose drift is at most 0.15 (the highest precision among them; arms are listed cheapest first, which breaks a tie). Another arm becomes the
- * default only when none of those exists: the most precise arm with drift at most 0.15. Coverage uses the arm with the best `brief_keeps_*` AUC.
- */
 export function decide(arms: readonly ArmScore[]): Decision {
     const rated = arms.filter((arm) => !Number.isNaN(arm.precision));
     const best = Math.max(...rated.map((arm) => arm.precision));

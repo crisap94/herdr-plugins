@@ -16,7 +16,6 @@ import type { TabView } from '#src/ports/tab-views.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 
-/** A reader whose positions are not bytes: it hands back what it was given plus one, and says what it saw. */
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
     const seen: Position[] = [];
     const reader: Transcripts = {

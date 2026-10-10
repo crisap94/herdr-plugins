@@ -1,4 +1,3 @@
-// The ruler: coverage, no-filler and the read-back are judged over the ledger's state after a run, the item checks over what the run added.
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +16,6 @@ import { oneTask } from '#test/support.ts';
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
 const TAB = { tab: 'w1:t1', key: 't1' };
 
-/** Three runs: A and B; then C, with B closed; then D. The state after the third is A, C and D. */
 function history(): { store: ReturnType<typeof memoryStore>; runs: readonly StoredRun[] } {
     const store = memoryStore();
     const record = (at: number, ops: (ids: Record<string, string>) => readonly Operation[]): void => {

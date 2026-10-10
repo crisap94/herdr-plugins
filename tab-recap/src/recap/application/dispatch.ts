@@ -21,9 +21,7 @@ export interface DispatchDeps {
     readonly recaps: RecapJob;
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
-    /** how full each lane's context is; left out, no lane has a hint */
     readonly contexts?: LaneContextSource;
-    /** told, without being awaited, that a lane's agent is idle or done and its context was looked at again (autocompact handles its own errors) */
     settled?(lane: Lane): void;
     sizing(): Sizing;
     board(): Board;
@@ -31,25 +29,21 @@ export interface DispatchDeps {
     log(line: string): void;
 }
 
-/** What the dispatcher needs of the live prompts: what is known, and a way to look again. */
 export interface LivePromptSource {
     of(pane: string): string | null;
     refresh(lane: Lane): Promise<boolean>;
 }
 
-/** What the dispatcher needs of the lanes' context use: what is known, and a way to look again. */
 export interface LaneContextSource {
     of(pane: string): ContextUse | null;
     refresh(lane: Lane): Promise<boolean>;
 }
 
-/** What the dispatcher needs of the lanes' web contexts: what is known, and a way to look again. */
 export interface LaneWebSource {
     of(pane: string): LaneWeb | null;
     refresh(lane: Lane): Promise<boolean>;
 }
 
-/** What the view knows of a lane besides the board's own facts, by pane. */
 export interface Lookups {
     readonly prompts?: (pane: string) => string | null;
     readonly webs?: (pane: string) => LaneWeb | null;
@@ -68,10 +62,8 @@ export function viewOf(board: Board, tab: TabId, at: number, lookups: Lookups = 
     };
 }
 
-/** A bar is one row of text plus herdr's pane border. */
 const BAR_ROWS = 3;
 
-/** Turns intents into port calls. Maps, does not decide: every decision was the fold's. */
 export class Dispatch {
     private readonly deps: DispatchDeps;
 
@@ -110,7 +102,6 @@ export class Dispatch {
         }
     }
 
-    /** What a lane shows beside its status — its live prompt, where it lives on the web, how full its context is — looked at again. */
     private async look(lane: Lane): Promise<void> {
         const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? false]);
         if (changed.includes(true)) {

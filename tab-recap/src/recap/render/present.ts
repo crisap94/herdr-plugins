@@ -26,13 +26,9 @@ export interface ColumnView {
     readonly warnings: readonly string[];
     readonly now: number;
     readonly messages: Messages;
-    /** the plugin version of the code on disk; absent or null when unknown */
     readonly version?: string | null;
-    /** the context share (percent) from which a lane shows the compaction hint; absent or null: no hint */
     readonly compactHint?: number | null;
-    /** the compactions the tab's lanes show (the newest of each, until the agent's next turn); absent: none */
     readonly compactions?: readonly CompactionRecord[];
-    /** colours and styles; the process picks them from its terminal. Absent: coloured */
     readonly style?: Style;
 }
 
@@ -72,13 +68,11 @@ function noteLines(view: ColumnView, pane: string, width: number): string[] {
     });
 }
 
-/** The live prompt if there is one, else what the last recap saw. */
 function promptLines(lane: TabLane, cursor: LaneCursor | undefined, width: number, style: Style): string[] {
     const prompt = lane.lastPrompt ?? cursor?.lastPrompt ?? null;
     return prompt === null ? [] : wrap(`› ${prompt.split('\n').join(' ')}`, width, '  ').slice(0, PROMPT_LINES).map(style.dim);
 }
 
-/** `compact? 45% of 1M` beside a lane whose context passes the configured share of its window; nothing otherwise. */
 function contextHint(lane: TabLane, view: ColumnView): string[] {
     const percent = hintFor(lane.context, view.compactHint ?? null);
     const window = lane.context === null || lane.context === undefined ? '' : sizeOf(lane.context.window);
@@ -87,13 +81,11 @@ function contextHint(lane: TabLane, view: ColumnView): string[] {
 
 const stageShown = (lane: TabLane, view: ColumnView): boolean => view.compactions?.some((each) => each.pane === lane.pane) === true;
 
-/** The stage of the lane's compaction while one is shown: it takes the place of the hint, on a line of its own. */
 function stageLines(lane: TabLane, view: ColumnView, width: number): string[] {
     const record = view.compactions?.find((each) => each.pane === lane.pane);
     return record === undefined ? [] : wrap(stageLine(record, view.now, { messages: view.messages, style: paint(view) }), width, '  ');
 }
 
-/** Who is in the tab: one short header per lane. The recap below is the tab's, not the lane's. */
 function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     const style = paint(view);
     const cursor = view.recap?.lanes.find((c) => c.pane === lane.pane);
@@ -107,7 +99,6 @@ function laneHeader(lane: TabLane, view: ColumnView, width: number): string[] {
     ];
 }
 
-/** The daemon runs another version than the code on disk (or is too old to say): the column is not what was deployed until it restarts. */
 function staleLines(view: ColumnView, width: number): string[] {
     const style = paint(view);
     const code = view.version ?? null;
@@ -129,7 +120,6 @@ function recapMeta(view: ColumnView, width: number): string[] {
     return [...wrap(parts.join(style.gray(' · ')), width, '  '), ...staleLines(view, width)];
 }
 
-/** A task's Markdown: drawn from its sections in the interface language; a recap from before the fixed structure shows as it was written. */
 function markdownOf(task: RecapTask | null, m: Messages): string {
     if (task === null) {
         return '';
@@ -142,7 +132,6 @@ function body(task: RecapTask | null, lanes: readonly TabLane[], width: number, 
     const style = paint(view);
     const drawn = markdownOf(task, m);
     const links = (text: string): string => linked(text, lanes.map((lane) => lane.web));
-    // the fixed structure is laid out here, never by glow: one blank line between sections, none after a heading
     if (task !== null && task.sections !== null) {
         return plainMarkdown(drawn, width, style, links);
     }
@@ -169,7 +158,6 @@ function warningLines(view: ColumnView, width: number): string[] {
 const headersOf = (lanes: readonly TabLane[], view: ColumnView, width: number): string[] =>
     lanes.flatMap((lane, index) => [...(index > 0 ? [''] : []), ...laneHeader(lane, view, width)]);
 
-/** One task of a tab with several: its name, its lanes, then its recap. A lane no task holds yet has only its header. */
 function taskBlock(group: Group, at: number, view: ColumnView, width: number, markdown: Markdown): string[] {
     const style = paint(view);
     const heading = group.task === null ? [] : [style.bold(style.cyan(`▌ ${group.task.name === '' ? view.messages.taskNumber(at + 1) : group.task.name}`))];
@@ -177,7 +165,6 @@ function taskBlock(group: Group, at: number, view: ColumnView, width: number, ma
     return [...heading, ...headersOf(group.lanes, view, width), ...recap];
 }
 
-/** The whole column, as lines: who is in the tab, then its recap — one per task, each under its task's name. Total; no I/O. */
 export function present(view: ColumnView, width: number, markdown: Markdown): string[] {
     const style = paint(view);
     if (view.tab === null || view.tab.lanes.length === 0) {
@@ -204,7 +191,6 @@ export function present(view: ColumnView, width: number, markdown: Markdown): st
 
 export type Mode = 'column' | 'modal' | 'bar';
 
-/** The longest hint that fits: a cut-off hint reads as a bug. */
 export function footer(width: number, mode: Mode, m: Messages, style: Style = coloured): string {
     const hints = mode === 'bar' ? [] : m.hints[mode];
     return style.gray(hints.find((hint) => visibleLength(hint) <= width) ?? '');
@@ -212,7 +198,6 @@ export function footer(width: number, mode: Mode, m: Messages, style: Style = co
 
 const PLAIN_BULLET = /^\s*[-*+]\s+/;
 
-/** The first bullet of a recap section, in plain text; the heading may be in any language the plugin writes. */
 export function firstItem(markdown: string, section: SectionId): string | null {
     let inside = false;
     for (const line of markdown.split('\n')) {
@@ -228,7 +213,6 @@ export function firstItem(markdown: string, section: SectionId): string | null {
     return null;
 }
 
-/** What leads one task: from its data; a recap from before the fixed structure is read from its Markdown. */
 function leadOf(task: RecapTask): { needs: string | null; now: string | null } {
     if (task.sections === null) {
         return { needs: firstItem(task.markdown, 'needs'), now: firstItem(task.markdown, 'now') };
@@ -237,13 +221,11 @@ function leadOf(task: RecapTask): { needs: string | null; now: string | null } {
     return { needs: lead?.kind === 'needs' ? lead.text : null, now: lead?.kind === 'now' ? lead.text : null };
 }
 
-/** What leads the tab: the most urgent "needs you" of ANY task, else the first "now". */
 function leads(recap: TabRecap | null): { needs: string | null; now: string | null } {
     const found = (recap?.tasks ?? []).map(leadOf);
     return { needs: found.find((lead) => lead.needs !== null)?.needs ?? null, now: found.find((lead) => lead.now !== null)?.now ?? null };
 }
 
-/** What the bar says: what needs the operator first, else what is happening now. */
 function headline(view: ColumnView): string {
     const style = paint(view);
     const shown = (view.compactions ?? []).toSorted((a, b) => b.startedAt - a.startedAt || b.stageAt - a.stageAt)[0];
@@ -257,23 +239,19 @@ function headline(view: ColumnView): string {
     return now ?? view.recap?.lanes.find((c) => c.claudeRecap !== null)?.claudeRecap ?? view.messages.noRecapShort;
 }
 
-/** the least a bar keeps for its headline when it also shows the version */
 const BAR_MIN_HEAD = 20;
 
 const clipTo = (text: string, width: number): string => wrap(text, width)[0] ?? '';
 
-/** A lane's status as one glyph: the bar has no room for words. */
 function dot(status: string, m: Messages, style: Style): string {
     return badge(laneStatus(status), m, style).split(' ').slice(0, 1).join('');
 }
 
-/** The phone's shape: ONE row along the bottom of a narrow tab — 📝, each lane's dot, the headline. A tap opens the modal. */
 export function presentBar(view: ColumnView, width: number): string[] {
     const style = paint(view);
     const dots = (view.tab?.lanes ?? []).map((lane) => dot(lane.status, view.messages, style)).join('');
     const head = `${style.bold(style.cyan('📝'))}${dots} ${style.dim(headline(view).split('\n').join(' '))}`;
     const tag = view.version === undefined || view.version === null ? '' : ` · v${view.version}`;
-    // the version is only worth the room it leaves: a headline never gets squeezed below BAR_MIN_HEAD cells for it
     if (tag === '' || width - tag.length < BAR_MIN_HEAD) {
         return [clipTo(head, width)];
     }

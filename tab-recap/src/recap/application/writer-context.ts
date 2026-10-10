@@ -1,4 +1,3 @@
-// The writer's input: one `recap_input` document (schema/recap-input.dtd), data only. The instructions come separately.
 import type { InputAgent, RecapInput } from '#src/ports/recap-input.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { correctionDocument } from './correction-input.ts';
@@ -8,14 +7,11 @@ import { candidatesOf } from './writer-candidates.ts';
 import { transcriptOf } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
 
-/** Characters of transcript markup shared by the agents that have something new. */
 export const TRANSCRIPT_BUDGET = 60_000;
-/** An away summary is a hint; a compaction summary carries the whole earlier session and only appears right after one. */
 const NOTE_CHARS = { 'away_summary': 400, compaction: 2_000 } as const;
 const LABEL_CHARS = 30;
 const NEST = '\n';
 
-/** The last folder of a path: `/home/dev/shop` → `shop`. */
 const basename = (path: string): string => path.split('/').findLast((part) => part !== '') ?? path;
 
 function agentOf(agent: InputAgent): string {
@@ -53,7 +49,6 @@ function notesOf(input: RecapRequest['input']): string {
     }).join('');
 }
 
-/** At least one transcript is required: with nothing new anywhere, the first agent's is empty (rewrite only). */
 function transcriptsOf(input: RecapInput, budget: number): string {
     const active = input.transcripts.filter((lane) => lane.entries.length > 0);
     const share = Math.floor(budget / Math.max(1, active.length));
@@ -61,7 +56,6 @@ function transcriptsOf(input: RecapInput, budget: number): string {
     return lanes.map((lane) => `${NEST}${transcriptOf(lane.agent, lane.entries, input.tab, share)}`).join('');
 }
 
-/** The document for `request`; `budget` is the characters of transcript markup shared out among the agents. */
 export function writerContext(request: RecapRequest, budget = TRANSCRIPT_BUDGET): string {
     if (request.retry !== undefined) {
         return correctionDocument({ ...request, retry: request.retry });

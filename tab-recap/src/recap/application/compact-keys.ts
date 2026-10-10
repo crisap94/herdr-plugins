@@ -1,4 +1,3 @@
-// The compaction popup as a pure reducer: a one-line note the operator may type. Enter sends (the note, or none), Esc cancels.
 import { NOTE_LIMIT } from './compaction-message.ts';
 
 export interface NoteState {
@@ -17,13 +16,11 @@ export const EMPTY_NOTE: NoteState = { note: '' };
 const ESC = String.fromCodePoint(0x1b);
 const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
 
-/** What is sent for a typed note: trimmed, on one line; nothing typed is no note at all. */
 export function noteOf(typed: string): string | null {
     const note = typed.replace(/\s+/g, ' ').trim();
     return note === '' ? null : note;
 }
 
-/** One key. Pasted text arrives as one key and is kept up to the limit; Ctrl-U clears, Backspace erases one character. */
 export function step(state: NoteState, key: string): NoteStepped {
     if (key === '\r' || key === '\n') {
         return { state, effect: { kind: 'send', note: noteOf(state.note) } };

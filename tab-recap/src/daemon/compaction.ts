@@ -1,4 +1,3 @@
-// The composition of compaction: the daemon's parts, handed to the one service that types into an agent.
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
@@ -25,10 +24,8 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 import { bounded } from './bounded.ts';
 import { loadConfig, messagesOf } from './config.ts';
 
-/** the recap a compaction waits for is given up on after this long (the last good one is used) */
 const RECAP_WAIT_MS = 90_000;
 
-/** The brief check of an automatic compaction: `null` when no decider is set up. The pass mark is read from `tuning` at each check. */
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
     return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
 }
@@ -45,15 +42,11 @@ export function wireCompaction(parts: {
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;
-    /** the decider that checks the brief's coverage (`TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`) */
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
-    /** answers another tool's compaction request on its pane */
     readonly answers: { answer(id: string, pane: string, stage: string): void };
-    /** the typing lease, taken around each line typed */
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
-    /** the compactions queued or running in this daemon: shared with autocompact, so a lane has one at a time */
     readonly claims: CompactionClaims;
     log(line: string): void;
 }): Compaction {

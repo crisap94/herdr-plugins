@@ -1,4 +1,3 @@
-// EXP-002's numbers per arm: per question, per policy, on the outcome set, and for coverage. Pure over the rows the tools wrote.
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { auc, brier, mean, quantile, undecidedRate } from './stats.ts';
 import type { Scored } from './stats.ts';
@@ -13,7 +12,6 @@ export interface Answer {
     readonly unknown?: string;
 }
 
-/** An arm's rows by repetition (1 and 2). */
 export type Reps = readonly (readonly Answer[])[];
 
 export interface QuestionMetrics {
@@ -37,13 +35,11 @@ const answered = (rows: readonly Answer[], question: string): Map<string, number
 const scoredOf = (rows: readonly Answer[], question: string, labels: Labels): Scored[] =>
     [...answered(rows, question)].flatMap(([key, score]) => { const label = labels.get(key)?.[question]; return label === undefined ? [] : [{ score, label }]; });
 
-/** Mean absolute difference between the repetitions on the keys both answered. */
 export function drift(reps: Reps, question: string): number {
     const [first, second] = [answered(reps[0] ?? [], question), answered(reps[1] ?? [], question)];
     return mean([...first].flatMap(([key, value]) => { const other = second.get(key); return other === undefined ? [] : [Math.abs(value - other)]; }));
 }
 
-/** One question's metrics for an arm: AUC and Brier averaged over the repetitions, the rest pooled. */
 export function questionMetrics(reps: Reps, question: string, labels: Labels, filter: (key: string) => boolean = () => true): QuestionMetrics {
     const rows = reps.map((rep) => rep.filter((row) => filter(row.key)));
     const all = rows.flat();
@@ -66,13 +62,10 @@ export interface PolicyMetrics {
     readonly n: number;
 }
 
-/** The arm's verdict for a point, from the answers it gave (missing ones make `wait`). */
 export const verdictFor = (row: Answer | undefined): string => (row?.answers === undefined ? 'wait' : verdictOf(row.answers));
 
-/** The labels' own verdict: `compact` when the labels make the moment safe. */
 export const safeByLabels = (labels: Readonly<Record<string, 0 | 1>>): boolean => verdictOf(labels) === 'compact';
 
-/** Precision of `compact` and recall among the moments the labels call safe, for one repetition over the points `keep` accepts. */
 export function policyMetrics(rep: readonly Answer[], labels: Labels, keep: (key: string) => boolean): PolicyMetrics {
     const byKey = new Map(rep.map((row) => [row.key, row]));
     const keys = [...labels.keys()].filter((key) => keep(key) && !key.includes('#'));
@@ -81,15 +74,10 @@ export function policyMetrics(rep: readonly Answer[], labels: Labels, keep: (key
     return { precision: compact.length === 0 ? Number.NaN : hits / compact.length, recall: safe.length === 0 ? Number.NaN : hits / safe.length, compact: compact.length, safe: safe.length, hits, n: keys.length };
 }
 
-/** Coverage: AUC of the `keeps` and `reason` answers against the brief labels (`<point>#<n>` keys). */
 export function coverageAuc(reps: Reps, labels: Labels, question: 'brief_keeps_fact' | 'brief_keeps_reason'): number {
     return mean(reps.map((rep) => auc(scoredOf(rep, question, labels))).filter((v) => !Number.isNaN(v)));
 }
 
-/**
- * A brief's one answer row (`keeps_<i>`, `reason_<i>`) as one row per fact keyed `<brief>#<i>`, answering `brief_keeps_fact` and `brief_keeps_reason`.
- * The call's tokens, money and time stay on the brief's first fact. Rows of points pass through unchanged.
- */
 export function expandBriefs(rows: readonly Answer[]): readonly Answer[] {
     return rows.flatMap((row) => {
         if (row.kind !== 'brief') return [row];

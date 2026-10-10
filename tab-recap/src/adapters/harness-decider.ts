@@ -5,7 +5,6 @@ import { unfenced } from './recap-prompt.ts';
 
 const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
 
-/** What the harness is told: each question with its criteria, and the one JSON object it must answer with. */
 export function deciderInstructions(questions: Readonly<Record<string, Noul>>): string {
     const listed = Object.entries(questions).map(([id, noul]) => `- ${id}: ${text(noul.instructions)}\n  true when: ${text(noul.criteria.true)}\n  false when: ${text(noul.criteria.false)}`);
     return [
@@ -16,7 +15,6 @@ export function deciderInstructions(questions: Readonly<Record<string, Noul>>): 
     ].join('\n');
 }
 
-/** Every question's number from a reply, each in [0, 1]; null when any is missing or the reply is not a JSON object. */
 export function probabilitiesOf(reply: string, ids: readonly string[]): Record<string, number> | null {
     let parsed: unknown;
     try { parsed = JSON.parse(unfenced(reply)); } catch { return null; }
@@ -30,7 +28,6 @@ export function probabilitiesOf(reply: string, ids: readonly string[]): Record<s
     return found;
 }
 
-/** The decider on a harness: one call, the state as input, a JSON object of probabilities back. */
 export class HarnessDecider implements Decider {
     readonly label: string;
     private readonly harness: Harness;

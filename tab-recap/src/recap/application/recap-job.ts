@@ -30,40 +30,29 @@ export interface RecapJobDeps {
     readonly transcripts: readonly Transcripts[];
     readonly records: RecapRecords;
     readonly ledger: Ledger;
-    /** where a lane's cwd lives in git: a hint for grouping the lanes into tasks */
     readonly repos: LaneRepo;
     readonly clock: Clock;
     summarizer(): Summarizer;
-    /** what recaps should be written in right now (re-read for every recap) */
     language(): string;
-    /** whether each run's input document is kept for judging (`TAB_RECAP_KEEP_INPUT_DAYS` above 0); kept when not given */
     keepInput?(): boolean;
-    /** the steps a run's new turns go through (`full` when not given) */
     pipeline?(): Pipeline;
-    /** the enumeration's model, as the job is set now; null (or not given): no enumeration, the single call */
     enumerator?(): Enumerators | null;
-    /** told of every run that wrote to the ledger: the curator reconciles it from time to time */
     ran?(event: RunEvent): void;
     log(line: string): void;
 }
 
-/** A turn's status can flap working↔idle; wait this long before reading the transcripts. */
 const TURN_SETTLE_MS = 2500;
-/** At most this much is read per recap, shared by the tab's lanes. */
 const READ_BUDGET = 768 * 1024;
-/** Where a lane works, for grouping: its repository's top-level folder, else its working folder. */
 async function placeOf(lane: Lane, repos: LaneRepo): Promise<PlacedLane> {
     const found = lane.cwd === null ? null : await repos.repoOf(lane.cwd);
     return { pane: String(lane.pane), place: found?.kind === 'repo' ? found.root : lane.cwd };
 }
 
-/** What one lane contributes to its tab's recap this time. */
 interface Reading {
     readonly lane: Lane;
     readonly cursor: LaneCursor;
     readonly chunk: Chunk | null;
     readonly grew: boolean;
-    /** the lane's transcript was never read before */
     readonly fresh: boolean;
     readonly error: string | null;
 }
@@ -72,11 +61,9 @@ interface Slot {
     timer: ReturnType<typeof setTimeout> | null;
     running: boolean;
     again: { lanes: readonly Lane[]; cause: RecapCause } | null;
-    /** callers waiting for the tab's recap to settle */
     waiting: (() => void)[];
 }
 
-/** Single flight per TAB: one recap at a time, and at most one more queued behind it. */
 export class RecapJob {
     private readonly deps: RecapJobDeps;
     private readonly slots = new Map<string, Slot>();
@@ -119,7 +106,6 @@ export class RecapJob {
         }
     }
 
-    /** A recap asked for now, and awaited: resolves when the tab's recap has been written (or has failed) and nothing more is queued behind it. */
     refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> {
         return new Promise((resolve) => {
             this.request(tab, lanes, 'requested');
@@ -175,13 +161,11 @@ export class RecapJob {
         return tasks.map((task) => ({ key: task.id, open: ledger.openOf({ tab, key: task.id }), closed: ledger.recentlyClosed({ tab, key: task.id }, now - CLOSED_SHOWN_MS) }));
     }
 
-    /** The run's operations by the pipeline as it is set now. */
     private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
         const { deps } = this;
         return extractPiped(summarizer, request, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, log: (line) => { deps.log(line); } });
     }
 
-    /** What the writer is asked about this run: the tasks the lanes group into, the document, and what its answer is judged against. */
     private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
         const now = this.deps.clock.now();
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
@@ -190,7 +174,6 @@ export class RecapJob {
         return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
     }
 
-    /** `switched`: the recap exists in another language than wanted — rewrite it now, new excerpt or not. */
     private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
         const note = errors.length > 0 ? errors.join('; ') : null;
@@ -219,7 +202,6 @@ export class RecapJob {
         this.written({ ...facts, language: language.want, error: note, lanes: advanced }, { tasks, request, asked, readings, parts });
     }
 
-    /** The run's recap is stored and the curator told. */
     private written(base: Omit<RecordedRun, 'tasks' | 'ops' | 'marks' | 'input' | 'gateStats'>, run: { tasks: readonly TaskShape[]; request: RecapRequest; asked: Extract<Extracted, { kind: 'ops' }>; readings: readonly Reading[]; parts: readonly Reading[] }): void {
         const input = this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {};
         const marks = marksOf(run.readings, base.at, true);

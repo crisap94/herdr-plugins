@@ -1,5 +1,3 @@
-// Autocompact against other tools' waits and the event stream: an `awaiting` token is in flight whatever the setting; a skip is logged, recorded and
-// written as an event only when its gate changes; a decision is an event with its verdict and share.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';

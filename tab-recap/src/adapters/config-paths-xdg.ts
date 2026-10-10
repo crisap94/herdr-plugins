@@ -1,4 +1,3 @@
-// ConfigPaths on Linux and macOS: herdr uses `~/.config` and `~/.local/state` on both (not `~/Library/Application Support`).
 import { join } from 'node:path';
 import type { ConfigPaths } from '#src/ports/config-paths.ts';
 

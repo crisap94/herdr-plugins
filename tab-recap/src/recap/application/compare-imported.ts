@@ -1,6 +1,3 @@
-// The fair comparison with 1.x: for each chapter of a tab, the last good 1.x recap of the chapter is judged as one state against the ledger state the
-// replay had at the same time — the same key facts (found once, on the replay's state), the same read-back questions, the same evidence (the chapter's
-// turns, without the ledgers the replay's own writer was shown, which would favour it). Per chapter and summed.
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { RunInputs, RunItem, StoredRun } from '#src/ports/run-inputs.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -12,12 +9,9 @@ import type { Carrying, Share } from './judge-coverage.ts';
 import { readBack } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
 
-/** How long after the replay's last run a 1.x recap may be and still be about what the replay saw. */
 const SLACK_MS = 30 * 60_000;
-/** The most evidence one call is given; the oldest documents go first. */
 const EVIDENCE_CHARS = 250_000;
 
-/** One recap (1.x or the replay's ledger) measured against the chapter's key facts. */
 export interface Side {
     readonly coverage: Share;
     readonly filler: Share;
@@ -36,11 +30,9 @@ export interface Comparison {
 }
 
 export interface CompareDeps extends JudgeDeps {
-    /** the label the replay ran under: its runs are the ones in `inputs` */
     readonly label: string;
 }
 
-/** The writer's input without its ledgers: what the turns of the chapter said, not what a writer had already made of them. */
 export const withoutLedgers = (document: string): string => document.replace(/<ledger\b[^>]*?(?:\/>|>[\s\S]*?<\/ledger>)/gu, '');
 
 function evidenceOf(inputs: RunInputs, runs: readonly StoredRun[]): string {
@@ -67,7 +59,6 @@ async function sideOf(deps: JudgeDeps, parts: { readonly input: string; readonly
     return { side: { coverage: measured.coverage, filler: measured.filler, readback: back.grades, size: parts.state.length }, costUsd: back.costUsd };
 }
 
-/** One chapter: the replay's state sets the key facts, the 1.x recap is measured against the same ones. */
 async function compareChapter(deps: CompareDeps, chapter: ImportedChapter, runs: readonly StoredRun[], since: number): Promise<{ readonly result: ChapterResult; readonly costUsd: number }> {
     const skip = (why: string, costUsd = 0): { result: ChapterResult; costUsd: number } => ({ result: { kind: 'skipped', n: chapter.n, at: chapter.at, why }, costUsd });
     const at = runs.findLast((run) => run.at <= chapter.at);
@@ -104,7 +95,6 @@ function totalOf(results: readonly ChapterResult[], pick: (result: ChapterResult
     };
 }
 
-/** Each chapter in turn (one model call at a time). The chapters are those of the 1.x tab, oldest first; `runs` the replay's, in time order. */
 export async function compareImported(deps: CompareDeps, chapters: readonly ImportedChapter[]): Promise<Comparison> {
     const runs = deps.inputs.runs({ tab: deps.label, since: null, limit: 100_000, withInput: true }).toReversed();
     const results: ChapterResult[] = [];

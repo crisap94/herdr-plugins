@@ -13,7 +13,6 @@ test('auc: a perfect ranking is 1, a reversed one 0, all ties 0.5, one class NaN
 
 test('auc: matches the pairwise definition, ties counting half', () => {
     const points = [{ score: 0.9, label: 1 as const }, { score: 0.4, label: 1 as const }, { score: 0.4, label: 0 as const }, { score: 0.7, label: 0 as const }, { score: 0.1, label: 0 as const }];
-    // pairs (pos, neg): .9>.4 .9>.7 .9>.1 → 3 · .4=.4 → .5, .4<.7 → 0, .4>.1 → 1 → 4.5 of 6
     near(auc(points), 4.5 / 6);
 });
 

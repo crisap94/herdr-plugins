@@ -2,23 +2,18 @@ import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Instant } from './time.ts';
 
-/** A wide tab docks its column at the SIDE; a narrow one (a phone) gets a BAR along the bottom. */
 export type Shape = 'side' | 'bar';
 
 export interface Placement {
     readonly pane: PaneId;
     readonly shape: Shape;
-    /** when the pane was created (ms), if we opened it ourselves: a snapshot requested before that cannot know it */
     readonly since?: number;
 }
 
-/** What the operator asked of a column: hide it, show it, or flip it from whatever it is NOW — decided by the board that applies the request, never by the one who sent it. */
 export type Visibility = boolean | 'toggle';
 
-/** What `hide` and `show` act on: one tab, or every tab. */
 export type VisibilityTarget = { readonly tab: TabId } | 'all';
 
-/** The operator's hidden columns, as saved: `all` is the blanket, `shown` the tabs shown again under it. */
 export interface HiddenState {
     readonly all: boolean;
     readonly hidden: readonly string[];
@@ -27,25 +22,16 @@ export interface HiddenState {
 
 export interface Board {
     readonly lanes: ReadonlyMap<PaneId, Lane>;
-    /** tab → where its column is */
     readonly columns: ReadonlyMap<TabId, Placement>;
-    /** pane → when we asked herdr to close it: until it leaves herdr's list the old column is still there */
     readonly closing: ReadonlyMap<PaneId, Instant>;
-    /** tabs whose column has been asked for and not yet reported */
     readonly opening: ReadonlySet<TabId>;
-    /** tab → when its column was closed by someone else, most recent last */
     readonly reopens: ReadonlyMap<TabId, readonly Instant[]>;
-    /** tab → until when it is given up */
     readonly givenUp: ReadonlyMap<TabId, Instant>;
-    /** tab → its width in cells, when known */
     readonly widths: ReadonlyMap<TabId, number>;
-    /** the tab the operator is looking at, when known */
     readonly focused: TabId | null;
     readonly enabled: boolean;
     readonly seeded: boolean;
-    /** tabs whose column the operator hid (their recaps keep being written) */
     readonly hidden: ReadonlySet<TabId>;
-    /** every column hidden at once; `shown` are the tabs shown again since */
     readonly allHidden: boolean;
     readonly shown: ReadonlySet<TabId>;
 }

@@ -1,9 +1,7 @@
-// G3 decision without a why: a "decisions" item needs a reason clause (S-decisions).
 import { said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
 
 const REASON_WORDS = /(?<![\p{L}\p{N}])(because|so that|so|since|to|instead of|rather than|therefore|otherwise|porque|para|para que|ya que|dado que|en vez de|en lugar de|así que|por eso|pues)(?![\p{L}\p{N}])/iu;
-/** A colon or a dash followed by a clause of at least two words. */
 const CLAUSE = /[:—]\s*\S+\s+\S+/u;
 
 export const withoutWhy: Gate = {

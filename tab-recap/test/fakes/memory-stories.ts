@@ -1,4 +1,3 @@
-// `Stories` over a `MemoryLedger`: the merges go through the ledger's fold, the story is kept beside them.
 import type { Applied } from '#src/ports/ledger.ts';
 import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';

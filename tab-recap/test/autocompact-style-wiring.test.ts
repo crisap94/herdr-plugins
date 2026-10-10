@@ -1,5 +1,3 @@
-// The style through the daemon's wiring: `wireAutocompact` hands the configured tuning to the service, `coverageOf` reads the pass mark of the
-// tuning in force, and `loadConfig` reads the style from the environment. The daemon's own reads are injected; nothing reaches herdr.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -25,17 +23,14 @@ import { memoryStore } from './db/support.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
-/** The configuration the daemon reads, built from the keys as `loadConfig` builds it. */
 function configOf(keys: Readonly<Record<string, string>>): Config {
     return { autocompact: { ...policyOf(env(keys)), mode: 'on' }, tuning: tuningOf(env(keys)) } as unknown as Config;
 }
 
-/** A decider that keeps every brief fact at `keeps`. */
 function keeping(keeps: number): Decider {
     return { label: 'fake', ask: (_s, questions): Promise<DecidedResult> => Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id): [string, number] => [id, keeps])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }) };
 }
 
-/** A transcript reader that finds a source and reports no work in flight; nothing else is read here. */
 function inertTranscripts(): Transcripts {
     return {
         agent: 'claude',
@@ -46,7 +41,6 @@ function inertTranscripts(): Transcripts {
     };
 }
 
-/** The decision a lane gets when the decider answers `closes` for the close question and 0.15 for the rest, through the daemon's wiring. */
 async function decisionUnder(keys: Readonly<Record<string, string>>, closes: number): Promise<string | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
@@ -106,7 +100,6 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
         await service.consider(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
         return store.autocompact.newest(1)[0]?.verdict;
     };
-    // eager: warnings at most 0.40, so 0.42 fails; the key 0.44 (below eager's band start 0.45) lets them pass, and the close of 0.95 compacts
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }), 'wait');
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager', TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.44' }), 'compact');
 });

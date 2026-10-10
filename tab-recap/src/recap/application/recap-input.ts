@@ -1,4 +1,3 @@
-// What the writer is given for one run: the tab, who works in it, what each agent said about itself and what is new.
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
@@ -10,7 +9,6 @@ import { numbered } from './ledger-input.ts';
 import type { Numbering, TaskFacts } from './ledger-input.ts';
 import { hintOf } from './lane-hints.ts';
 
-/** What one lane contributed this time. `fresh`: the lane was never read before. */
 export interface Observed {
     readonly lane: Lane;
     readonly cursor: LaneCursor;
@@ -20,16 +18,13 @@ export interface Observed {
 
 const idOf = (index: number): string => `a${index + 1}`;
 
-/** The newest note of each kind found in what was read; on a lane's first read the one Claude last left (kept in the cursor) too, when the chunk missed it. */
 function notesOf(seen: Observed, agent: string): readonly InputNote[] {
     const all = seen.chunk?.notes ?? [];
-    /** a newer summary of a kind replaces the older ones: only the last of each kind is sent */
     const found: readonly InputNote[] = all.filter((note, index) => !all.slice(index + 1).some((later) => later.kind === note.kind)).map((note) => ({ kind: note.kind, at: note.at, text: note.text, agent }));
     const left = seen.cursor.claudeRecap;
     return seen.fresh && left !== null && !found.some((note) => note.kind === 'away_summary') ? [{ kind: 'away_summary', at: null, text: left, agent }, ...found] : found;
 }
 
-/** What the input is built from besides the lanes: the tab, its grouping into tasks, and each task's facts. */
 export interface InputWorld {
     readonly tab: string;
     readonly repos: LaneRepo;
@@ -38,7 +33,6 @@ export interface InputWorld {
     readonly facts: readonly TaskFacts[];
 }
 
-/** The document's data, and how its ledger ids map back to the facts. */
 export interface Built {
     readonly input: RecapInput;
     readonly numbering: Numbering;

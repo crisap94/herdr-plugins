@@ -1,4 +1,3 @@
-// Migration 13, herdr asks: from a version 12 database with a request in it; the compaction keeps its answer id, the accepted asks are remembered by (tool, id), and the restart reads what it interrupts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

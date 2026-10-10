@@ -1,11 +1,9 @@
-// A long coding turn as a reader returns it: one prompt, then 300 rows of reads, edits, test runs, a failure, a commit, a push and replies.
 import type { Entry } from '#src/ports/transcripts.ts';
 
 export const START = Date.parse('2026-10-07T09:00:00Z');
 
 const at = (row: number): number => START + row * 20_000;
 
-/** 300 rows after the prompt (the prompt is row 0): 25 steps of twelve rows, with the events a session is made of in the steps named below. */
 export function longTurn(): readonly Entry[] {
     const rows: Entry[] = [{ role: 'user', text: 'Move the importer to async streams, fix what breaks and ship it as !41.', at: at(0) }];
     for (let step = 0; step < 25; step += 1) {

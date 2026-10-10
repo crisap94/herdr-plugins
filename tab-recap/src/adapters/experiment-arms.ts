@@ -1,4 +1,3 @@
-// The four arms of EXP-002: who answers the questions. Each arm makes one decider per lane (a lane is one concurrent call; Codex needs its own work folder).
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -28,7 +27,6 @@ const harnessArms: Readonly<Record<Exclude<ArmName, 'jev'>, { readonly make: (di
     'luna-low': { make: (dir) => new CodexHarness(dir, TIMEOUT_MS), settings: { model: 'gpt-6-luna', effort: 'low' } },
 };
 
-/** The decider of an arm for one lane; `work` is the arm's work folder. */
 export function deciderOf(arm: ArmName, work: string, lane: number): Decider {
     if (arm === 'jev') return new JevDecider({ url: JEV_URL_DEFAULT, model: JEV_MODEL_DEFAULT, key: () => jevKey(configGetter(), readKeyFile, homedir()) });
     const { make, settings } = harnessArms[arm];

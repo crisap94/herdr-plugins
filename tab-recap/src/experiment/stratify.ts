@@ -1,11 +1,8 @@
-// EXP-002's sample: 120 above the minimum, 60 just before an agent's own compaction, 60 at random from the rest. Pure.
 import { seeded, shuffled } from './seeded.ts';
 
 export interface Candidate {
     readonly id: string;
-    /** the context share in percent at the point; null when unknown */
     readonly share: number | null;
-    /** whether it is the last turn end before a compact_boundary of its transcript */
     readonly beforeBoundary: boolean;
 }
 
@@ -19,14 +16,9 @@ export const MINIMUM_LIMIT = 40;
 
 export interface Sampled {
     readonly picked: readonly { readonly id: string; readonly stratum: Stratum }[];
-    /** per stratum: how many were asked for and how many exist */
     readonly counts: Readonly<Record<Stratum, { readonly asked: number; readonly got: number }>>;
 }
 
-/**
- * Take the quotas in the order boundary, high, random, each from what the earlier strata left (the turn ends before a compaction are mostly
- * above the minimum, so they go first or the high stratum would use them up); a short stratum gives all it has.
- */
 export function stratify(candidates: readonly Candidate[], quota: Quota = QUOTA, seed = SEED): Sampled {
     const random = seeded(seed);
     const taken = new Set<string>();

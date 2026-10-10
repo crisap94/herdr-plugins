@@ -2,7 +2,6 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { hyperlink } from './hyperlink.ts';
 import { linkify } from './links.ts';
 
-/** `text` with every reference of it drawn as a hyperlink (the words stay as written); the lanes' web contexts say where they go. */
 export function linked(text: string, contexts: readonly (LaneWeb | null | undefined)[]): string {
     return linkify(text, contexts).map((piece) => (piece.url === undefined ? piece.text : hyperlink(piece.text, piece.url))).join('');
 }

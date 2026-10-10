@@ -1,4 +1,3 @@
-// What each editable field of the settings modal is: a list to choose from, or text to type, and how its value is read from and kept in the draft. Pure.
 import { languageSetting } from '#src/i18n/index.ts';
 import { minimumOf } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
@@ -9,9 +8,7 @@ import type { Draft, FieldId } from './setup-state.ts';
 
 export interface ChoiceField {
     readonly size: number;
-    /** the choice the draft has now */
     readonly at: (draft: Draft) => number;
-    /** the draft with choice number `at`; unchanged when there is none */
     readonly keep: (draft: Draft, at: number) => Draft;
 }
 
@@ -43,7 +40,6 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
     decideEffort: choice(EFFORT_CHOICES, (draft) => draft.decide.effort, (draft, effort) => ({ ...draft, decide: { ...draft.decide, effort } })),
 };
 
-/** The fields typed as text (other than the recap writer's model, which belongs to the harness in force). */
 export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed) => ({ ...draft, recapLanguage: languageSetting(typed) }) },
     screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed) => ({ ...draft, screenAgents: screenSetting(typed) }) },

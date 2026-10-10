@@ -22,7 +22,6 @@ import type { Config } from './config.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
 
-/** Herdr's list and the PATH must both say yes; when herdr cannot be asked, the PATH alone decides. */
 export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
     if (isUnknown(fromPath)) {
         return fromHerdr;
@@ -39,40 +38,31 @@ class Nothing implements Summarizer {
     }
 }
 
-/** The summarizer `config` asks for, given what is available; one that explains itself when there is none. */
 export function summarizerFor(config: Config, available: readonly string[], work: string): Summarizer {
     const id = pick(config.backend, available);
     return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work), { model: config.models[id], effort: config.effort });
 }
 
-/** The enumeration: the recap writer's harness and model at low effort (it lists candidates, the writer decides); null when no harness is there or the writer is a custom command, whose contract is the single call. */
 export function enumeratorFor(config: Config, available: readonly string[], work: string): Enumerators | null {
     const id = pick(config.backend, available);
     return id === null || id === 'custom' ? null : new HarnessEnumerator(MAKERS[id](config, work), { model: config.models[id], effort: 'low' });
 }
 
-/** The compaction brief's writer: the job's placement on a harness; null when the job is off or no harness is there. */
 export function briefFor(config: Config, available: readonly string[], work: string): CompactionBriefs | null {
     const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
 }
 
-/** The judge's model: the job's placement on a harness; null when the job is off or no harness is there. */
 export function judgeFor(config: Config, available: readonly string[], work: string, anchors?: CheckAnchors): Judge | null {
     const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort }, anchors);
 }
 
-/** The curator: the job's placement on a harness; null when the job is off or no harness is there. */
 export function curatorFor(config: Config, available: readonly string[], work: string): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work), { model: placed.model, effort: placed.effort });
 }
 
-/**
- * Picks the summarizer for each recap. The configuration is re-read every time (a switch applies at once);
- * what is installed is looked up at start and on every resync and cached, so `summarizer()` stays synchronous.
- */
 export class Backends {
     private available: readonly string[] = [];
     private warned = false;
@@ -98,7 +88,6 @@ export class Backends {
         await this.warnWhenNone();
     }
 
-    /** One toast per daemon start, and only when `auto` has nothing to choose from. */
     private async warnWhenNone(): Promise<void> {
         if (this.warned || loadConfig().backend !== 'auto' || pick('auto', this.available) !== null) {
             return;

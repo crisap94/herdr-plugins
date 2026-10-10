@@ -1,4 +1,3 @@
-// The enumeration's input: one `enumerate_input` document (schema/enumerate-input.dtd), data only. The instructions come separately.
 import { SECTIONS } from '#src/i18n/sections.ts';
 import type { Stub } from './triggers.ts';
 import type { TurnChunk } from './chunking.ts';
@@ -7,7 +6,6 @@ import { element, leaf } from './xml.ts';
 
 const NEST = '\n';
 
-/** A question of an ask-back: what the candidates so far cannot answer. */
 export interface Question {
     readonly id: string;
     readonly text: string;
@@ -16,7 +14,6 @@ export interface Question {
 export interface EnumerateMaterial {
     readonly language: string;
     readonly tab: { readonly id: string; readonly now: number; readonly zone: string };
-    /** the id of the agent (`a1`) the chunk comes from */
     readonly agent: string;
     readonly chunk: TurnChunk;
     readonly position: { readonly index: number; readonly of: number };
@@ -24,7 +21,6 @@ export interface EnumerateMaterial {
     readonly questions: readonly Question[];
 }
 
-/** The id a stub has in the document: `g1…gn` in the order given. */
 export const stubId = (at: number): string => `g${at + 1}`;
 
 const SECTION_LINES = [...SECTIONS.map((section) => [section.id, section.hint] as const), ['rules', 'standing constraints the operator stated and still wants kept'] as const];

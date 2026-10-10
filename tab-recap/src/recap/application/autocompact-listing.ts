@@ -1,4 +1,3 @@
-// `tab-recap autocompact`: the newest decisions as a table, read-only. Pure: decisions in, lines out.
 import { parseArgs } from 'node:util';
 import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
@@ -11,7 +10,6 @@ const DAY_MS = 24 * 60 * 60_000;
 
 export type ParsedListing = { readonly kind: 'options'; readonly all: boolean } | { readonly kind: 'usage'; readonly why: string };
 
-/** `--all` (every tab, which is also what no option does) and nothing else. */
 export function parseListing(argv: readonly string[]): ParsedListing {
     try {
         const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { all: { type: 'boolean' } } });
@@ -21,7 +19,6 @@ export function parseListing(argv: readonly string[]): ParsedListing {
     }
 }
 
-/** `10-08 11:59` in the given zone. */
 function stamp(at: number, zone: string): string {
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: zone, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(at).map((part) => [part.type, part.value]));
     return `${parts['month']}-${parts['day']} ${parts['hour']}:${parts['minute']}`;
@@ -38,10 +35,8 @@ const skippedRow = (found: Skip, zone: string): readonly string[] => [
     stamp(found.at, zone), found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—',
 ];
 
-/** A cooldown or a re-check interval: whole minutes, else seconds. */
 const everyOf = (ms: number): string => (ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`);
 
-/** The style in force and its numbers, the listing's first line: `style eager · warnings at most 0.40 · … · re-check 30 min`. */
 export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning): string {
     const { verdict } = tuning;
     return [
@@ -56,14 +51,12 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning):
     ].join(' · ');
 }
 
-/** The rows under their head, each column padded to its widest cell. */
 function table(head: readonly string[], rows: readonly (readonly string[])[]): readonly string[] {
     const all = [head, ...rows];
     const widths = head.map((_, at) => Math.max(...all.map((row) => (row[at] ?? '').length)));
     return all.map((row) => row.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd());
 }
 
-/** The decisions as a table, then `last 24 h: N decisions, $X`; then, when a lane is stopped, `not decided now` and the stopped lanes (newest first, their gate and detail). Nothing to list says so. */
 export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly string[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
     const total = `last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`;

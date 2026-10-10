@@ -122,6 +122,20 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 | **Publish** | Write a tab's view (its lanes and their statuses) for its column to render. |
 | **Reopen budget** | How often a column may be reopened after being closed: 3 times in 2 minutes, then the tab is **given up** for 10 minutes. Stops the daemon fighting an operator who means it. A close the daemon asked for and herdr has not done after 30 s (the **close grace**) is asked again and counts against the budget too. |
 
+## Rules the terms carry
+
+Facts about a term that a reader needs and that no name or test states.
+
+### Store
+- **Last seen** (Retention): a tab's last seen is the newer of its last run and the last time the daemon drew its column, so a tab whose column was drawn recently is never removed whatever its last run says.
+
+### Boundary
+
+- A boundary's tokens before and after come from the agent's mark when it carries them, else from the compaction record the plugin wrote for it.
+
+### Gates
+- **Gate `L`** is not a function in `recap/domain/gates/`: it labels the refusals of the ledger's own rules (a second `goal`, an update of a closed fact), found by a dry run of the fold against the facts the document showed. They are reported and sent back in the one retry like a gate's refusal, so everything that would be refused is known before anything is written.
+
 ## Banned synonyms
 
 `summary` → **recap** · `sidebar`, `panel` → **column** · `offset` → **cursor** ·

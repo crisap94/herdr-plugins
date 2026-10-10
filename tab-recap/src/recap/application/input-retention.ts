@@ -1,4 +1,3 @@
-// How long a run's input document is kept: once a day the daemon deletes the older ones. The runs stay.
 import type { Clock } from '#src/ports/clock.ts';
 import type { RunInputs } from '#src/ports/run-inputs.ts';
 
@@ -18,7 +17,6 @@ export class InputRetention {
         this.log = parts.log;
     }
 
-    /** Called on every tick; does its work at most once a day. Returns how many inputs it deleted; 0 days keeps none (every input is older than now). */
     tick(): number {
         const now = Number(this.clock.now());
         if (this.last !== null && now - this.last < DAY_MS) {

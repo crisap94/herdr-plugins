@@ -1,4 +1,3 @@
-// Quotes: found by words, whatever the whitespace and punctuation; case counts; a piece of a text is always a verbatim part of it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { pieceOf, QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';

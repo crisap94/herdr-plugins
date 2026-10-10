@@ -1,5 +1,3 @@
-// The facts the gates read beside the verdict's own: whether another lane's automatic compaction holds this one, whether anything changed since the
-// lane's last decision, and the detail a skip keeps. Pure over what it is handed.
 import type { AutocompactRecords, LastDecision } from '#src/ports/autocompact-records.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { CompactionQueue } from '#src/ports/requests.ts';
@@ -7,28 +5,21 @@ import type { CompactionClaims } from './compaction-claims.ts';
 import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
 
 export const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
-/** A compaction asked for and not yet begun counts as in progress this long: longer than the worst gap (the recap wait, the queue poll). */
 export const ASKED_FOR_MS = 5 * 60_000;
 
-/** The work a lane's agent has in flight: a count, or `unknown` with the reason the reader gave (it counts as in flight). */
 export interface FlightAnswer {
     readonly count: number | 'unknown';
     readonly why: string;
-    /** the skip's detail when it is not the count's (an `awaiting` token names what the lane waits for) */
     readonly detail?: string;
 }
 
 export interface BusyReads {
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
     readonly decisions: Pick<AutocompactRecords, 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
-    /** the panes whose compaction (of any origin) this daemon has queued or is running */
     readonly claims: Pick<CompactionClaims, 'has'>;
-    /** the compaction requests still queued, not yet taken */
     readonly queue: CompactionQueue;
 }
 
-/** A compaction of this lane is in progress, queued or was asked for (`this lane`); an automatic one of another lane is, or was asked for (`another lane`).
- * `asked` is this process's automatic requests by pane. */
 export function busyOf(reads: BusyReads, asked: ReadonlyMap<string, number>, tab: string, pane: string, now: number): { readonly busy: boolean; readonly detail: string | null } {
     const since = asked.get(pane);
     const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS)
@@ -38,15 +29,12 @@ export function busyOf(reads: BusyReads, asked: ReadonlyMap<string, number>, tab
     return other ? { busy: true, detail: 'another lane' } : { busy: false, detail: null };
 }
 
-/** The same tokens and mode as the lane's last decision, made by this process, and not `unknown` (an unknown one is asked again): nothing changed since. */
 export function unchangedOf(last: LastDecision | null, startedAt: number, tokens: number, mode: AutocompactMode): boolean {
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode;
 }
 
-/** The verdicts a re-check asks again: a `wait`, and an `undecided` (which acts as one). A compact decision is never re-asked. */
 const WAITING: ReadonlySet<string> = new Set(['wait', 'undecided']);
 
-/** The re-check: the lane's last decision was a wait and the style's interval has passed since it, so an unchanged lane is asked again. Never when `interval` is null. */
 export const recheckDue = (interval: number | null, last: LastDecision | null, now: number): boolean => interval !== null && last !== null && WAITING.has(last.verdict) && now - last.at >= interval;
 
 export interface DetailFacts {
@@ -55,12 +43,10 @@ export interface DetailFacts {
     readonly cooldownMs: number;
     readonly lastBreakAt: number | null;
     readonly lastDecisionAt: number | null;
-    /** the busy detail, when the lane is busy */
     readonly busy: string | null;
     readonly flight: FlightAnswer | null;
 }
 
-/** What a skip says about its gate, in a few words; null for the gates that decide. */
 export function detailOf(gate: Gate, facts: DetailFacts): string | null {
     if (gate === 'busy') return facts.busy;
     if (gate === 'below-minimum') return `below ${facts.minimum} %`;
@@ -69,5 +55,4 @@ export function detailOf(gate: Gate, facts: DetailFacts): string | null {
     return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight) : null;
 }
 
-/** An `awaiting` token names what the lane waits for; otherwise the reader's count, or why it cannot tell. */
 const flightDetail = (flight: FlightAnswer): string => flight.detail ?? (flight.count === 'unknown' ? flight.why : `${flight.count} running`);

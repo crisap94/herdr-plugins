@@ -8,11 +8,6 @@ import type { Effort } from '#src/recap/domain/effort.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner } from './process.ts';
 
-/**
- * Features a recap never uses, each probe-verified on codex 0.157.1 (an unknown one is an error) and measured:
- * together they cut the request by about 6%. `apps`, `image_generation`, `sleep_tool` and `goals` are
- * accepted too but make the request ~2.5x bigger, so they stay on.
- */
 export const UNUSED_FEATURES: readonly string[] = ['multi_agent', 'plugins', 'browser_use', 'computer_use', 'skill_search', 'tool_suggest', 'hooks'];
 
 export function codexArgs(model: string, out: string, effort: Effort = 'default'): string[] {
@@ -25,7 +20,6 @@ export function codexArgs(model: string, out: string, effort: Effort = 'default'
     ];
 }
 
-/** `codex exec`, ephemeral (no rollout written), read-only sandbox, user config ignored; the data first, then the instructions, on stdin. */
 export class CodexHarness implements Harness {
     readonly id = 'codex';
     readonly limit = null;
@@ -49,7 +43,7 @@ export class CodexHarness implements Harness {
         const input = `${call.input}\n\n${call.instructions}`;
         const ran = await this.runner('codex', codexArgs(settings.model, out, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
         let text = '';
-        try { text = readFileSync(out, 'utf8'); } catch { /* codex wrote nothing */ }
+        try { text = readFileSync(out, 'utf8'); } catch { }
         rmSync(out, { force: true });
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });

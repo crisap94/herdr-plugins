@@ -16,7 +16,6 @@ import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/port
 const lane = (pane: string, tab: string, agent = 'claude'): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status: 'idle', session: `s-${pane}` });
 const column = (tab: string, pane: string, shape: Shape = 'side'): { tabId: string; paneId: string; shape: Shape } => ({ tabId: tab, paneId: pane, shape });
 
-/** A snapshot of herdr; `at` is when it was REQUESTED (what the informer stamps), `panes` is what herdr held then. */
 const snapshot = (at: number | undefined, lanes: SeenLane[], columns: { tabId: string; paneId: string; shape: Shape }[]): Observation => ({
     kind: 'reconciled',
     seen: {
@@ -41,7 +40,6 @@ const opens = (intents: readonly Intent[]): string[] => intents.flatMap((intent)
 const closes = (intents: readonly Intent[]): string[] => intents.flatMap((intent) => (intent.kind === 'close-column' ? [String(intent.column)] : []));
 
 test('ROOT CAUSE: a snapshot taken BEFORE a column was opened, folded after it, must not make the board forget that column', () => {
-    // t=100 a snapshot is requested; t=200 the daemon opens the column; the (slow) snapshot is folded after the open
     const { board, intents } = play([
         snapshot(50, [lane('w1:p1', 'w1:t1')], []),
         opened('w1:t1', 'w1:p9', 200),
@@ -115,7 +113,6 @@ const seenWith = (columns: { tabId: string; paneId: string; shape: Shape }[]): S
     seen: { focusedTab: null, lanes: [lane('w1:p1', 'w1:t1')], columns, widths: new Map(), panes: ['w1:p1', ...columns.map((c) => c.paneId)] },
 });
 
-/** The race end to end, through the real informer: a snapshot requested before an open, answered after it. */
 test('informer: a slow snapshot that predates the open is stamped with when it was requested, and costs no second column', async () => {
     let now = 0;
     const openedTabs: string[] = [];

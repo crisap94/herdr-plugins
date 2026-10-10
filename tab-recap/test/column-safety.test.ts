@@ -74,7 +74,6 @@ const reconciled = (lanes: ReturnType<typeof lane>[], columnPanes: string[]): Ob
 
 test('the domain never adopts an agent pane as a column, nor closes it — not even on stop', () => {
     for (const agent of ['claude', 'codex', 'opencode']) {
-        // an adapter that wrongly reports the agent pane (named tab-recap-harness-config) as a column
         const { board, intents } = play([reconciled([lane('w1:p1', agent)], ['w1:p1']), { kind: 'switched', enabled: false }]);
         assert.equal(board.columns.size, 0, `${agent}: no column adopted`);
         const closes = intents.filter((intent) => intent.kind === 'close-column');
@@ -100,7 +99,6 @@ test('a real column is still closed on stop (the guard is not a blanket no)', ()
     assert.deepEqual(intents.filter((intent) => intent.kind === 'close-column').map((intent) => String(intent.column)), ['w1:p2']);
 });
 
-/** A herdr that answers session.snapshot and records everything else it is asked. */
 async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: string; calls: string[]; done: () => void }> {
     const dir = mkdtempSync(join(tmpdir(), 'recap-herdr-'));
     const path = join(dir, 'herdr.sock');

@@ -1,4 +1,3 @@
-// The reconcile step's candidates as the `candidates` element of the writer's document (schema/recap-input.dtd); nothing when the run has none to reconcile.
 import type { RecapInput } from '#src/ports/recap-input.ts';
 import { localTime } from './local-time.ts';
 import { element, leaf } from './xml.ts';

@@ -1,15 +1,9 @@
-// UUIDv7 (RFC 9562 §5.7): 48 bits of Unix milliseconds, version 7, variant 10, the rest random. Monotonic within one
-// process (§6.2): when the millisecond has not advanced, a 12-bit counter in `rand_a` goes up; when it overflows the
-// millisecond is bumped. The id carries ONLY its creation time — everything else about a row is a column.
-
 export interface Uuid7Sources {
-    /** Unix milliseconds */
     readonly now: () => number;
     readonly random: (bytes: Uint8Array) => void;
 }
 
 const COUNTER_MAX = 0xfff;
-/** a fresh counter starts in the lower half, leaving room to count up inside one millisecond */
 const COUNTER_SEED = 0x7ff;
 
 const SYSTEM: Uuid7Sources = { now: Date.now, random: (bytes) => { crypto.getRandomValues(bytes); } };
@@ -29,7 +23,6 @@ export class Uuid7Generator {
         return (((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0)) & COUNTER_SEED;
     }
 
-    /** The millisecond this id is stamped with, and its counter: strictly above the previous id's, whatever the clock does. */
     private tick(): void {
         const ms = this.sources.now();
         if (ms > this.lastMs) {
@@ -59,12 +52,10 @@ export class Uuid7Generator {
     }
 }
 
-/** The creation time inside an id, in Unix milliseconds. */
 export function timeOf(id: Uint8Array): number {
     return id.slice(0, 6).reduce((ms, byte) => ms * 256 + byte, 0);
 }
 
-/** The ids as bytes compare: oldest first. */
 export function compareIds(a: Uint8Array, b: Uint8Array): number {
     for (let at = 0; at < 16; at += 1) {
         const difference = (a[at] ?? 0) - (b[at] ?? 0);
@@ -75,5 +66,4 @@ export function compareIds(a: Uint8Array, b: Uint8Array): number {
     return 0;
 }
 
-/** One generator for the process, so ids made by different repositories stay in order. */
 export const ids = new Uuid7Generator();

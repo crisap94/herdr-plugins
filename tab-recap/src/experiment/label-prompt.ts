@@ -1,4 +1,3 @@
-// What the labeller is told, and how its answers are read. The labeller sees the state AND what happened next. Pure.
 import type { Noul } from '#src/ports/decider.ts';
 
 const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
@@ -6,7 +5,6 @@ const text = (part: string | object): string => (typeof part === 'string' ? part
 const listed = (questions: Readonly<Record<string, Noul>>): string[] =>
     Object.entries(questions).map(([id, noul]) => `- ${id}: ${text(noul.instructions)}\n  1 when: ${text(noul.criteria.true)}\n  0 when: ${text(noul.criteria.false)}`);
 
-/** Instructions for labelling a point: the six questions, with the hindsight to settle each. */
 export function labelInstructions(questions: Readonly<Record<string, Noul>>): string {
     return [
         'You label moments of a coding agent\'s work. The input is a JSON document with `state` (what a decider saw when the agent went idle) and `hindsight`',
@@ -17,7 +15,6 @@ export function labelInstructions(questions: Readonly<Record<string, Noul>>): st
     ].join('\n');
 }
 
-/** Instructions for labelling a brief against the facts of its session. */
 export function coverageLabelInstructions(): string {
     return [
         'The input is a JSON document with a `brief` (text written to carry a coding session across a compaction) and `facts`, a list of {n, section, text, why}.',
@@ -29,7 +26,6 @@ export function coverageLabelInstructions(): string {
 
 const binary = (value: unknown): value is 0 | 1 => value === 0 || value === 1;
 
-/** The 0/1 answer for every id, or null when the reply is not one JSON object with all of them. */
 export function labelsOf(reply: string, ids: readonly string[]): Readonly<Record<string, 0 | 1>> | null {
     const parsed = jsonOf(reply);
     if (parsed === null) return null;
@@ -42,7 +38,6 @@ export function labelsOf(reply: string, ids: readonly string[]): Readonly<Record
     return found;
 }
 
-/** `{n: {keeps, reason?}}` for every fact number asked, or null. */
 export function coverageLabelsOf(reply: string, facts: readonly { readonly n: number; readonly reason: boolean }[]): Readonly<Record<string, { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }>> | null {
     const parsed = jsonOf(reply);
     if (parsed === null) return null;

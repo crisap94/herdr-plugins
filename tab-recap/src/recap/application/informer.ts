@@ -22,31 +22,24 @@ export interface InformerHooks {
     onBlind(blindness: Blindness): void;
     onUnknownKind(rawKind: string): void;
     onBeat(): void;
-    /** herdr pushed a lane's status (the compaction flow waits on it, and an agent's next turn ends the compaction's showing) */
     onStatus?(pane: string, status: string): void;
-    /** a `pane.updated` frame: a pane's tokens changed (another tool may have asked for a compaction) */
     onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
 }
 
 const RESYNC_DEBOUNCE_MS = 400;
 
-/** How a failed subscription is retried: 1 s, 2 s, 4 s … up to a minute, until it works. */
 export interface Retry {
     readonly retryBaseMs: number;
     readonly retryMaxMs: number;
-    /** how long `resync` waits to merge a burst of frames into one reconcile (default 400 ms) */
     readonly resyncDebounceMs?: number;
-    /** how long without a frame or a snapshot from herdr before the daemon says so and subscribes afresh (default 5 minutes) */
     readonly watchdogMs?: number;
 }
 
 const DEFAULT_RETRY: Retry = { retryBaseMs: 1000, retryMaxMs: 60_000 };
 const WATCHDOG_MS = 300_000;
 
-/** Every Nth tick opens a fresh subscription even though nothing is known to be wrong: a half-open connection says nothing. */
 export const RESUBSCRIBE_EVERY = 10;
 
-/** Holds the board; feeds the fold; keeps the watch set in step with the lanes. */
 export class Informer {
     private readonly source: FleetSource;
     private readonly clock: Clock;
@@ -59,7 +52,6 @@ export class Informer {
     private pendingRetry: ReturnType<typeof setTimeout> | null = null;
     private failures = 0;
     private ticks = 0;
-    /** the last time herdr gave a sign of life: a frame, a snapshot, a subscription */
     private lastLife: number;
     private readonly retry: Retry;
 
@@ -76,12 +68,10 @@ export class Informer {
         return this.board;
     }
 
-    /** whether herdr's pushes are arriving (a subscription is open) */
     get listening(): boolean {
         return this.stream !== null;
     }
 
-    /** A snapshot, marked with when it was REQUESTED: the fold needs that to tell "gone" from "opened after this was asked". */
     private async stamped(): Promise<SnapshotResult> {
         const requested = Number(this.clock.now());
         const snap = await this.source.snapshot();
@@ -91,7 +81,6 @@ export class Informer {
         return isUnknown(snap) ? snap : { ...snap, seen: { ...snap.seen, at: requested } };
     }
 
-    /** Subscribe FIRST, snapshot SECOND: a change between the two is then not lost. */
     async enterSubscription(): Promise<void> {
         const opened = await this.source.subscribe(specsFor(watchSet(this.board)));
         if (isUnknown(opened)) {
@@ -117,13 +106,6 @@ export class Informer {
         }
     }
 
-    /**
-     * herdr closes — with no ack and no error — a subscription that names a pane it does not have, and
-     * the board only learns what is gone from the snapshot that follows a subscription. So a lane that
-     * died unannounced would make every later subscription fail, forever (measured: the daemon was blind
-     * for a week). The snapshot is a plain request: take it anyway, so the board drops what is gone and
-     * the next attempt asks only for what exists; and keep trying, with backoff, until it works.
-     */
     private async recoverWithoutStream(): Promise<void> {
         const snap = await this.stamped();
         if (!isUnknown(snap)) {
@@ -145,11 +127,6 @@ export class Informer {
         this.pendingRetry.unref();
     }
 
-    /**
-     * Refresh the board from a snapshot alone. A subscription is opened only when there is none (it
-     * died, or was never made); a changed watch set resubscribes from `run()`. Resubscribing on every
-     * refresh made herdr log a stream per minute for nothing.
-     */
     async reconcile(): Promise<void> {
         if (this.stream === null) {
             await this.enterSubscription();
@@ -163,7 +140,6 @@ export class Informer {
         this.queue.push({ kind: 'reconciled', seen: snap.seen });
     }
 
-    /** The daemon's once-a-minute beat: a snapshot-only reconcile, and every 10th time a fresh subscription. */
     tick(): void {
         this.ticks += 1;
         if (this.silentFor() > (this.retry.watchdogMs ?? WATCHDOG_MS)) {
@@ -191,7 +167,6 @@ export class Informer {
             this.lastLife = Number(this.clock.now());
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
                 this.hooks.onPaneUpdated?.(frame.data);
-                // herdr reports a pane's agent session on its frames: the lane follows it, so the next transcript read is the one herdr names now
                 const session = paneSessionOf(frame.data);
                 if (session !== null) {
                     this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });

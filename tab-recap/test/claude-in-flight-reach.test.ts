@@ -1,5 +1,3 @@
-// The Claude in-flight reader past the tail: a notice whose launch lies before the 512 KB tail is read back for, up to 16 MB; the bound answers unknown.
-// The transcripts are generated in a temp directory, never committed.
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -15,7 +13,6 @@ const started = (id: string, task: string): string => line({ type: 'user', toolU
 const notice = (task: string, tool: string): string => line({ type: 'user', origin: { kind: 'task-notification' }, message: { role: 'user', content: `<task-notification>\n<task-id>${task}</task-id>\n<tool-use-id>${tool}</tool-use-id>\n<status>completed</status>\n</task-notification>` } });
 const chat = (text: string): string => line({ type: 'assistant', isSidechain: false, message: { role: 'assistant', content: [{ type: 'text', text }] } });
 
-/** Chat lines of about 1 KB each, until `bytes` are written. */
 function filler(bytes: number): string[] {
     const out: string[] = [];
     for (let written = 0; written < bytes; ) {
@@ -26,7 +23,6 @@ function filler(bytes: number): string[] {
     return out;
 }
 
-/** `head` bytes of chat, the opening lines, `middle` bytes of chat, the two notices, `tail` bytes of chat: the notices sit in the last 512 KB. */
 function transcript(head: number, opening: string[], middle: number, tail: number): string[] {
     return [...filler(head), ...opening, ...filler(middle), notice('b1', 't1'), notice('b2', 't2'), ...filler(tail)];
 }

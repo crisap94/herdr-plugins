@@ -1,5 +1,3 @@
-// The style through the autocompact service: the decider's answers become the verdict under the style's numbers (not only when `verdictOf` is
-// called directly), and the re-check asks again only a lane whose last decision was a wait.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
@@ -12,12 +10,10 @@ import type { World } from './autocompact-world.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
-/** A world whose policy and tuning are read from the configuration, as the daemon reads them. */
 function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 'on'): World {
     return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOf(env(keys)));
 }
 
-/** A decider answer: `closes` for the close question, `rest` for the others. */
 const answer = (closes: number, rest = 0.15): DecidedResult => ({
     kind: 'decided',
     answers: { closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest },
@@ -27,7 +23,6 @@ const answer = (closes: number, rest = 0.15): DecidedResult => ({
     model: 'fake',
 });
 
-/** A decision of `verdict` made `minutes` ago at 12 % (120 000 tokens) in `mode`, by this process. */
 function decidedMinutesAgo(w: World, minutes: number, verdict: 'wait' | 'undecided' | 'compact', mode: DecisionMode = 'on'): void {
     w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict, answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
 }

@@ -1,4 +1,3 @@
-// The outcome check: for compactions that happened, what followed those the policy would have allowed and those it would have blocked. Pure.
 import { mean } from './stats.ts';
 import { verdictFor } from './report-metrics.ts';
 import type { Answer } from './report-metrics.ts';
@@ -11,7 +10,6 @@ export interface OutcomeGap { readonly allowed: Group; readonly blocked: Group }
 
 const groupOf = (rows: readonly BoundaryRow[]): Group => ({ n: rows.length, reReads: mean(rows.map((row) => row.reReads)), restated: mean(rows.map((row) => Number(row.restated))) });
 
-/** The boundaries that have a stored run before them, split by the arm's verdict over both repetitions (a verdict of `compact` allows). */
 export function outcomeGap(boundaries: readonly BoundaryRow[], reps: readonly (readonly Answer[])[]): OutcomeGap {
     const joined = boundaries.filter((row) => row.point_id !== null && row.followed);
     const verdicts = reps.flatMap((rep) => { const byKey = new Map(rep.map((answer) => [answer.key, answer])); return joined.map((row) => ({ row, allowed: verdictFor(byKey.get(row.point_id ?? '')) === 'compact' })); });

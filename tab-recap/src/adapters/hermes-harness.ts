@@ -10,10 +10,6 @@ import { ARGV_BYTES } from './recap-prompt.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner } from './process.ts';
 
-/**
- * `--safe-mode` drops user config, rules, memory, plugins and MCP; `-t clarify` leaves the one
- * toolset that cannot touch files, a shell or the network (measured: `-t ''` means "all tools").
- */
 export function hermesArgs(model: string, prompt: string, usage: string, effort: Effort = 'default'): string[] {
     const level = levelOf(effort, 'low');
     return ['-z', prompt, '--safe-mode', '-t', 'clarify', ...(model === '' ? [] : ['-m', model]), ...(level === null ? [] : ['--reasoning', level]), '--usage-file', usage];
@@ -25,10 +21,6 @@ export function hermesUsage(json: string): { cost: number; session: string | nul
     return { cost: typeof total === 'number' ? total : 0, session: str(report['session_id']) };
 }
 
-/**
- * `hermes -z`: it reads no stdin, so the prompt is an argument (the caller keeps it within `limit`).
- * hermes keeps every run as a session, so the one this run made is deleted once it is read.
- */
 export class HermesHarness implements Harness {
     readonly id = 'hermes';
     readonly limit = ARGV_BYTES;
@@ -52,7 +44,7 @@ export class HermesHarness implements Harness {
         const opts = { input: '', timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() };
         const ran = await this.runner('hermes', hermesArgs(settings.model, `${call.input}\n\n${call.instructions}`, usage, settings.effort), opts);
         let report = { cost: 0, session: null as string | null };
-        try { report = hermesUsage(readFileSync(usage, 'utf8')); } catch { /* hermes wrote no report */ }
+        try { report = hermesUsage(readFileSync(usage, 'utf8')); } catch { }
         rmSync(usage, { force: true });
         if (report.session !== null) {
             await this.runner('hermes', ['sessions', 'delete', '--yes', report.session], { ...opts, timeoutMs: 30_000 });

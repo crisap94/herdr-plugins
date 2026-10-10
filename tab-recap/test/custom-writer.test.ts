@@ -1,4 +1,3 @@
-// TAB_RECAP_CUSTOM_CMD: the command gets the version 2 document and must answer operations; the 1.x recap shape is refused with a line naming the contract.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
@@ -17,7 +16,6 @@ const ground: Ground = {
     grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), closedLately: [], source: 'go', language: 'en', agents: [] }],
 };
 
-/** A command that reads the document on stdin and prints `answer(document)`. */
 async function through(script: string): Promise<Extracted> {
     const dir = scratchDir('custom');
     try {

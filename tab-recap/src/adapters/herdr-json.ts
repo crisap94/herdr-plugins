@@ -1,4 +1,3 @@
-// Pure readers of herdr's JSON: a snapshot and a layout become the domain's values. No transport here: the frames and replies come from herdr-fleet.ts.
 import { agentPanesIn, columnsIn } from './column-panes.ts';
 import { seenFrom } from '#src/recap/application/decode.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';

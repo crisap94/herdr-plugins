@@ -1,5 +1,3 @@
-// `tab-recap compact` from the command line, in a throw-away state directory and a herdr context with no herdr behind it:
-// the popup can never open, so a popup shows up as its failure, and a queued request is read back from the store.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -12,10 +10,6 @@ import { stateStore } from '#src/adapters/db/database.ts';
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 const CONTEXT = JSON.stringify({ tab_id: 'w1:t1', pane_id: 'w1:p2' });
 
-/**
- * Runs the entry with `args` (the command first); `setting` is `TAB_RECAP_COMPACT_NOTE` when given. `newer` writes a
- * database from a later plugin into the state directory, so the state store is not ready and nothing can be queued.
- */
 function run(args: readonly string[], setting?: string, newer = false): { status: number | null; stdout: string; stderr: string; queued: unknown[]; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-compact-'));
     const state = join(root, 'state');

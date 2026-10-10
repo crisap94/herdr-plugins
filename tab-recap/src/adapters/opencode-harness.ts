@@ -9,8 +9,6 @@ import { obj, parse, str } from './jsonl.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner } from './process.ts';
 
-/** No tool, no permission: measured, the request shrinks from ~9k to <1k tokens and no tool event appears. */
-/** how long after a killed run opencode gets to finish writing its session before we look once more */
 const RELIST_MS = 3000;
 
 const TOOLLESS = JSON.stringify({ tools: { '*': false }, permission: { '*': 'deny' } });
@@ -20,7 +18,6 @@ export function opencodeArgs(model: string, title: string, effort: Effort = 'def
     return ['run', '--pure', '--format', 'json', '--title', title, ...(model === '' ? [] : ['-m', model]), ...(level === null ? [] : ['--variant', level])];
 }
 
-/** The ids of the sessions called `title` in `opencode session list --format json`. */
 export function sessionsTitled(json: string, title: string): string[] {
     try {
         const rows: unknown = JSON.parse(json);
@@ -36,7 +33,6 @@ export interface OpencodeOutput {
     readonly session: string | null;
 }
 
-/** `--format json` is one event per line: the answer is the `text` parts, the cost the `step_finish` parts. */
 export function opencodeOutput(stdout: string): OpencodeOutput {
     let text = '';
     let cost = 0;
@@ -58,11 +54,6 @@ export function opencodeOutput(stdout: string): OpencodeOutput {
     return { text, cost, session };
 }
 
-/**
- * `opencode run`, prompt on stdin, tools and permissions denied, plugins off. opencode has no
- * ephemeral flag, so the session it stored is deleted once the answer is read — found by the id in
- * the output or, when the run died before printing one, by its unique title.
- */
 export class OpencodeHarness implements Harness {
     readonly id = 'opencode';
     readonly limit = null;
@@ -93,10 +84,6 @@ export class OpencodeHarness implements Harness {
         }
     }
 
-    /**
-     * The session is deleted by the id the run printed. A run killed before it printed one is found by its
-     * title — and, because opencode may still be writing the session as it dies, looked for once more after a pause.
-     */
     private async forget(session: string | null, title: string, env: NodeJS.ProcessEnv): Promise<void> {
         if (session !== null) {
             await this.remove([session], env);

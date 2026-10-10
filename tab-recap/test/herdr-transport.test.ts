@@ -8,7 +8,6 @@ import { join } from 'node:path';
 import { rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Pushed } from '#src/transport/herdr.ts';
 
-/** A herdr stand-in: `script` gets the connection and the first request line, and writes whatever bytes it likes. */
 async function withHerdr<T>(script: (socket: Socket, request: { id: string }) => void, run: () => Promise<T>): Promise<T> {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-socket-'));
     const path = join(dir, 'herdr.sock');

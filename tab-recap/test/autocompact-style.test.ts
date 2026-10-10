@@ -1,5 +1,3 @@
-// The autocompact style: each style's numbers reach the verdict, the brief check, the ceiling, the cooldown and the re-check; an explicit key wins;
-// an invalid key falls back to the style's number; `balanced` is today's numbers.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { covered } from '#src/recap/application/brief-coverage.ts';
@@ -12,23 +10,18 @@ import type { Decider, DecidedResult } from '#src/ports/decider.ts';
 import { NOW, world, lane } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 
-/** A configuration reader over the given keys: what `loadConfig` reads from the environment or the file. */
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
-/** A world whose policy and tuning are read from the configuration, as the daemon reads them. */
 function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
     return world({ ...policyOf(env(keys)), mode: 'on' }, true, startedAt, tuningOf(env(keys)));
 }
 
-/** A `wait` decision recorded `minutes` ago at 12 % (120 000 tokens) in mode `on`, as the world's decider made it. */
 function waitedMinutesAgo(w: World, minutes: number): void {
     w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode: 'on', share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', answers: {}, coverage: null, decider: null, costUsd: 0, tookMs: null, why: null });
 }
 
-/** The brief check's pass mark, read from a style, against a fact kept at 0.65. */
 const passes = async (style: string): Promise<boolean> => (await covered('the brief', NEEDS, keeping(0.65), tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)).ok;
 
-/** A decider that keeps every fact at `keeps`. */
 const keeping = (keeps: number): Decider => ({ label: 'fake', ask: (_state, questions): Promise<DecidedResult> => Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id) => [id, keeps])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }) });
 const NEEDS = [{ section: 'needs', text: 'Keep the token', why: null }];
 
@@ -152,7 +145,6 @@ test('the listing header names the style and its numbers in force', () => {
     assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds))), /cooldown 90 s · re-check 150 s$/);
 });
 
-/** The balanced style's verdict numbers with the given keys. */
 const balancedWith = (keys: Record<string, string>): Thresholds => tuningOf(env(keys)).verdict;
 
 test('the advanced keys cannot contradict the band: a safe number at or above the band start, or a close at or below its end, falls back', () => {

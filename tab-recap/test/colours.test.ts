@@ -52,7 +52,6 @@ test('colours: the setup screen takes the plain table too', () => {
     assert.ok(lines.every((line) => !line.includes(ESC)));
 });
 
-/** a terminal that answers `hasColors` as Node's own tty stream does, from the environment it is given */
 const nodeHasColors = Reflect.get(WriteStream.prototype, 'hasColors') as (this: unknown, env?: object) => boolean;
 const nodeColorDepth = Reflect.get(WriteStream.prototype, 'getColorDepth') as unknown;
 const terminal = { hasColors: (env?: object): boolean => nodeHasColors.call({ getColorDepth: nodeColorDepth }, env) };

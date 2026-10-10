@@ -1,4 +1,3 @@
-// The settings modal as lines of text. Pure; every word comes from Messages.
 import type { Messages } from '#src/i18n/messages.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, STYLE_CHOICES, SWITCH_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
@@ -11,7 +10,6 @@ import type { Style } from './wrap.ts';
 
 const LABEL_WIDTH = 18;
 
-/** `text` wrapped after `prefix`; continuation lines are indented under the text. wrap() trims spaces, so the indent is added here. */
 function hanging(prefix: string, text: string, width: number, extra = ''): string[] {
     const room = Math.max(4, width - prefix.length - extra.length);
     return wrap(text, room).map((line, at) => `${at === 0 ? prefix : ' '.repeat(prefix.length)}${extra}${line}`);
@@ -24,7 +22,6 @@ function modelText(model: string, id: BackendId, m: Messages): string {
     return model === '' ? m.setup.modelDefault(MODEL_DEFAULTS[id]) : model;
 }
 
-/** The stored setting in words: `ui` is the interface's language, `en`/`es` are named, free text as typed. */
 function recapText(setting: string, m: Messages): string {
     const names: Readonly<Record<string, string>> = m.setup.languageNames;
     if (setting === 'ui') {
@@ -33,16 +30,13 @@ function recapText(setting: string, m: Messages): string {
     return names[setting] ?? setting;
 }
 
-/** The stored setting in words: empty is none, `all` is every agent, otherwise the list as typed. */
 function screenText(setting: string, m: Messages): string {
     const words: Readonly<Record<string, string>> = { '': m.setup.screenNone, all: m.setup.screenAll };
     return words[setting] ?? setting;
 }
 
-/** The compaction rows in words: the hint as a percentage (or off), an empty window as «found at runtime». */
 const hintText = (hint: string, m: Messages): string => (hint === 'off' ? m.setup.compactHintOff : `${hint}%`);
 
-/** A job's three parts in words, `harness · model · effort`; the focused one is bracketed (the model's text is the buffer while it is typed). */
 function jobText(row: RowId, state: Setup, m: Messages): string {
     const focused = rowOf(state) === row ? state.part : -1;
     const typing = focused === 1 && state.editing?.kind === 'text' ? state.editing.buffer : null;
@@ -62,7 +56,6 @@ function jobText(row: RowId, state: Setup, m: Messages): string {
     return parts.map(shown).join(' · ');
 }
 
-/** What each row shows as its value; a row added to `RowId` cannot compile without one. */
 const VALUES: Readonly<Record<RowId, (state: Setup, m: Messages) => string>> = {
     recapJob: (state, m) => jobText('recapJob', state, m),
     compactJob: (state, m) => jobText('compactJob', state, m),
@@ -107,7 +100,6 @@ function harnessChoices(state: Setup, m: Messages, width: number, style: Style):
     return [...lines, ...hanging('    ', legend, width).map(style.dim)];
 }
 
-/** The choices of the field being edited, one per line, the highlighted one marked. */
 function pickList(state: Setup, labels: readonly string[], width: number, style: Style): string[] {
     const editing = state.editing?.kind === 'choice' ? state.editing.at : -1;
     return labels.flatMap((label, at) => hanging(`    ${at === editing ? '▸' : ' '} `, label, width).map((line) => (at === editing ? style.bold(line) : line)));
@@ -118,7 +110,6 @@ function hintOf(row: RowId, m: Messages): string | null {
     return hints[row] ?? null;
 }
 
-/** What hangs under a row: the locks, its hint while focused, its choices. */
 function under(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const focused = rowOf(state) === row;
     const locks = [...new Set((JOB_FIELDS[row] ?? [row as FieldId]).flatMap((field) => state.locks[field] ?? []))];
@@ -130,7 +121,6 @@ function under(row: RowId, state: Setup, m: Messages, width: number, style: Styl
     ];
 }
 
-/** The harness's choices always hang under the recap writer; the others open while their field is being edited. */
 function choicesUnder(row: RowId, state: Setup, m: Messages, width: number, style: Style): string[] {
     const choosing = state.editing?.kind === 'choice';
     const lists: Readonly<Partial<Record<FieldId, () => string[]>>> = {
@@ -198,7 +188,6 @@ function testLine(state: Setup, m: Messages, style: Style): string | null {
     }
 }
 
-/** The whole modal, as lines no wider than `width`. */
 export function setupView(state: Setup, m: Messages, width: number, style: Style = coloured): string[] {
     const note = noteLine(state, m);
     const status = [
@@ -214,7 +203,6 @@ export function setupView(state: Setup, m: Messages, width: number, style: Style
     ];
 }
 
-/** The longest hint that fits: a cut-off hint reads as a bug. */
 export function setupFooter(state: Setup, m: Messages, width: number, style: Style = coloured): string {
     const hints = state.editing === null ? m.setup.keys : m.setup.editKeys;
     return style.gray(hints.find((hint) => visibleLength(hint) <= width) ?? '');

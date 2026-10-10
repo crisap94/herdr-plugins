@@ -1,5 +1,3 @@
-// Autocompact's style: one setting for how eagerly it acts. It sets the verdict's numbers, the brief check's pass mark, the ceiling and the cooldown
-// (unless their own keys are set) and the re-check of an idle lane. Pure: a table, and the reads of its config values.
 import { THRESHOLDS } from './autocompact-verdict.ts';
 import type { Thresholds } from './autocompact-verdict.ts';
 
@@ -7,7 +5,6 @@ export const STYLES = ['gentle', 'balanced', 'eager'] as const;
 export type AutocompactStyle = (typeof STYLES)[number];
 export const STYLE_DEFAULT: AutocompactStyle = 'balanced';
 
-/** The numbers one style sets. `recheckIdleMs` null is never: an idle `wait` lane is not asked again while its tokens stay the same. */
 export interface StyleNumbers {
     readonly verdict: Thresholds;
     readonly coverageAtLeast: number;
@@ -22,7 +19,6 @@ export const STYLE_NUMBERS: Readonly<Record<AutocompactStyle, StyleNumbers>> = {
     eager: { verdict: { safe: 0.40, closes: 0.60, undecidedFrom: 0.45, undecidedTo: 0.55 }, coverageAtLeast: 0.60, ceiling: 65, cooldownMs: 5 * 60_000, recheckIdleMs: 30 * 60_000 },
 };
 
-/** The numbers in force: the style's, with the advanced keys over the verdict's safe and close numbers, the pass mark and the re-check. */
 export interface AutocompactTuning {
     readonly style: AutocompactStyle;
     readonly verdict: Thresholds;
@@ -32,20 +28,14 @@ export interface AutocompactTuning {
 
 const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
 
-/** `TAB_RECAP_AUTOCOMPACT_STYLE`: `gentle`, `balanced` or `eager`; anything else is `balanced`. */
 export const styleOf = (raw: string | undefined): AutocompactStyle => STYLES.find((style) => style === word(raw)) ?? STYLE_DEFAULT;
 
-/** A number in `[min, max]` (a whole one when `whole`), else null: blank, not a number, or out of range. */
 export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
     const value = Number(word(raw));
     const usable = word(raw) !== '' && Number.isFinite(value) && (!whole || Number.isInteger(value));
     return usable && value >= min && value <= max ? value : null;
 }
 
-/**
- * The tuning from the configuration. Each advanced key is in its range and keeps the verdict coherent with the undecided band: `safe` must stay
- * below the band's start and `closes` above its end, so no answer inside the band can be `compact`. Otherwise the style's number.
- */
 export function tuningOf(get: (key: string) => string | undefined): AutocompactTuning {
     const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const numbers = STYLE_NUMBERS[style];

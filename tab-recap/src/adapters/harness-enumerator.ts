@@ -4,7 +4,6 @@ import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { ENUMERATE_INSTRUCTIONS } from './enumerate-instructions.ts';
 import { unfenced } from './recap-prompt.ts';
 
-/** The enumeration: one job on a harness. */
 export class HarnessEnumerator implements Enumerators {
     readonly backend: string;
     readonly job: string;

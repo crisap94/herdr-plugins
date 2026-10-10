@@ -1,4 +1,3 @@
-// The composition root and the loop. Started detached by `bin/tab-recap.ts start`.
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
@@ -58,17 +57,12 @@ import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
-/** every this many resync ticks the write-ahead log is folded back into the database file (10 minutes) */
 const CHECKPOINT_EVERY = 10;
-/** every this many resync ticks (a day) the tabs nobody has seen for a while are forgotten; the first sweep is after the first tick */
 const RETENTION_EVERY = 1440;
-/** an intent is a handful of herdr requests of at most 10 s each */
 const INTENT_MS = 90_000;
-/** the compaction requests from other tools are remembered this long (a request older than that is no risk of being acted on again) */
 const ASK_KEEP_MS = 30 * 24 * 60 * 60_000;
 
 const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
-/** the daemon's stop event goes to every workspace, but the stop does not wait for it longer than this */
 const EVENT_STOP_MS = 2_000;
 
 const log = (line: string): void => {
@@ -90,13 +84,11 @@ interface Wired {
     readonly events: EventStream;
 }
 
-/** A recap run wrote a tab's ledger: the curator looks at it, and each lane of the tab gets its `recap-written` event (`imported` runs are not new recaps). */
 function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: (line: string) => void): void {
     curate.afterRun(event).catch((error: unknown) => { say(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); });
     recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
 }
 
-/** The requests a restart interrupts are answered, none is run; the count of compactions it found in progress. */
 function answerRestart(store: Store, answers: CompactRequests): number {
     const interrupted = [...store.compactions.unfinishedAsks(), ...store.requests.takeAnswered()];
     const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
@@ -104,10 +96,8 @@ function answerRestart(store: Store, answers: CompactRequests): number {
     return restarted;
 }
 
-/** `TAB_RECAP_HERDR_EVENTS` is on: read on every use, so the setting applies without a restart. */
 const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
 
-/** A lane is read from its screen only for the kinds the operator listed (re-read on every use). */
 function wantsScreen(agent: string): boolean {
     const { screenAgents } = loadConfig();
     return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent);
@@ -116,7 +106,6 @@ function wantsScreen(agent: string): boolean {
 function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const config = loadConfig();
     const clock = new SystemClock();
-    /** the daemon's start, epoch ms: the base of the event sequence numbers */
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
     const transcripts = [new ClaudeTranscripts(), new CodexTranscripts(), new OpencodeTranscripts(), new ScreenTranscripts(fleet, wantsScreen)];
@@ -144,8 +133,6 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
-                // one stuck intent must not stop the daemon from ever folding another observation; and a long run of
-                // cheap ones hands the event loop back between intents, so sockets and timers keep being served
                 if (await bounded(dispatch.send(intent), INTENT_MS) === 'timeout') {
                     log(`intent ${intent.kind} took more than ${INTENT_MS / 1000} s: moving on`);
                 }
@@ -153,8 +140,8 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
             }
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
-        onUnknownKind: (): void => { /* herdr has more events than we map; that is expected */ },
-        onBeat: (): void => { /* the columns read the store; there is no separate heartbeat */ },
+        onUnknownKind: (): void => { },
+        onBeat: (): void => { },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
         onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
     });
@@ -172,7 +159,6 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
 }
 
-/** Every second: beat, and hand the daemon what the columns and commands asked for since. */
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events'>): void {
     const { store, informer, compaction, curate, laneTokens, answers, events } = wired;
     pidfile.beat();
@@ -193,7 +179,6 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
     }
 }
 
-/** The daemon's parts, or the exit code when it must not run: another daemon is alive (0), or the state is not usable (1). */
 async function boot(root: string, pidfile: Pidfile): Promise<Wired | number> {
     const other = pidfile.alive();
     if (other !== null && other !== process.pid) {

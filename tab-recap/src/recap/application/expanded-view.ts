@@ -1,5 +1,3 @@
-// What the expanded view shows, gathered from the store: every task's facts and story, the session facts, and — when
-// the story is older than the ledger — the one request that asks the daemon's curator to write it again. No model call.
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
@@ -13,7 +11,6 @@ import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import type { FileCount } from './edit-counts.ts';
 
-/** a story that was asked for and has not come is given up on after this long */
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
 
@@ -22,18 +19,14 @@ export interface ExpandedDeps {
     readonly ledger: Ledger;
     readonly stories: Stories;
     readonly session: SessionSource;
-    /** what autocompact decided for the tab; left out, no line */
     readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
-    /** where the session broke: the timeline's break lines and the chapter count */
     readonly boundaries: Pick<Boundaries, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<Requests, 'requestCurate'>;
-    /** the files most edited in these lanes, as far as they are known now */
     readonly edits: (lanes: readonly LaneCursor[], now: number) => readonly FileCount[];
 }
 
 export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs' | 'breaks'>;
 
-/** The newest change in a task's ledger: a fact added, confirmed or closed. */
 export const newestChange = (facts: readonly Fact[]): number | null =>
     facts.length === 0 ? null : Math.max(...facts.map((fact) => Math.max(fact.lastAt, fact.closedAt ?? 0)));
 
@@ -41,14 +34,12 @@ const clipped = (label: string | null): string | null => (label === null || labe
 
 export class ExpandedModel {
     private readonly deps: ExpandedDeps;
-    /** per task: the change the curator was asked about, and when */
     private readonly asked = new Map<string, { readonly change: number; readonly at: number }>();
 
     constructor(deps: ExpandedDeps) {
         this.deps = deps;
     }
 
-    /** One task: its facts and story; `curating` while an answer to the last request is awaited. Asks at most once per change. */
     private taskOf(tab: string, task: { readonly id: string; readonly name: string }, now: number): { readonly task: ExpandedTask; readonly asks: boolean } {
         const facts = this.deps.ledger.allOf({ tab, key: task.id });
         const story = this.deps.stories.read(tab, task.id);

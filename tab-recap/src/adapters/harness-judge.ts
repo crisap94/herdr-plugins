@@ -4,7 +4,6 @@ import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { judgeInstructions } from './judge-instructions.ts';
 import { unfenced } from './recap-prompt.ts';
 
-/** The judge: one job on a harness. */
 export class HarnessJudge implements Judge {
     readonly label: string;
     private readonly harness: Harness;

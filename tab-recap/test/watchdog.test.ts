@@ -14,7 +14,6 @@ import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/port
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 
-/** A herdr that answers once and then goes quiet: requests are accepted and never answered (a wedged server, a half-open socket). */
 function silentHerdr(): { source: FleetSource; subscribes: () => number } {
     let subscribes = 0;
     let answered = false;

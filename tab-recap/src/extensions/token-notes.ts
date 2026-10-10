@@ -1,5 +1,3 @@
-// The other tools' notes under a lane: `note` / `note-<tool>` on the lane's pane, shown with the lane's header. notes() runs in the column's 1 s
-// render path, so it only reads a cache; a stale or missing entry starts ONE async read through herdr's `pane.get`, and the next render shows it.
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import type { Extension, ExtensionFactory, Note, NotesResult } from '#src/ports/extension.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
@@ -8,9 +6,7 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
 
-/** an answer is trusted this long: a note a tool writes shows within this time */
 export const TTL_MS = 3000;
-/** a pane nobody has rendered for this long is forgotten */
 const FORGET_MS = 60_000;
 
 interface Entry {
@@ -29,7 +25,6 @@ export class TokenNotes implements Extension {
     private readonly deps: TokenNotesDeps;
     private readonly cache = new Map<string, Entry>();
     private readonly reading = new Set<string>();
-    /** pane → consecutive failed reads and the time before which none is tried (a failing herdr is not asked every render) */
     private readonly failing = new Map<string, { readonly count: number; readonly until: number }>();
 
     constructor(deps: TokenNotesDeps) {
@@ -62,7 +57,6 @@ export class TokenNotes implements Extension {
         return entry;
     }
 
-    /** Never rejects; a failed read keeps what was known, and the next render asks again. */
     private async read(pane: string): Promise<void> {
         try {
             const found = await this.deps.panes.read(pane);
@@ -88,5 +82,4 @@ export class TokenNotes implements Extension {
     }
 }
 
-/** Always built: a lane with no note shows nothing, and the reads cost one `pane.get` per lane per TTL. */
 export const tokenNotes: ExtensionFactory = () => new TokenNotes({ panes: { read: readPaneTokens }, now: () => Date.now() });

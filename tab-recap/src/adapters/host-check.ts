@@ -1,11 +1,9 @@
-// What `status` says about the machine the plugin runs on: the Node that runs it and the keys the operator bound. Read-only.
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 export { MIN_NODE, nodeAtLeast } from '#src/host/policy.mjs';
 
-/** The major of a `process.version` (`v24.1.0`); null for anything else. */
 export function nodeMajor(version: string): number | null {
     const found = /^v?(\d+)\.\d+\.\d+/.exec(version.trim());
     return found?.[1] === undefined ? null : Number(found[1]);
@@ -18,7 +16,6 @@ export interface Binding {
 
 const ASSIGNMENT = /^(\w+)\s*=\s*"([^"]*)"\s*(?:#.*)?$/;
 
-/** The `[[keys.command]]` blocks that run a `tab-recap.*` action, in file order; a strict line match, no TOML parser. */
 export function bindingsOf(toml: string): readonly Binding[] {
     const found: Binding[] = [];
     let block: Record<string, string> | null = null;
@@ -45,11 +42,9 @@ export function bindingsOf(toml: string): readonly Binding[] {
     return found;
 }
 
-/** Where herdr reads its config: `HERDR_CONFIG_PATH`, else `~/.config/herdr/config.toml` (macOS too). */
 export const herdrConfigPath = (env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string =>
     env['HERDR_CONFIG_PATH'] || join(home, '.config', 'herdr', 'config.toml');
 
-/** The tab-recap bindings in herdr's config; none when the file is missing or unreadable. */
 export function boundKeys(path: string = herdrConfigPath()): readonly Binding[] {
     try {
         return bindingsOf(readFileSync(path, 'utf8'));

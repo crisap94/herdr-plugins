@@ -1,4 +1,3 @@
-// The judge's three answers, checked like the writer's: JSON, the right shape, nothing the document did not name. Pure; unusable is a value, never a throw.
 import { objectIn } from './recap-shape.ts';
 
 export const ITEM_CHECKS: readonly string[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
@@ -13,7 +12,6 @@ export interface ItemVerdict {
 export interface Scored {
     readonly verdicts: readonly ItemVerdict[];
     readonly keyfacts: readonly string[];
-    /** which item carries each key fact (null: none does), by key fact index */
     readonly carried: ReadonlyMap<number, string | null>;
 }
 
@@ -43,10 +41,8 @@ const entries = (value: unknown): readonly Fields[] =>
 
 const lineOf = (value: unknown): string => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '');
 
-/** The checks an item can be given: I1…I7 and the one of its own section. */
 const checksOf = (section: string): readonly string[] => [...ITEM_CHECKS, `S-${section}`];
 
-/** The verdicts that name a known item and one of its checks, the first of each pair. */
 function verdictsOf(raw: unknown, sections: ReadonlyMap<string, string>): readonly ItemVerdict[] {
     const seen = new Set<string>();
     return entries(raw).flatMap((entry): ItemVerdict[] => {
@@ -62,7 +58,6 @@ function verdictsOf(raw: unknown, sections: ReadonlyMap<string, string>): readon
     });
 }
 
-/** Which known item carries each key fact; a fact named twice keeps its first. */
 function carriedBy(raw: unknown, count: number, sections: ReadonlyMap<string, string>): ReadonlyMap<number, string | null> {
     const carried = new Map<number, string | null>();
     for (const entry of entries(raw)) {
@@ -75,7 +70,6 @@ function carriedBy(raw: unknown, count: number, sections: ReadonlyMap<string, st
     return carried;
 }
 
-/** Score answer: verdicts for known items and checks, the key facts, and which item carries which. `sections` maps each added item's key to its section; `carriers` the keys of the items that may carry a key fact (the state's; the added items when not given). */
 export function parseScore(text: string, sections: ReadonlyMap<string, string>, carriers: ReadonlyMap<string, string> = sections): Parsed<Scored> {
     const fields = fieldsOf(text);
     if (typeof fields === 'string') {
@@ -89,13 +83,11 @@ export function parseScore(text: string, sections: ReadonlyMap<string, string>, 
     return { kind: 'ok', value: { verdicts, keyfacts, carried: carriedBy(fields['coverage'], keyfacts.length, carriers) } };
 }
 
-/** What a cover call settles: the key facts and which state item carries each. */
 export interface Covered {
     readonly keyfacts: readonly string[];
     readonly carried: ReadonlyMap<number, string | null>;
 }
 
-/** Cover answer: the key facts (those given, when the call was handed some) and the item of `carriers` that carries each. */
 export function parseCover(text: string, carriers: ReadonlyMap<string, string>, given: readonly string[] | null): Parsed<Covered> {
     const fields = fieldsOf(text);
     if (typeof fields === 'string') {
@@ -109,7 +101,6 @@ export function parseCover(text: string, carriers: ReadonlyMap<string, string>, 
     return { kind: 'ok', value: { keyfacts, carried: carriedBy(fields['coverage'], keyfacts.length, carriers) } };
 }
 
-/** Read-back answer: exactly six strings. */
 export function parseAnswers(text: string): Parsed<readonly string[]> {
     const fields = fieldsOf(text);
     const answers = typeof fields === 'string' ? [] : fields['answers'];
@@ -121,7 +112,6 @@ export function parseAnswers(text: string): Parsed<readonly string[]> {
         : unusable('the answer is not six strings');
 }
 
-/** Grading answer: a grade for each of the six questions. */
 export function parseGrades(text: string): Parsed<readonly Grade[]> {
     const fields = fieldsOf(text);
     if (typeof fields === 'string') {

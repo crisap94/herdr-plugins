@@ -1,4 +1,3 @@
-// The informer routes `pane.updated` frames to its hook, in either spelling, and never to the decoder's unknown-kind path.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
@@ -43,10 +42,6 @@ test('a pane.updated frame reaches the hook, in both spellings, and is not an un
     assert.deepEqual(unknownKinds, []);
 });
 
-/**
- * herdr's snapshot holds one agent that has no session yet (a new agent, whose detection named none). Each subscription is its own stream: the
- * informer re-subscribes when the lane joins the watch set, and the test pushes into the newest one.
- */
 class AgentWithoutSession implements FleetSource {
     private readonly streams = [new AsyncQueue<Frame>()];
 

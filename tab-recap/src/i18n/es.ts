@@ -3,7 +3,6 @@ import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
 import { agoIn } from './relative.ts';
 
-/** Neutral Latin-American Spanish, informal «tú». Typed as `Messages`: a missing key fails the typecheck. */
 export const es: Messages = {
     locale: 'es',
     badge: { working: 'trabajando', blocked: 'bloqueado — te necesita', idle: 'en pausa', done: 'listo', unknown: 'desconocido' },

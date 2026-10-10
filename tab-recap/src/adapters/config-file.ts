@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { writeAtomically } from './atomic-file.ts';
 
-/** Sets keys in config.env, keeping every other line, comments included. */
 export function setValues(path: string, values: ReadonlyMap<string, string>, parse: (text: string) => ReadonlyMap<string, string>): void {
     let text = '';
-    try { text = readFileSync(path, 'utf8'); } catch { /* a new file */ }
+    try { text = readFileSync(path, 'utf8'); } catch { }
     const lines = text === '' ? [] : text.replace(/\n$/, '').split('\n');
     for (const [key, value] of values) {
         const at = lines.findIndex((line) => parse(line).has(key));

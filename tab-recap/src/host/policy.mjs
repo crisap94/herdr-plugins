@@ -1,17 +1,7 @@
-// Which hosts the plugin runs on, decided in plain JavaScript on purpose: a Node too old to run TypeScript cannot load
-// the rest of the plugin, so what says "your Node is too old" must not need it. No TypeScript syntax, no import of a `.ts`.
-
-/** The Node the plugin needs: it runs the TypeScript directly, and the state lives in `node:sqlite` as it is from 24.15 (no experimental warning, so no launch needs a flag). */
 export const MIN_NODE = '24.21.0';
 
-/** @param {string} text */
 const versionParts = (text) => (/^v?(\d+)\.(\d+)\.(\d+)/.exec(text.trim()) ?? []).slice(1).map(Number);
 
-/**
- * Whether `version` (`v24.21.0`) is `minimum` or newer; false for anything that is not a version.
- * @param {string} version
- * @param {string} [minimum]
- */
 export function nodeAtLeast(version, minimum = MIN_NODE) {
     const [have, need] = [versionParts(version), versionParts(minimum)];
     if (have.length !== 3) {
@@ -21,7 +11,6 @@ export function nodeAtLeast(version, minimum = MIN_NODE) {
     return at === -1 || (have[at] ?? 0) > (need[at] ?? 0);
 }
 
-/** The ways to install a Node come first: the refusal shows them as ONE step. */
 const STEPS = {
     macos: ['brew', 'mise', 'nvm', 'herdr-stop', 'new-terminal', 'launchctl-path'],
     linux: ['nvm', 'mise', 'n', 'herdr-stop', 'new-terminal'],
@@ -30,10 +19,6 @@ const STEPS = {
 
 const INSTALLERS = new Set(['brew', 'mise', 'nvm', 'n', 'winget', 'nvm-windows']);
 
-/**
- * Whether this host can run the plugin, and when it cannot, what was found, what is needed and the steps for that OS.
- * @param {{ nodeVersion: string, platform: string }} host
- */
 export function supportOf(host) {
     if (nodeAtLeast(host.nodeVersion)) {
         return { ok: true };
@@ -42,7 +27,6 @@ export function supportOf(host) {
     return { ok: false, found: host.nodeVersion, needed: MIN_NODE, platform, steps: STEPS[platform] };
 }
 
-/** The English words, also the fallback for a Node that cannot load the catalogs. */
 export const ENGLISH = {
     headline: (found, needed, path) => `tab-recap needs Node >= ${needed}, but this is ${found} (${path}).`,
     fix: 'To fix it:',
@@ -61,12 +45,6 @@ export const ENGLISH = {
     },
 };
 
-/**
- * The refusal as text: the headline, then the steps numbered, the install options on one line.
- * @param {{ found: string, needed: string, steps: readonly string[] }} refusal
- * @param {string} path the `node` that ran
- * @param {typeof ENGLISH} [words]
- */
 export function renderRefusal(refusal, path, words = ENGLISH) {
     const { found, needed, steps } = refusal;
     const options = steps.filter((id) => INSTALLERS.has(id)).map((id) => words.steps[id](needed));

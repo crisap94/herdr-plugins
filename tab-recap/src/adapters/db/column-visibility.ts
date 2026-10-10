@@ -1,4 +1,3 @@
-// The ColumnVisibility repository: the blanket (`column_state`, one row) and the tabs hidden or shown on their own (`tab_visibility`).
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { NOTHING_HIDDEN } from '#src/ports/column-visibility.ts';

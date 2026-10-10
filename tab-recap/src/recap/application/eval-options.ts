@@ -1,4 +1,3 @@
-// The options of `tab-recap eval`, read with util.parseArgs. A usage error is a value.
 import { parseArgs } from 'node:util';
 import { PIPELINES } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -8,26 +7,19 @@ export type { Pipeline };
 
 export interface EvalOptions {
     readonly mode: 'sample' | 'label' | 'agree' | 'gates' | 'replay';
-    /** runs to judge (`sample`) or items to label (`label`) */
     readonly count: number;
     readonly tab: string | null;
-    /** only runs of the last this many days */
     readonly since: number | null;
     readonly json: boolean;
-    /** `--replay`: a stored transcript to run the extractor over; the other options here are then not allowed */
     readonly replay: string | null;
     readonly kind: string | null;
-    /** the tab whose imported facts are judged beside the replay */
     readonly compareImported: string | null;
-    /** `--replay --pipeline`: which steps of the extractor the replay runs; null: the build's default */
     readonly pipeline: Pipeline | null;
-    /** `--label --check`: the one check the operator is asked about (`I5`, `S-done`); null: every check of an item */
     readonly check: string | null;
 }
 
 const SECTIONS: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules']);
 
-/** Whether `check` names an item check (`I1`…`I7`) or a section's (`S-done`). */
 export const isItemCheck = (check: string): boolean => /^I[1-7]$/u.test(check) || (check.startsWith('S-') && SECTIONS.has(check.slice(2)));
 
 export type ParsedEval = { readonly kind: 'options'; readonly options: EvalOptions } | { readonly kind: 'usage'; readonly why: string };
@@ -36,7 +28,6 @@ export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--
 
 export const DEFAULT_SAMPLE = 20;
 
-/** A positive whole number, `null` when the option is absent; `bad` says what is wrong when it is not. */
 function whole(raw: string | undefined, name: string): { readonly value: number | null; readonly bad: string | null } {
     const value = Number(raw);
     if (raw === undefined) {
@@ -47,7 +38,6 @@ function whole(raw: string | undefined, name: string): { readonly value: number 
 
 const MODES = { label: 'label', agree: 'agree', gates: 'gates' } as const;
 
-/** The options as strings and flags; a usage error is a value. */
 function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values'] | string {
     try {
         return parseArgs({
@@ -63,7 +53,6 @@ const textOf = (values: ReturnType<typeof parseArgs>['values'], name: string): s
 
 type Moded = { readonly mode: EvalOptions['mode'] } | { readonly why: string };
 
-/** The one mode asked for (the sample when none), or what is wrong with asking for several. */
 function modeOf(values: ReturnType<typeof parseArgs>['values'], label: number | null, sample: number | null): Moded {
     const modes = [label !== null ? MODES.label : null, values['agree'] === true ? MODES.agree : null, values['gates'] === true ? MODES.gates : null].flatMap((mode) => mode ?? []);
     if (modes.length > 1 || (modes.length === 1 && sample !== null)) {
@@ -79,7 +68,6 @@ const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOpt
         pipeline: PIPELINES.find((each) => each === textOf(values, 'pipeline')) ?? null, check: textOf(values, 'check') ?? null,
     });
 
-/** `--replay` stands alone (but for its own options); its options do not stand without it. */
 function replayProblem(values: ReturnType<typeof parseArgs>['values']): string | null {
     const others = ['sample', 'label', 'since', 'agree', 'gates', 'json', 'check'].filter((name) => values[name] !== undefined);
     const pipeline = textOf(values, 'pipeline');
@@ -92,7 +80,6 @@ function replayProblem(values: ReturnType<typeof parseArgs>['values']): string |
     return others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null;
 }
 
-/** `--check` goes with `--label` and names one check of an item. */
 function checkProblem(check: string | undefined, label: number | null): string | undefined {
     if (check === undefined) {
         return undefined;

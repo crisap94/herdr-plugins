@@ -1,4 +1,3 @@
-// The AskRecords repository: each compaction request tab-recap accepted from another tool, by (tool, id). One row per id, kept across restarts.
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AskRecords } from '#src/ports/ask-records.ts';
 import { guarded, one } from './rows.ts';
@@ -19,7 +18,6 @@ export class AskRepository implements AskRecords {
         this.drop = db.prepare('DELETE FROM compact_ask WHERE at < ?');
     }
 
-    /** A store that cannot be read says the id was seen: nothing is acted on that cannot be recorded. */
     seen(tool: string, id: string): boolean {
         return guarded(() => one(this.find, tool, id) !== null, true);
     }

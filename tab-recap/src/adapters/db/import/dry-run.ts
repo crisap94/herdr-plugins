@@ -1,5 +1,3 @@
-// `node src/adapters/db/import/dry-run.ts <state-dir>`: import a state directory into a throw-away in-memory database and say
-// what came out. Touches nothing on disk. Run it against a COPY of the live state first.
 import { MEMORY } from '../connection.ts';
 import { storeOver } from '../database.ts';
 import { openDatabase } from '../open.ts';

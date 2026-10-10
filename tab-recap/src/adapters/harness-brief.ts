@@ -5,7 +5,6 @@ import { BRIEF_INSTRUCTIONS } from './brief-instructions.ts';
 import { leaf } from '#src/recap/application/xml.ts';
 import { unfenced } from './recap-prompt.ts';
 
-/** The compaction brief: one job on a harness. */
 export class HarnessBrief implements CompactionBriefs {
     readonly backend: string;
     readonly job: string;

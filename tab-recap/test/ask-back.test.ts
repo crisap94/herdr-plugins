@@ -1,4 +1,3 @@
-// The bounded second look: when it is due, and which questions the candidates leave open.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';

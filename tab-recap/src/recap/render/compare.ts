@@ -1,4 +1,3 @@
-// What `eval --replay --compare-imported` prints: the last good 1.x recap of each chapter beside the replay's ledger state at the same time. Pure.
 import { percent } from '#src/recap/application/eval-report.ts';
 import type { ChapterResult, Comparison, Side } from '#src/recap/application/compare-imported.ts';
 import type { Style } from './wrap.ts';
@@ -12,7 +11,6 @@ function chapterCells(result: ChapterResult & { kind: 'compared' }): readonly st
     return [`chapter ${result.n} (${when(result.at)}, ${result.keyfacts} key facts)`, figure(result.imported.coverage), figure(result.replay.coverage), figure(result.imported.filler), figure(result.replay.filler), back(result.imported), back(result.replay)];
 }
 
-/** One line per chapter, then the sums; chapters the replay does not reach, or that could not be judged, say why below. */
 export function comparisonLines(comparison: Comparison, beside: string, style: Style): readonly string[] {
     const compared = comparison.chapters.flatMap((result) => (result.kind === 'compared' ? [result] : []));
     const skipped = comparison.chapters.flatMap((result) => (result.kind === 'skipped' ? [result] : []));

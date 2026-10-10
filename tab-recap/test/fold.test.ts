@@ -172,7 +172,6 @@ test('a phone attaching swaps the side column for a bar, and back when the deskt
     assert.deepEqual(docking, ['open side', 'close w1:p9', 'open bar']);
 });
 
-/** The 2026-10-08 14:56Z storm: a client change flips 28 tabs from bar to side. */
 const tabs = Array.from({ length: 28 }, (_, i) => i + 1);
 const bars = (width: number): Observation => ({
     kind: 'reconciled',

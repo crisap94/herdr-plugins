@@ -9,7 +9,6 @@ import { sampleView } from '#test/fakes/expanded-fixture.ts';
 
 const GOLDENS = join(import.meta.dirname, 'fixtures');
 
-/** Compared with the file; `UPDATE_GOLDEN=1` rewrites it (and the diff is then read by a person). */
 function golden(name: string, lines: readonly string[]): void {
     const path = join(GOLDENS, name);
     const text = `${lines.map((line) => stripVTControlCharacters(line)).join('\n')}\n`;

@@ -1,12 +1,9 @@
-// How often each file was edited in a tab's lanes: the edit calls the agents' own records hold, counted per path.
-// Read through each lane's own reader from the source the store remembers for it; moves no position, writes nothing.
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 
-/** How much of the end of each record is looked through. */
 const BUDGET_BYTES = 4 * 1024 * 1024;
 const ANY_KIND = '*';
 
@@ -15,7 +12,6 @@ export interface FileCount {
     readonly count: number;
 }
 
-/** Most edited first; ties by path so the order is stable. */
 export function countEdits(paths: readonly string[]): readonly FileCount[] {
     const counts = new Map<string, number>();
     for (const path of paths) {
@@ -40,14 +36,12 @@ export class EditCounts {
         return isUnknown(chunk) ? [] : chunk.entries.filter((entry) => entry.role === 'tool' && entry.kind === 'edit' && entry.text !== '').map((entry) => entry.text);
     }
 
-    /** The files the lanes edited, most edited first; empty when none of the records can be read. */
     async of(lanes: readonly LaneCursor[]): Promise<readonly FileCount[]> {
         const found = await Promise.all(lanes.map((lane) => this.editsOf(lane)));
         return countEdits(found.flat());
     }
 }
 
-/** What the view reads on every tick without waiting: the last count, refreshed in the background once a minute. */
 export class EditCache {
     private readonly counts: EditCounts;
     private readonly every: number;

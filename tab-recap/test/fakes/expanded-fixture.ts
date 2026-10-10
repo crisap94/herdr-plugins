@@ -1,4 +1,3 @@
-// A small, fixed expanded view: one task, a waiting question, a decision with its why, a closed fact, a day change.
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';

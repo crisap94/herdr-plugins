@@ -1,5 +1,3 @@
-// Migration 10: the boundary's trigger gains `plugin` (stored `manual` becomes `plugin`), a compaction gains an origin, and a decision table appears.
-// From a version 9 database with a boundary and a compaction in it, through the real migrations.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

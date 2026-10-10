@@ -1,4 +1,3 @@
-// A recording LaneTokens: every report is kept; `failing` makes the next ones fail as herdr-unreachable.
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';

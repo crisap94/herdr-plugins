@@ -1,4 +1,3 @@
-// The RunInputs repository: the writer's document per run (gzip), the run's items (the facts it added) and its gate counts. Written inside the run's transaction by `RunRows`.
 import { gunzipSync, gzipSync } from 'node:zlib';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
@@ -7,7 +6,6 @@ import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 
-/** What the run row keeps of the gates: JSON, or null. */
 export const statsText = (stats: GateStats | null): string | null => (stats === null ? null : JSON.stringify(stats));
 
 const counts = (value: unknown): Record<string, number> =>
@@ -22,7 +20,6 @@ function statsOf(raw: string | null): GateStats | null {
     return { refused: counts(fields['refused']), flagged: counts(fields['flagged']), dropped: typeof fields['dropped'] === 'number' ? fields['dropped'] : 0 };
 }
 
-/** The statements of the write side, used by `RunRows` inside `recordRun`. */
 export class RunInputRows {
     private readonly insert: StatementSync;
 
@@ -43,12 +40,10 @@ const RUNS = `SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, 
 const SECTION_ORDER = "CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END";
 const COLUMNS = `t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ?1 AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position`;
 
-/** A run's added items are the facts it created (its `add` operations): updates and closes change what is already there. The position counts within the task and section. */
 const ADDED = `SELECT ${COLUMNS} FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
   WHERE f.born_run = ?1
   ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`;
 
-/** The state after a run: the tab's facts created by it or before it that were not closed by then (a fact closed by the run itself is not in it). The text is the fact's latest wording. */
 const STATE = `SELECT ${COLUMNS} FROM fact f JOIN task t ON t.id = f.task_id
   WHERE f.tab_id = (SELECT c.tab_id FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE r.id = ?1)
     AND f.born_run <= ?1 AND (f.closed_at IS NULL OR f.closed_at > (SELECT at FROM run WHERE id = ?1))

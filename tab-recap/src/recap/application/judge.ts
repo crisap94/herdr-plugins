@@ -1,4 +1,3 @@
-// Judging one stored run: score the facts it added against the rubric, find the key facts and what carries them in the ledger's state after it, read that state back, and keep the verdicts.
 import type { Judge } from '#src/ports/judge.ts';
 import type { RunInputs, RunItem, StoredRun } from '#src/ports/run-inputs.ts';
 import type { Verdict, Verdicts } from '#src/ports/verdicts.ts';
@@ -13,7 +12,6 @@ export interface JudgeDeps {
     readonly judge: Judge;
     readonly inputs: RunInputs;
     readonly verdicts: Verdicts;
-    /** the rubric file's text, as the judge's document carries it */
     readonly rubric: string;
     readonly now: () => number;
 }
@@ -23,12 +21,10 @@ export type { Share } from './judge-coverage.ts';
 export type RunResult =
     | {
         readonly kind: 'judged'; readonly run: StoredRun; readonly items: readonly RunItem[]; readonly verdicts: readonly Verdict[]; readonly coverage: Share; readonly filler: Share;
-        /** the numbers over the facts the run added only */
         readonly added: Measured['added']; readonly stateSize: number; readonly readback: readonly Grade[] | null; readonly note: string | null; readonly costUsd: number;
     }
     | { readonly kind: 'not-judged'; readonly run: StoredRun; readonly why: string; readonly costUsd: number };
 
-/** Two calls: the answers from the recap alone, then their grades against the input. Null (with why) when either cannot be used. */
 export async function readBack(deps: JudgeDeps, parts: { readonly items: readonly RunItem[]; readonly input: string; readonly keyfacts: readonly string[] }): Promise<{ readonly grades: readonly Grade[] | null; readonly note: string | null; readonly costUsd: number }> {
     const asked = await deps.judge.ask('readback', readbackDocument(parts.items));
     if (isUnknown(asked)) {
@@ -52,7 +48,6 @@ const verdictOf = (deps: JudgeDeps, run: StoredRun, row: Row): Verdict => ({ run
 
 const notJudged = (run: StoredRun, why: string, costUsd = 0): RunResult => ({ kind: 'not-judged', run, why, costUsd });
 
-/** One run, judged and stored. A model that fails or answers nonsense makes the run `not-judged`; nothing is stored for it. Item checks are scored on the facts the run added; coverage, no-filler and the read-back on the ledger's state after it. */
 export async function judgeRun(deps: JudgeDeps, run: StoredRun): Promise<RunResult> {
     const input = deps.inputs.document(run.id);
     const items = deps.inputs.itemsOf(run.id, 'added');
@@ -86,7 +81,6 @@ export async function judgeRun(deps: JudgeDeps, run: StoredRun): Promise<RunResu
     };
 }
 
-/** The runs in turn (one model call at a time), each result handed to `each` as it is known. */
 export async function judgeRuns(deps: JudgeDeps, runs: readonly StoredRun[], each: (result: RunResult) => void = (): void => undefined): Promise<readonly RunResult[]> {
     const results: RunResult[] = [];
     for (const run of runs) {

@@ -1,4 +1,3 @@
-// The watch set: the per-lane status topic, and the global topics the daemon must hear (pane.updated carries the tokens other tools write).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GLOBAL_TOPICS, specsFor } from '#src/recap/application/watch-set.ts';

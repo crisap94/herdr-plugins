@@ -1,4 +1,3 @@
-// The sweep: the first resync tick after the start and every fifth after it, the board's idle and done lanes one at a time, never stacked.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AutocompactSweep, SWEEP_EVERY } from '#src/daemon/autocompact-sweep.ts';

@@ -1,4 +1,3 @@
-// Each gate, with the rubric's own fail and pass examples: what the file says fails is refused or flagged, what it says passes is accepted.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { duplicate } from '#src/recap/domain/gates/duplicate.ts';

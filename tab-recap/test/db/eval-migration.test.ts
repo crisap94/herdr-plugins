@@ -1,4 +1,3 @@
-// Migration 5 (run_input, run.gate_stats, verdict): from the oldest fixture, through every registered migration, with its CHECKs and cascades.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
@@ -25,7 +24,6 @@ function upgradedOldest(path: string, upTo = MIGRATIONS.length): DatabaseSync {
     return db;
 }
 
-/** A run row on the first chapter (one is made when the fixture has none). */
 function runIn(db: DatabaseSync): Uint8Array {
     if (db.prepare('SELECT 1 FROM chapter').get() === undefined) {
         db.prepare("INSERT INTO tab (id, created_at) VALUES ('w1:t1', 1)").run();

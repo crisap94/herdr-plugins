@@ -1,4 +1,3 @@
-// `TAB_RECAP_HERDR_EVENTS`: off by default, a setting row in the modal, and what the modal writes for it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';

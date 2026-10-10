@@ -1,6 +1,3 @@
-// A compaction is confirmed in the transcript of the session herdr reports for the lane now, not in the one the lane held when it was detected.
-// The live cases: a brand-new agent (its lane had no session: the detection frame carries none) and a resumed agent (the lane held the old
-// session, herdr reports a new one). Both were recorded `unconfirmed` although Claude had compacted.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
@@ -15,7 +12,6 @@ import { unknown } from '#src/ports/unknowable.ts';
 const SINCE = Date.parse('2026-10-10T02:21:48Z');
 const compactedAt = (at: number): Mark => ({ kind: 'compacted', at, tokensBefore: 54_709, tokensAfter: 4_460, tookMs: 4_000 });
 
-/** A Claude reader whose transcripts are the sessions' files: a session's marks are what its file holds. */
 function claude(files: ReadonlyMap<string, readonly Mark[]>): Transcripts {
     return {
         agent: 'claude',
@@ -25,7 +21,6 @@ function claude(files: ReadonlyMap<string, readonly Mark[]>): Transcripts {
     };
 }
 
-/** The compaction flow's outcome read: the lane settles at once, and its marks come from the lane recent reads. */
 function confirm(recent: LaneRecent, lane: Lane): Promise<string> {
     const deps: OutcomeDeps = {
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },

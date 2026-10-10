@@ -1,4 +1,3 @@
-// Read-only questions an experiment asks a COPY of the plugin's database: the stored turn ends, the facts at their time, the compactions before.
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -7,9 +6,7 @@ import { stateDir } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { databasePath } from './db/database.ts';
 
-/** A stored turn end of one Claude lane: where its transcript had been read to when the run happened. */
 export interface StoredPoint {
-    /** the run's id in hex, then `:` and the lane's pane */
     readonly id: string;
     readonly tab: string;
     readonly pane: string;
@@ -38,7 +35,6 @@ function num(value: unknown): number | null {
 }
 const word = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 
-/** The file's name on disk: symlinks followed; a path that does not exist yet keeps its resolved spelling. */
 const onDisk = (path: string): string => {
     try {
         return realpathSync(path);
@@ -52,7 +48,6 @@ export class ExperimentStore {
     private readonly facts: StatementSync;
     private readonly breaks: StatementSync;
 
-    /** Refuses the plugin's own live store (`<state dir>/tab-recap.db`, the state dir the CLI takes): an experiment reads a copy. */
     constructor(path: string, live: string = databasePath(stateDir())) {
         if (onDisk(path) === onDisk(live)) throw new Error(`refusing to open the plugin's live store (${live}): give a copy of it with --db`);
         this.db = new DatabaseSync(path, { readOnly: true });
@@ -60,7 +55,6 @@ export class ExperimentStore {
         this.breaks = this.db.prepare(BREAK);
     }
 
-    /** Every stored turn end of a Claude lane, oldest first, with the run's blob id for the fact query. */
     frame(): readonly (StoredPoint & { readonly blob: Uint8Array })[] {
         return this.db.prepare(FRAME).all().map((row: Row) => ({
             id: `${word(row['run']) ?? ''}:${word(row['pane']) ?? ''}`, tab: word(row['tab']) ?? '', pane: word(row['pane']) ?? '', at: num(row['at']) ?? 0,
@@ -68,7 +62,6 @@ export class ExperimentStore {
         }));
     }
 
-    /** The tab's facts as they stood when the run happened (born at or before it; open unless closed by then), newest last seen first, at most 300. */
     factsAt(point: { readonly tab: string; readonly at: number; readonly blob: Uint8Array }): readonly HistoryFact[] {
         const params: Param[] = [point.tab, point.at, point.blob];
         return this.facts.all(...params).map((row: Row): HistoryFact => ({
@@ -77,7 +70,6 @@ export class ExperimentStore {
         }));
     }
 
-    /** When the tab last compacted at or before `at`; null when it never had. */
     lastBreakAt(tab: string, at: number): number | null {
         return num(this.breaks.get(tab, at)?.['at']);
     }

@@ -1,4 +1,3 @@
-// The 1.x recaps a database still holds: the last good run of each chapter, as items keyed state/<task>/<section>/<position>. Read-only.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

@@ -1,5 +1,3 @@
-// G2 duplicate, against the ledger: an added fact that says what an open fact of the task already says (≥ 0.6), what one closed in the
-// last day said (≥ 0.8) or what another add of the same answer says is refused, and the correction names the fact to update.
 import type { AddOp, Operation } from '../ops.ts';
 import { docIdOf } from './gate.ts';
 import type { Finding, Gate, GateContext } from './gate.ts';

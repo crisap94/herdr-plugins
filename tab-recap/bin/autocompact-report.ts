@@ -1,5 +1,3 @@
-// EXP-002 report: per arm and question, per policy, on the outcome set and for coverage, then the pre-registered rule.
-// `node bin/autocompact-report.ts --dir <exp002 dir>`. Prints markdown (numbers only) and writes it to <dir>/report.md.
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ARMS } from '#src/adapters/experiment-arms.ts';
@@ -29,7 +27,6 @@ const repsOf = (dir: string, arm: string): Reps => [1, 2].map((rep) => {
 
 const coverageLabel = (label: { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }): Readonly<Record<string, 0 | 1>> => (label.reason === undefined ? { brief_keeps_fact: label.keeps } : { brief_keeps_fact: label.keeps, brief_keeps_reason: label.reason });
 
-/** Labels for coverage: `<point>#<n>` → brief_keeps_fact (and brief_keeps_reason for decisions). */
 function briefLabels(dir: string): Labels {
     const rows = existsSync(join(dir, 'briefs.jsonl')) ? (readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[]) : [];
     return new Map(rows.flatMap((row) => Object.entries(row.labels).map(([n, label]) => [`${row.id}#${n}`, coverageLabel(label)] as const)));

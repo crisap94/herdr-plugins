@@ -1,4 +1,3 @@
-// Retention: a tab nobody has seen for a while goes, with everything that hangs off it (the foreign keys cascade).
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Removed, Retention } from '#src/ports/retention.ts';
 import { writeTx } from './connection.ts';
@@ -19,7 +18,6 @@ export class RetentionRepository implements Retention {
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        // seen = the newest of its last run and the last time the daemon drew its column
         this.old = db.prepare('SELECT id FROM tab WHERE column_pane IS NULL AND MAX(last_seen, COALESCE(view_at, 0)) < ? ORDER BY id');
         this.runs = count(db, 'SELECT COUNT(*) AS n FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ?');
         this.chapters = count(db, 'SELECT COUNT(*) AS n FROM chapter WHERE tab_id = ?');

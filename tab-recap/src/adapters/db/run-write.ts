@@ -1,4 +1,3 @@
-// What one run writes: the run, the cursors it read from and to, its tasks with their lanes. (The facts it changed are the ledger's: ledger-rows.ts.)
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { RunFacts } from '#src/ports/recap-records.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
@@ -8,10 +7,8 @@ import { ids } from './uuid7.ts';
 import { RunInputRows, statsText } from './run-inputs.ts';
 import type { Moved, TranscriptRows } from './transcripts.ts';
 
-/** Money is stored as whole millionths of a dollar. */
 export const microsOf = (usd: number): number => Math.round(usd * 1e6);
 
-/** A task of a run: who works on it; `legacy` is the Markdown of a recap stored before the fixed structure (only the legacy import gives it). */
 export interface StoredTask extends TaskShape {
     readonly legacy?: string;
 }
@@ -41,7 +38,6 @@ export class RunRows {
         this.laneInsert = db.prepare('INSERT INTO run_task_lane (run_id, task_id, transcript_id, position) VALUES (?, ?, ?, ?)');
     }
 
-    /** A run belongs to the tab's newest chapter (chapter 1 is made on first sight). */
     private currentChapter(tab: string, at: number): Uint8Array {
         this.chapterInsert.run(ids.next(), tab, at);
         return blob(one(this.chapterSelect, tab) ?? {}, 'id');
@@ -54,7 +50,6 @@ export class RunRows {
         return id;
     }
 
-    /** The document the writer was given, kept with the run (inside the run's transaction). */
     insertInput(run: Uint8Array, document: string): void {
         this.inputs.put(run, document);
     }

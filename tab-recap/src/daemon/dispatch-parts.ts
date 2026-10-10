@@ -1,5 +1,3 @@
-// The dispatch of the informer's intents, wired to the daemon's parts. The informer and autocompact are set on `box` after the dispatch is built,
-// so the board, the feedback and the decisions are read from `box` when they are needed.
 import type { Store } from '#src/adapters/db/database.ts';
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';

@@ -1,4 +1,3 @@
-// The gates that look at operations against the ledger (and, for G11, the input). The rubric's gates (G1, G3–G5, G7–G9) are listed with them where the two meet.
 import { closeWhyGate } from './g10-close-why.ts';
 import { anchorGate } from './g11-anchor.ts';
 import { answeredGate } from './g12-answered.ts';

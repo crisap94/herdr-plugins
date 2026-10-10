@@ -1,4 +1,3 @@
-// Migration 6's step: read the 1.x items back as runs per task, make facts of them (items-to-facts.ts) and write the `fact` rows.
 import type { DatabaseSync } from 'node:sqlite';
 import { isSection } from '#src/recap/domain/fact.ts';
 import { all, blob, text, whole } from '../rows.ts';
@@ -9,7 +8,6 @@ import type { ImportedFact, ImportedItem, ImportedRun } from './items-to-facts.t
 const hex = (id: Uint8Array): string => Buffer.from(id).toString('hex');
 const bytes = (id: string): Uint8Array => Uint8Array.from(Buffer.from(id, 'hex'));
 
-/** Every run that carried a task, oldest first, with the task's items in it. */
 function runsOfTasks(db: DatabaseSync): ReadonlyMap<string, { readonly tab: string; readonly task: Uint8Array; readonly runs: ImportedRun[] }> {
     const carried = all(db.prepare('SELECT rt.task_id, k.tab_id, r.id AS run_id, r.at, r.language, r.error IS NULL AS good FROM run_task rt JOIN run r ON r.id = rt.run_id JOIN task k ON k.id = rt.task_id ORDER BY rt.task_id, r.id'));
     const items = new Map<string, ImportedItem[]>();
@@ -36,7 +34,6 @@ function write(db: DatabaseSync, owner: { readonly tab: string; readonly task: U
     }
 }
 
-/** Import every stored item. The `item` rows are left as they are. */
 export function importFacts(db: DatabaseSync): void {
     for (const owner of runsOfTasks(db).values()) {
         write(db, owner, itemsToFacts(owner.runs));

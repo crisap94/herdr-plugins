@@ -1,4 +1,3 @@
-// G6 unknown id: an update or a close naming a fact the document did not show.
 import type { Gate } from './gate.ts';
 
 export const unknownIdGate: Gate = {

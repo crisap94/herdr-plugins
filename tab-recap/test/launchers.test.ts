@@ -11,7 +11,6 @@ const ENTRY = new URL('./fixtures/launch-entry.mjs', import.meta.url).href;
 const OLD = { nodeVersion: 'v20.11.0', execPath: '/old/bin/node', platform: 'macos', path: '' };
 const NEW = { ...OLD, nodeVersion: 'v24.21.0' };
 
-/** Runs `launch(kind, entry, …)` in a fresh Node as if the host were `host`; the locale is pinned, the operator's config kept out. */
 function launched(kind: string, host: object, argv: string[] = [], locale = 'en'): { status: number | null; out: string; err: string } {
     const home = mkdtempSync(join(tmpdir(), 'tab-recap-launch-'));
     try {

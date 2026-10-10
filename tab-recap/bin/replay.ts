@@ -1,5 +1,3 @@
-// `tab-recap eval --replay <file>`: run the extractor over a stored transcript on a scratch ledger, judge the facts it leaves, print the
-// report and the ledger. The plugin's own database is never written (and `--compare-imported` only reads it).
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
@@ -33,7 +31,6 @@ import { gateLines } from '#src/recap/render/eval.ts';
 
 const readers: Readonly<Record<string, () => Transcripts>> = { claude: () => new ClaudeTranscripts(), codex: () => new CodexTranscripts() };
 
-/** The kind from the flag, else from where the file lives (codex keeps its sessions under `.codex`). */
 const kindOf = (flag: string | null, file: string): string => flag ?? (file.includes('/.codex/') ? 'codex' : 'claude');
 
 const sizeOf = (file: string): number | null => {
@@ -44,13 +41,11 @@ const sizeOf = (file: string): number | null => {
     }
 };
 
-/** What ran: the pipeline and the jobs of the writer and the enumeration (the judge's is named in its own report), and what the calls cost. */
 function ranLine(done: Replayed, jobs: { readonly pipeline: string; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
     const per = done.windows === 0 ? 0 : done.costUsd / done.windows;
     return `pipeline ${jobs.pipeline} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.windows} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.windows)).toFixed(2)} per turn)`;
 }
 
-/** The mechanical checks (no judge), the ledger, and the imported facts beside them when asked. */
 function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
     console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.windows} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
     if (beside !== null) {
@@ -59,7 +54,6 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
     }
 }
 
-/** The writer and the enumeration the config asks for, each counting its calls (a harness that reports no cost still shows how much was asked). */
 function counted(config: Config, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, available, join(dir, 'summarizer'));
@@ -69,7 +63,6 @@ function counted(config: Config, available: readonly string[], dir: string): { r
     return { writer, enumerator, calls };
 }
 
-/** The replay itself, then what needs no model: the header (pipeline, jobs, calls), the checks, the ledger, the anchors and the gate counts. */
 async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalOptions; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Config; readonly available: readonly string[] }): Promise<void> {
     const { config, available } = parts;
     const { writer, enumerator, calls } = counted(config, available, scratch.dir);

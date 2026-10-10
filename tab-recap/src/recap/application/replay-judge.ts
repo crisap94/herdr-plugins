@@ -1,5 +1,3 @@
-// The judge over a replay: the run each turn made is scored like any stored run (the same report as `eval --sample`), and, when a tab is named,
-// the last good 1.x recap of each of its chapters is judged beside the replay's ledger state at the same time (compare-imported.ts).
 import type { Judge } from '#src/ports/judge.ts';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { RunInputs } from '#src/ports/run-inputs.ts';
@@ -14,11 +12,9 @@ import type { JudgeDeps } from './judge.ts';
 
 export interface JudgedReplay {
     readonly judge: Judge;
-    /** the scratch store: the runs of the replay with their inputs */
     readonly store: { readonly inputs: RunInputs; readonly verdicts: Verdicts };
     readonly rubric: string;
     readonly label: string;
-    /** the chapters of a tab with a good 1.x recap (null: none asked for, or none there) */
     readonly imported: readonly ImportedChapter[] | null;
     readonly beside: string | null;
     readonly style: Style;

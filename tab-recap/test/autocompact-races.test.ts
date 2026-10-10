@@ -1,5 +1,3 @@
-// The service's guarantees across awaits and lanes: an unknown verdict is asked again, two lanes never both request, a record-only compact holds nobody,
-// a compaction begun and unfinished holds the other lanes, and the sweep over several lanes decides each one once.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AutocompactSweep } from '#src/daemon/autocompact-sweep.ts';

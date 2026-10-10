@@ -1,4 +1,3 @@
-// The newest turns of a task's lanes, through each lane's own reader, with no position moved.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CustomHarness } from '#src/adapters/custom-harness.ts';

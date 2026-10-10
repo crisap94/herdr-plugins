@@ -1,4 +1,3 @@
-// `tab-recap eval` --label, --agree and --gates, over the real repositories and a scripted judge.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';

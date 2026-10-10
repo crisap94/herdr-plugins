@@ -1,4 +1,3 @@
-// The six yes/no questions of autocompact (design decision 2). Each does one judgment and names the state fields it reads in backticks.
 import type { Noul } from '#src/ports/decider.ts';
 
 export const QUESTIONS: Readonly<Record<string, Noul>> = {

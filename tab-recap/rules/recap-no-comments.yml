@@ -1,0 +1,40 @@
+id: recap-no-comments
+language: typescript
+severity: error
+message: >-
+  A comment in the code. The code carries no comments: meaning belongs in names, types, small
+  functions and tests; rationale belongs in CONTEXT.md, the README or the OpenSpec design.
+note: >-
+  Directive pragmas are not comments for this rule: a type-checker or linter directive
+  (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) and a `/// <reference` line stay.
+  A released migration is frozen byte-for-byte by ci/check-migrations.sh, so the migrations
+  listed under `ignores` keep their comments; a new migration is comment-free until it is released.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/test/**"
+  - "**/probes/recap-no-comments/**"
+ignores:
+  - "**/src/adapters/db/schema/001-history.ts"
+  - "**/src/adapters/db/schema/001-initial.ts"
+  - "**/src/adapters/db/schema/001-live.ts"
+  - "**/src/adapters/db/schema/001-views.ts"
+  - "**/src/adapters/db/schema/002-lane-web.ts"
+  - "**/src/adapters/db/schema/003-request.ts"
+  - "**/src/adapters/db/schema/003-rules.ts"
+  - "**/src/adapters/db/schema/004-compaction.ts"
+  - "**/src/adapters/db/schema/005-eval.ts"
+  - "**/src/adapters/db/schema/006-ledger.ts"
+  - "**/src/adapters/db/schema/007-curator.ts"
+  - "**/src/adapters/db/schema/007-request.ts"
+  - "**/src/adapters/db/schema/008-boundary-link.ts"
+  - "**/src/adapters/db/schema/009-anchor.ts"
+  - "**/src/adapters/db/schema/010-autocompact.ts"
+  - "**/src/adapters/db/schema/011-autocompact-skip.ts"
+  - "**/src/adapters/db/schema/012-herdr-events.ts"
+  - "**/src/adapters/db/schema/013-herdr-asks.ts"
+  - "**/src/adapters/db/schema/migration.ts"
+rule:
+  kind: comment
+  not:
+    regex: "^(//|/\\*)\\s*(@ts-(expect-error|ignore|nocheck|check)|oxlint-disable|ast-grep-ignore|eslint-disable)|^///\\s*<reference"

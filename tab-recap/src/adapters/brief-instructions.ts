@@ -1,9 +1,5 @@
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-message.ts';
 
-/**
- * What the brief writer is told. The brief is read by an agent as its operator's own words, so the writer
- * is asked for them in the first person and never to name anything but the work.
- */
 export const BRIEF_INSTRUCTIONS = [
     'You write the instructions that go with /compact: what an AI coding agent must keep when it summarizes its own conversation.',
     'The agent will read them as its operator talking. Write them in the operator\'s first person ("I want", "we decided"), in English.',

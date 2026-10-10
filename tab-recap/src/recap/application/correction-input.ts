@@ -1,4 +1,3 @@
-// The retry's document (schema/correction-input.dtd): the operations a gate refused with their reasons, and the facts they name. No transcript.
 import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Correction, RecapRequest, RefusedOperation } from '#src/ports/summarizer.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
@@ -7,7 +6,6 @@ import { element, leaf } from './xml.ts';
 
 const NEST = '\n';
 
-/** The operation as the writer gave it: an add by its fields, an update or a close by the fact's document id. */
 function operationOf(op: Operation, clock: (at: number) => string, agents: ReadonlyMap<string, string>): string {
     switch (op.op) {
         case 'add':
@@ -39,7 +37,6 @@ function ledgerOf(facts: readonly InputFact[], clock: (at: number) => string): s
     return `${NEST}${element('ledger', {}, `${lines}${NEST}`)}`;
 }
 
-/** The document of the one retry; the writer's agents are named by their label in an add, so the label is mapped back to the id the writer uses. */
 export function correctionDocument(request: RecapRequest & { readonly retry: Correction }): string {
     const { input, retry } = request;
     const clock = (at: number): string => localTime(at, input.tab.now, input.tab.zone);

@@ -1,5 +1,3 @@
-// The first step of a run: the new turns read chunk by chunk at low effort, every section asked for, and every trigger either filled in or
-// skipped with a reason; a stub the answer ignores is kept as a flagged candidate. The result is candidates, not facts.
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { InputCandidate } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
@@ -14,10 +12,8 @@ import { capStubs, triggersOf } from './triggers.ts';
 import type { Stub } from './triggers.ts';
 import { tidy } from './recap-shape.ts';
 
-/** How alike two candidates of a section must be to be one. */
 const SAME = 0.6;
 
-/** What the enumeration is given besides the turns. */
 export interface EnumerateRun {
     readonly enumerator: Enumerators;
     readonly language: string;
@@ -25,7 +21,6 @@ export interface EnumerateRun {
     log(line: string): void;
 }
 
-/** The new turns of one agent (`a1`). */
 export interface AgentTurns {
     readonly agent: string;
     readonly entries: readonly Entry[];
@@ -34,18 +29,14 @@ export interface AgentTurns {
 export interface Enumeration {
     readonly candidates: readonly InputCandidate[];
     readonly cost: number;
-    /** the chunks that were read */
     readonly chunks: number;
-    /** the markup read, in characters */
     readonly chars: number;
-    /** why it could not be done (a call failed or its answer was not usable); null when it was */
     readonly failed: string | null;
 }
 
 const flaggedOf = (stub: Stub, agent: string): InputCandidate =>
     ({ section: stub.section, text: tidy(stub.anchor, 16) || stub.anchor, why: null, ref: stub.ref, at: stub.at, anchor: stub.anchor, agent, flagged: true });
 
-/** The candidates a stub-less list holds, once each: of two that say the same in a section the first stays (a flagged one gives way to one that is not). */
 export function deduplicated(candidates: readonly InputCandidate[]): readonly InputCandidate[] {
     const kept: InputCandidate[] = [];
     for (const one of candidates) {
@@ -65,7 +56,6 @@ interface Called {
     readonly failed: string | null;
 }
 
-/** One call: the chunk, its stubs and (in an ask-back) the questions. */
 async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<Called> {
     const written = await run.enumerator.write(enumerateInput(material));
     if (isUnknown(written)) {
@@ -80,7 +70,6 @@ async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<C
     return { candidates: [...answer.candidates, ...left], cost: written.costUsd, failed: null };
 }
 
-/** Every chunk of every agent's turns, one call each, in order; the first call that fails ends it. */
 export async function enumerate(run: EnumerateRun, agents: readonly AgentTurns[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
     let [cost, chunks, chars] = [0, 0, 0];
@@ -98,10 +87,8 @@ export async function enumerate(run: EnumerateRun, agents: readonly AgentTurns[]
     return { candidates: deduplicated(all), cost, chunks, chars, failed: null };
 }
 
-/** The most markup the one more enumeration of an ask-back reads of an agent's turns (the newest). */
 export const ASK_BACK_CHARS = 24_000;
 
-/** The one more enumeration: each agent's newest turns, restricted to `questions`. */
 export async function enumerateAsked(run: EnumerateRun, agents: readonly AgentTurns[], questions: readonly Question[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
     let [cost, chars] = [0, 0];

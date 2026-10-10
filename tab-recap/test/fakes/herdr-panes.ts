@@ -1,6 +1,3 @@
-// A fake herdr for pane tokens: the behaviour measured on herdr 0.9.3 that the protocol relies on. One flat map per pane, merged from every source:
-// the last write of a name wins, `null` removes the name whoever wrote it, values are cut to 80 characters, names match `[A-Za-z0-9_-]{1,32}`,
-// at most 16 names per source, and a time to live of at most 24 hours.
 export const VALUE_MAX = 80;
 export const NAME = /^[A-Za-z0-9_-]{1,32}$/;
 export const TTL_MAX_MS = 86_400_000;
@@ -22,7 +19,6 @@ export class FakePanes {
         this.now = now;
     }
 
-    /** `pane.report_metadata`: the tokens of one source, merged into the pane's map. */
     report(pane: string, source: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Reply {
         const names = Object.keys(tokens);
         if (ttlMs > TTL_MAX_MS) {
@@ -49,7 +45,6 @@ export class FakePanes {
         return { ok: true };
     }
 
-    /** The pane's tokens as a reader sees them now: the names whose time to live has not passed. */
     read(pane: string): Readonly<Record<string, string>> {
         return Object.fromEntries([...this.panes.get(pane) ?? new Map<string, Held>()].filter(([, held]) => held.expires > this.now()).map(([name, held]) => [name, held.value]));
     }
