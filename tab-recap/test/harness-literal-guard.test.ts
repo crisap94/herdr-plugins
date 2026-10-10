@@ -6,14 +6,17 @@ import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 
 const RULE = readFileSync(new URL('../rules/recap-no-harness-literals.yml', import.meta.url), 'utf8');
 
-function ruleHarnessIds(): string[] {
-    const regex = RULE.split('\n').find((line) => line.includes('regex:'));
-    const alternation = regex?.match(/\(([a-z|]+)\)/)?.[1];
-    assert.ok(alternation !== undefined, 'the rule has a harness id alternation in its first regex');
-    return alternation.split('|').toSorted();
+function ruleHarnessIdBranches(): string[][] {
+    return RULE.split('\n')
+        .filter((line) => line.includes('regex:'))
+        .map((line) => line.match(/\(([a-z|]+)\)/)?.[1]?.split('|').toSorted() ?? []);
 }
 
-test('the guard rule names every registered kind and every backend id, and nothing else', () => {
+test('the guard rule names every registered kind and every backend id in both of its branches, and nothing else', () => {
     const known = [...new Set<string>([...Object.keys(REGISTERED_KINDS), ...BACKEND_IDS])].toSorted();
-    assert.deepEqual(ruleHarnessIds(), known);
+    const branches = ruleHarnessIdBranches();
+    assert.equal(branches.length, 2, 'the rule has one harness id alternation per regex: the string branch and the template branch');
+    for (const branch of branches) {
+        assert.deepEqual(branch, known);
+    }
 });

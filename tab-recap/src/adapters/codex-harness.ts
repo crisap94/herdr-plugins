@@ -35,7 +35,7 @@ export class CodexHarness implements Harness {
     }
 
     label(settings: HarnessSettings): string {
-        return settings.model === '' ? CODEX_PROGRAM : `codex/${settings.model}`;
+        return settings.model === '' ? 'codex' : `codex/${settings.model}`;
     }
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
