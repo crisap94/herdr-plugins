@@ -1,14 +1,15 @@
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
-import type { Entry, Transcripts } from '#src/ports/transcripts.ts';
+import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { registryOf } from '#src/ports/transcripts.ts';
+import type { TranscriptRegistryInput } from '#src/ports/transcripts.ts';
 
 const TAIL_BYTES = 256 * 1024;
-const ANY_KIND = '*';
-
-export async function tailOf(readers: readonly Transcripts[], lanes: readonly LaneCursor[]): Promise<readonly Entry[]> {
+export async function tailOf(readers: TranscriptRegistryInput, lanes: readonly LaneCursor[]): Promise<readonly Entry[]> {
+    const registry = registryOf(readers);
     const read = await Promise.all(lanes.filter((lane) => lane.transcript !== '').map(async (lane) => {
-        const reader = readers.find((each) => each.agent === lane.agent) ?? readers.find((each) => each.agent === ANY_KIND);
+        const reader = registry.readerFor(lane.agent);
         const chunk = reader === undefined ? null : await reader.read(lane.transcript, UNREAD, TAIL_BYTES);
         return chunk === null || isUnknown(chunk) ? [] : chunk.entries;
     }));

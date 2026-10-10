@@ -65,3 +65,58 @@ export interface Transcripts {
     observed?(source: string, budget: number): Promise<ObservedResult>;
     inFlight?(source: string, budget: number): Promise<InFlightResult>;
 }
+
+export type ReaderKind = 'claude' | 'codex' | 'opencode';
+
+export function readerKindOf(raw: string): ReaderKind | null {
+    switch (raw) {
+        case 'claude':
+        case 'codex':
+        case 'opencode':
+            return raw;
+        default:
+            return null;
+    }
+}
+
+export class TranscriptRegistry {
+    private readonly readers: Readonly<Partial<Record<ReaderKind, Transcripts>>>;
+    private readonly fallback: Transcripts | null;
+
+    constructor(readers: Readonly<Partial<Record<ReaderKind, Transcripts>>>, fallback: Transcripts | null) {
+        this.readers = readers;
+        this.fallback = fallback;
+    }
+
+    exact(kind: string): Transcripts | undefined {
+        const parsed = readerKindOf(kind);
+        return parsed === null ? undefined : this.readers[parsed];
+    }
+
+    readerFor(kind: string): Transcripts | undefined {
+        return this.exact(kind) ?? this.fallback ?? undefined;
+    }
+
+    kinds(): readonly ReaderKind[] {
+        return Object.keys(this.readers).filter((kind): kind is ReaderKind => readerKindOf(kind) !== null);
+    }
+}
+
+export type TranscriptRegistryInput = TranscriptRegistry | readonly Transcripts[];
+
+export function registryOf(input: TranscriptRegistryInput): TranscriptRegistry {
+    if (input instanceof TranscriptRegistry) {
+        return input;
+    }
+    const readers: Partial<Record<ReaderKind, Transcripts>> = {};
+    let fallback: Transcripts | null = null;
+    for (const reader of input) {
+        const kind = readerKindOf(reader.agent);
+        if (kind !== null) {
+            readers[kind] = reader;
+        } else if (reader.agent === '*') {
+            fallback = reader;
+        }
+    }
+    return new TranscriptRegistry(readers, fallback);
+}

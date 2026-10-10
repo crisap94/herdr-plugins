@@ -9,7 +9,6 @@ import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -20,13 +19,15 @@ import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { loadConfig } from './config.ts';
 import type { Config } from './config.ts';
+import { registryOf } from '#src/ports/transcripts.ts';
+import type { TranscriptRegistryInput } from '#src/ports/transcripts.ts';
 
 const RECAP_WAIT_MS = 90_000;
 const TAIL_BYTES = 512 * 1024;
 
-async function inFlightOf(transcripts: readonly Transcripts[], lane: Lane): Promise<FlightAnswer> {
+async function inFlightOf(transcripts: TranscriptRegistryInput, lane: Lane): Promise<FlightAnswer> {
     const agent = String(lane.agent);
-    const reader = transcripts.find((candidate) => candidate.agent === agent);
+    const reader = registryOf(transcripts).exact(agent);
     const located = reader === undefined ? null : await reader.locate(lane);
     if (reader?.inFlight === undefined) return { count: 'unknown', why: `no reader for ${agent}` };
     if (located === null || isUnknown(located)) return { count: 'unknown', why: located === null ? 'no transcript' : saying(located.why) };
@@ -45,7 +46,7 @@ export function wireAutocompact(parts: {
     readonly config?: () => Config;
     readonly awaiting?: (pane: string) => Promise<Waiting>;
     readonly store: Store;
-    readonly transcripts: readonly Transcripts[];
+    readonly transcripts: TranscriptRegistryInput;
     readonly contexts: LaneContexts;
     readonly recent: LaneRecent;
     readonly recaps: RecapJob;
