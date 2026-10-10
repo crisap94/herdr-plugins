@@ -1,14 +1,19 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { ANSWER_TTL_MS, answerValue, askedOf, badIdAnswer, COMPACT_EXCHANGE, isTerminalStage, NOT_ACTED, REQUEST_PREFIX } from '#src/recap/domain/compact-request.ts';
-import type { Asked } from '#src/recap/domain/compact-request.ts';
+import { ANSWER_TTL_MS, COMPACT_EXCHANGE, isTerminalStage, NOT_ACTED, noteOf, parseAskId } from '#src/recap/domain/compact-request.ts';
+import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_TOKEN } from '#src/recap/domain/lane-tokens.ts';
+import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { toolName } from '#src/protocol/primitives.ts';
-import type { ToolName } from '#src/protocol/primitives.ts';
+import { failureStage } from '#src/protocol/exchange.ts';
+import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
+import type { RequestId, ToolName } from '#src/protocol/primitives.ts';
+import { answer as answerOf, take } from '#src/protocol/responder.ts';
+import type { Refused } from '#src/protocol/responder.ts';
+import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { tokensOf } from './decode.ts';
 
@@ -25,15 +30,16 @@ export interface CompactRequestDeps {
     readonly log: (line: string) => void;
 }
 
-interface Pending {
+interface Incoming {
     readonly pane: string;
-    readonly tool: ToolName;
-    readonly asked: Asked;
+    readonly requester: ToolName;
+    readonly id: RequestId;
+    readonly note: string | null;
 }
 
 export class CompactRequests {
     private readonly deps: CompactRequestDeps;
-    private readonly pending: Pending[] = [];
+    private readonly pending: Incoming[] = [];
     private readonly badSeen = new Set<string>();
 
     constructor(deps: CompactRequestDeps) {
@@ -48,19 +54,18 @@ export class CompactRequests {
     }
 
     onPaneTokens(pane: string, tokens: TokenMap): void {
-        for (const [name, value] of Object.entries(tokens)) {
-            const raw = name.startsWith(REQUEST_PREFIX) ? name.slice(REQUEST_PREFIX.length) : '';
-            const asked = raw === '' ? null : askedOf(value);
-            if (asked === null) {
-                continue;
+        if (pane.trim() === '') {
+            return;
+        }
+        const taking = take(REGISTRY, tokens, (exchange, requester, id) => this.deps.asks.seen(exchange, requester, id));
+        for (const refused of taking.refused) {
+            if (refused.exchange.name === COMPACT_EXCHANGE) {
+                this.refuseBadId(pane, refused);
             }
-            if (!asked.valid) {
-                this.refuseBadId(pane, `${name}\u0000${value}`, asked.id);
-                continue;
-            }
-            const tool = toolName(raw);
-            if (tool.kind === 'ok' && !this.deps.asks.seen(COMPACT_EXCHANGE, tool.value, asked.id)) {
-                this.consider(pane, tool.value, asked);
+        }
+        for (const taken of taking.taken) {
+            if (taken.exchange.name === COMPACT_EXCHANGE) {
+                this.consider({ pane, requester: taken.tool, id: taken.id, note: noteOf(taken.value) });
             }
         }
     }
@@ -70,79 +75,92 @@ export class CompactRequests {
             return;
         }
         for (const item of this.pending.splice(0)) {
-            if (this.deps.enabled() && !this.deps.asks.seen(COMPACT_EXCHANGE, item.tool, item.asked.id)) {
-                this.act(item.pane, item.tool, item.asked);
+            if (this.deps.enabled() && !this.deps.asks.seen(COMPACT_EXCHANGE, item.requester, item.id)) {
+                this.act(item);
             }
         }
     }
 
     answer(id: string, pane: string, stage: string): void {
-        if (isTerminalStage(stage)) {
-            this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id, pane }, stage);
+        const askId = parseAskId(id);
+        if (askId !== null) {
+            this.finish(askId, pane, stage);
         }
-        this.reply(pane, answerValue(id, stage));
     }
 
-    answerInterrupted(asks: readonly { readonly pane: string; readonly answer: string }[]): void {
+    answerInterrupted(asks: readonly { readonly pane: string; readonly id: string }[]): void {
         for (const ask of asks) {
-            this.answer(ask.answer, ask.pane, 'failed-interrupted');
+            this.answer(ask.id, ask.pane, failureStage(COMPACT_FAILURES.interrupted));
         }
     }
 
-    private consider(pane: string, tool: ToolName, asked: Asked): void {
+    private consider(incoming: Incoming): void {
         if (!this.deps.enabled()) {
-            this.remember(pane, tool, asked.id);
-            this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id: asked.id, pane }, NOT_ACTED);
+            this.remember(incoming);
+            this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id: incoming.id, pane: paneId(incoming.pane) }, NOT_ACTED);
         } else if (!this.deps.board().seeded) {
             if (this.pending.length < PENDING_MAX) {
-                this.pending.push({ pane, tool, asked });
+                this.pending.push(incoming);
             }
         } else {
-            this.act(pane, tool, asked);
+            this.act(incoming);
         }
     }
 
-    private refuseBadId(pane: string, key: string, id: string): void {
-        if (!this.deps.enabled() || this.badSeen.has(`${pane}\u0000${key}`)) {
+    private refuseBadId(pane: string, refused: Refused): void {
+        const key = `${pane}\u0000${refused.exchange.name}\u0000${refused.tool}\u0000${refused.rawId}`;
+        if (!this.deps.enabled() || this.badSeen.has(key)) {
             return;
         }
         if (this.badSeen.size >= BAD_MAX) {
             this.badSeen.clear();
         }
-        this.badSeen.add(`${pane}\u0000${key}`);
-        this.reply(pane, badIdAnswer(id));
+        this.badSeen.add(key);
+        this.reply(pane, { name: COMPACT_TOKEN, value: refused.answer });
     }
 
-    private act(pane: string, tool: ToolName, asked: Asked): void {
+    private act(incoming: Incoming): void {
+        const { pane, id, note } = incoming;
         const lane = this.deps.board().lanes.get(paneId(pane));
         if (lane === undefined) {
-            this.remember(pane, tool, asked.id);
-            this.answer(asked.id, pane, 'failed-not-a-lane');
+            this.remember(incoming);
+            this.finish(id, pane, failureStage(COMPACT_FAILURES.notALane));
             return;
         }
         try {
-            this.deps.requests.requestCompact({ tab: String(lane.tab), pane, note: asked.note, origin: 'request', answer: asked.id });
+            this.deps.requests.requestCompact({ tab: String(lane.tab), pane, note, origin: 'request', answer: id });
         } catch (error) {
-            this.deps.log(`compaction request ${asked.id} on ${pane}: not queued (${error instanceof Error ? error.message : String(error)})`);
+            this.deps.log(`compaction request ${id} on ${pane}: not queued (${error instanceof Error ? error.message : String(error)})`);
             return;
         }
-        this.remember(pane, tool, asked.id);
-        this.answer(asked.id, pane, 'queued');
+        this.remember(incoming);
+        this.finish(id, pane, COMPACT_STAGES.queued);
     }
 
-    private remember(pane: string, tool: ToolName, id: string): void {
-        this.deps.asks.record({ exchange: COMPACT_EXCHANGE, requester: tool, id, pane, at: this.deps.now(), ref: null });
+    private finish(id: RequestId, pane: string, stage: string): void {
+        const outcome = isTerminalStage(stage) ? outcomeOf(stage) : null;
+        if (outcome !== null && pane !== '') {
+            this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id, pane: paneId(pane) }, outcome);
+        }
+        const write = answerOf(compact, id, stage);
+        if (write.kind === 'ok') {
+            this.reply(pane, write.value);
+        }
     }
 
-    private reply(pane: string, value: string): void {
+    private remember(incoming: Incoming): void {
+        this.deps.asks.record({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id: incoming.id, pane: incoming.pane, at: this.deps.now(), ref: null });
+    }
+
+    private reply(pane: string, write: TokenWrite): void {
         if (!this.deps.enabled() || pane === '') {
             return;
         }
-        void this.write(pane, value);
+        void this.write(pane, write);
     }
 
-    private async write(pane: string, value: string): Promise<void> {
-        const done = await this.deps.tokens.report(pane, { [COMPACT_TOKEN]: value }, ANSWER_TTL_MS);
+    private async write(pane: string, write: TokenWrite): Promise<void> {
+        const done = await this.deps.tokens.report(pane, { [write.name]: write.value }, ANSWER_TTL_MS);
         if (isUnknown(done)) {
             this.deps.log(`compaction request on ${pane}: not answered (${saying(done.why)})`);
         }

@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { observe, request, withdraw } from '#src/protocol/requester.ts';
-import type { Observation } from '#src/protocol/requester.ts';
+import type { AnswerState } from '#src/protocol/requester.ts';
 import { requestId } from '#src/protocol/primitives.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
 import { compactLike, handoffLike, nameOf, parsedOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
 
 const idOf = (raw: string, grammar: 'legacy-length' | 'token-safe'): RequestId => unwrap(requestId(raw, grammar));
 
-const observeOwn = (raw: string, id: string): Observation => unwrap(observe(handoffLike, { [nameOf('tab-recap-handoff')]: raw }, idOf(id, 'token-safe')));
+const observeOwn = (raw: string, id: string): AnswerState => unwrap(observe(handoffLike, { [nameOf('tab-recap-handoff')]: raw }, idOf(id, 'token-safe')));
 
 test('an absent or empty answer is not seen', () => {
     assert.deepEqual(observeOwn('', 'r1'), { kind: 'not-seen' });

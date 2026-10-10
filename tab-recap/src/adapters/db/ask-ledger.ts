@@ -1,7 +1,11 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { Ask, AskKey, AskLedger, Requester } from '#src/ports/ask-ledger.ts';
-import { exchangeName, toolName } from '#src/protocol/primitives.ts';
+import type { Ask, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
+import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
 import type { ExchangeName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import { outcomeOf, outcomeText } from '#src/recap/domain/ask-outcome.ts';
+import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 import { all, guarded, maybeText, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
@@ -17,10 +21,13 @@ const requesterOf = (raw: string): Requester | null => {
 function askOf(row: Row): readonly Ask[] {
     const exchange = exchangeName(text(row, 'exchange'));
     const requester = requesterOf(text(row, 'requester'));
-    if (exchange.kind !== 'ok' || requester === null) {
+    const id = requestId(text(row, 'id'), 'legacy-length');
+    const raw = maybeText(row, 'outcome');
+    const outcome = raw === null ? null : outcomeOf(raw);
+    if (exchange.kind !== 'ok' || requester === null || id.kind !== 'ok' || (raw !== null && outcome === null)) {
         return [];
     }
-    return [{ exchange: exchange.value, requester, id: text(row, 'id'), pane: text(row, 'pane'), at: whole(row, 'at'), ref: maybeText(row, 'ref'), outcome: maybeText(row, 'outcome') }];
+    return [{ exchange: exchange.value, requester, id: id.value, pane: paneId(text(row, 'pane')), at: whole(row, 'at'), ref: maybeText(row, 'ref'), outcome }];
 }
 
 export class AskLedgerRepository implements AskLedger {
@@ -44,12 +51,14 @@ export class AskLedgerRepository implements AskLedger {
         return guarded(() => one(this.find, exchange, requester, id) !== null, true);
     }
 
-    record(ask: Omit<Ask, 'outcome'>): void {
-        writeTx(this.db, () => { this.insert.run(ask.exchange, ask.requester, ask.id, ask.pane, ask.at, ask.ref); });
+    record(ask: NewAsk): void {
+        const id = must(requestId(ask.id, 'legacy-length'));
+        const pane = paneId(ask.pane);
+        writeTx(this.db, () => { this.insert.run(ask.exchange, ask.requester, id, pane, ask.at, ask.ref); });
     }
 
-    settle(match: AskKey, outcome: string): void {
-        writeTx(this.db, () => { this.settleRow.run(outcome, match.exchange, match.id, match.pane); });
+    settle(match: AskKey, outcome: AskOutcome): void {
+        writeTx(this.db, () => { this.settleRow.run(outcomeText(outcome), match.exchange, match.id, match.pane); });
     }
 
     unfinished(): readonly Ask[] {

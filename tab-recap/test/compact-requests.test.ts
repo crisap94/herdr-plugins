@@ -125,7 +125,7 @@ test('the id is per requester: another tool may use the same id', async () => {
 
 test('a restart interrupts what was asked: each unfinished or queued request is answered failed-interrupted, and none is run', async () => {
     const run = setup(true);
-    run.compact.answerInterrupted([{ pane: 'w1:p1', answer: 'r7' }, { pane: 'w1:p2', answer: 'r8' }]);
+    run.compact.answerInterrupted([{ pane: 'w1:p1', id: 'r7' }, { pane: 'w1:p2', id: 'r8' }]);
     await run.flush();
     assert.deepEqual(run.tokens.reports.map((report) => [report.pane, report.tokens]), [
         ['w1:p1', { 'tab-recap-compact': 'r7:failed-interrupted' }],
@@ -136,7 +136,7 @@ test('a restart interrupts what was asked: each unfinished or queued request is 
 
 test('off: an interrupted request is not answered either', async () => {
     const run = setup(false);
-    run.compact.answerInterrupted([{ pane: 'w1:p1', answer: 'r7' }]);
+    run.compact.answerInterrupted([{ pane: 'w1:p1', id: 'r7' }]);
     await run.flush();
     assert.deepEqual(run.tokens.reports, []);
 });

@@ -6,7 +6,6 @@ export const LIMITS = {
     nameMax: 32,
     idMax: 16,
     ownNamesPerPane: 10,
-    requestsPerCall: 16,
     toolMax: 20,
     exchangeMax: 16,
     versionMax: 99,

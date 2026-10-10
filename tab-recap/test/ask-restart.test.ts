@@ -35,7 +35,7 @@ function daemon(asks: MemoryAskLedger, tokens: RecordingTokens, on = true): Daem
 function restart(asks: MemoryAskLedger, tokens: RecordingTokens, on = true): Daemon {
     const next = daemon(asks, tokens, on);
     interruptAsks(asks, {
-        token: (ask: Ask): void => { next.handler.answerInterrupted([{ pane: ask.pane, answer: ask.id }]); },
+        token: (ask: Ask): void => { next.handler.answerInterrupted([{ pane: ask.pane, id: ask.id }]); },
         local: (): void => undefined,
     });
     return next;

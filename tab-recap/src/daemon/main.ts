@@ -51,6 +51,7 @@ import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import type { Requests } from '#src/ports/requests.ts';
 import { interruptAsks } from '#src/recap/application/ask-restart.ts';
 import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
@@ -92,11 +93,18 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
     recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
 }
 
+function purgeAnsweredCompactions(requests: Pick<Requests, 'takeAnswered'>): number {
+    return requests.takeAnswered().length;
+}
+
 function answerRestart(store: Store, answers: CompactRequests): number {
-    store.requests.takeAnswered();
+    const purged = purgeAnsweredCompactions(store.requests);
+    if (purged > 0) {
+        log(`restart: ${purged} answered compaction request(s) purged`);
+    }
     const restarted = store.compactions.interrupted(Date.now(), messagesOf().compaction.stage.restarted);
     interruptAsks(store.asks, {
-        token: (ask): void => { answers.answerInterrupted([{ pane: ask.pane, answer: ask.id }]); },
+        token: (ask): void => { answers.answerInterrupted([{ pane: ask.pane, id: ask.id }]); },
         local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
     });
     return restarted;

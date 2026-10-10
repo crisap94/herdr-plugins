@@ -1,6 +1,6 @@
 import type { Result } from './result.ts';
 import { LIMITS, tokenName, tokenValue } from './primitives.ts';
-import type { ExchangeName, ExchangeVersion, Refusal, RequestId, TokenName, TokenValue, ToolName } from './primitives.ts';
+import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
 
@@ -19,9 +19,13 @@ export type Exchange = {
 
 export const ANSWER_PREFIX = 'tab-recap-';
 
+export const FAILURE_PREFIX = 'failed-';
+
 export const defineExchange = (exchange: Exchange): Exchange => exchange;
 
-export const failureStage = (reason: string): string => `failed-${reason}`;
+export const failureStage = (reason: string): string => `${FAILURE_PREFIX}${reason}`;
+
+export const isFailureStage = (stage: string): boolean => stage.startsWith(FAILURE_PREFIX);
 
 export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => tokenName(`${ANSWER_PREFIX}${exchange.name}`);
 
@@ -31,7 +35,7 @@ const ANSWER_SEPARATOR = ':';
 
 const answerText = (id: string, stage: string): string => `${id}${ANSWER_SEPARATOR}${stage}`;
 
-export function answerValue(exchange: Exchange, id: RequestId, stage: string): Result<TokenValue, Refusal> {
+export function answerValue(exchange: Exchange, id: string, stage: string): Result<TokenValue, Refusal> {
     const text = answerText(id, stage);
     return tokenValue(exchange.truncatesAnswer ? text.slice(0, LIMITS.valueMax) : text);
 }

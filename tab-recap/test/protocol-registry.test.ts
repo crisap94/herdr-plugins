@@ -103,3 +103,8 @@ test('a request is parsed and serialized by its exchange descriptor', () => {
         assert.deepEqual(serializeRequest(exchange, parsed.value), { kind: 'ok', value: 'r_7:coordinator' });
     }
 });
+
+test('a request prefix that is a prefix of another exchange\'s prefix is refused, so the longest-match rule is never needed', () => {
+    const result = buildRegistry([probe('probe'), probe('other-x', { requestPrefix: 'probe-req-deep-' })], []);
+    assert.deepEqual(refused(result), { reason: 'prefix-overlap', detail: 'probe-req-' });
+});

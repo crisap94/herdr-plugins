@@ -1,5 +1,9 @@
-import type { Ask, AskKey, AskLedger, Requester } from '#src/ports/ask-ledger.ts';
+import type { Ask, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
+import { requestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const keyOf = (exchange: ExchangeName, requester: Requester, id: string): string => `${exchange}\u0000${requester}\u0000${id}`;
 
@@ -10,14 +14,14 @@ export class MemoryAskLedger implements AskLedger {
         return this.rows.has(keyOf(exchange, requester, id));
     }
 
-    record(ask: Omit<Ask, 'outcome'>): void {
+    record(ask: NewAsk): void {
         const key = keyOf(ask.exchange, ask.requester, ask.id);
         if (!this.rows.has(key)) {
-            this.rows.set(key, { ...ask, outcome: null });
+            this.rows.set(key, { ...ask, id: must(requestId(ask.id, 'legacy-length')), pane: paneId(ask.pane), outcome: null });
         }
     }
 
-    settle(match: AskKey, outcome: string): void {
+    settle(match: AskKey, outcome: AskOutcome): void {
         for (const [key, ask] of this.rows) {
             if (ask.exchange === match.exchange && ask.id === match.id && ask.pane === match.pane && ask.outcome === null) {
                 this.rows.set(key, { ...ask, outcome });

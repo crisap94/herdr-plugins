@@ -5,6 +5,8 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { endAnswerOf, refusalAnswerOf } from '#src/recap/domain/compact-request.ts';
+import { failureStage } from '#src/protocol/exchange.ts';
+import { COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
@@ -108,7 +110,7 @@ export class Compaction {
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
         const { compaction } = this.deps.messages();
         this.deps.claims.join(pane, request);
-        this.answerOne(request, pane, 'queued');
+        this.answerOne(request, pane, COMPACT_STAGES.queued);
         if (request.origin !== 'auto') {
             void this.tell(compaction.title(agent), compaction.joined(agent, request.note !== null));
         }
@@ -201,7 +203,7 @@ export class Compaction {
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const writing = this.deps.brief.enabled();
         const id = this.begun(request, { tab, pane, agent, stage: writing ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
-        this.answer(request, pane, 'running');
+        this.answer(request, pane, COMPACT_STAGES.running);
         this.deps.events?.lane(pane, 'compact-running', id);
         const trail = new Trail(this.deps.compactions, id, () => this.deps.now(), (end) => { this.ended(request, pane, id, end); });
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
@@ -235,7 +237,7 @@ export class Compaction {
         const lanes = this.deps.lanes(tab);
         const targets = targetsOf(lanes, this.deps.target(), { pane: request.pane, focused: await this.deps.focused(tab) });
         if (targets.length === 0) {
-            this.answer(request, request.pane ?? '', 'failed-no-target');
+            this.answer(request, request.pane ?? '', failureStage(COMPACT_FAILURES.noTarget));
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
@@ -252,7 +254,7 @@ export class Compaction {
             await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
         } catch (error) {
             for (const lane of owned) {
-                this.answer(request, String(lane.pane), 'failed-error');
+                this.answer(request, String(lane.pane), failureStage(COMPACT_FAILURES.error));
             }
             throw error;
         } finally {

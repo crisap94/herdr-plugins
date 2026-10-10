@@ -25,7 +25,6 @@ export interface InformerHooks {
     onUnknownKind(rawKind: string): void;
     onBeat(): void;
     onStatus?(pane: string, status: string): void;
-    onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
     onPaneTokens?(pane: string, tokens: TokenMap): void;
     sessionIdentity: SessionOf;
 }
@@ -199,7 +198,6 @@ export class Informer {
     }
 
     private paneUpdated(data: Readonly<Record<string, unknown>>): void {
-        this.hooks.onPaneUpdated?.(data);
         const tokens = tokensOf(data);
         if (tokens !== null) {
             this.hooks.onPaneTokens?.(tokens.pane, tokens.tokens);

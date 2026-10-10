@@ -22,7 +22,7 @@ class Herdr implements FleetSource {
 
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
-test('a pane.updated frame reaches the hook, in both spellings, and is not an unknown kind', async () => {
+test('a pane.updated frame reaches the token hook, in both spellings, and is not an unknown kind', async () => {
     const herdr = new Herdr();
     const routed: unknown[] = [];
     const unknownKinds: string[] = [];
@@ -32,7 +32,7 @@ test('a pane.updated frame reaches the hook, in both spellings, and is not an un
         onUnknownKind: (kind): void => { unknownKinds.push(kind); },
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-        onPaneUpdated: (data): void => { routed.push(data); },
+        onPaneTokens: (pane, tokens): void => { routed.push({ pane, tokens }); },
     });
     await informer.enterSubscription();
     const tokens = { pane: { pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } } };
@@ -40,7 +40,8 @@ test('a pane.updated frame reaches the hook, in both spellings, and is not an un
     herdr.queue.push({ event: 'pane_updated', data: tokens });
     await flush();
     await flush();
-    assert.deepEqual(routed, [tokens, tokens]);
+    const reported = { pane: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } };
+    assert.deepEqual(routed, [reported, reported]);
     assert.deepEqual(unknownKinds, []);
 });
 

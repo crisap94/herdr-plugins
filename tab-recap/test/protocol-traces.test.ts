@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { observe, request } from '#src/protocol/requester.ts';
-import type { Observation } from '#src/protocol/requester.ts';
+import type { AnswerState } from '#src/protocol/requester.ts';
 import { answer, take } from '#src/protocol/responder.ts';
 import type { SeenCheck, Taken } from '#src/protocol/responder.ts';
 import { requestId } from '#src/protocol/primitives.ts';
@@ -22,7 +22,7 @@ const ask = (map: FakeTokenMap, raw: string): void => {
     map.apply(unwrap(request(handoffLike, toolOf('alpha'), parsedOf(handoffLike, raw))));
 };
 
-const observeAs = (map: FakeTokenMap, raw: string): Observation => unwrap(observe(handoffLike, map.snapshot(), idOf(raw)));
+const observeAs = (map: FakeTokenMap, raw: string): AnswerState => unwrap(observe(handoffLike, map.snapshot(), idOf(raw)));
 
 const keyOf = (exchange: ExchangeName, tool: ToolName, id: RequestId): string => `${exchange}\u0000${tool}\u0000${id}`;
 

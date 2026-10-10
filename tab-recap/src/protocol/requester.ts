@@ -6,7 +6,7 @@ import type { Exchange } from './exchange.ts';
 import type { ParsedValue } from './codec.ts';
 import type { TokenMap, TokenWrite } from './tokens.ts';
 
-export type Observation =
+export type AnswerState =
     | { readonly kind: 'not-seen' }
     | { readonly kind: 'queued' }
     | { readonly kind: 'running' }
@@ -21,7 +21,7 @@ const LIVE_STAGES: readonly LiveStage[] = ['queued', 'running', 'done'];
 
 const isLiveStage = (stage: string): stage is LiveStage => (LIVE_STAGES as readonly string[]).includes(stage);
 
-function stageObservation(exchange: Exchange, stage: string): Observation {
+function stageObservation(exchange: Exchange, stage: string): AnswerState {
     const failure = exchange.failureReasons.find((reason) => failureStage(reason) === stage);
     if (failure !== undefined) {
         return { kind: 'failed', reason: failure };
@@ -29,7 +29,7 @@ function stageObservation(exchange: Exchange, stage: string): Observation {
     return exchange.answerStages.includes(stage) && isLiveStage(stage) ? { kind: stage } : { kind: 'unreadable' };
 }
 
-export function observe(exchange: Exchange, tokens: TokenMap, id: RequestId): Result<Observation, Refusal> {
+export function observe(exchange: Exchange, tokens: TokenMap, id: RequestId): Result<AnswerState, Refusal> {
     const name = answerToken(exchange);
     if (name.kind === 'err') {
         return name;
