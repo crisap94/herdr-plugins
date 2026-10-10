@@ -37,4 +37,4 @@ Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing, run from 
 
 ## 6. Archive
 
-- [ ] Run `openspec archive no-code-comments` once every other task is checked and the gates pass, in this merge request.
+- [x] Run `openspec archive no-code-comments` once every other task is checked and the gates pass, in this merge request.
