@@ -1,4 +1,5 @@
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
+import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
@@ -13,7 +14,7 @@ export class RecapWriter implements Summarizer {
     private readonly harness: Harness;
     private readonly settings: HarnessSettings;
 
-    constructor(harness: Harness, settings: HarnessSettings) {
+    constructor(harness: Harness<BackendId>, settings: HarnessSettings) {
         this.harness = harness;
         this.settings = settings;
         this.backend = harness.label(settings);

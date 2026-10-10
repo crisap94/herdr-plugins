@@ -35,6 +35,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
 
 const writer = (requests: RecapRequest[]): Summarizer => ({
     backend: 'fake',
+    contract: 'strict',
     write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 }); },
 });
 

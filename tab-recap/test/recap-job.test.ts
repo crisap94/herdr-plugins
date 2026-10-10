@@ -34,6 +34,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [add('goal', 'both'), add('now', 'migrating')] }), costUsd: 0.01 }); },
     };
     const store = memoryStore();
@@ -70,6 +71,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answer({ op: 'update', id: 'f1', text: 'hecho' }), costUsd: 0 }); },
     };
     const store = memoryStore();
@@ -111,7 +113,7 @@ test('the same language with nothing new does NOT call the summarizer (no cost f
 test('a recap stored before languages existed counts as English; a failed rewrite keeps the old language so it is retried', async () => {
     const legacy = await rewriteWith('es', undefined, 'requested');
     assert.equal(legacy.calls[0]?.previousLanguage, 'en');
-    const failing: Summarizer = { backend: 'fake', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: 'x' } }) };
+    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: 'x' } }) };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
@@ -125,6 +127,7 @@ function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; c
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
             calls.push(request);
             return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 });
@@ -204,7 +207,7 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
 
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
-    const failing: Summarizer = { backend: 'fake', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
+    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const store = memoryStore();
     const job = new RecapJob({ repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
@@ -215,6 +218,7 @@ test('a harness that fails outright is not retried', async () => {
 test('refreshNow resolves only once the recap of the tab has been written', async () => {
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (): Promise<Written> => new Promise((resolve) => { setTimeout(() => { resolve({ kind: 'written', text: answer({ ...add('goal', 'written late'), anchor: 'go' }), costUsd: 0 }); }, 30); }),
     };
     const store = memoryStore();
@@ -227,7 +231,7 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
 
 test('a run logs how long it took and why it ran, written or failed', async () => {
     for (const [reply, want] of [[{ kind: 'written', text: answer({ ...add('goal', 'x'), anchor: 'go' }), costUsd: 0 }, 'recap w1:t1: written in 12.4 s (turn-ended)'], [{ kind: 'unknown', why: { why: 'unreadable', detail: 'x' } }, 'recap w1:t1: failed in 12.4 s (turn-ended)']] as const) {
-        const summarizer: Summarizer = { backend: 'fake', write: (): Promise<Written> => Promise.resolve(reply) };
+        const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve(reply) };
         const [store, lines] = [memoryStore(), [] as string[]];
         let ticks = -1;
         const clock = { now: (): ReturnType<typeof instant> => { ticks += 1; return instant(1_000 + (ticks < 2 ? 0 : 12_400)); } };

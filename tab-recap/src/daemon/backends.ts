@@ -33,6 +33,7 @@ const NONE = `a coding agent to write recaps: install ${installableHarnessSenten
 
 class Nothing implements Summarizer {
     readonly backend = 'none';
+    readonly contract = 'strict';
     write(): Promise<Written> {
         return Promise.resolve(unknown({ why: 'not-found', what: NONE }));
     }

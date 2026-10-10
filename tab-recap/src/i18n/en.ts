@@ -1,7 +1,7 @@
 import type { Messages } from './messages.ts';
 import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
 import { agoIn } from './relative.ts';
-import { harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const en: Messages = {
     locale: 'en',
@@ -145,7 +145,7 @@ export const en: Messages = {
         compactNotQueued: (why) => `the compaction was not requested (${why})`,
         columnToggled: (tab) => `column in ${tab}: hidden or shown (recaps keep being written)`,
         columnsToggled: 'every column: hidden or shown (recaps keep being written)',
-        setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|${Object.keys(harnessLabels((id) => id)).join('|')}> [model]`,
+        setupBusy: (command) => `another herdr modal is open, so the settings cannot open now — close it and try again, or from a shell: node ${command} <auto|${BACKEND_IDS.join('|')}> [model]`,
         backendNow: (what) => `backend is now ${what} (applies to the next recap)`,
         usageBackend: (choices) => `USAGE: backend ${choices} [model]  (a model only for a named harness, e.g. haiku, gpt-6-luna, provider/model; omitted = keep the one set)`,
         usage: (commands) => `USAGE: tab-recap ${commands} [-h|--help]`,

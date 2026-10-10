@@ -18,7 +18,7 @@ import { hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
-import { BACKEND_IDS, JOB_HARNESSES } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, modelOf } from '#src/recap/domain/backend.ts';
 import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
@@ -119,11 +119,11 @@ export function backendOf(raw: string | undefined): BackendChoice {
 
 export function modelsOf(get: (key: string) => string | undefined, choice: BackendChoice): Readonly<Record<BackendId, string>> {
     const modelFor = (id: BackendId): string => {
-        const harness = JOB_HARNESSES.find((each) => each.id === id);
-        if (harness === undefined || harness.model === null) {
+        const model = modelOf(id);
+        if (model === null) {
             return '';
         }
-        const legacyKey = harness.model.legacyEnv;
+        const legacyKey = model.legacyEnv;
         const legacy = legacyKey === null ? undefined : get(legacyKey);
         const own = get(`TAB_RECAP_MODEL_${id.toUpperCase()}`) ?? (legacy === '' ? undefined : legacy);
         return own ?? (choice === id ? get('TAB_RECAP_MODEL') : undefined) ?? '';

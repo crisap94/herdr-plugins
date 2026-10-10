@@ -28,6 +28,6 @@ export type Written = { readonly kind: 'written'; readonly text: string; readonl
 
 export interface Summarizer {
     readonly backend: string;
-    readonly contract?: JobContract;
+    readonly contract: JobContract;
     write(request: RecapRequest): Promise<Written>;
 }

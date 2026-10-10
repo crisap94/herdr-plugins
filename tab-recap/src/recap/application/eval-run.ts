@@ -11,6 +11,7 @@ import { agreementOf, gateReportOf } from './eval-stats.ts';
 import { withText } from './judge-anchors.ts';
 import { judgeRuns } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
+import { installableHarnessSentence } from '#src/recap/domain/backend.ts';
 
 const DAY_MS = 86_400_000;
 const LABEL_RUNS = 200;
@@ -106,4 +107,3 @@ export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<num
         }
     }
 }
-import { installableHarnessSentence } from '#src/recap/domain/backend.ts';

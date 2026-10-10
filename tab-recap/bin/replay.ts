@@ -27,6 +27,7 @@ import type { Config } from '#src/daemon/config.ts';
 import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { gateLines } from '#src/recap/render/eval.ts';
+import { countedWriter } from '#src/recap/application/counted-writer.ts';
 
 const kindOf = (flag: string | null, file: string): string => flag ?? (file.includes('/.codex/') ? 'codex' : 'claude');
 
@@ -54,7 +55,7 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
 function counted(config: Config, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, available, join(dir, 'summarizer'));
-    const writer: Summarizer = { backend: made.backend, write: (request) => { calls.writer += 1; return made.write(request); } };
+    const writer = countedWriter(made, calls);
     const own = enumeratorFor(config, available, join(dir, 'enumerator'));
     const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };

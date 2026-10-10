@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
+import { countedWriter } from '#src/recap/application/counted-writer.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { numbered } from '#src/recap/application/ledger-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
@@ -99,9 +100,21 @@ test('the 1.x recap shape: a built-in writer is told to answer operations; a cus
     assert.equal(OLD_CONTRACT, 'custom writer must answer operations (see README)');
 });
 
+test('the replay counting wrapper preserves a custom writer contract', async () => {
+    const old = JSON.stringify({ goal: 'x', now: ['y'] });
+    const made = writer([old], 'custom/mine', 'free-text');
+    const calls = { writer: 0 };
+    const wrapped = countedWriter(made.summarizer, calls);
+    const done = await extract(wrapped, requestOf(), ground);
+    assert.equal(wrapped.contract, 'free-text');
+    assert.equal(calls.writer, 1);
+    assert.equal(made.calls.length, 1);
+    assert.deepEqual(done, { kind: 'failed', error: OLD_CONTRACT, cost: 0.5 });
+});
+
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
-    const failing: Summarizer = { backend: 'fake', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
+    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const done = await extract(failing, requestOf(), ground);
     assert.equal(calls.length, 1);
     assert.equal(done.kind, 'failed');

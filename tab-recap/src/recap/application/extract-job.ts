@@ -103,7 +103,7 @@ export async function extract(summarizer: Summarizer, request: RecapRequest, gro
             return fallback === null ? { kind: 'failed', error: saying(written.why), cost } : settled(fallback, cost);
         }
         cost += written.costUsd;
-        const next = round(written.text, ground, { contract: summarizer.contract ?? 'strict', retryLeft: attempt < ATTEMPTS - 1, stats, keep: keepOf(follow) });
+        const next = round(written.text, ground, { contract: summarizer.contract, retryLeft: attempt < ATTEMPTS - 1, stats, keep: keepOf(follow) });
         if (next.kind === 'failed') {
             return { kind: 'failed', error: next.error, cost };
         }

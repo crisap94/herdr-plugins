@@ -2,7 +2,7 @@ import type { Messages } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
 import { agoIn } from './relative.ts';
-import { harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const es: Messages = {
     locale: 'es',
@@ -146,7 +146,7 @@ export const es: Messages = {
         compactNotQueued: (why) => `no se pidió la compactación (${why})`,
         columnToggled: (tab) => `columna en ${tab}: oculta o visible (los resúmenes se siguen escribiendo)`,
         columnsToggled: 'todas las columnas: ocultas o visibles (los resúmenes se siguen escribiendo)',
-        setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|${Object.keys(harnessLabels((id) => id)).join('|')}> [modelo]`,
+        setupBusy: (command) => `hay otra ventana de herdr abierta, así que los ajustes no pueden abrirse ahora: ciérrala e inténtalo de nuevo, o desde una terminal: node ${command} <auto|${BACKEND_IDS.join('|')}> [modelo]`,
         backendNow: (what) => `el motor ahora es ${what} (se aplica al próximo resumen)`,
         usageBackend: (choices) => `USO: backend ${choices} [modelo]  (modelo solo para un agente concreto, p. ej. haiku, gpt-6-luna, proveedor/modelo; si lo omites se conserva el actual)`,
         usage: (commands) => `USO: tab-recap ${commands} [-h|--help]`,

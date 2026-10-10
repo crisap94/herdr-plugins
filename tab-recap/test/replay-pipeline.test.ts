@@ -21,6 +21,7 @@ function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
+        contract: 'strict',
         write: (request): Promise<Written> => {
             seen.push(request);
             const picked = request.input.candidates?.[0];
