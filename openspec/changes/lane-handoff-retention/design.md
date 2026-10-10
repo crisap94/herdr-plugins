@@ -39,6 +39,10 @@ This keeps one repository per aggregate: `RetentionRepository` owns closure meta
 
 A later handoff follow-up must extend the source selector with an explicit closed-lane identity. It SHALL add `--from-closed <pane> --tab <tab-id> --closed-at <epoch-ms>` as an all-or-none tuple and parse it into `ClosedLaneIdentity`; it SHALL leave `--from <pane>` as the active-lane selector. The follow-up SHALL route `found` through the existing handoff content builder, map `expired` and `never-seen` to the existing `source-unavailable` refusal, and map `unknown` to the existing failed outcome. It must not guess the newest record for a pane, because herdr pane identifiers can be reused. This change specifies the resolver only and does not edit or depend on the unmerged handoff capability.
 
+### Consumers
+
+Consumers may replace one agent in a lane with another and hand the old lane's ledger to the new one, including when the old lane closed seconds earlier. They identify that source by pane, tab, and close instant; the resolver returns the exact retained task ledger for that lane incarnation without selecting a newer lane that reused the pane identifier.
+
 ### Upkeep and deletion order
 
 The retention application uses both parsed windows. For a tab with no open column, the existing tab eligibility still requires the last-seen/view cutoff. It is also ineligible while any closed-lane row for that tab is within the closed-lane window. Tab deletion remains one transaction per tab; the count logged for a deleted tab adds the number of its closure records, and all related rows are removed atomically.
