@@ -19,7 +19,7 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { refusalOf } from './token-refusal.ts';
-import { layoutOf, list, reconciliationOf, str } from './herdr-json.ts';
+import { layoutOf, list, paneTokensOf, reconciliationOf, str } from './herdr-json.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
@@ -72,7 +72,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         try {
             const snap = await this.rawSnapshot();
             const focused = str(snap['focused_tab_id']);
-            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused };
+            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused, paneTokens: paneTokensOf(snap) };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
         }

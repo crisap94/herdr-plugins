@@ -60,9 +60,9 @@ typed values; one serializer per token.
 
 ## 5. Level-triggered consideration and the capability token
 
-- [ ] 5.1 The informer considers request tokens on every read of a pane's map (frame, snapshot after subscribe, resync).
+- [x] 5.1 The informer considers request tokens on every read of a pane's map (frame, snapshot after subscribe, resync).
   Verify: a request rewritten with no event is taken at the next resync.
-- [ ] 5.2 The lane token publisher writes `tab-recap-x` with the lane tokens when sharing is on and clears it when off.
+- [x] 5.2 The lane token publisher writes `tab-recap-x` with the lane tokens when sharing is on and clears it when off.
   Verify: lane-token tests for publish, unchanged and clear.
 
 ## 6. Published contract

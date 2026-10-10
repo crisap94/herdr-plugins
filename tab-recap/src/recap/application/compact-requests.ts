@@ -9,6 +9,7 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import type { ToolName } from '#src/protocol/primitives.ts';
+import type { TokenMap } from '#src/protocol/tokens.ts';
 import { tokensOf } from './decode.ts';
 
 const PENDING_MAX = 200;
@@ -41,22 +42,25 @@ export class CompactRequests {
 
     onPaneUpdated(data: Readonly<Record<string, unknown>>): void {
         const frame = tokensOf(data);
-        if (frame === null) {
-            return;
+        if (frame !== null) {
+            this.onPaneTokens(frame.pane, frame.tokens);
         }
-        for (const [name, value] of Object.entries(frame.tokens)) {
+    }
+
+    onPaneTokens(pane: string, tokens: TokenMap): void {
+        for (const [name, value] of Object.entries(tokens)) {
             const raw = name.startsWith(REQUEST_PREFIX) ? name.slice(REQUEST_PREFIX.length) : '';
             const asked = raw === '' ? null : askedOf(value);
             if (asked === null) {
                 continue;
             }
             if (!asked.valid) {
-                this.refuseBadId(frame.pane, `${name}\u0000${value}`, asked.id);
+                this.refuseBadId(pane, `${name}\u0000${value}`, asked.id);
                 continue;
             }
             const tool = toolName(raw);
             if (tool.kind === 'ok' && !this.deps.asks.seen(COMPACT_EXCHANGE, tool.value, asked.id)) {
-                this.consider(frame.pane, tool.value, asked);
+                this.consider(pane, tool.value, asked);
             }
         }
     }

@@ -1,3 +1,4 @@
+import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import type { Unknown } from './unknowable.ts';
 
@@ -11,7 +12,7 @@ export interface Frame {
     readonly data: Readonly<Record<string, unknown>>;
 }
 
-export type SnapshotResult = { readonly kind: 'snapshot'; readonly seen: Reconciliation; readonly focusedTab: string | null } | Unknown;
+export type SnapshotResult = { readonly kind: 'snapshot'; readonly seen: Reconciliation; readonly focusedTab: string | null; readonly paneTokens: ReadonlyMap<string, TokenMap> } | Unknown;
 
 export interface FrameStream {
     frames(): AsyncIterable<Frame>;

@@ -9,8 +9,9 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import type { TokenMap } from '#src/protocol/tokens.ts';
 import { AsyncQueue } from './async-queue.ts';
-import { decode, paneSessionOf } from './decode.ts';
+import { decode, paneSessionOf, tokensOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
 
 export interface Blindness {
@@ -25,6 +26,7 @@ export interface InformerHooks {
     onBeat(): void;
     onStatus?(pane: string, status: string): void;
     onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
+    onPaneTokens?(pane: string, tokens: TokenMap): void;
     sessionIdentity: SessionOf;
 }
 
@@ -79,10 +81,14 @@ export class Informer {
     private async stamped(): Promise<SnapshotResult> {
         const requested = Number(this.clock.now());
         const snap = await this.source.snapshot();
-        if (!isUnknown(snap)) {
-            this.lastLife = Number(this.clock.now());
+        if (isUnknown(snap)) {
+            return snap;
         }
-        return isUnknown(snap) ? snap : { ...snap, seen: { ...snap.seen, at: requested } };
+        this.lastLife = Number(this.clock.now());
+        for (const [pane, tokens] of snap.paneTokens) {
+            this.hooks.onPaneTokens?.(pane, tokens);
+        }
+        return { ...snap, seen: { ...snap.seen, at: requested } };
     }
 
     async enterSubscription(): Promise<void> {
@@ -170,11 +176,7 @@ export class Informer {
         for await (const frame of stream.frames()) {
             this.lastLife = Number(this.clock.now());
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
-                this.hooks.onPaneUpdated?.(frame.data);
-                const session = paneSessionOf(frame.data, this.identityForSession);
-                if (session !== null) {
-                    this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
-                }
+                this.paneUpdated(frame.data);
                 continue;
             }
             const decoded = decode(frame, this.identityForSession);
@@ -193,6 +195,18 @@ export class Informer {
             this.hooks.onBlind({ at: 'subscribe', saying: 'the subscription ended' });
             this.stream = null;
             this.resync();
+        }
+    }
+
+    private paneUpdated(data: Readonly<Record<string, unknown>>): void {
+        this.hooks.onPaneUpdated?.(data);
+        const tokens = tokensOf(data);
+        if (tokens !== null) {
+            this.hooks.onPaneTokens?.(tokens.pane, tokens.tokens);
+        }
+        const session = paneSessionOf(data, this.identityForSession);
+        if (session !== null) {
+            this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
         }
     }
 

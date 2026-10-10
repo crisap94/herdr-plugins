@@ -12,7 +12,7 @@ class Herdr implements FleetSource {
     readonly queue = new AsyncQueue<Frame>();
 
     snapshot(): Promise<SnapshotResult> {
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null });
+        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {
@@ -57,7 +57,7 @@ class AgentWithoutSession implements FleetSource {
 
     snapshot(): Promise<SnapshotResult> {
         const lanes = [{ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', status: 'idle', session: null }];
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }, focusedTab: null });
+        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {

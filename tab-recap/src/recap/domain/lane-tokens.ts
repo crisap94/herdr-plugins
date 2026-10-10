@@ -1,17 +1,21 @@
-import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
+import { CAPABILITY_TOKEN, capabilityValue } from '#src/protocol/capability.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
+import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
+import { KINDS_VERSION } from '#src/protocol/kinds.ts';
+import { must } from '#src/protocol/result.ts';
 import { ANSWER_TOKENS, OWNERS, answerNameOf } from './token-registry.ts';
 import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
 import { EVENT_TOKEN } from './event-token.ts';
 
 export const PROTOCOL_VERSION = '1';
 export const COMPACT_TOKEN = answerNameOf(compact);
+const CAPABILITY_VALUE = must(capabilityValue(EXCHANGES, KINDS_VERSION));
 
 const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 
 export const OWNED_TOKENS: readonly string[] = [...LANE_NAMES, ...ANSWER_TOKENS, CAPABILITY_TOKEN];
 
-export const STATE_TOKENS: readonly string[] = LANE_NAMES;
+export const STATE_TOKENS: readonly string[] = [...LANE_NAMES, CAPABILITY_TOKEN];
 
 export const PANE_WRITABLE: readonly string[] = OWNERS.writable;
 export const WORKSPACE_WRITABLE: readonly string[] = [EVENT_TOKEN];
@@ -32,6 +36,7 @@ export function valuesOf(facts: LaneFacts): TokenValues {
         ...(facts.share === null ? {} : { [SHARE_TOKEN]: String(facts.share) }),
         ...(facts.recapAt === null ? {} : { [RECAP_TOKEN]: String(facts.recapAt) }),
         [NEEDS_TOKEN]: String(facts.needs),
+        [CAPABILITY_TOKEN]: CAPABILITY_VALUE,
     };
 }
 

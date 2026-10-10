@@ -110,7 +110,7 @@ test('a hidden tab: its extras are closed too (the tracked one is closed by hidi
 });
 
 const seenWith = (columns: { tabId: string; paneId: string; shape: Shape }[]): SnapshotResult => ({
-    kind: 'snapshot', focusedTab: null,
+    kind: 'snapshot', focusedTab: null, paneTokens: new Map(),
     seen: { focusedTab: null, lanes: [lane('w1:p1', 'w1:t1')], columns, widths: new Map(), panes: ['w1:p1', ...columns.map((c) => c.paneId)] },
 });
 

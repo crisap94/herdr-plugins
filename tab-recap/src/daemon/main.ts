@@ -151,7 +151,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onUnknownKind: (): void => { },
         onBeat: (): void => { },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
-        onPaneUpdated: (data): void => { answers.onPaneUpdated(data); },
+        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); },
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
