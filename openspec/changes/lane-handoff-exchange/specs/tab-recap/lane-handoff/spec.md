@@ -2,7 +2,7 @@
 
 ### Requirement: Delivery is leased and runs only from the daemon's handoff request
 
-A non-print handoff SHALL run only in the daemon, from a `handoff` request row that the daemon took from the request queue and recorded as an ask of exchange `handoff` in the token protocol's ask ledger; the writers of that row are the operator's command and, only when the operator enabled `TAB_RECAP_HANDOFF_REQUESTS`, the handoff exchange of the token protocol; a further writer SHALL amend this sentence and the prompt-boundary rule explicitly. Before typing, the sender SHALL take the `typing-tab-recap` lease with `acquire(pane, 0)`, so that it never waits, honor an earlier live `typing-*` lease, and release its lease in a finally path. A busy lease SHALL return `typing-lease-busy` and SHALL NOT queue later delivery. An `unavailable` lease result SHALL proceed without a lease, as compaction does. The sender SHALL execute the target adapter's handoff plan exhaustively and SHALL NOT branch on agent-kind literals.
+A non-print handoff SHALL run only in the daemon, from a `handoff` request row that the daemon took from the request queue and recorded as an ask of exchange `handoff` in the token protocol's ask ledger (requester `cli` for a row the command wrote; for a row the enabled exchange wrote, the ask the exchange recorded when it queued the row, keyed by the requester's tool and id, and no second ask); the writers of that row are the operator's command and, only when the operator enabled `TAB_RECAP_HANDOFF_REQUESTS`, the handoff exchange of the token protocol; a further writer SHALL amend this sentence and the prompt-boundary rule explicitly. Before typing, the sender SHALL take the `typing-tab-recap` lease with `acquire(pane, 0)`, so that it never waits, honor an earlier live `typing-*` lease, and release its lease in a finally path. A busy lease SHALL return `typing-lease-busy` and SHALL NOT queue later delivery. An `unavailable` lease result SHALL proceed without a lease, as compaction does. The sender SHALL execute the target adapter's handoff plan exhaustively and SHALL NOT branch on agent-kind literals.
 
 #### Scenario: A typing lease is available
 
@@ -53,94 +53,22 @@ A non-print handoff SHALL run only in the daemon, from a `handoff` request row t
 - **WHEN** `TAB_RECAP_HANDOFF_REQUESTS` is `off`
 - **THEN** no `handoff` row SHALL be written for a token request and nothing SHALL be typed because of one
 
-### Requirement: Handoff outcome is a closed sum recorded as one answer row
-
-The daemon SHALL answer each taken handoff with exactly one closed outcome: `delivered`, `refused{reason}`, `unsupported{reason}`, or `failed{reason}`. The answer SHALL be one row keyed by `HandoffId`, and its reader SHALL NOT delete it. The outcomes and reasons SHALL be one typed table in the domain from which the union types, the CLI's exit mapping and the catalog-key check derive. A reason marked CLI-only SHALL NOT be storable in the answer row. The answer repository SHALL validate a reason against the table before writing it; the database SHALL NOT carry a literal list of reasons, so adding a reason needs no migration. The `unsupported` reason SHALL be a closed type, not free text. The reader of an answer SHALL NOT delete it, so reading it twice returns it twice. The CLI SHALL handle every row exhaustively, SHALL print no secret or handoff content except in `--print` mode, and SHALL use the message keys under `cli.handoff`.
-
-| Outcome | Reason | Storable | Exit | Message key |
-| --- | --- | --- | --- | --- |
-| `delivered` | none | yes | 0 | `delivered` |
-| `printed` | none | no | 0 | none; stdout carries the handoff |
-| `refused` | `source-unavailable` | yes | 1 | `refused.sourceUnavailable` |
-| `refused` | `task-ambiguous` | yes | 1 | `refused.taskAmbiguous` |
-| `refused` | `source-equals-target` | yes | 1 | `refused.sourceEqualsTarget` |
-| `refused` | `not-a-lane` | yes | 1 | `refused.notALane` |
-| `refused` | `status-not-ready` | yes | 1 | `refused.statusNotReady` |
-| `refused` | `in-flight` | yes | 1 | `refused.inFlight` |
-| `refused` | `lane-busy` | yes | 1 | `refused.laneBusy` |
-| `refused` | `typing-lease-busy` | yes | 1 | `refused.typingLeaseBusy` |
-| `refused` | `content-empty` | yes | 1 | `refused.contentEmpty` |
-| `refused` | `ledger-empty` | yes | 1 | `refused.ledgerEmpty` |
-| `refused` | `too-large` | yes | 1 | `refused.tooLarge` |
-| `refused` | `not-offered` | yes | 1 | `refused.notOffered` |
-| `refused` | `bad-request` | yes | 1 | `refused.badRequest` |
-| `refused` | `target-elsewhere` | yes | 1 | `refused.targetElsewhere` |
-| `refused` | `daemon-not-running` | no, CLI-only | 1 | `refused.daemonNotRunning` |
-| `refused` | `daemon-outdated` | no, CLI-only | 1 | `refused.daemonOutdated` |
-| `unsupported` | `no-plan` | yes | 1 | `unsupported.noPlan` |
-| `failed` | `transport` | yes | 1 | `failed.transport` |
-| `failed` | `unconfirmed` | yes | 1 | `failed.unconfirmed` |
-| `failed` | `internal-error` | yes | 1 | `failed.internalError` |
-| `failed` | `source-unreadable` | yes | 1 | `failed.sourceUnreadable` |
-| `failed` | `expired` | yes | 1 | `failed.expired` |
-| `failed` | `interrupted` | yes | 1 | `failed.interrupted` |
-| `failed` | `not-answered-withdrawn` | no, CLI-only | 1 | `failed.notAnswered` |
-| `failed` | `not-answered-taken` | no, CLI-only | 1 | `failed.notAnsweredMayDeliver` |
-| CLI edge | usage error | no | 2 | the existing usage message |
-
-#### Scenario: A handoff is delivered
-
-- **WHEN** delivery is confirmed
-- **THEN** the daemon SHALL write one answer row with outcome `delivered`
-- **AND** the CLI SHALL exit 0
-
-#### Scenario: A lane is refused
-
-- **WHEN** source, target, status, claim, content, size or lease policy refuses the request
-- **THEN** the daemon SHALL write one answer row with outcome `refused` and one storable reason from the table
-- **AND** the CLI SHALL exit 1 with that reason's message key
-
-#### Scenario: The handoff fails
-
-- **WHEN** transport or confirmation fails
-- **THEN** the daemon SHALL write one answer row with outcome `failed` and one storable reason from the table
-- **AND** it SHALL NOT retry the send
-
-#### Scenario: An unexpected error
-
-- **WHEN** a step outside the send path throws
-- **THEN** the daemon SHALL write one answer row with outcome `failed` and reason `internal-error`
-- **AND** both claims and the lease SHALL be released
-
-#### Scenario: A CLI-only reason is not storable
-
-- **WHEN** an answer row is written with reason `daemon-not-running`, `daemon-outdated`, `not-answered-withdrawn` or `not-answered-taken`
-- **THEN** the answer repository SHALL refuse it because the outcome table marks it not storable
-
-#### Scenario: An answer is read twice
-
-- **WHEN** the same answer is read twice
-- **THEN** both reads SHALL return it
-
-#### Scenario: Every row has an exit code and a message key
-
-- **WHEN** the catalog-key test runs
-- **THEN** it SHALL fail if any outcome row lacks an exit code or a key in either language catalog
-
-#### Scenario: A reason of the exchange is storable
-
-- **WHEN** the handoff exchange refuses a request as `not-offered`, `bad-request` or `target-elsewhere`
-- **THEN** the reason SHALL be one of the table's storable `refused` reasons, added with no migration
-
-## ADDED Requirements
-
 ### Requirement: The token answer mirrors the handoff's closed outcome
 
 For a `handoff` row queued by the handoff exchange, the daemon SHALL write the answer token `tab-recap-handoff` =
 `<id>:<stage>` with the requester's id: `queued` when the row is queued, `running` when the flow takes it, and then one
 terminal stage mapped from the row's closed outcome by one total function over the outcome table: `delivered`,
-`refused-<reason>`, `unsupported-<reason>` or `failed-<reason>`. It SHALL settle the ask in the same step. A row the
-command wrote SHALL write no token.
+`refused-<reason>`, `unsupported-<reason>` or `failed-<reason>`. The exchange's ask SHALL record the row's `HandoffId` as
+its local record when the row is queued; the mirror SHALL find the ask by that `HandoffId` when the answer row is written,
+write the token on the ask's pane (the source pane), and settle the ask in the same transaction as the answer row. Events
+on the target's pane SHALL be written while the flow runs; after a restart the restart sweep answers an unsettled exchange
+ask `<id>:failed-interrupted` on the source pane only. A row the command wrote SHALL write no token.
+
+#### Scenario: Interrupted after queueing
+
+- **WHEN** the daemon restarts after the exchange queued a row and before its answer row was written
+- **THEN** `tab-recap-handoff` on the source pane SHALL say `<id>:failed-interrupted` and no event SHALL be written on the
+  target's pane for it
 
 #### Scenario: A delivered handoff asked by token
 

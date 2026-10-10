@@ -33,7 +33,7 @@ token, so the handoff becomes its second descriptor instead of a second hand-wri
   optional field without breaking the grammar.
 - A handoff from a closed lane by token (the closed source stays operator-only, slice 2).
 - Authentication of the requester: herdr cannot authenticate a token writer (stated by the token protocol).
-- Any change to the handoff content, the delivery plan or the outcome table, beyond the reasons this exchange adds.
+- Any change to the handoff content, the delivery plan or the outcome table: the exchange's own refusals live in its descriptor.
 
 ## Depends on
 
