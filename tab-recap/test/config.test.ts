@@ -85,6 +85,27 @@ test('TAB_RECAP_TELEMETRY_TAGS: off unless explicitly on', () => {
     }
 });
 
+test('TAB_RECAP_RUN_DEBOUNCE_MS: a whole number of ms from 5000 to 300000 is the window; 0, unset or anything else is off', () => {
+    const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_RUN_DEBOUNCE_MS'] as const;
+    const saved = keys.map((key) => process.env[key]);
+    const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
+    try {
+        process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
+        delete process.env['TAB_RECAP_RUN_DEBOUNCE_MS'];
+        assert.deepEqual(loadConfig().recapDebounce, { kind: 'off' });
+        for (const [raw, expected] of [['60000', { kind: 'window', window: 60000 }], [' 60000 ', { kind: 'window', window: 60000 }], ['5000', { kind: 'window', window: 5000 }], ['300000', { kind: 'window', window: 300000 }], ['0', { kind: 'off' }], ['4999', { kind: 'off' }], ['300001', { kind: 'off' }], ['5000.5', { kind: 'off' }], ['soon', { kind: 'off' }]] as const) {
+            process.env['TAB_RECAP_RUN_DEBOUNCE_MS'] = raw;
+            assert.deepEqual(loadConfig().recapDebounce, expected, raw);
+        }
+        delete process.env['TAB_RECAP_RUN_DEBOUNCE_MS'];
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RUN_DEBOUNCE_MS=60000\n');
+        assert.deepEqual(loadConfig().recapDebounce, { kind: 'window', window: 60000 });
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+        keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
+    }
+});
+
 test('TAB_RECAP_KEEP_DAYS: 30 unless set to whole days; 0 keeps everything', () => {
     const saved = process.env['TAB_RECAP_KEEP_DAYS'];
     try {
