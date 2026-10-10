@@ -13,9 +13,9 @@ commits metrics only under `experiments/` at the repository root; corpora and ra
 
 ## 2. Writer's view pruning (carried from `ledger-pruning` 1.1, 4.1, 4.2, 6.1, 6.2)
 
-- [ ] 2.1 Offline, on the stored run inputs of the two busiest tabs (last 20 runs each): bytes per section per run, and the
+- [x] 2.1 Offline, on the stored run inputs of the two busiest tabs (last 20 runs each): bytes per section per run, and the
   open-fact count per section per hour. Verify: the table is in the MR and confirms or rejects the growth reading in the
-  `ledger-pruning` design's Evidence.
+  `ledger-pruning` design's Evidence. (!87)
 - [ ] 2.2 Input-only comparison: for those runs, write each once with the pruned input and once with the unpruned one, same
   writer and pinned judge. Verify: cost, bytes and judged state per arm, with the floor from two control runs.
 - [ ] 2.3 `tab-recap eval --replay <file> --prune` on the private corpus: two control runs and two pruned runs, same ruler.
