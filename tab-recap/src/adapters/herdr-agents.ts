@@ -1,6 +1,7 @@
 import { laneStatus } from '#src/recap/domain/status.ts';
-import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import type { Done } from '#src/ports/columns.ts';
+import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
 type Json = Readonly<Record<string, unknown>>;
@@ -10,8 +11,6 @@ const COMPACT_ENTRYPOINT = 'compact';
 const POPUP_WIDTH = '90%';
 const POPUP_HEIGHT = '30%';
 const WIRE_MARGIN_MS = 15_000;
-const ENTER_AFTER_MS = 300;
-
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 const codeOf = (error: unknown): unknown => (typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined);
 
@@ -39,20 +38,21 @@ export class HerdrAgents implements Agents {
         }
     }
 
-    async prompt(pane: string, text: string, wait?: PromptWait): Promise<Prompted> {
+    async prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> {
         const params: Json = wait === undefined ? { target: pane, text } : { target: pane, text, wait: { until: wait.until, timeout_ms: wait.timeoutMs } };
         try {
             await this.wire('agent.prompt', params, (wait?.timeoutMs ?? 0) + WIRE_MARGIN_MS);
             return { kind: 'sent' };
         } catch (error) {
-            if (codeOf(error) === 'agent_prompt_stalled') {
+            if (codeOf(error) === 'agent_prompt_stalled' && behavior.acceptsStall) {
                 return { kind: 'sent' };
             }
             return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: detail(error) });
         }
     }
 
-    async typeLine(pane: string, pieces: readonly string[]): Promise<Prompted> {
+    async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
+        const pieces = line.pieces;
         if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: 'a typed line has no line break' });
         }
@@ -60,7 +60,7 @@ export class HerdrAgents implements Agents {
             for (const piece of pieces) {
                 await this.wire('pane.send_text', { pane_id: pane, text: piece });
             }
-            await this.pause(ENTER_AFTER_MS);
+            await this.pause(behavior.enterDelay);
             await this.wire('pane.send_keys', { pane_id: pane, keys: ['enter'] });
             return { kind: 'sent' };
         } catch (error) {

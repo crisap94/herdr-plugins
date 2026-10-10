@@ -2,14 +2,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
+import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import { unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
-import type { Agents, AgentState, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
@@ -19,7 +23,7 @@ import { oneTask } from './support.ts';
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 
-interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly typed?: boolean }
+interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
 function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
@@ -31,14 +35,15 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
         status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
-        prompt: (pane, text, wait): Promise<Prompted> => {
+        prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
-            typed.push({ pane, text, wait });
+            typed.push({ pane, text, wait, promptBehavior: behavior });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
-        typeLine: (pane, pieces): Promise<Prompted> => {
+        typeLine: (pane, line, behavior): Promise<Prompted> => {
+            const pieces = line.pieces.map(String);
             events.push(`type ${pane}`);
-            typed.push({ pane, text: pieces.join(''), pieces, typed: true });
+            typed.push({ pane, text: pieces.join(''), pieces, lineBehavior: behavior, typed: true });
             return Promise.resolve(blocked.includes(pane) ? { kind: 'blocked' } : { kind: 'sent' });
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
@@ -52,11 +57,12 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-function flow(world: ReturnType<typeof fleet>, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
+        compactionPlans: world.plans ?? compactionPlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
@@ -143,6 +149,16 @@ test('codex that cannot finish its /compact gets no restore message', async () =
     assert.equal(world.typed.length, 1);
 });
 
+test('an unsupported send tells the operator after the started toast', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.toasts, [
+        'Compact codex | Compacting codex',
+        'Compact codex | Could not compact codex: no compaction plan is registered for codex',
+    ]);
+});
+
 test('all and kinds: every compactable agent that is free; gemini is never offered', async () => {
     const world = fleet({ 'w1:p1': 'idle', 'w1:p2': 'working', 'w1:p3': 'idle' });
     await flow(world, 'all').run({ tab: 'w1:t1', pane: null, note: null });
@@ -216,6 +232,7 @@ test('claude: a compaction its records confirm is announced with the numbers the
     const world = fleet({ 'w1:p1': 'idle' });
     await flow(world, 'focused', 'w1:p1', null, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
+    assert.deepEqual(world.typed[0]?.lineBehavior, { enterDelay: duration(300) });
     assert.equal(world.toasts.at(-1), 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s');
     assert.equal(world.toasts.length, 2, 'two toasts: when it starts, when it ends');
 });
@@ -266,7 +283,7 @@ test('the record: a claude compaction with a written brief walks briefing → co
     const world = fleet({ 'w1:p1': 'idle' });
     const seen: string[] = [];
     const briefing = { documents: [] as string[], answer: 'We kept SQLite.' };
-    const looking: Agents = { ...world.agents, typeLine: (pane, pieces) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, pieces); } };
+    const looking: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); } };
     const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: 900, tokensAfter: 100, tookMs: 4000 }]]);
     await flowing.run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual([...new Set(seen)], ['writing: briefing', 'typing: compacting']);
@@ -287,8 +304,8 @@ test('the record: codex passes through restoring; the end comes after the restor
     const seen: string[] = [];
     const looking: Agents = {
         ...world.agents,
-        typeLine: (pane, pieces) => { seen.push(`${pieces.join('').slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, pieces); },
-        prompt: (pane, text, wait) => { seen.push(`${text.split('\n')[0]?.slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.prompt(pane, text, wait); },
+        typeLine: (pane, line, behavior) => { seen.push(`${line.pieces.map(String).join('').slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); },
+        prompt: (pane, text, wait, behavior) => { seen.push(`${text.split('\n')[0]?.slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.prompt(pane, text, wait, behavior); },
     };
     await flow({ ...world, agents: looking }, 'focused', 'w1:p2', null, [[compacted]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(seen, ['/compact: compacting', 'We just comp: restoring']);

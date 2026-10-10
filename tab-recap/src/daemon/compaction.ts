@@ -8,6 +8,7 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
+import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
@@ -53,6 +54,7 @@ export function wireCompaction(parts: {
     const { fleet, informer, recaps } = parts;
     const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: string): void => { parts.log(line); } });
     return new Compaction({
+        compactionPlans,
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
         brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: () => Date.now(),
         lanes: (tab) => lanesOf(informer.current, tabId(tab)),

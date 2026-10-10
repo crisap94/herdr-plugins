@@ -164,7 +164,11 @@ export class Compaction {
         const { brief } = checked;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         if (!(await this.refused(lane, tab, trail))) {
-            await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: brief.text }, trail);
+            const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: brief.text }, trail);
+            if (unsupported !== undefined) {
+                const messages = this.deps.messages();
+                await this.tell(messages.compaction.title(String(lane.agent)), messages.compaction.failed(String(lane.agent), unsupported.why));
+            }
         }
     }
 

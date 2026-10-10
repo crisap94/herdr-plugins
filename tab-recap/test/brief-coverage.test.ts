@@ -4,6 +4,7 @@ import { en } from '#src/i18n/en.ts';
 import { correctionOf, covered, factsOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
+import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
@@ -64,8 +65,9 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     let checked = 0;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
+        compactionPlans,
         claims: new CompactionClaims(),
-        agents: { status: () => Promise.resolve({ kind: 'agent', agent: 'claude', status: 'idle' }), prompt: () => Promise.resolve({ kind: 'sent' }), typeLine: (_pane, pieces) => { world.typed.push(pieces.join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
+        agents: { status: () => Promise.resolve({ kind: 'agent', agent: 'claude', status: 'idle' }), prompt: () => Promise.resolve({ kind: 'sent' }), typeLine: (_pane, line) => { world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => HISTORY }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },

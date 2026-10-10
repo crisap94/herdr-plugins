@@ -37,10 +37,11 @@ compaction targets.
 - **THEN** the sender SHALL inspect it 20 times, with 19 one-second pauses and 60 additional 300 ms record reads, and SHALL still send the restore message
 - **AND** a failed verdict SHALL skip the restore message
 
-#### Scenario: An unknown kind reaches the sender
+#### Scenario: An unregistered kind reaches the sender
 
-- **WHEN** an unknown kind reaches `Sender` directly
-- **THEN** it SHALL take the Codex send path; current target selection filters by `COMPACTABLE` first, so the case is latent until an unknown kind is added there
+- **WHEN** an unregistered kind reaches `Sender` directly
+- **THEN** it SHALL return `Unsupported{why}` and type nothing
+- **AND** current target selection SHALL continue to filter through the registered compactable kinds
 
 #### Scenario: A screen lane is checked for in-flight work
 
@@ -61,6 +62,7 @@ compaction targets.
 
 - **WHEN** an OpenCode compaction appears on the second polling look
 - **THEN** each empty look SHALL read marks four times, a one-second pause SHALL separate looks, and confirmation SHALL be followed by one restore message without a retry
+
 ### Requirement: One registry hands out the transcript reader for a kind
 
 The plugin SHALL assemble transcript readers in one typed registry. The registry SHALL return a reader for each registered kind and SHALL return the screen reader for an unknown kind only when its configured fallback is present. Callers that require exact lookup SHALL receive no reader for an unregistered kind.
@@ -180,3 +182,47 @@ Each registered kind SHALL provide a context-window function, and the domain SHA
 
 - **WHEN** an unregistered screen-read kind has no stated window and no catalogue entry
 - **THEN** its context SHALL remain unknown and no context use SHALL be returned
+
+### Requirement: Registered kinds own typed compaction plans
+
+Each registered kind that supports compaction SHALL expose `plan(guidance)` as a typed plan value from its adapter. The plan SHALL represent typed lines as ordered value objects with pieces, line delays as duration values, restore-prompt stall acceptance, confirmation as the sum `turn-end | poll{reads, every}`, retry-on-self-failure, and follow-up as `restore-message | none`. Plan lookup for a kind without a plan SHALL return `Unsupported{why}`, distinct from `Unknown`, and SHALL NOT select another kind's plan by default. Core plan execution SHALL handle plan and confirmation sums exhaustively and SHALL NOT branch on a harness kind literal.
+
+#### Scenario: A registered adapter supplies its plan
+
+- **WHEN** the sender receives a compactable lane whose kind is registered
+- **THEN** it SHALL obtain and execute that kind's typed plan
+- **AND** it SHALL type the plan's lines in piece order and apply its declared delays and confirmation behavior
+
+#### Scenario: A kind has no compaction plan
+
+- **WHEN** the sender is directly asked to compact a kind with no registered plan
+- **THEN** it SHALL return an explicit `Unsupported{why}` outcome
+- **AND** it SHALL type no command and SHALL NOT use the Codex plan
+
+#### Scenario: A new registered kind is added
+
+- **WHEN** a kind is added to the registered-kinds table
+- **THEN** the plan registry SHALL require a matching adapter entry at compile time
+- **AND** adding the kind SHALL require the registered-kind table row and the plan-adapter registry entry as two compiler-linked edits
+
+### Requirement: Existing compaction behavior remains compatible
+
+Claude, Codex, and OpenCode compaction SHALL preserve their current conformance behavior, including command pieces, Enter delay and stalled-prompt handling, confirmation, retry, and follow-up. Pinned oddities SHALL remain unchanged unless a later change explicitly revises the relevant conformance expectation.
+
+#### Scenario: Claude compaction uses its current behavior
+
+- **WHEN** a Claude lane is compacted with guidance
+- **THEN** the adapter plan SHALL type `/compact ` and the guidance as two pieces
+- **AND** it SHALL confirm by turn-end, retry once after a self-failure, and use no restore message
+
+#### Scenario: Codex or OpenCode compaction uses its current behavior
+
+- **WHEN** a Codex or OpenCode lane is compacted
+- **THEN** the adapter plan SHALL type bare `/compact`, poll for 20 confirmation looks at one-second intervals, and not retry after a self-failure
+- **AND** it SHALL send the restore message after confirmed or unconfirmed outcomes, but not after a failed outcome
+
+#### Scenario: A line is submitted through Herdr
+
+- **WHEN** an adapter plan submits a typed line
+- **THEN** the Herdr adapter SHALL retain the 300 ms Enter delay
+- **AND** it SHALL treat the existing stalled-prompt response as sent
