@@ -4,8 +4,8 @@ import ts from 'typescript';
 import { err, type Result } from '#src/protocol/result.ts';
 import { BRAND_FILE } from './domain-exceptions.ts';
 import { categoryIn, type Finding } from './domain-findings.ts';
-import { modeOf } from './domain-ratchet.ts';
-import { printReport, projectOf, settle, type Report } from './domain-report.ts';
+import { runReport } from './domain-ratchet.ts';
+import { projectOf, settle, type Report } from './domain-report.ts';
 
 const PARSER_NAME = /^parse([A-Z]\w*)$/;
 const PRIMITIVE = ts.TypeFlags.String | ts.TypeFlags.Number | ts.TypeFlags.BigInt | ts.TypeFlags.Boolean | ts.TypeFlags.ESSymbol | ts.TypeFlags.Any | ts.TypeFlags.NonPrimitive;
@@ -276,20 +276,7 @@ const main = (args: readonly string[]): number => {
     const root = join(dirname(fileURLToPath(import.meta.url)), '..');
     const project = projectOf(args, join(root, 'tsconfig.json'));
     const result = project.kind === 'err' ? project : check(project.value);
-    if (result.kind === 'err') {
-        console.error(`domain types: 3 — NOT COVERED: ${result.error}`);
-        return 3;
-    }
-    const mode = modeOf(root, args, result.value);
-    if (mode.kind === 'err') {
-        console.error(`domain types: 3 — NOT COVERED: ${mode.error}`);
-        return 3;
-    }
-    if (mode.value.kind === 'written') {
-        console.log(`domain types: wrote ${mode.value.message}`);
-        return 0;
-    }
-    return printReport(result.value, args.includes('--json'), mode.value.kind === 'ratchet' ? mode.value.problems : null);
+    return runReport(root, args, result);
 };
 
 if (import.meta.main) {

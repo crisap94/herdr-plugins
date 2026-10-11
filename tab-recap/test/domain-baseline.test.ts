@@ -61,8 +61,7 @@ test('a lane file holds only the files its lane owns', () => {
     mkdirSync(dir);
     writeFileSync(join(dir, 'B1.json'), JSON.stringify({ [OTHER]: { return: 1 } }));
     const loaded = loadBaseline(dir, { B1: [FILE], B2: [OTHER] });
-    assert.equal(loaded.kind, 'err');
-    assert.match(String(loaded.kind === 'err' ? loaded.error : ''), /not a file of lane B1/u);
+    assert.deepEqual(loaded, { kind: 'err', error: 'B1.json: src/domain/other.ts is not a file of lane B1' });
 });
 
 test('the baseline written from counts is read back whole and sorted by lane', () => {
@@ -81,7 +80,7 @@ const project = (name: string, files: Readonly<Record<string, string>>): string 
     execFileSync('git', ['init', '-q'], { cwd: dir });
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'es2023', lib: ['es2023'], module: 'nodenext', moduleResolution: 'nodenext', types: [], strict: true, noEmit: true, skipLibCheck: true }, include: ['src'] }));
     Object.entries(files).forEach(([file, text]) => writeFileSync(join(dir, file), text));
-    writeFileSync(join(dir, 'lanes.json'), JSON.stringify({ lanes: { B1: Object.keys(files).sort() } }));
+    writeFileSync(join(dir, 'lanes.json'), JSON.stringify({ lanes: { B1: Object.keys(files).toSorted() } }));
     return dir;
 };
 
