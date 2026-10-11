@@ -5,6 +5,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { splitReason } from '#src/ports/capability-reasons.ts';
 import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
@@ -232,6 +233,8 @@ for (const row of ROWS) {
         }
         const capability = row.reader.inFlight;
         if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
+        const { split } = capability;
+        if (split.kind === 'foreground-only') assert.ok(splitReason(split.why, row.kind).includes(row.kind), `${row.kind} names its foreground-only split`);
         const found = await capability.read(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
         assert.deepEqual(found, { kind: 'in-flight', count: 0, background: [] });
     });

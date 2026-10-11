@@ -1,12 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { claudeInFlight } from '#src/adapters/claude-in-flight.ts';
+import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/claude-in-flight.ts';
+import type { BackgroundSplit } from '#src/ports/transcripts.ts';
 
 const line = (row: object): string => JSON.stringify(row);
 const launch = (id: string, name: string, input: object = {}): string => line({ type: 'assistant', isSidechain: false, message: { role: 'assistant', content: [{ type: 'tool_use', id, name, input }] } });
 const started = (id: string, task: string): string => line({ type: 'user', toolUseResult: { stdout: '', backgroundTaskId: task }, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: `Command running in background with ID: ${task}. Output is being written to: /x/${task}.output.` }] } });
 const notice = (task: string, tool: string | null, status: string): string => line({ type: 'user', origin: { kind: 'task-notification' }, message: { role: 'user', content: `<task-notification>\n<task-id>${task}</task-id>\n${tool === null ? '' : `<tool-use-id>${tool}</tool-use-id>\n`}<status>${status}</status>\n<summary>x</summary>\n</task-notification>` } });
 const shell = (id: string): string => launch(id, 'Bash', { command: 'sleep 99', run_in_background: true });
+const named = (id: string, description: string): string => launch(id, 'Bash', { command: 'sleep 99', run_in_background: true, description });
+const separates: BackgroundSplit = { kind: 'separates' };
 
 test('in flight: a background shell with no end is one', () => {
     assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1')]), { kind: 'in-flight', count: 1, background: [] });
@@ -79,4 +82,42 @@ test('in flight: a Monitor past its own timeout_ms (against the newest row of th
 test('in flight: a Monitor without a timeout_ms (persistent) does not expire by time; an expired Monitor is dropped and a live shell in the same tail still counts', () => {
     assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', persistent: true }), wordsAt('2026-10-09T10:00:00.000Z')]), { kind: 'in-flight', count: 1, background: [] });
     assert.deepEqual(claudeInFlight([monitorAt('m2', '2026-10-08T10:00:00.000Z', { command: 'x', timeout_ms: 60_000 }), shell('t1'), wordsAt('2026-10-08T12:00:00.000Z')]), { kind: 'in-flight', count: 1, background: [] });
+});
+
+test('in flight: the default split is foreground-only, and every launch counts as foreground in it', () => {
+    assert.deepEqual(CLAUDE_SPLIT, { kind: 'foreground-only', why: 'survival-unproven' });
+    assert.deepEqual(claudeInFlight([named('t1', 'watch the build'), started('t1', 'b1')]), { kind: 'in-flight', count: 1, background: [] });
+    assert.deepEqual(claudeInFlight([named('t1', 'watch the build'), started('t1', 'b1')], false, { kind: 'foreground-only', why: 'codex-cells' }), { kind: 'in-flight', count: 1, background: [] });
+});
+
+test('in flight, separates: a background shell is listed by its description, not counted', () => {
+    assert.deepEqual(claudeInFlight([named('t1', 'watch the build'), started('t1', 'b1')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'watch the build' }] });
+});
+
+test('in flight, separates: a Monitor and a background Agent are listed by their tool and description', () => {
+    const asyncAgent = line({ type: 'user', toolUseResult: { isAsync: true, status: 'async_launched', agentId: 'a1' }, message: { content: [{ type: 'tool_result', tool_use_id: 'g1', content: [{ type: 'text', text: 'Async agent launched successfully.' }] }] } });
+    assert.deepEqual(claudeInFlight([launch('t2', 'Monitor', { command: 'tail -f x', description: 'tail the log' }), started('t2', 'm1')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Monitor', label: 'tail the log' }] });
+    assert.deepEqual(claudeInFlight([launch('g1', 'Agent', { prompt: 'x', description: 'review the diff' }), asyncAgent], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Agent', label: 'review the diff' }] });
+});
+
+test('in flight, separates: a launch with no description, or a blank one, is labelled by its tool', () => {
+    assert.deepEqual(claudeInFlight([shell('t1'), started('t1', 'b1')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
+    assert.deepEqual(claudeInFlight([named('t1', '   '), started('t1', 'b1')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
+});
+
+test('in flight, separates: an ended launch is not listed; the items keep launch order', () => {
+    assert.deepEqual(claudeInFlight([named('t1', 'first'), started('t1', 'b1'), notice('b1', 't1', 'completed')], false, separates), { kind: 'in-flight', count: 0, background: [] });
+    assert.deepEqual(claudeInFlight([named('t1', 'first'), started('t1', 'b1'), named('t2', 'second'), started('t2', 'b2'), named('t3', 'third'), started('t3', 'b3'), notice('b2', 't2', 'completed')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'first' }, { tool: 'Bash', label: 'third' }] });
+});
+
+test('in flight, separates: an expired Monitor is not listed, a live one is', () => {
+    assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', description: 'old', timeout_ms: 60_000 }), wordsAt('2026-10-08T12:00:00.000Z')], false, separates), { kind: 'in-flight', count: 0, background: [] });
+    assert.deepEqual(claudeInFlight([monitorAt('m1', '2026-10-08T10:00:00.000Z', { command: 'tail -f x', description: 'live', persistent: true }), wordsAt('2026-10-08T12:00:00.000Z')], false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Monitor', label: 'live' }] });
+});
+
+test('in flight, separates: a truncated tail with an unseen notice is unknown in both modes', () => {
+    const cut = ['{"type":"assistant","mes', notice('b0', 'gone', 'completed'), named('t3', 'live'), started('t3', 'b3')];
+    assert.equal(claudeInFlight(cut, true, separates).kind, 'unknown');
+    assert.equal(claudeInFlight(cut, true, CLAUDE_SPLIT).kind, 'unknown');
+    assert.deepEqual(claudeInFlight(cut, false, separates), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'live' }] });
 });
