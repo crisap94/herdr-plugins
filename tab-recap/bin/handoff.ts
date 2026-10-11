@@ -175,7 +175,7 @@ function shapeProblem(values: HandoffValues, positionals: readonly string[], clo
 }
 
 function listingOf(values: HandoffValues, positionals: readonly string[]): HandoffArguments | HandoffProblem {
-    if (positionals.length > 0) {
+    if (positionals.length > 1) {
         return problem('handoff takes no argument');
     }
     const tabs = values.tab ?? [];

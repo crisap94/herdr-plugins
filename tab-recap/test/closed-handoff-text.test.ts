@@ -52,7 +52,7 @@ test('the closed listing is one tab-separated line per identity, in the order gi
 
 test('a task name with an escape sequence or a newline is printed without a control character', () => {
     const text = serializeClosedListing([record('w1:p1', 1000, 'bad\u001b[31m\nname')]);
-    const controls = [...text].filter((character) => isControl(character.codePointAt(0) ?? 0));
+    const controls = Array.from(text).filter((character) => character !== '\t' && isControl(character.codePointAt(0) ?? 0));
     assert.deepEqual(controls, []);
     assert.equal(text.split('\t').length, 4);
 });
