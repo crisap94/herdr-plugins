@@ -24,12 +24,10 @@
     "property": 9
   },
   "src/recap/application/autocompact-line.ts": {
-    "parameter": 2,
-    "return": 2
+    "parameter": 1
   },
   "src/recap/application/autocompact-listing.ts": {
-    "parameter": 5,
-    "return": 1,
+    "parameter": 3,
     "container": 1,
     "property": 2
   },

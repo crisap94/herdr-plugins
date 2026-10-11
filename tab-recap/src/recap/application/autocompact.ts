@@ -228,7 +228,7 @@ export class Autocompact {
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);
         deps.events?.lane(pane, 'autocompact-decided', `${judged.verdict}-${shareOf(use)}`);
-        deps.log(lineOf(made, recordOnly));
+        deps.log(lineOf(made, recordOnly ? 'record-only' : 'may-act'));
         if (asksForCompaction(found.mode, judged.verdict, recordOnly)) this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
