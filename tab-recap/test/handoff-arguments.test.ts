@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffArgumentsOf } from '../bin/handoff.ts';
+import { parseArguments } from '../bin/arguments.ts';
 
 const FROM = 'w1:p1';
 const TO = 'w1:p2';
@@ -58,4 +59,9 @@ test('the listing takes --tab alone and nothing that selects a source or a targe
     assert.deepEqual(handoffArgumentsOf({ 'list-closed': true, tab: ['w1:t1'] }, ['handoff']), { mode: 'list', tab: 'w1:t1' });
     assert.deepEqual(handoffArgumentsOf({ 'list-closed': true }, ['handoff']), { problem: '--list-closed needs --tab' });
     assert.deepEqual(handoffArgumentsOf({ 'list-closed': true, tab: ['w1:t1'], to: [TO] }, ['handoff']), { problem: '--list-closed takes only --tab' });
+});
+
+test('--tab is accepted by eval and refused by every other command that is not handoff', () => {
+    assert.deepEqual(parseArguments(['eval', '--tab', 'w1:t2']), { positionals: ['eval'], note: undefined, handoff: null });
+    assert.deepEqual(parseArguments(['status', '--tab', 'w1:t2']), { problem: '--tab applies to handoff and eval only' });
 });

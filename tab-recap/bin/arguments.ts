@@ -17,7 +17,7 @@ function handoffOnlyProblem(values: Readonly<Record<string, unknown>>, name: str
 }
 
 function placementProblem(values: Readonly<Record<string, unknown>>, name: string | undefined): string | null {
-    if (values.tab !== undefined && name !== 'handoff') {
+    if (values.tab !== undefined && name !== 'handoff' && name !== 'eval') {
         return '--tab applies to handoff and eval only';
     }
     return values.note !== undefined && name !== 'compact' && name !== 'handoff' ? '--note applies to compact and handoff only' : null;
