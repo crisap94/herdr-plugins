@@ -31,7 +31,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve({ count: state.inFlight, why: 'test' }); },
         recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tab, pane) }, compactions: store.compactions, decisions: store.autocompact,
-        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve(); },
+        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); },
         lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); }, startedAt,
         awaiting: () => Promise.resolve(awaitingOf(state)),
         events: { lane: (pane, kind, detail) => { events.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },

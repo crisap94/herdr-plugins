@@ -81,7 +81,7 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
         webs: { of: () => null },
         lanes: () => [LANE],
         focused: () => Promise.resolve('w1:p1'),
-        refresh: () => Promise.resolve(),
+        refresh: () => Promise.resolve('refreshed'),
         target: () => targetOf('focused'),
         messages: () => en,
         log: (): void => undefined,

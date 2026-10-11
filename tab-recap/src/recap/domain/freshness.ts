@@ -6,6 +6,13 @@ export type RefreshStatus = (typeof REFRESH_STATUSES)[number];
 
 export type LastRunCause = RunCause | 'imported';
 
+export function refreshStatusOf(waited: 'done' | 'timeout', error: string | null): RefreshStatus {
+    if (waited === 'timeout') {
+        return 'timed-out';
+    }
+    return error === null ? 'refreshed' : 'failed';
+}
+
 export type NewerPrompts = { readonly kind: 'none' } | { readonly kind: 'at-least'; readonly count: number } | { readonly kind: 'unknown' };
 
 export function newerPromptsOf(count: number | null): NewerPrompts {

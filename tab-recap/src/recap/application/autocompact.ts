@@ -5,6 +5,7 @@ import type { Decider } from '#src/ports/decider.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
 import type { LaneClaims } from './lane-claims.ts';
+import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -55,7 +56,7 @@ export interface AutocompactDeps {
     readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
     hasRecap(tab: string): boolean;
-    refresh(tab: string, lanes: readonly Lane[]): Promise<void>;
+    refresh: RecapRefresh;
     lanes(tab: string): readonly Lane[];
     now(): number;
     log(line: string): void;

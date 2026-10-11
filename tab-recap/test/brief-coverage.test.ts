@@ -84,7 +84,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => clock,
         webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
-        refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
+        refresh: () => Promise.resolve('refreshed'), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };
 }

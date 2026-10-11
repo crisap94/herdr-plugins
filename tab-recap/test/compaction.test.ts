@@ -94,7 +94,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         webs: { of: () => null },
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
-        refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve(); },
+        refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
         coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),

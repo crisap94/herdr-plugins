@@ -24,8 +24,8 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { bounded } from './bounded.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
+import { refreshedWithin } from './refresh-status.ts';
 import { loadConfig, messagesOf } from './config.ts';
 
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
@@ -65,9 +65,7 @@ export function wireCompaction(parts: {
             const layout = await fleet.layout(tabId(tab));
             return isUnknown(layout) ? null : layout.focused;
         },
-        refresh: async (tab, lanes) => {
-            await bounded(recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS);
-        },
+        refresh: (tab, lanes) => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,

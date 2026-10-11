@@ -15,6 +15,7 @@ import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
+import type { RecapRefresh } from './recap-wait.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
@@ -45,7 +46,7 @@ export interface CompactionDeps {
     readonly webs: { of(pane: string): LaneWeb | null };
     lanes(tab: string): readonly Lane[];
     focused(tab: string): Promise<string | null>;
-    refresh(tab: string, lanes: readonly Lane[]): Promise<void>;
+    refresh: RecapRefresh;
     target(): CompactTarget;
     messages(): Messages;
     log(line: string): void;
