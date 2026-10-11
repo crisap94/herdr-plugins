@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -139,7 +139,7 @@ async function configure(): Promise<number> {
 }
 
 function requests(): Requests | null {
-    const store = stateStore(stateDir());
+    const store = openCliStore();
     if (store.kind === 'ready') {
         return store.requests;
     }

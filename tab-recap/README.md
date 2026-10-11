@@ -135,6 +135,16 @@ seen longer ago than that and with no column open, with its facts, runs, saved i
 boundaries and compaction records — one transaction per tab, logged with the counts. A tab seen within the
 period is never touched, whatever its size.
 
+**Closed lanes.** When a lane leaves the board (its pane closed, its agent left the pane, or its agent kind changed
+in the pane), the plugin records a **closure record** for it: the pane, the agent, the working directory, the close
+instant and the task that lane produced in that stretch. `TAB_RECAP_CLOSED_LANE_DAYS` (default 14; `0` records
+nothing and keeps no record) is how long those records stay. Within that window a closed lane's work can be handed
+over with `tab-recap handoff --from-closed <pane> --tab <tab-id> --closed-at <epoch-ms>`; `--list-closed --tab <tab-id>`
+lists the retained closures, newest first. A tab holding a closure record inside the window is not removed by
+`TAB_RECAP_KEEP_DAYS`. Known limits: a run that finishes after the close is not attributed to the closed lane; a
+`/clear` is not a closure (the live path still reaches its ledger); a crash that leaves a live shell in the pane is
+not a closure while herdr still reports the pane as a lane.
+
 ## How the recap is kept
 
 Since 2.0 a recap is not rewritten on every turn: it is a **ledger of facts** per task. A fact has an id, a
@@ -701,7 +711,7 @@ Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: 
 
 Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
 
-Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
+Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never); `TAB_RECAP_CLOSED_LANE_DAYS` (days a closed lane's record is kept for `--from-closed`, default 14, `0` = record nothing).
 
 ### Recap runs
 

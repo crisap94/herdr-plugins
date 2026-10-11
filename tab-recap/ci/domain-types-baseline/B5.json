@@ -156,8 +156,7 @@
   },
   "src/adapters/db/retention.ts": {
     "parameter": 3,
-    "return": 2,
-    "container": 1
+    "return": 2
   },
   "src/adapters/db/rows.ts": {
     "parameter": 6,

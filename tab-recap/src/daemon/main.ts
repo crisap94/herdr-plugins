@@ -22,6 +22,7 @@ import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers, wireHandoffs } fro
 import type { HandoffRunner } from './handoff.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
+import type { Sharing } from '#src/recap/application/dispatch.ts';
 import { dispatchFor } from './dispatch-parts.ts';
 import type { Box } from './dispatch-parts.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
@@ -52,6 +53,7 @@ import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
+import { bootObservations } from './restored-lanes.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
@@ -135,7 +137,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: (): string => capabilityOf(switchOn), now: (): number => Date.now(), log, events });
 
-    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts }, log);
+    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
@@ -228,10 +230,8 @@ async function start(): Promise<number> {
         handoff: handoffRestartOf(handoffs),
         log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
     });
-    if (restarted > 0) {
-        log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
-    }
-    informer.push({ kind: 'hidden-restored', state: store.visibility.readHidden() });
+    if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }
+    bootObservations(store.visibility.readHidden(), store.views, log).forEach((observation) => { informer.push(observation); });
     setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
     setInterval(() => {

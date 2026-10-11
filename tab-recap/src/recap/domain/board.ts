@@ -1,5 +1,6 @@
 import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
+import type { RestoredLane } from './closures.ts';
 import type { Instant } from './time.ts';
 
 export type Shape = 'side' | 'bar';
@@ -34,6 +35,7 @@ export interface Board {
     readonly hidden: ReadonlySet<TabId>;
     readonly allHidden: boolean;
     readonly shown: ReadonlySet<TabId>;
+    readonly persisted: readonly RestoredLane[] | null;
 }
 
 export function emptyBoard(): Board {
@@ -51,6 +53,7 @@ export function emptyBoard(): Board {
         hidden: new Set(),
         allHidden: false,
         shown: new Set(),
+        persisted: null,
     };
 }
 

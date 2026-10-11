@@ -34,7 +34,20 @@ export function tabId(raw: string): TabId {
 }
 
 export function workspaceId(raw: string): WorkspaceId {
-    return nonEmpty(raw, 'a workspace id') as WorkspaceId;
+    const parsed = parseWorkspaceId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a workspace id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function workspaceOfTab(tab: TabId): WorkspaceId | null {
+    const raw = String(tab);
+    const colon = raw.indexOf(':');
+    if (colon === -1 || raw.slice(0, colon).trim() === '' || raw.slice(colon + 1).trim() === '') {
+        return null;
+    }
+    return raw.slice(0, colon) as WorkspaceId;
 }
 
 export function sessionId(raw: string): SessionId {

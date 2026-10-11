@@ -156,7 +156,6 @@
   },
   "src/ports/retention.ts": {
     "parameter": 2,
-    "container": 1,
     "property": 5
   },
   "src/ports/run-inputs.ts": {

@@ -1,4 +1,5 @@
 import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 
 export interface VisibilityRequest {
@@ -22,6 +23,7 @@ export interface HandoffRequestRow {
     readonly toPane: PaneId;
     readonly refreshFirst: boolean;
     readonly note: string | null;
+    readonly source: HandoffSource;
 }
 
 export interface NewHandoffRequest {
@@ -30,6 +32,7 @@ export interface NewHandoffRequest {
     readonly toPane: PaneId;
     readonly note: string | null;
     readonly refreshFirst: boolean;
+    readonly source: HandoffSource;
 }
 
 export interface HandoffRequester {

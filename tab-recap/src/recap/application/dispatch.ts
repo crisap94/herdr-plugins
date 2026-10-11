@@ -2,17 +2,24 @@ import { lanesOf } from '#src/recap/domain/board.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { workspaceOfTab } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/layout.ts';
 import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
+import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
+import type { LaneEvents } from './lane-events.ts';
+
+export type Sharing = 'on' | 'off';
 
 export interface DispatchDeps {
     readonly columns: Columns;
@@ -22,6 +29,10 @@ export interface DispatchDeps {
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
+    readonly closures?: ClosureRecorder;
+    readonly events?: LaneEvents;
+    readonly sharing?: () => Sharing;
+    closedDays?(): ClosedLaneDays;
     settled?(lane: Lane): void;
     sizing(): Sizing;
     board(): Board;
@@ -56,7 +67,7 @@ export function viewOf(board: Board, tab: TabId, at: number, lookups: Lookups = 
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)), context: contexts(String(lane.pane)),
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)), context: contexts(String(lane.pane)), since: lane.since,
         })),
         at,
     };
@@ -95,10 +106,41 @@ export class Dispatch {
             case 'give-up':
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;
+            case 'lane-closed':
+                this.keep(intent.closed);
+                this.announce(intent.closed);
+                return;
             default: {
                 const exhaustive: never = intent;
                 this.deps.log(`unhandled intent ${String(exhaustive)}`);
             }
+        }
+    }
+
+    private announce(closed: ClosedLane): void {
+        if (this.deps.events === undefined || this.deps.sharing?.() !== 'on') {
+            return;
+        }
+        const workspace = workspaceOfTab(closed.tab);
+        if (workspace === null) {
+            this.deps.log('lane closure not announced (malformed tab id)');
+            return;
+        }
+        try {
+            this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
+        } catch (error) {
+            this.deps.log(`lane ${closed.pane}: closure not announced (${error instanceof Error ? error.message : String(error)})`);
+        }
+    }
+
+    private keep(closed: ClosedLane): void {
+        if (this.deps.closures === undefined || (this.deps.closedDays?.() ?? 0) === 0) {
+            return;
+        }
+        try {
+            this.deps.closures.record(closed);
+        } catch (error) {
+            this.deps.log(`lane ${closed.pane}: closure not recorded (${error instanceof Error ? error.message : String(error)})`);
         }
     }
 

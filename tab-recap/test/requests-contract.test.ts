@@ -15,7 +15,7 @@ const subjects: readonly Subject[] = [
     { name: 'in-memory double', make: () => new MemoryRequests() },
 ];
 
-const HANDOFF = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: 'the note', refreshFirst: true };
+const HANDOFF = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: 'the note', refreshFirst: true, source: { kind: 'live' } as const };
 
 for (const { name, make } of subjects) {
     test(`${name}: a handoff is taken once, with its fields, and withdrawn only while it is queued`, () => {

@@ -2,6 +2,9 @@ import { agentKind, paneId, sessionId, tabId, workspaceId } from './ids.ts';
 import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
+import type { Instant } from './time.ts';
+import { parseDirectory } from './directory.ts';
+import type { Directory } from './directory.ts';
 
 export interface SeenLane {
     readonly paneId: string;
@@ -21,8 +24,9 @@ export interface Lane {
     readonly agent: AgentKind;
     readonly status: LaneStatus;
     readonly session: SessionId | null;
-    readonly cwd: string | null;
+    readonly cwd: Directory | null;
     readonly title: string | null;
+    readonly since: Instant | null;
 }
 
 function orNull(raw: string | null | undefined): string | null {
@@ -31,6 +35,7 @@ function orNull(raw: string | null | undefined): string | null {
 
 export function laneFrom(seen: SeenLane): Lane {
     const session = orNull(seen.session);
+    const cwd = parseDirectory(seen.cwd);
     return {
         pane: paneId(seen.paneId),
         tab: tabId(seen.tabId),
@@ -38,8 +43,9 @@ export function laneFrom(seen: SeenLane): Lane {
         agent: agentKind(seen.agent),
         status: laneStatus(seen.status),
         session: session === null ? null : sessionId(session),
-        cwd: orNull(seen.cwd),
+        cwd: cwd.kind === 'ok' ? cwd.value : null,
         title: orNull(seen.title),
+        since: null,
     };
 }
 

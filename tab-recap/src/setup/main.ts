@@ -1,5 +1,5 @@
 import { setValues } from '#src/adapters/config-file.ts';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
@@ -95,7 +95,7 @@ function save(values: ReadonlyMap<string, string>, languageChanged: boolean): vo
         setValues(join(configDir(), 'config.env'), values, parseEnv);
         const rewriting = languageChanged && tab !== '';
         if (rewriting) {
-            const store = stateStore(stateDir());
+            const store = openCliStore();
             if (store.kind !== 'ready') {
                 throw new Error(messages().database.newer(store.backup));
             }

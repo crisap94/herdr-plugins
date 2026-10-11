@@ -19,7 +19,8 @@ import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS, modelOf } from '#src/recap/domain/backend.ts';
-import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
@@ -65,6 +66,7 @@ export interface Config {
     readonly coverage: CoverageBy;
     readonly jev: JevSettings;
     readonly keepDays: number;
+    readonly closedLaneDays: ClosedLaneDays;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
     readonly herdrEvents: HerdrEvents;
@@ -204,6 +206,7 @@ export function loadConfig(): Config {
         coverage: coverageByOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         jev: jevOf(get),
         keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
+        closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
         herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),

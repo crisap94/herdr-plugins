@@ -1,23 +1,34 @@
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
 import { isLaneOfTab, resolveSource } from './handoff-source.ts';
+import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
+import { closedLaneOf } from './closed-lane-source.ts';
+import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import { DeliveryMark } from './delivery-mark.ts';
-import type { SourceDeps, SourceResolution } from './handoff-source.ts';
 import { resolveTarget } from './handoff-target.ts';
 import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
+
+export interface ClosedFlowDeps {
+    readonly closures: ClosedSourceDeps['closures'];
+    readonly ledger: ClosedSourceDeps['ledger'];
+    readonly runs: ClosedSourceDeps['runs'];
+    readonly closedDays: () => ClosedLaneDays;
+}
 
 export interface HandoffFlowDeps {
     readonly lanes: () => readonly Lane[];
     readonly records: SourceDeps['records'];
     readonly ledger: SourceDeps['ledger'];
+    readonly closed: ClosedFlowDeps;
     readonly target: Omit<TargetDeps, 'lanes'>;
     readonly claims: Pick<LaneClaims, 'has' | 'claimAll' | 'release'>;
     readonly refresh: (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus>;
@@ -34,6 +45,8 @@ export interface HandoffRun {
 }
 
 export const unrendered = (outcome: HandoffOutcome): HandoffRun => ({ outcome, rendered: null });
+
+type RenderStep = Promise<HandoffRenderResult> | HandoffOutcome;
 
 export class HandoffFlow {
     private readonly deps: HandoffFlowDeps;
@@ -56,7 +69,7 @@ export class HandoffFlow {
     }
 
     private async steps(request: HandoffRequestRow, mark: DeliveryMark): Promise<HandoffRun> {
-        if (request.pane === request.toPane) {
+        if (request.source.kind === 'live' && request.pane === request.toPane) {
             return unrendered({ kind: 'refused', reason: 'source-equals-target' });
         }
         const early = await this.early(request);
@@ -68,42 +81,51 @@ export class HandoffFlow {
         if (rendered.kind !== 'text') {
             return unrendered(rendered);
         }
-        const [sourcePane, targetPane] = [String(request.pane), String(request.toPane)];
-        if (!this.deps.claims.claimAll([{ pane: sourcePane, kind: 'handoff' }, { pane: targetPane, kind: 'handoff' }])) {
+        const held = this.holdsOf(request);
+        if (!this.deps.claims.claimAll(held.map((pane) => ({ pane, kind: 'handoff' as const })))) {
             return unrendered({ kind: 'refused', reason: 'lane-busy' });
         }
         if (!mark.claim()) {
-            this.deps.claims.release(sourcePane);
-            this.deps.claims.release(targetPane);
+            this.releaseAll(held);
             return unrendered({ kind: 'failed', reason: 'expired' });
         }
         try {
             return { outcome: await this.deliver(request, rendered.text, mark), rendered: { bytes: rendered.bytes, omitted: rendered.omitted, withheld: rendered.withheld } };
         } finally {
             if (mark.settle()) {
-                this.deps.claims.release(sourcePane);
-                this.deps.claims.release(targetPane);
+                this.releaseAll(held);
             }
+        }
+    }
+
+    private holdsOf(request: HandoffRequestRow): readonly PaneId[] {
+        return request.source.kind === 'live' ? [request.pane, request.toPane] : [request.toPane];
+    }
+
+    private releaseAll(panes: readonly PaneId[]): void {
+        for (const pane of panes) {
+            this.deps.claims.release(pane);
         }
     }
 
     private async early(request: HandoffRequestRow): Promise<Ready | HandoffOutcome> {
         const lanes = this.deps.lanes();
-        if (!isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
+        if (request.source.kind === 'live' && !isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
         const target = await this.resolve(request);
         if (target.kind !== 'ready') {
             return target;
         }
-        if (this.deps.claims.has(String(request.pane)) || this.deps.claims.has(String(request.toPane))) {
+        if (this.holdsOf(request).some((pane) => this.deps.claims.has(pane))) {
             return { kind: 'refused', reason: 'lane-busy' };
         }
         return target;
     }
 
     private resolve(request: HandoffRequestRow): Promise<TargetResolution> {
-        return resolveTarget(request.pane, request.toPane, { ...this.deps.target, lanes: this.deps.lanes() });
+        const source = request.source.kind === 'live' ? request.pane : null;
+        return resolveTarget(source, request.toPane, { ...this.deps.target, lanes: this.deps.lanes() });
     }
 
     private async refreshed(tab: TabId): Promise<RefreshStatus> {
@@ -116,10 +138,10 @@ export class HandoffFlow {
     }
 
     private async rendered(request: HandoffRequestRow, refresh: RefreshStatus): Promise<HandoffRenderResult | HandoffOutcome> {
-        const found: SourceResolution = resolveSource('live', { tab: request.tab, pane: request.pane }, { lanes: this.deps.lanes(), records: this.deps.records, ledger: this.deps.ledger, now: this.deps.now() });
+        const found = this.sourceOf(request);
         switch (found.kind) {
             case 'found':
-                return this.renderOf(request, found.facts, refresh);
+                return this.renderOf(request, found, refresh);
             case 'unlisted':
                 return { kind: 'refused', reason: 'ledger-empty' };
             case 'task-ambiguous':
@@ -135,13 +157,25 @@ export class HandoffFlow {
         }
     }
 
-    private renderOf(request: HandoffRequestRow, facts: readonly Fact[], refresh: RefreshStatus): Promise<HandoffRenderResult> | HandoffOutcome {
+    private sourceOf(request: HandoffRequestRow): SourceResolution {
+        if (request.source.kind === 'closed') {
+            const identity = { tab: request.tab, pane: request.pane, closedAt: request.source.closedAt };
+            return resolveSource('closed', identity, { ...this.deps.closed, closedDays: this.deps.closed.closedDays(), now: instant(this.deps.now()) });
+        }
+        return resolveSource('live', { tab: request.tab, pane: request.pane }, { lanes: this.deps.lanes(), records: this.deps.records, ledger: this.deps.ledger, now: this.deps.now() });
+    }
+
+    private renderOf(request: HandoffRequestRow, found: FoundSource, refresh: RefreshStatus): RenderStep {
+        if (found.view !== undefined) {
+            const lane = closedLaneOf({ tab: request.tab, pane: request.pane, closedAt: found.view.closedAt }, found.view);
+            return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor: null, facts: found.facts, note: request.note, refresh, closed: found.view });
+        }
         const lane = this.deps.lanes().find((candidate) => candidate.pane === request.pane);
         if (lane === undefined) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
         const cursor = this.deps.records.readRecap(String(request.tab))?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
-        return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts, note: request.note, refresh });
+        return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
     }
 
     private async deliver(request: HandoffRequestRow, text: string, mark: DeliveryMark): Promise<HandoffOutcome> {

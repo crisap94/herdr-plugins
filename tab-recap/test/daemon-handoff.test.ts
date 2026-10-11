@@ -29,7 +29,7 @@ const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');
 
 const row = (over: Partial<HandoffRequestRow> = {}): HandoffRequestRow => ({
-    id: handoffIdOf(ids.next()), at: NOW, tab: tabId('w1:t1'), pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, ...over,
+    id: handoffIdOf(ids.next()), at: NOW, tab: tabId('w1:t1'), pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, source: { kind: 'live' }, ...over,
 });
 
 interface Probe {

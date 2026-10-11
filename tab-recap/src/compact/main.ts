@@ -1,4 +1,4 @@
-import { stateStore } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
@@ -30,7 +30,7 @@ function draw(): void {
 
 function perform(effect: NoteEffect): never {
     if (effect.kind === 'send') {
-        const store = stateStore(stateDir());
+        const store = openCliStore();
         if (store.kind === 'ready') {
             store.requests.requestCompact({ tab, pane: pane === '' ? null : pane, note: effect.note });
             store.close();
