@@ -27,6 +27,20 @@ const FOLDER_LANES: readonly (readonly [string, Lane])[] = [
     ['src/experiment/', 'B8'],
 ];
 
+const SKIP_LIST = process.env['LANES_SKIP_LIST'] ?? join(ROOT, 'ci/atalaya-files.txt');
+const REPOSITORY_PREFIX = 'tab-recap/';
+
+function skippedPaths(): readonly string[] {
+    if (!existsSync(SKIP_LIST)) return [];
+    return readFileSync(SKIP_LIST, 'utf8').split('\n').map((line) => line.trim()).filter((line) => line !== '' && !line.startsWith('#') && line.startsWith(REPOSITORY_PREFIX)).map((line) => line.slice(REPOSITORY_PREFIX.length));
+}
+
+const SKIPPED = skippedPaths();
+
+function skipped(file: string): boolean {
+    return SKIPPED.some((path) => (path.endsWith('/') ? file.startsWith(path) : file === path));
+}
+
 function filesUnder(folder: string): readonly string[] {
     const found: string[] = [];
     const walk = (directory: string): void => {
@@ -35,7 +49,7 @@ function filesUnder(folder: string): readonly string[] {
             if (entry.isDirectory()) {
                 if (entry.name !== 'node_modules') walk(path);
             } else {
-                found.push(relative(ROOT, path));
+                if (!skipped(relative(ROOT, path))) found.push(relative(ROOT, path));
             }
         }
     };

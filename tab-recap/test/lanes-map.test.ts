@@ -12,8 +12,21 @@ after(() => {
     rmSync(SCRATCH, { recursive: true, force: true });
 });
 
-function generate(file: string | null): ReturnType<typeof spawnSync> {
-    return spawnSync('node', ['ci/lanes-generate.ts', '--check'], { cwd: ROOT, encoding: 'utf8', env: file === null ? process.env : { ...process.env, LANES_FILE: file } });
+function generate(file: string | null, skip: string | null = null): ReturnType<typeof spawnSync> {
+    const env = { ...process.env, ...(file === null ? {} : { LANES_FILE: file }), ...(skip === null ? {} : { LANES_SKIP_LIST: skip }) };
+    return spawnSync('node', ['ci/lanes-generate.ts', '--check'], { cwd: ROOT, encoding: 'utf8', env });
+}
+
+function written(name: string, text: string): string {
+    const path = join(SCRATCH, name);
+    writeFileSync(path, text);
+    return path;
+}
+
+function mapWithout(prefix: string): string {
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
+    for (const lane of Object.keys(parsed.lanes)) parsed.lanes[lane] = (parsed.lanes[lane] ?? []).filter((file) => !file.startsWith(prefix));
+    return written(`without-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
 }
 
 function tampered(change: (lanes: Record<string, string[]>) => void): string {
@@ -109,4 +122,21 @@ test('a foreign source edit fails without the adapts label and passes with it, b
     assert.equal(lane('B2', ['tab-recap/src/recap/application/legacy.ts'], { LANE_ADAPTS: '1' }).status, 1);
     assert.equal(lane('B2', ['.gitlab-ci.yml'], { LANE_ADAPTS: '1' }).status, 1);
     assert.equal(lane('B2', ['tab-recap/src/recap/application/zz-unowned.ts'], { LANE_ADAPTS: '1' }).status, 1);
+});
+
+test('a path named in the skip list is not expected in the map; a folder entry skips what is under it', () => {
+    const skip = written('skip.txt', '# listed\ntab-recap/src/protocol/result.ts\ntab-recap/test/fixtures/\nexperiments/\n');
+    const without = mapWithout('src/protocol/result.ts');
+    assert.equal(generate(without, skip).status, 1, 'the folder entry leaves its files out of the map');
+    const both = mapWithout('test/fixtures/');
+    assert.equal(generate(both, skip).status, 1, 'the listed source file is still in this map');
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(both, 'utf8'));
+    for (const lane of Object.keys(parsed.lanes)) parsed.lanes[lane] = (parsed.lanes[lane] ?? []).filter((file) => file !== 'src/protocol/result.ts');
+    const all = written(`all-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
+    assert.equal(generate(all, skip).status, 0);
+    assert.equal(generate(all).status, 1, 'without the list the same map misses those files');
+});
+
+test('a skip list that is absent changes nothing', () => {
+    assert.equal(generate(null, join(SCRATCH, 'no-such-list.txt')).status, 0);
 });
