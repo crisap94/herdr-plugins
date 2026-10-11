@@ -1,4 +1,5 @@
-import { databasePath, stateStore } from '#src/adapters/db/database.ts';
+import { databasePath } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
@@ -138,7 +139,7 @@ function deliverDeps(): DeliverDeps {
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),
         cliVersion: codeVersion(),
         openStore: () => {
-            const store = stateStore(stateDir());
+            const store = openCliStore();
             if (store.kind !== 'ready') {
                 throw new Error(messagesOf().database.newer(store.backup));
             }

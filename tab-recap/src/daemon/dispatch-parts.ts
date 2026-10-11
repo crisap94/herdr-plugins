@@ -3,6 +3,7 @@ import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
+import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
@@ -19,10 +20,10 @@ export interface Box {
     autocompact: Autocompact | null;
 }
 
-export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistry; readonly webs: LaneWebs; readonly contexts: LaneContexts }, log: (line: string) => void): Dispatch {
+export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistry; readonly webs: LaneWebs; readonly contexts: LaneContexts; readonly events: LaneEvents; readonly sharing: () => boolean }, log: (line: string) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
-        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => loadConfig().closedLaneDays,
+        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => loadConfig().closedLaneDays, events: parts.events, sharing: parts.sharing,
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

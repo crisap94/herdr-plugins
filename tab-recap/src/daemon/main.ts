@@ -136,7 +136,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: (): string => capabilityOf(switchOn), now: (): number => Date.now(), log, events });
 
-    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts }, log);
+    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: herdrEventsOn }, log);
     const informer = new Informer(fleet, clock, config.policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {

@@ -2,6 +2,7 @@ import { lanesOf } from '#src/recap/domain/board.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { workspaceOfTab } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
@@ -16,6 +17,7 @@ import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
+import type { LaneEvents } from './lane-events.ts';
 
 export interface DispatchDeps {
     readonly columns: Columns;
@@ -26,6 +28,8 @@ export interface DispatchDeps {
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
     readonly closures?: ClosureRecorder;
+    readonly events?: LaneEvents;
+    readonly sharing?: () => boolean;
     closedDays?(): ClosedLaneDays;
     settled?(lane: Lane): void;
     sizing(): Sizing;
@@ -101,6 +105,7 @@ export class Dispatch {
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;
             case 'lane-closed':
+                this.announce(intent.closed);
                 this.keep(intent.closed);
                 return;
             default: {
@@ -108,6 +113,18 @@ export class Dispatch {
                 this.deps.log(`unhandled intent ${String(exhaustive)}`);
             }
         }
+    }
+
+    private announce(closed: ClosedLane): void {
+        if (this.deps.events === undefined || this.deps.sharing?.() !== true) {
+            return;
+        }
+        const workspace = workspaceOfTab(closed.tab);
+        if (workspace === null) {
+            this.deps.log('lane closure not announced (malformed tab id)');
+            return;
+        }
+        this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
     }
 
     private keep(closed: ClosedLane): void {

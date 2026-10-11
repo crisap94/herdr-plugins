@@ -157,7 +157,7 @@ test('a lane\'s facts: its share from its context, the tab\'s last recap, and th
     assert.deepEqual(unknownLane, { share: null, recapAt: null, needs: 0 });
 });
 
-test('a change of needs is an event on the lane: raised when it grows, cleared when it shrinks; a lane that leaves the board is closed first', async () => {
+test('a change of needs is an event on the lane: raised when it grows, cleared when it shrinks; a lane that leaves the board is cleared without a closure event', async () => {
     const board = { current: boardOf(laneOf('w1:p1')) };
     const recap = { value: facts({ needs: 0 }) };
     const events: string[] = [];
@@ -177,7 +177,7 @@ test('a change of needs is an event on the lane: raised when it grows, cleared w
     board.current = emptyBoard();
     now = 3 * TICK_MS;
     lane.tick();
-    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1', 'w1 lane-closed w1:p1'], 'a lane closes on its workspace, its pane being gone');
+    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1'], 'the lane-closed event is the dispatch\'s, not the publisher\'s');
 });
 
 test('a failing pane waits (doubling from 2 s, up to a minute) and is logged once per outage; it is written again when herdr answers', async () => {
