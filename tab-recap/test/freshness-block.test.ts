@@ -63,6 +63,12 @@ test('newer prompts: the user prompts after the cursor are counted as at least N
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'at-least', count: 3 });
 });
 
+test('newer prompts: a queued prompt is a user prompt and counts as one', async () => {
+    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), { role: 'user', text: 'later', queued: true }]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
+    assert.equal(outcome.kind, 'fresh');
+    assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'at-least', count: 1 });
+});
+
 test('newer prompts: a transcript that grew with agent output only is none', async () => {
     const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), tool('b')]) }) }, input());
     assert.equal(outcome.kind, 'fresh');
