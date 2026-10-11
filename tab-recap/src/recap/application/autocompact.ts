@@ -24,8 +24,10 @@ import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
 import { lineOf, moneyOf } from './autocompact-line.ts';
-import { flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
+import { flightOf, flightDetail, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
 import type { Flight, Observed } from '#src/recap/domain/in-flight.ts';
+import { continuationNote } from '#src/recap/domain/continuation-note.ts';
+import type { ContinuationNote } from '#src/recap/domain/continuation-note.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
@@ -35,6 +37,8 @@ interface Stop {
     readonly recordOnly: boolean;
     readonly detail: string | null;
     readonly recheck: boolean;
+    readonly flight: Flight;
+    readonly atCeiling: boolean;
 }
 
 export interface AutocompactDeps {
@@ -91,6 +95,19 @@ function policyForLane(policy: AutocompactPolicy, lane: Lane): (Omit<Autocompact
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 
+const NOTHING: Flight = flightOf(NOTHING_IN_FLIGHT, NOT_AWAITING);
+
+function lateFlightOf(flight: Flight, late: Waiting): Flight {
+    if (late.kind === 'clear') return flightOf(flight, NOT_AWAITING);
+    if (late.kind === 'waiting') return flightOf(flight, { kind: 'on', names: awaitedNames(late.value) });
+    return flightOf(unreadable(flightReason(saying(late.why))), NOT_AWAITING);
+}
+
+function decisionWhy(judged: Judged, flight: Flight, atCeiling: boolean): string | null {
+    const reasons = [judged.why, flightDetail(flight, atCeiling)].filter((part): part is string => part !== null);
+    return reasons.length === 0 ? null : reasons.join('; ');
+}
+
 export class Autocompact {
     private readonly deps: AutocompactDeps;
     private readonly considering = new Set<string>();
@@ -141,14 +158,14 @@ export class Autocompact {
             unchanged: same && !recheck,
             coverageBackoff: backoff,
         };
+        const atCeiling = shareOf(use) >= policy.ceiling;
         const cheap = gateOf({ ...facts, flight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
-        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null, atCeiling: false }), recheck };
-        const atCeiling = shareOf(use) >= policy.ceiling;
+        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null, atCeiling: false }), recheck, flight: NOTHING, atCeiling };
         const flight = await this.flightOf(lane, pane, atCeiling);
         const full = gateOf({ ...facts, flight });
         if (recheck && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(`autocompact ${pane}: unchanged → recheck`);
-        return { ...full, detail: detailOf(full.gate, { ...context, flight, atCeiling }), recheck };
+        return { ...full, detail: detailOf(full.gate, { ...context, flight, atCeiling }), recheck, flight, atCeiling };
     }
 
     private skip(lane: Lane, gate: SkipGate, share: number | null, detail: string | null): void {
@@ -167,25 +184,26 @@ export class Autocompact {
         const tuning = this.tuning();
         const [tab, pane, use] = [String(lane.tab), String(lane.pane), deps.contexts.of(String(lane.pane))];
         if (use === null) { this.skip(lane, 'no-context', null, 'the context share is not known yet'); return; }
-        const { gate, recordOnly, detail } = await this.gated(lane, policy, use, tuning);
+        const { gate, recordOnly, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
         if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
-        if (await this.waitSkipped(lane, use)) return;
+        const seen = await this.lateFlight(lane, use, flight, atCeiling);
+        if (seen === null) return;
         const again = busyOf(deps, this.asked, tab, pane, deps.now());
         if (again.busy) {
             const paid = judged.costUsd > 0 ? `; decider ${moneyOf(judged.costUsd)} discarded` : '';
             this.skip(lane, 'busy', shareOf(use), `${again.detail}${paid}`);
             return;
         }
-        this.record(lane, use, { mode: policy.mode, gate, recordOnly, judged });
+        this.record(lane, use, { mode: policy.mode, gate, recordOnly, judged, flight: seen, atCeiling });
     }
 
-    private async waitSkipped(lane: Lane, use: ContextUse): Promise<boolean> {
-        const late = await this.waitingOf(String(lane.pane));
-        if (late.kind === 'clear') return false;
-        this.skip(lane, 'in-flight', shareOf(use), late.kind === 'waiting' ? `awaiting ${late.value}` : saying(late.why));
-        return true;
+    private async lateFlight(lane: Lane, use: ContextUse, flight: Flight, atCeiling: boolean): Promise<Flight | null> {
+        const seen = lateFlightOf(flight, await this.waitingOf(String(lane.pane)));
+        if (!holdsLane(seen, atCeiling)) return seen;
+        this.skip(lane, 'in-flight', shareOf(use), flightDetail(seen, atCeiling));
+        return null;
     }
 
     private async flightOf(lane: Lane, pane: string, atCeiling: boolean): Promise<Flight> {
@@ -199,24 +217,24 @@ export class Autocompact {
         return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(pane);
     }
 
-    private record(lane: Lane, use: ContextUse, found: { readonly mode: DecisionMode; readonly gate: DecisionGate; readonly recordOnly: boolean; readonly judged: Judged }): void {
+    private record(lane: Lane, use: ContextUse, found: { readonly mode: DecisionMode; readonly gate: DecisionGate; readonly recordOnly: boolean; readonly judged: Judged; readonly flight: Flight; readonly atCeiling: boolean }): void {
         const { deps } = this;
         const [tab, pane] = [String(lane.tab), String(lane.pane)];
-        const { judged, recordOnly } = found;
+        const { judged, recordOnly, flight, atCeiling } = found;
         const made: Decision = {
             tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
-            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: judged.why, coverageOutcome: null, coverageMs: null, coverageCostUsd: null,
+            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null,
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);
         deps.events?.lane(pane, 'autocompact-decided', `${judged.verdict}-${shareOf(use)}`);
         deps.log(lineOf(made, recordOnly));
-        if (asksForCompaction(found.mode, judged.verdict, recordOnly)) this.request(tab, pane, id);
+        if (asksForCompaction(found.mode, judged.verdict, recordOnly)) this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
-    private request(tab: string, pane: string, id: string): void {
+    private request(tab: string, pane: string, id: string, note: ContinuationNote | null): void {
         this.asked.set(pane, this.deps.now());
-        this.deps.requests.requestCompact({ tab, pane, note: null, origin: 'auto' });
+        this.deps.requests.requestCompact({ tab, pane, note, origin: 'auto' });
         this.deps.decisions.markRequested(id);
     }
 

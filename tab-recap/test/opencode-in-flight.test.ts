@@ -4,7 +4,15 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { splitReason } from '#src/ports/capability-reasons.ts';
 import { opencodeFixture, toolPart } from '#test/opencode-fixture.ts';
+
+test('opencode: all its in-flight work is foreground, and the capability says so by name', () => {
+    const { split } = new OpencodeTranscripts().inFlight;
+    if (split.kind !== 'foreground-only') throw new Error('opencode cannot tell its background work apart, so it must declare foreground-only');
+    assert.equal(split.why, 'opencode-parts');
+    assert.equal(splitReason(split.why, 'opencode'), 'opencode cannot tell background work that survives a compaction');
+});
 
 test('opencode: running or pending tool parts count; completed and error parts do not', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-flight-'));
