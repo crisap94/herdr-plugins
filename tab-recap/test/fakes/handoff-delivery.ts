@@ -6,7 +6,9 @@ import type { Acquired } from '#src/recap/application/typing-lease.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
 import type { HandoffTyping } from '#src/recap/application/handoff-sender.ts';
 import type { Ready } from '#src/recap/application/handoff-target.ts';
-import type { HandoffEvidence, HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
+import type { HandoffEvidence, HandoffPlan, LocatedBy } from '#src/recap/domain/handoff-plan.ts';
+import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
+import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
@@ -27,6 +29,8 @@ export interface Sent {
 }
 
 export interface World {
+    agent: string;
+    locatedBy: LocatedBy;
     session: string | null | Unknown;
     located: boolean;
     latest: string | null;
@@ -44,6 +48,8 @@ export interface World {
 
 export function worldOf(over: Partial<World> = {}): World {
     return {
+        agent: 'claude',
+        locatedBy: 'session',
         session: 'sess-1',
         located: true,
         latest: null,
@@ -63,13 +69,14 @@ export function worldOf(over: Partial<World> = {}): World {
 
 function transcriptsOf(world: World): Transcripts {
     return {
-        agent: 'claude',
+        agent: world.agent,
         locate: async (lane: Lane): Promise<Located> => {
             world.locates += 1;
             if (world.faults.locate) {
                 throw new Error('locate failed');
             }
-            return world.located && lane.session !== null ? { kind: 'located', source: 'transcript-1' } : unknown({ why: 'not-found', what: 'transcript' });
+            const key = world.locatedBy === 'session' ? lane.session : lane.cwd;
+            return world.located && key !== null ? { kind: 'located', source: 'transcript-1' } : unknown({ why: 'not-found', what: 'transcript' });
         },
         read: async (): Promise<ChunkResult> => unknown({ why: 'unreadable', detail: 'not used by handoff' }),
         latestPrompt: async (): Promise<PromptResult> => {
@@ -83,7 +90,7 @@ function transcriptsOf(world: World): Transcripts {
 }
 
 export function registryOf(world: World): ReturnType<typeof registryWith> {
-    return registryWith({ claude: transcriptsOf(world) });
+    return registryWith({ [world.agent]: transcriptsOf(world) });
 }
 
 export function sessionOf(world: World): CurrentSession {
@@ -166,4 +173,19 @@ export function laneWith(over: Partial<SeenLane> = {}): Lane {
 
 export function readyOf(lane: Lane, plan: HandoffPlan, ownTranscript = true): Ready {
     return { kind: 'ready', lane, plan, ownTranscript };
+}
+
+export function echoing(world: World): World {
+    world.onSend = (text: string): void => {
+        world.latest = text;
+    };
+    return world;
+}
+
+export function confirmationOf(world: World): HandoffConfirmation {
+    return new HandoffConfirmation({ agents: agentsOf(world), transcripts: registryOf(world), session: sessionOf(world), pause: pauseOf(world) });
+}
+
+export function senderOf(world: World, typing: HandoffTyping): HandoffSender {
+    return new HandoffSender({ agents: agentsOf(world), typing, confirmation: confirmationOf(world) });
 }

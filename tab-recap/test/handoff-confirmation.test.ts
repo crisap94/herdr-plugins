@@ -1,25 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { agentsOf, laneWith, pauseOf, planWith, readyOf, registryOf, sessionOf, worldOf } from './fakes/handoff-delivery.ts';
+import { confirmationOf, laneWith, planWith, readyOf, worldOf } from './fakes/handoff-delivery.ts';
 import type { World } from './fakes/handoff-delivery.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const FAILED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
 
-function confirmerOf(world: World): HandoffConfirmation {
-    return new HandoffConfirmation({ agents: agentsOf(world), transcripts: registryOf(world), session: sessionOf(world), pause: pauseOf(world) });
-}
-
 async function run(world: World, evidence: HandoffEvidence = 'either', lane: Lane = laneWith({ session: null }), ownTranscript = true, text = TEXT): Promise<HandoffOutcome> {
-    const confirmer = confirmerOf(world);
+    const confirmer = confirmationOf(world);
     const target = readyOf(lane, planWith(evidence), ownTranscript);
     const baseline = await confirmer.baseline(target);
     return confirmer.confirm(target, baseline, text);

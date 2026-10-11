@@ -1,8 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
-import type { HandoffTyping } from '#src/recap/application/handoff-sender.ts';
-import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HANDOFF_OBSERVATIONS } from '#src/recap/application/handoff-limits.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
@@ -13,8 +10,7 @@ import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
-import { agentsOf, laneWith, leaseSpy, pauseOf, PANE, planWith, readyOf, registryOf, sessionOf, worldOf } from './fakes/handoff-delivery.ts';
-import type { World } from './fakes/handoff-delivery.ts';
+import { echoing, laneWith, leaseSpy, PANE, planWith, readyOf, senderOf, worldOf } from './fakes/handoff-delivery.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps: finish the lexer.';
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
@@ -23,19 +19,7 @@ const TRANSPORT: HandoffOutcome = { kind: 'failed', reason: 'transport' };
 const BLOCKED: HandoffOutcome = { kind: 'refused', reason: 'status-not-ready' };
 const LEASE_BUSY: HandoffOutcome = { kind: 'refused', reason: 'typing-lease-busy' };
 
-function senderOf(world: World, typing: HandoffTyping): HandoffSender {
-    const confirmation = new HandoffConfirmation({ agents: agentsOf(world), transcripts: registryOf(world), session: sessionOf(world), pause: pauseOf(world) });
-    return new HandoffSender({ agents: agentsOf(world), typing, confirmation });
-}
-
 const readyClaude = (): Ready => readyOf(laneWith(), planWith('either'));
-
-function echoing(world: World): World {
-    world.onSend = (text: string): void => {
-        world.latest = text;
-    };
-    return world;
-}
 
 test('an available lease is taken without waiting, the plan runs once and the lease is released after confirmation', async () => {
     const world = echoing(worldOf({ latest: 'older' }));
