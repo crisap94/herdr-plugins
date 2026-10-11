@@ -15,6 +15,10 @@ import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { requestId } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
@@ -197,4 +201,66 @@ test('a flow that never finishes after typing is answered unconfirmed at the bou
         assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'unconfirmed' });
         assert.deepEqual(probe.released, []);
     });
+});
+
+function flakyAnswers(failing: (id: HandoffId, times: number) => boolean): { readonly answers: HandoffAnswers; readonly inner: MemoryHandoffAnswers } {
+    const inner = new MemoryHandoffAnswers(isStorablePair, () => NOW);
+    const attempts = new Map<string, number>();
+    const answers: HandoffAnswers = {
+        answerHandoff: (id, verdict): void => {
+            const times = (attempts.get(String(id)) ?? 0) + 1;
+            attempts.set(String(id), times);
+            if (failing(id, times)) {
+                throw new Error('disk busy');
+            }
+            inner.answerHandoff(id, verdict);
+        },
+        handoffAnswer: (id) => inner.handoffAnswer(id),
+        prune: (before) => inner.prune(before),
+    };
+    return { answers, inner };
+}
+
+test('a failed answer write is retried once and the ask is settled with the real outcome', async () => {
+    const { answers } = flakyAnswers((_id, times) => times === 1);
+    const { runner, asks, probe } = runnerOf(delivered, { answers });
+    const taken = row();
+    await runner.take([taken]);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, asks.unfinished()], ['delivered', []]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: answer write failed, retrying: Error: disk busy`, `handoff ${taken.id}: delivered`]);
+});
+
+test('when the retry also fails the ask is settled as settled, not interrupted, and the write is logged', async () => {
+    const { answers } = flakyAnswers(() => true);
+    const { runner, asks, probe } = runnerOf(delivered, { answers });
+    const settled: unknown[] = [];
+    const settle = asks.settle.bind(asks);
+    asks.settle = (match, outcome): void => {
+        settled.push(outcome);
+        settle(match, outcome);
+    };
+    const taken = row();
+    await runner.take([taken]);
+    assert.deepEqual([answers.handoffAnswer(taken.id), asks.unfinished(), settled], [null, [], [{ kind: 'settled' }]]);
+    assert.deepEqual(probe.logs, [
+        `handoff ${taken.id}: answer write failed, retrying: Error: disk busy`,
+        `handoff ${taken.id}: answer write failed again: Error: disk busy`,
+        `handoff ${taken.id}: ask settled without its answer`,
+        `handoff ${taken.id}: delivered`,
+    ]);
+});
+
+test('a restart sweep that fails on one ask logs it, leaves that ask open and settles the others, and never throws', () => {
+    const [broken, healthy] = [handoffIdOf(ids.next()), handoffIdOf(ids.next())];
+    const { answers } = flakyAnswers((id) => id === broken);
+    const { runner, asks, probe } = runnerOf(delivered, { answers });
+    for (const [hex, id] of [['0123456789abcdef', broken], ['fedcba9876543210', healthy]] as const) {
+        asks.record({ exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(requestId(hex, 'legacy-length')), pane: SOURCE, at: NOW, ref: String(id) });
+    }
+    for (const ask of asks.unfinished()) {
+        assert.doesNotThrow(() => { runner.interrupted(ask); });
+    }
+    assert.deepEqual([asks.unfinished().map((ask) => ask.ref), answers.handoffAnswer(healthy)?.reason], [[String(broken)], 'interrupted']);
+    assert.equal(probe.logs.length, 1);
+    assert.match(probe.logs[0] ?? '', /^handoff ask [0-9a-f]+: restart sweep failed Error: disk busy$/);
 });

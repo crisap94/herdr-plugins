@@ -84,16 +84,20 @@ export class HandoffRunner {
     }
 
     interrupted(ask: Ask): void {
-        const id = parseHandoffId(ask.ref);
-        const { asks, answers, transaction } = this.deps;
-        transaction(() => {
-            if (id !== null) {
-                answers.answerHandoff(id, { outcome: 'failed', reason: 'interrupted' });
+        try {
+            const id = parseHandoffId(ask.ref);
+            const { asks, answers, transaction } = this.deps;
+            transaction(() => {
+                if (id !== null) {
+                    answers.answerHandoff(id, { outcome: 'failed', reason: 'interrupted' });
+                }
+                asks.settle({ exchange: ask.exchange, id: ask.id, pane: ask.pane }, { kind: 'interrupted' });
+            });
+            if (id === null) {
+                this.deps.log(`handoff ask ${ask.id}: interrupted without a handoff id; no answer written`);
             }
-            asks.settle({ exchange: ask.exchange, id: ask.id, pane: ask.pane }, { kind: 'interrupted' });
-        });
-        if (id === null) {
-            this.deps.log(`handoff ask ${ask.id}: interrupted without a handoff id; no answer written`);
+        } catch (error) {
+            this.deps.log(`handoff ask ${ask.id}: restart sweep failed ${failureCauseOf(error)}`);
         }
     }
 
@@ -136,17 +140,42 @@ export class HandoffRunner {
     }
 
     private finish(id: HandoffId, run: HandoffRun, key: AskKey | null): void {
-        const { asks, answers, transaction } = this.deps;
         const { outcome, rendered } = run;
-        transaction(() => {
-            answers.answerHandoff(id, verdictOf(outcome));
-            if (key !== null) {
-                asks.settle(key, settledOf(outcome));
-            }
-        });
+        this.record(id, verdictOf(outcome), key, settledOf(outcome));
         const reason = 'reason' in outcome ? ` ${outcome.reason}` : '';
         const text = rendered === null ? '' : ` bytes ${rendered.bytes} omitted ${rendered.omitted} withheld ${rendered.withheld}`;
         this.deps.log(`handoff ${id}: ${outcome.kind}${reason}${text}`);
+    }
+
+    private record(id: HandoffId, verdict: HandoffVerdict, key: AskKey | null, settled: AskOutcome): void {
+        const { asks, answers, transaction } = this.deps;
+        const write = (): void => {
+            transaction(() => {
+                answers.answerHandoff(id, verdict);
+                if (key !== null) {
+                    asks.settle(key, settled);
+                }
+            });
+        };
+        if (this.attempt(write, `handoff ${id}: answer write failed, retrying`)) {
+            return;
+        }
+        if (this.attempt(write, `handoff ${id}: answer write failed again`)) {
+            return;
+        }
+        if (key !== null && this.attempt(() => { transaction(() => { asks.settle(key, { kind: 'settled' }); }); }, `handoff ${id}: ask settle failed`)) {
+            this.deps.log(`handoff ${id}: ask settled without its answer`);
+        }
+    }
+
+    private attempt(work: () => void, note: string): boolean {
+        try {
+            work();
+            return true;
+        } catch (error) {
+            this.deps.log(`${note}: ${failureCauseOf(error)}`);
+            return false;
+        }
     }
 }
 

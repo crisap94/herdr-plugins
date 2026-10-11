@@ -44,7 +44,11 @@ export class HandoffAnswersRepository implements HandoffAnswers {
         if (!this.storable(verdict.outcome, verdict.reason)) {
             throw new UnstorableHandoffReason(`handoff ${verdict.outcome} ${verdict.reason ?? 'delivered'} is not storable`);
         }
-        writeTx(this.db, () => { this.insert.run(key, this.now(), verdict.outcome, verdict.reason); });
+        writeTx(this.db, () => {
+            if (one(this.read, key) === null) {
+                this.insert.run(key, this.now(), verdict.outcome, verdict.reason);
+            }
+        });
     }
 
     handoffAnswer(id: HandoffId): HandoffAnswerRow | null {

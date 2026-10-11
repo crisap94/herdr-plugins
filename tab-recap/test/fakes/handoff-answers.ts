@@ -16,10 +16,9 @@ export class MemoryHandoffAnswers implements HandoffAnswers {
         if (!this.storable(verdict.outcome, verdict.reason)) {
             throw new Error(`handoff ${verdict.outcome} ${verdict.reason ?? 'delivered'} is not storable`);
         }
-        if (this.rows.has(id)) {
-            throw new Error('a handoff has one answer');
+        if (!this.rows.has(id)) {
+            this.rows.set(id, { ...verdict, id, at: this.now() });
         }
-        this.rows.set(id, { ...verdict, id, at: this.now() });
     }
 
     handoffAnswer(id: HandoffId): HandoffAnswerRow | null {

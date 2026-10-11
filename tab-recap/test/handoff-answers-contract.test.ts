@@ -41,12 +41,14 @@ for (const { name, make } of subjects) {
         assert.equal(answers.handoffAnswer(id), null);
     });
 
-    test(`${name}: one answer per handoff id: a second answer is refused`, () => {
-        const answers = make({ now: 1 });
+    test(`${name}: one answer per handoff id: a second answer is a no-op and the first verdict stands`, () => {
+        const clock = { now: 1 };
+        const answers = make(clock);
         const id = handoffIdOf(ids.next());
         answers.answerHandoff(id, { outcome: 'failed', reason: 'interrupted' });
-        assert.throws(() => { answers.answerHandoff(id, { outcome: 'delivered', reason: null }); });
-        assert.equal(answers.handoffAnswer(id)?.outcome, 'failed');
+        clock.now = 9;
+        answers.answerHandoff(id, { outcome: 'delivered', reason: null });
+        assert.deepEqual(answers.handoffAnswer(id), { id, at: 1, outcome: 'failed', reason: 'interrupted' });
     });
 
     test(`${name}: prune removes answers older than the cut and keeps the rest`, () => {
