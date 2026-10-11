@@ -1,5 +1,6 @@
 import { HandoffFlow } from '#src/recap/application/handoff-flow.ts';
 import type { HandoffFlowDeps } from '#src/recap/application/handoff-flow.ts';
+import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { HandoffRender, HandoffRenderInput, HandoffRenderResult } from '#src/recap/application/handoff-render.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { HandoffSender } from '#src/recap/application/handoff-sender.ts';
@@ -121,6 +122,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         lanes,
         records: { readRecap: () => { if (world.recapThrows) { throw new Error('unreadable recap'); } return world.recap; } } satisfies Pick<RecapRecords, 'readRecap'>,
         ledger: new MemoryLedger().seed(...world.facts),
+        closed: { closures: { resolve: () => ({ kind: 'absent' }) }, ledger: new MemoryLedger().seed(...world.facts), runs: { runAt: () => null }, closedDays: () => DEFAULT_CLOSED_LANE_DAYS },
         target: { plans: handoffPlans, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },
         claims,
         refresh: async (tab) => {
@@ -148,7 +150,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
 }
 
 export function request(over: Partial<HandoffRequestRow> = {}): HandoffRequestRow {
-    return { id: handoffIdOf(ids.next()), at: NOW, tab: TAB, pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, ...over };
+    return { id: handoffIdOf(ids.next()), at: NOW, tab: TAB, pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, source: { kind: 'live' }, ...over };
 }
 
 export const bothFree = (claims: LaneClaims): boolean => !claims.has(String(SOURCE)) && !claims.has(String(TARGET));

@@ -12,7 +12,7 @@ import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { Retention } from '#src/ports/retention.ts';
-import type { ClosureReader, ClosureRecorder, ClosureSweep } from '#src/ports/closed-lanes.ts';
+import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
@@ -59,7 +59,7 @@ export interface Store {
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
     readonly retention: Retention;
-    readonly closedLanes: ClosureRecorder & ClosureReader & ClosureSweep;
+    readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
     checkpoint(): void;
     close(): void;
 }

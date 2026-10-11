@@ -39,6 +39,8 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { parseHandoffId, sessionId, tabId } from '#src/recap/domain/ids.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
+import { loadConfig } from './config.ts';
 import { awaitingNow } from './autocompact.ts';
 import { within } from './bounded.ts';
 import { refreshedWithin } from './refresh-status.ts';
@@ -223,6 +225,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
     const { store, fleet, transcripts, repos, claims, recaps, board, pause, log } = parts;
     const flow = new HandoffFlow({
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
+        closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => loadConfig().closedLaneDays },
         target: { plans: handoffPlans, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
         claims, refresh: (tab: string, lanes: readonly Lane[]): Promise<RefreshStatus> => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
         render: renderHandoff({

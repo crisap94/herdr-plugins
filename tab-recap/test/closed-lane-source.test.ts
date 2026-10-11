@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { factsAsOf, resolveClosedLane } from '#src/recap/application/closed-lane-source.ts';
+import type { ClosedLaneResolution } from '#src/recap/application/closed-lane-source.ts';
 import type { ClosedSourceDeps } from '#src/recap/application/closed-lane-source.ts';
 import { resolveSource } from '#src/recap/application/handoff-source.ts';
 import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
@@ -38,10 +39,13 @@ function depsOf(read: ClosedLaneRead, parts: { readonly ledger?: Pick<Ledger, 'a
     return {
         closures: readOf(read),
         ledger: parts.ledger ?? new MemoryLedger(),
+        runs: { runAt: () => null },
         closedDays: parts.closedDays ?? FOURTEEN,
         now: parts.now ?? NOW,
     };
 }
+
+const withoutView = (resolution: ClosedLaneResolution): object => (resolution.kind === 'found' ? { kind: resolution.kind, task: resolution.task, facts: resolution.facts } : resolution);
 
 const F_OPEN = fact('f1', 'goal', 'open before the close', CLOSED - 5000, { task: T1 });
 const F_LATER = fact('f2', 'now', 'closed after the close', CLOSED - 1000, { task: T1, state: 'closed', closedAt: CLOSED + 1000, closedWhy: 'done' });
@@ -52,7 +56,7 @@ const LEDGER_FACTS: readonly Fact[] = [F_OPEN, F_LATER, F_EDGE, F_STALE, F_FUTUR
 
 test('a closure in the window resolves to its task with the facts as of the close', () => {
     const ledger = new MemoryLedger().seed(...LEDGER_FACTS);
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger })), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
+    assert.deepEqual(withoutView(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
 });
 
 test('the two-hour recently-closed window is inclusive at its start and drops one millisecond beyond', () => {
@@ -78,7 +82,7 @@ test('a row older than the window is expired', () => {
 
 test('a row exactly at the window start is still inside it', () => {
     const edge = NOW - 14 * DAY;
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(edge), { ledger: new MemoryLedger() })), { kind: 'found', task: T1, facts: [] });
+    assert.deepEqual(withoutView(resolveClosedLane(IDENTITY, depsOf(rowOf(edge), { ledger: new MemoryLedger() }))), { kind: 'found', task: T1, facts: [] });
 });
 
 test('days = 0 answers never-seen even for a stored row', () => {
@@ -98,7 +102,7 @@ test('after a prune an expired closure becomes never-seen', () => {
     const store = new MemoryClosedLanes(FOURTEEN);
     store.record({ tab: TAB, pane: PANE, agent: AGENT, since: null, cwd: null, closedAt: CLOSED });
     const later = instant(CLOSED + 15 * DAY);
-    const deps: ClosedSourceDeps = { closures: store, ledger: new MemoryLedger(), closedDays: FOURTEEN, now: later };
+    const deps: ClosedSourceDeps = { closures: store, ledger: new MemoryLedger(), runs: { runAt: () => null }, closedDays: FOURTEEN, now: later };
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'expired', closedAt: CLOSED });
     assert.equal(store.pruneTab(TAB, later), 1);
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'never-seen' });
@@ -106,7 +110,7 @@ test('after a prune an expired closure becomes never-seen', () => {
 
 test('the closed registry entry answers found, source-unavailable or unknown', () => {
     const ledger = new MemoryLedger().seed(...LEDGER_FACTS);
-    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger })), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
+    assert.deepEqual(withoutView(resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(NOW - 14 * DAY - 1))), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'store-unreadable' });
@@ -116,7 +120,7 @@ test('a closure past the window is expired, and once the sweep has pruned it the
     let stored: ClosedLaneRead = rowOf(CLOSED);
     const closures: Pick<ClosureReader, 'resolve'> = { resolve: (): ClosedLaneRead => stored };
     const later = instant(CLOSED + 15 * DAY);
-    const deps: ClosedSourceDeps = { closures, ledger: new MemoryLedger(), closedDays: FOURTEEN, now: later };
+    const deps: ClosedSourceDeps = { closures, ledger: new MemoryLedger(), runs: { runAt: () => null }, closedDays: FOURTEEN, now: later };
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'expired', closedAt: CLOSED });
     stored = { kind: 'absent' };
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'never-seen' });

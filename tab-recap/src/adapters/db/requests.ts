@@ -2,7 +2,9 @@ import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
 import type { CompactionQueue, CompactRequest, HandoffRequestRow, NewHandoffRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
+import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { originOf } from '#src/recap/domain/origin.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { handoffBytesOf, handoffIdOf } from './handoff-ids.ts';
 import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
@@ -20,11 +22,19 @@ function compactionOf(row: Row): CompactRequest | null {
     return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note'), origin: originOf(text(row, 'origin')), ...(answer === null ? {} : { answer }) };
 }
 
+function sourceOf(row: Row): HandoffSource {
+    return row.closed_at === null ? { kind: 'live' } : { kind: 'closed', closedAt: instant(whole(row, 'closed_at')) };
+}
+
+function closedAtOf(source: HandoffSource): number | null {
+    return source.kind === 'live' ? null : source.closedAt;
+}
+
 function handoffRowOf(row: Row): HandoffRequestRow | null {
     const tab = text(row, 'target');
     const pane = maybeText(row, 'pane');
     const toPane = maybeText(row, 'to_pane');
-    return tab === '' || pane === null || toPane === null ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note') };
+    return tab === '' || pane === null || toPane === null ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: sourceOf(row) };
 }
 
 function wordOf(hidden: boolean | 'toggle'): string {
@@ -62,9 +72,9 @@ export class RequestsRepository implements Requests, CompactionQueue {
         this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
         this.takeAnsweredRows = db.prepare("DELETE FROM request WHERE kind = 'compact' AND answer IS NOT NULL RETURNING id, pane, answer");
         this.queuedCompact = db.prepare("SELECT 1 FROM request WHERE kind = 'compact' AND target = ? AND (pane = ? OR pane IS NULL) LIMIT 1");
-        this.insertHandoff = db.prepare("INSERT INTO request (id, at, kind, target, pane, to_pane, note, refresh_first) VALUES (?, ?, 'handoff', ?, ?, ?, ?, ?)");
+        this.insertHandoff = db.prepare("INSERT INTO request (id, at, kind, target, pane, to_pane, note, refresh_first, closed_at) VALUES (?, ?, 'handoff', ?, ?, ?, ?, ?, ?)");
         this.withdrawHandoffRow = db.prepare("DELETE FROM request WHERE kind = 'handoff' AND id = ?");
-        this.takeHandoffRows = db.prepare("DELETE FROM request WHERE kind = 'handoff' RETURNING id, at, target, pane, to_pane, note, refresh_first");
+        this.takeHandoffRows = db.prepare("DELETE FROM request WHERE kind = 'handoff' RETURNING id, at, target, pane, to_pane, note, refresh_first, closed_at");
     }
 
     compactQueued(tab: string, pane: string): boolean {
@@ -89,7 +99,7 @@ export class RequestsRepository implements Requests, CompactionQueue {
 
     requestHandoff(request: NewHandoffRequest): HandoffId {
         const id = ids.next();
-        this.insertHandoff.run(id, this.now(), request.tab, request.pane, request.toPane, request.note, request.refreshFirst ? 1 : 0);
+        this.insertHandoff.run(id, this.now(), request.tab, request.pane, request.toPane, request.note, request.refreshFirst ? 1 : 0, closedAtOf(request.source));
         return handoffIdOf(id);
     }
 

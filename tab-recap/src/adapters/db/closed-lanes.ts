@@ -1,9 +1,12 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureSweep } from '#src/ports/closed-lanes.ts';
+import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
+import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
+import type { TaskId } from '#src/recap/domain/fact.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
+import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import { cutoffOf } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -23,6 +26,10 @@ interface Statements {
 }
 
 const ROW = 'SELECT c.pane, c.closed_at, c.agent, c.cwd, c.task_name, k.key FROM closed_lane c LEFT JOIN task k ON k.id = c.task_id';
+
+const LAST_RUN_AT = 'SELECT r.at AS at, r.cause AS cause FROM run r JOIN run_task rt ON rt.run_id = r.id JOIN task k ON k.id = rt.task_id WHERE k.tab_id = ? AND k.key = ? AND r.at <= ? ORDER BY r.at DESC, r.id DESC LIMIT 1';
+
+const causeOf = (raw: string): LastRun['cause'] | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
 
 const ASSOCIATE = `WITH hit AS (
   SELECT l.task_id, rt.name AS name FROM run_task_lane l
@@ -57,14 +64,16 @@ const recordOf = (row: Row, tab: TabId): ClosedLaneRecord => ({
     association: associationOf(row, tab),
 });
 
-export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, ClosureSweep {
+export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, ClosureRuns, ClosureSweep {
     private readonly db: DatabaseSync;
     private readonly days: ClosedLaneDays;
     private readonly statements: Statements | null;
+    private readonly lastRunAt: StatementSync;
 
     constructor(db: DatabaseSync, days: ClosedLaneDays) {
         this.db = db;
         this.days = days;
+        this.lastRunAt = db.prepare(LAST_RUN_AT);
         const present = one(db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'closed_lane'")) !== null;
         this.statements = present ? {
             insert: db.prepare(ASSOCIATE),
@@ -98,6 +107,12 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
         } catch (error) {
             return unreadable(error);
         }
+    }
+
+    runAt(task: TaskId, at: Instant): LastRun | null {
+        const row = one(this.lastRunAt, task.tab, task.key, at);
+        const cause = row === null ? null : causeOf(text(row, 'cause'));
+        return row === null || cause === null ? null : { at: whole(row, 'at'), cause };
     }
 
     listOf(tab: TabId, now: Instant): ClosedLaneList {

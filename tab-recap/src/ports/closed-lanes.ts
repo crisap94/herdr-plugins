@@ -2,6 +2,7 @@ import type { TaskId } from '#src/recap/domain/fact.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import type { LastRun } from './recap-records.ts';
 import type { Unknown } from './unknowable.ts';
 
 export interface ClosureAssociation {
@@ -29,6 +30,10 @@ export interface ClosureRecorder {
 export interface ClosureReader {
     resolve(identity: ClosedLaneIdentity): ClosedLaneRead;
     listOf(tab: TabId, now: Instant): ClosedLaneList;
+}
+
+export interface ClosureRuns {
+    runAt(task: TaskId, at: Instant): LastRun | null;
 }
 
 export interface ClosureSweep {

@@ -1,6 +1,8 @@
 import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { HandoffRequester } from '#src/ports/requests.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
+import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { handoffOutcomeOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { tabId, type HandoffId, type PaneId } from '#src/recap/domain/ids.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from './handoff-limits.ts';
@@ -10,6 +12,7 @@ export interface DeliverRequest {
     readonly to: PaneId;
     readonly note: string | null;
     readonly refresh: boolean;
+    readonly closed: ClosedLaneIdentity | null;
 }
 
 export interface Pacing {
@@ -59,8 +62,12 @@ async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pa
     }
 }
 
+function sourceOf(closed: ClosedLaneIdentity | null): HandoffSource {
+    return closed === null ? { kind: 'live' } : { kind: 'closed', closedAt: closed.closedAt };
+}
+
 export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps): Promise<HandoffOutcome> {
-    if (request.from === request.to) {
+    if (request.closed === null && request.from === request.to) {
         return refused('source-equals-target');
     }
     const daemon = deps.daemon();
@@ -72,11 +79,11 @@ export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps)
     }
     const store = deps.openStore();
     try {
-        const tab = store.views.tabOf(request.from);
+        const tab = request.closed === null ? store.views.tabOf(request.from) : String(request.closed.tab);
         if (tab === null) {
             return refused('source-unavailable');
         }
-        const id = store.requests.requestHandoff({ tab: tabId(tab), pane: request.from, toPane: request.to, note: request.note, refreshFirst: request.refresh });
+        const id = store.requests.requestHandoff({ tab: tabId(tab), pane: request.from, toPane: request.to, note: request.note, refreshFirst: request.refresh, source: sourceOf(request.closed) });
         const answer = await awaitAnswer(store.handoffs, id, deps.pacing, request.refresh ? HANDOFF_WAIT_REFRESH_MS : HANDOFF_WAIT_MS);
         if (answer !== null) {
             return outcomeOf(answer);

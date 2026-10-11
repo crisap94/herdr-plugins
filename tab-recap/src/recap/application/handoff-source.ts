@@ -6,7 +6,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
-import type { ClosedSourceDeps } from './closed-lane-source.ts';
+import type { ClosedSourceDeps, ClosedView } from './closed-lane-source.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;
@@ -23,7 +23,7 @@ export interface SourceDeps {
 }
 
 export type SourceResolution =
-    | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[] }
+    | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view?: ClosedView }
     | { readonly kind: 'unlisted' }
     | { readonly kind: 'source-unavailable' }
     | { readonly kind: 'task-ambiguous' }
@@ -68,7 +68,7 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps) => {
     const resolution = resolveClosedLane(identity, deps);
     switch (resolution.kind) {
         case 'found':
-            return resolution;
+            return { kind: 'found', task: resolution.task, facts: resolution.facts, view: resolution.view };
         case 'unknown':
             return { kind: 'unknown', why: resolution.reason };
         default:

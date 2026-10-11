@@ -9,8 +9,8 @@ import { paneId } from '#src/recap/domain/ids.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
-const DELIVER: HandoffArguments = { mode: 'deliver', from: FROM, to: TO, note: null, refresh: false };
-const PRINT: HandoffArguments = { mode: 'print', from: FROM, to: null, note: 'keep the tests' };
+const DELIVER: HandoffArguments = { mode: 'deliver', from: FROM, to: TO, note: null, refresh: false, closed: null };
+const PRINT: HandoffArguments = { mode: 'print', from: FROM, to: null, note: 'keep the tests', closed: null };
 
 interface Recorded {
     readonly value: HandoffWiring;
