@@ -16,7 +16,7 @@ The handoff is English, first person, operator-voiced markdown, delivered as one
 - Modify `tab-recap/cli` to add the command, flags, usage, and exit behavior.
 - Modify `tab-recap/harness-adapters` to declare the handoff plan and its conformance expectations.
 - Modify `tab-recap/agent-compaction` so that a lane holds one claim, compaction or handoff, and a compaction request for a handoff-held lane is answered `failed-lane-busy`.
-- Modify `tab-recap/state-migrations` with the handoff migration (016, after the token protocol's 015): the `handoff` request kind, its target pane and refresh columns, and the `handoff_answer` table.
+- Modify `tab-recap/state-migrations` with the handoff migration (017, after the token protocol's 015 and the queued compaction's 016): the `handoff` request kind, its target pane and refresh columns, and the `handoff_answer` table.
 - Modify `tab-recap/lane-tokens` to declare the compaction answer stage `failed-lane-busy`.
 
 ## Depends on
