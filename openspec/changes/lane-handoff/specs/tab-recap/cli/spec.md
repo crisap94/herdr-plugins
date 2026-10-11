@@ -29,7 +29,7 @@ The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--pri
 #### Scenario: Refresh without print
 
 - **WHEN** the operator invokes `handoff --from pane-a --to pane-b --refresh`
-- **THEN** the CLI SHALL write one handoff request row marked as refreshing and wait for its answer at most 150 seconds
+- **THEN** the CLI SHALL write one handoff request row marked as refreshing and wait for its answer at most 200 seconds
 
 #### Scenario: A handoff option is missing or repeated
 
