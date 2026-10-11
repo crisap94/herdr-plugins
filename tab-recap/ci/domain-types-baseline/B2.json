@@ -264,7 +264,7 @@
   "src/recap/domain/lane.ts": {
     "parameter": 1,
     "return": 1,
-    "property": 10
+    "property": 9
   },
   "src/recap/domain/layout.ts": {
     "parameter": 2,

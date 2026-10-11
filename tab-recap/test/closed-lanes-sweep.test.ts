@@ -7,6 +7,8 @@ import type { Removed, Retention } from '#src/ports/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { countFrom } from './fakes/closed-values.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 const DAY = 86_400_000;
@@ -38,8 +40,8 @@ function fakeClosures(options: { readonly protectedNow?: readonly TabId[]; reado
         closures: {
             protectedTabs: (_now: Instant): readonly TabId[] => options.protectedNow ?? [],
             expiredTabs: (_now: Instant): readonly TabId[] => options.expired ?? [],
-            countOf: (tab: TabId): number => options.counts?.[tab] ?? 0,
-            pruneTab: (tab: TabId, _now: Instant): number => { pruned.push(tab); return 1; },
+            countOf: (tab: TabId): Count => countFrom(options.counts?.[tab] ?? 0),
+            pruneTab: (tab: TabId, _now: Instant): Count => { pruned.push(tab); return countFrom(1); },
         },
     };
 }

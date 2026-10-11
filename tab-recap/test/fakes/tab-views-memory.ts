@@ -1,6 +1,7 @@
 import type { LiveLanes, LiveLanesRead, TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { directoryOf } from './closed-values.ts';
 
 export class MemoryTabViews implements Pick<TabViews, 'writeTab' | 'tabOf'>, LiveLanes {
     private readonly tabs = new Map<string, TabView>();
@@ -15,7 +16,7 @@ export class MemoryTabViews implements Pick<TabViews, 'writeTab' | 'tabOf'>, Liv
 
     liveLanes(): LiveLanesRead {
         const lanes: RestoredLane[] = [...this.tabs.keys()].toSorted().flatMap((tab) => (this.tabs.get(tab)?.lanes ?? []).map((lane) => ({
-            tab: tabId(tab), pane: paneId(lane.pane), agent: agentKind(lane.agent), since: lane.since ?? null, cwd: lane.cwd,
+            tab: tabId(tab), pane: paneId(lane.pane), agent: agentKind(lane.agent), since: lane.since ?? null, cwd: lane.cwd === null || lane.cwd === undefined ? null : directoryOf(lane.cwd),
         })));
         return { kind: 'read', lanes };
     }

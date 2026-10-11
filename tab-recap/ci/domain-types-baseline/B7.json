@@ -40,9 +40,6 @@
     "return": 2,
     "container": 3
   },
-  "src/daemon/dispatch-parts.ts": {
-    "parameter": 2
-  },
   "src/daemon/handoff.ts": {
     "parameter": 11,
     "return": 5,
