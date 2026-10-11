@@ -8,6 +8,8 @@ import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { compactFooter, compactView } from '#src/recap/render/compact.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 
@@ -37,7 +39,7 @@ test('a note: printable keys, Backspace, Ctrl-U, pasted text on one line, trimme
 });
 
 test('the popup names the agent and shows the note with a cursor, in both languages; the footer fits', () => {
-    assert.deepEqual(compactView({ note: 'keep x' }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
+    assert.deepEqual(compactView({ note: must(parseText('keep x')) }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
     assert.match(compactView(EMPTY_NOTE, es, 'codex', 40, plain).join('\n'), /Compactar codex[\s\S]*¿Algo que deba conservar\?/);
     for (const m of [en, es]) {
         assert.ok(visibleLength(compactFooter(m, 40, plain)) <= 40);

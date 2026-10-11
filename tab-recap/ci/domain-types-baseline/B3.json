@@ -50,8 +50,7 @@
     "property": 5
   },
   "src/recap/application/compact-keys.ts": {
-    "parameter": 3,
-    "property": 4
+    "parameter": 3
   },
   "src/recap/application/compact-requests.ts": {
     "parameter": 14,
