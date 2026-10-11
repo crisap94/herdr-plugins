@@ -13,7 +13,7 @@ export class DeliveryMark {
         return true;
     }
 
-    type(): boolean {
+    startTyping(): boolean {
         if (this.phase !== 'claimed') {
             return false;
         }

@@ -50,7 +50,7 @@ test('parseHandoffId yields the id for a handoff TypeID and null for any other v
     const id = 'hnd_01j3tt8z1efcd9tfr14d2pf2db';
     assert.equal(parseHandoffId(id), id);
     for (const bad of [null, undefined, 7, { id }, 'hnd_01j3tt8z1efcd9tfr14d2pf2d', 'hnd_81j3tt8z1efcd9tfr14d2pf2db']) {
-        assert.equal(parseHandoffId(bad), null, String(bad));
+        assert.equal(parseHandoffId(bad), null);
     }
 });
 

@@ -179,29 +179,27 @@ test('a flow that throws is logged once with the request id and the error name, 
     assert.deepEqual(answers.handoffAnswer(taken.id)?.outcome, 'failed');
 });
 
-test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', (t) => {
+test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark = new DeliveryMark()): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryMark): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
-    return running.then(() => {
-        assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'expired' });
-        assert.deepEqual(probe.released, [String(taken.pane), String(taken.toPane)]);
-        assert.deepEqual(probe.logs, [`handoff ${taken.id}: failed expired`]);
-    });
+    await running;
+    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'expired' });
+    assert.deepEqual(probe.released, [String(taken.pane), String(taken.toPane)]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: failed expired`]);
 });
 
-test('a flow that never finishes after typing is answered unconfirmed at the bound, and its lanes stay claimed until the flow ends', (t) => {
+test('a flow that never finishes after typing is answered unconfirmed at the bound, and its lanes stay claimed until the flow ends', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark = new DeliveryMark()): Promise<HandoffRun> => { mark.claim(); mark.type(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryMark): Promise<HandoffRun> => { mark.claim(); mark.startTyping(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
-    return running.then(() => {
-        assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'unconfirmed' });
-        assert.deepEqual(probe.released, []);
-    });
+    await running;
+    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'unconfirmed' });
+    assert.deepEqual(probe.released, []);
 });
 
 function flakyAnswers(failing: (id: HandoffId, times: number) => boolean): { readonly answers: HandoffAnswers; readonly inner: MemoryHandoffAnswers } {

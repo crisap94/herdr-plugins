@@ -154,7 +154,7 @@ export class HandoffFlow {
         if (held.kind !== 'ready') {
             return { kind: 'refused', reason: 'status-not-ready' };
         }
-        if (!mark.type()) {
+        if (!mark.startTyping()) {
             return { kind: 'failed', reason: 'expired' };
         }
         return this.deps.sender.send(held, text);

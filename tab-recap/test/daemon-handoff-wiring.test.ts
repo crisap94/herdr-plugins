@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from '#src/daemon/handoff.ts';
-import type { HandoffRunner } from '#src/daemon/handoff.ts';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
@@ -18,7 +17,7 @@ test('the poll hands the taken rows to the runner, and a rejected take is logged
     const seen: (readonly HandoffRequestRow[])[] = [];
     const logs: string[] = [];
     pollHandoffs({
-        runner: { take: (taken: readonly HandoffRequestRow[]): Promise<void> => { seen.push(taken); return Promise.reject(new Error('store locked')); } } as Pick<HandoffRunner, 'take'>,
+        runner: { take: (taken: readonly HandoffRequestRow[]): Promise<void> => { seen.push(taken); return Promise.reject(new Error('store locked')); } },
         requests: { takeHandoffs: (): readonly HandoffRequestRow[] => rows },
         log: (line: string): void => { logs.push(line); },
     });
