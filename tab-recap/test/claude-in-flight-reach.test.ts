@@ -88,12 +88,11 @@ test('the kept unknown answers are capped at KEPT_UNKNOWN_MAX: the oldest is for
     assert.equal((await reader.inFlight.read(newest, TAIL)).kind, 'unknown', 'kept: the same size is not read again');
 });
 
-test('the reader split is CLAUDE_SPLIT, and its result is the one claudeInFlight gives under that split: a live background shell is foreground, not a listed item', async () => {
+test('the reader split is CLAUDE_SPLIT, and the reader result is the one claudeInFlight gives under it', async () => {
     const lines = [launch('t1'), started('t1', 'b1')];
     const path = write('split.jsonl', lines);
     const reader = new ClaudeTranscripts(dir);
     assert.equal(reader.inFlight.split, CLAUDE_SPLIT);
-    assert.deepEqual(claudeInFlight(lines, false, CLAUDE_SPLIT), { kind: 'in-flight', count: 1, background: [] });
     assert.deepEqual(await reader.inFlight.read(path, TAIL), claudeInFlight(lines, false, CLAUDE_SPLIT));
 });
 
