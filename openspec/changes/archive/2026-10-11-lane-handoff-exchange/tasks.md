@@ -14,7 +14,7 @@ typed values; one serializer per token. Build after `token-protocol`, `lane-hand
 
 - [x] (!129) 2.1 `src/protocol/exchanges/handoff.ts`: id (token-safe), target (pane identifier, one colon), optional `refresh`,
   stages and terminal families, the refusal reasons of the exchange (`not-offered`, `bad-request`, `not-a-lane`,
-  `target-elsewhere`), events, opt-in setting, version 1, and `deadline-ms` declared as 150 000.
+  `target-elsewhere`), events, opt-in setting, version 1, and `deadline-ms` declared as 200 000.
   Verify: round-trip and refused-value vectors; the longest name is 32 characters and the longest answer fits 80.
 - [x] (!129) 2.2 Register it in `EXCHANGES`; the capability value lists `handoff1` only when enabled. Verify: the registry build
   passes with 9 own names per pane; a capability test with the setting on and off.
