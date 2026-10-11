@@ -52,7 +52,7 @@ test:floor:
     - bash ci/test.sh
 
 # A Phase B lane of the domain-type-gates change edits only the files ci/lanes.json gives it; the lane is
-# named by the branch (lane/B3-something). Tests (test/**) are open to every lane; with the label lane-scope::adapts (set by the lead after reading the merge request) a lane may also adapt the source of another lane mechanically.
+# named by the branch (lane/B3-something). test/** and the label lane-scope::adapts are the two openings.
 lane-scope:
   extends: .tab-recap
   stage: check
