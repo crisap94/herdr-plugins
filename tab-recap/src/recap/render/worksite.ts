@@ -8,25 +8,29 @@ const encoder = new TextEncoder();
 
 const bytesOf = (text: string): number => encoder.encode(text).byteLength;
 
+const FORMAT_CHARACTERS = /\p{Cf}/gu;
+
+const worksiteText = (value: string): string => plainText(value.replaceAll(FORMAT_CHARACTERS, ''));
+
 function linesOf(facts: WorksiteFacts): string {
-    const lines = ['## Worksite', `- directory: ${plainText(facts.directory)}`];
+    const lines = ['## Worksite', `- directory: ${worksiteText(facts.directory)}`];
     if (facts.repository !== null) {
-        const branch = facts.repository.branch === null ? '' : ` (branch ${plainText(facts.repository.branch)})`;
-        lines.push(`- repository: ${plainText(facts.repository.root)}${branch}`);
+        const branch = facts.repository.branch === null ? '' : ` (branch ${worksiteText(facts.repository.branch)})`;
+        lines.push(`- repository: ${worksiteText(facts.repository.root)}${branch}`);
     }
     if (facts.lastCommit !== null) {
-        lines.push(`- last commit: ${plainText(facts.lastCommit.hash)} ${plainText(facts.lastCommit.subject)}`);
+        lines.push(`- last commit: ${worksiteText(facts.lastCommit.hash)} ${worksiteText(facts.lastCommit.subject)}`);
     }
     if (facts.uncommitted !== null) {
         lines.push(`- ${facts.uncommitted.count} uncommitted paths`);
-        lines.push(...facts.uncommitted.paths.map((path) => `  - ${plainText(path)}`));
+        lines.push(...facts.uncommitted.paths.map((path) => `  - ${worksiteText(path)}`));
     }
     if (facts.edited.length > 0) {
         lines.push('- most edited files:');
-        lines.push(...facts.edited.map((file) => `  - ${plainText(file.path)} (${file.edits} edits)`));
+        lines.push(...facts.edited.map((file) => `  - ${worksiteText(file.path)} (${file.edits} edits)`));
     }
     if (facts.tokens.length > 0) {
-        lines.push(`- tokens: ${facts.tokens.map(plainText).join(', ')}`);
+        lines.push(`- tokens: ${facts.tokens.map(worksiteText).join(', ')}`);
     }
     return lines.join('\n');
 }

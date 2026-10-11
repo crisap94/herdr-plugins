@@ -118,6 +118,21 @@ test('a control character or a line break in a value cannot forge a heading', ()
     assert.match(text, /  - x\.ts ## Forged/);
 });
 
+test('invisible format characters in a value are removed: bidi overrides, zero-width characters and tag characters', () => {
+    const hostile: WorksiteFacts = {
+        ...full,
+        lastCommit: { hash: 'a1b2c3d', subject: 'fix‮ the​ rows' },
+        uncommitted: { count: 1, paths: ['src/\u{E0041}a.ts⁦'] },
+        edited: [],
+        tokens: ['note-‍tool'],
+    };
+    const text = worksiteTextOf(known(hostile), LIMIT);
+    assert.equal(/\p{Cf}/u.test(text), false);
+    assert.match(text, /^- last commit: a1b2c3d fix the rows$/mu);
+    assert.match(text, /^  - src\/a\.ts$/mu);
+    assert.match(text, /^- tokens: note-tool$/mu);
+});
+
 test('the labels and the fixed words of a worksite section contain no forbidden word', () => {
     const neutral: WorksiteFacts = {
         directory: '/srv/app', repository: { root: '/srv/app', branch: 'main' }, lastCommit: { hash: 'a1b2c3d', subject: 'fix' },
