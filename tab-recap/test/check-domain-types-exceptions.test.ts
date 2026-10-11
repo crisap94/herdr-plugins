@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyEntries, parseEntries, parseEntry, type Entry } from '../bin/domain-exceptions.ts';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { applyEntries, parseEntries, parseEntry, releasedMigrations, type Entry } from '../bin/domain-exceptions.ts';
 import { categoryIn, compareFindings, type Finding } from '../bin/domain-findings.ts';
 
 const finding = (overrides: Partial<Finding>): Finding => ({
@@ -88,4 +92,25 @@ test('a callback exception never covers an assertion', () => {
     const entry: Entry = { class: 'callback', file: 'src/domain/value.ts', function: 'echo', parameter: null, reason: 'a Node callback' };
     const cast = finding({ category: 'assertion', parameter: null, site: 'type assertion' });
     assert.deepEqual(applyEntries([cast], [entry], []).findings, [cast]);
+});
+
+test('the released migrations are the files of the latest release tag, not the registry and not newer files', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'released-'));
+    try {
+        const git = (...args: readonly string[]): string => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.test', ...args], { cwd: dir, encoding: 'utf8' });
+        git('init', '-q', '-b', 'main');
+        mkdirSync(join(dir, 'src/adapters/db/schema'), { recursive: true });
+        writeFileSync(join(dir, 'src/adapters/db/schema/001-initial.ts'), 'export const a = 1;\n');
+        writeFileSync(join(dir, 'src/adapters/db/schema/index.ts'), 'export const b = 1;\n');
+        git('add', '.');
+        git('commit', '-q', '-m', 'one');
+        assert.deepEqual(releasedMigrations(dir), { kind: 'ok', value: [] });
+        git('tag', 'tab-recap-v1.0.0');
+        writeFileSync(join(dir, 'src/adapters/db/schema/002-later.ts'), 'export const c = 1;\n');
+        git('add', '.');
+        git('commit', '-q', '-m', 'two');
+        assert.deepEqual(releasedMigrations(dir), { kind: 'ok', value: ['src/adapters/db/schema/001-initial.ts'] });
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });

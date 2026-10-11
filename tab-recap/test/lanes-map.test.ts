@@ -24,8 +24,8 @@ function tampered(change: (lanes: Record<string, string[]>) => void): string {
     return path;
 }
 
-function lane(name: string, changed: readonly string[]): ReturnType<typeof spawnSync> {
-    return spawnSync('node', ['ci/check-lane.ts', name], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CHANGED_FILES: changed.join('\n') } });
+function lane(name: string, changed: readonly string[], extra: Record<string, string> = {}): ReturnType<typeof spawnSync> {
+    return spawnSync('node', ['ci/check-lane.ts', name], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CHANGED_FILES: changed.join('\n'), ...extra } });
 }
 
 test('the lane map lists every file of src and test exactly once', () => {
@@ -73,4 +73,22 @@ test('a lane merge request cannot edit another lane baseline or legacy file', ()
 test('an unknown lane is not covered', () => {
     const result = lane('B9', []);
     assert.equal(result.status, 3);
+});
+
+test('a lane that adds a file lists it under its own key of the lane map and passes', () => {
+    const head = tampered((lanes) => { lanes['B2']?.push('src/recap/domain/zz-new.ts'); });
+    const result = lane('B2', ['tab-recap/src/recap/domain/zz-new.ts', 'tab-recap/ci/lanes.json'], { LANES_FILE: head, LANES_BASE_FILE: join(ROOT, 'ci/lanes.json') });
+    assert.equal(result.status, 0, String(result.stderr));
+});
+
+test('a lane that changes the key of another lane in the lane map fails and names it', () => {
+    const head = tampered((lanes) => { lanes['B3']?.push('src/recap/application/zz-new.ts'); });
+    const result = lane('B2', ['tab-recap/ci/lanes.json'], { LANES_FILE: head, LANES_BASE_FILE: join(ROOT, 'ci/lanes.json') });
+    assert.equal(result.status, 1);
+    assert.match(String(result.stderr), /changes the lanes B3/u);
+});
+
+test('a lane cannot edit the pipeline file', () => {
+    const result = lane('B2', ['.gitlab-ci.yml']);
+    assert.equal(result.status, 1);
 });

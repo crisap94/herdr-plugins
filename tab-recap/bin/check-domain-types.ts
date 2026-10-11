@@ -9,7 +9,7 @@ import { runReport } from './domain-ratchet.ts';
 import { projectOf, settle, type Report } from './domain-report.ts';
 
 const PARSER_NAME = /^parse([A-Z]\w*)$/;
-const PRIMITIVE = ts.TypeFlags.String | ts.TypeFlags.Number | ts.TypeFlags.BigInt | ts.TypeFlags.Boolean | ts.TypeFlags.ESSymbol | ts.TypeFlags.Any | ts.TypeFlags.NonPrimitive;
+const PRIMITIVE = ts.TypeFlags.String | ts.TypeFlags.TemplateLiteral | ts.TypeFlags.StringMapping | ts.TypeFlags.Number | ts.TypeFlags.BigInt | ts.TypeFlags.Boolean | ts.TypeFlags.ESSymbol | ts.TypeFlags.Any | ts.TypeFlags.NonPrimitive;
 
 type Holder = ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeLiteralNode;
 type Place = Omit<Finding, 'reason'>;

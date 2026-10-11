@@ -12,7 +12,9 @@ files:
   - "**/bin/**"
   - "**/probes/recap-brand-in-own-parser/**"
 rule:
-  pattern: brand($$$ARGS)
+  any:
+    - pattern: brand($$$ARGS)
+    - pattern: brand<$$$TYPES>($$$ARGS)
   not:
     any:
       - inside:

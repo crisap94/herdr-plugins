@@ -186,3 +186,12 @@ test('a change that introduces the baseline folder passes the guard', () => {
     writeFileSync(join(dir, 'ci/domain-types-baseline/B1.json'), JSON.stringify({ [FILE]: { parameter: 9 } }));
     assert.equal(guarded(dir).status, 0);
 });
+
+test('a finding in a legacy file is counted and ratcheted under the legacy category', () => {
+    const dir = project('legacy', { 'src/domain/legacy.ts': VALUE });
+    const json = check(dir, '--json');
+    const parsed: { readonly counts: Record<string, Record<string, number>> } = JSON.parse(String(json.stdout));
+    assert.deepEqual(parsed.counts['src/domain/legacy.ts'], { legacy: 2 });
+    check(dir, '--write-baseline', join(dir, 'baseline'));
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, 'baseline/B1.json'), 'utf8')), { 'src/domain/legacy.ts': { legacy: 2 } });
+});
