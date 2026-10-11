@@ -136,4 +136,70 @@ expect fail "a release that already exists" asked 200
 expect pass "no release yet" asked 404
 expect fail "an API that does not answer properly" asked 500
 
+# --- release-publish and tag-release: a bare remote, and a curl that records what it was asked and answers from FAKE_*
+cat > "$scratch/curl-fake" <<'SH'
+#!/usr/bin/env bash
+out=""; method=GET; url=""; data=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        --request) method="$2"; shift 2 ;;
+        -w | -H) shift 2 ;;
+        --data-urlencode) data="$data $2"; shift 2 ;;
+        -s) shift ;;
+        *) url="$1"; shift ;;
+    esac
+done
+echo "$method $url$data" >> "$CURL_LOG"
+case "$method $url" in
+    "GET "*merge_requests*) printf '%s' "${FAKE_LIST:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
+    "GET "*repository/tags/*) echo '{}' > "$out"; echo "${FAKE_TAG_CODE:-404}" ;;
+    "POST "*merge_requests*) echo '{}' > "$out"; echo "${FAKE_MR_CODE:-201}" ;;
+    "POST "*repository/tags*) echo '{}' > "$out"; echo "${FAKE_TAG_POST_CODE:-201}" ;;
+    *) echo '{}' > "$out"; echo 599 ;;
+esac
+SH
+chmod +x "$scratch/curl-fake"
+export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
+export CI_PROJECT_PATH=group/project CI_SERVER_HOST=example.invalid RELEASE_TOKEN=bite-token CI_COMMIT_SHA="$(git rev-parse HEAD)"
+git init --quiet --bare "$scratch/remote.git"
+export PUSH_URL="$scratch/remote.git"
+remote_refs() { git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)'; }
+publish() { bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0; }
+tagit() { bash "$HERE/tag-release.sh"; }
+
+: > "$CURL_LOG"
+expect fail "a release without its token" env -u RELEASE_TOKEN bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
+expect fail "a release without a version" bash "$HERE/release-publish.sh" demo
+FAKE_LIST_CODE=500 expect fail "a merge request list that does not answer" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge requests could not be listed" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='[{"iid":7,"source_branch":"release/demo-v1.0.0"}]' expect pass "a release merge request that is open already" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a second release branch was pushed while a release merge request is open" >&2; wrong=$((wrong + 1)); }
+expect fail "no merge request opened while one is open" grep -q "POST .*merge_requests" "$CURL_LOG"
+FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+: > "$CURL_LOG"
+expect pass "a release published as a merge request" publish
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release did not push exactly its branch: $(remote_refs)" >&2; wrong=$((wrong + 1)); }
+expect pass "the merge request carries the label land" grep -q "POST .*merge_requests .*labels=land,changelog::internal" "$CURL_LOG"
+expect pass "the merge request is from the release branch to main" grep -q "source_branch=release/demo-v1.1.0 target_branch=main" "$CURL_LOG"
+expect fail "the release creates no tag" grep -q "POST .*repository/tags" "$CURL_LOG"
+git commit --quiet --amend --allow-empty -m "another release commit"
+expect fail "a release branch that already exists with other history" publish
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+
+: > "$CURL_LOG"
+expect pass "a merged release gets its tag" tagit
+expect pass "the tag is created at the commit with the API" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$CI_COMMIT_SHA" "$CURL_LOG"
+: > "$CURL_LOG"
+FAKE_TAG_CODE=200 expect pass "a version that is tagged already" tagit
+expect fail "no second tag for a tagged version" grep -q "POST " "$CURL_LOG"
+: > "$CURL_LOG"
+undated() { sed -e 's/^### \[1.1.0\] — .*/### [1.1.0]/' "$scratch/CHANGELOG.md" > "$scratch/changelog.undated"; CHANGELOG="$scratch/changelog.undated" tagit; }
+expect pass "a version without a dated changelog section is not a release" undated
+expect fail "nothing is asked or created for it" test -s "$CURL_LOG"
+FAKE_TAG_CODE=500 expect fail "a tag lookup that does not answer" tagit
+FAKE_TAG_POST_CODE=500 expect fail "a tag the forge refuses" tagit
+expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
+
 [ "$wrong" -eq 0 ]

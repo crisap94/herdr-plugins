@@ -169,8 +169,12 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
 2. On `main`'s pipeline, run the manual **`release:prepare`** job. It works out the next version
    (`ci/next-release.sh` prints it with the section it will write), updates the manifest,
    `package.json`, the lockfile and `CHANGELOG.md` (one bullet per MR: title and `(!number)`, grouped
-   under Breaking/Added/Changed/Fixed, `internal` left out), pushes that commit to `main` and creates
-   the annotated tag `tab-recap-vX.Y.Z`. If nothing is due it says so and stops.
+   under Breaking/Added/Changed/Fixed, `internal` left out), commits that on the branch
+   `release/tab-recap-vX.Y.Z` and opens a merge request from it labelled `land` (`ci/release-publish.sh`);
+   it never pushes `main`. If nothing is due it says so and stops; while a release merge request is open
+   it will not prepare another. When the merge train has landed that merge request, **`release:tag`** on
+   `main`'s pipeline (`ci/tag-release.sh`) creates the annotated tag `tab-recap-vX.Y.Z` at that commit,
+   for a manifest version with a dated changelog section and no tag.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the

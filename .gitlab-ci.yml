@@ -100,8 +100,9 @@ merge-request-notes:
     - bash tab-recap/ci/check-mr.sh
 
 # Manual, on main only: the MRs merged since the previous tag decide whether a release is due and
-# which version it is. If so: bump the versions, write the CHANGELOG section, push the commit to
-# main and create the annotated tag. RELEASE_TOKEN is a protected, masked CI variable.
+# which version it is. If so: bump the versions, write the CHANGELOG section and open a merge request
+# labelled `land` from release/<plugin>-v<version>; main is never pushed. RELEASE_TOKEN is a protected,
+# masked CI variable.
 release:prepare:
   stage: release
   needs: [lint, test, "test:floor"]
@@ -113,6 +114,16 @@ release:prepare:
       allow_failure: true
   script:
     - bash tab-recap/ci/prepare-release.sh
+
+# On main's pipeline once the release merge request has landed: the manifest carries a version with a
+# dated changelog section and no tag, so create the annotated tag at this commit; the tag pipeline follows.
+release:tag:
+  stage: release
+  needs: [lint, test, "test:floor"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+  script:
+    - bash tab-recap/ci/tag-release.sh
 
 # A tag `tab-recap-v<x.y.z>`: check that it is a release we can publish, take the notes from the
 # CHANGELOG, then create the GitLab release.
