@@ -56,6 +56,20 @@ export interface HandoffMirrorDeps {
 
 export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(requestId(route.id, 'token-safe')), pane: route.source });
 
+const REPORT_BOUND_MS = 5_000;
+
+async function settledOrBound(done: Promise<void>): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    const bound = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, REPORT_BOUND_MS);
+    });
+    try {
+        await Promise.race([done.catch(() => undefined), bound]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
     try {
         const done = await tokens.report(pane, { [write.name]: write.value }, HANDOFF_ANSWER_TTL_MS);
@@ -108,7 +122,7 @@ export class HandoffMirror {
     private report(pane: PaneId, write: TokenWrite): void {
         const { tokens, log } = this.deps;
         const previous = this.pending.get(pane);
-        const next = previous === undefined ? reportWrite(tokens, log, pane, write) : previous.catch(() => undefined).then(() => reportWrite(tokens, log, pane, write));
+        const next = previous === undefined ? reportWrite(tokens, log, pane, write) : settledOrBound(previous).then(() => reportWrite(tokens, log, pane, write));
         this.pending.set(pane, next);
         void this.release(pane, next);
     }

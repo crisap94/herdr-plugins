@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
@@ -185,4 +185,32 @@ test('a first report that fails, even in its log, does not stop the later stages
     await settled();
     await settled();
     assert.deepEqual(reports.map((written) => written['tab-recap-handoff']), ['h1:queued', 'h1:delivered']);
+});
+
+test('a report that never settles delays the later stages of its pane by the bound at most', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const reports: Array<Readonly<Record<string, string | null>>> = [];
+        let first = true;
+        const tokens: LaneTokens = {
+            report(_pane: string, written: Readonly<Record<string, string | null>>): Promise<Done> {
+                reports.push(written);
+                if (first) {
+                    first = false;
+                    return new Promise<Done>(() => undefined);
+                }
+                return Promise.resolve({ kind: 'done' });
+            },
+        };
+        const mirror = new HandoffMirror({ asks: new MemoryAskLedger(), tokens, events: new RecordingEvents(), sharing: (): HerdrEvents => 'on', log: (): void => undefined });
+        mirror.queued(route);
+        mirror.terminal(route, { kind: 'delivered' });
+        await settled();
+        assert.deepEqual(reports.map((written) => written['tab-recap-handoff']), ['h1:queued']);
+        mock.timers.tick(5_000);
+        await settled();
+        assert.deepEqual(reports.map((written) => written['tab-recap-handoff']), ['h1:queued', 'h1:delivered']);
+    } finally {
+        mock.timers.reset();
+    }
 });
