@@ -56,6 +56,12 @@ if [ -n "$newest" ]; then
     next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else node "$HERE/next-release.ts" "$@"; fi; }
     computed="$(GITLAB_TOKEN="$RELEASE_TOKEN" PLUGIN="$plugin" next_release --previous "$plugin-v$newest" --to "$commit")" \
         || { echo "tag-release: 3 — NOT COVERED: could not work out which merge requests the release should list (an unlabelled merge request in the range? label it, then run the pipeline on main again)" >&2; exit 3; }
+    computed_version="$(printf '%s' "$computed" | node -e 'const j = JSON.parse(require("fs").readFileSync(0, "utf8")); process.stdout.write(j.version === null || j.version === undefined ? "" : String(j.version));')" \
+        || { echo "tag-release: 3 — NOT COVERED: could not read the version the merge requests call for" >&2; exit 3; }
+    if [ -n "$computed_version" ] && [ "$computed_version" != "$version" ]; then
+        echo "tag-release: 1 — the merge requests merged call for $computed_version but the manifest says $version: no tag (prepare the release again once the version is right)" >&2
+        exit 1
+    fi
     CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" > "$notes" 2>/dev/null
     missing="$(printf '%s' "$computed" | node -e 'const fs = require("fs"); const j = JSON.parse(fs.readFileSync(0, "utf8")); const notes = fs.readFileSync(process.argv[1], "utf8"); const ids = [...String(j.section ?? "").matchAll(/\(!(\d+)\)/g)].map((m) => m[1]); process.stdout.write(ids.filter((id) => !notes.includes("(!" + id + ")")).map((id) => "!" + id).join(" "));' "$notes")" \
         || { echo "tag-release: 3 — NOT COVERED: could not compare the changelog section with the merge requests" >&2; exit 3; }

@@ -237,6 +237,8 @@ expect fail "a version without its changelog link reference" nolink
 FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' expect fail "a merge request merged since the release was prepared and missing from the section" tagit
 covered() { sed -e 's/^- the new thing$/- the new thing (!41)/' "$scratch/CHANGELOG.md" > "$scratch/changelog.covered"; CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
 expect pass "every merge request of the release is in the section" covered
+higher() { CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.2.0","section":"### [1.2.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
+expect fail "merge requests that call for a larger version than the prepared one" higher
 emptysection() { sed -e '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}' "$scratch/CHANGELOG.md" > "$scratch/changelog.empty"; CHANGELOG="$scratch/changelog.empty" tagit; }
 expect fail "a version whose changelog section is empty" emptysection
 printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
