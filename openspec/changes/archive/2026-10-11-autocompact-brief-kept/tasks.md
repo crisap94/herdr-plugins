@@ -34,8 +34,8 @@ passing. Every code merge request ticks its own boxes and names itself on the li
       8 h 43 min after the start (the operator asked for the initial changes to be finished today, so the 24-hour window
       is not reached): `skipped`/`coverage` automatic compactions: 0 (79 in the 36 hours before the change); typed
       automatic compactions: 22 (17 compacted, 5 unconfirmed; 41 in the 36 hours before); 9 briefs went ahead with
-      `missed facts appended` in the daemon log. No 24-hour recount was made.
+      `missed facts appended` in the daemon log. No 24-hour recount was made. (!127)
 
 ## 5. Archive
 
-- [x] 5.1 Archive the change in its own merge request.
+- [x] 5.1 Archive the change in its own merge request. (!127)
