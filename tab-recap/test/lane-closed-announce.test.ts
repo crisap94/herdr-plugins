@@ -120,5 +120,5 @@ test('a publisher that throws does not stop the closure from being recorded, and
     const closures: ClosureRecorder = { record: (value: ClosedLane): void => { recorded.push(value); } };
     await dispatchWith({ events: throwing, sharing: true, closures, days: '14', log: (line: string): void => { lines.push(line); } }).send({ kind: 'lane-closed', closed });
     assert.deepEqual(recorded, [closed]);
-    assert.deepEqual(lines, ['lane w1:p1: closure not announced (socket closed)']);
+    assert.deepEqual(lines, ['lane w1:p1: closure not announced (Error)']);
 });

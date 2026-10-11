@@ -1,4 +1,5 @@
 import { lanesOf } from '#src/recap/domain/board.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -132,7 +133,7 @@ export class Dispatch {
         try {
             this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
         } catch (error) {
-            this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${error instanceof Error ? error.message : String(error)})`)));
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(error)})`)));
         }
     }
 
@@ -143,7 +144,7 @@ export class Dispatch {
         try {
             this.deps.closures.record(closed);
         } catch (error) {
-            this.deps.log(must(parseText(`lane ${closed.pane}: closure not recorded (${error instanceof Error ? error.message : String(error)})`)));
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not recorded (${failureCauseOf(error)})`)));
         }
     }
 

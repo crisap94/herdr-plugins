@@ -51,7 +51,7 @@ test('a recorder that throws is logged without content and does not stop the dis
     const { port } = recorder(true);
     const lines: string[] = [];
     await dispatchWith(port, '14', (line) => { lines.push(line); }).send({ kind: 'lane-closed', closed });
-    assert.deepEqual(lines, ['lane w1:p1: closure not recorded (disk full)']);
+    assert.deepEqual(lines, ['lane w1:p1: closure not recorded (Error)']);
 });
 
 test('no recorder wired means nothing is recorded and nothing fails', async () => {

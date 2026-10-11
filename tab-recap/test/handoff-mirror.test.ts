@@ -163,3 +163,26 @@ test('a stage reported while nothing is pending is issued at once', () => {
     run.mirror.queued(route);
     assert.equal(run.tokens.reports.length, 1);
 });
+
+test('a first report that fails, even in its log, does not stop the later stages of its pane', async () => {
+    const reports: Array<Readonly<Record<string, string | null>>> = [];
+    let failing = true;
+    const tokens: LaneTokens = {
+        report(_pane: string, written: Readonly<Record<string, string | null>>): Promise<Done> {
+            reports.push(written);
+            return failing ? Promise.reject(new Error('socket closed')) : Promise.resolve({ kind: 'done' });
+        },
+    };
+    const log = (): void => {
+        if (failing) {
+            failing = false;
+            throw new Error('log failed');
+        }
+    };
+    const mirror = new HandoffMirror({ asks: new MemoryAskLedger(), tokens, events: new RecordingEvents(), sharing: (): HerdrEvents => 'on', log });
+    mirror.queued(route);
+    mirror.terminal(route, { kind: 'delivered' });
+    await settled();
+    await settled();
+    assert.deepEqual(reports.map((written) => written['tab-recap-handoff']), ['h1:queued', 'h1:delivered']);
+});

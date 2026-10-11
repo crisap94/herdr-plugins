@@ -17,3 +17,11 @@ test('a failure cause adds the string code of the error after its name', () => {
     assert.equal(failureCauseOf(Object.assign(new Error("ENOENT: no such file, open '/x'"), { code: 'ENOENT' })), 'Error: ENOENT');
     assert.equal(failureCauseOf(Object.assign(new Error('database is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' })), 'SqliteError: SQLITE_BUSY');
 });
+
+test('a failure cause accepts only a plain name and an upper-case code, so a hostile error cannot put text in a log', () => {
+    assert.equal(failureCauseOf(Object.assign(new Error('x'), { name: '/home/coder/secret' })), 'Error');
+    assert.equal(failureCauseOf(Object.assign(new Error('x'), { name: 'Name with spaces\nand a newline' })), 'Error');
+    assert.equal(failureCauseOf(Object.assign(new Error('x'), { code: '/home/coder/secret' })), 'Error');
+    assert.equal(failureCauseOf(Object.assign(new Error('x'), { code: 'lower case' })), 'Error');
+    assert.equal(failureCauseOf(Object.assign(new Error('x'), { code: `SQLITE_${'A'.repeat(60)}` })), 'Error');
+});
