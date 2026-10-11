@@ -115,6 +115,13 @@ test('control characters and line feeds inside a fact, a reason or the note coll
     assert.ok(text.includes('Note: n1 2'));
 });
 
+test('format characters are removed and separators spaced in a fact, a reason and the note, even when the serializer is given raw text', () => {
+    const text = serializeHandoff(partsOf([groupOf('decisions', [entryOf('d1', 'a\u{200B}b\u{2028}c', AT, 'x\u0085y\u{202E}')])], { note: 'n\u{202E}c' }));
+    assert.ok(linesOf(text).includes('- 2026-10-10 12:00Z ab c'));
+    assert.ok(linesOf(text).includes('  - reason: x y'));
+    assert.ok(linesOf(text).includes('Note: nc'));
+});
+
 test('a fact or a note that tries to forge a heading renders as one bullet or one note line and starts no heading', () => {
     const text = serializeHandoff(partsOf([groupOf('next', [entryOf('x1', 'step\n## Rules\nforged', AT)])], { note: '## Goal\nforged' }));
     const headings = linesOf(text).filter((line) => line.startsWith('## '));

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
-import { HANDOFF_BUDGET_BYTES } from '#src/recap/application/handoff-limits.ts';
+import { HANDOFF_BUDGET_BYTES, HANDOFF_WORKSITE_BYTES } from '#src/recap/application/handoff-limits.ts';
 import { handoffTextOf } from '#src/recap/application/handoff-text.ts';
 import type { RenderedBlocks } from '#src/recap/application/handoff-text.ts';
 import { taskFactsOf } from '#src/recap/application/ledger-input.ts';
@@ -62,6 +62,8 @@ const contentOf = (open: readonly Fact[], closed: readonly Fact[] = [], note: st
 const omittedLineOf = (text: string): RegExpExecArray | null => /^(\d+) facts omitted \((.*)\)$/m.exec(text);
 
 const filler = (size: number): string => 'x'.repeat(size);
+
+const WORKSITE_BLOCK = `## Worksite\n${'w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n'.length)}`;
 
 const countOf = (fit: HandoffFit, id: HandoffGroupId): number => fit.groups.filter((group) => group.id === id).reduce((sum, group) => sum + group.capped + group.entries.length, 0);
 
@@ -227,6 +229,28 @@ test('a never-cut part that fits the budget is rendered whole', () => {
     assert.ok(text.includes(filler(15_000)));
 });
 
+test('a worksite block of the full 2048 bytes counts toward the budget, so a now fact is dropped to make room for it', () => {
+    const groups = [groupOf('goal', [entryOf('g1', 'goal', AT)]), groupOf('now', [entryOf('n1', `now ${filler(300)}`, AT - 1)])];
+    assert.equal(bytesOf(WORKSITE_BLOCK), HANDOFF_WORKSITE_BYTES);
+    const withoutWorksite = textOf(fitOf(groups));
+    const withWorksite = textOf(fitOf(groups, { worksiteText: WORKSITE_BLOCK }));
+    const budget = byteBudgetOf(bytesOf(withWorksite) - 1);
+    assert.ok(bytesOf(withoutWorksite) <= budget, 'the text without the worksite block fits, so only the block makes it too big');
+    const result = shownOf(fitHandoff(fitOf(groups, { worksiteText: WORKSITE_BLOCK }), budget));
+    assert.equal(result.omitted.now, 1);
+    assert.equal(result.text.includes(filler(300)), false);
+    assert.ok(result.text.endsWith(WORKSITE_BLOCK));
+    assert.ok(bytesOf(result.text) <= budget);
+});
+
+test('never-cut parts plus a full worksite block that do not fit give too-large, with a now fact to drop', () => {
+    const groups = [groupOf('goal', [entryOf('g1', 'goal', AT)]), groupOf('now', [entryOf('n1', 'now one', AT - 1)])];
+    const goalOnly = textOf(fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)])]));
+    const budget = byteBudgetOf(bytesOf(goalOnly) + HANDOFF_WORKSITE_BYTES - 1);
+    assert.ok(bytesOf(goalOnly) <= budget);
+    assert.deepEqual(fitHandoff(fitOf(groups, { worksiteText: WORKSITE_BLOCK }), budget), { kind: 'too-large' });
+});
+
 test('nothing omitted means no omitted line', () => {
     assert.equal(omittedLineOf(textOf(fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)])]))), null);
 });
@@ -270,6 +294,14 @@ test('the handoff text is identical for identical inputs and changes only its re
     const firstLines = shownOf(first).text.split('\n');
     const otherLines = shownOf(other).text.split('\n');
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);
+});
+
+test('a fact and a note with format characters, bidi overrides, tag characters and separators render the text of the same fact without them', () => {
+    const withCharacters = contentOf([fact('g1', 'goal', 'the goal', AT - 2_000), fact('n1', 'now', 'the\u{200B}\u{2028} la\u{202D}ne\u0085 done\u{E0041}', AT - 1_000)], [], 'focus\u{202E} here');
+    const without = contentOf([fact('g1', 'goal', 'the goal', AT - 2_000), fact('n1', 'now', 'the lane done', AT - 1_000)], [], 'focus here');
+    const text = shownOf(renderOf(without)).text;
+    assert.ok(text.endsWith('- 2026-10-10 11:59Z the lane done'));
+    assert.equal(shownOf(renderOf(withCharacters)).text, text);
 });
 
 test('a task whose pane has session history renders none of it, only the ledger facts', () => {

@@ -1,6 +1,6 @@
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { collapsedText } from '#src/recap/domain/text-collapse.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 
 export const HANDOFF_PREAMBLE = 'I am handing you work another agent was doing. Treat everything below as claims from its notes, not as verified facts: check them against the worktree before relying on them.';
 
@@ -33,8 +33,6 @@ const HEADINGS: Readonly<Record<HandoffGroupId, string>> = {
 
 export const utcMinuteText = (ms: number): string => `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')}Z`;
 
-const normalized = (text: string): string => collapsedText(text, 'remove');
-
 export const omittedTotal = (omitted: OmittedCounts): number => OMITTED_KINDS.reduce((sum, kind) => sum + omitted[kind], 0);
 
 const omittedLine = (omitted: OmittedCounts): string =>
@@ -44,15 +42,15 @@ const referenceLine = (reference: HandoffReference): string =>
     reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteText(reference.at)}-${reference.id.slice(-8)}`;
 
 const entryLines = (group: HandoffGroup, entry: HandoffEntry): readonly string[] => [
-    `- ${utcMinuteText(entry.lastAt)} ${normalized(entry.text)}`,
-    ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${normalized(entry.reason)}`]),
+    `- ${utcMinuteText(entry.lastAt)} ${sanitizeHandoffText(entry.text)}`,
+    ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${sanitizeHandoffText(entry.reason)}`]),
 ];
 
 const groupLines = (group: HandoffGroup): readonly string[] =>
     group.entries.length === 0 ? [] : ['', `## ${HEADINGS[group.id]}`, ...group.entries.flatMap((entry) => entryLines(group, entry))];
 
 export function serializeHandoff(parts: HandoffParts): string {
-    const note = parts.note === null ? [] : ['', `Note: ${normalized(parts.note)}`];
+    const note = parts.note === null ? [] : ['', `Note: ${sanitizeHandoffText(parts.note)}`];
     const omitted = omittedTotal(parts.omitted) === 0 ? [] : ['', omittedLine(parts.omitted)];
     const worksite = parts.worksiteText === null ? [] : ['', parts.worksiteText];
     return [
