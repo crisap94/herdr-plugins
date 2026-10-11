@@ -170,7 +170,8 @@ publish() { bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0; }
 tagit() { bash "$HERE/tag-release.sh"; }
 cat > "$scratch/next-fake" <<'SH'
 #!/usr/bin/env bash
-default='{"version":null,"section":null}'
+version="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$PLUGIN_DIR/herdr-plugin.toml" | head -n 1)"
+default="{\"version\":\"$version\",\"section\":null}"
 printf '%s' "${FAKE_NEXT:-$default}"
 SH
 chmod +x "$scratch/next-fake"
@@ -241,6 +242,8 @@ expect fail "a version without its changelog link reference" nolink
 FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' expect fail "a merge request merged since the release was prepared and missing from the section" tagit
 covered() { sed -e 's/^- the new thing$/- the new thing (!41)/' "$scratch/CHANGELOG.md" > "$scratch/changelog.covered"; CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
 expect pass "every merge request of the release is in the section" covered
+nothingdue() { FAKE_NEXT='{"version":null,"section":null}' tagit; }
+expect fail "no merge request calls for a release" nothingdue
 higher() { CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.2.0","section":"### [1.2.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
 expect fail "merge requests that call for a larger version than the prepared one" higher
 emptysection() { sed -e '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}' "$scratch/CHANGELOG.md" > "$scratch/changelog.empty"; CHANGELOG="$scratch/changelog.empty" tagit; }
@@ -259,6 +262,13 @@ sed -e 's/1\.1\.0/1.1.1/g' "$scratch/CHANGELOG.md" > "$scratch/changelog.next"
 second() { CI_COMMIT_SHA="$(git rev-parse HEAD)" CHANGELOG="$scratch/changelog.next" tagit; }
 expect pass "a second release among several commits" second
 expect pass "the tag is at the commit that set 1.1.1, not the root or the tip" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$second_release" "$CURL_LOG"
+printf '\n- a line added later\n' >> CHANGELOG.md
+git add -A && git commit --quiet -m "complete the changelog"
+repair_commit="$(git rev-parse HEAD)"
+git commit --quiet --allow-empty -m "after the repair"
+: > "$CURL_LOG"
+expect pass "a release whose changelog was completed afterwards" second
+expect pass "the tag is at the commit that completed the changelog" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$repair_commit" "$CURL_LOG"
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
 [ "$wrong" -eq 0 ]

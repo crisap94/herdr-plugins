@@ -175,15 +175,16 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    it will not prepare another, and it refuses while a prepared release is still untagged (the manifest
    is ahead of the newest tag). When the merge train has landed that merge request, **`release:tag`**
    (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a
-   dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the release commit,
-   the one that set the version, after checking that the version is above every tag, the three versions
-   agree and the changelog has its link and a non-empty section that lists every merge request the
-   release should (`ci/next-release.sh` run up to the release commit). A merge request that lands between
-   the preparation and the landing of the release merge request is not in that section: `release:tag`
-   then refuses and names it (exit 1, a warning job, `allow_failure`, so `main` stays green; a lookup error
-   or a tag the forge refuses is exit 3 and fails the job); add its line
+   dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the newest commit
+   that touched the manifest or `CHANGELOG.md` (the release commit, or the merge request that completed
+   its changelog afterwards), after checking that the version is above every tag, the three versions
+   agree, the changelog has its link and a non-empty section, and `ci/next-release.sh` run up to that
+   commit calls for exactly this version and lists no merge request the section lacks. A merge request
+   that lands between the preparation and the landing of the release merge request is not in that
+   section: `release:tag` then refuses and names it (exit 1, a warning job, `allow_failure`, so `main`
+   stays green; a lookup error or a tag the forge refuses is exit 3 and fails the job); add its line
    to `CHANGELOG.md` (and raise the version if it calls for more) in a normal merge request and the next
-   pipeline on `main` tags the release.
+   pipeline on `main` tags the release at that merge request's commit.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the

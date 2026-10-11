@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # release:tag — on main's pipeline: when the manifest carries a version that has a dated changelog section
 # and no tag, create the annotated tag <plugin>-v<version> through the API at the release commit (the
-# commit that set that version in the manifest, an ancestor of CI_COMMIT_SHA), so the tag pipeline starts
+# newest commit that touched the manifest or the changelog, an ancestor of CI_COMMIT_SHA: the release
+# commit, or the merge request that completed its changelog afterwards), so the tag pipeline starts
 # as the project's own (check-release.sh, notes, releases). Every merge request that next-release lists up
 # to the release commit must be in the section (the project merges semi-linearly: the release merge request
 # is rebased on the tip, so what landed meanwhile is below the release commit), or no tag is made. The
@@ -51,7 +52,7 @@ grep -q "^\\[$escaped\\]: " "$changelog" \
 CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" >/dev/null 2>&1 \
     || { echo "tag-release: 1 — the CHANGELOG section for $version is missing or empty: no tag" >&2; exit 1; }
 
-commit="$(git -C "$dir" log -1 --format=%H -G"^version = \"$escaped\"" "$CI_COMMIT_SHA" -- herdr-plugin.toml)"
+commit="$(git -C "$dir" log -1 --format=%H "$CI_COMMIT_SHA" -- herdr-plugin.toml ../CHANGELOG.md)"
 [ -n "$commit" ] || { echo "tag-release: 3 — NOT COVERED: no commit that set version $version in the manifest (is the history shallow?)" >&2; exit 3; }
 if [ -n "$newest" ]; then
     next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else node "$HERE/next-release.ts" "$@"; fi; }
@@ -59,8 +60,8 @@ if [ -n "$newest" ]; then
         || { echo "tag-release: 3 — NOT COVERED: could not work out which merge requests the release should list (an unlabelled merge request in the range? label it, then run the pipeline on main again)" >&2; exit 3; }
     computed_version="$(printf '%s' "$computed" | node -e 'const j = JSON.parse(require("fs").readFileSync(0, "utf8")); process.stdout.write(j.version === null || j.version === undefined ? "" : String(j.version));')" \
         || { echo "tag-release: 3 — NOT COVERED: could not read the version the merge requests call for" >&2; exit 3; }
-    if [ -n "$computed_version" ] && [ "$computed_version" != "$version" ]; then
-        echo "tag-release: 1 — the merge requests merged call for $computed_version but the manifest says $version: no tag (prepare the release again once the version is right)" >&2
+    if [ "$computed_version" != "$version" ]; then
+        echo "tag-release: 1 — the merge requests merged call for ${computed_version:-no release} but the manifest says $version: no tag (prepare the release again once the version is right)" >&2
         exit 1
     fi
     CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" > "$notes" 2>/dev/null
