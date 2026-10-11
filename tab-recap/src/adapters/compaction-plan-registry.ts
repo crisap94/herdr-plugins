@@ -1,4 +1,4 @@
-import { compactionLine, compactionPiece, confirmationReads, needsIdle, unsupported } from '#src/recap/domain/compaction-plan.ts';
+import { compactionLine, compactionPiece, confirmationReads, needsIdle, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlanFactory, CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
@@ -15,7 +15,7 @@ const claude: CompactionPlanFactory = (guidance) => ({ kind: 'supported', plan: 
     confirm: { kind: 'turn-end' },
     retryOnSelfFailure: true,
     followUp: { kind: 'none' },
-    whileWorking: needsIdle('queued input is not proven for this kind yet'),
+    whileWorking: QUEUES,
 } });
 
 const polling: CompactionPlanFactory = (_guidance) => ({ kind: 'supported', plan: {

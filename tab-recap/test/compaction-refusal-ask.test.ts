@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
@@ -55,7 +55,7 @@ function world(states: readonly AgentState[], answerOn: boolean): World {
     };
     const settling: LaneSettling = { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) };
     const deps: CompactionDeps = {
-        compactionPlans,
+        compactionPlans: idleClaudePlans,
         agents,
         notifier: { notify: () => Promise.resolve({ kind: 'shown' }) },
         records: { readRecap: () => blankRecap('w1:t1') },
