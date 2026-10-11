@@ -527,6 +527,7 @@
       "src/recap/render/setup.ts",
       "src/recap/render/timeline-breaks.ts",
       "src/recap/render/timeline.ts",
+      "src/recap/render/utc-minute.ts",
       "src/recap/render/worksite.ts",
       "src/recap/render/wrap.ts",
       "test/compaction-stage.test.ts",
