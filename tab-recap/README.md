@@ -652,7 +652,7 @@ lane's workspace. The request carries no text: tab-recap builds the handoff from
 tab-recap answers in `tab-recap-handoff` = `<id>:<stage>`: `queued`, `running`, then `delivered`, or `refused-<reason>`,
 `unsupported-<reason>` or `failed-<reason>`. The exchange itself refuses with `refused-not-offered` (sharing on, the setting off),
 `refused-bad-request`, `refused-not-a-lane` and `refused-target-elsewhere`, and writes no row for those. The published deadline is
-150 000 ms from `queued` to a terminal stage; a request taken later than 30 000 ms after it was queued is answered
+200 000 ms from `queued` to a terminal stage; a request taken later than 30 000 ms after it was queued is answered
 `failed-expired` and nothing is typed. A restart that interrupts an ask writes `failed-interrupted`, and an interrupted request
 is never delivered late. The events are `handoff-queued`, `handoff-running`, `handoff-delivered` and `handoff-failed`. A requester
 that reads a `delivered` written by any other process must still check the target's own reaction: the exchange is not authenticated.

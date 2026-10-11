@@ -49,6 +49,6 @@ export const handoff = {
     failureReasons: HANDOFF_FAILURES,
     events: Object.values(HANDOFF_EVENTS),
     optIn: 'TAB_RECAP_HANDOFF_REQUESTS',
-    timing: { 'deadline-ms': 150_000 },
+    timing: { 'deadline-ms': 200_000 },
     truncatesAnswer: false,
 } as const satisfies Exchange;

@@ -4,7 +4,7 @@
   "requestPrefix": "handoff-req-",
   "answerToken": "tab-recap-handoff",
   "timing": {
-    "deadline-ms": 150000
+    "deadline-ms": 200000
   },
   "requests": [
     { "raw": "h1:w2:p7", "expect": { "kind": "parsed", "id": "h1", "note": null } },

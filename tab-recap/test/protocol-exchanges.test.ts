@@ -7,6 +7,8 @@ import { exchangeVersion } from '#src/protocol/primitives.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
 import { must } from '#src/protocol/result.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
+import { defineExchange } from '#src/protocol/exchange.ts';
+import { exchangeName } from '#src/protocol/primitives.ts';
 import { ANSWER_TOKENS, REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { COMPACT_TOKEN, OWNED_TOKENS, PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
@@ -35,7 +37,8 @@ test('tab-recap stays within the ten names a pane may carry', () => {
 });
 
 test('a new exchange reaches the owner table through its descriptor alone', () => {
-    const owners = ownerTable(must(buildRegistry([...EXCHANGES, handoffLike], [CAPABILITY_TOKEN])));
-    assert.ok(owners.writable.some((name) => name === 'tab-recap-handoff'));
-    assert.ok(owners.readPrefixes.includes('handoff-req-'));
+    const ticket = defineExchange({ ...handoffLike, name: must(exchangeName('ticket')), requestPrefix: 'ticket-req-' });
+    const owners = ownerTable(must(buildRegistry([...EXCHANGES, ticket], [CAPABILITY_TOKEN])));
+    assert.ok(owners.writable.some((name) => name === 'tab-recap-ticket'));
+    assert.ok(owners.readPrefixes.includes('ticket-req-'));
 });
