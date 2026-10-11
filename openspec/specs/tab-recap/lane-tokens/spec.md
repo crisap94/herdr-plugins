@@ -9,8 +9,10 @@ Other local tools learn what tab-recap knows about each lane and ask it to act t
 ### Requirement: Sharing on herdr is a setting, off by default
 
 `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`) SHALL decide whether tab-recap writes its lane tokens and
-its event token and acts on compaction requests. With `off`, it SHALL write none of them, SHALL clear those it
-wrote before, and SHALL ignore `compact-req-<tool>`. It SHALL honour other tools' typing leases and `awaiting`
+its event token and acts on compaction requests and, when `TAB_RECAP_HANDOFF_REQUESTS` is `on`, on handoff requests. With
+`off`, it SHALL write none of them, SHALL clear those it wrote before, and SHALL ignore `compact-req-<tool>` and
+`handoff-req-<tool>`. `TAB_RECAP_HANDOFF_REQUESTS` (`off` by default, or `on`) SHALL have no effect while sharing is
+`off`. It SHALL honour other tools' typing leases and `awaiting`
 tokens, and take its own typing lease, whatever the setting. The settings modal SHALL show the row "Herdr
 events".
 
@@ -29,6 +31,12 @@ events".
 
 - **WHEN** the setting is `off` and a pane carries an earlier `typing-coordinator` lease
 - **THEN** tab-recap SHALL still wait before typing a compaction brief there
+
+#### Scenario: Handoff requests need both settings
+
+- **WHEN** `TAB_RECAP_HERDR_EVENTS` is `on` and `TAB_RECAP_HANDOFF_REQUESTS` is not set
+- **THEN** `tab-recap-x` SHALL NOT list `handoff1`
+- **AND** a `handoff-req-<tool>` request SHALL be answered `<id>:refused-not-offered` and SHALL queue nothing
 
 ### Requirement: Every token name has one writer, named in it
 
@@ -172,12 +180,13 @@ it missed an event; the whole value SHALL fit in 80 characters. The kinds SHALL 
 | `recap-written` | the trigger (`turn-ended`, `focused`, `requested`) |
 | `needs-raised`, `needs-cleared` | the number of open needs |
 | `compact-queued`, `compact-running`, `compact-done`, `compact-failed` | the compaction id, and the reason when failed |
+| `handoff-queued`, `handoff-running`, `handoff-delivered`, `handoff-failed` (also for `refused` and `unsupported` outcomes) | the request id, and the outcome and reason when not delivered (written on the source lane's pane and on the target's pane) |
 | `autocompact-decided` | the verdict and the share (`compact-24`, `wait-61`) |
 | `autocompact-skipped` | the gate (`in-flight`, `cooldown`, `below-minimum`, …), written only when the gate changes |
 | `lane-closed` | the pane whose lane closed (written on the lane's workspace, not the pane) |
 | `daemon-started`, `daemon-stopping` | the version (workspace token) |
 
-The state tokens (`tab-recap-share`, `tab-recap-recap`, `tab-recap-needs`, `tab-recap-compact`) SHALL stay
+The state tokens (`tab-recap-share`, `tab-recap-recap`, `tab-recap-needs`, `tab-recap-compact`, `tab-recap-handoff`) SHALL stay
 the current truth; an event says that something happened, and a subscriber that missed one reads the state.
 
 #### Scenario: A recap is written
@@ -206,3 +215,75 @@ the current truth; an event says that something happened, and a subscriber that 
 
 - **WHEN** `TAB_RECAP_CLOSED_LANE_DAYS` is `0` and a lane closes
 - **THEN** exactly one `lane-closed` event SHALL still be written, and no closure record SHALL be kept
+
+#### Scenario: A handoff asked by token is announced on both panes
+
+- **WHEN** a token-asked handoff is delivered
+- **THEN** both the source lane's pane and the target's pane SHALL receive `tab-recap-event` with `handoff-delivered` and
+  the request id
+
+### Requirement: A handoff is asked and answered by tokens
+
+The handoff SHALL be the second exchange of the token protocol. When the handoff exchange is enabled and tab-recap reads,
+on a lane's pane, a value `<id>:<target-pane>` or `<id>:<target-pane>:refresh` of a `handoff-req-<tool>` token whose id it
+has not taken from that tool, it SHALL check the request, record it as an ask of exchange `handoff`, and queue the same
+`handoff` request row the operator's command writes, with that pane as the source, its tab, the target, the refresh flag,
+no note, and the requester's id. The request SHALL carry no text that would be typed. The target SHALL be a lane in the
+source lane's workspace. A request that cannot be queued SHALL be answered at once, on the token only, with `<id>:refused-not-offered`,
+`<id>:refused-bad-request`, `<id>:refused-not-a-lane` or `<id>:refused-target-elsewhere`; these answers write no request
+row and no answer row, so they are reasons of the exchange's descriptor, not of the handoff's outcome table. The descriptor
+SHALL publish `deadline-ms`, equal to the handoff's `HANDOFF_DEADLINE_MS` (the longest time from queueing to a terminal
+answer, stated by the handoff change as the take-age bound plus the longest flow); a queued row whose age when taken exceeds
+the handoff's `HANDOFF_TAKE_MAX_AGE_MS` SHALL be answered `<id>:failed-expired` and not run, so nothing is typed after the
+deadline. When the exchange is enabled, `tab-recap-x` SHALL list `handoff1`.
+
+#### Scenario: Asked and queued
+
+- **WHEN** a tool writes `handoff-req-coordinator` = `h1:w2:p7` on a lane's pane and `w2:p7` is a lane of the same
+  workspace
+- **THEN** tab-recap SHALL queue one `handoff` row from that pane to `w2:p7` and answer `h1:queued`
+
+#### Scenario: A refresh is asked
+
+- **WHEN** the value is `h2:w2:p7:refresh`
+- **THEN** the queued row SHALL ask for a refresh before rendering
+
+#### Scenario: A target in another workspace
+
+- **WHEN** the target pane is a lane of a different workspace than the source lane
+- **THEN** tab-recap SHALL answer `h1:refused-target-elsewhere` and queue nothing
+
+#### Scenario: The same id after a restart
+
+- **WHEN** the token still carries `h1:w2:p7` after the daemon restarted
+- **THEN** nothing SHALL be queued again
+
+#### Scenario: A malformed request
+
+- **WHEN** a tool writes `handoff-req-coordinator` = `h3:not a pane`
+- **THEN** tab-recap SHALL answer `h3:refused-bad-request`, queue nothing and write no answer row
+
+#### Scenario: The token is not on a lane
+
+- **WHEN** the request is written on a pane that is not a lane
+- **THEN** tab-recap SHALL answer `h1:refused-not-a-lane` and queue nothing
+
+#### Scenario: The flow takes the row
+
+- **WHEN** the daemon takes a row the exchange queued
+- **THEN** `tab-recap-handoff` SHALL say `h1:running`
+
+#### Scenario: A row taken too late
+
+- **WHEN** the daemon takes a queued row whose age exceeds `HANDOFF_TAKE_MAX_AGE_MS`
+- **THEN** tab-recap SHALL answer `h1:failed-expired` and type nothing
+
+#### Scenario: Support is advertised
+
+- **WHEN** sharing and the handoff exchange are both on
+- **THEN** each lane's pane SHALL carry `tab-recap-x` listing `handoff1`
+
+#### Scenario: The deadline is published
+
+- **WHEN** another tool reads the published protocol vectors
+- **THEN** it SHALL find the handoff's `deadline-ms`, equal to 150 000 while the handoff's constants are unchanged

@@ -32,6 +32,7 @@ When a handoff is typed into an agent that has just started, how long must the p
 | [R01-settle-and-handoff-proof](runs/R01-settle-and-handoff-proof/run.yaml) | valid | first live proof on `108d8cb`: idle delivery, refusal of a working target, print, refresh, a 16 KiB handoff, transcript location, and the settle sweep (337 trials) | the settle values below; the proof checks listed under Results |
 | [R02-claude-transcript-confirmation](runs/R02-claude-transcript-confirmation/run.yaml) | valid | one Claude handoff on `f4a23bc` (prompt unwrapping fix in), read back from the target's transcript | the stored prompt is wrapped (1422 B, 37 lines for 1364 B, 32 lines sent) and the real reader returns the 1364 B that were sent |
 | [R03-closed-lane-retention-proof](runs/R03-closed-lane-retention-proof/run.yaml) | valid | the closed-lane groups of the retention change on herdr 0.9.3: pane identifiers are not reused; a live and a restart closure are recorded, listed and handed over | the closed source works end to end; read-only commands write nothing |
+| [R04-handoff-exchange-proof](runs/R04-handoff-exchange-proof/run.yaml) | valid | the handoff exchange on herdr 0.9.3: a request written on a source pane naming an idle lane is answered queued, running, delivered; with the setting off it is refused-not-offered | the exchange works end to end; a repeated id is acted on once |
 
 ## Results
 
