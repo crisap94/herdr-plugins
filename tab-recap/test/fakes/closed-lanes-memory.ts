@@ -32,18 +32,18 @@ export class MemoryClosedLanes implements ClosureRecorder, ClosureReader, Closur
         const cutoff = cutoffOf(now, this.days);
         const records = this.records
             .filter((row) => row.tab === tab && cutoff !== null && row.closedAt >= cutoff)
-            .sort((a, b) => b.closedAt - a.closedAt || (a.pane < b.pane ? -1 : a.pane > b.pane ? 1 : 0));
+            .toSorted((a, b) => b.closedAt - a.closedAt || Number(a.pane > b.pane) - Number(a.pane < b.pane));
         return { kind: 'listed', records };
     }
 
     protectedTabs(now: Instant): readonly TabId[] {
         const cutoff = cutoffOf(now, this.days);
-        return [...new Set(this.records.filter((row) => cutoff !== null && row.closedAt >= cutoff).map((row) => row.tab))].sort();
+        return [...new Set(this.records.filter((row) => cutoff !== null && row.closedAt >= cutoff).map((row) => row.tab))].toSorted();
     }
 
     expiredTabs(now: Instant): readonly TabId[] {
         const cutoff = cutoffOf(now, this.days);
-        return [...new Set(this.records.filter((row) => cutoff === null || row.closedAt < cutoff).map((row) => row.tab))].sort();
+        return [...new Set(this.records.filter((row) => cutoff === null || row.closedAt < cutoff).map((row) => row.tab))].toSorted();
     }
 
     countOf(tab: TabId): number {

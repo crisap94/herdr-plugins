@@ -102,9 +102,9 @@ test('the readable views show the task as UUID text and the closed-source column
     insertClosed(db, { task, name: 'the name', closedAt: 7 });
     insertClosed(db, { pane: 'w1:p2', closedAt: 8 });
     insertHandoff(db, 9);
-    assert.deepEqual(db.prepare('SELECT task_name, length(task_id) AS length FROM closed_lane_readable WHERE closed_at = 7').get(), { task_name: 'the name', length: 36 });
-    assert.deepEqual(db.prepare('SELECT task_id FROM closed_lane_readable WHERE closed_at = 8').get(), { task_id: null });
-    assert.deepEqual(db.prepare("SELECT closed_at FROM request_readable WHERE kind = 'handoff'").get(), { closed_at: 9 });
+    assert.deepEqual({ ...db.prepare('SELECT task_name, length(task_id) AS length FROM closed_lane_readable WHERE closed_at = 7').get() }, { task_name: 'the name', length: 36 });
+    assert.deepEqual({ ...db.prepare('SELECT task_id FROM closed_lane_readable WHERE closed_at = 8').get() }, { task_id: null });
+    assert.deepEqual({ ...db.prepare("SELECT closed_at FROM request_readable WHERE kind = 'handoff'").get() }, { closed_at: 9 });
     db.close();
 });
 
