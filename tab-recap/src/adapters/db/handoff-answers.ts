@@ -5,7 +5,6 @@ import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { writeTx } from './connection.ts';
 import { handoffBytesOf } from './handoff-ids.ts';
 import { guarded, maybeText, one, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
 
 export class HandoffAnswersRepository implements HandoffAnswers {
     private readonly db: DatabaseSync;
