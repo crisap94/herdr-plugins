@@ -22,10 +22,9 @@ import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
 import { lineOf, moneyOf } from './autocompact-line.ts';
-import type { FlightAnswer } from './autocompact-gates.ts';
+import { flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
+import type { Flight, Observed } from '#src/recap/domain/in-flight.ts';
 import type { LaneEvents } from './lane-events.ts';
-
-export type { FlightAnswer } from './autocompact-gates.ts';
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
 
@@ -41,7 +40,7 @@ export interface AutocompactDeps {
     tuning?(): AutocompactTuning;
     decider(): Decider | null;
     readonly contexts: { of(pane: string): ContextUse | null };
-    inFlight(lane: Lane): Promise<FlightAnswer>;
+    inFlight(lane: Lane): Promise<Observed>;
     awaiting?(pane: string): Promise<Waiting>;
     readonly events?: LaneEvents;
     recent(lane: Lane): Promise<readonly Entry[]>;
@@ -140,13 +139,14 @@ export class Autocompact {
             unchanged: same && !recheck,
             coverageBackoff: backoff,
         };
-        const cheap = gateOf({ ...facts, inFlight: null });
+        const cheap = gateOf({ ...facts, flight: null });
         const context = { now, minimum: policy.minimum, cooldownMs: policy.cooldownMs, lastBreakAt, lastDecisionAt, busy: busy.detail };
-        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null }), recheck };
-        const flight = await this.flightOf(lane, pane);
-        const full = gateOf({ ...facts, inFlight: flight.count });
+        if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { ...cheap, detail: detailOf(cheap.gate, { ...context, flight: null, atCeiling: false }), recheck };
+        const atCeiling = shareOf(use) >= policy.ceiling;
+        const flight = await this.flightOf(lane, pane, atCeiling);
+        const full = gateOf({ ...facts, flight });
         if (recheck && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(`autocompact ${pane}: unchanged → recheck`);
-        return { ...full, detail: detailOf(full.gate, { ...context, flight }), recheck };
+        return { ...full, detail: detailOf(full.gate, { ...context, flight, atCeiling }), recheck };
     }
 
     private skip(lane: Lane, gate: SkipGate, share: number | null, detail: string | null): void {
@@ -186,11 +186,11 @@ export class Autocompact {
         return true;
     }
 
-    private async flightOf(lane: Lane, pane: string): Promise<FlightAnswer> {
+    private async flightOf(lane: Lane, pane: string, atCeiling: boolean): Promise<Flight> {
         const waiting = await this.waitingOf(pane);
-        if (waiting.kind === 'clear') return this.deps.inFlight(lane);
-        if (waiting.kind === 'waiting') return { count: 1, why: 'awaiting', detail: `awaiting ${waiting.value}` };
-        return { count: 'unknown', why: saying(waiting.why) };
+        if (waiting.kind === 'clear') return flightOf(await this.deps.inFlight(lane), NOT_AWAITING);
+        if (waiting.kind === 'waiting') return flightOf(atCeiling ? await this.deps.inFlight(lane) : NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames(waiting.value) });
+        return flightOf(unreadable(flightReason(saying(waiting.why))), NOT_AWAITING);
     }
 
     private async waitingOf(pane: string): Promise<Waiting> {
