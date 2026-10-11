@@ -150,3 +150,17 @@ test('on the SQLite store a delivered handoff writes its answer and settles its 
     await runner.take([taken]);
     assert.deepEqual([store.handoffs.handoffAnswer(taken.id)?.outcome, store.asks.unfinished()], ['delivered', []]);
 });
+
+test('the log line for a rendered handoff names its id, outcome, byte, omitted and withheld counts and no fact text', async () => {
+    const taken = row();
+    const { runner, probe } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => ({ outcome: { kind: 'delivered' }, rendered: { bytes: 812, omitted: 3, withheld: 1 } }) } });
+    await runner.take([taken]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: delivered bytes 812 omitted 3 withheld 1`]);
+});
+
+test('a refusal before the text is logged with its reason and no counts', async () => {
+    const taken = row();
+    const { runner, probe } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => unrendered({ kind: 'refused', reason: 'ledger-empty' }) } });
+    await runner.take([taken]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: refused ledger-empty`]);
+});
