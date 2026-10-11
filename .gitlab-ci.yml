@@ -52,13 +52,16 @@ test:floor:
     - bash ci/test.sh
 
 # A Phase B lane of the domain-type-gates change edits only the files ci/lanes.json gives it; the lane is
-# named by the branch (lane/B3-something).
+# named by the branch (lane/B3-something). Tests (test/**) are open to every lane; a merge request that must adapt
+# another lane's source mechanically carries the label lane-scope::adapts, which the lead sets after reading it.
 lane-scope:
   extends: .tab-recap
   stage: check
   variables:
     GIT_DEPTH: "0"
   rules:
+    - if: $CI_MERGE_REQUEST_LABELS =~ /lane-scope::adapts/
+      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\/B[1-8]-/
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"

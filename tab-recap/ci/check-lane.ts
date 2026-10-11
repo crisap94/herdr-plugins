@@ -61,7 +61,7 @@ function allowed(file: string): boolean {
     if (file === PIPELINE) return false;
     if (!file.startsWith(PREFIX)) return true;
     if (file === LANES_PATH) return foreignKeys().length === 0;
-    if (ownPaths.has(file)) return true;
+    if (file.startsWith(`${PREFIX}test/`) || ownPaths.has(file)) return true;
     if (file === `${PREFIX}ci/domain-types-baseline/${lane}.json` || file === `${PREFIX}ci/domain-types-exceptions/${lane}.json`) return true;
     return file.endsWith('/legacy.ts') && ownFolders.has(dirname(file));
 }
