@@ -8,6 +8,9 @@ export type Milliseconds = Brand<number, 'Milliseconds'>;
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
 export type BriefRetention = { readonly kind: 'none' } | { readonly kind: 'days'; readonly value: number };
+export const MISSED_FACTS = ['append', 'wait'] as const;
+export type MissedFacts = (typeof MISSED_FACTS)[number];
+export const MISSED_FACTS_DEFAULT: MissedFacts = 'append';
 export type UncheckedReason = 'no-decider' | 'decider-cannot-answer' | 'no-brief';
 export interface CheckedFact {
     readonly section: Section;
@@ -31,6 +34,10 @@ export const briefRetentionOf = (raw: string | undefined): BriefRetention => {
     if (days === 0) return { kind: 'none' };
     return { kind: 'days', value: days };
 };
+export const missedFactsOf = (raw: unknown): MissedFacts => {
+    const word = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return MISSED_FACTS.find((each) => each === word) ?? MISSED_FACTS_DEFAULT;
+};
 export const milliseconds = (value: number): Milliseconds => value as Milliseconds;
 export function unreachable(value: never): never {
     throw new Error(`unexpected case: ${String(value)}`);
@@ -47,6 +54,7 @@ export interface AutocompactPolicy {
     readonly shadowKinds: readonly RegisteredKind[];
     readonly ceilingPolicy: CeilingPolicy;
     readonly coverageBackoff: Backoff;
+    readonly missedFacts: MissedFacts;
 }
 
 export const MINIMUM_DEFAULT = 10;
@@ -103,6 +111,7 @@ export function policyOf(get: (key: string) => string | undefined): AutocompactP
         mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
         cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: shadowKindsOf(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
         ceilingPolicy: ceilingPolicyOf(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: backoffOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
+        missedFacts: missedFactsOf(get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS')),
     };
 }
 

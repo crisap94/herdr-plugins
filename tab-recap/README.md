@@ -313,7 +313,11 @@ Every safe moment above the limit compacts; anything else waits and is asked aga
 anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite. With
 `TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK=on` (the default), a ceiling compaction proceeds even if the check still
 misses facts; the better brief is typed with missed facts appended verbatim, capped at 1,500 characters. Set it to `off`
-to block ceiling compactions on a failed check.
+to treat a ceiling lane as one below the ceiling: `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` then decides.
+
+Below the ceiling, `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` decides what a failed check does. `append` (the default) types the better
+brief with the missed facts appended verbatim, as at the ceiling; `wait` keeps the lane waiting until a brief covers them. A
+brief that was written but could not be checked is typed unchanged; a lane with no brief or no decider still waits.
 
 `TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS` sets a skip window after a failed brief check below the ceiling. Its default
 is `0` (off); accepted values are 60,000 to 86,400,000 milliseconds. The skip is `coverage-backoff` and ends when its

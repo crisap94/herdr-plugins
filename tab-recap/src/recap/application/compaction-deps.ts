@@ -10,6 +10,7 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
+import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import type { Written } from './compaction-brief.ts';
 import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
@@ -33,6 +34,7 @@ export interface CompactionDeps {
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
     readonly checkedBriefs?: AutocompactBriefs;
     ceilingOverride?(): boolean;
+    missedFacts?(): MissedFacts;
     answer?(id: string, pane: string, stage: string): void;
     readonly asks?: Pick<AskLedger, 'attach'>;
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };

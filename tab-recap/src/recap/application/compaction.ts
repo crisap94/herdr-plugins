@@ -3,6 +3,7 @@ import type { Messages } from '#src/i18n/index.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
+import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { CompactionEnd } from '#src/ports/compaction-records.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { finalAnswerOf } from '#src/recap/domain/compact-request.ts';
@@ -14,6 +15,7 @@ import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
+import type { CoverageFlow } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
 import { isSection } from '#src/recap/domain/fact.ts';
 import type { Briefed, Checked } from './compaction-coverage.ts';
@@ -21,7 +23,8 @@ import { blockedByCoverage, coverageLog, coverageWhy } from './coverage-verdict.
 import { compactionInput } from './compaction-input.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
 import type { Material } from './compaction-message.ts';
-import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
+import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
+import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { Sender } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
@@ -32,7 +35,7 @@ const READY = new Set(['idle', 'done']);
 interface Link {
     readonly auto: boolean;
     readonly decision: string | null;
-    readonly ceilingOverride: boolean;
+    readonly flow: CoverageFlow;
 }
 
 interface Refusal {
@@ -140,21 +143,22 @@ export class Compaction {
     }
 
     private async verified(lane: Lane, tab: string, material: Material, link: Link): Promise<Checked> {
-        const { auto, decision, ceilingOverride } = link;
+        const { auto, decision, flow } = link;
         const first = await this.briefOf(lane, tab, material);
         if (!auto) return { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: 0, coverageCostUsd: null, why: null };
-        const checked = await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction), ceilingOverride);
-        const saved = this.rememberCoverage(decision, checked, first.history, ceilingOverride);
+        const checked = await checkedBrief(this.deps, first, first.history, (correction) => this.briefOf(lane, tab, material, correction), flow);
+        const saved = this.rememberCoverage(decision, checked, first.history, flow);
         const messages = this.deps.messages();
-        const ceilingLine = ceilingOverride ? coverageLog(saved.outcome, messages) : null;
-        if (ceilingLine !== null) this.deps.log(`autocompact ceiling: ${ceilingLine}`);
-        if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage, outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: ceilingOverride ? coverageWhy(saved.outcome, saved.why, messages) : saved.why, block: !ceilingOverride });
+        const blocked = blockedByCoverage(saved, flow);
+        const line = flow.appends ? coverageLog(saved.outcome, messages) : null;
+        if (line !== null) this.deps.log(`${flow.atCeiling ? 'autocompact ceiling' : 'autocompact'}: ${line}`);
+        if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage, outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: blocked ? saved.why : coverageWhy(saved.outcome, saved.why, messages), block: blocked });
         return saved;
     }
 
-    private rememberCoverage(decision: string | null, checked: Checked, history: ReturnType<Ledger['historyOf']>, ceilingOverride: boolean): Checked {
+    private rememberCoverage(decision: string | null, checked: Checked, history: ReturnType<Ledger['historyOf']>, flow: CoverageFlow): Checked {
         const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
-        const appended = ceilingOverride && checked.outcome.kind === 'missed' && checked.brief.text !== null
+        const appended = flow.appends && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;
         if (decision !== null && checked.brief.text !== null) this.deps.checkedBriefs?.put(decision, checked.brief.text, appended?.indexes ?? [], checkedFacts, this.deps.now());
@@ -163,7 +167,13 @@ export class Compaction {
 
     private linkedDecision(auto: boolean, tab: string, pane: string, id: string): Link {
         const linked = auto ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
-        return { auto, decision: linked?.id ?? null, ceilingOverride: linked?.gate === 'ceiling' && this.deps.ceilingOverride?.() !== false };
+        return { auto, decision: linked?.id ?? null, flow: this.flowOf(linked?.gate) };
+    }
+
+    private flowOf(gate: LinkedDecision['gate'] | undefined): CoverageFlow {
+        const atCeiling = gate === 'ceiling' && this.deps.ceilingOverride?.() !== false;
+        const missedFacts: MissedFacts = this.deps.missedFacts?.() ?? MISSED_FACTS_DEFAULT;
+        return { atCeiling, appends: atCeiling || missedFacts === 'append' };
     }
 
     private begun(request: CompactRequest, start: { readonly tab: string; readonly pane: string; readonly agent: string; readonly stage: 'briefing' | 'compacting'; readonly writer: string | null }): string {
@@ -192,7 +202,7 @@ export class Compaction {
         const material = this.materialOf(tab, pane, request.note);
         const link = this.linkedDecision(auto, tab, pane, id);
         const checked = await this.verified(lane, tab, material, link);
-        if (await this.stoppedByCoverage({ lane, checked, ceilingOverride: link.ceilingOverride, trail, said, messages: compaction })) return;
+        if (await this.stoppedByCoverage({ lane, checked, flow: link.flow, trail, said, messages: compaction })) return;
         const { brief } = checked;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         if (!(await this.refused(lane, tab, trail))) {
@@ -204,9 +214,9 @@ export class Compaction {
         }
     }
 
-    private async stoppedByCoverage(parts: { readonly lane: Lane; readonly checked: Checked; readonly ceilingOverride: boolean; readonly trail: Trail; readonly said: (text: string) => string; readonly messages: Messages['compaction'] }): Promise<boolean> {
-        const { lane, checked, ceilingOverride, trail, said, messages } = parts;
-        if (!blockedByCoverage(checked, ceilingOverride)) return false;
+    private async stoppedByCoverage(parts: { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: string) => string; readonly messages: Messages['compaction'] }): Promise<boolean> {
+        const { lane, checked, flow, trail, said, messages } = parts;
+        if (!blockedByCoverage(checked, flow)) return false;
         trail.end('skipped', { why: 'coverage' });
         await this.tell(said(messages.title(String(lane.agent))), messages.coverageMissed(String(lane.agent)));
         return true;
