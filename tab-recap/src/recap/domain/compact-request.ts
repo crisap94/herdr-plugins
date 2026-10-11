@@ -1,30 +1,33 @@
-export const REQUEST_PREFIX = 'compact-req-';
-export const ID_MAX = 16;
-export const VALUE_MAX = 80;
+import { idGrammarOf } from '#src/protocol/codec.ts';
+import type { ParsedValue } from '#src/protocol/codec.ts';
+import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
+import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import { isFailureStage, failureStage } from '#src/protocol/exchange.ts';
+import { LIMITS, requestId } from '#src/protocol/primitives.ts';
+import type { RequestId } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import type { AskOutcome } from './ask-outcome.ts';
+
+export const COMPACT_EXCHANGE = compact.name;
+export const VALUE_MAX = LIMITS.valueMax;
 export const ANSWER_TTL_MS = 3_600_000;
+export const NOT_ACTED: AskOutcome = { kind: 'off' };
 
-export interface Asked {
-    readonly id: string;
-    readonly note: string | null;
-    readonly valid: boolean;
-}
+const ID_GRAMMAR = must(idGrammarOf(compact.request));
 
-export function askedOf(value: string): Asked | null {
-    if (value === '') {
-        return null;
-    }
-    const cut = value.indexOf(':');
-    const id = cut < 0 ? value : value.slice(0, cut);
-    const note = cut < 0 ? '' : value.slice(cut + 1);
-    return { id, note: note.trim() === '' ? null : note.slice(0, VALUE_MAX - id.length - 1), valid: id !== '' && id.length <= ID_MAX };
-}
+const fitNote = (id: string, note: string): string | null => (note.trim() === '' ? null : note.slice(0, VALUE_MAX - id.length - 1));
 
-export const badIdAnswer = (id: string): string => answerValue(id.slice(0, ID_MAX), 'failed-bad-id');
+export const parseAskId = (raw: string): RequestId | null => {
+    const id = requestId(raw, ID_GRAMMAR);
+    return id.kind === 'ok' ? id.value : null;
+};
 
-const slug = (word: string): string => word.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unknown';
+export const noteOf = (value: ParsedValue): string | null => {
+    const note = value['note'];
+    return typeof note === 'string' ? fitNote(value.id, note) : null;
+};
 
-export const endAnswerOf = (stage: string, why: string | null): string => (stage === 'compacted' ? 'done' : `failed-${slug(why ?? stage)}`);
+export const finalAnswerOf = (stage: string, reason: CompactFailure | null): string =>
+    stage === 'compacted' ? COMPACT_STAGES.done : failureStage(reason ?? (stage === 'skipped' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error));
 
-export const refusalAnswerOf = (why: string): string => `failed-${slug(why)}`;
-
-export const answerValue = (id: string, stage: string): string => `${id}:${stage}`.slice(0, VALUE_MAX);
+export const isTerminalStage = (stage: string): boolean => stage === COMPACT_STAGES.done || isFailureStage(stage);

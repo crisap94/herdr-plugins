@@ -59,6 +59,9 @@ bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released mig
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
 bash ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"
 
+echo "protocol names (no copy of a wire name outside src/protocol):"
+node bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
+
 echo "the linters bite (a seeded violation must fail them):"
 bash ci/verify-bite.sh && echo "  ok    tsgo and oxlint both reject the seed" || fail "a linter accepted the seeded violation"
 

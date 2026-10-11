@@ -30,6 +30,8 @@ import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { debounceOf } from '#src/recap/domain/debounce.ts';
+import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import { FULL_WRITER_VIEW, KEEP_NEWEST_RANGE, NEXT_HOURS_RANGE, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
@@ -44,6 +46,7 @@ export interface Config {
     readonly customCommand: string;
     readonly effort: Effort;
     readonly pipeline: Pipeline;
+    readonly recapDebounce: Debounce;
     readonly reconcileEvery: number;
     readonly locale: Locale;
     readonly recapLanguage: string;
@@ -173,6 +176,7 @@ export function loadConfig(): Config {
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
         effort: effortOf(get('TAB_RECAP_EFFORT')),
         pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE,
+        recapDebounce: debounceOf(get('TAB_RECAP_RUN_DEBOUNCE_MS')),
         reconcileEvery: Math.max(1, Math.floor(number(get('TAB_RECAP_RECONCILE_EVERY'), RECONCILE_EVERY))),
         sizing: {
             fraction: Math.min(0.6, number(get('TAB_RECAP_WIDTH'), 0.3)),

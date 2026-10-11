@@ -15,6 +15,7 @@ export interface EvalOptions {
     readonly kind: string | null;
     readonly compareImported: string | null;
     readonly pipeline: Pipeline | null;
+    readonly mergeTurns?: number;
     readonly check: string | null;
     readonly prune: boolean;
 }
@@ -25,7 +26,7 @@ export const isItemCheck = (check: string): boolean => /^I[1-7]$/u.test(check) |
 
 export type ParsedEval = { readonly kind: 'options'; readonly options: EvalOptions } | { readonly kind: 'usage'; readonly why: string };
 
-export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> [--check <I1…I7|S-section>] | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full] [--prune]';
+export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--since <days>] [--json] | --label <n> [--check <I1…I7|S-section>] | --agree | --gates [--since <days>] | --replay <transcript-file> [--kind claude|codex] [--tab <label>] [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full] [--merge-turns <n>] [--prune]';
 
 export const DEFAULT_SAMPLE = 20;
 
@@ -43,7 +44,7 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
     try {
         return parseArgs({
             args: [...argv], allowPositionals: false, strict: true,
-            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' }, pipeline: { type: 'string' }, check: { type: 'string' }, prune: { type: 'boolean' } },
+            options: { sample: { type: 'string' }, tab: { type: 'string' }, since: { type: 'string' }, label: { type: 'string' }, agree: { type: 'boolean' }, gates: { type: 'boolean' }, json: { type: 'boolean' }, replay: { type: 'string' }, kind: { type: 'string' }, 'compare-imported': { type: 'string' }, pipeline: { type: 'string' }, 'merge-turns': { type: 'string' }, check: { type: 'string' }, prune: { type: 'boolean' } },
         }).values;
     } catch (error) {
         return error instanceof Error ? error.message : String(error);
@@ -51,6 +52,10 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
 }
 
 const textOf = (values: ReturnType<typeof parseArgs>['values'], name: string): string | undefined => (typeof values[name] === 'string' ? values[name] : undefined);
+
+function mergeTurnsOf(values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode']): { readonly mergeTurns?: number } {
+    return mode === 'replay' ? { mergeTurns: Number(textOf(values, 'merge-turns') ?? 1) } : {};
+}
 
 type Moded = { readonly mode: EvalOptions['mode'] } | { readonly why: string };
 
@@ -66,20 +71,27 @@ const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOpt
     ({
         mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true,
         replay: textOf(values, 'replay') ?? null, kind: textOf(values, 'kind') ?? null, compareImported: textOf(values, 'compare-imported') ?? null,
-        pipeline: PIPELINES.find((each) => each === textOf(values, 'pipeline')) ?? null, check: textOf(values, 'check') ?? null,
+        pipeline: PIPELINES.find((each) => each === textOf(values, 'pipeline')) ?? null,
+        ...mergeTurnsOf(values, mode), check: textOf(values, 'check') ?? null,
         prune: values['prune'] === true,
     });
 
 function replayProblem(values: ReturnType<typeof parseArgs>['values']): string | null {
     const others = ['sample', 'label', 'since', 'agree', 'gates', 'json', 'check'].filter((name) => values[name] !== undefined);
     const pipeline = textOf(values, 'pipeline');
-    if (pipeline !== undefined && !PIPELINES.some((each) => each === pipeline)) {
-        return `--pipeline takes ${PIPELINES.join(', ')}`;
-    }
+    const pipelineBad = pipeline !== undefined && !PIPELINES.some((each) => each === pipeline) ? `--pipeline takes ${PIPELINES.join(', ')}` : null;
+    if (pipelineBad !== null) return pipelineBad;
     if (values['replay'] === undefined) {
-        return values['kind'] === undefined && values['compare-imported'] === undefined && pipeline === undefined && values['prune'] === undefined ? null : '--kind, --compare-imported, --pipeline and --prune go with --replay';
+        return replayOnlyOptions(values, pipeline);
     }
-    return others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null;
+    const mergeTurns = whole(textOf(values, 'merge-turns'), 'merge-turns');
+    return mergeTurns.bad ?? (others.length > 0 ? `--replay excludes --${others[0] ?? ''}` : null);
+}
+
+function replayOnlyOptions(values: ReturnType<typeof parseArgs>['values'], pipeline: string | undefined): string | null {
+    return values['kind'] === undefined && values['compare-imported'] === undefined && pipeline === undefined && values['prune'] === undefined && values['merge-turns'] === undefined
+        ? null
+        : '--kind, --compare-imported, --pipeline, --prune and --merge-turns go with --replay';
 }
 
 function checkProblem(check: string | undefined, label: number | null): string | undefined {

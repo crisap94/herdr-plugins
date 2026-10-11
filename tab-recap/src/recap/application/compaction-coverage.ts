@@ -11,6 +11,11 @@ export interface Briefed {
     readonly own: string;
 }
 
+export interface CoverageFlow {
+    readonly atCeiling: boolean;
+    readonly appends: boolean;
+}
+
 export interface Checked {
     readonly brief: Briefed;
     readonly coverage: Readonly<Record<string, number>> | null;
@@ -24,8 +29,8 @@ const waiting = (parts: { readonly brief: Briefed; readonly why: string; readonl
     brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? 0, coverageCostUsd: parts.coverageCostUsd ?? null,
 });
 
-async function bestBrief(parts: { readonly coverage: { check(brief: string, facts: ReturnType<typeof factsOf>): Promise<Coverage> }; readonly first: Briefed; readonly facts: ReturnType<typeof factsOf>; readonly rewrite: (correction: string) => Promise<Briefed>; readonly log: (line: string) => void; readonly ceiling: boolean }): Promise<{ readonly brief: Briefed; readonly result: Coverage }> {
-    const { coverage, first, facts, rewrite, log, ceiling } = parts;
+async function bestBrief(parts: { readonly coverage: { check(brief: string, facts: ReturnType<typeof factsOf>): Promise<Coverage> }; readonly first: Briefed; readonly facts: ReturnType<typeof factsOf>; readonly rewrite: (correction: string) => Promise<Briefed>; readonly log: (line: string) => void; readonly flow: CoverageFlow }): Promise<{ readonly brief: Briefed; readonly result: Coverage }> {
+    const { coverage, first, facts, rewrite, log, flow } = parts;
     let brief = first;
     let result = await coverage.check(first.text ?? '', facts);
     if (!result.ok && result.unknown === null) {
@@ -34,20 +39,20 @@ async function bestBrief(parts: { readonly coverage: { check(brief: string, fact
         if (again.text !== null) {
             const rewritten = await coverage.check(again.text, facts);
             const costUsd = (result.costUsd ?? 0) + (rewritten.costUsd ?? 0);
-            const keepRewrite = !ceiling || (rewritten.unknown === null && rewritten.missingFacts.length <= result.missingFacts.length);
+            const keepRewrite = !flow.appends || (rewritten.unknown === null && rewritten.missingFacts.length <= result.missingFacts.length);
             [brief, result] = keepRewrite ? [again, { ...rewritten, costUsd }] : [brief, { ...result, costUsd }];
         }
     }
     return { brief, result };
 }
 
-export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log' | 'now'>, first: Briefed, history: readonly HistoryFact[], rewrite: (correction: string) => Promise<Briefed>, ceiling: boolean): Promise<Checked> {
+export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log' | 'now'>, first: Briefed, history: readonly HistoryFact[], rewrite: (correction: string) => Promise<Briefed>, flow: CoverageFlow): Promise<Checked> {
     const started = deps.now();
     const coverage = deps.coverage();
     if (coverage === null) return waiting({ brief: first, why: 'no decider is set up', outcome: { kind: 'unchecked', reason: 'no-decider' } });
     if (first.text === null) return waiting({ brief: first, why: first.why ?? 'the template would be used', outcome: { kind: 'unchecked', reason: 'no-brief' } });
     const facts = factsOf(history);
-    const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, ceiling });
+    const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, flow });
     if (result.unknown !== null) return waiting({ brief, why: `brief not checked (${result.unknown})`, outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: deps.now() - started, coverageCostUsd: result.costUsd ?? null });
     if (!result.ok) {
         const missed = result.missingFacts.flatMap(({ fact }) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);

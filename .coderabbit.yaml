@@ -1,0 +1,113 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+tone_instructions: >-
+  Senior reviewer of a public herdr plugin. Cite the rule (tab-recap/CLAUDE.md, CONTRIBUTING.md,
+  rules/<id>.yml or the OpenSpec requirement) and the file:line it breaks. Terse, no praise.
+reviews:
+  profile: "assertive"
+  high_level_summary: true
+  path_filters:
+    - "!**/package-lock.json"
+  path_instructions:
+    - path: "**"
+      instructions: >-
+        This repository is public: flag any private host, personal infrastructure, internal tool
+        name, private e-mail address, token or secret anywhere, including commit-facing text,
+        docs, fixtures and experiment records. English everywhere. The plugin runs straight from
+        source on Node with ZERO runtime dependencies: a new entry under "dependencies" is a
+        blocker; prefer Node built-ins (node:*, Intl, util) and justify any hand-written piece a
+        built-in could do. No comments in code (rules/recap-no-comments.yml): meaning lives in
+        names, types, small functions and tests; rationale in CONTEXT.md, the README or the
+        OpenSpec design; only directive pragmas with their excuse inline. Never edit CHANGELOG.md
+        or any version field: the release job writes them from the merge request's single
+        changelog:: label. Use the vocabulary in tab-recap/CONTEXT.md (rules/recap-vocabulary.yml
+        bans summary, sidebar, panel, offset, worker in identifiers); a new domain noun goes into
+        CONTEXT.md before code. Flag weakened, skipped or deleted tests and any rule silenced
+        without a stated reason.
+    - path: "tab-recap/src/**"
+      instructions: >-
+        Layers and red lines (tab-recap/CLAUDE.md; each red line is an ast-grep rule with a bad
+        probe it must bite). The domain (src/recap/domain) is a pure fold
+        (board, observation, instant) -> (board, intents) importing only ./ (domain/gates/ may
+        reach one file up); application and render import no node: module (except node:util text
+        helpers), adapter, transport or composition root; ports are interfaces whose fallible
+        reads are sum types; one adapter per port; only adapters/herdr-fleet.ts imports the
+        transport; agent.prompt, pane.send_text and pane.send_keys appear only in
+        adapters/herdr-agents.ts; a recap never types into a lane (no pane.send_input,
+        agent.send_keys, pane.input.set); only adapters write files and only under the plugin's
+        state dir; any foreign SQLite store is opened readOnly; transactions are writeTx
+        (BEGIN IMMEDIATE) in adapters/db/connection.ts only; platform probes only in src/host and
+        the OS-family adapters. Run-time red line: a recap never closes, resizes or moves a pane
+        that hosts an agent. Dispatch maps intents to port calls and decides nothing; a new intent
+        is a member on the Intent union plus a golden sequence in test/fold.test.ts. TypeScript
+        standards: no any or object; values earn their type by what they refuse (closed set,
+        value object, shape); one Result type; one serializer per format; erasable syntax only
+        (no enum, namespace, parameter property, decorator). Coming with the domain-type-gates
+        change: no primitive type (string, number, boolean, bigint, any, object, or containers of
+        them, or an unbranded alias) in any function, method, arrow or callback parameter or
+        return; value objects only; parsers take unknown; no brand casts outside the constructor
+        module. Until that gate lands, flag new code that adds primitive signatures.
+    - path: "tab-recap/src/host/**"
+      instructions: >-
+        Plain JavaScript on purpose (.mjs with .d.mts, no TypeScript syntax) so an old Node can
+        report that it is too old; the host policy and its refusal text live here. Keep it
+        dependency-free and syntax-conservative.
+    - path: "tab-recap/src/adapters/db/**"
+      instructions: >-
+        The plugin's own SQLite database, opened only through the repositories here. Schema
+        changes are numbered migrations in schema/ (NNN-name.ts listed in schema/index.ts);
+        never edit a released migration (in a tab-recap-v* tag): a fix is a new number
+        (ci/check-migrations.sh). Columns SQLite cannot ALTER use rebuildTable. Index every
+        foreign-key column; entity ids are UUIDv7 BLOB(16); money integer millionths; times epoch
+        milliseconds. A released schema gets a frozen fixture and an upgrade test. Upgrades back
+        up the database first; a newer database is opened read-only.
+    - path: "tab-recap/protocol/**"
+      instructions: >-
+        The token protocol's published contract and vectors: other tools consume them, so a
+        change is a contract change. Descriptors, golden vectors and the manifest move together;
+        a wire change must be declared in the change's proposal and the merge request's label.
+    - path: "tab-recap/test/**"
+      instructions: >-
+        Domain decisions are tested as plain folds without fakes or timers. Every test must be
+        able to fail on a plausible mutant; every rule ships bad and good probes; every value
+        object a probe that builds it invalid. No sleeps or real network in unit tests.
+    - path: "tab-recap/rules/**"
+      instructions: >-
+        A rule needs both probes (bad must fire, good must pass), and lint.sh asserts the bad
+        probe fires. Never widen a rule's ignores without a reason in the OpenSpec design.
+    - path: "openspec/changes/**"
+      instructions: >-
+        OpenSpec rules (openspec/config.yaml): the proposal states what is out of scope and names
+        the changelog:: label; the design says why no Node built-in fits each hand-written piece;
+        every task group ends with bash ci/lint.sh and bash ci/test.sh passing from tab-recap/;
+        new domain nouns go into CONTEXT.md first; the last group is Archive, run in the same
+        merge request once every task is checked. A MODIFIED requirement restates the full base
+        block plus the change. Every requirement has testable scenarios; every number is measured
+        or marked unmeasured with the task that measures it. Real-herdr proofs are automated in a
+        scratch workspace with a scratch daemon (CONTRIBUTING.md), never against the maintainer's
+        daemon. A new capability's delta starts with a Purpose section. Write tasks so lanes can
+        work in parallel on disjoint files after the gates and domain exist.
+    - path: "openspec/specs/**"
+      instructions: >-
+        Main specs change only by archiving a change whose delta restates them; a hand edit here
+        is a finding.
+    - path: "**/.gitlab-ci.yml"
+      instructions: >-
+        Pin every image and tool to an exact version; no secrets in variables; explicit needs and
+        timeouts; the merge-request check (ci/check-mr.sh) requires one changelog:: label and the
+        two template sections.
+    - path: ".github/**"
+      instructions: >-
+        The GitHub side is a push mirror of main: workflows only test and release from the
+        mirrored tags. Pin actions to a full commit SHA or exact version; no secrets in logs.
+    - path: "tab-recap/ci/**"
+      instructions: >-
+        Scripts run on macOS' stock bash 3.2 and Linux: no mapfile or other bash 4 features;
+        set -euo pipefail; exit 0 clean, 1 finding, 2 usage, 3 could not look.
+  auto_review:
+    ignore_usernames:
+      - renovate
+issues:
+  auto_create: true
+  severities:
+    - blocker

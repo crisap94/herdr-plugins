@@ -43,13 +43,13 @@ const sizeOf = (file: string): number | null => {
     }
 };
 
-export function ranLine(done: Replayed, jobs: { readonly view: WriterView; readonly pipeline: string; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
-    const per = done.windows === 0 ? 0 : done.costUsd / done.windows;
-    return `view ${jobs.view.kind} · pipeline ${jobs.pipeline} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.windows} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.windows)).toFixed(2)} per turn)`;
+export function ranLine(done: Replayed, jobs: { readonly view: WriterView; readonly pipeline: string; readonly mergeTurns: number; readonly writer: string; readonly effort: string; readonly enumerator: string | null; readonly judge: string; readonly calls: { readonly writer: number; readonly enumeration: number } }): string {
+    const per = done.turns === 0 ? 0 : done.costUsd / done.turns;
+    return `view ${jobs.view.kind} · pipeline ${jobs.pipeline} · merge-turns ${jobs.mergeTurns} · writer ${jobs.writer} ${jobs.effort} · enumeration ${jobs.enumerator ?? 'none'} · judge ${jobs.judge} · cost: $${done.costUsd.toFixed(3)} over ${done.turns} turns ($${per.toFixed(4)} per turn; a harness that reports no cost shows 0) · calls: ${jobs.calls.writer} writer + ${jobs.calls.enumeration} enumeration (${((jobs.calls.writer + jobs.calls.enumeration) / Math.max(1, done.turns)).toFixed(2)} per turn)`;
 }
 
 function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
-    console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.windows} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
+    console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.turns} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
     if (beside !== null) {
         const imported = factsOfTab(databasePath(stateDir()), beside);
         console.log(`\n${imported === null ? `the imported facts of ${beside}: none (no ledger in the database yet)` : reportOf(`the imported facts of ${beside}`, imported)}`);
@@ -73,8 +73,8 @@ async function replayed(input: { readonly file: string; readonly reader: Transcr
     const done = await replay({
         reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
         summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: view,
-    }, input.file, input.options.tab ?? 'replay:t1', input.size);
-    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view, pipeline, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
+    }, input.file, input.options.tab ?? 'replay:t1', input.size, input.options.mergeTurns ?? 1);
+    printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view, pipeline, mergeTurns: input.options.mergeTurns ?? 1, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
     console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
 }
 

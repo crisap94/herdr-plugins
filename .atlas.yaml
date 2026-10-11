@@ -1,0 +1,39 @@
+# Review-bot overlay: only the depth gate lives here; the review instructions are in
+# .coderabbit.yaml, so no list in this file replaces one there. Read from the default
+# branch, so it takes effect once merged. Paths with no rule are reviewed at full depth,
+# so every area of the repository has one.
+gate:
+  rules:
+    - { path: ".gitlab-ci.yml",                        criticality: supply-chain, bypass: never }
+    - { path: ".github/**",                            criticality: supply-chain, bypass: never }
+    - { path: "tab-recap/ci/**",                       criticality: supply-chain, bypass: never }
+    - { path: "tab-recap/package.json",                criticality: supply-chain, bypass: never }
+    - { path: "tab-recap/herdr-plugin.toml",           criticality: supply-chain, bypass: never }
+    - { path: ".atlas.yaml",                           criticality: governance,   bypass: never }
+    - { path: ".coderabbit.yaml",                      criticality: governance,   bypass: never }
+    - { path: "tab-recap/rules/**",                    criticality: governance,   bypass: never }
+    - { path: "tab-recap/src/adapters/db/schema/**",   criticality: data,         bypass: never }
+    - { path: "tab-recap/src/adapters/herdr-agents.ts", criticality: red-line,    bypass: never }
+    - { path: "tab-recap/src/adapters/column-panes.ts", criticality: red-line,    bypass: never }
+    - { path: "tab-recap/src/adapters/herdr-fleet.ts", criticality: red-line,     bypass: never }
+    - { path: "tab-recap/protocol/**",                 criticality: contract,     bypass: never }
+    - { path: "tab-recap/src/host/**",                 level: full }
+    - { path: "tab-recap/src/**",                      level: normal }
+    - { path: "tab-recap/bin/**",                      level: normal }
+    - { path: "tab-recap/schema/**",                   level: normal }
+    - { path: "tab-recap/test/**",                     level: normal }
+    - { path: "tab-recap/tsconfig.json",               level: normal }
+    - { path: "tab-recap/.oxlintrc.json",              level: normal }
+    - { path: "tab-recap/sgconfig.yml",                level: normal }
+    - { path: "tab-recap/config.example.env",          level: normal }
+    - { path: "openspec/**",                           level: normal }
+    - { path: ".gitlab/**",                            level: normal }
+    - { path: "experiments/**",                        level: light }
+    - { path: "tab-recap/docs/**",                     level: light }
+    - { path: "**/package-lock.json",                  level: light }
+    - { path: "**/.gitignore",                         level: light }
+    - { path: "LICENSE",                               level: light }
+    - { path: "**/*.md",                               level: light }
+  keep_open_severities:
+    - blocker
+    - major

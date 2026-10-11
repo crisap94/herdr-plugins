@@ -1,11 +1,17 @@
+import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
+import { LIMITS } from '#src/protocol/primitives.ts';
+
 export const EVENT_TOKEN = 'tab-recap-event';
 export const EVENT_TTL_MS = 3_600_000;
-export const VALUE_MAX = 80;
+export const VALUE_MAX = LIMITS.valueMax;
 
-export const EVENT_KINDS = [
-    'recap-written', 'needs-raised', 'needs-cleared', 'compact-queued', 'compact-running', 'compact-done', 'compact-failed',
+const LANE_EVENT_KINDS = [
+    'recap-written', 'needs-raised', 'needs-cleared',
     'autocompact-decided', 'autocompact-skipped', 'lane-closed', 'daemon-started', 'daemon-stopping',
 ] as const;
+const EXCHANGE_EVENT_KINDS = EXCHANGES.flatMap((exchange) => exchange.events);
+
+export const EVENT_KINDS = [...LANE_EVENT_KINDS, ...EXCHANGE_EVENT_KINDS] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 export const seqOf = (startedAt: number, n: number): string => (Math.floor(startedAt) + n).toString(36);

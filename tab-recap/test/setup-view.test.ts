@@ -31,7 +31,7 @@ const states: readonly [string, Setup][] = [
     ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
     ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
     ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
-    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 15 }, () => 'j'), '\r'])],
+    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r'])],
     ['save failed', { ...withAvailable(base, ['claude']), note: { failed: 'EACCES: permission denied, open config.env' } }],
 ];
 
@@ -70,11 +70,11 @@ test('a locked row names its variable; the recap writer row shows harness · mod
 });
 
 test('the telemetry setting shows its choices and environment lock', () => {
-    const choices = setupView({ ...base, row: 17, editing: { kind: 'choice', at: 1 } }, en, 100).join('\n');
+    const choices = setupView({ ...base, row: 18, editing: { kind: 'choice', at: 1 } }, en, 100).join('\n');
     assert.ok(choices.includes('Job telemetry tags'));
     assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
     assert.ok(choices.includes('off — do not add a job attribute'));
-    const locked = { ...base, row: 17, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
+    const locked = { ...base, row: 18, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
     assert.ok(setupView(locked, en, 100).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
 });
 
@@ -176,7 +176,7 @@ test('the autocompact rows show their value, the focused one its hint, and the d
     assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
-    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 15 }, () => 'j'), '\r']), en, 140).join('\n');
+    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r']), en, 140).join('\n');
     assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
     assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
     assert.match(setupView(rows, es, 120).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);

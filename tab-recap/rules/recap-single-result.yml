@@ -1,0 +1,30 @@
+id: recap-single-result
+language: typescript
+severity: error
+message: >-
+  A second result union. The repository's one Result<T, E> is in src/protocol/result.ts: import it
+  instead of declaring an ok | err union.
+note: >-
+  Only a union with a kind 'ok' arm and a kind 'err' arm is a fallible-operation result. An outcome table
+  that pairs 'ok' with another word ('bad', 'unusable') is a closed sum of its own and is not matched.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/test/**"
+  - "**/probes/recap-single-result/**"
+ignores:
+  - "**/src/protocol/**"
+rule:
+  kind: type_alias_declaration
+  all:
+    - has:
+        kind: union_type
+        stopBy: end
+    - has:
+        kind: property_signature
+        regex: "^(readonly )?kind: ['\"]ok['\"]$"
+        stopBy: end
+    - has:
+        kind: property_signature
+        regex: "^(readonly )?kind: ['\"]err['\"]$"
+        stopBy: end

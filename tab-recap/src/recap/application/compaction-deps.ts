@@ -10,6 +10,7 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
+import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import type { Written } from './compaction-brief.ts';
 import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
@@ -17,6 +18,7 @@ import type { LaneEvents } from './lane-events.ts';
 import type { CompactionClaims } from './compaction-claims.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
+import type { AskLedger } from '#src/ports/ask-ledger.ts';
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
@@ -32,7 +34,9 @@ export interface CompactionDeps {
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
     readonly checkedBriefs?: AutocompactBriefs;
     ceilingOverride?(): boolean;
+    missedFacts?(): MissedFacts;
     answer?(id: string, pane: string, stage: string): void;
+    readonly asks?: Pick<AskLedger, 'attach'>;
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events?: LaneEvents;
     readonly claims: CompactionClaims;

@@ -313,7 +313,11 @@ Every safe moment above the limit compacts; anything else waits and is asked aga
 anything, the brief is checked against the open goal, needs, decisions and rules: a fact it loses gets one rewrite. With
 `TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK=on` (the default), a ceiling compaction proceeds even if the check still
 misses facts; the better brief is typed with missed facts appended verbatim, capped at 1,500 characters. Set it to `off`
-to block ceiling compactions on a failed check.
+to treat a ceiling lane as one below the ceiling: `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` then decides.
+
+Below the ceiling, `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` decides what a failed check does. `append` (the default) types the better
+brief with the missed facts appended verbatim, as at the ceiling; `wait` keeps the lane waiting until a brief covers them. A
+brief that was written but could not be checked is typed unchanged; a lane with no brief or no decider still waits.
 
 `TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS` sets a skip window after a failed brief check below the ceiling. Its default
 is `0` (off); accepted values are 60,000 to 86,400,000 milliseconds. The skip is `coverage-backoff` and ends when its
@@ -590,6 +594,7 @@ off unless `TAB_RECAP_HERDR_EVENTS=on`; with it off, nothing below is written an
 | token | value | when |
 | --- | --- | --- |
 | `tab-recap-api` | `1`, the protocol version | with the lane's other lane tokens |
+| `tab-recap-x` | `compact1,kinds1`, the exchanges and kinds offered (see below) | with the lane's other lane tokens |
 | `tab-recap-share` | the context share, in percent | when it changes |
 | `tab-recap-recap` | epoch ms of the tab's last recap | when a recap is written |
 | `tab-recap-needs` | the number of open needs of the tab | when it changes |
@@ -603,7 +608,7 @@ every pane and workspace that carried one, and the lane tokens on every lane.
 
 **Requests another tool may write** on a lane's pane: `compact-req-<tool>` = `<id>` or `<id>:<note>` (the note is the focus of the
 brief, cut to fit). tab-recap answers in `tab-recap-compact`: `<id>:queued`, then `running`, then `done` or `failed-<reason>`;
-`failed-not-a-lane` when the pane is not a lane; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
+`failed-not-a-lane` when the pane is not a lane; `failed-busy` when the agent is working; `failed-skipped` when it is not ready (blocked, or the brief does not cover the facts); `failed-error` for any other cause; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
 restarts: the same id written again asks for nothing. A request seen while the setting is off is remembered and never acted on, even
 after it goes on. A request a restart interrupts while the setting is on is answered `failed-interrupted`; one interrupted while it is
 off is not answered.
@@ -637,6 +642,33 @@ per outage.
 
 **The version.** `tab-recap-api` is the protocol version. A breaking change to a token's name or value format raises it.
 
+**The token protocol.** Each exchange another tool can start is declared once in `src/protocol/`, and its golden vectors are in
+`protocol/vectors/`. A request is the token `<prefix><tool>` (`compact-req-<tool>` for `compact`). Its answer is one token per pane,
+shared by every requester of that exchange: `tab-recap-<exchange>` = `<id>:<stage>` (`tab-recap-compact` for `compact`). The stages are
+`queued`, `running`, `done` and `failed-<reason>`; a restart that interrupts an ask writes `failed-interrupted`. A requester reads an
+answer whose id is not its own as foreign and keeps waiting for its own id. A stage the exchange does not declare reads as unreadable, and
+a `failed-` stage a tool does not know should be read as a failure. The id grammar belongs to the exchange: `compact` keeps the legacy one
+(1 to 16 characters, anything but `:`), and an exchange added later takes `token-safe` (`[A-Za-z0-9_-]`, 1 to 16 characters).
+
+**The capability token.** `tab-recap-x` = `compact1,kinds1` on a lane's pane when sharing is on: `<exchange><version>` for every exchange
+tab-recap answers and has enabled, then `kinds<version>`, the version of the agent kinds list in `protocol/vectors/kinds.json`. An exchange
+missing from the list is not offered, so do not wait for it. A pane without `tab-recap-x` offers nothing: sharing is off, or the tab-recap
+predates this token.
+
+**Not authenticated.** The protocol does not authenticate its writers. Any process of the same user with access to herdr can write or clear
+any token, a request, an answer or the capability token. An answer is an observation of what the answer token holds, not proof that the work
+was done.
+
+**Carrying a copy.** A tool may carry a verbatim copy of `src/protocol/` and `protocol/vectors/`. `test/protocol-vectors.test.ts` runs the
+vectors against `src/protocol` and imports nothing but `node:` modules and that folder, so it can be copied with them. `protocol/MANIFEST`
+lists each of those files with its SHA-256 in `sha256sum` format, the paths relative to this directory. To check a copy, lay it out the same
+way and run `sha256sum -c protocol/MANIFEST` where `src/` and `protocol/` sit, against the MANIFEST of the tag the copy pins.
+
+**Measured herdr facts.** herdr writes a token only when its value changes: a rewrite with the same bytes emits no event, so tab-recap reads a
+pane's request tokens on every read of its token map, not only on an event. A token whose time to live runs out emits an event with a null
+value. herdr truncates a value over 80 characters, so the protocol refuses to write one; only the compact answer is cut to 80, as before the
+protocol. Token names are `[A-Za-z0-9_-]`, 1 to 32 characters.
+
 ## Command exit codes
 
 - Every command exits `0` when it did what was asked, `1` when it failed, `2` on a usage error (an unknown or mistyped option is named, the usage goes to stderr) and `3` when it could not look at what it was asked about.
@@ -653,6 +685,19 @@ Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: 
 Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
 
 Keys new in 2.0: `TAB_RECAP_JUDGE_BY` / `_MODEL` / `_EFFORT` and `TAB_RECAP_CURATE_BY` / `_MODEL` / `_EFFORT` (the two new jobs, see [Models](#models)); `TAB_RECAP_KEEP_INPUT_DAYS` (days the input of each run is kept for the judge, default 14, `0` = never); `TAB_RECAP_KEEP_DAYS` (days before a closed tab is removed, default 30, `0` = never).
+
+### Recap runs
+
+`TAB_RECAP_RUN_DEBOUNCE_MS` sets the run window, the minimum gap between turn-ended runs of one tab, measured from
+the start of the last run that called the writer. Endings inside the window are collected into one run, which reads
+their turns through the transcript cursor. The settle delay still applies after each ending. Focus, requested refreshes,
+and, when a window is enabled, the first run of a tab in this process and a changed lane set are forced runs and start at once. The default is `0`
+(off), which keeps the previous timing. Set `5000` through `300000` to use a window; invalid values act as `0`.
+
+Use `tab-recap eval --replay <file> --merge-turns <n>` to group consecutive turns into one writer call and compare its
+result with the existing `--merge-turns 1` report. The replay report names the merge count beside the pipeline.
+The recommended window is `60000` ms, pending measurement against the recall bar. That replay has not been measured,
+so the default remains off.
 
 ## State and rolling back
 

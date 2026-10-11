@@ -18,7 +18,7 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import { RecapJob } from './recap-job.ts';
 import type { RecapJobDeps } from './recap-job.ts';
 
-export function windowsOf(entries: readonly Entry[]): readonly (readonly Entry[])[] {
+export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
     for (const entry of entries) {
         const [last] = windows.slice(-1);
@@ -28,7 +28,11 @@ export function windowsOf(entries: readonly Entry[]): readonly (readonly Entry[]
             last.push(entry);
         }
     }
-    return windows;
+    const merged: Entry[][] = [];
+    for (let index = 0; index < windows.length; index += mergeTurns) {
+        merged.push(windows.slice(index, index + mergeTurns).flat());
+    }
+    return merged;
 }
 
 export interface ReplayDeps {
@@ -46,6 +50,7 @@ export interface ReplayDeps {
 
 export interface Replayed {
     readonly windows: number;
+    readonly turns: number;
     readonly facts: readonly Fact[];
     readonly costUsd: number;
 }
@@ -73,23 +78,35 @@ function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerat
     return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }), writerView: (): WriterView => deps.writerView };
 }
 
-export async function replay(deps: ReplayDeps, file: string, label: string, size: number): Promise<Replayed> {
-    const whole = await deps.reader.read(file, UNREAD, size);
-    if (isUnknown(whole)) {
-        throw new Error(`cannot read ${file}: ${saying(whole.why)}`);
-    }
-    const windows = windowsOf(whole.entries);
-    const at: Position = { turn: 0, now: windows.at(0)?.at(0)?.at ?? 1 };
-    const job = new RecapJob({
+function jobOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): RecapJob {
+    return new RecapJob({
         transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, (kind): string => capabilityWording('history-unavailable', kind)), records: deps.records, ledger: deps.ledger, repos: deps.repos, summarizer: deps.summarizer,
         language: (): string => deps.language, log: deps.log, clock: { now: (): Instant => instant(at.now) },
         ...pipelineOf(deps),
     });
-    const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
+}
+
+async function entriesOf(reader: Transcripts, file: string, size: number): Promise<readonly Entry[]> {
+    const result = await reader.read(file, UNREAD, size);
+    if (isUnknown(result)) throw new Error(`cannot read ${file}: ${saying(result.why)}`);
+    return result.entries;
+}
+
+async function runWindows(job: RecapJob, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
     for (; at.turn < windows.length; at.turn += 1) {
         at.now = endOf(windows[at.turn], at.now);
         await job.refreshNow(tabId(label), [lane]);
     }
+}
+
+export async function replay(deps: ReplayDeps, file: string, label: string, size: number, mergeTurns = 1): Promise<Replayed> {
+    const entries = await entriesOf(deps.reader, file, size);
+    const turns = windowsOf(entries);
+    const windows = windowsOf(entries, mergeTurns);
+    const at: Position = { turn: 0, now: windows.at(0)?.at(0)?.at ?? 1 };
+    const job = jobOf(deps, file, windows, at);
+    const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
+    await runWindows(job, lane, windows, at, label);
     const tasks = deps.records.readRecap(label)?.tasks ?? [];
-    return { windows: windows.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })), costUsd: deps.records.readRecap(label)?.costUsd ?? 0 };
+    return { windows: windows.length, turns: turns.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })), costUsd: deps.records.readRecap(label)?.costUsd ?? 0 };
 }

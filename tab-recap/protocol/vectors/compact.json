@@ -1,0 +1,563 @@
+{
+    "exchange": "compact",
+    "exchangeVersion": 1,
+    "requestPrefix": "compact-req-",
+    "answerToken": "tab-recap-compact",
+    "timing": {},
+    "requests": [
+        {
+            "raw": "r7",
+            "expect": {
+                "kind": "parsed",
+                "id": "r7",
+                "note": null
+            }
+        },
+        {
+            "raw": "r7:please keep the parser",
+            "expect": {
+                "kind": "parsed",
+                "id": "r7",
+                "note": "please keep the parser"
+            }
+        },
+        {
+            "raw": "r.7",
+            "expect": {
+                "kind": "parsed",
+                "id": "r.7",
+                "note": null
+            }
+        },
+        {
+            "raw": "r.7:why",
+            "expect": {
+                "kind": "parsed",
+                "id": "r.7",
+                "note": "why"
+            }
+        },
+        {
+            "raw": "r7:a:b",
+            "expect": {
+                "kind": "parsed",
+                "id": "r7",
+                "note": "a:b"
+            }
+        },
+        {
+            "raw": " :n",
+            "expect": {
+                "kind": "parsed",
+                "id": " ",
+                "note": "n"
+            }
+        },
+        {
+            "raw": "aaaaaaaaaaaaaaaa",
+            "expect": {
+                "kind": "parsed",
+                "id": "aaaaaaaaaaaaaaaa",
+                "note": null
+            }
+        },
+        {
+            "raw": "",
+            "expect": {
+                "kind": "refused",
+                "reason": "empty",
+                "subject": "RequestId"
+            }
+        },
+        {
+            "raw": ":x",
+            "expect": {
+                "kind": "refused",
+                "reason": "empty",
+                "subject": "RequestId"
+            }
+        },
+        {
+            "raw": "aaaaaaaaaaaaaaaaa",
+            "expect": {
+                "kind": "refused",
+                "reason": "too-long",
+                "subject": "RequestId"
+            }
+        }
+    ],
+    "serializes": [
+        {
+            "value": {
+                "id": "r.7",
+                "note": "why"
+            },
+            "expect": {
+                "kind": "value",
+                "value": "r.7:why"
+            }
+        },
+        {
+            "value": {
+                "id": "r7",
+                "note": null
+            },
+            "expect": {
+                "kind": "value",
+                "value": "r7"
+            }
+        },
+        {
+            "value": {
+                "id": "r7",
+                "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "expect": {
+                "kind": "value",
+                "value": "r7:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            }
+        },
+        {
+            "value": {
+                "id": "r7",
+                "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "expect": {
+                "kind": "refused",
+                "reason": "too-long",
+                "subject": "TokenValue"
+            }
+        }
+    ],
+    "answers": [
+        {
+            "id": "r7",
+            "stage": "queued",
+            "expect": {
+                "kind": "value",
+                "value": "r7:queued"
+            }
+        },
+        {
+            "id": "r7",
+            "stage": "running",
+            "expect": {
+                "kind": "value",
+                "value": "r7:running"
+            }
+        },
+        {
+            "id": "r7",
+            "stage": "done",
+            "expect": {
+                "kind": "value",
+                "value": "r7:done"
+            }
+        },
+        {
+            "id": "r7",
+            "stage": "failed-interrupted",
+            "expect": {
+                "kind": "value",
+                "value": "r7:failed-interrupted"
+            }
+        },
+        {
+            "id": "",
+            "stage": "queued",
+            "expect": {
+                "kind": "value",
+                "value": ":queued"
+            }
+        },
+        {
+            "id": "aaaaaaaaaaaaaaaa",
+            "stage": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "expect": {
+                "kind": "value",
+                "value": "aaaaaaaaaaaaaaaa:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            }
+        },
+        {
+            "id": "aaaaaaaaaaaaaaaa",
+            "stage": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "expect": {
+                "kind": "value",
+                "value": "aaaaaaaaaaaaaaaa:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            }
+        },
+        {
+            "id": "aaaaaaaaaaaaaaaaa",
+            "stage": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "expect": {
+                "kind": "value",
+                "value": "aaaaaaaaaaaaaaaaa:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            }
+        },
+        {
+            "id": "r7",
+            "stage": "failed-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+            "expect": {
+                "kind": "value",
+                "value": "r7:failed-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+            }
+        }
+    ],
+    "badIds": [
+        {
+            "rawId": "aaaaaaaaaaaaaaaaa",
+            "expect": "aaaaaaaaaaaaaaaa:failed-bad-id"
+        },
+        {
+            "rawId": "",
+            "expect": ":failed-bad-id"
+        }
+    ],
+    "traces": [
+        {
+            "name": "queued, running, done: each stage is observed as the requester reads it",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r1"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [
+                            {
+                                "tool": "coordinator",
+                                "id": "r1",
+                                "note": null
+                            }
+                        ],
+                        "refused": []
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r1",
+                        "expect": {
+                            "kind": "not-seen"
+                        }
+                    }
+                },
+                {
+                    "answer": {
+                        "id": "r1",
+                        "stage": "queued"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r1",
+                        "expect": {
+                            "kind": "queued"
+                        }
+                    }
+                },
+                {
+                    "answer": {
+                        "id": "r1",
+                        "stage": "running"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r1",
+                        "expect": {
+                            "kind": "running"
+                        }
+                    }
+                },
+                {
+                    "answer": {
+                        "id": "r1",
+                        "stage": "done"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r1",
+                        "expect": {
+                            "kind": "done"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a note travels with the request",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r2:please keep the parser"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [
+                            {
+                                "tool": "coordinator",
+                                "id": "r2",
+                                "note": "please keep the parser"
+                            }
+                        ],
+                        "refused": []
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a request is taken once, though it stays on the pane",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r1"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [
+                            {
+                                "tool": "coordinator",
+                                "id": "r1",
+                                "note": null
+                            }
+                        ],
+                        "refused": []
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [],
+                        "refused": []
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a rewrite with a new id is taken",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r1"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [
+                            {
+                                "tool": "coordinator",
+                                "id": "r1",
+                                "note": null
+                            }
+                        ],
+                        "refused": []
+                    }
+                },
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r2"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [
+                            {
+                                "tool": "coordinator",
+                                "id": "r2",
+                                "note": null
+                            }
+                        ],
+                        "refused": []
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a request cleared before the take is not taken",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "r1"
+                    }
+                },
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": null
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [],
+                        "refused": []
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a foreign answer is observed as foreign, and the own answer is read once it arrives",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "b2:done"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "a1",
+                        "expect": {
+                            "kind": "foreign-id",
+                            "id": "b2"
+                        }
+                    }
+                },
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "a1:running"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "a1",
+                        "expect": {
+                            "kind": "running"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a failure is observed with its reason",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r3:failed-not-a-lane"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r3",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "not-a-lane"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a bad id is refused with its answer and requests nothing",
+            "steps": [
+                {
+                    "write": {
+                        "name": "compact-req-coordinator",
+                        "value": "aaaaaaaaaaaaaaaaa"
+                    }
+                },
+                {
+                    "take": {
+                        "taken": [],
+                        "refused": [
+                            {
+                                "tool": "coordinator",
+                                "rawId": "aaaaaaaaaaaaaaaaa",
+                                "answer": "aaaaaaaaaaaaaaaa:failed-bad-id"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a stage the descriptor does not declare is unreadable",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r4:weird"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r4",
+                        "expect": {
+                            "kind": "unreadable"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a skipped compaction is answered and observed as failed with reason skipped",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r5:failed-skipped"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r5",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "skipped"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a refusal because the agent is busy is observed as failed with reason busy",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r6:failed-busy"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r6",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "busy"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a free-text cause is answered failed-error, and observed as failed with reason error",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r8:failed-error"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r8",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "error"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

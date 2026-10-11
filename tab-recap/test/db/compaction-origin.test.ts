@@ -8,7 +8,7 @@ test('a compaction asked by another tool is recorded with origin request, with i
     store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: 10, origin: 'request', answer: 'r7' });
     const shown = store.compactions.shownFor('w1:t1');
     assert.equal(shown[0]?.origin, 'request');
-    assert.deepEqual(store.compactions.unfinishedAsks(), [{ pane: 'w1:p1', answer: 'r7' }]);
+    assert.deepEqual(store.db.prepare("SELECT pane, answer FROM compaction WHERE origin = 'request' AND answer IS NOT NULL AND finished_at IS NULL").all().map((row) => ({ pane: row['pane'], answer: row['answer'] })), [{ pane: 'w1:p1', answer: 'r7' }]);
     store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p2', agent: 'claude', stage: 'compacting', at: 11, origin: 'auto' });
     assert.deepEqual(store.compactions.shownFor('w1:t1').map((record) => record.origin).toSorted(), ['auto', 'request']);
 });

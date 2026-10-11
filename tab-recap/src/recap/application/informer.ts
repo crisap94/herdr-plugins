@@ -9,9 +9,20 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import type { TokenMap } from '#src/protocol/tokens.ts';
 import { AsyncQueue } from './async-queue.ts';
-import { decode, paneSessionOf } from './decode.ts';
+import { decode, paneSessionOf, tokensOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
+
+type Snapshot = Exclude<SnapshotResult, { readonly kind: 'unknown' }>;
+
+interface PaneTokens {
+    readonly kind: 'tokens';
+    readonly pane: string;
+    readonly tokens: TokenMap;
+}
+
+type Step = Observation | PaneTokens;
 
 export interface Blindness {
     readonly at: 'snapshot' | 'subscribe';
@@ -24,7 +35,7 @@ export interface InformerHooks {
     onUnknownKind(rawKind: string): void;
     onBeat(): void;
     onStatus?(pane: string, status: string): void;
-    onPaneUpdated?(data: Readonly<Record<string, unknown>>): void;
+    onPaneTokens?(pane: string, tokens: TokenMap): void;
     sessionIdentity: SessionOf;
 }
 
@@ -48,7 +59,7 @@ export class Informer {
     private readonly policy: Policy;
     private readonly hooks: InformerHooks;
     private readonly identityForSession: SessionOf;
-    private readonly queue = new AsyncQueue<Observation>();
+    private readonly queue = new AsyncQueue<Step>();
     private board: Board = emptyBoard();
     private stream: FrameStream | null = null;
     private pendingResync: ReturnType<typeof setTimeout> | null = null;
@@ -79,10 +90,18 @@ export class Informer {
     private async stamped(): Promise<SnapshotResult> {
         const requested = Number(this.clock.now());
         const snap = await this.source.snapshot();
-        if (!isUnknown(snap)) {
-            this.lastLife = Number(this.clock.now());
+        if (isUnknown(snap)) {
+            return snap;
         }
-        return isUnknown(snap) ? snap : { ...snap, seen: { ...snap.seen, at: requested } };
+        this.lastLife = Number(this.clock.now());
+        return { ...snap, seen: { ...snap.seen, at: requested } };
+    }
+
+    private pushSnapshot(snap: Snapshot): void {
+        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        for (const [pane, tokens] of snap.paneTokens) {
+            this.queue.push({ kind: 'tokens', pane, tokens });
+        }
     }
 
     async enterSubscription(): Promise<void> {
@@ -104,7 +123,7 @@ export class Informer {
         this.stream = opened.stream;
         void this.pump(opened.stream);
         const first = !this.board.seeded;
-        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        this.pushSnapshot(snap);
         if (first && snap.focusedTab !== null) {
             this.queue.push({ kind: 'focused', tab: tabId(snap.focusedTab) });
         }
@@ -113,7 +132,7 @@ export class Informer {
     private async recoverWithoutStream(): Promise<void> {
         const snap = await this.stamped();
         if (!isUnknown(snap)) {
-            this.queue.push({ kind: 'reconciled', seen: snap.seen });
+            this.pushSnapshot(snap);
         }
         this.retrySoon();
     }
@@ -141,7 +160,7 @@ export class Informer {
             this.hooks.onBlind({ at: 'snapshot', saying: saying(snap.why) });
             return;
         }
-        this.queue.push({ kind: 'reconciled', seen: snap.seen });
+        this.pushSnapshot(snap);
     }
 
     tick(): void {
@@ -170,11 +189,7 @@ export class Informer {
         for await (const frame of stream.frames()) {
             this.lastLife = Number(this.clock.now());
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
-                this.hooks.onPaneUpdated?.(frame.data);
-                const session = paneSessionOf(frame.data, this.identityForSession);
-                if (session !== null) {
-                    this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
-                }
+                this.paneUpdated(frame.data);
                 continue;
             }
             const decoded = decode(frame, this.identityForSession);
@@ -196,6 +211,17 @@ export class Informer {
         }
     }
 
+    private paneUpdated(data: Readonly<Record<string, unknown>>): void {
+        const tokens = tokensOf(data);
+        if (tokens !== null) {
+            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: tokens.tokens });
+        }
+        const session = paneSessionOf(data, this.identityForSession);
+        if (session !== null) {
+            this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
+        }
+    }
+
     push(observation: Observation): void {
         this.queue.push(observation);
     }
@@ -211,8 +237,12 @@ export class Informer {
     }
 
     async run(): Promise<void> {
-        for await (const observation of this.queue) {
-            const outcome = observe(this.board, observation, this.clock.now(), this.policy);
+        for await (const step of this.queue) {
+            if (step.kind === 'tokens') {
+                this.hooks.onPaneTokens?.(step.pane, step.tokens);
+                continue;
+            }
+            const outcome = observe(this.board, step, this.clock.now(), this.policy);
             this.board = outcome.board;
             if (outcome.intents.length > 0) {
                 await this.hooks.onIntents(outcome.intents);

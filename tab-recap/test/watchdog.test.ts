@@ -24,7 +24,7 @@ function silentHerdr(): { source: FleetSource; subscribes: () => number } {
                 return new Promise<SnapshotResult>(() => undefined);
             }
             answered = true;
-            return Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() } });
+            return Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, paneTokens: new Map() });
         },
         subscribe: (): Promise<StreamResult> => {
             subscribes += 1;
@@ -71,7 +71,7 @@ test('watchdog: a frame, or a snapshot, counts as a sign of life', async () => {
     const queue = new AsyncQueue<Frame>();
     let subscribes = 0;
     const source: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() } }),
+        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, paneTokens: new Map() }),
         subscribe: (): Promise<StreamResult> => { subscribes += 1; return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => undefined } }); },
     };
     const informer = new Informer(source, { now: (): ReturnType<typeof instant> => instant(now) }, DEFAULT_POLICY, {

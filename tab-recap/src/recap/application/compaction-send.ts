@@ -5,6 +5,7 @@ import { saying, unknown } from '#src/ports/unknowable.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
+import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
 import { outcomeOf } from './compaction-outcome.ts';
 import type { OutcomeDeps, Verdict } from './compaction-outcome.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
@@ -98,7 +99,7 @@ export class Sender {
     private async refused(lane: Lane, trail: Trail, sent: Exclude<Prompted, { kind: 'sent' }>): Promise<void> {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
-        trail.end('failed', { why });
+        trail.end('failed', { why }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
         await this.tell(compaction.title(String(lane.agent)), compaction.failed(String(lane.agent), why));
     }
 

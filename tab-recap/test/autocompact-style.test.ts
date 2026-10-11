@@ -153,11 +153,11 @@ test('the re-check key works under any style: balanced with a re-check of one mi
 
 test('the listing header names the style and its numbers in force', () => {
     const balanced = styleLine(policyOf(env({})), tuningOf(env({})), en.autocompactSettings);
-    assert.equal(balanced, 'style balanced · warnings at most 0.30 · closes at least 0.70 · undecided 0.35–0.65 · pass mark 0.70 · ceiling 80 % · ceiling override on · coverage backoff off · cooldown 10 min · re-check never');
+    assert.equal(balanced, 'style balanced · warnings at most 0.30 · closes at least 0.70 · undecided 0.35–0.65 · pass mark 0.70 · ceiling 80 % · ceiling override on · coverage backoff off · missed facts append · cooldown 10 min · re-check never');
     const eagerKeys = { TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' };
-    assert.equal(styleLine(policyOf(env(eagerKeys)), tuningOf(env(eagerKeys)), en.autocompactSettings), 'style eager · warnings at most 0.40 · closes at least 0.60 · undecided 0.45–0.55 · pass mark 0.60 · ceiling 65 % · ceiling override on · coverage backoff off · cooldown 5 min · re-check 30 min');
+    assert.equal(styleLine(policyOf(env(eagerKeys)), tuningOf(env(eagerKeys)), en.autocompactSettings), 'style eager · warnings at most 0.40 · closes at least 0.60 · undecided 0.45–0.55 · pass mark 0.60 · ceiling 65 % · ceiling override on · coverage backoff off · missed facts append · cooldown 5 min · re-check 30 min');
     const seconds = { ...eagerKeys, TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS: '90000', TAB_RECAP_AUTOCOMPACT_RECHECK_IDLE_MS: '150000' };
-    assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds)), en.autocompactSettings), /ceiling override on · coverage backoff off · cooldown 90 s · re-check 150 s$/);
+    assert.match(styleLine(policyOf(env(seconds)), tuningOf(env(seconds)), en.autocompactSettings), /ceiling override on · coverage backoff off · missed facts append · cooldown 90 s · re-check 150 s$/);
     assert.match(styleLine(policyOf(env({})), tuningOf(env({})), es.autocompactSettings), /límite anula cobertura sí · espera de cobertura off/);
 });
 

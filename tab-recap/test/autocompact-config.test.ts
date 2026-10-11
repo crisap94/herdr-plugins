@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/harness-decider.ts';
 import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
+import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, missedFactsOf, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -14,8 +14,13 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
+test('the missed facts key: append or wait, any other value or a non-text value is append', () => {
+    assert.deepEqual([missedFactsOf('append'), missedFactsOf('wait'), missedFactsOf(' WAIT '), missedFactsOf(undefined), missedFactsOf('maybe'), missedFactsOf(42), missedFactsOf(null)], ['append', 'wait', 'wait', 'append', 'append', 'append', 'append']);
+    assert.equal(policyOf(config({ TAB_RECAP_AUTOCOMPACT_MISSED_FACTS: 'wait' })).missedFacts, 'wait');
+});
+
 test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude only', () => {
-    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [], ceilingPolicy: 'overrides-check', coverageBackoff: { kind: 'off' } });
+    assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [], ceilingPolicy: 'overrides-check', coverageBackoff: { kind: 'off' }, missedFacts: 'append' });
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {

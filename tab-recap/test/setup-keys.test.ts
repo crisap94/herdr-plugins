@@ -27,10 +27,10 @@ test('the draft starts from the configuration: auto UI, recap language follows t
     assert.equal(changes(start()).size, 0);
 });
 
-test('navigation: j/k and arrows move between the eighteen rows and stop at the ends', () => {
+test('navigation: j/k and arrows move between the nineteen rows and stop at the ends', () => {
     assert.equal(typed(start(), ['k', 'k']).state.row, 0);
     assert.equal(typed(start(), ['j', `${ESC}[B`]).state.row, 2);
-    assert.equal(typed(start(), down(20)).state.row, 17);
+    assert.equal(typed(start(), down(20)).state.row, 18);
     assert.equal(typed(start(), [...down(3), 'k', `${ESC}[A`]).state.row, 1);
 });
 
@@ -153,11 +153,11 @@ test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, rea
     assert.equal(draft.telemetryTags, 'off');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: ' ON ' }).telemetryTags, 'on');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: 'maybe' }).telemetryTags, 'off');
-    const on = typed(start(), [...down(17), '\r', 'k', '\r']);
+    const on = typed(start(), [...down(18), '\r', 'k', '\r']);
     assert.equal(on.state.draft.telemetryTags, 'on');
     assert.deepEqual([...changes(on.state)], [['TAB_RECAP_TELEMETRY_TAGS', 'on']]);
     assert.deepEqual(locksOf({ TAB_RECAP_TELEMETRY_TAGS: 'on' }), { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' });
-    const locked = typed(start({ telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' }), [...down(17), '\r']).state;
+    const locked = typed(start({ telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' }), [...down(18), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual([...changes(locked)], []);
 });
@@ -249,9 +249,9 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
     assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
-    const by = typed(start(), [...down(15),'\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
+    const by = typed(start(), [...down(16),'\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
-    const model = typed(start(), [...down(15),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
+    const model = typed(start(), [...down(16),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '50', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }), { autocompact: 'TAB_RECAP_AUTOCOMPACT', autocompactAt: 'TAB_RECAP_AUTOCOMPACT_AT', decideBy: 'TAB_RECAP_AUTOCOMPACT_BY' });
     assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(12),'\r']).state.note, 'locked');

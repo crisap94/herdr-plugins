@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -16,6 +17,9 @@ export function memoryStore(options: StoreOptions = {}): Store {
     }
     return storeOver(opened.db, options);
 }
+
+export const shapeOf = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
+    .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
 export const scratchDir = (name: string): string => mkdtempSync(join(tmpdir(), `recap-${name}-`));
 
