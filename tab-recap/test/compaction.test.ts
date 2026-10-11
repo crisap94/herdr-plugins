@@ -20,6 +20,15 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
+import { RecordingTokens } from './fakes/lane-tokens.ts';
+import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
+import { emptyBoard } from '#src/recap/domain/board.ts';
+import type { Board } from '#src/recap/domain/board.ts';
+import { toolName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -60,7 +69,7 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
@@ -93,7 +102,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         log: () => undefined,
         ...(world.lease === undefined ? {} : { typing: world.lease }),
         claims: world.claims,
-        answer: (id, pane, stage) => { world.answered.push(`${id} ${pane} ${stage}`); },
+        answer: (id, pane, stage) => { if (world.answerTo === undefined) { world.answered.push(`${id} ${pane} ${stage}`); } else { world.answerTo(id, pane, stage); } },
         events: { lane: (pane, kind, detail) => { world.laneEvents.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },
     };
     return new Compaction(deps);
@@ -417,6 +426,22 @@ test('one compaction per lane: a request and an automatic one at the same instan
     assert.match(world.toasts.join('\n'), /already compacting/);
 });
 
+test('a request that joins a running compaction is settled in the ask ledger when the compaction ends', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const asks = new MemoryAskLedger();
+    const handler = new CompactRequests({
+        enabled: (): boolean => true, board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): number => NOW, log: (): void => undefined,
+    });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(toolName('coordinator')), id: rid('r1'), pane: paneId('w1:p1'), at: NOW, ref: null });
+    const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stage); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
+    await Promise.all([
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
+        compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),
+    ]);
+    assert.equal(world.typed.length, 1, 'one /compact typed');
+    assert.deepEqual(asks.unfinished(), [], 'the joined ask is settled, not left queued');
+});
+
 test('a request that joins a compaction the agent refuses is answered with that refusal', async () => {
     const world = fleet({ 'w1:p1': 'working' });
     const compaction = flow(world);
@@ -497,4 +522,37 @@ test('a joined request with a note is told its note is not used; an automatic re
         joining.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
     ]);
     assert.equal(auto.toasts.some((toast) => /already compacting/.test(toast)), false, 'an automatic joiner is not announced');
+});
+
+test('a request whose agent blocks at the typing is answered failed-skipped: the same cause as an agent blocked when it is read', async () => {
+    const world = fleet({ 'w1:p1': 'idle' }, ['w1:p1']);
+    await flow(world, 'focused', 'w1:p1').run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-skipped']);
+});
+
+test('a request whose typing is refused for any other cause is answered failed-error', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const refusing = { ...world, agents: { ...world.agents, typeLine: (): Promise<Prompted> => Promise.resolve(unknown({ why: 'not-found', what: 'w1:p1' })) } };
+    await flow(refusing, 'focused', 'w1:p1').run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-error']);
+});
+
+test('a request for an agent with no compaction plan is answered failed-error', async () => {
+    const world = fleet({ 'w1:p2': 'idle' });
+    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: 'w1:p2', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p2 running', 'r7 w1:p2 failed-error']);
+});
+
+test('a request whose compaction fails on its own summary, twice, is answered failed-error', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', null, [[failed]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-error']);
+});
+
+test('an automatic request the coverage check stops is answered failed-skipped', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'a brief' }).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'r7' });
+    assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-skipped']);
+    assert.deepEqual(world.typed, [], 'nothing is typed');
 });

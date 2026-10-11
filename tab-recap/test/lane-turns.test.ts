@@ -46,7 +46,7 @@ test('a working push after the compaction ended dismisses it; the flow\'s own tu
 test('the informer hands every status push to the daemon\'s hook, before the fold sees it', async () => {
     const queue = new AsyncQueue<Frame>();
     const herdr: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null }),
+        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() }),
         subscribe: (): Promise<StreamResult> => Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { queue.end(); } } }),
     };
     const heard: string[] = [];

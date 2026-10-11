@@ -13,7 +13,7 @@ async function refuse(notifier: Notifier, log: (line: string) => void, why: stri
 }
 
 export async function openState(root: string, notifier: Notifier, log: (line: string) => void): Promise<Store | null> {
-    const store = stateStore(root, { daemonVersion: codeVersion() });
+    const store = stateStore(root, { daemonVersion: codeVersion(), log });
     if (store.kind === 'newer-db') {
         store.db.close();
         return refuse(notifier, log, `tab-recap: ${messagesOf().database.newer(store.backup)}`);

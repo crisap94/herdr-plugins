@@ -12,7 +12,7 @@ class Herdr implements FleetSource {
     readonly queue = new AsyncQueue<Frame>();
 
     snapshot(): Promise<SnapshotResult> {
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null });
+        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {
@@ -22,7 +22,7 @@ class Herdr implements FleetSource {
 
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
-test('a pane.updated frame reaches the hook, in both spellings, and is not an unknown kind', async () => {
+test('a pane.updated frame reaches the token hook, in both spellings, and is not an unknown kind', async () => {
     const herdr = new Herdr();
     const routed: unknown[] = [];
     const unknownKinds: string[] = [];
@@ -32,15 +32,17 @@ test('a pane.updated frame reaches the hook, in both spellings, and is not an un
         onUnknownKind: (kind): void => { unknownKinds.push(kind); },
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-        onPaneUpdated: (data): void => { routed.push(data); },
+        onPaneTokens: (pane, tokens): void => { routed.push({ pane, tokens }); },
     });
+    void informer.run();
     await informer.enterSubscription();
     const tokens = { pane: { pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } } };
     herdr.queue.push({ event: 'pane.updated', data: tokens });
     herdr.queue.push({ event: 'pane_updated', data: tokens });
     await flush();
     await flush();
-    assert.deepEqual(routed, [tokens, tokens]);
+    const reported = { pane: 'w1:p1', tokens: { 'compact-req-coordinator': 'r7' } };
+    assert.deepEqual(routed, [reported, reported]);
     assert.deepEqual(unknownKinds, []);
 });
 
@@ -57,7 +59,7 @@ class AgentWithoutSession implements FleetSource {
 
     snapshot(): Promise<SnapshotResult> {
         const lanes = [{ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', status: 'idle', session: null }];
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }, focusedTab: null });
+        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {

@@ -1,18 +1,24 @@
+import { CAPABILITY_TOKEN, capabilityValue } from '#src/protocol/capability.ts';
+import { compact } from '#src/protocol/exchanges/compact.ts';
+import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
+import { KINDS_VERSION } from '#src/protocol/kinds.ts';
+import { must } from '#src/protocol/result.ts';
+import { ANSWER_TOKENS, OWNERS, answerNameOf } from './token-registry.ts';
+import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
 import { EVENT_TOKEN } from './event-token.ts';
-import { LEASE } from './typing-lease.ts';
 
 export const PROTOCOL_VERSION = '1';
-export const API_TOKEN = 'tab-recap-api';
-export const SHARE_TOKEN = 'tab-recap-share';
-export const RECAP_TOKEN = 'tab-recap-recap';
-export const NEEDS_TOKEN = 'tab-recap-needs';
-export const COMPACT_TOKEN = 'tab-recap-compact';
+export const COMPACT_TOKEN = answerNameOf(compact);
+export const capabilityOf = (isOn: (setting: string) => boolean): string => must(capabilityValue(EXCHANGES, KINDS_VERSION, isOn));
+export const CAPABILITY_VALUE = capabilityOf(() => true);
 
-export const OWNED_TOKENS: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN, COMPACT_TOKEN];
+const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 
-export const STATE_TOKENS: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
+export const OWNED_TOKENS: readonly string[] = [...LANE_NAMES, ...ANSWER_TOKENS, CAPABILITY_TOKEN];
 
-export const PANE_WRITABLE: readonly string[] = [...OWNED_TOKENS, EVENT_TOKEN, LEASE];
+export const STATE_TOKENS: readonly string[] = [...LANE_NAMES, CAPABILITY_TOKEN];
+
+export const PANE_WRITABLE: readonly string[] = OWNERS.writable;
 export const WORKSPACE_WRITABLE: readonly string[] = [EVENT_TOKEN];
 
 export const unownedName = (names: readonly string[], allowed: readonly string[]): string | null => names.find((name) => !allowed.includes(name)) ?? null;
@@ -25,12 +31,13 @@ export interface LaneFacts {
 
 export type TokenValues = Readonly<Record<string, string>>;
 
-export function valuesOf(facts: LaneFacts): TokenValues {
+export function valuesOf(facts: LaneFacts, capability: string = CAPABILITY_VALUE): TokenValues {
     return {
         [API_TOKEN]: PROTOCOL_VERSION,
         ...(facts.share === null ? {} : { [SHARE_TOKEN]: String(facts.share) }),
         ...(facts.recapAt === null ? {} : { [RECAP_TOKEN]: String(facts.recapAt) }),
         [NEEDS_TOKEN]: String(facts.needs),
+        [CAPABILITY_TOKEN]: capability,
     };
 }
 

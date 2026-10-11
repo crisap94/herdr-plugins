@@ -65,5 +65,4 @@ export interface CompactionRecords extends CompactionView {
     finish(id: string, end: CompactionEnd): void;
     dismissTurn(tab: string, pane: string, at: number): void;
     interrupted(at: number, why: string): number;
-    unfinishedAsks(): readonly { readonly pane: string; readonly answer: string }[];
 }
