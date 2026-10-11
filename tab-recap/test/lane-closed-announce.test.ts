@@ -108,3 +108,16 @@ test('a malformed tab id logs a line without content and announces nothing', asy
     assert.deepEqual(lines, []);
     assert.deepEqual(logged, ['lane closure not announced (malformed tab id)']);
 });
+
+test('a publisher that throws does not stop the closure from being recorded, and the failure is logged', async () => {
+    const recorded: ClosedLane[] = [];
+    const lines: string[] = [];
+    const throwing: LaneEvents = {
+        lane: noop,
+        inWorkspace: (): void => { throw new Error('socket closed'); },
+    };
+    const closures: ClosureRecorder = { record: (value: ClosedLane): void => { recorded.push(value); } };
+    await dispatchWith({ events: throwing, sharing: true, closures, days: '14', log: (line: string): void => { lines.push(line); } }).send({ kind: 'lane-closed', closed });
+    assert.deepEqual(recorded, [closed]);
+    assert.deepEqual(lines, ['lane w1:p1: closure not announced (socket closed)']);
+});
