@@ -128,8 +128,8 @@ test('`autocompact`: three decisions print three rows newest first with share, v
         const ran = spawnSync(process.execPath, [entry, 'autocompact', '--all'], { encoding: 'utf8', env });
         assert.equal(ran.status, 0, ran.stderr);
         const rows = ran.stdout.split('\n').filter((line) => line.includes('w1:t1'));
-        assert.deepEqual(rows.map((line) => line.split(/\s{2,}/)[3]), ['44 %', '55 %', '71 %']);
-        assert.match(ran.stdout, /time\s+tab\s+pane\s+share\s+verdict\s+gate\s+decider\s+cost/);
+        assert.deepEqual(rows.map((line) => line.split(/\s{2,}/)[4]), ['44 %', '55 %', '71 %']);
+        assert.match(ran.stdout, /time\s+tab\s+pane\s+status\s+share\s+verdict\s+gate\s+decider\s+cost/);
         assert.match(ran.stdout, /jev · jev-1\.13\.0\s+\$0\.00003/);
         assert.match(ran.stdout, /last 24 h: 3 decisions, \$0\.00007$/m);
         const bad = spawnSync(process.execPath, [entry, 'autocompact', '--nope'], { encoding: 'utf8', env });
