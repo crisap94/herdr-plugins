@@ -2,7 +2,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { err, type Result } from '#src/protocol/result.ts';
-import { isAssertion, isInlineLiteralUnion, isLibraryContext, predicateName } from './domain-syntax.ts';
+import { isAssertion, isInlineLiteralUnion, isLibraryContext, isBuiltinObject, isNumericEnum, predicateName } from './domain-syntax.ts';
 import { BRAND_FILE } from './domain-exceptions.ts';
 import { categoryIn, type Finding } from './domain-findings.ts';
 import { runReport } from './domain-ratchet.ts';
@@ -85,7 +85,7 @@ const isPrimitive = (type: ts.Type): boolean => (type.flags & PRIMITIVE) !== 0;
 
 const isBareType = (type: ts.Type): boolean =>
     isPrimitive(type) ||
-    ['Object', 'Function'].includes(type.getSymbol()?.getName() ?? '') ||
+    isBuiltinObject(type) ||
     (type.isIntersection() && type.types.some(isPrimitive));
 
 const isReference = (type: ts.Type): type is ts.TypeReference => {
@@ -118,6 +118,13 @@ const inspectObject = (scan: Scan, frame: Frame, type: ts.Type, inAlias: boolean
     enqueue(scan, type);
 };
 
+const forbiddenReason = (scan: Scan, type: ts.Type): string | undefined => {
+    if (isNumericEnum(type)) {
+        return 'is a numeric enum; use a closed union of string literals or a brand';
+    }
+    return isBareType(type) ? `resolves to ${scan.checker.typeToString(type)}` : undefined;
+};
+
 const inspect = (scan: Scan, frame: Frame, type: ts.Type, inAlias: boolean): void => {
     if (frame.seen.has(type)) {
         return;
@@ -132,11 +139,12 @@ const inspect = (scan: Scan, frame: Frame, type: ts.Type, inAlias: boolean): voi
     if (isBrand(scan, type)) {
         return;
     }
-    if (isBareType(type)) {
-        report(scan, frame.place, `resolves to ${scan.checker.typeToString(type)}`);
+    const forbidden = forbiddenReason(scan, type);
+    if (forbidden !== undefined) {
+        report(scan, frame.place, forbidden);
         return;
     }
-    const inner: Frame = { ...frame, place: { ...frame.place, category: 'container' } };
+    const inner: Frame = { ...frame, allowUnknown: false, place: { ...frame.place, category: 'container' } };
     argumentsOf(scan, type).forEach((argument) => inspect(scan, inner, argument, false));
     if (type.isUnion() || type.isIntersection()) {
         const aliased = inAlias || type.aliasSymbol !== undefined;

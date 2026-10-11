@@ -8,30 +8,37 @@ import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { compactJobOf, COMPACT_DEFAULT, placementOf } from '#src/recap/domain/job.ts';
+
+const t = (raw: string): Text => {
+    const parsed = parseText(raw);
+    if (parsed.kind === 'err') throw new Error(`not text: ${raw}`);
+    return parsed.value;
+};
 
 const models = { claude: 'haiku', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
 const config = (values: Record<string, string>): ((key: string) => string | undefined) => (key) => values[key];
 
 test('the brief is trimmed, folded to one line and kept whole under the limit', () => {
-    assert.deepEqual(vetted('  I want X.\n\nWe chose   Y because Z.  '), { kind: 'ok', text: 'I want X. We chose Y because Z.' });
+    assert.deepEqual(vetted(t('  I want X.\n\nWe chose   Y because Z.  ')), { kind: 'ok', text: 'I want X. We chose Y because Z.' });
 });
 
 test('an empty answer and one that names the plugin are refused, whatever the case', () => {
-    assert.equal(vetted('  \n ').kind, 'bad');
+    assert.equal(vetted(t('  \n ')).kind, 'bad');
     for (const word of ['recap', 'Recap', 'recaps', 'plugin', 'Herdr', 'tab', 'tabs']) {
-        const verdict = vetted(`We keep the ${word} here.`);
+        const verdict = vetted(t(`We keep the ${word} here.`));
         assert.equal(verdict.kind, 'bad', word);
     }
-    assert.equal(vetted('We keep the tabular data and the stable tabs-free layout.').kind, 'bad', 'a whole word `tabs` is matched');
-    assert.equal(vetted('We keep the tabular data and the tabletop layout.').kind, 'ok', 'a word that merely contains `tab` is not');
+    assert.equal(vetted(t('We keep the tabular data and the stable tabs-free layout.')).kind, 'bad', 'a whole word `tabs` is matched');
+    assert.equal(vetted(t('We keep the tabular data and the tabletop layout.')).kind, 'ok', 'a word that merely contains `tab` is not');
 });
 
 test('an answer over 3 000 characters is cut at the last sentence end before the limit', () => {
     const sentence = 'We decided to keep the schema as it is. ';
-    const verdict = vetted(sentence.repeat(200));
+    const verdict = vetted(t(sentence.repeat(200)));
     assert.ok(verdict.kind === 'ok' && verdict.text.length <= BRIEF_LIMIT && verdict.text.endsWith('as it is.'));
-    const unbroken = vetted('x'.repeat(5000));
+    const unbroken = vetted(t('x'.repeat(5000)));
     assert.ok(unbroken.kind === 'ok' && unbroken.text.length <= BRIEF_LIMIT);
 });
 
@@ -89,19 +96,19 @@ test('golden: the brief writer\'s instructions are exactly the reviewed text', (
 });
 
 test('forbidden words are relative to the conversation: a word the agent\'s own text uses is allowed, the others are not', () => {
-    const own = 'Fix the browser tab that crashes; the plugin loader is in src/plugins.';
-    assert.equal(vetted('We fix the tab crash and the plugin loader.', own).kind, 'ok', 'a word in the own text is kept');
-    assert.equal(vetted('We fix the tabs crash.', own).kind, 'ok', 'its plural is the same word');
-    assert.deepEqual(vetted('We fix the tab crash and the recap.', own), { kind: 'bad', why: 'the answer says "recap"' }, 'a word the conversation never uses is refused');
-    assert.equal(vetted('Ask herdr.', own).kind, 'bad');
-    assert.equal(vetted('We fix the tab crash.').kind, 'bad', 'with no conversation the old rule holds');
+    const own = t('Fix the browser tab that crashes; the plugin loader is in src/plugins.');
+    assert.equal(vetted(t('We fix the tab crash and the plugin loader.'), own).kind, 'ok', 'a word in the own text is kept');
+    assert.equal(vetted(t('We fix the tabs crash.'), own).kind, 'ok', 'its plural is the same word');
+    assert.deepEqual(vetted(t('We fix the tab crash and the recap.'), own), { kind: 'bad', why: 'the answer says "recap"' }, 'a word the conversation never uses is refused');
+    assert.equal(vetted(t('Ask herdr.'), own).kind, 'bad');
+    assert.equal(vetted(t('We fix the tab crash.')).kind, 'bad', 'with no conversation the old rule holds');
 });
 
 test('tab-recap and recap column stay refused unless the conversation itself contains them', () => {
-    assert.deepEqual(vetted('Keep the tab-recap column.', 'a tab opens, a recap is a thing'), { kind: 'bad', why: 'the answer says "tab-recap"' });
-    assert.equal(vetted('Keep the tab-recap project.', 'we maintain tab-recap in this repo').kind, 'ok');
-    assert.deepEqual(vetted('Hide the recap column.', 'the recap of the tab'), { kind: 'bad', why: 'the answer says "recap column"' });
-    assert.equal(vetted('Hide the recap column.', 'we hide the Recap column on phones').kind, 'ok');
+    assert.deepEqual(vetted(t('Keep the tab-recap column.'), t('a tab opens, a recap is a thing')), { kind: 'bad', why: 'the answer says "tab-recap"' });
+    assert.equal(vetted(t('Keep the tab-recap project.'), t('we maintain tab-recap in this repo')).kind, 'ok');
+    assert.deepEqual(vetted(t('Hide the recap column.'), t('the recap of the tab')), { kind: 'bad', why: 'the answer says "recap column"' });
+    assert.equal(vetted(t('Hide the recap column.'), t('we hide the Recap column on phones')).kind, 'ok');
 });
 
 test('the template obeys the same rule: recap items with a refused word are left out, unless the conversation uses it', () => {

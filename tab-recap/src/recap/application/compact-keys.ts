@@ -1,3 +1,4 @@
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
 export interface NoteState {
@@ -14,11 +15,20 @@ export interface NoteStepped {
 export const EMPTY_NOTE: NoteState = { note: '' };
 
 const ESC = String.fromCodePoint(0x1b);
-const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
+type Printability = 'printable' | 'control';
 
-export function noteOf(typed: string): string | null {
+const printabilityOf = (key: string): Printability => {
+    const printable = !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
+    return printable ? 'printable' : 'control';
+};
+
+export function noteOf(typed: string): Text | null {
     const note = typed.replace(/\s+/g, ' ').trim();
-    return note === '' ? null : note;
+    if (note === '') {
+        return null;
+    }
+    const parsed = parseText(note);
+    return parsed.kind === 'ok' ? parsed.value : null;
 }
 
 export function step(state: NoteState, key: string): NoteStepped {
@@ -35,5 +45,5 @@ export function step(state: NoteState, key: string): NoteStepped {
         return { state: EMPTY_NOTE, effect: null };
     }
     const text = key.replaceAll(/[\r\n]+/g, ' ');
-    return { state: isPrintable(text) ? { note: Array.from(state.note + text).slice(0, NOTE_LIMIT).join('') } : state, effect: null };
+    return { state: printabilityOf(text) === 'printable' ? { note: Array.from(state.note + text).slice(0, NOTE_LIMIT).join('') } : state, effect: null };
 }

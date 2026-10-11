@@ -22,7 +22,7 @@ Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3
 Run both from the plugin directory before you send anything:
 
 ```bash
-bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, tsgo typecheck, oxlint
+bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
 bash ci/test.sh      # node --test
 ```
 
@@ -95,7 +95,7 @@ node bin/check-domain-types.ts --json                                # every fin
 - **Read a `not supported:` line.** It names the file, line, function and the parameter, return or property, says what the type
   resolves to (`string`, an array of them, an anonymous object, a hand-rolled brand) and asks for a value object or domain type.
 - **Raw input is `unknown`, parsed once.** A parser is `parse<Name>(input: unknown): Result<Name, E>`, exported from the file that
-  declares `<Name>`; a type guard lives in the same file. `unknown` anywhere else fails. A parameter or a return written as an inline literal union (`state: 'open' | 'closed'`) needs a named alias; a property may be typed by a literal or an inline union of literals. `brand()` is called only by the parser of
+  declares `<Name>`; a type guard lives in the same file. `unknown` anywhere else fails, including as a type argument (`Record<string, unknown>`, `Promise<unknown>`). A `Date`, a `Buffer` and a numeric `enum` fail too (use a branded instant, a branded byte value or a closed union of string literals; a string `enum` passes). A parameter or a return written as an inline literal union (`state: 'open' | 'closed'`) needs a named alias; a property may be typed by a literal or an inline union of literals. `brand()` is called only by the parser of
   the value it brands, and no other file casts to a brand.
 - **Exceptions are per symbol, never per file or folder.** `ci/domain-types-exceptions/<lane>.json` lists a file, a function and a
   parameter or return with a reason, for one of three classes: a Node or third-party callback that forces a primitive, a released
@@ -105,7 +105,7 @@ node bin/check-domain-types.ts --json                                # every fin
   above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
   and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
 - **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
-  its files, its baseline, its exception file and its own `legacy.ts` (the old export other lanes still call, counted under
+  its files, its baseline, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
   `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`node ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
 
 ## Changing the database schema

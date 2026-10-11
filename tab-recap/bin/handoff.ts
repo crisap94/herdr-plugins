@@ -55,6 +55,7 @@ export interface HandoffReport {
 }
 
 const OK = 0;
+const LATEST_DATE_MS = 8_640_000_000_000_000;
 
 function reportOf(outcome: HandoffOutcome): HandoffReport {
     const key = messageKeyOf(outcome);
@@ -111,7 +112,7 @@ function closedAtOf(raw: string): Instant | null {
         return null;
     }
     const ms = Number(raw);
-    return Number.isSafeInteger(ms) ? instant(ms) : null;
+    return Number.isSafeInteger(ms) && ms <= LATEST_DATE_MS ? instant(ms) : null;
 }
 
 const CLOSED_OPTIONS = ['from-closed', 'tab', 'closed-at'] as const;

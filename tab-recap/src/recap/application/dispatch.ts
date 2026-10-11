@@ -107,8 +107,8 @@ export class Dispatch {
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;
             case 'lane-closed':
-                this.announce(intent.closed);
                 this.keep(intent.closed);
+                this.announce(intent.closed);
                 return;
             default: {
                 const exhaustive: never = intent;
@@ -126,7 +126,11 @@ export class Dispatch {
             this.deps.log('lane closure not announced (malformed tab id)');
             return;
         }
-        this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
+        try {
+            this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
+        } catch (error) {
+            this.deps.log(`lane ${closed.pane}: closure not announced (${error instanceof Error ? error.message : String(error)})`);
+        }
     }
 
     private keep(closed: ClosedLane): void {

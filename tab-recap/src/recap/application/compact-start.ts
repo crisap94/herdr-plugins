@@ -1,6 +1,7 @@
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
@@ -9,9 +10,13 @@ export interface CompactStart {
     queue(request: CompactRequest): Done;
 }
 
-export function requestNoteOf(text: string): string | null {
+export function requestNoteOf(text: string): Text | null {
     const note = collapsedText(text, 'remove');
-    return note === '' ? null : Array.from(note).slice(0, NOTE_LIMIT).join('').trimEnd();
+    if (note === '') {
+        return null;
+    }
+    const parsed = parseText(Array.from(note).slice(0, NOTE_LIMIT).join('').trimEnd());
+    return parsed.kind === 'ok' ? parsed.value : null;
 }
 
 export const opensPopup = (note: string | null | undefined, setting: CompactNote): boolean => note === undefined && setting === 'ask';
