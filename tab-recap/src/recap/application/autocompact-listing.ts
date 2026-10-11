@@ -49,6 +49,7 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, 
         `ceiling ${policy.ceiling} %`,
         settings.ceilingOverride(policy.ceilingPolicy === 'overrides-check'),
         settings.coverageBackoff(policy.coverageBackoff.kind === 'off' ? 'off' : everyOf(policy.coverageBackoff.ms)),
+        settings.missedFacts(policy.missedFacts),
         `cooldown ${everyOf(policy.cooldownMs)}`,
         `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(tuning.recheckIdleMs)}`,
     ].join(' · ');
