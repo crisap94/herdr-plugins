@@ -120,14 +120,24 @@ test('amend with no coverage (the decider could not answer, or none is set up) w
     assert.deepEqual([waited?.verdict, waited?.gate, waited?.coverage, waited?.why], ['wait', 'coverage', null, 'no decider is set up']);
 });
 
-test('amend writes a non-null why over the decision\'s own why, and keeps the decision\'s why when the amend has none', () => {
+test('amend joins a non-null why after the decision\'s own why, keeps the decision\'s why when the amend has none, and takes the amend when the decision has none', () => {
     const store = seeded();
     const blocked = store.autocompact.record(decision({ at: 600, why: 'the decider said wait: too early' }));
     store.autocompact.amend(blocked, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 1, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
-    assert.equal(store.autocompact.newest(10).find((each) => each.id === blocked)?.why, 'the brief still misses 1 fact(s)');
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === blocked)?.why, 'the decider said wait: too early; the brief still misses 1 fact(s)');
+    const bare = store.autocompact.record(decision({ at: 650, why: null }));
+    store.autocompact.amend(bare, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 1, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === bare)?.why, 'the brief still misses 1 fact(s)');
     const passed = store.autocompact.record(decision({ at: 700, why: 'kept by the decider' }));
     store.autocompact.amend(passed, { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: 1, coverageCostUsd: null, why: null, block: false });
     assert.equal(store.autocompact.newest(10).find((each) => each.id === passed)?.why, 'kept by the decider');
+});
+
+test('a ceiling decision that waited keeps the flight detail and gains the coverage reason', () => {
+    const store = seeded();
+    const id = store.autocompact.record(decision({ at: 800, gate: 'ceiling', why: 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running' }));
+    store.autocompact.amend(id, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 1, coverageCostUsd: null, why: '1 fact missed; missed fact appended', block: false });
+    assert.equal(store.autocompact.newest(10).find((each) => each.id === id)?.why, 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running; 1 fact missed; missed fact appended');
 });
 
 test('a checked brief is stored with its exact checked fact wording and pruned by time', () => {

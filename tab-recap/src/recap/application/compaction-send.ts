@@ -6,8 +6,8 @@ import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
-import { outcomeOf } from './compaction-outcome.ts';
-import type { OutcomeDeps, Verdict } from './compaction-outcome.ts';
+import { outcomeOf, queuedOutcomeOf } from './compaction-outcome.ts';
+import type { QueuedDeps, Verdict } from './compaction-outcome.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
 import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
@@ -22,6 +22,12 @@ export interface Text {
     readonly material: Material;
     readonly brief: string | null;
 }
+
+export interface Placed {
+    readonly queued: boolean;
+}
+
+export const NOT_QUEUED: Placed = { queued: false };
 
 interface Tried {
     readonly sent: Prompted;
@@ -42,7 +48,7 @@ export class Sender {
         return leased.kind === 'busy' ? unknown({ why: 'lease', after: duration(LEASE_TTL_MS) }) : leased.value;
     }
 
-    private async attempt(lane: Lane, plan: CompactionPlan): Promise<Tried> {
+    private async attempt(lane: Lane, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<Tried> {
         const since = this.deps.now();
         const pane = String(lane.pane);
         const sent = await this.typed(pane, async () => {
@@ -57,14 +63,14 @@ export class Sender {
         if (sent.kind !== 'sent') {
             return { sent, verdict: null };
         }
-        return { sent, verdict: await this.confirmed(lane, since, plan) };
+        return { sent, verdict: await this.confirmed(lane, since, plan, trail, queued) };
     }
 
-    private async confirmed(lane: Lane, since: number, plan: CompactionPlan): Promise<Verdict> {
-        const deps: OutcomeDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms) };
+    private async confirmed(lane: Lane, since: number, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<Verdict> {
+        const deps: QueuedDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms), now: () => this.deps.now() };
         switch (plan.confirm.kind) {
             case 'turn-end':
-                return outcomeOf(deps, lane, since, true);
+                return queued ? queuedOutcomeOf(deps, lane, since, () => { trail.to('compacting', { queued: false }); }) : outcomeOf(deps, lane, since, true);
             case 'poll': {
                 let verdict = await outcomeOf(deps, lane, since, false);
                 for (let read = 1; read < plan.confirm.reads && verdict.outcome === 'unconfirmed'; read += 1) {
@@ -119,7 +125,17 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }));
     }
 
-    async send(lane: Lane, text: Text, trail: Trail): Promise<Unsupported | undefined> {
+    private async attemptedOnce(lane: Lane, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<{ readonly tried: Tried; readonly retried: boolean }> {
+        const first = await this.attempt(lane, plan, trail, queued);
+        const retried = plan.retryOnSelfFailure && first.verdict?.outcome === 'failed';
+        if (!retried) {
+            return { tried: first, retried };
+        }
+        trail.to('compacting', { queued: false });
+        return { tried: await this.attempt(lane, plan, trail, false), retried };
+    }
+
+    async send(lane: Lane, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
         const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(String(lane.agent), text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
             trail.end('failed', { why: resolved.why });
@@ -127,9 +143,8 @@ export class Sender {
         }
         const plan = resolved.plan;
         const began = this.deps.now();
-        let tried = await this.attempt(lane, plan);
-        const retried = plan.retryOnSelfFailure && tried.verdict?.outcome === 'failed';
-        tried = retried ? await this.attempt(lane, plan) : tried;
+        if (placed.queued) trail.to('compacting', { queued: true });
+        const { tried, retried } = await this.attemptedOnce(lane, plan, trail, placed.queued);
         if (tried.sent.kind !== 'sent') {
             await this.refused(lane, trail, tried.sent);
             return undefined;

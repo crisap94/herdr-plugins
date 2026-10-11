@@ -1,4 +1,6 @@
+import type { CompactRequest } from '#src/ports/requests.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
@@ -9,6 +11,11 @@ export interface Refusal {
     readonly reason: CompactFailure;
     readonly why: string;
     readonly toast: string;
+}
+
+export interface Asked {
+    readonly origin: Origin;
+    readonly request: CompactRequest | null;
 }
 
 const LANE_BUSY_WHY = 'lane busy';

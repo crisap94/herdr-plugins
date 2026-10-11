@@ -10,7 +10,7 @@ export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 const ENDED = new Set(['completed', 'failed', 'killed', 'stopped']);
 const LAUNCHERS = new Set(['Agent', 'Task', 'Monitor']);
 
-export const CLAUDE_SPLIT: BackgroundSplit = { kind: 'foreground-only', why: 'survival-unproven' };
+export const CLAUDE_SPLIT: BackgroundSplit = { kind: 'separates' };
 
 interface Launch { readonly agentTool: boolean; readonly item: BackgroundItem; readonly tasks: Set<string>; readonly startedAt: number | null; readonly expiresAfter: number | null }
 

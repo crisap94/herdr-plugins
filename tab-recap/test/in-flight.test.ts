@@ -20,7 +20,7 @@ function fakeReader(agent: string, located: Located, flight: InFlightResult): Tr
         locate: () => Promise.resolve(located),
         read: () => Promise.reject(new Error('unused')),
         latestPrompt: () => Promise.reject(new Error('unused')),
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'survival-unproven' }, read: () => Promise.resolve(flight) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve(flight) },
     };
 }
 

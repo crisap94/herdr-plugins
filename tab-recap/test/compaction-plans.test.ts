@@ -21,7 +21,7 @@ const registeredPlan = (kind: 'claude' | 'codex' | 'opencode', guidance: string)
 
 test('registered kinds expose their current behavior as typed plans', () => {
     assert.deepEqual(plain(registeredPlan('claude', 'guidance')), {
-        lines: [['/compact ', 'guidance']], enterDelay: 300, confirm: { kind: 'turn-end' }, retryOnSelfFailure: true, followUp: { kind: 'none' }, whileWorking: { kind: 'needs-idle', reason: 'queued input is not proven for this kind yet' },
+        lines: [['/compact ', 'guidance']], enterDelay: 300, confirm: { kind: 'turn-end' }, retryOnSelfFailure: true, followUp: { kind: 'none' }, whileWorking: { kind: 'queues' },
     });
     assert.deepEqual(plain(registeredPlan('codex', 'unused')), {
         lines: [['/compact']], enterDelay: 300, confirm: { kind: 'poll', reads: 20, every: 1000 }, retryOnSelfFailure: false, followUp: { kind: 'restore-message', acceptsStall: true }, whileWorking: { kind: 'needs-idle', reason: 'queued input is not measured for this kind' },
@@ -42,8 +42,9 @@ test('a kind that needs the lane idle must say why; one that queues says nothing
     assert.deepEqual(QUEUES, { kind: 'queues' });
 });
 
-test('every registered kind declares what happens while it works', () => {
-    for (const kind of ['claude', 'codex', 'opencode'] as const) {
+test('only claude queues typed input while it works; codex and opencode need the lane idle, and say why', () => {
+    assert.equal(registeredPlan('claude', 'unused').whileWorking.kind, 'queues');
+    for (const kind of ['codex', 'opencode'] as const) {
         assert.equal(registeredPlan(kind, 'unused').whileWorking.kind, 'needs-idle', kind);
     }
 });
