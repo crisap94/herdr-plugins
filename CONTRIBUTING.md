@@ -183,8 +183,12 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    that lands between the preparation and the landing of the release merge request is not in that
    section: `release:tag` then refuses and names it (exit 1, a warning job, `allow_failure`, so `main`
    stays green; a lookup error or a tag the forge refuses is exit 3 and fails the job); add its line
-   to `CHANGELOG.md` (and raise the version if it calls for more) in a normal merge request and the next
-   pipeline on `main` tags the release at that merge request's commit.
+   to `CHANGELOG.md` in a normal merge request and the next pipeline on `main` tags the release at that
+   merge request's commit. If the merge requests call for another version (or for none), change the
+   version in a normal merge request (the manifest, `package.json`, the lockfile, the CHANGELOG heading
+   and its link reference) or tag the release commit by hand; `release:prepare` refuses meanwhile. A
+   merge request without a `changelog::` label anywhere in the range also stops the job (exit 3) until
+   it is labelled.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the

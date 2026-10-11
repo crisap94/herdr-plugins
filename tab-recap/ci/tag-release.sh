@@ -61,7 +61,7 @@ if [ -n "$newest" ]; then
     computed_version="$(printf '%s' "$computed" | node -e 'const j = JSON.parse(require("fs").readFileSync(0, "utf8")); process.stdout.write(j.version === null || j.version === undefined ? "" : String(j.version));')" \
         || { echo "tag-release: 3 — NOT COVERED: could not read the version the merge requests call for" >&2; exit 3; }
     if [ "$computed_version" != "$version" ]; then
-        echo "tag-release: 1 — the merge requests merged call for ${computed_version:-no release} but the manifest says $version: no tag (prepare the release again once the version is right)" >&2
+        echo "tag-release: 1 — the merge requests merged call for ${computed_version:-no release} but the manifest says $version: no tag (fix the version in a normal merge request: the manifest, package.json, the lockfile, the CHANGELOG heading and its link; or tag by hand if no release is due after all)" >&2
         exit 1
     fi
     CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" > "$notes" 2>/dev/null
