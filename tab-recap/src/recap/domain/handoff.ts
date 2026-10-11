@@ -1,5 +1,9 @@
+import { exchangeName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 import type { HandoffId, PaneId, TabId } from './ids.ts';
 import type { StoredHandoffOutcome } from './handoff-outcome.ts';
+
+export const HANDOFF_EXCHANGE = must(exchangeName('handoff'));
 
 export interface HandoffRequest {
     readonly id: HandoffId;

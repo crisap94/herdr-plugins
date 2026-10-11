@@ -1,0 +1,126 @@
+import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
+import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import type { LaneClaims } from './lane-claims.ts';
+import type { HandoffRender, HandoffRenderResult } from './handoff-render.ts';
+import type { HandoffSender } from './handoff-sender.ts';
+import { isLaneOfTab, resolveSource } from './handoff-source.ts';
+import type { SourceDeps, SourceResolution } from './handoff-source.ts';
+import { resolveTarget } from './handoff-target.ts';
+import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
+
+export interface HandoffFlowDeps {
+    readonly lanes: () => readonly Lane[];
+    readonly records: SourceDeps['records'];
+    readonly ledger: SourceDeps['ledger'];
+    readonly target: Omit<TargetDeps, 'lanes'>;
+    readonly claims: Pick<LaneClaims, 'has' | 'claimAll' | 'release'>;
+    readonly refresh: (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus>;
+    readonly render: HandoffRender;
+    readonly sender: Pick<HandoffSender, 'send'>;
+    readonly pause: (ms: number) => Promise<void>;
+    readonly now: () => number;
+}
+
+export class HandoffFlow {
+    private readonly deps: HandoffFlowDeps;
+
+    constructor(deps: HandoffFlowDeps) {
+        this.deps = deps;
+    }
+
+    async run(request: HandoffRequestRow): Promise<HandoffOutcome> {
+        try {
+            return await this.steps(request);
+        } catch {
+            return { kind: 'failed', reason: 'internal-error' };
+        }
+    }
+
+    private async steps(request: HandoffRequestRow): Promise<HandoffOutcome> {
+        if (request.pane === request.toPane) {
+            return { kind: 'refused', reason: 'source-equals-target' };
+        }
+        const early = await this.early(request);
+        if (early.kind !== 'ready') {
+            return early;
+        }
+        const refresh = request.refreshFirst ? await this.refreshed(request.tab) : 'not-requested';
+        const rendered = this.rendered(request, refresh);
+        if (rendered.kind !== 'text') {
+            return rendered;
+        }
+        const [sourcePane, targetPane] = [String(request.pane), String(request.toPane)];
+        if (!this.deps.claims.claimAll([{ pane: sourcePane, kind: 'handoff' }, { pane: targetPane, kind: 'handoff' }])) {
+            return { kind: 'refused', reason: 'lane-busy' };
+        }
+        try {
+            return await this.deliver(request, rendered.text);
+        } finally {
+            this.deps.claims.release(sourcePane);
+            this.deps.claims.release(targetPane);
+        }
+    }
+
+    private async early(request: HandoffRequestRow): Promise<Ready | HandoffOutcome> {
+        const lanes = this.deps.lanes();
+        if (!isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
+            return { kind: 'refused', reason: 'source-unavailable' };
+        }
+        const target = await this.resolve(request);
+        if (target.kind !== 'ready') {
+            return target;
+        }
+        if (this.deps.claims.has(String(request.pane)) || this.deps.claims.has(String(request.toPane))) {
+            return { kind: 'refused', reason: 'lane-busy' };
+        }
+        return target;
+    }
+
+    private resolve(request: HandoffRequestRow): Promise<TargetResolution> {
+        return resolveTarget(request.pane, request.toPane, { ...this.deps.target, lanes: this.deps.lanes() });
+    }
+
+    private async refreshed(tab: TabId): Promise<RefreshStatus> {
+        try {
+            return await this.deps.refresh(String(tab), this.deps.lanes().filter((lane) => lane.tab === tab));
+        } catch {
+            return 'failed';
+        }
+    }
+
+    private rendered(request: HandoffRequestRow, refresh: RefreshStatus): HandoffRenderResult | HandoffOutcome {
+        const found: SourceResolution = resolveSource('live', { tab: request.tab, pane: request.pane }, { lanes: this.deps.lanes(), records: this.deps.records, ledger: this.deps.ledger, now: this.deps.now() });
+        switch (found.kind) {
+            case 'found':
+                return this.deps.render({ handoff: request.id, task: found.task, facts: found.facts, note: request.note, refresh, now: this.deps.now() });
+            case 'unlisted':
+                return { kind: 'refused', reason: 'ledger-empty' };
+            case 'task-ambiguous':
+                return { kind: 'refused', reason: 'task-ambiguous' };
+            case 'source-unavailable':
+                return { kind: 'refused', reason: 'source-unavailable' };
+            case 'unknown':
+                return { kind: 'failed', reason: 'source-unreadable' };
+            default: {
+                const exhaustive: never = found;
+                return exhaustive;
+            }
+        }
+    }
+
+    private async deliver(request: HandoffRequestRow, text: string): Promise<HandoffOutcome> {
+        const first = await this.resolve(request);
+        if (first.kind !== 'ready') {
+            return first;
+        }
+        await this.deps.pause(first.plan.settle.after);
+        const held = await this.resolve(request);
+        if (held.kind !== 'ready') {
+            return { kind: 'refused', reason: 'status-not-ready' };
+        }
+        return this.deps.sender.send(held, text);
+    }
+}

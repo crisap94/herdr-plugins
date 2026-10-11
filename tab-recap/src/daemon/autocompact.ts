@@ -19,7 +19,7 @@ import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 
-async function awaitingNow(pane: string): Promise<Waiting> {
+export async function awaitingNow(pane: string): Promise<Waiting> {
     const found = await readPaneTokens(pane);
     if (found.kind !== 'tokens') return found;
     const value = awaitingOf(found.tokens);
