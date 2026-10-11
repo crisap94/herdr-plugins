@@ -13,7 +13,7 @@ import { failureStage } from '#src/protocol/exchange.ts';
 import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import { laneBusyRefusal, splitByClaim } from './compaction-lanes.ts';
-import type { Refusal } from './compaction-lanes.ts';
+import type { Asked, Refusal } from './compaction-lanes.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { withNote } from '#src/recap/domain/continuation-note.ts';
@@ -110,33 +110,26 @@ export class Compaction {
         return false;
     }
 
-    private recordRefusal(lane: Lane, tab: string, refusal: Refusal, origin: Origin, request: CompactRequest | null): void {
-        const pane = String(lane.pane);
-        const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-        linkAsk(this.deps.asks, request, pane, id);
-        this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
-        this.answer(request, pane, failureStage(refusal.reason));
-    }
-
-    private async gated(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<Gate> {
-        const gate = await this.gateOf(lane);
-        if (gate.kind === 'proceed') {
-            return gate;
-        }
-        const { refusal } = gate;
+    private async refuse(lane: Lane, tab: string, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
+        const { origin, request } = asked;
         if (trail === null) {
-            this.recordRefusal(lane, tab, refusal, origin, request);
+            const pane = String(lane.pane);
+            const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
+            linkAsk(this.deps.asks, request, pane, id);
+            this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
+            this.answer(request, pane, failureStage(refusal.reason));
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
         await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
-        return gate;
     }
 
-    private async heldByHandoff(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
-        const refusal = laneBusyRefusal(this.deps.messages(), lane);
-        this.recordRefusal(lane, tab, refusal, request.origin ?? 'operator', request);
-        await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
+    private async gated(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<Gate> {
+        const gate = await this.gateOf(lane);
+        if (gate.kind === 'refused') {
+            await this.refuse(lane, tab, trail, gate.refusal, { origin, request });
+        }
+        return gate;
     }
 
     private materialOf(tab: string, pane: string, note: string | null): Material {
@@ -256,7 +249,7 @@ export class Compaction {
         }
         const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
-            await Promise.all(held.map((lane) => this.heldByHandoff(lane, tab, request)));
+            await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin: request.origin ?? 'operator', request })));
             if (owned.length === 0) {
                 return;
             }
