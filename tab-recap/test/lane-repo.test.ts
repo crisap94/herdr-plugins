@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BRANCH_ARGS, GitLaneRepo, ORIGIN_ARGS, ROOT_ARGS } from '#src/adapters/git-lane-repo.ts';
+import { BRANCH_ARGS, GIT, GitLaneRepo, ORIGIN_ARGS, ROOT_ARGS } from '#src/adapters/git-lane-repo.ts';
 import { run } from '#src/adapters/process.ts';
 import type { Runner, RunResult } from '#src/adapters/process.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -125,4 +125,10 @@ test('against real git: a repository on a branch, a subdirectory, and a director
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
+});
+
+test('the shared git prefix is read-only, so no reader can extend it for every call', () => {
+    // @ts-expect-error the prefix is a read-only list
+    const writable: string[] = GIT;
+    assert.deepEqual([...writable], ['-c', 'core.fsmonitor=false']);
 });

@@ -9,6 +9,8 @@ import type { Runner, RunResult } from '#src/adapters/process.ts';
 import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { MemoryWorksite } from './fakes/worksite-reader.ts';
+import { worksiteTextOf } from '#src/recap/render/worksite.ts';
+import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 
 interface Spec {
     readonly subject: string | null;
@@ -137,6 +139,17 @@ test('git adapter: an unmerged path is listed', async () => {
     assert.deepEqual(uncommitted.paths, ['shared.txt']);
 });
 
+test('git adapter: a path with a space and a newline is one path, and its section keeps one heading', async () => {
+    const { directory, reader } = realRepo({ subject: 'base', untracked: [] });
+    const hostile = 'x y\n- forged\n# heading.txt';
+    writeFileSync(join(directory, hostile), 'n');
+    const uncommitted = await reader.uncommitted(directory);
+    assert.ok(!isUnknown(uncommitted));
+    assert.deepEqual(uncommitted.paths, [hostile]);
+    const text = worksiteTextOf({ kind: 'known', directory, repository: null, lastCommit: null, uncommitted: { count: uncommitted.count, paths: uncommitted.paths }, edited: [], tokens: [] }, byteBudgetOf(2_048));
+    assert.equal(text, `## Worksite\n- directory: ${directory}\n- 1 uncommitted paths\n  - x y - forged # heading.txt`);
+});
+
 test('git adapter: a git timeout is an unknown timeout for both reads', async () => {
     const reader = new GitWorksiteReader(timingOut);
     const directory = tempRoot();
@@ -167,11 +180,53 @@ test('git adapter: every read disables optional locks and fsmonitor before its s
     await reader.lastCommit(directory);
     await reader.uncommitted(directory);
     assert.deepEqual(calls.map((call) => call.args), [LAST_COMMIT_ARGS, PORCELAIN_ARGS]);
-    assert.deepEqual(LAST_COMMIT_ARGS.slice(0, 2), ['-c', 'core.fsmonitor=false']);
-    assert.deepEqual(PORCELAIN_ARGS.slice(0, 2), ['-c', 'core.fsmonitor=false']);
+    assert.deepEqual(LAST_COMMIT_ARGS, ['-c', 'core.fsmonitor=false', 'log', '-1', '--no-show-signature', '--format=%h%x00%s']);
+    assert.deepEqual(PORCELAIN_ARGS, ['-c', 'core.fsmonitor=false', 'status', '--porcelain=v2', '-z', '--untracked-files=normal']);
     for (const call of calls) {
         assert.equal(call.env['GIT_OPTIONAL_LOCKS'], '0');
     }
+});
+
+test('git adapter: GIT_DIR, GIT_WORK_TREE and GIT_INDEX_FILE from the daemon environment never reach a read', async () => {
+    const redirecting = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE'] as const;
+    const saved = redirecting.map((name) => [name, process.env[name]] as const);
+    const envs: NodeJS.ProcessEnv[] = [];
+    const recording: Runner = async (_command, _args, options) => {
+        envs.push(options.env);
+        return { code: 0, stdout: '', stderr: '', timedOut: false };
+    };
+    try {
+        for (const name of redirecting) {
+            process.env[name] = '/elsewhere';
+        }
+        const reader = new GitWorksiteReader(recording);
+        await reader.lastCommit(tempRoot());
+        await reader.uncommitted(tempRoot());
+    } finally {
+        for (const [name, value] of saved) {
+            if (value === undefined) {
+                delete process.env[name];
+            } else {
+                process.env[name] = value;
+            }
+        }
+    }
+    assert.equal(envs.length, 2);
+    for (const env of envs) {
+        for (const name of redirecting) {
+            assert.equal(env[name], undefined);
+        }
+        assert.equal(env['GIT_OPTIONAL_LOCKS'], '0');
+    }
+});
+
+test('git adapter: a user config that hides untracked files does not undercount', async () => {
+    const { directory, reader } = realRepo({ subject: 'base', untracked: ['draft.md'] });
+    git(directory, 'config', 'status.showUntrackedFiles', 'no');
+    const uncommitted = await reader.uncommitted(directory);
+    assert.ok(!isUnknown(uncommitted));
+    assert.equal(uncommitted.count, 1);
+    assert.deepEqual(uncommitted.paths, ['draft.md']);
 });
 
 const timingOut: Runner = async (): Promise<RunResult> => ({ code: 137, stdout: '', stderr: '', timedOut: true });

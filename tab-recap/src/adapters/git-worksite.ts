@@ -6,8 +6,14 @@ import type { Runner } from './process.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import type { LastCommitResult, UncommittedResult, WorksiteReader } from '#src/ports/worksite-reader.ts';
 
-export const LAST_COMMIT_ARGS: readonly string[] = [...GIT, 'log', '-1', '--format=%h%x00%s'];
-export const PORCELAIN_ARGS: readonly string[] = [...GIT, 'status', '--porcelain=v2', '-z'];
+export const LAST_COMMIT_ARGS: readonly string[] = [...GIT, 'log', '-1', '--no-show-signature', '--format=%h%x00%s'];
+export const PORCELAIN_ARGS: readonly string[] = [...GIT, 'status', '--porcelain=v2', '-z', '--untracked-files=normal'];
+
+const REDIRECTING_ENV: ReadonlySet<string> = new Set(['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']);
+
+function worksiteEnv(): NodeJS.ProcessEnv {
+    return Object.fromEntries(Object.entries(gitEnv()).filter(([name]) => !REDIRECTING_ENV.has(name)));
+}
 
 async function isDirectory(directory: string): Promise<boolean> {
     return stat(directory).then((found) => found.isDirectory(), () => false);
@@ -38,7 +44,7 @@ export class GitWorksiteReader implements WorksiteReader {
         if (!(await isDirectory(directory))) {
             return unknown({ why: 'not-found', what: 'directory' });
         }
-        const result = await this.runner('git', args, { input: '', timeoutMs: TIMEOUT_MS, cwd: directory, env: gitEnv() });
+        const result = await this.runner('git', args, { input: '', timeoutMs: TIMEOUT_MS, cwd: directory, env: worksiteEnv() });
         if (result.timedOut || result.code !== 0) {
             return failure(result);
         }
