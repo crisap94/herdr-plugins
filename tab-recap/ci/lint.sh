@@ -62,6 +62,9 @@ bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph b
 echo "lane map (every file of src and test belongs to exactly one lane):"
 node ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
 
+echo "domain types (the signature check fails its bad probes and passes its good ones):"
+bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 
