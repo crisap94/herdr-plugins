@@ -87,6 +87,7 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
         pause: (ms) => { world.pauses.push(ms); return Promise.resolve(); },
         webs: { of: () => null },
         lanes: () => lanes,
+        listsPane: () => true,
         focused: () => Promise.resolve(focused),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
         coverage: () => null,

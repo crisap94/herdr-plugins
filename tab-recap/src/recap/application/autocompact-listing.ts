@@ -26,10 +26,10 @@ function stamp(at: number, zone: string): string {
 }
 
 const rowOf = (found: StoredDecision, zone: string): readonly string[] => [
-    stamp(found.at, zone), found.tab, found.pane, `${found.share} %`, found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
+    stamp(found.at, zone), found.tab, found.pane, found.laneStatus ?? '—', `${found.share} %`, found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd),
 ];
 
-const HEAD = ['time', 'tab', 'pane', 'share', 'verdict', 'gate', 'decider', 'cost'] as const;
+const HEAD = ['time', 'tab', 'pane', 'status', 'share', 'verdict', 'gate', 'decider', 'cost'] as const;
 const SKIPPED = ['time', 'tab', 'pane', 'share', 'gate', 'detail'] as const;
 
 const skippedRow = (found: Skip, zone: string): readonly string[] => [
