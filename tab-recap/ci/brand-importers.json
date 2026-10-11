@@ -11,6 +11,7 @@
   "src/recap/domain/handoff-sanitize.ts",
   "src/recap/domain/ids.ts",
   "src/recap/domain/in-flight.ts",
+  "src/recap/domain/lane-closed.ts",
   "src/recap/domain/text.ts",
   "src/recap/domain/time.ts",
   "src/recap/domain/writer-view.ts",
