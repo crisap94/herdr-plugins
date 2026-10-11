@@ -78,3 +78,6 @@ npm install            # tsgo, oxlint (dev only — the plugin itself has zero d
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, tsgo, oxlint, and a seed they must reject
 bash ci/test.sh        # node --test
 ```
+
+On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test run one at a time across every checkout,
+and `TEST_CONCURRENCY=<n>` to cap the test runner's parallel files (`ci/host-limits.sh`). Unset, both do nothing.
