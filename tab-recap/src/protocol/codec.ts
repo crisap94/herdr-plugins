@@ -11,9 +11,8 @@ export type FieldSpec =
 
 type Field = Exclude<FieldSpec, { readonly kind: 'id' }>;
 type RestField = Extract<Field, { readonly kind: 'rest' }>;
-type WordField = Extract<Field, { readonly kind: 'word' }>;
 
-const shapeOf = (field: WordField): RegExp => WORD_SHAPES[field.shape ?? 'word'];
+const shapeOf = (shape: WordShape | undefined): RegExp => WORD_SHAPES[shape ?? 'word'];
 
 export type Fields = Readonly<Record<string, string | boolean | null>>;
 
@@ -52,7 +51,7 @@ function pieceOf(field: Field, value: ParsedValue): Result<string | null, Refusa
     if (typeof text !== 'string') {
         return refuse('bad-grammar', field.name);
     }
-    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, shapeOf(field)) : checkedRest(field, text);
+    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, shapeOf(field.shape)) : checkedRest(field, text);
 }
 
 export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue): Result<TokenValue, Refusal> {
@@ -93,7 +92,7 @@ function readField(field: Field, segments: readonly string[], at: number): Resul
         return field.optional ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
     }
     if (field.kind === 'word') {
-        const word = checkedText(field.name, segment, LIMITS.valueMax, shapeOf(field));
+        const word = checkedText(field.name, segment, LIMITS.valueMax, shapeOf(field.shape));
         return word.kind === 'ok' ? ok({ value: word.value, at: at + 1 }) : word;
     }
     const text = checkedRest(field, segments.slice(at).join(':'));

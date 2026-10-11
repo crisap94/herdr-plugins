@@ -24,7 +24,7 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
-import { handoffRequestsOf } from '#src/recap/domain/handoff-requests.ts';
+import { parseHandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
@@ -214,7 +214,7 @@ export function loadConfig(): Config {
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
         herdrEvents,
-        handoffRequests: handoffRequestsOf(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
+        handoffRequests: parseHandoffRequests(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,

@@ -11,7 +11,7 @@ import { EVENT_TOKEN } from './event-token.ts';
 export const PROTOCOL_VERSION = '1';
 export const COMPACT_TOKEN = answerNameOf(compact);
 export const capabilityOf = (isOn: (setting: string) => boolean): string => must(capabilityValue(EXCHANGES, KINDS_VERSION, isOn));
-export const CAPABILITY_VALUE = capabilityOf((setting) => setting !== handoff.optIn);
+export const CAPABILITY_VALUE = must(capabilityValue(EXCHANGES.filter((exchange) => exchange.optIn !== handoff.optIn), KINDS_VERSION));
 
 const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 

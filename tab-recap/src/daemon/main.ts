@@ -64,6 +64,7 @@ import { factsOf } from '#src/recap/application/lane-facts.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 
 const REQUEST_POLL_MS = 1000;
@@ -103,9 +104,9 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
 
 const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
 
-const handoffRequestsOn = (): boolean => loadConfig().handoffRequests === 'on';
+const handoffRequestsOn = (): HandoffRequests => loadConfig().handoffRequests;
 
-const switchOn = (setting: string): boolean => (setting === handoff.optIn ? handoffRequestsOn() : herdrEventsOf(configGetter()(setting)) === 'on');
+const switchOn = (setting: string): boolean => (setting === handoff.optIn ? handoffRequestsOn() === 'on' : herdrEventsOf(configGetter()(setting)) === 'on');
 
 function wantsScreen(agent: string): boolean {
     const { screenAgents } = loadConfig();
