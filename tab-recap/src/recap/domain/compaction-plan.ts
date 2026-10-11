@@ -18,6 +18,23 @@ export function confirmationReads(reads: number): ConfirmationReads {
     return reads as ConfirmationReads;
 }
 
+export type NeedsIdleReason = Brand<string, 'NeedsIdleReason'>;
+
+export class NotAReasonError extends Error {
+    override readonly name = 'NotAReasonError';
+}
+
+export type WhileWorking = { readonly kind: 'queues' } | { readonly kind: 'needs-idle'; readonly reason: NeedsIdleReason };
+
+export const QUEUES: WhileWorking = { kind: 'queues' };
+
+export function needsIdle(reason: string): WhileWorking {
+    if (reason.trim() === '') {
+        throw new NotAReasonError('a kind that needs the lane idle must say why');
+    }
+    return { kind: 'needs-idle', reason: reason.trim() as NeedsIdleReason };
+}
+
 export interface CompactionLine {
     readonly pieces: readonly CompactionPiece[];
 }
@@ -38,6 +55,7 @@ export interface CompactionPlan {
     readonly confirm: Confirmation;
     readonly retryOnSelfFailure: boolean;
     readonly followUp: FollowUp;
+    readonly whileWorking: WhileWorking;
 }
 
 export type CompactionPlanFactory = (guidance: string) => CompactionPlanResult;

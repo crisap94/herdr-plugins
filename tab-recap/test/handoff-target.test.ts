@@ -38,7 +38,7 @@ test('a fresh lane whose session is known and whose transcript does not exist ye
 });
 
 test('a done lane is ready exactly as an idle one is', async () => {
-    const result = await resolveTarget(SOURCE, TARGET, depsOf([seen('w1:p1', 'claude', { status: 'done', session: 'sess-1' })], { kind: 'count', count: 0 }));
+    const result = await resolveTarget(SOURCE, TARGET, depsOf([seen('w1:p1', 'claude', { status: 'done', session: 'sess-1' })], { kind: 'count', count: 0, background: [] }));
     assert.ok(result.kind === 'ready');
 });
 
@@ -67,13 +67,13 @@ test('a transcript that exists but cannot be read is in-flight and sends nothing
 });
 
 test('running work in the target transcript is in-flight', async () => {
-    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'count', count: 2 });
+    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'count', count: 2, background: [] });
     assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'refused', reason: 'in-flight' });
 });
 
 test('two Codex lanes sharing a directory do not read each other as the target transcript', async () => {
     const lanes = [seen('w1:p9', 'codex', { cwd: '/repo' }), seen('w1:p1', 'codex', { cwd: '/repo' })];
-    const deps = depsOf(lanes, { kind: 'count', count: 5 });
+    const deps = depsOf(lanes, { kind: 'count', count: 5, background: [] });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
     assert.equal(result.ownTranscript, false);

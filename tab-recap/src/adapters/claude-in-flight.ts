@@ -118,5 +118,5 @@ export function claudeInFlight(lines: readonly string[], truncated = false): InF
 export function answerOf(scan: TailScan | null, truncated: boolean): InFlightResult {
     if (scan === null) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
     if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
-    return { kind: 'in-flight', count: scan.count };
+    return { kind: 'in-flight', count: scan.count, background: [] };
 }

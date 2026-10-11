@@ -29,7 +29,7 @@ const rejects = (action: () => void): void => {
     assert.throws(action, /CHECK constraint failed|UNIQUE constraint failed/);
 };
 
-test('migration 16 from the previous version keeps every request and compaction row; the database ends at the latest version; upgraded == fresh', () => {
+test('migration 17 from the previous version keeps every request and compaction row; the database ends at the latest version; upgraded == fresh', () => {
     const dir = scratchDir('handoff-upgrade');
     try {
         const path = join(dir, 'tab-recap.db');

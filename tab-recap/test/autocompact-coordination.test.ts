@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';
 import { lane, rows, world } from './autocompact-world.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
+import { awaitedNames, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
 
 test('an `awaiting` token makes the lane in flight, with the detail `awaiting <value>`: no decider is asked, nothing is requested, and the in-flight reader is not read', async () => {
     const w = world();
@@ -24,8 +25,8 @@ test('the wait answered, the lane goes through the remaining gates again', async
 });
 
 test('the in-flight count still applies when nothing awaits: the same detail as before', () => {
-    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: { count: 2, why: '2 running' } }), '2 running');
-    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: { count: 1, why: 'awaiting', detail: 'awaiting reviewer' } }), 'awaiting reviewer');
+    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: false }), '2 running');
+    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: false }), 'awaiting reviewer');
 });
 
 test('events: a skip is written when its gate changes, not on each sweep; a decision is written with its verdict and share', async () => {

@@ -1,7 +1,8 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { Unknown } from './unknowable.ts';
-import type { InFlightWhy } from './capability-reasons.ts';
+import type { InFlightWhy, SplitWhy } from './capability-reasons.ts';
+import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 
 export type CallKind = 'shell' | 'edit' | 'web' | 'agent' | 'other' | 'read';
 
@@ -56,10 +57,12 @@ export type PromptResult = { readonly kind: 'prompt'; readonly text: string | nu
 
 export type ObservedResult = { readonly kind: 'observed'; readonly observed: Observed | null } | Unknown;
 
-export type InFlightResult = { readonly kind: 'in-flight'; readonly count: number } | Unknown;
+export type InFlightResult = { readonly kind: 'in-flight'; readonly count: number; readonly background: readonly BackgroundItem[] } | Unknown;
+
+export type BackgroundSplit = { readonly kind: 'separates' } | { readonly kind: 'foreground-only'; readonly why: SplitWhy };
 
 export type InFlightCapability =
-    | { readonly kind: 'supported'; readonly read: (source: string, budget: number) => Promise<InFlightResult> }
+    | { readonly kind: 'supported'; readonly split: BackgroundSplit; readonly read: (source: string, budget: number) => Promise<InFlightResult> }
     | { readonly kind: 'unsupported'; readonly why: InFlightWhy };
 
 export type SupportedInFlight = Extract<InFlightCapability, { readonly kind: 'supported' }>;

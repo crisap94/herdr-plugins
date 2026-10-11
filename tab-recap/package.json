@@ -14,7 +14,7 @@
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "lint": "bash ci/lint.sh",
-    "test": "node --test \"test/**/*.test.ts\"",
+    "test": "bash ci/test.sh",
     "daemon": "node src/daemon/launch.mjs"
   },
   "devDependencies": {

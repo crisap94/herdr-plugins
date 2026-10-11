@@ -46,4 +46,4 @@ function up(db: DatabaseSync): void {
     db.exec(`CREATE VIEW handoff_answer_readable AS SELECT ${uuid('id')} AS id, at, outcome, reason FROM handoff_answer`);
 }
 
-export const m016: Migration = { version: 16, name: 'handoff', up };
+export const m017: Migration = { version: 17, name: 'handoff', up };

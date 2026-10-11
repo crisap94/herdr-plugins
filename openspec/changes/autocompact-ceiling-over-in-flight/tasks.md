@@ -19,14 +19,14 @@ Paths are under `tab-recap/` unless stated otherwise. Each implementation group 
 
 ## 1. Domain (written first, by the change's owner; lanes start once it and the gates are in)
 
-- [ ] 1.1 `FlightAnswer` becomes a value with `foreground` (count or unknown) and `background` (a list of
+- [x] 1.1 `FlightAnswer` becomes a value with `foreground` (count or unknown) and `background` (a list of
       `BackgroundItem`: a tool and a label, both domain types). The gate (`gateOf` in `src/recap/domain/autocompact.ts`)
       reads only `foreground`.
-- [ ] 1.2 `WhileWorking` (`queues` or `needs-idle` with its reason) joins the compaction plan type.
-- [ ] 1.3 One domain function builds the note `Still waiting for: <names>. Still running: <tool> "<label>", …` from the
+- [x] 1.2 `WhileWorking` (`queues` or `needs-idle` with its reason) joins the compaction plan type.
+- [x] 1.3 One domain function builds the note `Still waiting for: <names>. Still running: <tool> "<label>", …` from the
       awaited names and the background items, through the existing plain-text sanitizer, cut to 400 characters (task 0.3),
       and returns no note when there is nothing to name.
-- [ ] 1.4 Verify: unit tests for the note (both parts, one part, nothing, the cut), for the gate reading only
+- [x] 1.4 Verify: unit tests for the note (both parts, one part, nothing, the cut), for the gate reading only
       `foreground`, and for `WhileWorking` refusing an empty reason.
 
 ## 2. Lane A: in-flight readers (`src/adapters/*-in-flight.ts`)

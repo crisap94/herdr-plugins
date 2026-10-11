@@ -242,7 +242,7 @@ for (const row of ROWS) {
         const capability = row.reader.inFlight;
         if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
         const found = await capability.read(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
-        assert.deepEqual(found, { kind: 'in-flight', count: 0 });
+        assert.deepEqual(found, { kind: 'in-flight', count: 0, background: [] });
     });
 
     test(`${row.kind}: ${row.compactable ? 'offered a compaction' : 'not offered a compaction'}`, () => {
