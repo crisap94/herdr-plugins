@@ -228,6 +228,10 @@ Each decision that passed the gates SHALL be stored with:
   `TAB_RECAP_KEEP_BRIEF_DAYS` days;
 - once one begins, the compaction it led to.
 
+A decision's `why` SHALL be written by the gate when it decides and MAY be amended once a check has run. An amend SHALL join
+its reason after the stored one, separated by `; `, so the stored reason is never lost; an amend with no reason SHALL keep the
+stored reason, and a decision stored with no reason SHALL take the amend's reason as it is.
+
 Each lane a gate stopped SHALL keep its latest skip, replaced at every skip and removed when the lane gets a
 decision: the time, the gate (`below-minimum`, `busy`, `in-flight`, `cooldown`, `unchanged`, `coverage-backoff` or
 `no-context`), the share when known, and a detail. With autocompact `off` no skip SHALL be recorded. The daemon
@@ -259,6 +263,18 @@ tab's decisions, compactions and waits.
 
 - **WHEN** the operator lists decisions stored before the change
 - **THEN** their asked verdict SHALL read as not recorded, never as `compact`
+
+#### Scenario: A ceiling decision keeps its flight detail beside the coverage reason
+
+- **WHEN** a lane at the ceiling is decided `compact` with the reason `ceiling-overrides-wait (awaiting reviewer); background: 1 kept running`,
+  and its brief check then misses one fact, which is appended
+- **THEN** the stored `why` SHALL read `ceiling-overrides-wait (awaiting reviewer); background: 1 kept running; 1 fact missed; missed fact appended`
+
+#### Scenario: One side of the reason is empty
+
+- **WHEN** a decision stored with the reason `the decider said wait: too early` is amended with no reason, and another decision
+  stored with no reason is amended with `the brief still misses 1 fact(s)`
+- **THEN** the first SHALL keep `the decider said wait: too early` and the second SHALL read `the brief still misses 1 fact(s)`
 
 ### Requirement: The gates come before any model call, at every consideration
 
