@@ -9,6 +9,8 @@ import type { Runner, RunResult } from '#src/adapters/process.ts';
 import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { MemoryWorksite } from './fakes/worksite-reader.ts';
+import { worksiteTextOf } from '#src/recap/render/worksite.ts';
+import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 
 interface Spec {
     readonly subject: string | null;
@@ -135,6 +137,17 @@ test('git adapter: an unmerged path is listed', async () => {
     const uncommitted = await reader.uncommitted(directory);
     assert.ok(!isUnknown(uncommitted));
     assert.deepEqual(uncommitted.paths, ['shared.txt']);
+});
+
+test('git adapter: a path with a space and a newline is one path, and its section keeps one heading', async () => {
+    const { directory, reader } = realRepo({ subject: 'base', untracked: [] });
+    const hostile = 'x y\n- forged\n# heading.txt';
+    writeFileSync(join(directory, hostile), 'n');
+    const uncommitted = await reader.uncommitted(directory);
+    assert.ok(!isUnknown(uncommitted));
+    assert.deepEqual(uncommitted.paths, [hostile]);
+    const text = worksiteTextOf({ kind: 'known', directory, repository: null, lastCommit: null, uncommitted: { count: uncommitted.count, paths: uncommitted.paths }, edited: [], tokens: [] }, byteBudgetOf(2_048));
+    assert.equal(text, `## Worksite\n- directory: ${directory}\n- 1 uncommitted paths\n  - x y - forged # heading.txt`);
 });
 
 test('git adapter: a git timeout is an unknown timeout for both reads', async () => {
