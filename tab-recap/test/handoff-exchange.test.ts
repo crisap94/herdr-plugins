@@ -58,7 +58,7 @@ function setup(offer: HandoffOffer = 'offered', asks = new MemoryAskLedger()): H
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
     const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (current.value !== 'sharing-off' ? 'on' : 'off'), log: (): void => undefined });
-    const queue = { queueHandoff: (ask: NewAsk, request: NewHandoffRequest): void => { asks.record(ask); queued.push(request); asks.attach(ask, HID); } };
+    const queue = { queueHandoff: (newAsk: NewAsk, request: NewHandoffRequest): void => { asks.record(newAsk); queued.push(request); asks.attach(newAsk, HID); } };
     const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, queue, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { responder, queued, tokens, events, asks, offer: current };
 }

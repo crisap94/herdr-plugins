@@ -110,10 +110,13 @@ export class HandoffMirror {
         const previous = this.pending.get(pane);
         const next = previous === undefined ? reportWrite(tokens, log, pane, write) : previous.then(() => reportWrite(tokens, log, pane, write));
         this.pending.set(pane, next);
-        void next.then(() => {
-            if (this.pending.get(pane) === next) {
-                this.pending.delete(pane);
-            }
-        });
+        void this.release(pane, next);
+    }
+
+    private async release(pane: PaneId, done: Promise<void>): Promise<void> {
+        await done;
+        if (this.pending.get(pane) === done) {
+            this.pending.delete(pane);
+        }
     }
 }

@@ -24,7 +24,7 @@ test('a queued handoff records its ask, inserts its request row and attaches the
     queueOf(store).queueHandoff(ask, request);
     const [row] = store.requests.takeHandoffs();
     assert.equal(row?.answer, 'h1');
-    assert.deepEqual(store.asks.unfinished().map((each) => each.ref), [String(row?.id)]);
+    assert.deepEqual(store.asks.unfinished().map((each) => each.ref), [String(row.id)]);
 });
 
 test('a failing request insert leaves no ask and no row', () => {
