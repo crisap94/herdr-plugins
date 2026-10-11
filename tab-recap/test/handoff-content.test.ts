@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildHandoffContent, taskFactsOf } from '#src/recap/application/handoff-content.ts';
+import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
 import type { HandoffInput } from '#src/recap/application/handoff-content.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
-import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
+import { CLOSED_SHOWN_MS, taskFactsOf } from '#src/recap/application/ledger-input.ts';
 import type { TaskFacts } from '#src/recap/application/ledger-input.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { FORBIDDEN_PHRASES, FORBIDDEN_WORDS } from '#src/recap/domain/forbidden-words.ts';
@@ -275,4 +275,67 @@ test('a note that names a forbidden word is dropped and the handoff is still ren
     assert.equal(body.note, null);
     assert.deepEqual(textsOf(body, 'goal'), ['the goal']);
     assert.equal(body.withheld, 0);
+});
+
+test('a fact whose control character would join a forbidden word is withheld, because the vetted text is the sent text', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 2_000), fact('x1', 'next', 'her\u001bdr lane', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'next'), []);
+    assert.equal(body.withheld, 1);
+});
+
+test('a stored fact text has its control characters removed and its whitespace collapsed', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'a\u001bb  c\n d', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'goal'), ['ab c d']);
+});
+
+test('a decision reason whose control character would join a forbidden word is withheld whole', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'keep the ledger', NOW - 1_000, { why: 'her\u001bdr reads it' }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
+    assert.deepEqual(textsOf(body, 'decisions'), []);
+    assert.equal(body.withheld, 1);
+});
+
+test('the done, links and recently closed groups each keep their newest 15 and count the rest', () => {
+    const open = [
+        fact('g1', 'goal', 'the goal', NOW - 1_000),
+        ...Array.from({ length: 16 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, NOW - 20_000 + index * 1_000)),
+        ...Array.from({ length: 16 }, (_, index) => fact(`l${index}`, 'links', `link ${index}`, NOW - 20_000 + index * 1_000)),
+    ];
+    const closed = Array.from({ length: 16 }, (_, index) => closedFact(`c${index}`, 'next', `closed ${index}`, NOW - 3_000_000 + index * 1_000));
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf(open, closed))));
+    for (const [id, prefix] of [['done', 'd'], ['links', 'l'], ['closed', 'c']] as const) {
+        const group = groupOf(body, id);
+        assert.equal(group.entries.length, 15, id);
+        assert.equal(group.capped, 1, id);
+        assert.equal(group.entries[0]?.id, `${prefix}1`, id);
+    }
+});
+
+test('a withheld fact does not use a cap slot, and the cap counts only the facts that were kept', () => {
+    const links = Array.from({ length: 16 }, (_, index) => fact(`l${index}`, 'links', index === 15 ? 'the herdr link' : `link ${index}`, NOW - 20_000 + index * 1_000));
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW), ...links]))));
+    const group = groupOf(body, 'links');
+    assert.equal(group.entries.length, 15);
+    assert.equal(group.capped, 0);
+    assert.equal(body.withheld, 1);
+    assert.equal(firstOf(body, 'links').text, 'link 0');
+});
+
+test('facts with the same last-seen time keep the lowest ids when the cap cuts between them', () => {
+    const done = Array.from({ length: 16 }, (_, index) => fact(`d${String(index).padStart(2, '0')}`, 'done', `done ${index}`, NOW - 5_000)).toReversed();
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW), ...done]))));
+    const group = groupOf(body, 'done');
+    assert.deepEqual(group.entries.map((entry) => entry.id), Array.from({ length: 15 }, (_, index) => `d${String(index).padStart(2, '0')}`));
+    assert.equal(group.capped, 1);
+});
+
+test('a recently closed fact outside the window, or with no close time, is not shown', () => {
+    const stale = closedFact('c1', 'next', 'stale plan', NOW - CLOSED_SHOWN_MS - 1);
+    const untimed = { ...closedFact('c2', 'next', 'untimed plan', NOW - 1_000), closedAt: null };
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)], [stale, untimed, closedFact('c3', 'next', 'fresh plan', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'closed'), ['fresh plan']);
+    assert.equal(body.withheld, 0);
+});
+
+test('a ledger whose only closed facts are outside the window is ledger-empty', () => {
+    assert.equal(refusedBy(buildHandoffContent(inputOf(taskOf([], [closedFact('c1', 'next', 'stale plan', NOW - CLOSED_SHOWN_MS - 1)])))), 'ledger-empty');
 });
