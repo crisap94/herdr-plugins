@@ -6,6 +6,7 @@ import type { AutocompactState } from '#src/recap/application/autocompact-state.
 import { contextOf, shareOf } from '#src/recap/domain/compaction.ts';
 import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateOf } from '#src/recap/domain/autocompact.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
+import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
 import { claudeWindowOf } from './context-window.ts';
@@ -53,7 +54,8 @@ export function shareAt(source: string, cursor: number, catalogue: ModelCatalogu
 function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
-    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, inFlight, share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
+    const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(flight.count), flight.background, flightReason('running')) : unreadable(flightReason('unreadable'));
+    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, flight: flightOf(observed, NOT_AWAITING), share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
     return { inFlight, gate };
 }
 

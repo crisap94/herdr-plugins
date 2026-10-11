@@ -3,6 +3,8 @@ import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kind
 import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
 import type { Brand } from './brand.ts';
 import type { Section } from './fact.ts';
+import { holdsLane } from './in-flight.ts';
+import type { Flight } from './in-flight.ts';
 
 export type Milliseconds = Brand<number, 'Milliseconds'>;
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
@@ -150,7 +152,7 @@ export interface GateInput {
     readonly kinds: readonly string[];
     readonly shadowKinds: readonly RegisteredKind[];
     readonly busy: boolean;
-    readonly inFlight: number | 'unknown' | null;
+    readonly flight: Flight | null;
     readonly share: number;
     readonly minimum: number;
     readonly ceiling: number;
@@ -177,7 +179,7 @@ export function gateOf(input: GateInput): { readonly gate: Gate; readonly record
         if (input.unchanged) return 'unchanged';
         const backoff = backoffGate(input);
         if (backoff !== null) return backoff;
-        if (input.inFlight === 'unknown' || (input.inFlight !== null && input.inFlight > 0)) return 'in-flight';
+        if (input.flight !== null && holdsLane(input.flight, input.share >= input.ceiling)) return 'in-flight';
         return input.share >= input.ceiling ? 'ceiling' : 'ask';
     })();
     return { gate, recordOnly };

@@ -32,7 +32,7 @@ export class ClaudeTranscripts implements Transcripts {
     readonly agent = CLAUDE_KIND;
     private readonly root: string;
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
-    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
+    readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'survival-unproven' }, read: (source, budget) => this.readInFlight(source, budget) };
 
     constructor(root = join(homedir(), '.claude', 'projects')) {
         this.root = root;

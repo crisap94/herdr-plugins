@@ -33,7 +33,7 @@ function newest(entries: readonly Entry[], budget: number): readonly Entry[] {
 
 export class OpencodeTranscripts implements Transcripts {
     readonly agent = 'opencode';
-    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source) => this.readInFlight(source) };
+    readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(source) };
     private readonly database: string;
 
     constructor(database = opencodeDatabase()) {
