@@ -152,3 +152,20 @@ test('a lane that stays on the board is compacted as before', async () => {
     assert.deepEqual(stages(run.world).map(([stage]) => stage), ['compacted']);
     assert.deepEqual(closedLines(run.logs), []);
 });
+
+const failedEvents = (world: Fleet): readonly string[] => world.laneEvents.filter((event) => event.includes('compact-failed'));
+
+test('a lane closed end publishes no compact-failed event, whichever step saw the lane gone', async () => {
+    const mid = hostile({ closesIn: 'writer' });
+    await mid.compaction.run(AUTO);
+    assert.deepEqual(failedEvents(mid.world), []);
+    const first = hostile({ statuses: [unknown({ why: 'not-found', what: 'agent w1:p1' })] });
+    await first.compaction.run(AUTO);
+    assert.deepEqual(failedEvents(first.world), []);
+});
+
+test('a failure that is not a closed lane still publishes compact-failed', async () => {
+    const run = hostile({ statuses: [unknown({ why: 'unreachable', detail: 'socket closed' })] });
+    await run.compaction.run(AUTO);
+    assert.equal(failedEvents(run.world).length, 1);
+});
