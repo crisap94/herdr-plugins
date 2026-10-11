@@ -91,7 +91,7 @@ test('a reason the table does not mark storable cannot be stored, and every stor
 });
 
 test('the stored outcome type has no CLI-only reason', () => {
-    // @ts-expect-error daemon-not-running is CLI-only and is not a storable reason
+    // @ts-expect-error
     const refused: StoredHandoffOutcome = { kind: 'refused', reason: 'daemon-not-running' };
     assert.equal(storedOutcomeOf(refused.kind, 'reason' in refused ? refused.reason : null), null);
 });
@@ -112,4 +112,39 @@ test('the message key maps each outcome to its row, and printed has none', () =>
     assert.equal(messageKeyOf({ kind: 'delivered' }), 'delivered');
     assert.equal(messageKeyOf({ kind: 'refused', reason: 'source-equals-target' }), 'refused.sourceEqualsTarget');
     assert.equal(messageKeyOf({ kind: 'failed', reason: 'not-answered-taken' }), 'failed.notAnsweredMayDeliver');
+});
+
+test('a missing outcome row fails the same way in the exit mapping and the message key', () => {
+    const unknown = { kind: 'refused', reason: 'not-a-reason' } as unknown as HandoffOutcome;
+    assert.throws(() => exitCodeOf(unknown), /^Error: no handoff outcome row for refused not-a-reason$/);
+    assert.throws(() => messageKeyOf(unknown), /^Error: no handoff outcome row for refused not-a-reason$/);
+});
+
+test('the outcome table is pinned row for row', () => {
+    assert.deepEqual(HANDOFF_OUTCOME_ROWS, [
+        { outcome: 'delivered', reason: null, storable: true, exit: 0, message: 'delivered' },
+        { outcome: 'printed', reason: null, storable: false, exit: 0, message: null },
+        { outcome: 'refused', reason: 'source-unavailable', storable: true, exit: 1, message: 'refused.sourceUnavailable' },
+        { outcome: 'refused', reason: 'task-ambiguous', storable: true, exit: 1, message: 'refused.taskAmbiguous' },
+        { outcome: 'refused', reason: 'source-equals-target', storable: true, exit: 1, message: 'refused.sourceEqualsTarget' },
+        { outcome: 'refused', reason: 'not-a-lane', storable: true, exit: 1, message: 'refused.notALane' },
+        { outcome: 'refused', reason: 'status-not-ready', storable: true, exit: 1, message: 'refused.statusNotReady' },
+        { outcome: 'refused', reason: 'in-flight', storable: true, exit: 1, message: 'refused.inFlight' },
+        { outcome: 'refused', reason: 'lane-busy', storable: true, exit: 1, message: 'refused.laneBusy' },
+        { outcome: 'refused', reason: 'typing-lease-busy', storable: true, exit: 1, message: 'refused.typingLeaseBusy' },
+        { outcome: 'refused', reason: 'content-empty', storable: true, exit: 1, message: 'refused.contentEmpty' },
+        { outcome: 'refused', reason: 'ledger-empty', storable: true, exit: 1, message: 'refused.ledgerEmpty' },
+        { outcome: 'refused', reason: 'too-large', storable: true, exit: 1, message: 'refused.tooLarge' },
+        { outcome: 'refused', reason: 'daemon-not-running', storable: false, exit: 1, message: 'refused.daemonNotRunning' },
+        { outcome: 'refused', reason: 'daemon-outdated', storable: false, exit: 1, message: 'refused.daemonOutdated' },
+        { outcome: 'unsupported', reason: 'no-plan', storable: true, exit: 1, message: 'unsupported.noPlan' },
+        { outcome: 'failed', reason: 'transport', storable: true, exit: 1, message: 'failed.transport' },
+        { outcome: 'failed', reason: 'unconfirmed', storable: true, exit: 1, message: 'failed.unconfirmed' },
+        { outcome: 'failed', reason: 'internal-error', storable: true, exit: 1, message: 'failed.internalError' },
+        { outcome: 'failed', reason: 'source-unreadable', storable: true, exit: 1, message: 'failed.sourceUnreadable' },
+        { outcome: 'failed', reason: 'expired', storable: true, exit: 1, message: 'failed.expired' },
+        { outcome: 'failed', reason: 'interrupted', storable: true, exit: 1, message: 'failed.interrupted' },
+        { outcome: 'failed', reason: 'not-answered-withdrawn', storable: false, exit: 1, message: 'failed.notAnswered' },
+        { outcome: 'failed', reason: 'not-answered-taken', storable: false, exit: 1, message: 'failed.notAnsweredMayDeliver' },
+    ]);
 });
