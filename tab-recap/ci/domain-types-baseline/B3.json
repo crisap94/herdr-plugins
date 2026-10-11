@@ -108,8 +108,7 @@
     "property": 1
   },
   "src/recap/application/compaction-send.ts": {
-    "parameter": 8,
-    "return": 1,
+    "parameter": 7,
     "container": 3,
     "property": 4
   },
@@ -119,7 +118,7 @@
   },
   "src/recap/application/compaction.ts": {
     "parameter": 22,
-    "return": 9,
+    "return": 8,
     "container": 1,
     "property": 6
   },
