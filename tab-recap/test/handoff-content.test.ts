@@ -240,6 +240,12 @@ test('forbidden words across every template of the shared list are withheld from
     }
 });
 
+test('a forbidden word split by a default-ignorable character is withheld, not shown as its plain form', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 2_000), fact('x1', 'next', 'her\u{34F}dr lane', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'next'), []);
+    assert.equal(body.withheld, 1);
+});
+
 test('the focus note is normalized: control characters out, whitespace collapsed, trimmed', () => {
     const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: '  focus\ton the\u001b parser\n\n  now ' })));
     assert.equal(body.note, 'focus on the parser now');
