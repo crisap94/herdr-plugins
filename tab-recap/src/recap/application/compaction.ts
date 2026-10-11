@@ -22,7 +22,7 @@ import type { CompactionDeps } from './compaction-deps.ts';
 import type { Material } from './compaction-message.ts';
 import { Briefing } from './compaction-briefing.ts';
 import { Sender } from './compaction-send.ts';
-import type { Placed } from './compaction-send.ts';
+import type { Placed, Placement } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -64,8 +64,8 @@ export class Compaction {
             const why = saying(state.why);
             return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: compaction.failed(agent, why) } };
         }
-        if (READY.has(state.status)) return { kind: 'proceed', queued: false };
-        if (state.status === 'working' && this.queues(agent)) return { kind: 'proceed', queued: true };
+        if (READY.has(state.status)) return { kind: 'proceed', placement: 'immediate' };
+        if (state.status === 'working' && this.queues(agent)) return { kind: 'proceed', placement: 'queued' };
         const reason = state.status === 'working' ? COMPACT_FAILURES.busy : COMPACT_FAILURES.skipped;
         return { kind: 'refused', refusal: { stage: 'skipped', reason, why: badge[state.status], toast: compaction.skipped(agent, state.status) } };
     }
@@ -154,13 +154,13 @@ export class Compaction {
         return new Trail(this.deps.compactions, id, () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
-    private beginning(agent: string, queued: boolean): string {
+    private beginning(agent: string, placement: Placement): string {
         const { compaction } = this.deps.messages();
-        if (queued) return compaction.startedQueued(agent);
+        if (placement === 'queued') return compaction.startedQueued(agent);
         return this.deps.brief.enabled() ? compaction.writing(agent) : compaction.started(agent);
     }
 
-    private async compact(lane: Lane, tab: string, request: CompactRequest, queued: boolean): Promise<void> {
+    private async compact(lane: Lane, tab: string, request: CompactRequest, placement: Placement): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);
@@ -169,7 +169,7 @@ export class Compaction {
             return;
         }
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
-        await this.tell(said(compaction.title(agent)), said(this.beginning(agent, queued)));
+        await this.tell(said(compaction.title(agent)), said(this.beginning(agent, placement)));
         const material = this.briefing.materialOf(tab, pane, request.note);
         const link = this.briefing.linkedDecision(auto, tab, pane, trail.id);
         const verified = await this.briefing.verified(lane, tab, material, link);
@@ -236,12 +236,12 @@ export class Compaction {
                 return;
             }
             const gates = await Promise.all(owned.map(async (lane) => ({ lane, gate: await this.gated(lane, tab, null, 'status-check', { origin: request.origin ?? 'operator', request }) })));
-            const ready = gates.flatMap(({ lane, gate }) => (gate.kind === 'proceed' ? [{ lane, queued: gate.queued }] : []));
+            const ready = gates.flatMap(({ lane, gate }) => (gate.kind === 'proceed' ? [{ lane, placement: gate.placement }] : []));
             if (ready.length === 0) {
                 return;
             }
             await this.deps.refresh(tab, lanes);
-            await Promise.all(ready.map(({ lane, queued }) => this.compact(lane, tab, request, queued)));
+            await Promise.all(ready.map(({ lane, placement }) => this.compact(lane, tab, request, placement)));
         } catch (error) {
             for (const lane of owned) {
                 this.answer(request, String(lane.pane), failureStage(COMPACT_FAILURES.error));
