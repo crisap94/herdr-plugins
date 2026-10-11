@@ -53,11 +53,13 @@ const F_LATER = fact('f2', 'now', 'closed after the close', CLOSED - 1000, { tas
 const F_EDGE = fact('f3', 'done', 'closed exactly two hours before the close', CLOSED - 9000, { task: T1, state: 'closed', closedAt: CLOSED - CLOSED_SHOWN_MS, closedWhy: 'done' });
 const F_STALE = fact('f4', 'done', 'closed one millisecond beyond two hours', CLOSED - 9000, { task: T1, state: 'closed', closedAt: CLOSED - CLOSED_SHOWN_MS - 1, closedWhy: 'done' });
 const F_FUTURE = fact('f5', 'goal', 'first seen after the close', CLOSED + 1000, { task: T1 });
+const F_LATER_AS_OPEN: Fact = { ...F_LATER, state: 'open', closedAt: null, closedWhy: null };
 const LEDGER_FACTS: readonly Fact[] = [F_OPEN, F_LATER, F_EDGE, F_STALE, F_FUTURE];
 
 test('a closure in the window resolves to its task with the facts as of the close', () => {
     const ledger = new MemoryLedger().seed(...LEDGER_FACTS);
-    assert.deepEqual(withoutView(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
+    assert.deepEqual(withoutView(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE] });
+    assert.equal(F_LATER_AS_OPEN.state, 'open');
 });
 
 test('the two-hour recently-closed window is inclusive at its start and drops one millisecond beyond', () => {
@@ -111,7 +113,7 @@ test('after a prune an expired closure becomes never-seen', () => {
 
 test('the closed registry entry answers found, source-unavailable or unknown', () => {
     const ledger = new MemoryLedger().seed(...LEDGER_FACTS);
-    assert.deepEqual(withoutView(resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER, F_EDGE] });
+    assert.deepEqual(withoutView(resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE] });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(NOW - 14 * DAY - 1))), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'store-unreadable' });

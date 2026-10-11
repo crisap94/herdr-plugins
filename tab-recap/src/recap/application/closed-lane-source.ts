@@ -37,11 +37,13 @@ export interface ClosedSourceDeps {
 const openAt = (fact: Fact, closedAt: Instant): boolean =>
     fact.firstAt <= closedAt && (fact.closedAt === null || fact.closedAt > closedAt);
 
+const asOpen = (fact: Fact): Fact => (fact.state === 'open' ? fact : { ...fact, state: 'open', closedAt: null, closedWhy: null });
+
 const closedWithin = (fact: Fact, closedAt: Instant): boolean =>
     fact.closedAt !== null && fact.closedAt <= closedAt && fact.closedAt >= closedAt - CLOSED_SHOWN_MS;
 
 export function factsAsOf(facts: readonly Fact[], closedAt: Instant): readonly Fact[] {
-    return [...facts.filter((fact) => openAt(fact, closedAt)), ...facts.filter((fact) => closedWithin(fact, closedAt))];
+    return [...facts.filter((fact) => openAt(fact, closedAt)).map(asOpen), ...facts.filter((fact) => closedWithin(fact, closedAt))];
 }
 
 export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSourceDeps): ClosedLaneResolution {
