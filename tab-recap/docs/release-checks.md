@@ -32,4 +32,4 @@ running across a compaction (`CLAUDE_SPLIT` is `separates`).
 2. Type `/compact keep the background tasks` when the agent is idle.
 3. Pass: each task's end notice, and the monitor's events, still reach the agent after the `compact_boundary` row.
 
-If any step fails, set `CLAUDE_SPLIT` back to `foreground-only` (`src/adapters/claude-in-flight.ts`) before releasing.
+If any step fails, set `CLAUDE_SPLIT` back to `{ kind: 'foreground-only', why: 'claude-background-lost' }` (`src/adapters/claude-in-flight.ts`) before releasing.

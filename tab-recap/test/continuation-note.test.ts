@@ -49,3 +49,17 @@ test('a note that the brief lost is appended whole; one it kept leaves the brief
     assert.equal(withNote('Ship the rewrite.', note), `Ship the rewrite. ${note}`);
     assert.equal(withNote('Ship the rewrite once the reviewer answers.', note), 'Ship the rewrite once the reviewer answers.');
 });
+
+test('short names are tested too: a brief that dropped a1 does not keep the note, one that mentions it does', () => {
+    const note = continuationNote(on('a1'), []) ?? '';
+    assert.equal(keepsNote('Ship the rewrite.', note), false);
+    assert.equal(keepsNote('Ship the rewrite once A1 answers.', note), true);
+    const mixed = continuationNote(on('a1'), [item('Monitor', 'open merge requests')]) ?? '';
+    assert.equal(keepsNote('The open merge requests monitor runs.', mixed), false);
+});
+
+test('a word counts only as a whole word, in any letter case', () => {
+    const note = continuationNote(NOT_AWAITING, [item('Monitor', 'open merge')]) ?? '';
+    assert.equal(keepsNote('A monitor opened a merge emerged.', note), false);
+    assert.equal(keepsNote('A MONITOR: open, then merge.', note), true);
+});

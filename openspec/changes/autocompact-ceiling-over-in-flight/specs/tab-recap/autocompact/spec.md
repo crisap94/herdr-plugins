@@ -203,8 +203,8 @@ from the `awaiting` token and the items from the reader's background part, throu
 and the note SHALL be cut to 400 characters. With nothing to name the note SHALL be empty, as before. A reply or an end
 notice that arrives after the compaction SHALL reach the agent as before.
 The brief writer rewrites a note in its own words and may leave a name or a label out (measured: the whole note was kept
-in half of eight live samples); when the written brief of an automatic compaction does not contain every name and label
-of the note, the plugin SHALL append the note to the brief whole, on the same line, and SHALL NOT change a brief that
+in half of eight live samples); when the written brief of an automatic compaction does not contain every name, tool and label
+of the note as whole words, the plugin SHALL append the note to the brief whole, on the same line, and SHALL NOT change a brief that
 contains them all nor append an operator's note.
 
 #### Scenario: The note after a full lane compacts

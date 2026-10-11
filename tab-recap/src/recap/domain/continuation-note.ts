@@ -32,12 +32,15 @@ export function continuationNote(awaiting: Awaiting, background: readonly Backgr
 }
 
 const LEADS = /Still (?:waiting for|running):/g;
-const WORD = /[\p{L}\p{N}][\p{L}\p{N}_-]{3,}/gu;
+const WORD = /[\p{L}\p{N}]+/gu;
+const EDGE_BEFORE = '(?<![\\p{L}\\p{N}])';
+const EDGE_AFTER = '(?![\\p{L}\\p{N}])';
+
+const mentions = (brief: string, word: string): boolean => new RegExp(`${EDGE_BEFORE}${word}${EDGE_AFTER}`, 'iu').test(brief);
 
 export function keepsNote(brief: string, note: string): boolean {
-    const text = brief.toLowerCase();
     const words = note.replaceAll(LEADS, ' ').match(WORD) ?? [];
-    return words.every((word) => text.includes(word.toLowerCase()));
+    return words.every((word) => mentions(brief, word));
 }
 
 export function withNote(brief: string, note: string): string {

@@ -1,6 +1,6 @@
 export type HistoryWhy = 'history-unavailable';
 export type InFlightWhy = 'unregistered-reader' | 'screen' | 'windowed-reader' | 'in-flight-unavailable';
-export type SplitWhy = 'codex-cells' | 'opencode-parts';
+export type SplitWhy = 'claude-background-lost' | 'codex-cells' | 'opencode-parts';
 export type ContextWindowWhy = 'context-window-unavailable';
 export type CompactionWhy = 'compaction-unavailable';
 
@@ -12,6 +12,7 @@ const WORDING: Readonly<Record<CapabilityWhy, (agent: string) => string>> = {
     screen: () => 'screen transcripts do not contain in-flight work',
     'windowed-reader': () => 'windowed replay does not expose in-flight work',
     'in-flight-unavailable': (agent) => `no transcript reader for ${agent}`,
+    'claude-background-lost': (agent) => `${agent} background work does not survive a compaction on this version`,
     'codex-cells': (agent) => `${agent} cannot tell background work that survives a compaction`,
     'opencode-parts': (agent) => `${agent} cannot tell background work that survives a compaction`,
     'context-window-unavailable': () => 'context window is unavailable',
