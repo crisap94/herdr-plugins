@@ -1,0 +1,17 @@
+id: recap-no-suppression
+language: typescript
+severity: error
+message: >-
+  A suppression directive silences a gate. Fix the finding instead. In src/ and bin/ no @ts-ignore,
+  @ts-expect-error, @ts-nocheck, oxlint-disable, eslint-disable or ast-grep-ignore.
+note: >-
+  test/ keeps them: a test may need a deliberately ill-typed fixture. Production code may not.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-no-suppression/**"
+ignores:
+  - "**/test/**"
+rule:
+  kind: comment
+  regex: "(@ts-ignore|@ts-expect-error|@ts-nocheck|oxlint-disable|eslint-disable|ast-grep-ignore)"

@@ -53,6 +53,9 @@ node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail 
 echo "oxlint (type-aware, the house configuration):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
+echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
+bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 
