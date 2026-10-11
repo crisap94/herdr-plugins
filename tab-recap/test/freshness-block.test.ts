@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { freshnessOf, refreshStatusOf } from '#src/recap/application/freshness-block.ts';
-import type { FreshnessInput, RefreshOutcome } from '#src/recap/application/freshness-block.ts';
+import { freshnessOf } from '#src/recap/application/freshness-block.ts';
+import type { FreshnessInput } from '#src/recap/application/freshness-block.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import type { LaneCursor, LastRun, RecapRecords } from '#src/ports/recap-records.ts';
@@ -111,14 +111,3 @@ test('the located source is the one read, so the daemon and the CLI share one fu
     assert.deepEqual(asked.map((call) => call.source), ['located.jsonl']);
 });
 
-test('refresh: not requested, timed out, finished without an error, and finished with an error', () => {
-    const cases: [RefreshOutcome, string][] = [
-        [{ kind: 'not-requested' }, 'not-requested'],
-        [{ kind: 'timed-out' }, 'timed-out'],
-        [{ kind: 'finished', error: null }, 'refreshed'],
-        [{ kind: 'finished', error: 'boom' }, 'failed'],
-    ];
-    for (const [outcome, status] of cases) {
-        assert.equal(refreshStatusOf(outcome), status);
-    }
-});

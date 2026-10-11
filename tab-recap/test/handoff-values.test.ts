@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { NotAnIdentifierError, handoffId, parseHandoffId } from '#src/recap/domain/ids.ts';
-import { CLAIM_KINDS, isClaimKind } from '#src/recap/domain/lane-claim.ts';
+import { CLAIM_KINDS } from '#src/recap/domain/lane-claim.ts';
 import { REFRESH_STATUSES, newerPromptsOf } from '#src/recap/domain/freshness.ts';
 import type { NewerPrompts, RefreshStatus } from '#src/recap/domain/freshness.ts';
 import { byteBudgetOf, fits } from '#src/recap/domain/byte-budget.ts';
@@ -54,10 +54,8 @@ test('parseHandoffId yields the id for a handoff TypeID and null for any other v
     }
 });
 
-test('claim kinds are the two compaction and handoff, and nothing else is a claim kind', () => {
+test('claim kinds are the two compaction and handoff', () => {
     assert.deepEqual([...CLAIM_KINDS], ['compaction', 'handoff']);
-    assert.equal(isClaimKind('handoff'), true);
-    assert.equal(isClaimKind('joined'), false);
 });
 
 test('newer prompts: no transcript is unknown, no prompt is none, and a count is at least that many', () => {

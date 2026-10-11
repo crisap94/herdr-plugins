@@ -7,23 +7,6 @@ import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/d
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
 
-export type RefreshOutcome = { readonly kind: 'not-requested' } | { readonly kind: 'timed-out' } | { readonly kind: 'finished'; readonly error: string | null };
-
-export function refreshStatusOf(outcome: RefreshOutcome): RefreshStatus {
-    switch (outcome.kind) {
-        case 'not-requested':
-            return 'not-requested';
-        case 'timed-out':
-            return 'timed-out';
-        case 'finished':
-            return outcome.error === null ? 'refreshed' : 'failed';
-        default: {
-            const exhaustive: never = outcome;
-            return exhaustive;
-        }
-    }
-}
-
 export interface FreshnessInput {
     readonly tab: string;
     readonly agent: string;
