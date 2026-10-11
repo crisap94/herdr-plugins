@@ -9,26 +9,21 @@ import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { gateOf, laneStatusAtDecision, milliseconds } from '#src/recap/domain/autocompact.ts';
 import { READY } from '#src/recap/domain/status.ts';
-import type { Gate } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
+import { gateOf, laneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
-import { shareOf } from '#src/recap/domain/compaction.ts';
-import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
-import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
+import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, flightTextOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
-import type { Busy, BusyDetail, CeilingReach, Recheck } from './autocompact-gates.ts';
+import type { CeilingReach, Recheck } from './autocompact-gates.ts';
 import { lineOf, moneyOf } from './autocompact-line.ts';
 import type { Effect } from './autocompact-line.ts';
 import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
@@ -36,31 +31,14 @@ import type { Flight, Observed } from '#src/recap/domain/in-flight.ts';
 import { continuationNote } from '#src/recap/domain/continuation-note.ts';
 import type { ContinuationNote } from '#src/recap/domain/continuation-note.ts';
 import type { LaneEvents } from './lane-events.ts';
+import { busyDetailOf, idleMsOf, policyForLane, reachOf } from './autocompact-shapes.ts';
+import type { Asking, CoverageHold, DeciderHealth, Marks, Stop } from './autocompact-shapes.ts';
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
-
-type CoverageHold = 'backing-off' | 'open';
-type Asking = 'asks' | 'holds';
-type DeciderHealth = 'reachable' | 'unreachable';
 
 interface Judgment {
     readonly gate: Gate;
     readonly recordOnly: boolean;
-}
-
-interface Stop {
-    readonly gate: Gate;
-    readonly effect: Effect;
-    readonly detail: Text | null;
-    readonly recheck: Recheck;
-    readonly flight: Flight;
-    readonly atCeiling: CeilingReach;
-}
-
-interface Marks {
-    readonly last: LastDecision | null;
-    readonly lastBreakAt: Instant | null;
-    readonly lastDecisionAt: Instant | null;
 }
 
 interface BackoffFacts {
@@ -70,10 +48,6 @@ interface BackoffFacts {
     readonly tokens: number;
     readonly window: number;
     readonly lastBreakAt: Instant | null;
-}
-
-interface LanePolicy extends Omit<AutocompactPolicy, 'mode'> {
-    readonly mode: DecisionMode;
 }
 
 export interface AutocompactDeps {
@@ -128,13 +102,6 @@ function coverageBackoffActive(input: BackoffFacts): CoverageHold {
     return last.gate === 'coverage' && last.verdict === 'wait' && now - last.at < policy.coverageBackoff.ms && tokens - last.tokens <= window * 0.1 && (lastBreakAt === null || lastBreakAt <= last.at) ? 'backing-off' : 'open';
 }
 
-function policyForLane(policy: AutocompactPolicy, lane: Lane): LanePolicy | null {
-    if (policy.mode === 'off') return null;
-    const registered = registeredKindOf(lane.agent);
-    const shadowed = registered !== null && policy.shadowKinds.includes(registered);
-    return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
-}
-
 const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
 const NO_CONTEXT = must(parseText('the context share is not known yet'));
@@ -150,18 +117,6 @@ function lateFlightOf(flight: Flight, late: Waiting): Flight {
 function decisionWhy(judged: Judged, flight: Flight, atCeiling: CeilingReach): Text | null {
     const reasons = [judged.why, flightTextOf(flight, atCeiling)].filter((part): part is Text => part !== null);
     return reasons.length === 0 ? null : must(parseText(reasons.join('; ')));
-}
-
-function idleMsOf(tuning: AutocompactTuning): Milliseconds | null {
-    return tuning.recheckIdleMs === null ? null : milliseconds(tuning.recheckIdleMs);
-}
-
-function reachOf(use: ContextUse, policy: AutocompactPolicy): CeilingReach {
-    return shareOf(use) >= policy.ceiling ? 'at-ceiling' : 'below-ceiling';
-}
-
-function busyDetailOf(busy: Busy): BusyDetail | null {
-    return busy.kind === 'busy' ? busy.detail : null;
 }
 
 function effectOf(judgment: Judgment): Effect {
@@ -318,6 +273,6 @@ export class Autocompact {
             return { ...UNKNOWN, why: must(parseText(why)), decider: label };
         }
         this.outage = 'reachable';
-        return { verdict: verdictOf(answered.answers, tuning.verdict), answers: answered.answers, why: null, decider: label, costUsd: answered.costUsd, tookMs: answered.tookMs === null ? null : duration(answered.tookMs) };
+        return { verdict: verdictOf(answered.answers, tuning.verdict), answers: answered.answers, why: null, decider: label, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
     }
 }
