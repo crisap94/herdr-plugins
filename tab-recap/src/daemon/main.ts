@@ -18,8 +18,12 @@ import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers, wireHandoffs } from './handoff.ts';
+import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from './handoff.ts';
 import type { HandoffRunner } from './handoff.ts';
+import { wireHandoffs } from './handoff-wiring.ts';
+import { HandoffExchangeResponder, withdrawAsked } from '#src/recap/application/handoff-exchange.ts';
+import type { HandoffOffer } from '#src/recap/application/handoff-exchange.ts';
+import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
@@ -32,7 +36,7 @@ import type { Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
@@ -136,6 +140,8 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
+    const mirror = new HandoffMirror({ asks: store.asks, tokens: fleet, events, sharing: herdrEventsOn, log });
+    const handoffAnswers = new HandoffExchangeResponder({ offer: (): HandoffOffer => (herdrEventsOn() ? (handoffRequestsOn() ? 'offered' : 'not-offered') : 'sharing-off'), board, requests: store.requests, asks: store.asks, mirror, tokens: fleet, now: (): number => Date.now(), log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
@@ -155,7 +161,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onUnknownKind: (): void => { },
         onBeat: (): void => { },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
-        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); },
+        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); handoffAnswers.onPaneTokens(paneId(pane), tokens); },
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
@@ -169,7 +175,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, pause: sleep, log }) };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror, pause: sleep, log }) };
 }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
@@ -231,7 +237,7 @@ async function start(): Promise<number> {
     const restarted = answerRestart({
         exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
         enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
-        handoff: handoffRestartOf(handoffs),
+        handoff: handoffRestartOf(handoffs), withdraw: (ask): void => { withdrawAsked(store.requests, ask); },
         log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
     });
     if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }

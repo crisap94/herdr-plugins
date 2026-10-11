@@ -21,6 +21,7 @@ export interface RestartDeps {
     readonly enabled: () => boolean;
     readonly local: (ask: Ask) => void;
     readonly handoff: (ask: Ask) => void;
+    readonly withdraw: (ask: Ask) => void;
     readonly log: (line: string) => void;
     readonly now: () => number;
     readonly restartedWhy: string;
@@ -67,6 +68,9 @@ export function answerRestart(deps: RestartDeps): number {
             deps.local(ask);
             deps.ledger.settle(ask, INTERRUPTED);
         } else {
+            if (ask.exchange === HANDOFF_EXCHANGE) {
+                deps.withdraw(ask);
+            }
             answerInterrupted(deps, ask);
         }
     }

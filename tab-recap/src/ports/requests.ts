@@ -1,3 +1,4 @@
+import type { RequestId } from '#src/protocol/primitives.ts';
 import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
@@ -24,6 +25,7 @@ export interface HandoffRequestRow {
     readonly refreshFirst: boolean;
     readonly note: string | null;
     readonly source: HandoffSource;
+    readonly answer?: RequestId | null;
 }
 
 export interface NewHandoffRequest {
@@ -33,6 +35,7 @@ export interface NewHandoffRequest {
     readonly note: string | null;
     readonly refreshFirst: boolean;
     readonly source: HandoffSource;
+    readonly answer?: RequestId;
 }
 
 export interface HandoffRequester {
