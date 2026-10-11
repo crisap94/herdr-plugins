@@ -160,18 +160,15 @@ export function configGetter(): (key: string) => string | undefined {
     return (key: string): string | undefined => given(key) ?? readFile().get(key);
 }
 
-function writerViewSettingsOf(get: (key: string) => string | undefined): ReturnType<typeof prunedWriterView> {
-    const keepNewest = rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max);
-    const nextHours = rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max);
-    return prunedWriterView(keepNewestOf(keepNewest), nextHoursOf(nextHours));
-}
-
 export function loadConfig(): Config {
     const file = readFile();
     const get = (key: string): string | undefined => given(key) ?? file.get(key);
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
-    const writerViewSettings = writerViewSettingsOf(get);
+    const writerViewSettings = prunedWriterView(
+        keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)),
+        nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)),
+    );
     const kinds = get('TAB_RECAP_AGENTS');
     const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');
