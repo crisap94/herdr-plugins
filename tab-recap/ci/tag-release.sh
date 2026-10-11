@@ -2,9 +2,12 @@
 # release:tag — on main's pipeline: when the manifest carries a version that has a dated changelog section
 # and no tag, create the annotated tag <plugin>-v<version> through the API at the release commit (the
 # commit that set that version in the manifest, an ancestor of CI_COMMIT_SHA), so the tag pipeline starts
-# as the project's own (check-release.sh, notes, releases). The version must be above every existing tag,
-# the three versions must agree and the changelog needs its link reference, or no tag is made. Nothing to do
-# is not an error. Needs the full history and the tags (the job fetches them).
+# as the project's own (check-release.sh, notes, releases). Every merge request that next-release lists up
+# to the release commit must be in the section (the project merges semi-linearly: the release merge request
+# is rebased on the tip, so what landed meanwhile is below the release commit), or no tag is made. The
+# version must be above every existing tag, the three versions must agree and the changelog needs its
+# link reference, or no tag is made. Nothing to do is not an error. Needs the full history and the tags
+# (the job fetches them).
 # env: RELEASE_TOKEN (api) · CI_API_V4_URL · CI_PROJECT_ID · CI_COMMIT_SHA · PLUGIN_DIR · CHANGELOG · CURL
 # Exit: 0 tagged, or nothing to tag · 1 the tag could not be created · 3 could not look.
 set -uo pipefail
@@ -52,12 +55,12 @@ commit="$(git -C "$dir" log -1 --format=%H -G"^version = \"$escaped\"" "$CI_COMM
 if [ -n "$newest" ]; then
     next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else node "$HERE/next-release.ts" "$@"; fi; }
     computed="$(GITLAB_TOKEN="$RELEASE_TOKEN" PLUGIN="$plugin" next_release --previous "$plugin-v$newest" --to "$commit")" \
-        || { echo "tag-release: 3 — NOT COVERED: could not work out which merge requests the release should list" >&2; exit 3; }
+        || { echo "tag-release: 3 — NOT COVERED: could not work out which merge requests the release should list (an unlabelled merge request in the range? label it, then run the pipeline on main again)" >&2; exit 3; }
     CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" > "$notes" 2>/dev/null
     missing="$(printf '%s' "$computed" | node -e 'const fs = require("fs"); const j = JSON.parse(fs.readFileSync(0, "utf8")); const notes = fs.readFileSync(process.argv[1], "utf8"); const ids = [...String(j.section ?? "").matchAll(/\(!(\d+)\)/g)].map((m) => m[1]); process.stdout.write(ids.filter((id) => !notes.includes("(!" + id + ")")).map((id) => "!" + id).join(" "));' "$notes")" \
         || { echo "tag-release: 3 — NOT COVERED: could not compare the changelog section with the merge requests" >&2; exit 3; }
     if [ -n "$missing" ]; then
-        echo "tag-release: 1 — the changelog section for $version lacks $missing, merged since the release was prepared: no tag (add their lines to CHANGELOG.md in a normal merge request, or fix the version, and the next pipeline on main tags it)" >&2
+        echo "tag-release: 1 — the changelog section for $version lacks $missing, merged or relabelled since the changelog was written: no tag (add their lines to CHANGELOG.md in a normal merge request, or fix the version, and the next pipeline on main tags it)" >&2
         exit 1
     fi
 fi
