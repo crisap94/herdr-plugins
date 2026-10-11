@@ -29,6 +29,8 @@ import { Trail } from './compaction-trail.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
+const LANE_BUSY_WHY = 'lane busy';
+
 interface Link {
     readonly auto: boolean;
     readonly decision: string | null;
@@ -102,21 +104,46 @@ export class Compaction {
         return false;
     }
 
+    private split(lanes: readonly Lane[], request: CompactRequest): { readonly owned: Lane[]; readonly held: Lane[] } {
+        const owned: Lane[] = [];
+        const held: Lane[] = [];
+        for (const lane of lanes) {
+            if (this.deps.claims.kindOf(String(lane.pane)) === 'handoff') {
+                held.push(lane);
+            } else if (this.claimed(lane, request)) {
+                owned.push(lane);
+            }
+        }
+        return { owned, held };
+    }
+
+    private recordRefusal(lane: Lane, tab: string, refusal: Refusal, origin: Origin, request: CompactRequest | null): void {
+        const pane = String(lane.pane);
+        const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
+        linkAsk(this.deps.asks, request, pane, id);
+        this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
+        this.answer(request, pane, failureStage(refusal.reason));
+    }
+
     private async refused(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<boolean> {
         const refusal = await this.refusalOf(lane);
         if (refusal === null) {
             return false;
         }
         if (trail === null) {
-            const id = this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-            linkAsk(this.deps.asks, request, String(lane.pane), id);
-            this.deps.events?.lane(String(lane.pane), COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
-            this.answer(request, String(lane.pane), failureStage(refusal.reason));
+            this.recordRefusal(lane, tab, refusal, origin, request);
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
         await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
         return true;
+    }
+
+    private async heldByHandoff(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
+        const agent = String(lane.agent);
+        const refusal: Refusal = { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: this.deps.messages().compaction.failed(agent, LANE_BUSY_WHY) };
+        this.recordRefusal(lane, tab, refusal, request.origin ?? 'operator', request);
+        await this.tell(this.deps.messages().compaction.title(agent), refusal.toast);
     }
 
     private materialOf(tab: string, pane: string, note: string | null): Material {
@@ -221,11 +248,12 @@ export class Compaction {
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        const owned = targets.filter((lane) => this.claimed(lane, request));
-        if (owned.length === 0) {
-            return;
-        }
+        const { owned, held } = this.split(targets, request);
         try {
+            await Promise.all(held.map((lane) => this.heldByHandoff(lane, tab, request)));
+            if (owned.length === 0) {
+                return;
+            }
             const ready = (await Promise.all(owned.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator', request)) ? [] : [lane])))).flat();
             if (ready.length === 0) {
                 return;
