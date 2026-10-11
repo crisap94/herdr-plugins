@@ -1,7 +1,7 @@
-import type { RequestId } from '#src/protocol/primitives.ts';
 import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 export interface VisibilityRequest {
     readonly target: string;
@@ -25,7 +25,7 @@ export interface HandoffRequestRow {
     readonly refreshFirst: boolean;
     readonly note: string | null;
     readonly source: HandoffSource;
-    readonly answer?: RequestId | null;
+    readonly answer?: Text | null;
 }
 
 export interface NewHandoffRequest {
@@ -35,7 +35,7 @@ export interface NewHandoffRequest {
     readonly note: string | null;
     readonly refreshFirst: boolean;
     readonly source: HandoffSource;
-    readonly answer?: RequestId;
+    readonly answer?: Text;
 }
 
 export interface HandoffRequester {

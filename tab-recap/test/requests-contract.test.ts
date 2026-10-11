@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Requests } from '#src/ports/requests.ts';
-import { requestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryRequests } from './fakes/requests.ts';
 
@@ -22,7 +22,7 @@ const HANDOFF = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1
 for (const { name, make } of subjects) {
     test(`${name}: a handoff keeps the requester's answer id; a handoff the command wrote has none`, () => {
         const requests = make();
-        requests.requestHandoff({ ...HANDOFF, note: null, refreshFirst: false, answer: must(requestId('h1', 'token-safe')) });
+        requests.requestHandoff({ ...HANDOFF, note: null, refreshFirst: false, answer: must(parseText('h1')) });
         requests.requestHandoff({ ...HANDOFF, note: null, refreshFirst: false });
         assert.deepEqual(requests.takeHandoffs().map((row) => row.answer ?? null), ['h1', null]);
     });

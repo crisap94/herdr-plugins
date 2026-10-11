@@ -14,12 +14,14 @@ import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { HANDOFF_OUTCOME_ROWS, handoffOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
-const route: Route = { source: paneId('w1:p1'), target: paneId('w1:p2'), id: rid('h1') };
+const route: Route = { source: paneId('w1:p1'), target: paneId('w1:p2'), id: must(parseText('h1')) };
 
 interface Event { readonly kind: EventKind; readonly pane: string; readonly detail: string | null }
 
@@ -39,7 +41,7 @@ function setup(sharing = true): { readonly mirror: HandoffMirror; readonly token
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
     const asks = new MemoryAskLedger();
-    return { mirror: new HandoffMirror({ asks, tokens, events, sharing: (): boolean => sharing, log: (): void => undefined }), tokens, events, asks };
+    return { mirror: new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (sharing ? 'on' : 'off'), log: (): void => undefined }), tokens, events, asks };
 }
 
 test('every storable outcome maps to the stage the descriptor names, and that stage fits 80 characters with a 16-character id', () => {
@@ -95,7 +97,7 @@ test('with sharing off the mirror writes no token and no event', () => {
 test('the mirror finds the exchange ask by its handoff id, and returns the route the requester asked for', () => {
     const run = setup();
     run.asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
-    const row: HandoffRequestRow = { id: HID, at: 1000, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: rid('h1') };
+    const row: HandoffRequestRow = { id: HID, at: 1000, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: must(parseText('h1')) };
     assert.deepEqual(run.mirror.routeOf(row), route);
     assert.equal(run.mirror.routeOf({ ...row, id: handoffIdOf(new Uint8Array(16).fill(8)) }), null);
 });

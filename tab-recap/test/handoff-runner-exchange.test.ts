@@ -12,6 +12,8 @@ import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
+import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
@@ -41,13 +43,13 @@ function setup(now: number): { readonly runner: HandoffRunner; readonly tokens: 
     const tokens = new RecordingTokens();
     const answers = new MemoryAnswers();
     const ran: number[] = [];
-    const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): boolean => true, log: (): void => undefined });
+    const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => 'on', log: (): void => undefined });
     const flow = { execute: async (): Promise<ReturnType<typeof unrendered>> => { ran.push(1); return unrendered({ kind: 'delivered' }); } };
     const runner = new HandoffRunner({ flow, asks, answers, claims: { release: (): void => undefined }, mirror, transaction: (work) => work(), now: (): number => now, log: (): void => undefined });
     return { runner, tokens, answers, ran, asks };
 }
 
-const row = (at: number): HandoffRequestRow => ({ id: HID, at, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: rid('h1') });
+const row = (at: number): HandoffRequestRow => ({ id: HID, at, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: must(parseText('h1')) });
 
 test('an exchange row runs: running, then delivered on the source pane; its answer row is written and its ask settled', async () => {
     const run = setup(1000);

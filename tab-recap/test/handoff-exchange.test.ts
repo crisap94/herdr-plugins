@@ -12,8 +12,11 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { HandoffExchangeResponder, withdrawAsked } from '#src/recap/application/handoff-exchange.ts';
-import type { HandoffOffer } from '#src/recap/application/handoff-exchange.ts';
+import { HandoffExchangeResponder, withdrawAsked, type TokenEntries } from '#src/recap/application/handoff-exchange.ts';
+import type { HandoffOffer } from '#src/recap/domain/handoff-ask.ts';
+import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -52,13 +55,13 @@ function setup(offer: HandoffOffer = 'offered', asks = new MemoryAskLedger()): H
     const queued: NewHandoffRequest[] = [];
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
-    const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): boolean => current.value !== 'sharing-off', log: (): void => undefined });
+    const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (current.value !== 'sharing-off' ? 'on' : 'off'), log: (): void => undefined });
     const requests = { requestHandoff: (request: NewHandoffRequest) => { queued.push(request); return HID; } };
-    const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, requests, asks, mirror, tokens, now: (): number => 1000, log: (): void => undefined });
+    const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, requests, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { responder, queued, tokens, events, asks, offer: current };
 }
 
-const request = (raw: string): Record<string, string> => ({ 'handoff-req-coordinator': raw });
+const request = (raw: string): TokenEntries => new Map([[must(parseText('handoff-req-coordinator')), must(parseText(raw))]]);
 const answered = (run: Harness): unknown[] => run.tokens.reports.map((report) => [report.pane, report.tokens]);
 
 test('not offered: the request is answered refused-not-offered and queues nothing', () => {

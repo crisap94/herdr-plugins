@@ -18,11 +18,10 @@ import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from './handoff.ts';
+import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers, wireHandoffs } from './handoff.ts';
 import type { HandoffRunner } from './handoff.ts';
-import { wireHandoffs } from './handoff-wiring.ts';
 import { HandoffExchangeResponder, withdrawAsked } from '#src/recap/application/handoff-exchange.ts';
-import type { HandoffOffer } from '#src/recap/application/handoff-exchange.ts';
+import type { HandoffOffer } from '#src/recap/domain/handoff-ask.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
@@ -67,7 +66,10 @@ import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
-import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { herdrEventsOf, type HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 
@@ -140,8 +142,8 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
-    const mirror = new HandoffMirror({ asks: store.asks, tokens: fleet, events, sharing: herdrEventsOn, log });
-    const handoffAnswers = new HandoffExchangeResponder({ offer: (): HandoffOffer => (herdrEventsOn() ? (handoffRequestsOn() ? 'offered' : 'not-offered') : 'sharing-off'), board, requests: store.requests, asks: store.asks, mirror, tokens: fleet, now: (): number => Date.now(), log });
+    const mirror = new HandoffMirror({ asks: store.asks, tokens: fleet, events, sharing: (): HerdrEvents => loadConfig().herdrEvents, log });
+    const handoffAnswers = new HandoffExchangeResponder({ offer: (): HandoffOffer => (herdrEventsOn() ? (handoffRequestsOn() ? 'offered' : 'not-offered') : 'sharing-off'), board, requests: store.requests, asks: store.asks, mirror, tokens: fleet, now: (): Instant => instant(Date.now()), log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
@@ -161,7 +163,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         onUnknownKind: (): void => { },
         onBeat: (): void => { },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
-        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); handoffAnswers.onPaneTokens(paneId(pane), tokens); },
+        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); handoffAnswers.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]))); },
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;

@@ -1,10 +1,10 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { err, must, ok, type Result } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { CompactionQueue, CompactRequest, HandoffRequestRow, NewHandoffRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
-import type { RequestId } from '#src/protocol/primitives.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { originOf } from '#src/recap/domain/origin.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -47,12 +47,8 @@ function closedAtOf(source: HandoffSource): Instant | null {
     return source.kind === 'live' ? null : source.closedAt;
 }
 
-function requesterOf(raw: string | null): RequestId | null | undefined {
-    if (raw === null) {
-        return null;
-    }
-    const id = requestId(raw, 'token-safe');
-    return id.kind === 'ok' ? id.value : undefined;
+export function parseRequester(input: unknown): Text | null {
+    return input === null ? null : must(parseText(input));
 }
 
 function handoffRowOf(row: Row): HandoffRequestRow | null {
@@ -60,8 +56,7 @@ function handoffRowOf(row: Row): HandoffRequestRow | null {
     const pane = maybeText(row, 'pane');
     const toPane = maybeText(row, 'to_pane');
     const source = parseSourceRow(row);
-    const answer = requesterOf(maybeText(row, 'answer'));
-    return tab === '' || pane === null || toPane === null || source.kind === 'err' || answer === undefined ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: source.value, answer };
+    return tab === '' || pane === null || toPane === null || source.kind === 'err' ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: source.value, answer: parseRequester(maybeText(row, 'answer')) };
 }
 
 function wordOf(hidden: boolean | 'toggle'): string {

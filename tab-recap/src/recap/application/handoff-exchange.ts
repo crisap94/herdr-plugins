@@ -2,32 +2,36 @@ import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { HandoffRequester } from '#src/ports/requests.ts';
 import { idGrammarOf, idTextOf } from '#src/protocol/codec.ts';
-import type { ParsedValue } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { parseRequest, terminalStage } from '#src/protocol/exchange.ts';
 import { requestId, toolName } from '#src/protocol/primitives.ts';
-import type { RequestId, ToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answer as answerOf, take } from '#src/protocol/responder.ts';
-import type { SeenCheck } from '#src/protocol/responder.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
+import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId, PaneId } from '#src/recap/domain/ids.ts';
 import { paneId, parseHandoffId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { askKeyOf, HandoffMirror, reportWrite } from './handoff-mirror.ts';
-import type { Route } from './handoff-mirror.ts';
+import type { HandoffLog, Route } from './handoff-mirror.ts';
 
-export type HandoffOffer = 'sharing-off' | 'not-offered' | 'offered';
-
-type Refusal = 'not-offered' | 'bad-request' | 'not-a-lane' | 'target-elsewhere';
+export type TokenEntries = ReadonlyMap<Text, Text>;
 
 interface Unparsed {
-    readonly tool: ToolName;
-    readonly id: RequestId;
+    readonly tool: Text;
+    readonly id: Text;
+}
+
+interface IncomingRequest {
+    readonly target: PaneId | null;
+    readonly refresh: RefreshAsk;
 }
 
 const GRAMMAR = must(idGrammarOf(handoff.request));
@@ -41,24 +45,18 @@ export interface HandoffExchangeDeps {
     readonly asks: AskLedger;
     readonly mirror: HandoffMirror;
     readonly tokens: LaneTokens;
-    readonly now: () => number;
-    readonly log: (line: string) => void;
+    readonly now: () => Instant;
+    readonly log: HandoffLog;
 }
 
-function targetOf(value: ParsedValue): PaneId | null {
-    const workspace = value['workspace'];
-    const pane = value['pane'];
-    return typeof workspace === 'string' && typeof pane === 'string' ? paneId(`${workspace}:${pane}`) : null;
-}
-
-function unparsedOf(tokens: TokenMap, seen: SeenCheck): readonly Unparsed[] {
-    return Object.entries(tokens).flatMap(([name, raw]): Unparsed[] => {
+function unparsedOf(tokens: TokenEntries, asks: AskLedger): readonly Unparsed[] {
+    return [...tokens].flatMap(([name, raw]): Unparsed[] => {
         const tool = name.startsWith(PREFIX) ? toolName(name.slice(PREFIX.length)) : null;
         const id = requestId(idTextOf(raw), GRAMMAR);
-        if (tool === null || tool.kind === 'err' || id.kind === 'err' || parseRequest(handoff, raw).kind === 'ok' || seen(HANDOFF_EXCHANGE, tool.value, id.value)) {
+        if (tool === null || tool.kind === 'err' || id.kind === 'err' || parseRequest(handoff, raw).kind === 'ok' || asks.seen(HANDOFF_EXCHANGE, tool.value, id.value)) {
             return [];
         }
-        return [{ tool: tool.value, id: id.value }];
+        return [{ tool: must(parseText(tool.value)), id: must(parseText(id.value)) }];
     });
 }
 
@@ -76,20 +74,23 @@ export class HandoffExchangeResponder {
         this.deps = deps;
     }
 
-    onPaneTokens(pane: PaneId, tokens: TokenMap): void {
-        const seen: SeenCheck = (exchange, tool, id) => this.deps.asks.seen(exchange, tool, id);
-        const taking = take(REGISTRY, tokens, seen);
+    onPaneTokens(pane: PaneId, tokens: TokenEntries): void {
+        const record: TokenMap = Object.fromEntries(tokens);
+        const taking = take(REGISTRY, record, this.deps.asks.seen.bind(this.deps.asks));
         for (const taken of taking.taken) {
             if (taken.exchange.name === HANDOFF_EXCHANGE) {
-                this.consider(pane, taken.tool, taken.id, taken.value);
+                const workspace = taken.value['workspace'];
+                const lanePane = taken.value['pane'];
+                const target = typeof workspace === 'string' && typeof lanePane === 'string' ? paneId(`${workspace}:${lanePane}`) : null;
+                this.consider(pane, must(parseText(taken.tool)), must(parseText(taken.id)), { target, refresh: taken.value['refresh'] === true ? 'refresh' : 'plain' });
             }
         }
-        for (const bad of unparsedOf(tokens, seen)) {
+        for (const bad of unparsedOf(tokens, this.deps.asks)) {
             this.consider(pane, bad.tool, bad.id, null);
         }
     }
 
-    private consider(pane: PaneId, tool: ToolName, id: RequestId, value: ParsedValue | null): void {
+    private consider(pane: PaneId, tool: Text, id: Text, request: IncomingRequest | null): void {
         const offer = this.deps.offer();
         if (offer === 'sharing-off') {
             this.remember(pane, tool, id, { kind: 'off' });
@@ -99,7 +100,7 @@ export class HandoffExchangeResponder {
             this.refuse(pane, tool, id, 'not-offered');
             return;
         }
-        if (value === null) {
+        if (request === null) {
             this.refuse(pane, tool, id, 'bad-request');
             return;
         }
@@ -108,40 +109,42 @@ export class HandoffExchangeResponder {
             this.refuse(pane, tool, id, 'not-a-lane');
             return;
         }
-        const target = targetOf(value);
-        const lane = target === null ? undefined : this.deps.board().lanes.get(target);
-        if (target === null || lane === undefined || lane.workspace !== source.workspace) {
+        const lane = request.target === null ? undefined : this.deps.board().lanes.get(request.target);
+        if (request.target === null || lane === undefined || lane.workspace !== source.workspace) {
             this.refuse(pane, tool, id, 'target-elsewhere');
             return;
         }
-        this.queue(source, target, tool, id, value['refresh'] === true);
+        this.queue(source, request.target, tool, id, request.refresh);
     }
 
-    private queue(source: Lane, target: PaneId, tool: ToolName, id: RequestId, refresh: boolean): void {
-        this.deps.asks.record({ exchange: HANDOFF_EXCHANGE, requester: tool, id, pane: source.pane, at: this.deps.now(), ref: null });
+    private queue(source: Lane, target: PaneId, tool: Text, id: Text, refresh: RefreshAsk): void {
+        const key = { exchange: HANDOFF_EXCHANGE, id: must(requestId(id, GRAMMAR)), pane: source.pane };
+        const requester = must(toolName(tool));
+        this.deps.asks.record({ ...key, requester, at: this.deps.now(), ref: null });
         const route: Route = { source: source.pane, target, id };
         let handoffId: HandoffId;
         try {
-            handoffId = this.deps.requests.requestHandoff({ tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh, source: { kind: 'live' }, answer: id });
+            handoffId = this.deps.requests.requestHandoff({ tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh === 'refresh', source: { kind: 'live' }, answer: id });
         } catch (error) {
-            this.deps.asks.withdraw({ exchange: HANDOFF_EXCHANGE, requester: tool, id });
-            this.deps.log(`handoff request ${id} on ${source.pane}: not queued (${error instanceof Error ? error.message : String(error)})`);
+            this.deps.asks.withdraw({ exchange: HANDOFF_EXCHANGE, requester, id: key.id });
+            this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${error instanceof Error ? error.message : String(error)})`)));
             return;
         }
         this.deps.asks.attach(askKeyOf(route), handoffId);
         this.deps.mirror.queued(route);
     }
 
-    private refuse(pane: PaneId, tool: ToolName, id: RequestId, reason: Refusal): void {
+    private refuse(pane: PaneId, tool: Text, id: Text, reason: HandoffRefusal): void {
         this.remember(pane, tool, id, { kind: 'settled' });
-        const write = answerOf(handoff, id, terminalStage({ kind: 'refused', reason }));
+        const write = answerOf(handoff, must(requestId(id, GRAMMAR)), terminalStage({ kind: 'refused', reason }));
         if (write.kind === 'ok') {
             reportWrite(this.deps.tokens, this.deps.log, pane, write.value);
         }
     }
 
-    private remember(pane: PaneId, tool: ToolName, id: RequestId, outcome: AskOutcome): void {
-        this.deps.asks.record({ exchange: HANDOFF_EXCHANGE, requester: tool, id, pane, at: this.deps.now(), ref: null });
-        this.deps.asks.settle({ exchange: HANDOFF_EXCHANGE, id, pane }, outcome);
+    private remember(pane: PaneId, tool: Text, id: Text, outcome: AskOutcome): void {
+        const key = { exchange: HANDOFF_EXCHANGE, id: must(requestId(id, GRAMMAR)), pane };
+        this.deps.asks.record({ ...key, requester: must(toolName(tool)), at: this.deps.now(), ref: null });
+        this.deps.asks.settle(key, outcome);
     }
 }
