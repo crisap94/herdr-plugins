@@ -101,6 +101,7 @@ export const es: Messages = {
         },
         stage: {
             briefing: (agent, writer, clock) => `${agent === null ? 'escribiendo qué conservar…' : `escribiendo qué conserva ${agent}…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
+            queued: (agent, clock) => `${agent === null ? '' : `${agent}: `}en cola tras el turno actual… ${clock}`,
             compacting: (agent, clock) => `compactando${agent === null ? '' : ` ${agent}`}… ${clock}`,
             restoring: (agent) => (agent === null ? 'recordándole cómo van las cosas…' : `recordándole a ${agent} cómo van las cosas…`),
             compacted: (agent, figures) => `${agent === null ? '' : `${agent} `}compactado${figures === '' ? '' : ` ${figures}`}`,
@@ -114,6 +115,7 @@ export const es: Messages = {
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compactando ${agent}`,
+        startedQueued: (agent) => `Compactando ${agent}: en cola tras el turno actual`,
         auto: (text) => `${text} (automática)`,
         coverageMissed: (agent) => `${agent} no se compactó: el resumen perdería algo que el trabajo necesita`,
         coverageCeiling: (count) => count === 1 ? 'Falta 1 dato; se añadió al resumen' : `Faltan ${count} datos; se añadieron al resumen`,

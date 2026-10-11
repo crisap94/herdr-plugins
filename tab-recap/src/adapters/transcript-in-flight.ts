@@ -45,6 +45,6 @@ export class TranscriptInFlight implements InFlight {
         if (isUnknown(located)) return exact === undefined ? { kind: 'unknown', why: inFlightReason('unregistered-reader', agent) } : unlocated(lane, registered, located);
         if (reader.inFlight.kind === 'unsupported') return { kind: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };
         const found = await reader.inFlight.read(located.source, TAIL_BYTES);
-        return isUnknown(found) ? { kind: 'unknown', why: saying(found.why) } : { kind: 'count', count: found.count };
+        return isUnknown(found) ? { kind: 'unknown', why: saying(found.why) } : { kind: 'count', count: found.count, background: found.background };
     }
 }

@@ -34,7 +34,7 @@ export function claudeReader(prompts: number): Transcripts {
     const entries: Entry[] = Array.from({ length: prompts }, (_, index): Entry => ({ role: 'user', text: `prompt ${index}` }));
     return {
         agent: 'claude',
-        inFlight: { kind: 'supported', read: async () => ({ kind: 'in-flight', count: 0 }) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'survival-unproven' }, read: async () => ({ kind: 'in-flight', count: 0, background: [] }) },
         locate: async () => ({ kind: 'located', source: SOURCE_FILE }),
         read: async () => ({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
         latestPrompt: async () => ({ kind: 'prompt', text: null }),

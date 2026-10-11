@@ -100,6 +100,7 @@ export const en: Messages = {
         },
         stage: {
             briefing: (agent, writer, clock) => `${agent === null ? 'writing what to keep…' : `writing what ${agent} keeps…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
+            queued: (agent, clock) => `${agent === null ? '' : `${agent}: `}queued behind the current turn… ${clock}`,
             compacting: (agent, clock) => `compacting${agent === null ? '' : ` ${agent}`}… ${clock}`,
             restoring: (agent) => `telling ${agent ?? 'it'} where things stand…`,
             compacted: (agent, figures) => `${agent === null ? '' : `${agent} `}compacted${figures === '' ? '' : ` ${figures}`}`,
@@ -113,6 +114,7 @@ export const en: Messages = {
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
         started: (agent) => `Compacting ${agent}`,
+        startedQueued: (agent) => `Compacting ${agent}: queued behind the current turn`,
         auto: (text) => `${text} (auto)`,
         coverageMissed: (agent) => `${agent} not compacted: the brief would lose something the work needs`,
         coverageCeiling: (count) => count === 1 ? '1 fact missed; missed fact appended' : `${count} facts missed; missed facts appended`,

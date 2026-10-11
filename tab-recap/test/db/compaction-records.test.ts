@@ -139,3 +139,14 @@ test('records go with their tab, and a column reading while the daemon writes se
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('queued: a compaction typed behind a turn is shown queued until the turn ends, and a plain advance leaves the flag alone', () => {
+    const { compactions } = store();
+    const id = compactions.begin({ ...start, stage: 'briefing', at: 10 });
+    assert.equal(compactions.shownFor('w1:t1')[0]?.queued, false);
+    compactions.advance(id, 'compacting', { at: 20, queued: true });
+    compactions.advance(id, 'compacting', { at: 21, brief: 'written' });
+    assert.deepEqual([compactions.shownFor('w1:t1')[0]?.stage, compactions.shownFor('w1:t1')[0]?.queued], ['compacting', true]);
+    compactions.advance(id, 'compacting', { at: 30, queued: false });
+    assert.deepEqual([compactions.shownFor('w1:t1')[0]?.queued, compactions.shownFor('w1:t1')[0]?.stageAt], [false, 30]);
+});

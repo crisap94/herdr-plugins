@@ -103,7 +103,7 @@ A closure recorded at restart for a tab last seen long ago is protected by the s
 
 ### 10. Migration
 
-The migration is 017, after the token protocol's ask ledger (015) and the handoff migration (016) (it must run after them; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
+The migration is 018, after the token protocol's ask ledger (015), the queued compaction (016) and the handoff migration (017) (it must run after them; tests end at the latest version rather than naming a number). It is forward-only, runs under the existing backup and transaction rules (the backup is `tab-recap.db.v<n>.bak` for the version the database had), and leaves every released file unchanged. It adds: `lane.since INTEGER` (nullable); `request.closed_at INTEGER CHECK (closed_at IS NULL OR kind = 'handoff')` by `ALTER TABLE ... ADD COLUMN` (a column-local CHECK needs no rebuild) with `request_readable` recreated; and the `closed_lane` table below, its indexes and a readable view in the pattern of `fact_readable` (hex task id). It carries no comments until released. `handoff_answer` is not touched: the reason `source-unreadable` is already storable in slice 1's table.
 
 ```sql
 CREATE TABLE closed_lane (
@@ -177,7 +177,7 @@ The real-herdr proof establishes first whether herdr reuses pane identifiers, by
 
 ## Decisions and history (2026-10-10)
 
-- Migration 017 follows the token protocol's ask ledger (015) and the handoff migration (016), in landing order.
+- Migration 018 follows the token protocol's ask ledger (015), the queued compaction (016) and the handoff migration (017), in landing order.
 - One closure detector (decision 2 above): the fold's `lane-closed` intent also drives the `lane-closed` event; `lane-tokens`
   is modified for it.
 - The restated slice-1 requirements follow slice 1's text: asks are kept in the token protocol's ask ledger, so a handoff a
