@@ -79,4 +79,4 @@ Paths are under `tab-recap/` unless stated otherwise. Each implementation group 
 
 ## 6. Archive
 
-- [ ] 6.1 Archive `autocompact-ceiling-over-in-flight` in its own merge request after all tasks and gates pass.
+- [x] 6.1 (this merge request) Archive `autocompact-ceiling-over-in-flight` in its own merge request after all tasks and gates pass.
