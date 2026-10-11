@@ -3,7 +3,8 @@
     "container": 1
   },
   "src/experiment/cross-check.ts": {
-    "parameter": 1
+    "parameter": 1,
+    "return": 1
   },
   "src/experiment/hindsight.ts": {
     "parameter": 2,
@@ -46,7 +47,7 @@
     "property": 4
   },
   "src/experiment/report-metrics.ts": {
-    "parameter": 6,
+    "parameter": 7,
     "return": 11,
     "container": 13,
     "property": 21
@@ -84,6 +85,7 @@
   },
   "src/experiment/verbatim.ts": {
     "parameter": 6,
+    "return": 1,
     "container": 2
   }
 }

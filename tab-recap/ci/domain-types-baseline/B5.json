@@ -145,11 +145,11 @@
   },
   "src/adapters/db/recap-records.ts": {
     "parameter": 6,
-    "return": 1,
+    "return": 2,
     "assertion": 2
   },
   "src/adapters/db/requests.ts": {
-    "parameter": 4,
+    "parameter": 5,
     "return": 11,
     "container": 28,
     "property": 2

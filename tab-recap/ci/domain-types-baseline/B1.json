@@ -33,7 +33,7 @@
     "parameter": 2
   },
   "src/ports/columns.ts": {
-    "parameter": 2,
+    "parameter": 3,
     "property": 5
   },
   "src/ports/compaction-briefs.ts": {

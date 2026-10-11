@@ -367,7 +367,7 @@
     "container": 3
   },
   "src/recap/application/lane-events.ts": {
-    "parameter": 20,
+    "parameter": 21,
     "return": 3,
     "container": 5,
     "property": 7
@@ -443,7 +443,7 @@
     "property": 14
   },
   "src/recap/application/recap-shape.ts": {
-    "parameter": 3,
+    "parameter": 4,
     "return": 4,
     "property": 1
   },
@@ -526,7 +526,7 @@
     "return": 1
   },
   "src/recap/application/writer-clip.ts": {
-    "parameter": 3,
+    "parameter": 4,
     "property": 2
   },
   "src/recap/application/writer-context.ts": {

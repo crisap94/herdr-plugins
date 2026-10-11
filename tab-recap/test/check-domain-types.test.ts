@@ -58,3 +58,17 @@ test('--project with no path is a could-not-look result, exit 3', () => {
     const result = run(['--project']);
     assert.equal(result.status, 3);
 });
+
+test('a parameter or a return typed by an inline literal union needs a named alias', () => {
+    const parameter = run(probe('bad-inline-union-parameter'));
+    assert.equal(parameter.status, 1);
+    assert.match(parameter.stderr, /^not supported: src\/domain\/value\.ts:1: open, parameter state is an inline literal union; name it with a type alias/m);
+    const returned = run(probe('bad-inline-union-return'));
+    assert.equal(returned.status, 1);
+    assert.match(returned.stderr, /^not supported: src\/domain\/value\.ts:1: state, return is an inline literal union/m);
+});
+
+test('a property typed by a literal union, and a named alias in a signature, pass', () => {
+    assert.equal(run(probe('good-property-literal-union')).status, 0);
+    assert.equal(run(probe('good-named-literal-union')).status, 0);
+});

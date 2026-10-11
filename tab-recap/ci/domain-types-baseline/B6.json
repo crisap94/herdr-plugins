@@ -164,7 +164,7 @@
     "property": 1
   },
   "src/adapters/glow.ts": {
-    "parameter": 5,
+    "parameter": 6,
     "return": 1,
     "container": 2
   },
@@ -201,7 +201,7 @@
     "assertion": 2
   },
   "src/adapters/herdr-fleet.ts": {
-    "parameter": 21,
+    "parameter": 22,
     "return": 1,
     "container": 11,
     "property": 1,

@@ -184,6 +184,17 @@ const isLibraryContext = (scan: Scan, node: ts.SignatureDeclaration): boolean =>
     return declared !== undefined && declared.getSourceFile().isDeclarationFile;
 };
 
+const isInlineLiteralUnion = (type: ts.TypeNode | undefined): boolean =>
+    type !== undefined &&
+    ts.isUnionTypeNode(type) &&
+    type.types.some((member) => ts.isLiteralTypeNode(member) && (ts.isStringLiteral(member.literal) || ts.isNumericLiteral(member.literal)));
+
+const reportInlineUnion = (scan: Scan, annotation: ts.TypeNode | undefined, place: Place): void => {
+    if (isInlineLiteralUnion(annotation)) {
+        report(scan, place, 'is an inline literal union; name it with a type alias');
+    }
+};
+
 const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
     const owner = ownerName(node);
     const unknownParameter = allowsUnknown(node);
@@ -193,6 +204,7 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
         }
         const name = parameter.name.getText();
         const place = placeOf(scan, parameter, { owner, parameter: name, category: 'parameter', site: `parameter ${name}` });
+        reportInlineUnion(scan, parameter.type, place);
         inspect(scan, frameOf(place, unknownParameter), scan.checker.getTypeAtLocation(parameter), false);
     });
     const noReturn = ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || (node.type !== undefined && ts.isTypePredicateNode(node.type)) || (node.type === undefined && isLibraryContext(scan, node));
@@ -201,6 +213,7 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
         return;
     }
     const place = placeOf(scan, node, { owner, parameter: null, category: 'return', site: 'return' });
+    reportInlineUnion(scan, node.type, place);
     inspect(scan, frameOf(place, false), scan.checker.getReturnTypeOfSignature(signature), false);
 };
 
