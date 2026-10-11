@@ -5,15 +5,15 @@ Paths are under `tab-recap/` unless stated otherwise. Each implementation group 
 
 ## 0. Live proofs (scratch workspace, throwaway Claude agents, evidence in the merge request)
 
-- [x] 0.1 (INT) Prove that Claude Code keeps a background shell (`run_in_background: true`), a `Monitor` and a background
+- [x] 0.1 (!113) Prove that Claude Code keeps a background shell (`run_in_background: true`), a `Monitor` and a background
       `Agent` running across `/compact`, and still delivers each end notice after it. Record the Claude Code version, the
       commands, and the transcript lines of the launch, the compaction mark and the end notice. Until this passes, Claude's
       reader keeps every item as foreground (spec: "Background work that survives a compaction does not hold a lane").
-- [x] 0.2 (INT) Prove that `/compact <guidance>` typed into a working Claude agent (through `herdr agent prompt` while a
+- [x] 0.2 (!113) Prove that `/compact <guidance>` typed into a working Claude agent (through `herdr agent prompt` while a
       long shell command runs) is kept, runs as the compaction after the turn ends, and writes one compaction mark after
       the typing instant. Record the version, the typing instant, the turn end and the mark. Until this passes, Claude's
       plan says `needs-idle` (spec: "Each kind says whether a compaction can be queued").
-- [x] 0.3 (INT) Prove that the brief writer keeps the note of an automatic compaction (`Still waiting for: …`) in the guidance
+- [x] 0.3 (!113) Prove that the brief writer keeps the note of an automatic compaction (`Still waiting for: …`) in the guidance
       it writes, for a note of 400 characters. The 400-character cap is UNMEASURED until then; if the note is dropped or
       cut, record the length kept and set the cap to it.
 
@@ -53,7 +53,7 @@ Paths are under `tab-recap/` unless stated otherwise. Each implementation group 
 
 ## 4. Lane C: queued compactions (`src/recap/application/compaction*.ts`, `src/adapters/compaction-plan-registry.ts`)
 
-- [x] 4.1 (!107, INT) The plans declare `WhileWorking`: Codex and opencode `needs-idle` (`queued input is not measured for this
+- [x] 4.1 (!107, !113) The plans declare `WhileWorking`: Codex and opencode `needs-idle` (`queued input is not measured for this
       kind`); Claude `needs-idle` until 0.2 passes, then `queues`.
 - [x] 4.2 (!107) `refusalOf` and `refused` refuse `working` only for a `needs-idle` plan; `blocked` is refused at both checks and
       right before typing; an unknown status fails as today. The sender types through the existing typing lease.
@@ -69,12 +69,12 @@ Paths are under `tab-recap/` unless stated otherwise. Each implementation group 
 
 ## 5. Integration
 
-- [x] 5.1 (INT) Turn on the switches of 2.1 and 4.1 only for the proofs that passed (0.1, 0.2), each in its own merge request
+- [x] 5.1 (!113) Turn on the switches of 2.1 and 4.1 only for the proofs that passed (0.1, 0.2), each in its own merge request
       citing the evidence.
-- [ ] 5.2 Live check on a scratch workspace: a Claude lane above the ceiling with an `awaiting` token and a running
+- [x] 5.2 (!113) Live check on a scratch workspace: a Claude lane above the ceiling with an `awaiting` token and a running
       `Monitor` is compacted, its note names both, the monitor's next event and the awaited reply reach it after.
-- [x] 5.3 (INT) Add the 0.2 proof to the release checklist, so a Claude Code update that stops queuing typed input is caught.
-- [x] 5.4 (INT) Run strict OpenSpec validation from the repository root, and `bash ci/lint.sh` and `bash ci/test.sh` from
+- [x] 5.3 (!113) Add the 0.2 proof to the release checklist, so a Claude Code update that stops queuing typed input is caught.
+- [x] 5.4 (!113) Run strict OpenSpec validation from the repository root, and `bash ci/lint.sh` and `bash ci/test.sh` from
       `tab-recap/`.
 
 ## 6. Archive
