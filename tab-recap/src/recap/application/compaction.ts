@@ -233,22 +233,27 @@ export class Compaction {
         await this.tell(must(parseText(compaction.title(request.tab))), must(parseText(compaction.nothing)));
     }
 
+    private async targetsFor(request: CompactRequest, tab: TabId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+        const focused = await this.deps.focused(tab);
+        return targetsOf(lanes, this.deps.target(), { pane: request.pane === null ? null : paneId(request.pane), focused: focused === null ? null : paneId(focused) });
+    }
+
     async run(request: CompactRequest): Promise<void> {
         const tab = tabId(request.tab);
         const lanes = this.deps.lanes(tab);
-        const focused = await this.deps.focused(tab);
-        const targets = targetsOf(lanes, this.deps.target(), { pane: request.pane === null ? null : paneId(request.pane), focused: focused === null ? null : paneId(focused) });
+        const targets = await this.targetsFor(request, tab, lanes);
         if (targets.length === 0) {
             await this.withoutTarget(request);
             return;
         }
+        const origin = request.origin ?? 'operator';
         const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
-            await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin: request.origin ?? 'operator', request })));
+            await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin, request })));
             if (owned.length === 0) {
                 return;
             }
-            const gates = await Promise.all(owned.map(async (lane) => ({ lane, gate: await this.gated(lane, tab, null, 'status-check', { origin: request.origin ?? 'operator', request }) })));
+            const gates = await Promise.all(owned.map(async (lane) => ({ lane, gate: await this.gated(lane, tab, null, 'status-check', { origin, request }) })));
             const ready = gates.flatMap(({ lane, gate }) => (gate.kind === 'proceed' ? [{ lane, placement: gate.placement }] : []));
             if (ready.length === 0) {
                 return;
