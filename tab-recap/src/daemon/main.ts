@@ -164,7 +164,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, claims, recaps, board, pause: sleep, log }) };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, pause: sleep, log }) };
 }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
