@@ -9,9 +9,15 @@ test('the flow deadline is the take bound plus the longest flow', () => {
 });
 
 test('the longest flow is the recap wait, the settle hold and the confirmation window', () => {
-    assert.equal(limits.HANDOFF_FLOW_MAX_MS, RECAP_WAIT_MS + 10_000 + 20 * 1_000);
-    assert.equal(limits.HANDOFF_FLOW_MAX_MS, 120_000);
-    assert.equal(limits.HANDOFF_TAKE_MAX_AGE_MS, 30_000);
+    assert.equal(limits.HANDOFF_FLOW_MAX_MS, RECAP_WAIT_MS + limits.HANDOFF_SETTLE_MAX_MS + limits.HANDOFF_OBSERVATIONS * limits.HANDOFF_OBSERVE_MS);
+});
+
+test('a handoff row older than the take bound is expired', () => {
+    assert.equal(limits.HANDOFF_TAKE_MAX_AGE_MS, limits.HANDOFF_TAKE_BOUND_MS);
+});
+
+test('the wait without --refresh is the take bound plus the flow after the recap wait', () => {
+    assert.equal(limits.HANDOFF_WAIT_MS, limits.HANDOFF_TAKE_BOUND_MS + (limits.HANDOFF_FLOW_MAX_MS - RECAP_WAIT_MS));
 });
 
 test('the wait with --refresh is the daemon deadline', () => {
@@ -25,7 +31,7 @@ test('the handoff values the design gives', () => {
             observations: limits.HANDOFF_OBSERVATIONS, observe: limits.HANDOFF_OBSERVE_MS, tail: limits.HANDOFF_PROMPT_TAIL_BYTES, prefix: limits.HANDOFF_PREFIX_CODE_POINTS,
             poll: limits.HANDOFF_POLL_MS, answerTtl: limits.HANDOFF_ANSWER_TTL_MS, worksite: limits.HANDOFF_WORKSITE_BYTES, paths: limits.HANDOFF_PATHS_SHOWN,
         },
-        { budget: 16_384, wait: 60_000, refresh: 150_000, done: 15, links: 15, closed: 15, observations: 20, observe: 1_000, tail: 65_536, prefix: 400, poll: 500, answerTtl: 3_600_000, worksite: 2_048, paths: 20 },
+        { budget: 16_384, wait: 110_000, refresh: 200_000, done: 15, links: 15, closed: 15, observations: 20, observe: 1_000, tail: 65_536, prefix: 400, poll: 500, answerTtl: 3_600_000, worksite: 2_048, paths: 20 },
     );
 });
 

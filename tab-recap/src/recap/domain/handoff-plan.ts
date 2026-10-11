@@ -5,9 +5,14 @@ export type HandoffEvidence = 'transcript' | 'status' | 'either';
 
 export type LocatedBy = 'session' | 'directory';
 
+export interface SettleEvidence {
+    readonly trials: number;
+    readonly source: string;
+}
+
 export interface SettleTime {
     readonly after: Duration;
-    readonly measured: boolean;
+    readonly evidence: SettleEvidence;
 }
 
 export interface HandoffPlan {

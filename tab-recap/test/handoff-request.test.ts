@@ -7,6 +7,7 @@ import { deliverHandoff, type DeliverDeps, type DeliverRequest, type DaemonReadi
 import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import { paneId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
+import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
 
 const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');
@@ -112,27 +113,27 @@ test('the answer the daemon writes is reported at the first poll that finds it, 
     assert.deepEqual([s.log.opened, s.log.closed], [1, 1]);
 });
 
-test('no answer within 60 seconds polls every 500 ms, withdraws the request and reports it withdrawn', async () => {
+test('no answer within the wait polls every poll interval, withdraws the request and reports it withdrawn', async () => {
     const s = setup({ tabs: TABS });
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'failed', reason: 'not-answered-withdrawn' });
-    assert.equal(s.sleeps.length, 120);
-    assert.ok(s.sleeps.every((ms) => ms === 500));
-    assert.equal(s.elapsed(), 60_000);
+    assert.equal(s.sleeps.length, HANDOFF_WAIT_MS / HANDOFF_POLL_MS);
+    assert.ok(s.sleeps.every((ms) => ms === HANDOFF_POLL_MS));
+    assert.equal(s.elapsed(), HANDOFF_WAIT_MS);
     assert.deepEqual(s.requests.takeHandoffs(), []);
 });
 
-test('--refresh waits 150 seconds on the same poll', async () => {
+test('--refresh waits the daemon deadline on the same poll', async () => {
     const s = setup({ tabs: TABS });
     assert.deepEqual(await deliverHandoff(request({ refresh: true }), s.deps), { kind: 'failed', reason: 'not-answered-withdrawn' });
-    assert.equal(s.sleeps.length, 300);
-    assert.ok(s.sleeps.every((ms) => ms === 500));
-    assert.equal(s.elapsed(), 150_000);
+    assert.equal(s.sleeps.length, HANDOFF_WAIT_REFRESH_MS / HANDOFF_POLL_MS);
+    assert.ok(s.sleeps.every((ms) => ms === HANDOFF_POLL_MS));
+    assert.equal(s.elapsed(), HANDOFF_WAIT_REFRESH_MS);
 });
 
 test('a request the daemon took before the withdrawal, with no answer, is reported may-still-deliver', async () => {
     const s = setup({ tabs: TABS, onSleep: ({ requests }) => { requests.takeHandoffs(); } });
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'failed', reason: 'not-answered-taken' });
-    assert.equal(s.elapsed(), 60_000);
+    assert.equal(s.elapsed(), HANDOFF_WAIT_MS);
 });
 
 test('an answer written between the last poll and the withdrawal is reported, not the timeout', async () => {

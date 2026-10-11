@@ -28,7 +28,7 @@ import type { BackendId } from '#src/recap/domain/backend.ts';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans, SETTLE_SOURCE } from '#src/adapters/handoff-plan-registry.ts';
 import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
@@ -342,7 +342,7 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
 interface HandoffPin {
     readonly kind: 'supported';
     readonly settleMs: number;
-    readonly measured: boolean;
+    readonly trials: number;
     readonly locatedBy: LocatedBy;
 }
 
@@ -352,9 +352,9 @@ interface HandoffNoPlan {
 }
 
 const HANDOFF_PINS = {
-    claude: { kind: 'supported', settleMs: 10_000, measured: true, locatedBy: 'session' },
-    codex: { kind: 'supported', settleMs: 10_000, measured: false, locatedBy: 'directory' },
-    opencode: { kind: 'supported', settleMs: 10_000, measured: false, locatedBy: 'directory' },
+    claude: { kind: 'supported', settleMs: 10_000, trials: 130, locatedBy: 'session' },
+    codex: { kind: 'supported', settleMs: 3_000, trials: 130, locatedBy: 'directory' },
+    opencode: { kind: 'supported', settleMs: 60_000, trials: 77, locatedBy: 'directory' },
     hermes: { kind: 'unsupported', reason: 'no-plan' },
 } satisfies Record<RegisteredKind, HandoffPin | HandoffNoPlan>;
 
@@ -366,7 +366,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     test(`${kind} handoff: the plan is one prompt with either evidence, no retry, its settle time and its locating key`, () => {
         assert.deepEqual(handoffPlans.forKind(kind), {
             kind: 'supported',
-            plan: { delivery: 'prompt', evidence: 'either', retry: 'none', settle: { after: duration(pin.settleMs), measured: pin.measured }, locatedBy: pin.locatedBy },
+            plan: { delivery: 'prompt', evidence: 'either', retry: 'none', settle: { after: duration(pin.settleMs), evidence: { trials: pin.trials, source: SETTLE_SOURCE } }, locatedBy: pin.locatedBy },
         });
     });
 
