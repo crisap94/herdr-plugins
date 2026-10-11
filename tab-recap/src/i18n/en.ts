@@ -124,7 +124,7 @@ export const en: Messages = {
         joined: (agent, noted) => `${agent} is already compacting: this request joins that compaction${noted ? ', and its note is not used' : ''}`,
         nothing: 'No agent here can be compacted',
         failed: (agent, why) => `Could not compact ${agent}: ${why}`,
-        laneClosed: (agent, pane, point) => `compaction: ${agent} ${pane} closed, skipped (${{ 'status-check': 'at the status check', 'before-writer': 'before the brief', 'after-writer': 'after the brief was written', 'before-rewrite': 'before a rewrite of the brief', 'before-typing': 'before typing' }[point]})`,
+        laneClosed: (agent, pane, point) => `compaction: ${agent ?? 'lane'} ${pane} closed, skipped (${{ 'status-check': 'at the status check', 'before-writer': 'before the brief', 'after-writer': 'after the brief was written', 'before-rewrite': 'before a rewrite of the brief', 'before-typing': 'before typing' }[point]})`,
     },
     expanded: {
         timeline: 'Timeline', rules: 'Rules', session: 'Session', story: 'Session so far', updatingStory: 'updating…',

@@ -124,7 +124,7 @@ export const es: Messages = {
         skipped: (agent, status) => `${agent} está ${status}: no se compactó — inténtalo cuando esté libre`,
         joined: (agent, noted) => `${agent} ya se está compactando: esta petición se une a esa compactación${noted ? ', y su nota no se usa' : ''}`,
         nothing: 'Ningún agente de aquí se puede compactar',
-        laneClosed: (agent, pane, point) => `compactación: ${agent} ${pane} se cerró, omitida (${{ 'status-check': 'al comprobar el estado', 'before-writer': 'antes del resumen', 'after-writer': 'tras escribir el resumen', 'before-rewrite': 'antes de reescribir el resumen', 'before-typing': 'antes de escribir en el agente' }[point]})`,
+        laneClosed: (agent, pane, point) => `compactación: ${agent ?? 'carril'} ${pane} se cerró, omitida (${{ 'status-check': 'al comprobar el estado', 'before-writer': 'antes del resumen', 'after-writer': 'tras escribir el resumen', 'before-rewrite': 'antes de reescribir el resumen', 'before-typing': 'antes de escribir en el agente' }[point]})`,
         failed: (agent, why) => `No se pudo compactar ${agent}: ${why}`,
     },
     expanded: {

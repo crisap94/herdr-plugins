@@ -102,7 +102,7 @@ test('herdr answers agent_not_found at the status check before typing while the 
     assert.deepEqual(run.world.typed, []);
     assert.deepEqual(stages(run.world), [['skipped', 'lane closed']]);
     assert.ok(run.world.toasts.every((toast) => !/Could not compact/u.test(toast)), run.world.toasts.join('\n'));
-    assert.match(closedLines(run.logs)[0] ?? '', /before typing|status check/u);
+    assert.match(closedLines(run.logs)[0] ?? '', /before typing/u);
 });
 
 test('herdr answers agent_not_found at the very first status check: skipped lane closed, no writer, no toast at all', async () => {

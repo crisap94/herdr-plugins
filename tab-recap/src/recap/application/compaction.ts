@@ -118,10 +118,6 @@ export class Compaction {
         if (point !== undefined) this.deps.log(this.deps.messages().compaction.laneClosed(String(lane.agent), String(lane.pane), point));
     }
 
-    private listed(lane: Lane): boolean {
-        return this.briefing.listed(lane);
-    }
-
     private endClosed(lane: Lane, trail: Trail, point: ClosePoint): void {
         trail.end('skipped', { why: LANE_CLOSED }, COMPACT_FAILURES.skipped);
         this.logClosed(lane, point);
@@ -165,7 +161,7 @@ export class Compaction {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);
-        if (!this.listed(lane)) {
+        if (!this.briefing.listed(lane)) {
             this.endClosed(lane, trail, 'before-writer');
             return;
         }
@@ -185,7 +181,7 @@ export class Compaction {
     private async typed(at: { readonly lane: Lane; readonly tab: string; readonly request: CompactRequest; readonly trail: Trail }, material: Material, brief: Briefed): Promise<void> {
         const { lane, tab, request, trail } = at;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
-        if (!this.listed(lane)) {
+        if (!this.briefing.listed(lane)) {
             this.endClosed(lane, trail, 'before-typing');
             return;
         }
@@ -214,7 +210,7 @@ export class Compaction {
         const { compaction } = this.deps.messages();
         if (request.origin === 'auto' && request.pane !== null && !this.deps.listsPane(request.pane)) {
             this.answer(request, request.pane, failureStage(COMPACT_FAILURES.skipped));
-            this.deps.log(compaction.laneClosed('lane', request.pane, 'before-writer'));
+            this.deps.log(compaction.laneClosed(null, request.pane, 'before-writer'));
             return;
         }
         this.answer(request, request.pane ?? '', failureStage(COMPACT_FAILURES.noTarget));

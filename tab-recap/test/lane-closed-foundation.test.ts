@@ -46,6 +46,11 @@ test('herdr answering agent_not_found is a lane that is gone; any other failure 
     assert.match(saying(silent.why), /socket closed/);
 });
 
+test('the closed-lane log line names a lane whose agent is not known too', () => {
+    assert.match(en.compaction.laneClosed(null, 'w1:p1', 'before-writer'), /^compaction: lane w1:p1 closed, skipped/u);
+    assert.match(es.compaction.laneClosed(null, 'w1:p1', 'before-writer'), /^compactación: carril w1:p1 se cerró, omitida/u);
+});
+
 test('the closed-lane log line names the agent, the pane and where the compaction was, in both languages', () => {
     for (const point of CLOSE_POINTS) {
         assert.match(en.compaction.laneClosed('claude', 'w1:p1', point), /^compaction: claude w1:p1 closed, skipped \(.+\)$/u, point);

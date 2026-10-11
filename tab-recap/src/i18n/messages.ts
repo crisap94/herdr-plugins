@@ -129,7 +129,7 @@ export interface Messages {
         readonly joined: (agent: string, noted: boolean) => string;
         readonly nothing: string;
         readonly failed: (agent: string, why: string) => string;
-        readonly laneClosed: (agent: string, pane: string, point: ClosePoint) => string;
+        readonly laneClosed: (agent: string | null, pane: string, point: ClosePoint) => string;
     };
     readonly expanded: {
         readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
