@@ -7,7 +7,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import type { Ask } from '#src/ports/ask-ledger.ts';
+import type { Ask, NewAsk } from '#src/ports/ask-ledger.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { toolName } from '#src/protocol/primitives.ts';
@@ -58,8 +58,8 @@ function setup(offer: HandoffOffer = 'offered', asks = new MemoryAskLedger()): H
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
     const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (current.value !== 'sharing-off' ? 'on' : 'off'), log: (): void => undefined });
-    const requests = { requestHandoff: (request: NewHandoffRequest): HandoffId => { queued.push(request); return HID; } };
-    const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, requests, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
+    const queue = { queueHandoff: (ask: NewAsk, request: NewHandoffRequest): void => { asks.record(ask); queued.push(request); asks.attach(ask, HID); } };
+    const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, queue, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { responder, queued, tokens, events, asks, offer: current };
 }
 
@@ -141,4 +141,17 @@ test('restart withdraws the queued row of an exchange ask, and only one that car
     withdrawAsked(requests, ask(HID));
     withdrawAsked(requests, ask(null));
     assert.deepEqual(withdrawn, [HID]);
+});
+
+test('a queue that fails leaves no ask, and the log carries the error name and code, never the message', () => {
+    const logged: string[] = [];
+    const asks = new MemoryAskLedger();
+    const tokens = new RecordingTokens();
+    const mirror = new HandoffMirror({ asks, tokens, events: new RecordingEvents(), sharing: (): HerdrEvents => 'on', log: (): void => undefined });
+    const queue = { queueHandoff: (): void => { throw Object.assign(new Error('/private/store.sqlite is busy'), { code: 'SQLITE_BUSY' }); } };
+    const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => 'offered', board, queue, asks, mirror, tokens, now: (): Instant => instant(1000), log: (line): void => { logged.push(line); } });
+    responder.onPaneTokens(paneId('w1:p1'), request('h1:w1:p2'));
+    assert.deepEqual(logged, ['handoff request h1 on w1:p1: not queued (Error: SQLITE_BUSY)']);
+    assert.deepEqual(asks.unfinished(), []);
+    assert.deepEqual(tokens.reports, []);
 });
