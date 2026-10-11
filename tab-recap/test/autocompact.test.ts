@@ -35,6 +35,16 @@ test('shadow: the decision is recorded and logged with (shadow), and no request 
     assert.match(w.logs[0] ?? '', /→ compact \(shadow\)$/);
 });
 
+test('a done lane is decided, and each decision stores the status its lane had', async () => {
+    const done = world();
+    done.share = 70;
+    await done.service.consider(lane('claude', 'done'));
+    const idle = world();
+    idle.share = 70;
+    await idle.service.consider(lane());
+    assert.deepEqual([rows(done)[0]?.verdict, rows(done)[0]?.laneStatus, rows(idle)[0]?.laneStatus], ['compact', 'done', 'idle']);
+});
+
 test('off decides nothing; a lane that is working, or an unknown context, is not considered', async () => {
     const off = world({ mode: 'off' });
     await off.service.consider(lane());

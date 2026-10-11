@@ -48,3 +48,9 @@ test('the listing shows the asked verdict when coverage changed the effective ve
     const lines = listing([found({ verdict: 'wait', gate: 'coverage', askedVerdict: 'compact' })], { since: 0, costUsd: 0 }, NOW, 'UTC');
     assert.match(lines[1] ?? '', /wait \(asked compact\)/);
 });
+
+test('the listing shows the status each decision had; a decision that recorded none is a dash', () => {
+    const lines = listing([found({ laneStatus: 'done' }), found({ laneStatus: null, tab: 'w2:t9', pane: 'w2:p3' })], { since: 0, costUsd: 0 }, NOW, 'UTC');
+    assert.match(lines[1] ?? '', /w1:p1\s+done\s+61 %/);
+    assert.match(lines[2] ?? '', /w2:p3\s+—\s+61 %/);
+});
