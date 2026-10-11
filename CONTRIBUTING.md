@@ -105,7 +105,7 @@ node bin/check-domain-types.ts --json                                # every fin
   above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
   and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
 - **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
-  its files, its baseline, its exception file and its own `legacy.ts` (tests are open to every lane; a merge request that must adapt another lane's source mechanically carries the label `lane-scope::adapts`, set by the lead) (the old export other lanes still call, counted under
+  its files, its baseline, its exception file and its own `legacy.ts` (tests, fakes and fixtures under `test/` are open to every lane, to adapt them to its own signature changes; another lane's source never is) (the old export other lanes still call, counted under
   `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`node ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
 
 ## Changing the database schema
