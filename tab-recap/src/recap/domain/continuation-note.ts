@@ -30,3 +30,16 @@ export function continuationNote(awaiting: Awaiting, background: readonly Backgr
     const parts = [...waitingPart(awaiting), ...runningPart(background)];
     return parts.length === 0 ? null : (cutNote(parts.join(' '), limit) as ContinuationNote);
 }
+
+const LEADS = /Still (?:waiting for|running):/g;
+const WORD = /[\p{L}\p{N}][\p{L}\p{N}_-]{3,}/gu;
+
+export function keepsNote(brief: string, note: string): boolean {
+    const text = brief.toLowerCase();
+    const words = note.replaceAll(LEADS, ' ').match(WORD) ?? [];
+    return words.every((word) => text.includes(word.toLowerCase()));
+}
+
+export function withNote(brief: string, note: string): string {
+    return keepsNote(brief, note) ? brief : `${brief} ${note}`;
+}

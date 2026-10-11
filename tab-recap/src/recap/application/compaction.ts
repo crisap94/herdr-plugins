@@ -13,6 +13,7 @@ import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
+import { withNote } from '#src/recap/domain/continuation-note.ts';
 import { clean } from './compaction-brief.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { CoverageFlow } from './compaction-coverage.ts';
@@ -218,12 +219,16 @@ export class Compaction {
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         const gate = await this.gated(lane, tab, trail);
         if (gate.kind === 'proceed') {
-            const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: brief.text }, trail, gate);
+            const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: this.keptNote(brief.text, request) }, trail, gate);
             if (unsupported !== undefined) {
                 const messages = this.deps.messages();
                 await this.tell(messages.compaction.title(String(lane.agent)), messages.compaction.failed(String(lane.agent), unsupported.why));
             }
         }
+    }
+
+    private keptNote(brief: string | null, request: CompactRequest): string | null {
+        return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(brief, request.note) : brief;
     }
 
     private async stoppedByCoverage(parts: { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: string) => string; readonly messages: Messages['compaction'] }): Promise<boolean> {

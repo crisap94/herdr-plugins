@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import { QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
@@ -97,7 +98,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
-        compactionPlans: world.plans ?? compactionPlans,
+        compactionPlans: world.plans ?? idleClaudePlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
@@ -235,6 +236,26 @@ test('with a brief: claude gets `/compact ` then the brief as typed pieces; the 
     const [document] = briefing.documents;
     assert.ok(document?.includes('Keep SQLite') && document.includes('the retry test') && document.includes('run the tests'));
     assert.match(world.toasts.join('\n'), /Writing what claude should keep/);
+});
+
+const AUTO_NOTE = 'Still waiting for: reviewer. Still running: Monitor "open merge requests".';
+
+test('with a brief: an automatic compaction whose written brief dropped what the lane still waits for gets the note appended whole', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const briefing = { documents: [] as string[], answer: 'I want the cart rewrite shipped.', covered: true };
+    await flow(world, 'focused', 'w1:p1', briefing, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: AUTO_NOTE, origin: 'auto' });
+    assert.deepEqual(world.typed[0]?.pieces, ['/compact ', `${briefing.answer} ${AUTO_NOTE}`]);
+});
+
+test('with a brief: a brief that keeps the names is typed as written, and an operator note is never appended', async () => {
+    const kept = { documents: [] as string[], answer: 'Waiting for the reviewer, and the open merge requests monitor keeps running.', covered: true };
+    const world = fleet({ 'w1:p1': 'idle' });
+    await flow(world, 'focused', 'w1:p1', kept, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: AUTO_NOTE, origin: 'auto' });
+    assert.deepEqual(world.typed[0]?.pieces, ['/compact ', kept.answer]);
+    const operator = { documents: [] as string[], answer: 'I want the cart rewrite shipped.' };
+    const other = fleet({ 'w1:p1': 'idle' });
+    await flow(other, 'focused', 'w1:p1', operator, [[compacted]]).run({ tab: 'w1:t1', pane: 'w1:p1', note: AUTO_NOTE });
+    assert.deepEqual(other.typed[0]?.pieces, ['/compact ', operator.answer]);
 });
 
 const documentFor = async (lastBreak?: number): Promise<string> => {
