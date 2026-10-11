@@ -1,0 +1,26 @@
+id: EXP-003-handoff-live
+change: lane-handoff (slice 1, task group 8)
+runs:
+  - R01-settle-and-handoff-proof
+herdr: 0.9.3
+node: v24.21.0
+claude_code: 2.1.296
+codex_cli: 0.162.1
+opencode: 1.18.35
+hermes: on PATH; a handoff to a Hermes lane was refused not-a-lane under the default watched kinds
+code:
+  branch: feat/lane-handoff
+  commit_at_start: 5d69365
+  commit_at_end: 108d8cb
+  note: the branch moved at 03:10:46Z; the first measurements ran on the live worktree, the clean delivery check and the Hermes check ran on a git archive of 108d8cb
+host:
+  cores: 8
+  load_1min: {min: 60.4, median: 84.4, max: 186.6}
+  parallelism: 4
+trials:
+  total: 337
+  claude: 130
+  codex: 130
+  opencode: 77
+isolation: separate herdr session, scratch state directory, scratch git repository as the lane directory
+definition_of_received: a unique marker is present in the agent's own transcript store within 25 s of the prompt call
