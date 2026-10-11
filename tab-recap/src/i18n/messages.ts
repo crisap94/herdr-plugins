@@ -1,4 +1,4 @@
-import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
+import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
@@ -27,7 +27,7 @@ export interface Messages {
     readonly claudeOwn: string;
     readonly noRecapYet: string;
     readonly noRecapShort: string;
-    readonly autocompactSettings: { readonly ceilingOverride: (enabled: boolean) => string; readonly coverageBackoff: (window: string) => string };
+    readonly autocompactSettings: { readonly ceilingOverride: (enabled: boolean) => string; readonly coverageBackoff: (window: string) => string; readonly missedFacts: (choice: MissedFacts) => string };
     readonly git: { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string };
     readonly recapError: (error: string) => string;
     readonly needsYou: (what: string) => string;
@@ -35,7 +35,7 @@ export interface Messages {
     readonly hints: { readonly column: readonly string[]; readonly modal: readonly string[] };
     readonly setup: {
         readonly title: string;
-        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactJob' | 'herdrEvents', string>>;
+        readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents', string>>;
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
@@ -67,6 +67,8 @@ export interface Messages {
         readonly autocompactAtHint: string;
         readonly autocompactStyleChoices: { readonly gentle: string; readonly balanced: string; readonly eager: string };
         readonly autocompactStyleHint: string;
+        readonly autocompactMissedChoices: Readonly<Record<MissedFacts, string>>;
+        readonly autocompactMissedHint: string;
         readonly autocompactJobHint: string;
         readonly deciderOff: string;
         readonly judgeJobHint: string;

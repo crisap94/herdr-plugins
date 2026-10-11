@@ -1,9 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { after } from 'node:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { configGetter, loadConfig, parseEnv } from '#src/daemon/config.ts';
+
+const isolatedConfigDir = mkdtempSync(join(tmpdir(), 'recap-config-isolated-'));
+process.env['HERDR_PLUGIN_CONFIG_DIR'] = isolatedConfigDir;
+after(() => { rmSync(isolatedConfigDir, { recursive: true, force: true }); });
 
 test('config.env: comments, blanks and quotes', () => {
     const values = parseEnv('# a comment\n\nTAB_RECAP_BACKEND=codex\nTAB_RECAP_MODEL="gpt-5-mini"\nnot a pair\n');

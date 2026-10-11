@@ -70,6 +70,7 @@ export function wireCompaction(parts: {
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,
         ceilingOverride: () => loadConfig().autocompact.ceilingPolicy === 'overrides-check',
+        missedFacts: () => loadConfig().autocompact.missedFacts,
         answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
         asks: parts.asks,
         typing: parts.typing,
