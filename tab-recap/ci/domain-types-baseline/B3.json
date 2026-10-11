@@ -19,7 +19,7 @@
   },
   "src/recap/application/autocompact-gates.ts": {
     "parameter": 7,
-    "return": 4,
+    "return": 3,
     "container": 2,
     "property": 9
   },
@@ -28,16 +28,10 @@
     "return": 2
   },
   "src/recap/application/autocompact-listing.ts": {
-    "parameter": 9,
-    "return": 3,
-    "container": 7,
-    "property": 4
-  },
-  "src/recap/application/autocompact-state.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 2,
-    "property": 9
+    "parameter": 5,
+    "return": 1,
+    "container": 1,
+    "property": 2
   },
   "src/recap/application/autocompact.ts": {
     "parameter": 18,
@@ -78,10 +72,9 @@
     "parameter": 2
   },
   "src/recap/application/compaction-brief.ts": {
-    "parameter": 13,
-    "return": 5,
-    "container": 1,
-    "property": 4
+    "parameter": 5,
+    "return": 1,
+    "property": 2
   },
   "src/recap/application/compaction-briefing.ts": {
     "parameter": 12,
@@ -103,8 +96,8 @@
     "property": 3
   },
   "src/recap/application/compaction-input.ts": {
-    "parameter": 2,
-    "return": 3,
+    "parameter": 1,
+    "return": 1,
     "property": 10
   },
   "src/recap/application/compaction-lanes.ts": {
@@ -112,10 +105,8 @@
     "property": 2
   },
   "src/recap/application/compaction-message.ts": {
-    "parameter": 6,
-    "return": 10,
-    "container": 10,
-    "property": 2
+    "parameter": 1,
+    "property": 1
   },
   "src/recap/application/compaction-outcome.ts": {
     "parameter": 7,
