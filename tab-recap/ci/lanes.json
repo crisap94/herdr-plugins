@@ -711,6 +711,8 @@
       "src/host/policy.mjs",
       "test/autocompact-probe.test.ts",
       "test/brand-importers.test.ts",
+      "test/check-domain-types-exceptions.test.ts",
+      "test/check-domain-types.test.ts",
       "test/db/compaction-origin.test.ts",
       "test/db/fixtures/live-items.json",
       "test/db/fixtures/schema-v1.sql",
