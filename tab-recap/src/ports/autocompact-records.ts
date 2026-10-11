@@ -1,4 +1,4 @@
-import type { CoverageOutcome, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
+import type { CoverageOutcome, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
 
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
@@ -46,6 +46,7 @@ export interface Decision {
     readonly costUsd: number;
     readonly tookMs: number | null;
     readonly why: string | null;
+    readonly laneStatus?: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
     readonly coverageMs: number | null;
     readonly coverageCostUsd: number | null;
