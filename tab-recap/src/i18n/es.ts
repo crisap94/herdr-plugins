@@ -183,7 +183,7 @@ export const es: Messages = {
             'refused.daemonOutdated': 'el daemon en marcha es otra versión: reinícialo y vuelve a intentarlo',
             'unsupported.noPlan': 'el tipo de agente destino no puede recibir un traspaso',
             'failed.transport': 'no se pudo enviar el texto al destino',
-            'failed.unconfirmed': 'el texto se envió pero no se confirmó su llegada',
+            'failed.unconfirmed': 'el texto se envió pero no se confirmó su llegada: puede que ya se haya entregado, revisa el panel de destino antes de volver a intentarlo',
             'failed.internalError': 'el traspaso falló dentro de tab-recap: mira el registro del daemon',
             'failed.sourceUnreadable': 'no se pudo leer la transcripción de origen',
             'failed.expired': 'la petición esperó demasiado y se descartó sin enviar',

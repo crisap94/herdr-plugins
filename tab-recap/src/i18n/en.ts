@@ -182,7 +182,7 @@ export const en: Messages = {
             'refused.daemonOutdated': 'the running daemon is another version: restart it, then try again',
             'unsupported.noPlan': 'the target kind cannot receive a handoff',
             'failed.transport': 'the text could not be sent to the target',
-            'failed.unconfirmed': 'the text was sent but its arrival was not confirmed',
+            'failed.unconfirmed': 'the text was sent but its arrival was not confirmed: it may have been delivered, check the target pane before trying again',
             'failed.internalError': 'the handoff failed inside tab-recap: see the daemon log',
             'failed.sourceUnreadable': 'the source transcript could not be read',
             'failed.expired': 'the request waited too long and was dropped unsent',

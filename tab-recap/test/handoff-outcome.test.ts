@@ -45,6 +45,17 @@ test('every outcome row with a message key has text in both catalogs, and printe
     }
 });
 
+test('the unconfirmed message says the text may have been delivered and the target should be checked first', () => {
+    const en = messagesFor('en').cli.handoff['failed.unconfirmed'];
+    const es = messagesFor('es').cli.handoff['failed.unconfirmed'];
+    for (const word of ['may have been delivered', 'check the target pane']) {
+        assert.ok(en.includes(word), `en: ${word}`);
+    }
+    for (const word of ['puede que ya se haya entregado', 'revisa el panel de destino']) {
+        assert.ok(es.includes(word), `es: ${word}`);
+    }
+});
+
 test('each catalog carries exactly the message keys of the outcome table', () => {
     for (const locale of ['en', 'es'] as const) {
         assert.deepEqual(Object.keys(messagesFor(locale).cli.handoff).toSorted(), [...MESSAGE_KEYS].toSorted(), locale);
