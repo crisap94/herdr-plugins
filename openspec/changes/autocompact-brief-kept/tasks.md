@@ -6,27 +6,27 @@ passing. Every code merge request ticks its own boxes and names itself on the li
 
 ## 1. Domain
 
-- [ ] 1.1 `MissedFacts` (`append` | `wait`) and `missedFactsOf` in `src/recap/domain/autocompact.ts`, default `append`;
-      `src/daemon/config.ts` reads `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` into the autocompact policy.
-- [ ] 1.2 Verify: unit tests for `missedFactsOf` (`append`, `wait`, unset, any other value).
+- [x] 1.1 `MissedFacts` (`append` | `wait`) and `missedFactsOf` in `src/recap/domain/autocompact.ts`, default `append`;
+      `src/daemon/config.ts` reads `TAB_RECAP_AUTOCOMPACT_MISSED_FACTS` into the autocompact policy. (!109)
+- [x] 1.2 Verify: unit tests for `missedFactsOf` (`append`, `wait`, unset, any other value). (!109)
 
 ## 2. The flow
 
-- [ ] 2.1 `Link` gains `appends` (ceiling override applies, or the key is `append`); `verified`, `rememberCoverage`,
+- [x] 2.1 `Link` gains `appends` (ceiling override applies, or the key is `append`); `verified`, `rememberCoverage`,
       `bestBrief` and `blockedByCoverage` read it as design D1 says; `decider-cannot-answer` with a written brief goes
-      ahead unchanged; `no-brief` and `no-decider` stay blocked below the ceiling.
-- [ ] 2.2 The decision amend keeps gate and verdict when the brief goes ahead, `why` from `coverageWhy`; the log line
-      drops `ceiling` below the ceiling.
-- [ ] 2.3 Verify in `test/compaction*.test.ts` and `test/autocompact*.test.ts`: "A failed check below the ceiling",
+      ahead unchanged; `no-brief` and `no-decider` stay blocked below the ceiling. (!109)
+- [x] 2.2 The decision amend keeps gate and verdict when the brief goes ahead, `why` from `coverageWhy`; the log line
+      drops `ceiling` below the ceiling. (!109)
+- [x] 2.3 Verify in `test/compaction*.test.ts` and `test/autocompact*.test.ts`: "A failed check below the ceiling",
       "A check that cannot answer below the ceiling", "No brief below the ceiling", "The missed facts key set to wait",
-      and the existing ceiling scenarios unchanged.
+      and the existing ceiling scenarios unchanged. (!109)
 
 ## 3. Docs and setup
 
-- [ ] 3.1 `README.md` (autocompact section, next to the ceiling override) and `config.example.env` document the key.
-- [ ] 3.2 The setup modal shows the key beside the ceiling override and respects an environment lock.
-- [ ] 3.3 Run strict OpenSpec validation from the repository root, and `bash ci/lint.sh` and `bash ci/test.sh` from
-      `tab-recap/`.
+- [x] 3.1 `README.md` (autocompact section, next to the ceiling override) and `config.example.env` document the key. (!109)
+- [x] 3.2 The setup modal shows the key beside the ceiling override and respects an environment lock. (!109)
+- [x] 3.3 Run strict OpenSpec validation from the repository root, and `bash ci/lint.sh` and `bash ci/test.sh` from
+      `tab-recap/`. (!109)
 
 ## 4. After it ships
 
