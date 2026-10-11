@@ -92,3 +92,21 @@ test('a lane cannot edit the pipeline file', () => {
     const result = lane('B2', ['.gitlab-ci.yml']);
     assert.equal(result.status, 1);
 });
+
+test('a lane merge request may edit the tests and fakes of another lane, and still not its source', () => {
+    const other = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes.B3.find((file: string) => file.startsWith('test/'));
+    assert.equal(lane('B2', [`tab-recap/${String(other)}`, 'tab-recap/test/fakes/ask-ledger.ts']).status, 0);
+    assert.equal(lane('B2', ['tab-recap/src/recap/application/compaction.ts']).status, 1);
+});
+
+test('a foreign source edit fails without the adapts label and passes with it, but never a foreign baseline, legacy file or the pipeline', () => {
+    const foreign = ['tab-recap/src/recap/application/compaction.ts'];
+    assert.equal(lane('B2', foreign).status, 1);
+    const adapting = lane('B2', foreign, { LANE_ADAPTS: '1' });
+    assert.equal(adapting.status, 0, String(adapting.stderr));
+    assert.match(String(adapting.stdout), /adapting tab-recap\/src\/recap\/application\/compaction\.ts \(owned by B3\)/u);
+    assert.equal(lane('B2', ['tab-recap/ci/domain-types-baseline/B3.json'], { LANE_ADAPTS: '1' }).status, 1);
+    assert.equal(lane('B2', ['tab-recap/src/recap/application/legacy.ts'], { LANE_ADAPTS: '1' }).status, 1);
+    assert.equal(lane('B2', ['.gitlab-ci.yml'], { LANE_ADAPTS: '1' }).status, 1);
+    assert.equal(lane('B2', ['tab-recap/src/recap/application/zz-unowned.ts'], { LANE_ADAPTS: '1' }).status, 1);
+});

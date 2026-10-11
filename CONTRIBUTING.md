@@ -105,7 +105,7 @@ node bin/check-domain-types.ts --json                                # every fin
   above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
   and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
 - **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
-  its files, its baseline, its exception file and its own `legacy.ts` (the old export other lanes still call, counted under
+  its files, its baseline, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
   `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`node ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
 
 ## Changing the database schema

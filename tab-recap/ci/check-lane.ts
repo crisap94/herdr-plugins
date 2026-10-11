@@ -6,6 +6,7 @@ const PREFIX = 'tab-recap/';
 const LANES_PATH = `${PREFIX}ci/lanes.json`;
 const PIPELINE = '.gitlab-ci.yml';
 
+const adapts = process.env['LANE_ADAPTS'] === '1';
 const lane = process.argv[2];
 if (lane === undefined) {
     process.stderr.write('check-lane: 3 — NOT COVERED: usage: node ci/check-lane.ts <lane>\n');
@@ -57,11 +58,15 @@ function foreignKeys(): readonly string[] {
     return [...new Set([...Object.keys(base), ...Object.keys(lanes)])].filter((name) => name !== lane && JSON.stringify(base[name]) !== JSON.stringify(lanes[name]));
 }
 
+function adaptsForeignSource(file: string): boolean {
+    return adapts && otherOwner.has(file) && file.startsWith(`${PREFIX}src/`) && !file.endsWith('/legacy.ts');
+}
+
 function allowed(file: string): boolean {
     if (file === PIPELINE) return false;
     if (!file.startsWith(PREFIX)) return true;
     if (file === LANES_PATH) return foreignKeys().length === 0;
-    if (ownPaths.has(file)) return true;
+    if (file.startsWith(`${PREFIX}test/`) || ownPaths.has(file) || adaptsForeignSource(file)) return true;
     if (file === `${PREFIX}ci/domain-types-baseline/${lane}.json` || file === `${PREFIX}ci/domain-types-exceptions/${lane}.json`) return true;
     return file.endsWith('/legacy.ts') && ownFolders.has(dirname(file));
 }
@@ -75,6 +80,9 @@ const stray = changedFiles().filter((file) => !allowed(file));
 for (const file of stray) {
     const owner = otherOwner.get(file);
     process.stderr.write(`  outside lane ${lane}: ${file}${detailOf(file, owner)}\n`);
+}
+for (const file of changedFiles().filter(adaptsForeignSource)) {
+    process.stdout.write(`  adapting ${file} (owned by ${otherOwner.get(file) ?? 'no lane'})\n`);
 }
 process.stdout.write(stray.length === 0 ? `check-lane: ${lane} clean\n` : `check-lane: 1 — ${stray.length} file(s) outside lane ${lane}\n`);
 process.exit(stray.length === 0 ? 0 : 1);
