@@ -180,11 +180,53 @@ test('git adapter: every read disables optional locks and fsmonitor before its s
     await reader.lastCommit(directory);
     await reader.uncommitted(directory);
     assert.deepEqual(calls.map((call) => call.args), [LAST_COMMIT_ARGS, PORCELAIN_ARGS]);
-    assert.deepEqual(LAST_COMMIT_ARGS.slice(0, 2), ['-c', 'core.fsmonitor=false']);
-    assert.deepEqual(PORCELAIN_ARGS.slice(0, 2), ['-c', 'core.fsmonitor=false']);
+    assert.deepEqual(LAST_COMMIT_ARGS, ['-c', 'core.fsmonitor=false', 'log', '-1', '--no-show-signature', '--format=%h%x00%s']);
+    assert.deepEqual(PORCELAIN_ARGS, ['-c', 'core.fsmonitor=false', 'status', '--porcelain=v2', '-z', '--untracked-files=normal']);
     for (const call of calls) {
         assert.equal(call.env['GIT_OPTIONAL_LOCKS'], '0');
     }
+});
+
+test('git adapter: GIT_DIR, GIT_WORK_TREE and GIT_INDEX_FILE from the daemon environment never reach a read', async () => {
+    const redirecting = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE'] as const;
+    const saved = redirecting.map((name) => [name, process.env[name]] as const);
+    const envs: NodeJS.ProcessEnv[] = [];
+    const recording: Runner = async (_command, _args, options) => {
+        envs.push(options.env);
+        return { code: 0, stdout: '', stderr: '', timedOut: false };
+    };
+    try {
+        for (const name of redirecting) {
+            process.env[name] = '/elsewhere';
+        }
+        const reader = new GitWorksiteReader(recording);
+        await reader.lastCommit(tempRoot());
+        await reader.uncommitted(tempRoot());
+    } finally {
+        for (const [name, value] of saved) {
+            if (value === undefined) {
+                delete process.env[name];
+            } else {
+                process.env[name] = value;
+            }
+        }
+    }
+    assert.equal(envs.length, 2);
+    for (const env of envs) {
+        for (const name of redirecting) {
+            assert.equal(env[name], undefined);
+        }
+        assert.equal(env['GIT_OPTIONAL_LOCKS'], '0');
+    }
+});
+
+test('git adapter: a user config that hides untracked files does not undercount', async () => {
+    const { directory, reader } = realRepo({ subject: 'base', untracked: ['draft.md'] });
+    git(directory, 'config', 'status.showUntrackedFiles', 'no');
+    const uncommitted = await reader.uncommitted(directory);
+    assert.ok(!isUnknown(uncommitted));
+    assert.equal(uncommitted.count, 1);
+    assert.deepEqual(uncommitted.paths, ['draft.md']);
 });
 
 const timingOut: Runner = async (): Promise<RunResult> => ({ code: 137, stdout: '', stderr: '', timedOut: true });
