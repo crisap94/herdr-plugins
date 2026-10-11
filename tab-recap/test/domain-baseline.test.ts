@@ -87,8 +87,10 @@ const project = (name: string, files: Readonly<Record<string, string>>): string 
 const check = (dir: string, ...flags: readonly string[]): ReturnType<typeof spawnSync> =>
     spawnSync(process.execPath, [join(ROOT, 'bin/check-domain-types.ts'), '--project', join(dir, 'tsconfig.json'), '--lanes', join(dir, 'lanes.json'), ...flags], { encoding: 'utf8', cwd: ROOT });
 
-const VALUE = `export function echo(text: string): 'a' | 'b' {
-    return text as 'a';
+const VALUE = `export type Door = 'a' | 'b';
+
+export function echo(text: string): Door {
+    return text as Door;
 }
 `;
 
@@ -113,7 +115,7 @@ test('a finding added to a counted file fails and names the file and the finding
 test('a fixed finding without a lowered entry fails as stale', () => {
     const dir = project('fixed', { [FILE]: VALUE });
     check(dir, '--write-baseline', join(dir, 'baseline'));
-    writeFileSync(join(dir, FILE), "export function echo(text: 'a' | 'b'): 'a' | 'b' {\n    return text;\n}\n");
+    writeFileSync(join(dir, FILE), "export type Door = 'a' | 'b';\n\nexport function echo(text: Door): Door {\n    return text;\n}\n");
     const result = check(dir, '--baseline', join(dir, 'baseline'));
     assert.equal(result.status, 1);
     assert.match(String(result.stderr), /stale baseline: src\/domain\/value\.ts: parameter 0, baseline 1/u);
