@@ -1,22 +1,12 @@
-import { INTERRUPTED_REASON } from '../exchange.ts';
+import { COMPACT_FAILURES } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
 import { exchangeName, exchangeVersion } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'done' } as const;
 
-export const COMPACT_FAILURES = {
-    badId: 'bad-id',
-    notALane: 'not-a-lane',
-    interrupted: INTERRUPTED_REASON,
-    noTarget: 'no-target',
-    skipped: 'skipped',
-    busy: 'busy',
-    laneBusy: 'lane-busy',
-    error: 'error',
-} as const;
-
-export type CompactFailure = (typeof COMPACT_FAILURES)[keyof typeof COMPACT_FAILURES];
+export { COMPACT_FAILURES } from '../reasons.ts';
+export type { CompactFailure } from '../reasons.ts';
 
 export const COMPACT_EVENTS = {
     queued: 'compact-queued',

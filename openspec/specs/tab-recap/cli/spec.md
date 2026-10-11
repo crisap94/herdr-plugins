@@ -62,7 +62,7 @@ run failed, 2 on a usage error.
 
 ### Requirement: The handoff command has an explicit source and target
 
-The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--print] [--refresh]`. It SHALL extend the existing `parseArguments` in `bin/tab-recap.ts`, which uses `node:util` `parseArgs` in strict mode, with `from`, `to`, `print` and `refresh`, and SHALL register `handoff` in the command table so that usage lists it. `--from` SHALL be given exactly once. `--to` SHALL be given exactly once, and it SHALL be required unless `--print` is given. A repeated single-value option SHALL be a usage error; detecting it requires the option to be declared with `multiple: true` and a length check. An option without a value and an unknown option SHALL be usage errors. `--from`, `--to`, `--print` and `--refresh` given to any command other than `handoff` SHALL be usage errors, and `--note` given to any command other than `compact` or `handoff` SHALL be a usage error. `--refresh` SHALL NOT be combined with `--print`. Without `--print`, the command SHALL write one handoff request row, wait for its answer, and map that answer to an exit code as the `lane-handoff` outcome table specifies. Exit codes SHALL be 0 for `delivered` and `printed`, 1 for refused, unsupported or failed outcomes, and 2 for usage errors. With `--print`, stdout SHALL contain only the handoff text and the command SHALL type nothing. Other diagnostics SHALL go to stderr.
+The CLI SHALL accept `handoff (--from <pane> | --from-closed <pane> --tab <tab-id> --closed-at <epoch-ms>) [--to <pane>] [--note <text>] [--print] [--refresh]` and `handoff --list-closed --tab <tab-id>`. It SHALL extend the existing `parseArguments` in `bin/tab-recap.ts`, which uses `node:util` `parseArgs` in strict mode, with `from`, `to`, `print`, `refresh`, `from-closed`, `tab`, `closed-at` and `list-closed`, and SHALL register `handoff` in the command table so that usage lists it. In the delivering and printing form, exactly one of `--from` and the complete `--from-closed` tuple SHALL be given, once; the tuple parts are all-or-none and `--closed-at` SHALL be a non-negative integer. `--from-closed` with `--refresh` SHALL be a usage error, because a refresh cannot change a closed lane's facts. `--list-closed` SHALL require `--tab` and SHALL NOT be combined with `--from`, `--from-closed`, `--to`, `--print`, `--note` or `--refresh`. In that form `--to` SHALL be given at most once, and it SHALL be required unless `--print` is given; the listing form `handoff --list-closed --tab <tab-id>` takes neither a source nor `--to`. A repeated single-value option SHALL be a usage error; detecting it requires the option to be declared with `multiple: true` and a length check. An option without a value and an unknown option SHALL be usage errors. `--from`, `--to`, `--print`, `--refresh`, `--from-closed`, `--closed-at` and `--list-closed` given to any command other than `handoff` SHALL be usage errors; `--tab` SHALL be accepted by `handoff` and by `eval` (whose existing `--tab` option is unchanged) and SHALL be a usage error with any other command; and `--note` given to any command other than `compact` or `handoff` SHALL be a usage error. `--refresh` SHALL NOT be combined with `--print`. Without `--print`, the command SHALL write one handoff request row, wait for its answer, and map that answer to an exit code as the `lane-handoff` outcome table specifies. Exit codes SHALL be 0 for `delivered` and `printed`, 1 for refused, unsupported or failed outcomes, and 2 for usage errors. With `--print`, stdout SHALL contain only the handoff text and the command SHALL type nothing. Other diagnostics SHALL go to stderr.
 
 #### Scenario: Deliver a handoff
 
@@ -93,7 +93,7 @@ The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--pri
 
 #### Scenario: A handoff option is missing or repeated
 
-- **WHEN** `--from` is missing or repeated, `--to` is missing without `--print`, or `--from` or `--to` has no value
+- **WHEN**, outside the listing form, `--from` is missing or repeated, `--to` is missing without `--print`, or `--from` or `--to` has no value
 - **THEN** the CLI SHALL print usage to stderr and exit 2
 
 #### Scenario: A single-value option is repeated
@@ -125,3 +125,53 @@ The CLI SHALL accept `handoff --from <pane> [--to <pane>] [--note <text>] [--pri
 
 - **WHEN** the application returns refused, unsupported, or failed
 - **THEN** the CLI SHALL write the localized message for that reason to stderr and exit 1, as the `lane-handoff` outcome table specifies
+
+#### Scenario: A closed source is queued
+
+- **WHEN** the operator passes a complete `--from-closed` tuple and the daemon is running
+- **THEN** the CLI SHALL write one `handoff` request row carrying the pane, the tab, the target and the close instant, and wait for its answer as for a live source
+
+#### Scenario: Both source selectors are given
+
+- **WHEN** the command receives `--from` and `--from-closed`
+- **THEN** the CLI SHALL exit 2 and write no row
+
+#### Scenario: A partial tuple
+
+- **WHEN** the command receives `--from-closed` without `--closed-at` or `--tab`
+- **THEN** the CLI SHALL exit 2 and write no row
+
+#### Scenario: A malformed close instant
+
+- **WHEN** `--closed-at` is negative or not an integer
+- **THEN** the CLI SHALL exit 2 and write no row
+
+#### Scenario: A closed source with refresh
+
+- **WHEN** the operator passes `--from-closed ... --refresh`
+- **THEN** the CLI SHALL exit 2 and write no row
+
+#### Scenario: The listing is combined with another option
+
+- **WHEN** `--list-closed` is given with `--from`, `--to`, `--print`, `--note` or `--refresh`
+- **THEN** the CLI SHALL exit 2
+
+#### Scenario: Closed-source flags on another command
+
+- **WHEN** `--closed-at` is given to a command other than `handoff`, or `--tab` to a command other than `handoff` or `eval`
+- **THEN** the CLI SHALL print a usage error naming `handoff` and exit 2
+
+#### Scenario: The eval command keeps its tab option
+
+- **WHEN** the operator invokes `eval --tab <id>`
+- **THEN** the CLI SHALL accept it as before this change
+
+#### Scenario: The listing without a tab
+
+- **WHEN** `handoff --list-closed` is given without `--tab`
+- **THEN** the CLI SHALL print usage to stderr and exit 2
+
+#### Scenario: The listing takes no source
+
+- **WHEN** the operator invokes `handoff --list-closed --tab <tab-id>`
+- **THEN** the CLI SHALL list the retained closed lanes of that tab without requiring `--from` or `--to`

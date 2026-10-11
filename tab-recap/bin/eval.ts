@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
 import { AUTO_ORDER, judgeFor } from '#src/daemon/backends.ts';
@@ -41,7 +41,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
     if (parsed.options.mode === 'replay') {
         return replayCommand(parsed.options);
     }
-    const store = stateStore(stateDir());
+    const store = openCliStore();
     if (store.kind !== 'ready') {
         console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
         return 1;

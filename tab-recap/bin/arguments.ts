@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import { handoffArgumentsOf, type HandoffArguments } from './handoff.ts';
 
-const HANDOFF_ONLY = ['from', 'to', 'print', 'refresh'] as const;
+const HANDOFF_ONLY = ['from', 'to', 'print', 'refresh', 'from-closed', 'closed-at', 'list-closed'] as const;
 
 interface ParsedArguments {
     readonly positionals: string[];
@@ -9,16 +9,27 @@ interface ParsedArguments {
     readonly handoff: HandoffArguments | null;
 }
 
+const OPTIONS = { help: { type: 'boolean', short: 'h' }, note: { type: 'string' }, from: { type: 'string', multiple: true }, to: { type: 'string', multiple: true }, print: { type: 'boolean' }, refresh: { type: 'boolean' }, 'from-closed': { type: 'string', multiple: true }, tab: { type: 'string', multiple: true }, 'closed-at': { type: 'string', multiple: true }, 'list-closed': { type: 'boolean' } } as const;
+
+function handoffOnlyProblem(values: Readonly<Record<string, unknown>>, name: string | undefined): string | null {
+    const misplaced = HANDOFF_ONLY.find((option) => values[option] !== undefined);
+    return misplaced !== undefined && name !== 'handoff' ? `--${misplaced} applies to handoff only` : null;
+}
+
+function placementProblem(values: Readonly<Record<string, unknown>>, name: string | undefined): string | null {
+    if (values.tab !== undefined && name !== 'handoff' && name !== 'eval') {
+        return '--tab applies to handoff and eval only';
+    }
+    return values.note !== undefined && name !== 'compact' && name !== 'handoff' ? '--note applies to compact and handoff only' : null;
+}
+
 export function parseArguments(argv: readonly string[]): ParsedArguments | { problem: string } {
     try {
-        const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' }, note: { type: 'string' }, from: { type: 'string', multiple: true }, to: { type: 'string', multiple: true }, print: { type: 'boolean' }, refresh: { type: 'boolean' } } });
+        const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: OPTIONS });
         const [name] = positionals;
-        const misplaced = HANDOFF_ONLY.find((option) => values[option] !== undefined);
-        if (misplaced !== undefined && name !== 'handoff') {
-            return { problem: `--${misplaced} applies to handoff only` };
-        }
-        if (values.note !== undefined && name !== 'compact' && name !== 'handoff') {
-            return { problem: '--note applies to compact and handoff only' };
+        const problemText = handoffOnlyProblem(values, name) ?? placementProblem(values, name);
+        if (problemText !== null) {
+            return { problem: problemText };
         }
         if (name !== 'handoff') {
             return { positionals, note: values.note, handoff: null };

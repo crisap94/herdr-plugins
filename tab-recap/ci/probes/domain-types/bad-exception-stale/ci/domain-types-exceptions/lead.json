@@ -1,0 +1,9 @@
+[
+  {
+    "class": "callback",
+    "file": "src/domain/value.ts",
+    "function": "echo",
+    "parameter": "value",
+    "reason": "probe: echo holds no primitive, so this entry is stale"
+  }
+]

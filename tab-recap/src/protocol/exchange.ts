@@ -3,6 +3,9 @@ import { LIMITS, tokenName, tokenValue } from './primitives.ts';
 import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
+import type { ReasonWord } from './reasons.ts';
+
+export { INTERRUPTED_REASON } from './reasons.ts';
 
 export type Exchange = {
     readonly name: ExchangeName;
@@ -10,7 +13,9 @@ export type Exchange = {
     readonly requestPrefix: string;
     readonly request: readonly FieldSpec[];
     readonly answerStages: readonly string[];
-    readonly failureReasons: readonly string[];
+    readonly failureReasons: readonly ReasonWord[];
+    readonly refusalReasons?: readonly ReasonWord[];
+    readonly unsupportedReasons?: readonly ReasonWord[];
     readonly events: readonly string[];
     readonly optIn: string | null;
     readonly timing: Readonly<Record<string, number>>;
@@ -21,13 +26,35 @@ export const ANSWER_PREFIX = 'tab-recap-';
 
 export const FAILURE_PREFIX = 'failed-';
 
-export const INTERRUPTED_REASON = 'interrupted';
+export const REFUSED_PREFIX = 'refused-';
+
+export const UNSUPPORTED_PREFIX = 'unsupported-';
 
 export const defineExchange = (exchange: Exchange): Exchange => exchange;
 
 export const failureStage = (reason: string): string => `${FAILURE_PREFIX}${reason}`;
 
 export const isFailureStage = (stage: string): boolean => stage.startsWith(FAILURE_PREFIX);
+
+export type TerminalKind = 'failed' | 'refused' | 'unsupported';
+
+export type Terminal = { readonly kind: TerminalKind; readonly reason: ReasonWord };
+
+export type TerminalStage = `${typeof FAILURE_PREFIX | typeof REFUSED_PREFIX | typeof UNSUPPORTED_PREFIX}${ReasonWord}`;
+
+const TERMINAL_PREFIX = {
+    failed: FAILURE_PREFIX,
+    refused: REFUSED_PREFIX,
+    unsupported: UNSUPPORTED_PREFIX,
+} as const satisfies Readonly<Record<TerminalKind, string>>;
+
+export const terminalStage = (terminal: Terminal): TerminalStage => `${TERMINAL_PREFIX[terminal.kind]}${terminal.reason}`;
+
+export const terminalsOf = (exchange: Exchange): readonly Terminal[] => [
+    ...exchange.failureReasons.map((reason): Terminal => ({ kind: 'failed', reason })),
+    ...(exchange.refusalReasons ?? []).map((reason): Terminal => ({ kind: 'refused', reason })),
+    ...(exchange.unsupportedReasons ?? []).map((reason): Terminal => ({ kind: 'unsupported', reason })),
+];
 
 export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => tokenName(`${ANSWER_PREFIX}${exchange.name}`);
 

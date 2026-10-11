@@ -1,4 +1,4 @@
-import { stateStore } from '#src/adapters/db/database.ts';
+import { openCliStore } from '#src/daemon/cli-store.ts';
 import { glowRenderer } from '#src/adapters/glow.ts';
 import { styleFor } from '#src/adapters/terminal-style.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
@@ -32,7 +32,7 @@ function modeOf(env: NodeJS.ProcessEnv): Mode {
 }
 const mode = modeOf(process.env);
 const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
-const opened = stateStore(stateDir());
+const opened = openCliStore();
 const store = opened.kind === 'ready' ? opened : null;
 const config = loadConfig();
 const startedVersion = codeVersion();

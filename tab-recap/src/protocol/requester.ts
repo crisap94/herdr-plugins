@@ -1,9 +1,10 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
 import type { Refusal, RequestId, ToolName } from './primitives.ts';
-import { answerToken, failureStage, requestName, serializeRequest, splitAnswer } from './exchange.ts';
-import type { Exchange } from './exchange.ts';
+import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf } from './exchange.ts';
+import type { Exchange, Terminal } from './exchange.ts';
 import type { ParsedValue } from './codec.ts';
+import type { ReasonWord } from './reasons.ts';
 import type { TokenMap, TokenWrite } from './tokens.ts';
 
 export type AnswerState =
@@ -11,20 +12,33 @@ export type AnswerState =
     | { readonly kind: 'queued' }
     | { readonly kind: 'running' }
     | { readonly kind: 'done' }
+    | { readonly kind: 'delivered' }
     | { readonly kind: 'failed'; readonly reason: string }
+    | { readonly kind: 'refused'; readonly reason: ReasonWord }
+    | { readonly kind: 'unsupported'; readonly reason: ReasonWord }
     | { readonly kind: 'foreign-id'; readonly id: string }
     | { readonly kind: 'unreadable' };
 
-type LiveStage = 'queued' | 'running' | 'done';
+type LiveStage = 'queued' | 'running' | 'done' | 'delivered';
 
-const LIVE_STAGES: readonly LiveStage[] = ['queued', 'running', 'done'];
+const LIVE_STAGES: readonly LiveStage[] = ['queued', 'running', 'done', 'delivered'];
 
 const isLiveStage = (stage: string): stage is LiveStage => (LIVE_STAGES as readonly string[]).includes(stage);
 
+const observedTerminal = (terminal: Terminal): AnswerState => {
+    if (terminal.kind === 'failed') {
+        return { kind: 'failed', reason: terminal.reason };
+    }
+    if (terminal.kind === 'refused') {
+        return { kind: 'refused', reason: terminal.reason };
+    }
+    return { kind: 'unsupported', reason: terminal.reason };
+};
+
 function stageObservation(exchange: Exchange, stage: string): AnswerState {
-    const failure = exchange.failureReasons.find((reason) => failureStage(reason) === stage);
-    if (failure !== undefined) {
-        return { kind: 'failed', reason: failure };
+    const terminal = terminalsOf(exchange).find((each) => terminalStage(each) === stage);
+    if (terminal !== undefined) {
+        return observedTerminal(terminal);
     }
     return exchange.answerStages.includes(stage) && isLiveStage(stage) ? { kind: stage } : { kind: 'unreadable' };
 }

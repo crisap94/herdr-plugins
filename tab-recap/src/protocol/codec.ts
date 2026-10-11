@@ -1,16 +1,18 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, WORD_SHAPE, checkedText, refuse, requestId, tokenValue } from './primitives.ts';
-import type { IdGrammar, Refusal, RequestId, TokenValue } from './primitives.ts';
+import { LIMITS, WORD_SHAPES, checkedText, refuse, requestId, tokenValue } from './primitives.ts';
+import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
 
 export type FieldSpec =
     | { readonly kind: 'id'; readonly grammar: IdGrammar }
-    | { readonly kind: 'word'; readonly name: string; readonly optional: boolean }
+    | { readonly kind: 'word'; readonly name: string; readonly optional: boolean; readonly shape?: WordShape }
     | { readonly kind: 'flag'; readonly name: string; readonly text: string }
     | { readonly kind: 'rest'; readonly name: string; readonly optional: boolean; readonly maxChars: number | null };
 
 type Field = Exclude<FieldSpec, { readonly kind: 'id' }>;
 type RestField = Extract<Field, { readonly kind: 'rest' }>;
+
+const shapeOf = (shape: WordShape | undefined): RegExp => WORD_SHAPES[shape ?? 'word'];
 
 export type Fields = Readonly<Record<string, string | boolean | null>>;
 
@@ -49,7 +51,7 @@ function pieceOf(field: Field, value: ParsedValue): Result<string | null, Refusa
     if (typeof text !== 'string') {
         return refuse('bad-grammar', field.name);
     }
-    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, WORD_SHAPE) : checkedRest(field, text);
+    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, shapeOf(field.shape)) : checkedRest(field, text);
 }
 
 export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue): Result<TokenValue, Refusal> {
@@ -90,7 +92,7 @@ function readField(field: Field, segments: readonly string[], at: number): Resul
         return field.optional ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
     }
     if (field.kind === 'word') {
-        const word = checkedText(field.name, segment, LIMITS.valueMax, WORD_SHAPE);
+        const word = checkedText(field.name, segment, LIMITS.valueMax, shapeOf(field.shape));
         return word.kind === 'ok' ? ok({ value: word.value, at: at + 1 }) : word;
     }
     const text = checkedRest(field, segments.slice(at).join(':'));

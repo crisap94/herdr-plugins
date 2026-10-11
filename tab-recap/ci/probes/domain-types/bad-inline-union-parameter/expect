@@ -1,0 +1,1 @@
+src/domain/value.ts:[0-9]+: open, parameter state is an inline literal union; name it with a type alias

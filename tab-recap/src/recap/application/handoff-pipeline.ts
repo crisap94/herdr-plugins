@@ -6,7 +6,7 @@ import { omittedTotal } from '#src/recap/render/handoff-markdown.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { buildHandoffContent } from './handoff-content.ts';
-import { freshnessOf } from './freshness-block.ts';
+import { closedFreshnessOf, freshnessOf } from './freshness-block.ts';
 import type { FreshnessDeps } from './freshness-block.ts';
 import { HANDOFF_WORKSITE_BYTES } from './handoff-limits.ts';
 import type { HandoffLane, HandoffRender, HandoffRenderInput, HandoffRenderResult } from './handoff-render.ts';
@@ -31,15 +31,14 @@ async function tokensOf(tokens: PaneTokens, lane: HandoffLane): Promise<Readonly
 
 export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
     return async (input: HandoffRenderInput): Promise<HandoffRenderResult> => {
-        const { lane, cursor } = input;
-        const freshness = await freshnessOf(
-            { records: deps.records, transcripts: deps.transcripts },
-            { tab: String(lane.tab), agent: String(lane.agent), source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh },
-        );
+        const { lane, cursor, closed } = input;
+        const freshness = closed === undefined
+            ? await freshnessOf({ records: deps.records, transcripts: deps.transcripts }, { tab: String(lane.tab), agent: String(lane.agent), source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh })
+            : closedFreshnessOf(closed);
         if (freshness.kind === 'ledger-empty') {
             return { kind: 'refused', reason: 'ledger-empty' };
         }
-        const worksite = await worksiteOf(deps.worksite, { directory: lane.cwd, cursor, tokens: await tokensOf(deps.tokens, lane) });
+        const worksite = await worksiteOf(deps.worksite, { directory: lane.cwd, cursor, tokens: closed === undefined ? await tokensOf(deps.tokens, lane) : null });
         const body = buildHandoffContent({
             at: input.at,
             task: { open: input.facts.filter((fact) => fact.state === 'open'), closed: input.facts.filter((fact) => fact.state === 'closed') },
@@ -52,7 +51,7 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
         }
         const fitted = handoffTextOf(body, {
             reference: referenceOf(input),
-            freshnessText: freshnessTextOf(freshness.freshness),
+            freshnessText: freshnessTextOf(freshness.freshness, closed === undefined ? null : closed.closedAt),
             worksiteText: worksiteTextOf(worksite, byteBudgetOf(HANDOFF_WORKSITE_BYTES)),
         });
         if (fitted.kind === 'too-large') {

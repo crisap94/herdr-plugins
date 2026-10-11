@@ -5,6 +5,8 @@ import type { LaneClaims } from './lane-claims.ts';
 import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
 import { flightDetail } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 export const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
 export const ASKED_FOR_MS = 5 * 60_000;
@@ -44,11 +46,19 @@ export interface DetailFacts {
     readonly atCeiling: boolean;
 }
 
-export function detailOf(gate: Gate, facts: DetailFacts): string | null {
-    if (gate === 'busy') return facts.busy;
-    if (gate === 'below-minimum') return `below ${facts.minimum} %`;
-    if (gate === 'cooldown') return `${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`;
-    if (gate === 'unchanged') return 'same tokens and mode as the last decision';
-    if (gate === 'coverage-backoff') return 'recent brief check failed';
-    return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight, facts.atCeiling) : null;
+const cooldownText = (facts: DetailFacts): Text => must(parseText(`${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`));
+
+function flightText(facts: DetailFacts): Text | null {
+    if (facts.flight === null) return null;
+    const detail = flightDetail(facts.flight, facts.atCeiling);
+    return detail === null ? null : must(parseText(detail));
+}
+
+export function detailOf(gate: Gate, facts: DetailFacts): Text | null {
+    if (gate === 'busy') return facts.busy === null ? null : must(parseText(facts.busy));
+    if (gate === 'below-minimum') return must(parseText(`below ${facts.minimum} %`));
+    if (gate === 'cooldown') return cooldownText(facts);
+    if (gate === 'unchanged') return must(parseText('same tokens and mode as the last decision'));
+    if (gate === 'coverage-backoff') return must(parseText('recent brief check failed'));
+    return gate === 'in-flight' ? flightText(facts) : null;
 }

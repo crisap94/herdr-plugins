@@ -19,10 +19,13 @@ import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 
 import { BACKEND_IDS, modelOf } from '#src/recap/domain/backend.ts';
-import { tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { parseHandoffRequests } from '#src/recap/domain/handoff-requests.ts';
+import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
@@ -65,9 +68,11 @@ export interface Config {
     readonly coverage: CoverageBy;
     readonly jev: JevSettings;
     readonly keepDays: number;
+    readonly closedLaneDays: ClosedLaneDays;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
     readonly herdrEvents: HerdrEvents;
+    readonly handoffRequests: HandoffRequests;
     readonly compactNote: CompactNote;
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;
@@ -160,14 +165,13 @@ export function loadConfig(): Config {
     const get = (key: string): string | undefined => given(key) ?? file.get(key);
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
-    const keepNewest = rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max);
-    const nextHours = rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max);
-    const writerViewSettings = prunedWriterView(keepNewestOf(keepNewest), nextHoursOf(nextHours));
+    const writerViewSettings = prunedWriterView(keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)), nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)));
     const kinds = get('TAB_RECAP_AGENTS');
     const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');
     const backend = backendOf(get('TAB_RECAP_BACKEND'));
     const locale = localeOf(get('TAB_RECAP_LOCALE'), process.env);
+    const herdrEvents = herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS'));
     return {
         locale,
         recapLanguage: recapLanguageOf(get('TAB_RECAP_RECAP_LANG'), locale),
@@ -204,9 +208,11 @@ export function loadConfig(): Config {
         coverage: coverageByOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         jev: jevOf(get),
         keepDays: tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS')),
+        closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
-        herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),
+        herdrEvents,
+        handoffRequests: parseHandoffRequests(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,

@@ -46,6 +46,7 @@ function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: 
         enabled: (): boolean => on,
         local: (ask: Ask): void => { localAsks.push(ask.id); },
         handoff: (ask: Ask): void => { handoffAsks.push(ask.id); },
+        withdraw: (): void => undefined,
         log: (): void => undefined,
         now: (): number => 1000,
         restartedWhy: 'restarted',
