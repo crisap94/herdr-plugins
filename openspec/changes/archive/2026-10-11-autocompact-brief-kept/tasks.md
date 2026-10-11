@@ -30,9 +30,12 @@ passing. Every code merge request ticks its own boxes and names itself on the li
 
 ## 4. After it ships
 
-- [ ] 4.1 Promote to the live plugin; after 24 hours, count `skipped`/`coverage` and typed automatic compactions in the
-      `compaction` table and record both in the archive merge request.
+- [x] 4.1 Promoted to the live plugin (2.5.0, daemon started 2026-10-11 11:35 UTC). Counted at 2026-10-11 20:18 UTC,
+      8 h 43 min after the start (the operator asked for the initial changes to be finished today, so the 24-hour window
+      is not reached): `skipped`/`coverage` automatic compactions: 0 (79 in the 36 hours before the change); typed
+      automatic compactions: 22 (17 compacted, 5 unconfirmed; 41 in the 36 hours before); 9 briefs went ahead with
+      `missed facts appended` in the daemon log. No 24-hour recount was made.
 
 ## 5. Archive
 
-- [ ] 5.1 Archive the change in its own merge request.
+- [x] 5.1 Archive the change in its own merge request.
