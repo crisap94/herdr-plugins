@@ -22,7 +22,7 @@ function tab(store: Store, id: string, ago: number): void {
     store.db.prepare("INSERT INTO tab_visibility (tab_id, state) VALUES (?, 'hidden')").run(id);
 }
 
-const count = (db: DatabaseSync, table: string, tabId: string): number => {
+const count = (db: DatabaseSync, table: string, owner: string): number => {
     const sql: Record<string, string> = {
         tab: 'SELECT COUNT(*) AS n FROM tab WHERE id = ?', chapter: 'SELECT COUNT(*) AS n FROM chapter WHERE tab_id = ?',
         run: 'SELECT COUNT(*) AS n FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ?',
@@ -31,7 +31,7 @@ const count = (db: DatabaseSync, table: string, tabId: string): number => {
         transcript: 'SELECT COUNT(*) AS n FROM transcript WHERE tab_id = ?', compaction: 'SELECT COUNT(*) AS n FROM compaction WHERE tab_id = ?',
         tab_visibility: 'SELECT COUNT(*) AS n FROM tab_visibility WHERE tab_id = ?',
     };
-    return (db.prepare(sql[table] ?? '').get(tabId) as { n: number }).n;
+    return (db.prepare(sql[table] ?? '').get(owner) as { n: number }).n;
 };
 const everything = (db: DatabaseSync, id: string): number[] => ['tab', 'chapter', 'run', 'boundary', 'fact', 'transcript', 'compaction', 'tab_visibility'].map((table) => count(db, table, id));
 

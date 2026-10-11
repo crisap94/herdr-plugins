@@ -30,7 +30,7 @@ function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (lin
     return new Dispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
         prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
-        feedback: noop, closures: port, closedDays: () => closedLaneDaysOf(days),
+        feedback: noop, ...(port === undefined ? {} : { closures: port }), closedDays: () => closedLaneDaysOf(days),
     });
 }
 

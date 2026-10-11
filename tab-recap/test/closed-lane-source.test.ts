@@ -111,3 +111,13 @@ test('the closed registry entry answers found, source-unavailable or unknown', (
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'store-unreadable' });
 });
+
+test('a closure past the window is expired, and once the sweep has pruned it the same identity is never-seen', () => {
+    let stored: ClosedLaneRead = rowOf(CLOSED);
+    const closures: Pick<ClosureReader, 'resolve'> = { resolve: (): ClosedLaneRead => stored };
+    const later = instant(CLOSED + 15 * DAY);
+    const deps: ClosedSourceDeps = { closures, ledger: new MemoryLedger(), closedDays: FOURTEEN, now: later };
+    assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'expired', closedAt: CLOSED });
+    stored = { kind: 'absent' };
+    assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'never-seen' });
+});

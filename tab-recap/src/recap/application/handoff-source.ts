@@ -69,11 +69,10 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps) => {
     switch (resolution.kind) {
         case 'found':
             return resolution;
-        case 'expired':
-        case 'never-seen':
-            return { kind: 'source-unavailable' };
         case 'unknown':
             return { kind: 'unknown', why: resolution.reason };
+        default:
+            return { kind: 'source-unavailable' };
     }
 };
 
