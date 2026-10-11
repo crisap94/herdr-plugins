@@ -76,7 +76,7 @@ echo "protocol names (no copy of a wire name outside src/protocol):"
 node bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
 
 echo "the linters bite (a seeded violation must fail them):"
-bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the three seeded type errors (TS2322, TS1294, TS2375)" || fail "a linter accepted the seeded violation"
+bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the seeded type errors" || fail "a linter accepted the seeded violation"
 
 [ "$failures" -eq 0 ] && { echo "lint: clean"; exit 0; }
 echo "lint: $failures finding(s)"; exit 1
