@@ -1,7 +1,7 @@
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
-import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
+import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
@@ -27,12 +27,6 @@ interface Candidate {
 
 const CAPS: Partial<Record<HandoffGroupId, number>> = { done: HANDOFF_DONE_SHOWN, links: HANDOFF_LINKS_SHOWN, closed: HANDOFF_CLOSED_SHOWN };
 
-const compareIds = (a: string, b: string): number => {
-    if (a === b) {
-        return 0;
-    }
-    return a < b ? -1 : 1;
-};
 const newestFirst = (a: HandoffEntry, b: HandoffEntry): number => b.lastAt - a.lastAt || compareIds(a.id, b.id);
 const oldestFirst = (a: HandoffEntry, b: HandoffEntry): number => a.firstAt - b.firstAt || compareIds(a.id, b.id);
 

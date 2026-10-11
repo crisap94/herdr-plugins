@@ -8,6 +8,13 @@ import type { WorksiteSnapshot } from './worksite.ts';
 export const HANDOFF_GROUP_IDS = [...SECTION_IDS, 'closed'] as const;
 export type HandoffGroupId = (typeof HANDOFF_GROUP_IDS)[number];
 
+export const compareIds = (a: string, b: string): number => {
+    if (a === b) {
+        return 0;
+    }
+    return a < b ? -1 : 1;
+};
+
 export interface HandoffEntry {
     readonly id: FactId;
     readonly text: string;
