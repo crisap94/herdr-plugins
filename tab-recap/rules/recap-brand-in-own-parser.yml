@@ -1,0 +1,37 @@
+id: recap-brand-in-own-parser
+language: typescript
+severity: error
+message: >-
+  A brand is applied only by the parser of its own value. Call brand(...) inside parse<Name>, or inside a
+  type guard of the file that declares <Name>, and nowhere else in src/ or bin/.
+note: >-
+  The application layer receives domain types and never mints one. A brand call in any other function
+  launders a raw value past its parser.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-brand-in-own-parser/**"
+rule:
+  pattern: brand($$$ARGS)
+  not:
+    any:
+      - inside:
+          kind: function_declaration
+          has:
+            field: name
+            regex: "^parse[A-Z]"
+          stopBy: end
+      - inside:
+          kind: variable_declarator
+          has:
+            field: name
+            regex: "^parse[A-Z]"
+          stopBy: end
+      - inside:
+          kind: function_declaration
+          has:
+            field: return_type
+            has:
+              kind: type_predicate
+              stopBy: end
+          stopBy: end
