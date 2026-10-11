@@ -176,14 +176,6 @@
     "return": 1,
     "property": 2
   },
-  "src/adapters/db/schema/014-coverage-evidence.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/adapters/db/schema/017-handoff.ts": {
-    "parameter": 1,
-    "return": 1
-  },
   "src/adapters/db/scratch.ts": {
     "property": 1
   },
