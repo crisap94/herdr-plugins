@@ -25,7 +25,7 @@ function written(name: string, text: string): string {
 
 function mapWithout(prefix: string): string {
     const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
-    for (const lane of Object.keys(parsed.lanes)) parsed.lanes[lane] = (parsed.lanes[lane] ?? []).filter((file) => !file.startsWith(prefix));
+    for (const name of Object.keys(parsed.lanes)) parsed.lanes[name] = (parsed.lanes[name] ?? []).filter((file) => !file.startsWith(prefix));
     return written(`without-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
 }
 
@@ -131,7 +131,7 @@ test('a path named in the skip list is not expected in the map; a folder entry s
     const both = mapWithout('test/fixtures/');
     assert.equal(generate(both, skip).status, 1, 'the listed source file is still in this map');
     const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(both, 'utf8'));
-    for (const lane of Object.keys(parsed.lanes)) parsed.lanes[lane] = (parsed.lanes[lane] ?? []).filter((file) => file !== 'src/protocol/result.ts');
+    for (const name of Object.keys(parsed.lanes)) parsed.lanes[name] = (parsed.lanes[name] ?? []).filter((file) => file !== 'src/protocol/result.ts');
     const all = written(`all-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
     assert.equal(generate(all, skip).status, 0);
     assert.equal(generate(all).status, 1, 'without the list the same map misses those files');
