@@ -20,7 +20,8 @@
   "ignorePatterns": [
     "node_modules/**",
     "rules/probes/**",
-    "rules/pending/probes/**"
+    "rules/pending/probes/**",
+    "ci/probes/**"
   ],
   "rules": {
     "complexity": [

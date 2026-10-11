@@ -22,7 +22,7 @@ Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3
 Run both from the plugin directory before you send anything:
 
 ```bash
-bash ci/lint.sh      # ast-grep rules and their probes, vocabulary ↔ CONTEXT.md, tsgo typecheck, oxlint
+bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, tsgo typecheck, oxlint
 bash ci/test.sh      # node --test
 ```
 
@@ -75,7 +75,8 @@ would like to read in the notes ("Hide or show a tab's column with a key").
   `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Node can say it is too old; anything that
   depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
-  rules enforce the boundaries and each ships a bad/good probe it must bite. A new rule needs both
+  rules enforce the syntax boundaries and dependency-cruiser (`tab-recap/.dependency-cruiser.cjs`) enforces
+  the import boundaries. Each rule ships a bad/good probe it must bite. A new rule needs both
   probes. See [`tab-recap/CLAUDE.md`](tab-recap/CLAUDE.md).
 - **Use the vocabulary.** A word means one thing; banned synonyms fail lint. See
   [`tab-recap/CONTEXT.md`](tab-recap/CONTEXT.md), and add new terms there first.

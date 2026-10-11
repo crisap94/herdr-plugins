@@ -56,6 +56,9 @@ node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint
 echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
 bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
 
+echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
+bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 
