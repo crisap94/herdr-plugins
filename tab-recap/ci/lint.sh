@@ -8,8 +8,8 @@ cd "$HERE"
 # the pinned devDependency first, so CI and a checkout run the same ast-grep
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
 [ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'npm install'" >&2; exit 3; }
-[ -x node_modules/.bin/tsgo ] && [ -x node_modules/.bin/oxlint ] \
-    || { echo "lint: 3 — NOT COVERED: run 'npm install' (tsgo, oxlint)" >&2; exit 3; }
+[ -x node_modules/.bin/oxlint ] \
+    || { echo "lint: 3 — NOT COVERED: run 'npm install' (oxlint)" >&2; exit 3; }
 
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
@@ -48,10 +48,7 @@ bash ci/check-version.sh || fail "the plugin's version is not one number"
 echo "the release scripts bite (what is right passes, what is wrong fails):"
 bash ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
 
-echo "typecheck (tsgo, strict + exactOptionalPropertyTypes + erasableSyntaxOnly):"
-node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail "tsgo"
-
-echo "oxlint (type-aware, the house configuration):"
+echo "oxlint (type-aware: one program type-checks the tree with the tsconfig flags and runs the house rules):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
 echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
@@ -79,7 +76,7 @@ echo "protocol names (no copy of a wire name outside src/protocol):"
 node bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
 
 echo "the linters bite (a seeded violation must fail them):"
-bash ci/verify-bite.sh && echo "  ok    tsgo and oxlint both reject the seed" || fail "a linter accepted the seeded violation"
+bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the seeded type error" || fail "a linter accepted the seeded violation"
 
 [ "$failures" -eq 0 ] && { echo "lint: clean"; exit 0; }
 echo "lint: $failures finding(s)"; exit 1
