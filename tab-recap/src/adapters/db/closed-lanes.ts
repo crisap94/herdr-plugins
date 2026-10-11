@@ -3,6 +3,7 @@ import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import { unreadableOf } from '#src/ports/unknowable.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -175,7 +176,7 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             const row = one(statements.byKey, identity.tab, identity.pane, identity.closedAt);
             return row === null ? { kind: 'absent' } : { kind: 'row', record: readOrThrow(parseClosedLaneRow(row, identity.tab)) };
         } catch (error) {
-            return unreadableOf(error);
+            return unreadableOf(failureCauseOf(error));
         }
     }
 
@@ -198,7 +199,7 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             const { off, cutoff } = windowOf(now, this.days);
             return { kind: 'listed', records: all(statements.listed, tab, off, cutoff).map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
         } catch (error) {
-            return unreadableOf(error);
+            return unreadableOf(failureCauseOf(error));
         }
     }
 

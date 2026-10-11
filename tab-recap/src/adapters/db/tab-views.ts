@@ -8,6 +8,7 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import type { LaneWeb, LiveLanes, LiveLanesRead, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { unreadableOf } from '#src/ports/unknowable.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { writeTx } from './connection.ts';
 import { BadRow, all, guarded, isRow, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
@@ -121,7 +122,7 @@ export class TabViewsRepository implements TabViews, LiveLanes {
         try {
             return { kind: 'read', lanes: all(this.live).map((row) => restoredOrThrow(parseRestoredRow(row))) };
         } catch (error) {
-            return unreadableOf(error);
+            return unreadableOf(failureCauseOf(error));
         }
     }
 

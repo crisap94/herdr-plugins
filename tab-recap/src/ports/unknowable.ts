@@ -1,4 +1,4 @@
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 
 export type Unknowable =
@@ -15,8 +15,8 @@ export function unknown(why: Unknowable): Unknown {
     return { kind: 'unknown', why };
 }
 
-export function unreadableOf(error: unknown): Unknown {
-    return unknown({ why: 'unreadable', detail: failureCauseOf(error) });
+export function unreadableOf(cause: FailureCause): Unknown {
+    return unknown({ why: 'unreadable', detail: cause });
 }
 
 export function isUnknown(result: { readonly kind: string }): result is Unknown {

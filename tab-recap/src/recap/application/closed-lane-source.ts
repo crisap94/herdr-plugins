@@ -6,6 +6,7 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import { isUnknown, unreadableOf } from '#src/ports/unknowable.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { HandoffLane } from './handoff-render.ts';
 import type { ClosedView } from './closed-view.ts';
@@ -65,7 +66,7 @@ export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSour
         const view = { closedAt: record.closedAt, agent: record.agent, cwd: record.cwd, run: deps.runs.runAt(task, record.closedAt) };
         return { kind: 'found', task, facts, view };
     } catch (error) {
-        return unreadableOf(error);
+        return unreadableOf(failureCauseOf(error));
     }
 }
 
