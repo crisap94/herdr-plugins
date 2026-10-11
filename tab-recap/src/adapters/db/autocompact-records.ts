@@ -1,14 +1,14 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
-import { unreachable } from '#src/recap/domain/autocompact.ts';
-import type { CoverageOutcome } from '#src/recap/domain/autocompact.ts';
+import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
+import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { all, BadRow, blob, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-const COLUMNS = 'id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, requested, asked_verdict, coverage_outcome, unchecked_reason, coverage_missing, coverage_ms, coverage_cost_micro_usd, compaction_id';
+const COLUMNS = 'id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, requested, asked_verdict, coverage_outcome, unchecked_reason, coverage_missing, coverage_ms, coverage_cost_micro_usd, compaction_id, lane_status';
 
 const numbers = (raw: string | null): Record<string, number> | null => {
     if (raw === null) return null;
@@ -50,6 +50,8 @@ function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['covera
     }
 }
 
+export const laneStatusOf = (row: Row): LaneStatusAtDecision | null => laneStatusAtDecision(maybeText(row, 'lane_status'));
+
 function decisionOf(row: Row): StoredDecision {
     const compaction = row['compaction_id'] === null ? null : typeIdOf('compaction', blob(row, 'compaction_id'));
     return {
@@ -59,7 +61,7 @@ function decisionOf(row: Row): StoredDecision {
         askedVerdict: maybeText(row, 'asked_verdict') as DecisionVerdict | null,
         answers: numbers(text(row, 'answers')) ?? {}, coverage: numbers(maybeText(row, 'coverage')), decider: maybeText(row, 'decider'),
         costUsd: whole(row, 'cost_micro_usd') / 1e6, tookMs: maybeWhole(row, 'took_ms'), why: maybeText(row, 'why'),
-        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms'), coverageCostUsd: costOf(row), compactionId: compaction,
+        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms'), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
     };
 }
 
@@ -84,7 +86,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
 
     constructor(db: DatabaseSync) {
         this.db = db;
-        this.insert = db.prepare('INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, asked_verdict) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        this.insert = db.prepare('INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, asked_verdict, lane_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');
         this.latest = db.prepare("SELECT id, gate FROM autocompact_decision WHERE tab_id = ? AND pane = ? AND verdict = 'compact' AND compaction_id IS NULL ORDER BY at DESC, id DESC LIMIT 1");
         this.cover = db.prepare("UPDATE autocompact_decision SET coverage = ?, coverage_outcome = ?, unchecked_reason = ?, coverage_missing = ?, coverage_ms = ?, coverage_cost_micro_usd = ?, verdict = CASE WHEN ? = 1 THEN 'wait' ELSE verdict END, gate = CASE WHEN ? = 1 THEN 'coverage' ELSE gate END, why = CASE WHEN ? IS NULL THEN why WHEN why IS NULL THEN ? ELSE why || '; ' || ? END WHERE id = ?");
@@ -105,7 +107,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     record(d: Decision): string {
         const id = ids.next();
         writeTx(this.db, () => {
-            this.insert.run(id, d.tab, d.pane, d.agent, d.at, d.mode, d.share, d.tokens, d.window, d.gate, d.verdict, JSON.stringify(d.answers), d.coverage === null ? null : JSON.stringify(d.coverage), d.decider, Math.round(d.costUsd * 1e6), d.tookMs, d.why, d.askedVerdict);
+            this.insert.run(id, d.tab, d.pane, d.agent, d.at, d.mode, d.share, d.tokens, d.window, d.gate, d.verdict, JSON.stringify(d.answers), d.coverage === null ? null : JSON.stringify(d.coverage), d.decider, Math.round(d.costUsd * 1e6), d.tookMs, d.why, d.askedVerdict, d.laneStatus);
             this.dropSkip.run(d.tab, d.pane);
         });
         return typeIdOf('decision', id);

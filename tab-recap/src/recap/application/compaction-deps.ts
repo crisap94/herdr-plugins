@@ -47,6 +47,7 @@ export interface CompactionDeps {
     now(): number;
     readonly webs: { of(pane: string): LaneWeb | null };
     lanes(tab: string): readonly Lane[];
+    listsPane(pane: string): boolean;
     focused(tab: string): Promise<string | null>;
     refresh: RecapRefresh;
     target(): CompactTarget;

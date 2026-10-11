@@ -10,6 +10,7 @@
 | Decider spend of the same decisions | ask 5 910 + coverage 651 micro-USD, of 80 376 over 157 linked automatic decisions (8 %) | `autocompact_decision.cost_micro_usd` |
 | When the lanes closed | all 15 while the writer ran; none between the first status check and the brief | stage times against the close |
 | Lane status at decision time | not stored today | neither record keeps it |
+| Board drop after a close | 10 closes on a scratch workspace: the `pane.closed` event reached a subscriber 58 to 226 ms (median 162 ms) after the close command was issued; applying it to the board with the fold took at most 0.2 ms; the pane was gone from the board after every one (10 of 10) | 2026-10-11 09:00 UTC, run with the plugin's `subscribe`, `decode` and `observe`; measured at a subscriber, not inside the live daemon's loop |
 
 The flow today (`src/recap/application/compaction.ts`): the decider answers in `Autocompact`; `Compaction.run` picks the lane
 from the board and calls `gated`, whose `gateOf` asks herdr for the agent's status (the first check); `Compaction.compact` writes
@@ -38,7 +39,7 @@ one predicate, "does the board still list this pane", at four points:
 4. before typing, next to the existing second status check.
 
 A failed predicate ends the compaction as D1 does. The predicate is a port on the board, not a herdr call, so it adds no load and
-no latency. How long the board takes to drop a pane after herdr closes it is UNMEASURED (task 6.1); until it is, the status checks
+no latency. The board drops a pane within about a quarter of a second of herdr closing it (the Context table, task 6.1); the status checks
 of `gated` stay and catch what the board has not seen yet.
 
 Why not re-check only before the brief (option A of the measurement): the gap between the first status check and the brief is

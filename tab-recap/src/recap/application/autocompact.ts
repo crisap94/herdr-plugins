@@ -9,7 +9,7 @@ import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { gateOf } from '#src/recap/domain/autocompact.ts';
+import { gateOf, laneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode, AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
@@ -223,7 +223,7 @@ export class Autocompact {
         const { judged, recordOnly, flight, atCeiling } = found;
         const made: Decision = {
             tab, pane, agent: String(lane.agent), at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
-            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null,
+            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: laneStatusAtDecision(lane.status),
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);

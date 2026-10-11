@@ -5,10 +5,12 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
 import { idOf } from '#src/adapters/db/typeid.ts';
 import { decode } from '#src/adapters/db/checked-fact-codec.ts';
+import { laneStatusOf } from '#src/adapters/db/autocompact-records.ts';
+import { listing } from '#src/recap/application/autocompact-listing.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
     tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: 1_000, mode: 'shadow', share: 61, tokens: 610_000, window: 1_000_000, gate: 'ask', verdict: 'compact',
-    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, ...over,
+    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, ...over,
 });
 
 function seeded(): Store {
@@ -170,4 +172,21 @@ test('the unchecked reason is set exactly when the outcome is unchecked', () => 
     amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: 'ship', why: null }] });
     const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', id))?.['reason'];
     assert.deepEqual([reasonOf(unchecked), reasonOf(passed), reasonOf(missed)], ['no-brief', null, null]);
+});
+
+test('the status a lane had at a decision round-trips; a decision that recorded none reads as null', () => {
+    const store = seeded();
+    for (const [at, laneStatus] of [[10, 'idle'], [20, 'done'], [30, 'working'], [40, null]] as const) store.autocompact.record(decision({ at, laneStatus }));
+    assert.deepEqual(store.autocompact.newest(4).map((each) => each.laneStatus), [null, 'working', 'done', 'idle']);
+});
+
+test('a decision that recorded no status lists as a dash', () => {
+    const store = seeded();
+    store.autocompact.record(decision({ at: 1_000, laneStatus: null }));
+    const line = listing(store.autocompact.newest(1), { since: 0, costUsd: 0 }, 1_001, 'UTC')[1] ?? '';
+    assert.match(line, /w1:p1\s+—\s+61 %/);
+});
+
+test('a stored lane status that is not one of the three reads as null', () => {
+    assert.deepEqual([laneStatusOf({ lane_status: 'done' }), laneStatusOf({ lane_status: 'bogus' }), laneStatusOf({ lane_status: null })], ['done', null, null]);
 });

@@ -34,7 +34,7 @@ export class HerdrAgents implements Agents {
                 ? { kind: 'agent', agent: fields['agent'], status: laneStatus(typeof fields['agent_status'] === 'string' ? fields['agent_status'] : null) }
                 : unknown({ why: 'unreadable', detail: `agent.get of ${pane} returned no agent` });
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return codeOf(error) === 'agent_not_found' ? unknown({ why: 'not-found', what: `agent ${pane}` }) : unknown({ why: 'unreachable', detail: detail(error) });
         }
     }
 

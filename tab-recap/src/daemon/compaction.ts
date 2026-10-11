@@ -14,8 +14,8 @@ import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
-import { lanesOf } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -61,6 +61,7 @@ export function wireCompaction(parts: {
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
         brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: () => Date.now(),
         lanes: (tab) => lanesOf(informer.current, tabId(tab)),
+        listsPane: (pane) => listsPane(informer.current, paneId(pane)),
         focused: async (tab) => {
             const layout = await fleet.layout(tabId(tab));
             return isUnknown(layout) ? null : layout.focused;

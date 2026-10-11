@@ -8,6 +8,35 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [2.5.0] — 2026-10-11
+
+#### Added
+
+- feat(tab-recap): in-flight readers for Codex and opencode, with a shadow run (!74)
+- feat(recap): add opt-in writer ledger pruning (!77)
+- feat(tab-recap): add opt-in job telemetry tags (!78)
+- feat(tab-recap): add an optional run window for turn-ended recaps (!79)
+- feat(tab-recap): register hermes with explicit capability limits (!80)
+- Hand a lane's task over to another lane with tab-recap handoff (!111)
+
+#### Changed
+
+- Add autocompact coverage gate (!76)
+- One typed token protocol for every exchange with another tool (!89)
+- docs(openspec): autocompact-ceiling-over-in-flight, compact full lanes that wait (!102)
+- docs(openspec): autocompact-brief-kept, a written brief is never thrown away (!104)
+- feat(tab-recap): a written brief below the ceiling is typed, not thrown away (!109)
+
+#### Fixed
+
+- fix(tab-recap): apply the size ladder only to Claude-sized windows (!71)
+- feat(tab-recap): the domain of a compaction that waits for the lane (!103)
+- feat(tab-recap): a full lane compacts past an awaited reply (!105)
+- feat(tab-recap): Claude's in-flight reader tells background work apart (!106)
+- fix(tab-recap): a compaction is queued behind the current turn instead of refused (!107)
+- fix(tab-recap): Claude queues a compaction behind its turn and keeps its background work out of the gate (!113)
+- fix(tab-recap): a ceiling decision keeps its flight detail beside the coverage reason (!116)
+
 ### [2.4.0] — 2026-10-10
 
 #### Added
@@ -221,7 +250,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.4.0...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.5.0...HEAD
+[2.5.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.4.0...tab-recap-v2.5.0
 [2.4.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.3.0...tab-recap-v2.4.0
 [2.3.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.2.1...tab-recap-v2.3.0
 [2.2.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.2.0...tab-recap-v2.2.1

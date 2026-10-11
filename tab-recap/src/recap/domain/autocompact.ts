@@ -142,6 +142,13 @@ export function jevOf(get: (key: string) => string | undefined): JevSettings {
     return { url: usable ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
 }
 
+export const LANE_STATUSES = ['idle', 'done', 'working'] as const;
+export type LaneStatusAtDecision = (typeof LANE_STATUSES)[number];
+
+export function laneStatusAtDecision(raw: string | null | undefined): LaneStatusAtDecision | null {
+    return LANE_STATUSES.find((status) => status === raw) ?? null;
+}
+
 export const SKIP_GATES = ['below-minimum', 'busy', 'in-flight', 'cooldown', 'unchanged', 'no-context', 'coverage-backoff'] as const;
 export type SkipGate = (typeof SKIP_GATES)[number];
 export type Gate = SkipGate | 'ceiling' | 'ask';
