@@ -1,4 +1,5 @@
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Forge } from './lane-repo.ts';
 
 export interface LaneWeb {
@@ -16,6 +17,7 @@ export interface TabLane {
     readonly lastPrompt?: string | null;
     readonly web?: LaneWeb | null;
     readonly context?: ContextUse | null;
+    readonly since?: Instant | null;
 }
 
 export interface TabView {

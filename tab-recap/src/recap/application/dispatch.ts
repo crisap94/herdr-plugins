@@ -95,6 +95,8 @@ export class Dispatch {
             case 'give-up':
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;
+            case 'lane-closed':
+                return;
             default: {
                 const exhaustive: never = intent;
                 this.deps.log(`unhandled intent ${String(exhaustive)}`);

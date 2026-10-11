@@ -1,5 +1,7 @@
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Shape, Visibility, VisibilityTarget } from './board.ts';
+import { closureOf, closuresBetween } from './closures.ts';
+import type { ClosedLane, RestoredLane } from './closures.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { sessionId } from './ids.ts';
@@ -38,7 +40,8 @@ export type Observation =
     | { readonly kind: 'requested'; readonly tab: TabId }
     | { readonly kind: 'switched'; readonly enabled: boolean }
     | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
-    | { readonly kind: 'hidden-restored'; readonly state: HiddenState };
+    | { readonly kind: 'hidden-restored'; readonly state: HiddenState }
+    | { readonly kind: 'restored'; readonly lanes: readonly RestoredLane[] };
 
 export interface Outcome {
     readonly board: Board;
@@ -68,22 +71,32 @@ function withoutColumnAt(board: Board, pane: string): Board {
     return columns.size === board.columns.size ? board : { ...board, columns };
 }
 
-function onDetected(held: Board, seen: SeenLane, policy: Policy): Step {
+function onDetected(held: Board, seen: SeenLane, now: Instant, policy: Policy): Step {
     const board = withoutColumnAt(held, seen.paneId);
     if (!wanted(seen, policy)) {
         return step(board);
     }
     const fresh = laneFrom(seen);
-    const lane = keepingSession(fresh, board.lanes.get(fresh.pane));
+    const prior = board.lanes.get(fresh.pane);
+    const lane = incarnating(keepingSession(fresh, prior), prior, now);
     const isNew = !board.lanes.has(lane.pane);
+    const closes = prior !== undefined && prior.agent !== lane.agent ? closedIntents([closureOf(prior, now)]) : [];
     const reads: Intent[] = isNew ? [{ kind: 'read-prompt', lane }] : [];
-    return step({ ...board, lanes: put(board.lanes, lane.pane, lane) }, [{ kind: 'publish', tab: lane.tab }, ...reads], isNew);
+    return step({ ...board, lanes: put(board.lanes, lane.pane, lane) }, [...closes, { kind: 'publish', tab: lane.tab }, ...reads], isNew);
+}
+
+function closedIntents(closures: readonly ClosedLane[]): readonly Intent[] {
+    return closures.map((closed) => ({ kind: 'lane-closed', closed }));
+}
+
+function incarnating(lane: Lane, prior: Pick<Lane, 'agent' | 'since'> | undefined, now: Instant): Lane {
+    return { ...lane, since: prior !== undefined && prior.agent === lane.agent ? prior.since : now };
 }
 
 function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Step {
     const lane = board.lanes.get(pane);
     if (lane !== undefined) {
-        return step({ ...board, lanes: without(board.lanes, pane) }, [{ kind: 'publish', tab: lane.tab }], true);
+        return step({ ...board, lanes: without(board.lanes, pane) }, [...closedIntents([closureOf(lane, now)]), { kind: 'publish', tab: lane.tab }], true);
     }
     const tab = tabOfColumn(board, pane);
     if (tab === null) {
@@ -154,7 +167,8 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     const lanes = new Map<PaneId, Lane>();
     for (const raw of seen.lanes.filter((lane) => wanted(lane, policy))) {
         const fresh = laneFrom(raw);
-        const lane = keepingSession(fresh, board.lanes.get(fresh.pane));
+        const prior = board.lanes.get(fresh.pane) ?? board.persisted?.find((lane) => lane.pane === fresh.pane);
+        const lane = incarnating(keepingSession(fresh, board.lanes.get(fresh.pane)), prior, now);
         lanes.set(lane.pane, lane);
     }
     const { columns, extras: found } = columnsAfter(board, seen);
@@ -170,12 +184,18 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     }
     const widths = new Map([...seen.widths].map(([tab, width]) => [tab as TabId, width]));
     const focused = seen.focusedTab === undefined || seen.focusedTab === null ? board.focused : (seen.focusedTab as TabId);
-    const next: Board = { ...board, lanes, columns, closing, opening, widths, focused, seeded: true };
+    const next: Board = { ...board, lanes, columns, closing, opening, widths, focused, seeded: true, persisted: null };
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
-    const published: Intent[] = tabsWithLanes(next).map((tab) => ({ kind: 'publish', tab }));
+    const closures = closuresBetween(board.lanes, lanes, board.persisted ?? [], now);
+    const publishedTabs = [...new Set([...tabsWithLanes(next), ...closures.map((closed) => closed.tab)])];
+    const published: Intent[] = publishedTabs.map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
     const closes: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
-    return step(next, [...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
+    return step(next, [...closedIntents(closures), ...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
+}
+
+function onRestored(board: Board, lanes: readonly RestoredLane[]): Step {
+    return step({ ...board, persisted: lanes });
 }
 
 function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
@@ -209,9 +229,11 @@ function onOperator(board: Board, observation: Operator): Step {
 function route(board: Board, observation: Observation, now: Instant, policy: Policy): Step {
     switch (observation.kind) {
         case 'detected':
-            return onDetected(board, observation.lane, policy);
+            return onDetected(board, observation.lane, now, policy);
         case 'closed':
             return onClosed(board, observation.pane, now, policy);
+        case 'restored':
+            return onRestored(board, observation.lanes);
         case 'status':
             return onStatus(board, observation.pane, observation.status);
         case 'session':

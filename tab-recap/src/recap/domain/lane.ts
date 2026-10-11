@@ -2,6 +2,7 @@ import { agentKind, paneId, sessionId, tabId, workspaceId } from './ids.ts';
 import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
+import type { Instant } from './time.ts';
 
 export interface SeenLane {
     readonly paneId: string;
@@ -23,6 +24,7 @@ export interface Lane {
     readonly session: SessionId | null;
     readonly cwd: string | null;
     readonly title: string | null;
+    readonly since: Instant | null;
 }
 
 function orNull(raw: string | null | undefined): string | null {
@@ -40,6 +42,7 @@ export function laneFrom(seen: SeenLane): Lane {
         session: session === null ? null : sessionId(session),
         cwd: orNull(seen.cwd),
         title: orNull(seen.title),
+        since: null,
     };
 }
 
