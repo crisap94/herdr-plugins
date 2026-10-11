@@ -48,7 +48,7 @@ const refused = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['
 const failed = (reason: Extract<HandoffOutcome, { readonly kind: 'failed' }>['reason']): HandoffOutcome => ({ kind: 'failed', reason });
 
 function outcomeOf(answer: HandoffAnswerRow): HandoffOutcome {
-    return handoffOutcomeOf(answer.outcome, answer.reason) ?? failed('internal-error');
+    return handoffOutcomeOf(answer.kind, answer.reason) ?? failed('internal-error');
 }
 
 async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pacing: Pacing, waitMs: number): Promise<HandoffAnswerRow | null> {

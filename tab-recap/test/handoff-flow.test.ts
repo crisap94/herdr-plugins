@@ -205,14 +205,14 @@ test('a working source is handed over: only the target must be idle', async () =
 test('a refresh that throws is logged once with its error name and the flow still delivers', async () => {
     const h = harness({ refreshThrows: true });
     assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
-    assert.deepEqual(h.logs, [`handoff refresh ${String(TAB)}: Error: refresh failed`]);
+    assert.deepEqual(h.logs, [`handoff refresh ${String(TAB)}: Error`]);
 });
 
 test('an internal error is logged once with the request id and the error name, and the outcome is internal-error', async () => {
     const h = harness({ renderThrows: true });
     const row = request();
     assert.deepEqual(await h.flow.run(row), { kind: 'failed', reason: 'internal-error' });
-    assert.deepEqual(h.logs, [`handoff ${row.id}: Error: render failed`]);
+    assert.deepEqual(h.logs, [`handoff ${row.id}: Error`]);
 });
 
 test('a run abandoned before it claims its lanes types nothing, claims nothing and is expired', async () => {

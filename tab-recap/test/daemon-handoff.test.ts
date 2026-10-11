@@ -5,7 +5,6 @@ import { silentMirror } from './fakes/handoff-mirror.ts';
 import type { HandoffRunnerDeps } from '#src/daemon/handoff.ts';
 import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
-import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
 import type { HandoffRun } from '#src/recap/application/handoff-flow.ts';
@@ -52,7 +51,7 @@ function runnerOf(
     over: Partial<HandoffRunnerDeps> = {},
 ): Runner {
     const asks = new MemoryAskLedger();
-    const answers = new MemoryHandoffAnswers(isStorablePair, () => NOW);
+    const answers = new MemoryHandoffAnswers(() => NOW);
     const probe: Probe = { flowRuns: [], asksSeenAtRun: [], logs: [], released: [] };
     const runner = new HandoffRunner({
         flow: { execute: async (request): Promise<HandoffRun> => { probe.flowRuns.push(String(request.id)); probe.asksSeenAtRun.push(asks.unfinished().length); return unrendered(await flowRun(request, probe)); } },
@@ -68,7 +67,7 @@ test('a taken row is recorded as a local handoff ask before the flow runs, then 
     const taken = row();
     await runner.take([taken]);
     assert.deepEqual(probe.asksSeenAtRun, [1]);
-    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'delivered', reason: null });
+    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, kind: 'delivered', reason: null });
     assert.deepEqual(asks.unfinished(), []);
 });
 
@@ -99,28 +98,28 @@ test('a row exactly at the take bound still runs', async () => {
     const { runner, answers, probe } = runnerOf(delivered);
     const edge = row({ at: NOW - HANDOFF_TAKE_MAX_AGE_MS });
     await runner.take([edge]);
-    assert.deepEqual([probe.flowRuns.length, answers.handoffAnswer(edge.id)?.outcome], [1, 'delivered']);
+    assert.deepEqual([probe.flowRuns.length, answers.handoffAnswer(edge.id)?.kind], [1, 'delivered']);
 });
 
 test('a refusal is stored with its storable reason and its ask is settled', async () => {
     const { runner, asks, answers } = runnerOf(async () => ({ kind: 'refused', reason: 'lane-busy' }));
     const taken = row();
     await runner.take([taken]);
-    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, answers.handoffAnswer(taken.id)?.reason, asks.unfinished()], ['refused', 'lane-busy', []]);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.kind, answers.handoffAnswer(taken.id)?.reason, asks.unfinished()], ['refused', 'lane-busy', []]);
 });
 
 test('a flow that rejects is answered failed internal-error and its ask is settled, so the row is never left open', async () => {
     const { runner, asks, answers } = runnerOf(async () => { throw new Error('boom'); });
     const taken = row();
     await runner.take([taken]);
-    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, answers.handoffAnswer(taken.id)?.reason, asks.unfinished()], ['failed', 'internal-error', []]);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.kind, answers.handoffAnswer(taken.id)?.reason, asks.unfinished()], ['failed', 'internal-error', []]);
 });
 
 test('an outcome that is not storable never reaches the answer repository and is answered internal-error', async () => {
     const { runner, answers } = runnerOf(async () => ({ kind: 'printed' }));
     const taken = row();
     await runner.take([taken]);
-    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, answers.handoffAnswer(taken.id)?.reason], ['failed', 'internal-error']);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.kind, answers.handoffAnswer(taken.id)?.reason], ['failed', 'internal-error']);
 });
 
 test('a restart answers an unfinished handoff ask failed interrupted, settles it, and never runs the flow again', async () => {
@@ -130,7 +129,7 @@ test('a restart answers an unfinished handoff ask failed interrupted, settles it
     const [ask] = asks.unfinished();
     assert.ok(ask !== undefined);
     runner.interrupted(ask);
-    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, answers.handoffAnswer(taken.id)?.reason, asks.unfinished(), probe.flowRuns.length], ['failed', 'interrupted', [], 1]);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.kind, answers.handoffAnswer(taken.id)?.reason, asks.unfinished(), probe.flowRuns.length], ['failed', 'interrupted', [], 1]);
 });
 
 test('on the SQLite store the restart finds the ask again (its id parses) and writes the interrupted answer in one transaction', async () => {
@@ -155,7 +154,7 @@ test('on the SQLite store a delivered handoff writes its answer and settles its 
     });
     const taken = row();
     await runner.take([taken]);
-    assert.deepEqual([store.handoffs.handoffAnswer(taken.id)?.outcome, store.asks.unfinished()], ['delivered', []]);
+    assert.deepEqual([store.handoffs.handoffAnswer(taken.id)?.kind, store.asks.unfinished()], ['delivered', []]);
 });
 
 test('the log line for a rendered handoff names its id, outcome, byte, omitted and withheld counts and no fact text', async () => {
@@ -176,8 +175,8 @@ test('a flow that throws is logged once with the request id and the error name, 
     const taken = row();
     const { runner, probe, answers } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => { throw new Error('boom'); } } });
     await runner.take([taken]);
-    assert.deepEqual(probe.logs, [`handoff ${taken.id}: Error: boom`, `handoff ${taken.id}: failed internal-error`]);
-    assert.deepEqual(answers.handoffAnswer(taken.id)?.outcome, 'failed');
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: Error`, `handoff ${taken.id}: failed internal-error`]);
+    assert.deepEqual(answers.handoffAnswer(taken.id)?.kind, 'failed');
 });
 
 test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', async (t) => {
@@ -187,7 +186,7 @@ test('a flow that never finishes before anything is typed is answered expired at
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     await running;
-    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'expired' });
+    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, kind: 'failed', reason: 'expired' });
     assert.deepEqual(probe.released, [String(taken.pane), String(taken.toPane)]);
     assert.deepEqual(probe.logs, [`handoff ${taken.id}: failed expired`]);
 });
@@ -199,21 +198,21 @@ test('a flow that never finishes after typing is answered unconfirmed at the bou
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     await running;
-    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'unconfirmed' });
+    assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, kind: 'failed', reason: 'unconfirmed' });
     assert.deepEqual(probe.released, []);
 });
 
 function flakyAnswers(failing: (id: HandoffId, times: number) => boolean): { readonly answers: HandoffAnswers; readonly inner: MemoryHandoffAnswers } {
-    const inner = new MemoryHandoffAnswers(isStorablePair, () => NOW);
+    const inner = new MemoryHandoffAnswers(() => NOW);
     const attempts = new Map<string, number>();
     const answers: HandoffAnswers = {
-        answerHandoff: (id, verdict): void => {
+        answerHandoff: (id, outcome): void => {
             const times = (attempts.get(String(id)) ?? 0) + 1;
             attempts.set(String(id), times);
             if (failing(id, times)) {
                 throw new Error('disk busy');
             }
-            inner.answerHandoff(id, verdict);
+            inner.answerHandoff(id, outcome);
         },
         handoffAnswer: (id) => inner.handoffAnswer(id),
         prune: (before) => inner.prune(before),
@@ -226,8 +225,8 @@ test('a failed answer write is retried once and the ask is settled with the real
     const { runner, asks, probe } = runnerOf(delivered, { answers });
     const taken = row();
     await runner.take([taken]);
-    assert.deepEqual([answers.handoffAnswer(taken.id)?.outcome, asks.unfinished()], ['delivered', []]);
-    assert.deepEqual(probe.logs, [`handoff ${taken.id}: answer write failed, retrying: Error: disk busy`, `handoff ${taken.id}: delivered`]);
+    assert.deepEqual([answers.handoffAnswer(taken.id)?.kind, asks.unfinished()], ['delivered', []]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: answer write failed, retrying: Error`, `handoff ${taken.id}: delivered`]);
 });
 
 test('when the retry also fails the ask is settled as settled, not interrupted, and the write is logged', async () => {
@@ -243,8 +242,8 @@ test('when the retry also fails the ask is settled as settled, not interrupted, 
     await runner.take([taken]);
     assert.deepEqual([answers.handoffAnswer(taken.id), asks.unfinished(), settled], [null, [], [{ kind: 'settled' }]]);
     assert.deepEqual(probe.logs, [
-        `handoff ${taken.id}: answer write failed, retrying: Error: disk busy`,
-        `handoff ${taken.id}: answer write failed again: Error: disk busy`,
+        `handoff ${taken.id}: answer write failed, retrying: Error`,
+        `handoff ${taken.id}: answer write failed again: Error`,
         `handoff ${taken.id}: ask settled without its answer`,
         `handoff ${taken.id}: delivered`,
     ]);
@@ -262,5 +261,5 @@ test('a restart sweep that fails on one ask logs it, leaves that ask open and se
     }
     assert.deepEqual([asks.unfinished().map((ask) => ask.ref), answers.handoffAnswer(healthy)?.reason], [[String(broken)], 'interrupted']);
     assert.equal(probe.logs.length, 1);
-    assert.match(probe.logs[0] ?? '', /^handoff ask [0-9a-f]+: restart sweep failed Error: disk busy$/);
+    assert.match(probe.logs[0] ?? '', /^handoff ask [0-9a-f]+: restart sweep failed Error$/);
 });
