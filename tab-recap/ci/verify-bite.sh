@@ -35,10 +35,14 @@ interface Seeded {
 }
 export const seeded: Seeded = { value: undefined };
 TS
-output="$(node_modules/.bin/oxlint --type-aware . 2>&1)"
+output="$(NO_COLOR=1 node_modules/.bin/oxlint --type-aware . 2>&1)"
 status=$?
+rejected=1
 [ "$status" -ne 0 ] \
     && grep -q 'zz-bite-rule-seed\.ts.*no-explicit-any' <<<"$output" \
     && grep -q 'zz-bite-type-seed\.ts.*TS2322' <<<"$output" \
     && grep -q 'zz-bite-syntax-seed\.ts.*TS1294' <<<"$output" \
-    && grep -q 'zz-bite-option-seed\.ts.*TS2375' <<<"$output"
+    && grep -q 'zz-bite-option-seed\.ts.*TS2375' <<<"$output" \
+    && rejected=0
+[ "$rejected" -eq 0 ] || { echo "verify-bite: oxlint exit $status; output follows" >&2; head -c 3000 <<<"$output" >&2; }
+[ "$rejected" -eq 0 ]
