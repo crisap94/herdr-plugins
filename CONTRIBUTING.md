@@ -180,7 +180,8 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    agree and the changelog has its link and a non-empty section that lists every merge request the
    release should (`ci/next-release.sh` run up to the release commit). A merge request that lands between
    the preparation and the landing of the release merge request is not in that section: `release:tag`
-   then refuses, names it and fails (as a warning, `allow_failure`, so `main` stays green); add its line
+   then refuses and names it (exit 1, a warning job, `allow_failure`, so `main` stays green; a lookup error
+   or a tag the forge refuses is exit 3 and fails the job); add its line
    to `CHANGELOG.md` (and raise the version if it calls for more) in a normal merge request and the next
    pipeline on `main` tags the release.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,

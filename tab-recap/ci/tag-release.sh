@@ -9,7 +9,8 @@
 # link reference, or no tag is made. Nothing to do is not an error. Needs the full history and the tags
 # (the job fetches them).
 # env: RELEASE_TOKEN (api) · CI_API_V4_URL · CI_PROJECT_ID · CI_COMMIT_SHA · PLUGIN_DIR · CHANGELOG · CURL
-# Exit: 0 tagged, or nothing to tag · 1 the tag could not be created · 3 could not look.
+# Exit: 0 tagged, or nothing to tag · 1 a guard refused the tag (the job only warns) · 3 could not look, or the forge
+#       refused the tag (the job fails).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${PLUGIN_DIR:-$HERE/..}"
@@ -74,7 +75,7 @@ code="$(api --request POST --data-urlencode "tag_name=$tag" --data-urlencode "re
     --data-urlencode "message=$plugin $version" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/tags")"
 if [ "$code" != "201" ]; then
     [ "$(exists)" = "200" ] && { echo "$tag was created meanwhile: nothing to tag"; exit 0; }
-    echo "tag-release: 1 — creating $tag answered HTTP $code (create it by hand at $commit)" >&2
-    exit 1
+    echo "tag-release: 3 — creating $tag answered HTTP $code (create it by hand at $commit)" >&2
+    exit 3
 fi
 echo "tagged $tag at $commit"

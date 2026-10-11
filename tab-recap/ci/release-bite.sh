@@ -190,6 +190,8 @@ expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_H
 full="$(node -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
 FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request on the second page of open merge requests" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed over a release merge request on the second page" >&2; wrong=$((wrong + 1)); }
+lookup_exit() { PUSH_URL="$scratch/no-such-remote.git" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1; echo $?; }
+[ "$(lookup_exit)" = "3" ] || { echo "bite: a remote that cannot be asked must end with exit 3 before any push" >&2; wrong=$((wrong + 1)); }
 FAKE_LIST='{"iid":7}' expect fail "an open merge request answer that is not a list" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request answer was not a list" >&2; wrong=$((wrong + 1)); }
 FAKE_LIST='[{"iid":9,"source_branch":"release/demo-v1.0.0","source_project_id":5,"target_project_id":1}]' expect pass "a merge request from a fork does not count as the release merge request" publish
@@ -229,6 +231,8 @@ expect pass "a version without a dated changelog section is not a release" undat
 expect fail "nothing is asked or created for it" test -s "$CURL_LOG"
 FAKE_TAG_CODE=500 expect fail "a tag lookup that does not answer" tagit
 FAKE_TAG_POST_CODE=500 expect fail "a tag the forge refuses" tagit
+tag_exit() { bash "$HERE/tag-release.sh" > /dev/null 2>&1; echo $?; }
+[ "$(FAKE_TAG_POST_CODE=500 tag_exit)" = "3" ] || { echo "bite: a tag the forge refuses must end with exit 3, not a warning" >&2; wrong=$((wrong + 1)); }
 git tag demo-v1.2.0
 expect fail "a version below the newest release" tagit
 git tag -d demo-v1.2.0 >/dev/null

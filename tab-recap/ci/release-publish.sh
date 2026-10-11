@@ -44,7 +44,8 @@ if [ -n "$open" ]; then
     exit 0
 fi
 
-seen="$(git ls-remote "$push_url" "refs/heads/$branch" | cut -f1)"
+seen="$(git ls-remote "$push_url" "refs/heads/$branch" | cut -f1)" \
+    || { echo "release-publish: 3 — NOT COVERED: could not ask the remote whether $branch exists" >&2; exit 3; }
 git push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
     || { echo "release-publish: 1 — could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 1; }
 

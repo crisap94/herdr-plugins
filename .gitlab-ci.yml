@@ -120,7 +120,8 @@ release:prepare:
 # dated changelog section and no tag, so create the annotated tag at this commit; the tag pipeline follows.
 release:tag:
   stage: release
-  allow_failure: true
+  allow_failure:
+    exit_codes: 1
   needs: [lint, test, "test:floor"]
   variables:
     GIT_DEPTH: "0"
