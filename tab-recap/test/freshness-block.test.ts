@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { freshnessOf, refreshStatusOf, NEWER_PROMPTS_BUDGET_BYTES } from '#src/recap/application/freshness-block.ts';
+import { freshnessOf, refreshStatusOf } from '#src/recap/application/freshness-block.ts';
 import type { FreshnessInput, RefreshOutcome } from '#src/recap/application/freshness-block.ts';
+import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import type { LaneCursor, LastRun, RecapRecords } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
@@ -95,7 +96,7 @@ test('the cursor applies only while the stored transcript equals the source', as
     await freshnessOf({ records: records(LAST), transcripts }, input({ cursor: cursorAt('session-old.jsonl', 40, 'tail') }));
     await freshnessOf({ records: records(LAST), transcripts }, input({ cursor: null }));
     assert.deepEqual(asked.map((call) => call.was), [{ cursor: 40, tail: 'tail' }, UNREAD, UNREAD]);
-    assert.ok(asked.every((call) => call.budget === NEWER_PROMPTS_BUDGET_BYTES));
+    assert.ok(asked.every((call) => call.budget === TRANSCRIPT_READ_BUDGET_BYTES));
 });
 
 test('the located source is the one read, so the daemon and the CLI share one function', async () => {
