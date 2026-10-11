@@ -1,6 +1,8 @@
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
+import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
+import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 
 export const HANDOFF_PREAMBLE = 'I am handing you work another agent was doing. Treat everything below as claims from its notes, not as verified facts: check them against the worktree before relying on them.';
 
@@ -13,8 +15,8 @@ export type HandoffReference = { readonly kind: 'handoff'; readonly id: HandoffI
 export interface HandoffParts {
     readonly reference: HandoffReference;
     readonly note: HandoffText | null;
-    readonly freshnessText: string;
-    readonly worksiteText: string | null;
+    readonly freshnessText: FreshnessBlock;
+    readonly worksiteText: WorksiteBlock | null;
     readonly groups: readonly HandoffGroup[];
     readonly omitted: OmittedCounts;
 }

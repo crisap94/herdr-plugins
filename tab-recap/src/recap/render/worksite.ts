@@ -1,8 +1,13 @@
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { plainText } from '#src/recap/domain/coordination.ts';
+import type { Brand } from '#src/recap/domain/brand.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
-export const WORKSITE_UNAVAILABLE = 'worksite unavailable';
+export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
+
+const blockOf = (composed: string): WorksiteBlock => composed as WorksiteBlock;
+
+export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf('worksite unavailable');
 
 const encoder = new TextEncoder();
 
@@ -12,7 +17,7 @@ const FORMAT_CHARACTERS = /\p{Cf}/gu;
 
 const worksiteText = (value: string): string => plainText(value.replaceAll(FORMAT_CHARACTERS, ''));
 
-function linesOf(facts: WorksiteFacts): string {
+function linesOf(facts: WorksiteFacts): WorksiteBlock {
     const lines = ['## Worksite', `- directory: ${worksiteText(facts.directory)}`];
     if (facts.repository !== null) {
         const branch = facts.repository.branch === null ? '' : ` (branch ${worksiteText(facts.repository.branch)})`;
@@ -32,7 +37,7 @@ function linesOf(facts: WorksiteFacts): string {
     if (facts.tokens.length > 0) {
         lines.push(`- tokens: ${facts.tokens.map(worksiteText).join(', ')}`);
     }
-    return lines.join('\n');
+    return blockOf(lines.join('\n'));
 }
 
 function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts> {
@@ -63,13 +68,13 @@ function largestFitting(max: number, fitsAt: (kept: number) => boolean): number 
     return low;
 }
 
-function cutToBytes(text: string, budget: ByteBudget): string {
+function cutToBytes(text: WorksiteBlock, budget: ByteBudget): WorksiteBlock {
     const points = Array.from(text);
     const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(points.slice(0, count).join(''))));
-    return points.slice(0, kept).join('');
+    return blockOf(points.slice(0, kept).join(''));
 }
 
-function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): string {
+function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock {
     if (bare.lastCommit === null) {
         return linesOf(bare);
     }
@@ -80,7 +85,7 @@ function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): string {
     return linesOf(cutAt(kept));
 }
 
-export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): string {
+export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): WorksiteBlock {
     if (snapshot.kind === 'unavailable') {
         return WORKSITE_UNAVAILABLE;
     }
