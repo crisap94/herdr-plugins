@@ -1,0 +1,150 @@
+{
+  "src/column/compact.ts": {
+    "parameter": 4,
+    "return": 1
+  },
+  "src/column/expanded-modal.ts": {
+    "parameter": 3,
+    "container": 2
+  },
+  "src/column/main.ts": {
+    "parameter": 7,
+    "return": 2,
+    "container": 3
+  },
+  "src/i18n/en.ts": {
+    "parameter": 87,
+    "return": 66,
+    "container": 1
+  },
+  "src/i18n/es.ts": {
+    "parameter": 87,
+    "return": 66,
+    "container": 1
+  },
+  "src/i18n/index.ts": {
+    "parameter": 3,
+    "return": 3
+  },
+  "src/i18n/messages.ts": {
+    "parameter": 88,
+    "return": 67,
+    "container": 13,
+    "property": 133
+  },
+  "src/i18n/relative.ts": {
+    "parameter": 3,
+    "return": 2
+  },
+  "src/i18n/sections.ts": {
+    "parameter": 1
+  },
+  "src/recap/render/compact.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/render/compaction-stage.ts": {
+    "parameter": 5,
+    "return": 4,
+    "property": 3
+  },
+  "src/recap/render/compare.ts": {
+    "parameter": 6,
+    "return": 4,
+    "container": 4,
+    "property": 2
+  },
+  "src/recap/render/eval.ts": {
+    "parameter": 9,
+    "return": 8,
+    "container": 7,
+    "property": 6
+  },
+  "src/recap/render/expanded-regions.ts": {
+    "parameter": 3,
+    "return": 8,
+    "container": 12,
+    "property": 6,
+    "assertion": 1
+  },
+  "src/recap/render/expanded.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 8,
+    "property": 4
+  },
+  "src/recap/render/freshness.ts": {
+    "return": 2,
+    "assertion": 1
+  },
+  "src/recap/render/handoff-budget.ts": {
+    "parameter": 1,
+    "return": 3,
+    "container": 4,
+    "property": 2
+  },
+  "src/recap/render/handoff-markdown.ts": {
+    "return": 4,
+    "container": 5,
+    "property": 1
+  },
+  "src/recap/render/hyperlink.ts": {
+    "parameter": 5,
+    "return": 4
+  },
+  "src/recap/render/linked.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/recap/render/links.ts": {
+    "parameter": 10,
+    "return": 9,
+    "property": 5
+  },
+  "src/recap/render/present.ts": {
+    "parameter": 24,
+    "return": 13,
+    "container": 17,
+    "property": 7
+  },
+  "src/recap/render/session-lines.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 3,
+    "property": 6
+  },
+  "src/recap/render/setup.ts": {
+    "parameter": 18,
+    "return": 34,
+    "container": 26,
+    "assertion": 1
+  },
+  "src/recap/render/timeline-breaks.ts": {
+    "parameter": 7,
+    "return": 4
+  },
+  "src/recap/render/timeline.ts": {
+    "parameter": 9,
+    "return": 5,
+    "container": 2,
+    "property": 3
+  },
+  "src/recap/render/utc-minute.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/recap/render/worksite.ts": {
+    "parameter": 7,
+    "return": 5,
+    "container": 1,
+    "assertion": 1
+  },
+  "src/recap/render/wrap.ts": {
+    "parameter": 17,
+    "return": 8,
+    "container": 4,
+    "property": 1,
+    "assertion": 2
+  }
+}

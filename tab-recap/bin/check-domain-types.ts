@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { err, type Result } from '#src/protocol/result.ts';
 import { BRAND_FILE } from './domain-exceptions.ts';
 import { categoryIn, type Finding } from './domain-findings.ts';
+import { modeOf } from './domain-ratchet.ts';
 import { printReport, projectOf, settle, type Report } from './domain-report.ts';
 
 const PARSER_NAME = /^parse([A-Z]\w*)$/;
@@ -194,7 +195,7 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
         const place = placeOf(scan, parameter, { owner, parameter: name, category: 'parameter', site: `parameter ${name}` });
         inspect(scan, frameOf(place, unknownParameter), scan.checker.getTypeAtLocation(parameter), false);
     });
-    const noReturn = ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || (node.type !== undefined && ts.isTypePredicateNode(node.type));
+    const noReturn = ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || (node.type !== undefined && ts.isTypePredicateNode(node.type)) || (node.type === undefined && isLibraryContext(scan, node));
     const signature = noReturn ? undefined : scan.checker.getSignatureFromDeclaration(node);
     if (signature === undefined) {
         return;
@@ -279,7 +280,16 @@ const main = (args: readonly string[]): number => {
         console.error(`domain types: 3 — NOT COVERED: ${result.error}`);
         return 3;
     }
-    return printReport(result.value, args.includes('--json'));
+    const mode = modeOf(root, args, result.value);
+    if (mode.kind === 'err') {
+        console.error(`domain types: 3 — NOT COVERED: ${mode.error}`);
+        return 3;
+    }
+    if (mode.value.kind === 'written') {
+        console.log(`domain types: wrote ${mode.value.message}`);
+        return 0;
+    }
+    return printReport(result.value, args.includes('--json'), mode.value.kind === 'ratchet' ? mode.value.problems : null);
 };
 
 if (import.meta.main) {

@@ -76,3 +76,16 @@ test('findings sort by file, then line, then category, then site, with plain com
         ['src/domain/value.ts', 2, 'parameter value'],
     ]);
 });
+
+test('the brand exception covers the one cast inside the brand function of brand.ts and no other assertion', () => {
+    const brand: Entry = { class: 'brand', file: 'src/recap/domain/brand.ts', function: 'brand', parameter: null, reason: 'the one brand function casts its carrier' };
+    const cast = finding({ file: 'src/recap/domain/brand.ts', category: 'assertion', owner: 'brand', parameter: null, site: 'type assertion' });
+    const stray = finding({ file: 'src/recap/domain/brand.ts', category: 'assertion', owner: 'other', parameter: null, site: 'type assertion' });
+    assert.deepEqual(applyEntries([cast, stray], [brand], []), { findings: [stray], stale: [] });
+});
+
+test('a callback exception never covers an assertion', () => {
+    const entry: Entry = { class: 'callback', file: 'src/domain/value.ts', function: 'echo', parameter: null, reason: 'a Node callback' };
+    const cast = finding({ category: 'assertion', parameter: null, site: 'type assertion' });
+    assert.deepEqual(applyEntries([cast], [entry], []).findings, [cast]);
+});

@@ -22,7 +22,7 @@ Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3
 Run both from the plugin directory before you send anything:
 
 ```bash
-bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, tsgo typecheck, oxlint
+bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, tsgo typecheck, oxlint
 bash ci/test.sh      # node --test
 ```
 
@@ -81,6 +81,32 @@ would like to read in the notes ("Hide or show a tab's column with a key").
 - **Use the vocabulary.** A word means one thing; banned synonyms fail lint. See
   [`tab-recap/CONTEXT.md`](tab-recap/CONTEXT.md), and add new terms there first.
 - **Tests with the change.** Domain decisions are tested as plain folds, without fakes or timers.
+
+## Domain types in signatures
+
+Every parameter, return and property in `tab-recap/src/` is a domain type: a `Brand` of a primitive, a named value object or a
+closed union of literals. Run the check from the plugin directory:
+
+```bash
+node bin/check-domain-types.ts --baseline ci/domain-types-baseline   # what lint runs
+node bin/check-domain-types.ts --json                                # every finding, by file and category
+```
+
+- **Read a `not supported:` line.** It names the file, line, function and the parameter, return or property, says what the type
+  resolves to (`string`, an array of them, an anonymous object, a hand-rolled brand) and asks for a value object or domain type.
+- **Raw input is `unknown`, parsed once.** A parser is `parse<Name>(input: unknown): Result<Name, E>`, exported from the file that
+  declares `<Name>`; a type guard lives in the same file. `unknown` anywhere else fails. `brand()` is called only by the parser of
+  the value it brands, and no other file casts to a brand.
+- **Exceptions are per symbol, never per file or folder.** `ci/domain-types-exceptions/<lane>.json` lists a file, a function and a
+  parameter or return with a reason, for one of three classes: a Node or third-party callback that forces a primitive, a released
+  migration (named by file, derived from the latest `tab-recap-v*` tag), and the one brand function. An entry that no finding
+  hits fails.
+- **The ratchet.** While the tree is converted, `ci/domain-types-baseline/<lane>.json` holds one count per category per file. A count
+  above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
+  and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
+- **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
+  its files, its baseline, its exception file and its own `legacy.ts` (the old export other lanes still call, counted under
+  `legacy` until the last caller moves). A new file starts at zero findings.
 
 ## Changing the database schema
 

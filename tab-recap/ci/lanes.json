@@ -821,6 +821,7 @@
       "test/db/fixtures/schema-v1.sql",
       "test/db/fixtures/schema-v2.sql",
       "test/db/schema.test.ts",
+      "test/domain-baseline.test.ts",
       "test/fakes/ask-ledger.ts",
       "test/fakes/compaction-fleet.ts",
       "test/fakes/curated-facts.ts",

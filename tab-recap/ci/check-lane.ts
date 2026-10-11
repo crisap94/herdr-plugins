@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { loadLanes } from '../bin/lane-map.ts';
 
 const PREFIX = 'tab-recap/';
 
@@ -8,12 +8,6 @@ const lane = process.argv[2];
 if (lane === undefined) {
     process.stderr.write('check-lane: 3 — NOT COVERED: usage: node ci/check-lane.ts <lane>\n');
     process.exit(3);
-}
-
-function lanesFile(): Readonly<Record<string, readonly string[]>> {
-    const parsed: unknown = JSON.parse(readFileSync(new URL('./lanes.json', import.meta.url), 'utf8'));
-    if (typeof parsed !== 'object' || parsed === null || !('lanes' in parsed) || typeof parsed.lanes !== 'object' || parsed.lanes === null) return {};
-    return Object.fromEntries(Object.entries(parsed.lanes).map(([name, files]: [string, unknown]) => [name, Array.isArray(files) ? files.filter((file): file is string => typeof file === 'string') : []]));
 }
 
 function changedFiles(): readonly string[] {
@@ -24,7 +18,12 @@ function changedFiles(): readonly string[] {
     return execFileSync('git', ['diff', '--name-only', `${mergeBase}...HEAD`], { encoding: 'utf8' }).split('\n').filter((line) => line !== '');
 }
 
-const lanes = lanesFile();
+const loaded = loadLanes(new URL('./lanes.json', import.meta.url).pathname);
+if (loaded.kind === 'err') {
+    process.stderr.write(`check-lane: 3 — NOT COVERED: ${loaded.error}\n`);
+    process.exit(3);
+}
+const lanes = loaded.value;
 const own = lanes[lane];
 if (own === undefined) {
     process.stderr.write(`check-lane: 3 — NOT COVERED: no lane named ${lane} in ci/lanes.json\n`);

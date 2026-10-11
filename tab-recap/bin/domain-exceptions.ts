@@ -116,7 +116,8 @@ const matches = (entry: Entry, released: readonly string[], finding: Finding): b
     if (entry.class === 'brand' && entry.file !== BRAND_FILE) {
         return false;
     }
-    return (finding.category === 'parameter' || finding.category === 'return') &&
+    const castInBrand = entry.class === 'brand' && finding.category === 'assertion';
+    return (finding.category === 'parameter' || finding.category === 'return' || castInBrand) &&
         entry.function === finding.owner &&
         entry.parameter === finding.parameter;
 };

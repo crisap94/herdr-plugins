@@ -62,6 +62,18 @@ lane-scope:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" node ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
 
+# The domain-type ratchet only goes down: against the target branch no baseline entry rises and none is new.
+domain-baseline:
+  extends: .tab-recap
+  stage: check
+  variables:
+    GIT_DEPTH: "0"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - BASELINE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bash ci/check-domain-baseline.sh
+
 # Only the atalaya branch is held to the allowlist; main never needs it.
 atalaya-branch-guard:
   stage: guard

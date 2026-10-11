@@ -40,5 +40,14 @@ else
     echo "  ok    the module-count guard bites when the cruise sees one .ts module fewer"
 fi
 
+NODE_OPTIONS="--require $HERE/ci/probes/depcruise-hide-typescript.cjs" "$DC" --config "$CFG" --output-type json src bin > "$work/hidden.json" 2>"$work/hidden.err"
+if [ ! -s "$work/hidden.json" ]; then
+    echo "  ok    the module-count guard bites when the transpiler cannot be loaded (the cruise failed outright)"
+elif node "$VERDICT" tree "$work/hidden.json" "$expected" > /dev/null 2>&1; then
+    fail "the module-count guard does not bite: the cruise passed with typescript hidden"
+else
+    echo "  ok    the module-count guard bites when the transpiler cannot be loaded"
+fi
+
 [ "$failures" -eq 0 ] && { echo "graph: clean"; exit 0; }
 echo "graph: $failures finding(s)"; exit 1

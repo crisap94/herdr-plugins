@@ -66,6 +66,9 @@ node ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.j
 echo "domain types (the signature check fails its bad probes and passes its good ones):"
 bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
 
+echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
+node bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run node bin/check-domain-types.ts --json and lower or fix"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 

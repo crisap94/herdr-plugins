@@ -1,0 +1,374 @@
+{
+  "src/adapters/atomic-file.ts": {
+    "parameter": 2
+  },
+  "src/adapters/claude-context.ts": {
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/claude-harness.ts": {
+    "parameter": 5,
+    "return": 2,
+    "container": 1,
+    "property": 4,
+    "assertion": 1
+  },
+  "src/adapters/claude-in-flight.ts": {
+    "parameter": 11,
+    "return": 9,
+    "container": 21,
+    "property": 6
+  },
+  "src/adapters/claude-prompt.ts": {
+    "parameter": 1,
+    "assertion": 1
+  },
+  "src/adapters/claude-rows.ts": {
+    "parameter": 2,
+    "return": 3,
+    "container": 9,
+    "property": 3
+  },
+  "src/adapters/claude-tool-calls.ts": {
+    "parameter": 1,
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/claude-transcripts.ts": {
+    "parameter": 15,
+    "container": 2,
+    "property": 4
+  },
+  "src/adapters/codex-context.ts": {
+    "container": 1
+  },
+  "src/adapters/codex-harness.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 1,
+    "property": 2
+  },
+  "src/adapters/codex-in-flight.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 12,
+    "property": 2
+  },
+  "src/adapters/codex-marks.ts": {
+    "return": 2,
+    "container": 3
+  },
+  "src/adapters/codex-tool-calls.ts": {
+    "parameter": 6,
+    "return": 1,
+    "container": 3,
+    "assertion": 1
+  },
+  "src/adapters/codex-transcripts.ts": {
+    "parameter": 17,
+    "return": 3,
+    "container": 6,
+    "property": 8
+  },
+  "src/adapters/column-panes.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 8
+  },
+  "src/adapters/compaction-plan-registry.ts": {
+    "parameter": 4,
+    "return": 2
+  },
+  "src/adapters/config-file.ts": {
+    "parameter": 2,
+    "container": 2
+  },
+  "src/adapters/config-paths-windows.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/config-paths-xdg.ts": {
+    "parameter": 1
+  },
+  "src/adapters/config-paths.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/context-values.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 2
+  },
+  "src/adapters/context-window.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 3
+  },
+  "src/adapters/custom-harness.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 2,
+    "property": 2
+  },
+  "src/adapters/experiment-arms.ts": {
+    "parameter": 8,
+    "return": 2,
+    "container": 1
+  },
+  "src/adapters/experiment-data.ts": {
+    "parameter": 2,
+    "assertion": 2
+  },
+  "src/adapters/experiment-files.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 3
+  },
+  "src/adapters/experiment-io.ts": {
+    "parameter": 5,
+    "return": 1,
+    "container": 2,
+    "assertion": 1
+  },
+  "src/adapters/experiment-labeller.ts": {
+    "parameter": 12,
+    "return": 1,
+    "container": 5,
+    "property": 3
+  },
+  "src/adapters/experiment-point.ts": {
+    "parameter": 6,
+    "return": 2,
+    "container": 1,
+    "property": 10
+  },
+  "src/adapters/experiment-store.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 5,
+    "property": 9,
+    "assertion": 1
+  },
+  "src/adapters/git-lane-repo.ts": {
+    "parameter": 4
+  },
+  "src/adapters/git-porcelain.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 1
+  },
+  "src/adapters/git-worksite.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 2,
+    "property": 1
+  },
+  "src/adapters/glow.ts": {
+    "parameter": 5,
+    "return": 1,
+    "container": 2
+  },
+  "src/adapters/handoff-plan-registry.ts": {
+    "parameter": 3
+  },
+  "src/adapters/harness-brief.ts": {
+    "parameter": 2,
+    "container": 1
+  },
+  "src/adapters/harness-curator.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/harness-decider.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 6,
+    "assertion": 1
+  },
+  "src/adapters/harness-enumerator.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/harness-judge.ts": {
+    "parameter": 1,
+    "container": 2
+  },
+  "src/adapters/herdr-agents.ts": {
+    "parameter": 14,
+    "return": 2,
+    "container": 4,
+    "property": 5,
+    "assertion": 2
+  },
+  "src/adapters/herdr-fleet.ts": {
+    "parameter": 21,
+    "return": 1,
+    "container": 11,
+    "property": 1,
+    "assertion": 6
+  },
+  "src/adapters/herdr-json.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 9,
+    "assertion": 1
+  },
+  "src/adapters/hermes-harness.ts": {
+    "parameter": 6,
+    "return": 2,
+    "container": 1,
+    "property": 4,
+    "assertion": 1
+  },
+  "src/adapters/host-check.ts": {
+    "parameter": 4,
+    "return": 2,
+    "property": 2
+  },
+  "src/adapters/jev-decider.ts": {
+    "parameter": 6,
+    "return": 3,
+    "container": 3,
+    "property": 5,
+    "assertion": 1
+  },
+  "src/adapters/jev-key.ts": {
+    "parameter": 4,
+    "return": 4
+  },
+  "src/adapters/jsonl.ts": {
+    "parameter": 16,
+    "return": 6,
+    "container": 8,
+    "property": 3,
+    "assertion": 2
+  },
+  "src/adapters/judge-instructions.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 4
+  },
+  "src/adapters/model-catalogue.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 3
+  },
+  "src/adapters/opencode-context.ts": {
+    "container": 1
+  },
+  "src/adapters/opencode-harness.ts": {
+    "parameter": 12,
+    "return": 1,
+    "container": 4,
+    "property": 7
+  },
+  "src/adapters/opencode-in-flight.ts": {
+    "parameter": 2,
+    "assertion": 2
+  },
+  "src/adapters/opencode-parts.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 5,
+    "property": 3,
+    "assertion": 2
+  },
+  "src/adapters/opencode-tool-calls.ts": {
+    "parameter": 1,
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/opencode-transcripts.ts": {
+    "parameter": 14,
+    "return": 1,
+    "container": 1,
+    "property": 2,
+    "assertion": 8
+  },
+  "src/adapters/path-harnesses.ts": {
+    "parameter": 2,
+    "return": 1,
+    "container": 1
+  },
+  "src/adapters/pidfile.ts": {
+    "parameter": 6,
+    "return": 9,
+    "property": 1
+  },
+  "src/adapters/plugin-version.ts": {
+    "parameter": 5,
+    "return": 3
+  },
+  "src/adapters/process-core.ts": {
+    "parameter": 6,
+    "container": 1,
+    "property": 2
+  },
+  "src/adapters/process-posix.ts": {
+    "parameter": 3,
+    "container": 1
+  },
+  "src/adapters/process-windows.ts": {
+    "parameter": 2,
+    "container": 1
+  },
+  "src/adapters/process.ts": {
+    "parameter": 2,
+    "return": 3,
+    "container": 2
+  },
+  "src/adapters/recap-instructions.ts": {
+    "parameter": 3,
+    "return": 4,
+    "container": 1,
+    "property": 1
+  },
+  "src/adapters/recap-prompt.ts": {
+    "parameter": 4,
+    "return": 5
+  },
+  "src/adapters/remote-web.ts": {
+    "parameter": 6
+  },
+  "src/adapters/rubric.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 3
+  },
+  "src/adapters/screen-transcripts.ts": {
+    "parameter": 5,
+    "return": 3
+  },
+  "src/adapters/session-registry.ts": {
+    "parameter": 2
+  },
+  "src/adapters/terminal-style.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/adapters/token-refusal.ts": {
+    "container": 2
+  },
+  "src/adapters/tool-calls.ts": {
+    "parameter": 13,
+    "return": 8,
+    "container": 8,
+    "property": 2
+  },
+  "src/adapters/transcript-events.ts": {
+    "parameter": 5,
+    "return": 1
+  },
+  "src/adapters/transcript-in-flight.ts": {
+    "return": 5
+  },
+  "src/adapters/transcript-registry.ts": {
+    "parameter": 6,
+    "return": 2,
+    "container": 1
+  },
+  "src/adapters/transcript-slice.ts": {
+    "parameter": 6,
+    "container": 2
+  }
+}

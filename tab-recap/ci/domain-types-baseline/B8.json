@@ -1,0 +1,89 @@
+{
+  "src/experiment/coverage.ts": {
+    "container": 1
+  },
+  "src/experiment/cross-check.ts": {
+    "parameter": 1
+  },
+  "src/experiment/hindsight.ts": {
+    "parameter": 2,
+    "return": 1,
+    "container": 1,
+    "property": 3
+  },
+  "src/experiment/kappa-report.ts": {
+    "parameter": 1,
+    "container": 2,
+    "property": 5
+  },
+  "src/experiment/label-prompt.ts": {
+    "parameter": 6,
+    "return": 3,
+    "container": 10,
+    "property": 2,
+    "assertion": 3
+  },
+  "src/experiment/outcomes.ts": {
+    "parameter": 1,
+    "container": 2,
+    "property": 14,
+    "assertion": 1
+  },
+  "src/experiment/pool.ts": {
+    "parameter": 8,
+    "return": 1,
+    "property": 2,
+    "assertion": 1
+  },
+  "src/experiment/read-paths.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 4
+  },
+  "src/experiment/report-code.ts": {
+    "parameter": 1,
+    "return": 2,
+    "property": 4
+  },
+  "src/experiment/report-metrics.ts": {
+    "parameter": 6,
+    "return": 11,
+    "container": 13,
+    "property": 21
+  },
+  "src/experiment/report-outcome.ts": {
+    "property": 7
+  },
+  "src/experiment/report-render.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 3
+  },
+  "src/experiment/report-rule.ts": {
+    "parameter": 1,
+    "return": 1,
+    "property": 8
+  },
+  "src/experiment/seeded.ts": {
+    "parameter": 1,
+    "return": 3,
+    "assertion": 2
+  },
+  "src/experiment/stats.ts": {
+    "parameter": 6,
+    "return": 9,
+    "container": 8,
+    "property": 1
+  },
+  "src/experiment/stratify.ts": {
+    "parameter": 1,
+    "return": 3,
+    "container": 2,
+    "property": 9,
+    "assertion": 1
+  },
+  "src/experiment/verbatim.ts": {
+    "parameter": 6,
+    "container": 2
+  }
+}

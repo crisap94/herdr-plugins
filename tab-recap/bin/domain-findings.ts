@@ -1,4 +1,8 @@
-export type Category = 'parameter' | 'return' | 'container' | 'property' | 'assertion' | 'legacy';
+export const CATEGORIES = ['parameter', 'return', 'container', 'property', 'assertion', 'legacy'] as const;
+
+export type Category = typeof CATEGORIES[number];
+
+export type Counts = Readonly<Record<string, Readonly<Partial<Record<Category, number>>>>>;
 
 export interface Finding {
     readonly file: string;

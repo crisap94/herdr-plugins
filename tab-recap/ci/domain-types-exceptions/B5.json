@@ -1,0 +1,52 @@
+[
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/001-views.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/003-request.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/004-compaction.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/006-ledger.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/007-request.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/008-boundary-link.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/009-anchor.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/010-autocompact.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/012-herdr-events.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/migration.ts",
+    "reason": "released in tab-recap-v2.4.0 and frozen by ci/check-migrations.sh"
+  }
+]
