@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/claude-transcripts.ts';
+import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/claude-in-flight.ts';
 
 const TAIL = 512 * 1024;
 const MB = 1024 * 1024;
@@ -85,4 +86,17 @@ test('the kept unknown answers are capped at KEPT_UNKNOWN_MAX: the oldest is for
     assert.deepEqual(await reader.inFlight.read(oldest, TAIL), { kind: 'in-flight', count: 0, background: [] }, 'forgotten: the same size is read again');
     writeFileSync(newest, '{"a":"b"}\n');
     assert.equal((await reader.inFlight.read(newest, TAIL)).kind, 'unknown', 'kept: the same size is not read again');
+});
+
+test('the reader split is CLAUDE_SPLIT, and its result is the one claudeInFlight gives under that split: a live background shell is foreground, not a listed item', async () => {
+    const lines = [launch('t1'), started('t1', 'b1')];
+    const path = write('split.jsonl', lines);
+    const reader = new ClaudeTranscripts(dir);
+    assert.equal(reader.inFlight.split, CLAUDE_SPLIT);
+    assert.deepEqual(claudeInFlight(lines, false, CLAUDE_SPLIT), { kind: 'in-flight', count: 1, background: [] });
+    assert.deepEqual(await reader.inFlight.read(path, TAIL), claudeInFlight(lines, false, CLAUDE_SPLIT));
+});
+
+test('the same tail under separates lists the live shell as a background item, with its tool for a label without a description', () => {
+    assert.deepEqual(claudeInFlight([launch('t1'), started('t1', 'b1')], false, { kind: 'separates' }), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
 });
