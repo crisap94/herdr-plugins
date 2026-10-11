@@ -95,7 +95,7 @@ export class Compaction {
     }
 
     private claimed(lane: Lane, request: CompactRequest): boolean {
-        if (this.deps.claims.claim(String(lane.pane))) {
+        if (this.deps.claims.claim(String(lane.pane), 'compaction')) {
             return true;
         }
         this.joinRunning(lane, request);

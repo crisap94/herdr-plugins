@@ -6,7 +6,7 @@ import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import { unsupported } from '#src/recap/domain/compaction-plan.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -35,7 +35,7 @@ const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'g
 
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
@@ -60,7 +60,7 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new CompactionClaims(), refreshFails: false };
+    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new LaneClaims(), refreshFails: false };
 }
 
 interface Briefing { readonly documents: string[]; readonly answer: string | null; readonly lastBreak?: number; readonly covered?: boolean }

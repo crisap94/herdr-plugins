@@ -17,7 +17,7 @@ import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { dispatchFor } from './dispatch-parts.ts';
@@ -152,7 +152,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts, readPaneSession);
-    const claims = new CompactionClaims();
+    const claims = new LaneClaims();
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({

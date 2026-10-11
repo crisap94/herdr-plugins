@@ -4,7 +4,7 @@ import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
-import type { CompactionClaims } from './compaction-claims.ts';
+import type { LaneClaims } from './lane-claims.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -52,7 +52,7 @@ export interface AutocompactDeps {
     readonly decisions: Pick<AutocompactRecords, 'record' | 'skip' | 'markRequested' | 'pruneSkips' | 'lastDecisionAt' | 'lastDecision' | 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
     readonly startedAt: number;
     readonly requests: Pick<Requests, 'requestCompact'>;
-    readonly claims: Pick<CompactionClaims, 'has'>;
+    readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
     hasRecap(tab: string): boolean;
     refresh(tab: string, lanes: readonly Lane[]): Promise<void>;

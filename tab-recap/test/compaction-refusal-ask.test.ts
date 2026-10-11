@@ -4,7 +4,7 @@ import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
@@ -68,7 +68,7 @@ function world(states: readonly AgentState[], answerOn: boolean): World {
         decisions: null,
         answer: (id, pane, stage): void => { if (answerOn) { handler.answer(id, pane, stage); } },
         asks,
-        claims: new CompactionClaims(),
+        claims: new LaneClaims(),
         recent: () => Promise.resolve([]),
         marks: () => Promise.resolve([]),
         pause: () => Promise.resolve(),

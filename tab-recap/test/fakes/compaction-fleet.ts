@@ -2,7 +2,7 @@ import { en } from '#src/i18n/en.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -31,7 +31,7 @@ export interface Fleet {
     readonly settledAfter: string[];
     readonly laneEvents: string[];
     readonly answered: string[];
-    readonly claims: CompactionClaims;
+    readonly claims: LaneClaims;
     refreshFails: boolean;
     readonly pauses: number[];
 }
@@ -61,7 +61,7 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], answered: [], claims: new CompactionClaims(), refreshFails: false, pauses: [] };
+    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], answered: [], claims: new LaneClaims(), refreshFails: false, pauses: [] };
 }
 
 export const NOW = Date.parse('2026-10-07T10:00:00Z');

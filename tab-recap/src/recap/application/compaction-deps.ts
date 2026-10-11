@@ -14,7 +14,7 @@ import type { Written } from './compaction-brief.ts';
 import type { Coverage, CoverageFact } from './brief-coverage.ts';
 import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
-import type { CompactionClaims } from './compaction-claims.ts';
+import type { LaneClaims } from './lane-claims.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
@@ -37,7 +37,7 @@ export interface CompactionDeps {
     readonly asks?: Pick<AskLedger, 'attach'>;
     readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events?: LaneEvents;
-    readonly claims: CompactionClaims;
+    readonly claims: LaneClaims;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: number): Promise<void>;

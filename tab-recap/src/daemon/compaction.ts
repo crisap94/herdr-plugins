@@ -11,7 +11,7 @@ import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
-import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
@@ -51,7 +51,7 @@ export function wireCompaction(parts: {
     readonly asks: AskLedger;
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
-    readonly claims: CompactionClaims;
+    readonly claims: LaneClaims;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;

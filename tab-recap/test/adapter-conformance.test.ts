@@ -19,7 +19,7 @@ import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { compactable, targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -167,7 +167,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: BackendId
         recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider, events: { lane: () => undefined, inWorkspace: () => undefined },
-        claims: new CompactionClaims(), log: () => undefined,
+        claims: new LaneClaims(), log: () => undefined,
     });
     await service.consider(placed);
     const [skip] = store.autocompact.skips();

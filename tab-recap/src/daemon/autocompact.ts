@@ -2,7 +2,7 @@ import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -37,7 +37,7 @@ export function wireAutocompact(parts: {
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
-    readonly claims: CompactionClaims;
+    readonly claims: LaneClaims;
     log(line: string): void;
 }): Autocompact {
     const { store } = parts;
