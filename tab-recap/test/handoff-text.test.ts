@@ -24,7 +24,7 @@ import { fact } from './fakes/fact-at.ts';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 
-const ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ab');
+const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const TASK: TaskId = { tab: 'w1:t1', key: 't1' };
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
@@ -302,7 +302,7 @@ test('the handoff text is identical for identical inputs and changes only its re
     const content = contentOf([fact('g1', 'goal', 'the goal', AT - 1_000)], [], 'a note');
     const first = renderOf(content);
     assert.deepEqual(first, renderOf(content));
-    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ac'), at: AT } });
+    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc'), at: AT } });
     const firstLines = shownOf(first).text.split('\n');
     const otherLines = shownOf(other).text.split('\n');
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);

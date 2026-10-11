@@ -17,8 +17,8 @@ import { HANDOFF_PREAMBLE, serializeHandoff, utcMinuteText } from '#src/recap/re
 import type { HandoffParts, OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
-const ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ab');
-const OTHER_ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ac');
+const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
+const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const ZERO: OmittedCounts = { done: 0, links: 0, closed: 0, now: 0, next: 0, withheld: 0 };
 const FRESHNESS: Freshness = { lastRun: { at: AT, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
@@ -55,7 +55,7 @@ test('the text begins with the fixed preamble, so its first character is the let
 });
 
 test('the reference line carries the UTC minute and the last eight characters of the HandoffId, or dry run', () => {
-    assert.ok(linesOf(serializeHandoff(partsOf())).includes('Handoff reference: 2026-10-10 12:00Z-456789ab'));
+    assert.ok(linesOf(serializeHandoff(partsOf())).includes('Handoff reference: 2026-10-10 12:00Z-4d2pf2db'));
     assert.ok(linesOf(serializeHandoff(partsOf([], { reference: { kind: 'dry-run' } }))).includes('Handoff reference: dry run'));
 });
 
@@ -99,7 +99,7 @@ test('the headings come in the fixed order, and a group with no fact has no head
 
 test('the note comes right after the reference line, as one line with its own prefix', () => {
     const lines = linesOf(serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { note: sanitizeHandoffText('focus on the parser') })));
-    const reference = lines.indexOf('Handoff reference: 2026-10-10 12:00Z-456789ab');
+    const reference = lines.indexOf('Handoff reference: 2026-10-10 12:00Z-4d2pf2db');
     assert.equal(lines[reference + 2], 'Note: focus on the parser');
     assert.equal(lines.indexOf('## Freshness') > reference + 2, true);
 });

@@ -36,7 +36,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { sessionId, tabId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, sessionId, tabId } from '#src/recap/domain/ids.ts';
 import { awaitingNow } from './autocompact.ts';
 import { refreshedWithin } from './refresh-status.ts';
 
@@ -53,8 +53,6 @@ const askIdOf = (id: HandoffId): RequestId | null => {
     const bytes = handoffBytesOf(id);
     return bytes === null ? null : must(requestId(Buffer.from(bytes).toString('hex').slice(-16), 'legacy-length'));
 };
-
-const handoffIdOfRef = (ref: string | null): HandoffId | null => (ref !== null && handoffBytesOf(ref as HandoffId) !== null ? (ref as HandoffId) : null);
 
 function verdictOf(outcome: HandoffOutcome): HandoffVerdict {
     if (outcome.kind === 'delivered') {
@@ -82,7 +80,7 @@ export class HandoffRunner {
     }
 
     interrupted(ask: Ask): void {
-        const id = handoffIdOfRef(ask.ref);
+        const id = parseHandoffId(ask.ref);
         const { asks, answers, transaction } = this.deps;
         transaction(() => {
             if (id !== null) {

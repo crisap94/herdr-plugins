@@ -50,13 +50,19 @@ export function sessionPathFromAgentValue(raw: string): SessionPath {
     return raw as SessionPath;
 }
 
-const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const HANDOFF_TYPE_ID = /^hnd_[0-7][0-9a-hjkmnp-tv-z]{25}$/;
+
+const isHandoffTypeId = (raw: string): raw is HandoffId => HANDOFF_TYPE_ID.test(raw);
 
 export function handoffId(raw: string): HandoffId {
-    if (!UUID_V7.test(raw)) {
-        throw new NotAnIdentifierError('a handoff id must be a UUIDv7');
+    if (!isHandoffTypeId(raw)) {
+        throw new NotAnIdentifierError('a handoff id must be a TypeID: hnd_ and 26 base32 characters');
     }
-    return raw as HandoffId;
+    return raw;
+}
+
+export function parseHandoffId(raw: unknown): HandoffId | null {
+    return typeof raw === 'string' && isHandoffTypeId(raw) ? raw : null;
 }
 
 export function agentKind(raw: string): AgentKind {

@@ -11,8 +11,8 @@ import { MemoryWorksite } from './worksite-reader.ts';
 import { registryWith } from './transcript-registry.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
-export const ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ab');
-export const OTHER_ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ac');
+export const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
+export const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 export const SOURCE_FILE = 'session.jsonl';
 export const LAST_RUN: LastRun = { at: NOW - 60_000, cause: 'turn-ended' };
 export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: '/repo' };

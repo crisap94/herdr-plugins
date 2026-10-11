@@ -13,7 +13,7 @@ test('a handoff renders the preamble, the reference line, the freshness, the led
     const result = await renderHandoff(depsOf())(inputOf());
     const text = await textOf(result);
     assert.ok(text.startsWith('I am handing you work another agent was doing.'));
-    assert.match(text, /^Handoff reference: 2026-10-11 10:00Z-456789ab$/m);
+    assert.match(text, /^Handoff reference: 2026-10-11 10:00Z-4d2pf2db$/m);
     assert.deepEqual([...text.matchAll(/^## (.+)$/gm)].map((match) => match[1]), HEADINGS);
     assert.match(text, /^last run: 2026-10-11 09:59Z, after a turn$/m);
     assert.match(text, /^lane status: idle$/m);
