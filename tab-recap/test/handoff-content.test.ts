@@ -9,6 +9,7 @@ import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { FORBIDDEN_PHRASES, FORBIDDEN_WORDS } from '#src/recap/domain/forbidden-words.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
@@ -236,7 +237,7 @@ test('forbidden words across every template of the shared list are withheld from
         const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 2_000), fact('x1', 'next', `call it ${sample} now`, NOW - 1_000)]))));
         assert.deepEqual(textsOf(body, 'next'), [], sample);
         assert.equal(body.withheld, 1, sample);
-        assert.equal(isForbidden(`call it ${sample} now`), true, sample);
+        assert.equal(isForbidden(sanitizeHandoffText(`call it ${sample} now`)), true, sample);
     }
 });
 

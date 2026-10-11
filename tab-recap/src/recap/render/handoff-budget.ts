@@ -2,12 +2,13 @@ import { fits } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { compareIds } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
+import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffReference, OmittedCounts } from './handoff-markdown.ts';
 import { serializeHandoff } from './handoff-markdown.ts';
 
 export interface HandoffFit {
     readonly reference: HandoffReference;
-    readonly note: string | null;
+    readonly note: HandoffText | null;
     readonly freshnessText: string;
     readonly worksiteText: string | null;
     readonly groups: readonly HandoffGroup[];

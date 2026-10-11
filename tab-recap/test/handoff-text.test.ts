@@ -11,6 +11,7 @@ import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fitHandoff } from '#src/recap/render/handoff-budget.ts';
@@ -34,7 +35,13 @@ const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: AT },
 
 const bytesOf = (text: string): number => new TextEncoder().encode(text).byteLength;
 
-const entryOf = (id: string, text: string, lastAt: number, firstAt = lastAt, reason: string | null = null): HandoffEntry => ({ id: id as FactId, text, firstAt, lastAt, reason });
+const entryOf = (id: string, text: string, lastAt: number, firstAt = lastAt, reason: string | null = null): HandoffEntry => ({
+    id: id as FactId,
+    text: sanitizeHandoffText(text),
+    firstAt,
+    lastAt,
+    reason: reason === null ? null : sanitizeHandoffText(reason),
+});
 
 const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 0): HandoffGroup => ({ id, entries, capped });
 
@@ -111,7 +118,7 @@ const randomFit = (random: () => number): HandoffFit => {
         const capped = id === 'done' || id === 'links' || id === 'closed' ? below(3) : 0;
         return groupOf(id, entries, capped);
     });
-    return fitOf(groups, { note: random() < 0.5 ? 'focus on the parser' : null, withheld: below(5) });
+    return fitOf(groups, { note: random() < 0.5 ? sanitizeHandoffText('focus on the parser') : null, withheld: below(5) });
 };
 
 const survivorsOf = (fit: HandoffFit, text: string, ids: readonly HandoffGroupId[]): readonly HandoffEntry[] =>

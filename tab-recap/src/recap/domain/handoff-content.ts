@@ -2,6 +2,7 @@ import { SECTION_IDS } from './fact.ts';
 import type { FactId } from './fact.ts';
 import type { Freshness } from './freshness.ts';
 import type { HandoffReason } from './handoff-outcome.ts';
+import type { HandoffText } from './handoff-sanitize.ts';
 import type { WorksiteSnapshot } from './worksite.ts';
 
 export const HANDOFF_GROUP_IDS = [...SECTION_IDS, 'closed'] as const;
@@ -16,10 +17,10 @@ export const compareIds = (a: string, b: string): number => {
 
 export interface HandoffEntry {
     readonly id: FactId;
-    readonly text: string;
+    readonly text: HandoffText;
     readonly firstAt: number;
     readonly lastAt: number;
-    readonly reason: string | null;
+    readonly reason: HandoffText | null;
 }
 
 export interface HandoffGroup {
@@ -30,7 +31,7 @@ export interface HandoffGroup {
 
 export interface HandoffBody {
     readonly kind: 'content';
-    readonly note: string | null;
+    readonly note: HandoffText | null;
     readonly freshness: Freshness;
     readonly worksite: WorksiteSnapshot;
     readonly groups: readonly HandoffGroup[];

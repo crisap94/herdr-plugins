@@ -3,9 +3,10 @@ import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
-import { requestNoteOf } from './compact-start.ts';
+import { NOTE_LIMIT } from './compaction-message.ts';
 import { HANDOFF_CLOSED_SHOWN, HANDOFF_DONE_SHOWN, HANDOFF_LINKS_SHOWN } from './handoff-limits.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import type { TaskFacts } from './ledger-input.ts';
@@ -55,12 +56,13 @@ const groupOf = (id: HandoffGroupId, kept: readonly Candidate[]): HandoffGroup =
     return { id, entries: shown.toSorted(oldestFirst), capped: entries.length - shown.length };
 };
 
-const noteOf = (raw: string | null): string | null => {
+const noteOf = (raw: string | null): HandoffText | null => {
     if (raw === null) {
         return null;
     }
-    const note = requestNoteOf(sanitizeHandoffText(raw));
-    return note === null || isForbidden(note) ? null : note;
+    const sanitized = sanitizeHandoffText(raw);
+    const note = sanitizeHandoffText(Array.from(sanitized).slice(0, NOTE_LIMIT).join(''));
+    return note === '' || isForbidden(note) ? null : note;
 };
 
 export function buildHandoffContent(input: HandoffInput): HandoffContent {
