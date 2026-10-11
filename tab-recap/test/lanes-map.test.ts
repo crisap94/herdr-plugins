@@ -95,6 +95,6 @@ test('a lane cannot edit the pipeline file', () => {
 
 test('a lane merge request may edit the tests and fakes of another lane, and still not its source', () => {
     const other = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes.B3.find((file: string) => file.startsWith('test/'));
-    assert.equal(lane('B2', [`tab-recap/${String(other)}`, 'tab-recap/test/fakes/clock.ts']).status, 0);
+    assert.equal(lane('B2', [`tab-recap/${String(other)}`, 'tab-recap/test/fakes/ask-ledger.ts']).status, 0);
     assert.equal(lane('B2', ['tab-recap/src/recap/application/compaction.ts']).status, 1);
 });
