@@ -230,9 +230,7 @@ async function start(): Promise<number> {
         handoff: handoffRestartOf(handoffs),
         log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
     });
-    if (restarted > 0) {
-        log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
-    }
+    if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }
     bootObservations(store.visibility.readHidden(), store.views, log).forEach((observation) => { informer.push(observation); });
     setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
     let ticks = 0;

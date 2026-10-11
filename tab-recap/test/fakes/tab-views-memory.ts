@@ -16,7 +16,7 @@ export class MemoryTabViews implements Pick<TabViews, 'writeTab' | 'tabOf'>, Liv
 
     liveLanes(): LiveLanesRead {
         const lanes: RestoredLane[] = [...this.tabs.keys()].toSorted().flatMap((tab) => (this.tabs.get(tab)?.lanes ?? []).map((lane) => ({
-            tab: tabId(tab), pane: paneId(lane.pane), agent: agentKind(lane.agent), since: lane.since ?? null, cwd: lane.cwd === null || lane.cwd === undefined ? null : directoryOf(lane.cwd),
+            tab: tabId(tab), pane: paneId(lane.pane), agent: agentKind(lane.agent), since: lane.since ?? null, cwd: lane.cwd === null ? null : directoryOf(lane.cwd),
         })));
         return { kind: 'read', lanes };
     }
