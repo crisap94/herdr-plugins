@@ -12,7 +12,7 @@ import type { HandoffAnswers, HandoffVerdict } from '#src/ports/handoff-answers.
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { HandoffRequestRow, Requests } from '#src/ports/requests.ts';
 import { requestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
@@ -28,7 +28,7 @@ import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
-import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
+import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { isStorable } from '#src/recap/domain/handoff-outcome.ts';
@@ -177,6 +177,18 @@ export class HandoffRunner {
             return false;
         }
     }
+}
+
+export function pollHandoffs(parts: { readonly runner: Pick<HandoffRunner, 'take'>; readonly requests: Pick<Requests, 'takeHandoffs'>; readonly log: (line: string) => void }): void {
+    parts.runner.take(parts.requests.takeHandoffs()).catch((error: unknown) => { parts.log(`handoff poll: ${failureCauseOf(error)}`); });
+}
+
+export function pruneHandoffAnswers(parts: { readonly answers: Pick<HandoffAnswers, 'prune'>; readonly now: () => number }): void {
+    parts.answers.prune(parts.now() - HANDOFF_ANSWER_TTL_MS);
+}
+
+export function handoffRestartOf(runner: Pick<HandoffRunner, 'interrupted'>): (ask: Ask) => void {
+    return (ask: Ask): void => { runner.interrupted(ask); };
 }
 
 export interface HandoffWiring {

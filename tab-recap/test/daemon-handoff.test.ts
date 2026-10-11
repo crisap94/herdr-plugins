@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
 import type { HandoffRunnerDeps } from '#src/daemon/handoff.ts';
 import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
+import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
@@ -135,7 +136,7 @@ test('on the SQLite store the restart finds the ask again (its id parses) and wr
     const store = memoryStore({ now: (): number => NOW });
     const runner = new HandoffRunner({
         flow: { execute: (): Promise<HandoffRun> => new Promise<HandoffRun>(() => undefined) },
-        asks: store.asks, answers: store.handoffs, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
     });
     const taken = row();
     void runner.take([taken]);
@@ -149,7 +150,7 @@ test('on the SQLite store a delivered handoff writes its answer and settles its 
     const store = memoryStore({ now: (): number => NOW });
     const runner = new HandoffRunner({
         flow: { execute: async (): Promise<HandoffRun> => unrendered({ kind: 'delivered' }) },
-        asks: store.asks, answers: store.handoffs, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
     });
     const taken = row();
     await runner.take([taken]);
@@ -181,7 +182,7 @@ test('a flow that throws is logged once with the request id and the error name, 
 test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark = new DeliveryMark()): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     return running.then(() => {
@@ -194,7 +195,7 @@ test('a flow that never finishes before anything is typed is answered expired at
 test('a flow that never finishes after typing is answered unconfirmed at the bound, and its lanes stay claimed until the flow ends', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark): Promise<HandoffRun> => { mark.claim(); mark.type(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark = new DeliveryMark()): Promise<HandoffRun> => { mark.claim(); mark.type(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     return running.then(() => {

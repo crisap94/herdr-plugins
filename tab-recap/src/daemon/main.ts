@@ -18,7 +18,7 @@ import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { wireHandoffs } from './handoff.ts';
+import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers, wireHandoffs } from './handoff.ts';
 import type { HandoffRunner } from './handoff.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
@@ -32,7 +32,6 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
-import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import type { Extension } from '#src/ports/extension.ts';
@@ -179,7 +178,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
     for (const asked of store.requests.takeCompactions()) {
         compaction.run(asked).catch((error: unknown) => { log(`compaction ${asked.tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
-    void handoffs.take(store.requests.takeHandoffs());
+    pollHandoffs({ runner: handoffs, requests: store.requests, log });
     for (const tab of store.requests.takeCurations()) {
         curate.run(tab).catch((error: unknown) => { log(`curator ${tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
@@ -226,7 +225,7 @@ async function start(): Promise<number> {
     const restarted = answerRestart({
         exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
         enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
-        handoff: (ask): void => { handoffs.interrupted(ask); },
+        handoff: handoffRestartOf(handoffs),
         log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
     });
     if (restarted > 0) {
@@ -245,7 +244,7 @@ async function start(): Promise<number> {
         }
         informer.tick();
         store.asks.prune(Date.now() - ASK_KEEP_MS);
-        store.handoffs.prune(Date.now() - HANDOFF_ANSWER_TTL_MS);
+        pruneHandoffAnswers({ answers: store.handoffs, now: (): number => Date.now() });
         events.prune(Date.now());
         sweep.tick();
         retention.tick();
