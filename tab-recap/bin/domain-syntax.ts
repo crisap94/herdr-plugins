@@ -24,3 +24,8 @@ export const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAss
     ts.isTypeAssertionExpression(node) ||
     (ts.isAsExpression(node) && !(ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName) && node.type.typeName.text === 'const'));
 
+
+export const isNumericEnum = (type: ts.Type): boolean => {
+    const first = type.isUnion() ? type.types[0] : type;
+    return (type.flags & ts.TypeFlags.EnumLike) !== 0 && first !== undefined && (first.flags & ts.TypeFlags.NumberLiteral) !== 0;
+};
