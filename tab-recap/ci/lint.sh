@@ -53,6 +53,9 @@ node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail 
 echo "oxlint (type-aware, the house configuration):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
+echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
+bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 
