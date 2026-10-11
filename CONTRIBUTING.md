@@ -177,9 +177,12 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a
    dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the release commit,
    the one that set the version, after checking that the version is above every tag, the three versions
-   agree and the changelog has its link. A merge request that lands between the preparation and the
-   landing of the release merge request is not in that section or its version bump: add its line to the
-   next release by hand.
+   agree and the changelog has its link and a non-empty section that lists every merge request the
+   release should (`ci/next-release.sh` run up to the release commit). A merge request that lands between
+   the preparation and the landing of the release merge request is not in that section: `release:tag`
+   then refuses, names it and fails (as a warning, `allow_failure`, so `main` stays green); add its line
+   to `CHANGELOG.md` (and raise the version if it calls for more) in a normal merge request and the next
+   pipeline on `main` tags the release.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the

@@ -168,21 +168,33 @@ export PUSH_URL="$scratch/remote.git"
 remote_refs() { git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)'; }
 publish() { bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0; }
 tagit() { bash "$HERE/tag-release.sh"; }
+cat > "$scratch/next-fake" <<'SH'
+#!/usr/bin/env bash
+default='{"version":null,"section":null}'
+printf '%s' "${FAKE_NEXT:-$default}"
+SH
+chmod +x "$scratch/next-fake"
+export NEXT_RELEASE="$scratch/next-fake"
 
 : > "$CURL_LOG"
 expect fail "a release without its token" env -u RELEASE_TOKEN bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
 expect fail "a release without a version" bash "$HERE/release-publish.sh" demo
 FAKE_LIST_CODE=500 expect fail "a merge request list that does not answer" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge requests could not be listed" >&2; wrong=$((wrong + 1)); }
-FAKE_LIST='[{"iid":7,"source_branch":"release/demo-v1.0.0"}]' expect pass "a release merge request that is open already" publish
+FAKE_LIST='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request that is open already" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a second release branch was pushed while a release merge request is open" >&2; wrong=$((wrong + 1)); }
 expect fail "no merge request opened while one is open" grep -q "POST .*merge_requests" "$CURL_LOG"
 FAKE_LIST='not json' expect fail "an open merge request list that is not JSON" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request list was not JSON" >&2; wrong=$((wrong + 1)); }
 expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_HOST bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
 full="$(node -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
-FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0"}]' expect pass "a release merge request on the second page of open merge requests" publish
+FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request on the second page of open merge requests" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed over a release merge request on the second page" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='{"iid":7}' expect fail "an open merge request answer that is not a list" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request answer was not a list" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='[{"iid":9,"source_branch":"release/demo-v1.0.0","source_project_id":5,"target_project_id":1}]' expect pass "a merge request from a fork does not count as the release merge request" publish
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: a merge request from a fork blocked the release" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelated open merge request does not block the release" publish
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
@@ -222,6 +234,9 @@ expect fail "a version below the newest release" tagit
 git tag -d demo-v1.2.0 >/dev/null
 nolink() { sed -e '/^\[1.1.0\]: /d' "$scratch/CHANGELOG.md" > "$scratch/changelog.nolink"; CHANGELOG="$scratch/changelog.nolink" tagit; }
 expect fail "a version without its changelog link reference" nolink
+FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' expect fail "a merge request merged since the release was prepared and missing from the section" tagit
+covered() { sed -e 's/^- the new thing$/- the new thing (!41)/' "$scratch/CHANGELOG.md" > "$scratch/changelog.covered"; CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
+expect pass "every merge request of the release is in the section" covered
 emptysection() { sed -e '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}' "$scratch/CHANGELOG.md" > "$scratch/changelog.empty"; CHANGELOG="$scratch/changelog.empty" tagit; }
 expect fail "a version whose changelog section is empty" emptysection
 printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json

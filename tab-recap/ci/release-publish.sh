@@ -32,7 +32,7 @@ page=1
 while [ "$page" -le 20 ]; do
     code="$(api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests?state=opened&target_branch=$target&per_page=100&page=$page")"
     [ "$code" = "200" ] || { echo "release-publish: 3 — NOT COVERED: listing the open merge requests answered HTTP $code" >&2; exit 3; }
-    listed="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(list.length); for (const mr of list) { if (String(mr.source_branch).startsWith(process.argv[2])) { console.log("!" + mr.iid + " " + mr.source_branch); } }' "$body" "release/$plugin-v")" \
+    listed="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!Array.isArray(list)) { throw new Error("not a list"); } console.log(list.length); for (const mr of list) { if (mr.source_project_id === mr.target_project_id && String(mr.source_branch).startsWith(process.argv[2])) { console.log("!" + mr.iid + " " + mr.source_branch); } }' "$body" "release/$plugin-v")" \
         || { echo "release-publish: 3 — NOT COVERED: the open merge request list is not JSON" >&2; exit 3; }
     open="$open$(printf '%s\n' "$listed" | sed 1d | tr '\n' ' ')"
     [ "$(printf '%s\n' "$listed" | head -n 1)" -ge 100 ] || break

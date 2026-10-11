@@ -19,7 +19,8 @@ version="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$dir/herdr-plugin.toml" | he
 [ -n "$plugin" ] && [ -n "$version" ] || { echo "tag-release: 3 — NOT COVERED: no id/version in the manifest" >&2; exit 3; }
 tag="$plugin-v$version"
 body="$(mktemp)"
-trap 'rm -f "$body"' EXIT
+notes="$(mktemp)"
+trap 'rm -f "$body" "$notes"' EXIT
 api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "PRIVATE-TOKEN: $RELEASE_TOKEN" "$@"; }
 exists() { api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/tags/$tag"; }
 
@@ -39,8 +40,8 @@ if [ -n "$newest" ] && [ "$(printf '%s\n%s\n' "$newest" "$version" | by_version 
     echo "tag-release: 1 — $version is not greater than the newest release $newest: no tag (fix the version with a new release)" >&2
     exit 1
 fi
-PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" >/dev/null 2>&1 \
-    || { echo "tag-release: 1 — the manifest, package.json and package-lock.json do not agree on $version: no tag" >&2; exit 1; }
+versions="$(PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" 2>&1)" \
+    || { echo "tag-release: 1 — the manifest, package.json and package-lock.json do not agree on $version: no tag ($(printf '%s' "$versions" | head -n 1))" >&2; exit 1; }
 grep -q "^\\[$escaped\\]: " "$changelog" \
     || { echo "tag-release: 1 — CHANGELOG has no '[$version]: …' link reference: no tag" >&2; exit 1; }
 CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" >/dev/null 2>&1 \
@@ -48,6 +49,18 @@ CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" >/dev/
 
 commit="$(git -C "$dir" log -1 --format=%H -G"^version = \"$escaped\"" "$CI_COMMIT_SHA" -- herdr-plugin.toml)"
 [ -n "$commit" ] || { echo "tag-release: 3 — NOT COVERED: no commit that set version $version in the manifest (is the history shallow?)" >&2; exit 3; }
+if [ -n "$newest" ]; then
+    next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else node "$HERE/next-release.ts" "$@"; fi; }
+    computed="$(GITLAB_TOKEN="$RELEASE_TOKEN" PLUGIN="$plugin" next_release --previous "$plugin-v$newest" --to "$commit")" \
+        || { echo "tag-release: 3 — NOT COVERED: could not work out which merge requests the release should list" >&2; exit 3; }
+    CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" > "$notes" 2>/dev/null
+    missing="$(printf '%s' "$computed" | node -e 'const fs = require("fs"); const j = JSON.parse(fs.readFileSync(0, "utf8")); const notes = fs.readFileSync(process.argv[1], "utf8"); const ids = [...String(j.section ?? "").matchAll(/\(!(\d+)\)/g)].map((m) => m[1]); process.stdout.write(ids.filter((id) => !notes.includes("(!" + id + ")")).map((id) => "!" + id).join(" "));' "$notes")" \
+        || { echo "tag-release: 3 — NOT COVERED: could not compare the changelog section with the merge requests" >&2; exit 3; }
+    if [ -n "$missing" ]; then
+        echo "tag-release: 1 — the changelog section for $version lacks $missing, merged since the release was prepared: no tag (add their lines to CHANGELOG.md in a normal merge request, or fix the version, and the next pipeline on main tags it)" >&2
+        exit 1
+    fi
+fi
 code="$(api --request POST --data-urlencode "tag_name=$tag" --data-urlencode "ref=$commit" \
     --data-urlencode "message=$plugin $version" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/tags")"
 if [ "$code" != "201" ]; then
