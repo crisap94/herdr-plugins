@@ -20,7 +20,7 @@ import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { compactable, targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -28,6 +28,10 @@ import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { handoffPlans, SETTLE_SOURCE } from '#src/adapters/handoff-plan-registry.ts';
+import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
+import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
@@ -36,7 +40,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -47,6 +51,11 @@ import { NO_REPOS } from '#test/support.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { compactionFlow, typingFleet } from '#test/fakes/compaction-fleet.ts';
+import { echoing, leaseSpy, senderOf, worldOf } from '#test/fakes/handoff-delivery.ts';
+import type { LeaseSpy, World } from '#test/fakes/handoff-delivery.ts';
+import { harness as handoffHarness, NOW, recapOf, request, SOURCE_LISTED, T1, TAB, TARGET, TEXT, task } from '#test/fakes/handoff-flow-harness.ts';
+import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
+import { fact } from '#test/fakes/fact-at.ts';
 
 const BUDGET = 1 << 20;
 const dir = mkdtempSync(join(tmpdir(), 'recap-conformance-'));
@@ -168,7 +177,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: BackendId
         recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider, events: { lane: () => undefined, inWorkspace: () => undefined },
-        claims: new CompactionClaims(), log: () => undefined,
+        claims: new LaneClaims(), log: () => undefined,
     });
     await service.consider(placed);
     const [skip] = store.autocompact.skips();
@@ -332,3 +341,169 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
 
     assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
 });
+
+interface HandoffPin {
+    readonly kind: 'supported';
+    readonly settleMs: number;
+    readonly trials: number;
+    readonly locatedBy: LocatedBy;
+}
+
+interface HandoffNoPlan {
+    readonly kind: 'unsupported';
+    readonly reason: 'no-plan';
+}
+
+const HANDOFF_PINS = {
+    claude: { kind: 'supported', settleMs: 10_000, trials: 130, locatedBy: 'session' },
+    codex: { kind: 'supported', settleMs: 3_000, trials: 130, locatedBy: 'directory' },
+    opencode: { kind: 'supported', settleMs: 60_000, trials: 77, locatedBy: 'directory' },
+    hermes: { kind: 'unsupported', reason: 'no-plan' },
+} satisfies Record<RegisteredKind, HandoffPin | HandoffNoPlan>;
+
+function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
+    const deliveryOf = (over: Partial<World> = {}): World => worldOf({ agent: kind, locatedBy: pin.locatedBy, ...over });
+    const flowOf = (world: World, typing: LeaseSpy, over: Partial<FlowWorld> = {}): ReturnType<typeof handoffHarness> => handoffHarness({ targetAgent: kind, ...over }, senderOf(world, typing.port));
+    const working = { kind: 'agent', agent: kind, status: 'working' } as const;
+
+    test(`${kind} handoff: the plan is one prompt with either evidence, no retry, its settle time and its locating key`, () => {
+        assert.deepEqual(handoffPlans.forKind(kind), {
+            kind: 'supported',
+            plan: { delivery: 'prompt', evidence: 'either', retry: 'none', settle: { after: duration(pin.settleMs), evidence: { trials: pin.trials, source: SETTLE_SOURCE } }, locatedBy: pin.locatedBy },
+        });
+    });
+
+    test(`${kind} handoff: a delivered text is one prompt with no wait or stall, under a lease taken at once and released, held for the settle time, and confirmed by its transcript at the first look`, async () => {
+        const world = echoing(deliveryOf({ latest: 'older' }));
+        const typing = leaseSpy('taken');
+        const h = flowOf(world, typing);
+        assert.deepEqual(await h.flow.run(request()), { kind: 'delivered' });
+        assert.deepEqual(typing.acquired, [['w1:p2', 0]]);
+        assert.deepEqual(typing.released, ['w1:p2']);
+        assert.deepEqual(world.sent, [{ pane: 'w1:p2', text: TEXT, wait: undefined, behavior: { acceptsStall: false } }]);
+        assert.deepEqual(h.pauses, [pin.settleMs]);
+        assert.deepEqual(world.pauses, [HANDOFF_OBSERVE_MS]);
+    });
+
+    test(`${kind} handoff: a send that throws is failed transport, is sent once, and releases the lease`, async () => {
+        const world = deliveryOf({ faults: { prompt: true } });
+        const typing = leaseSpy('taken');
+        assert.deepEqual(await flowOf(world, typing).flow.run(request()), { kind: 'failed', reason: 'transport' });
+        assert.equal(world.sent.length, 1);
+        assert.deepEqual(world.pauses, []);
+        assert.deepEqual(typing.released, ['w1:p2']);
+    });
+
+    test(`${kind} handoff: a target that reports blocked when the text is sent is refused status-not-ready and never confirmed`, async () => {
+        const world = deliveryOf({ sendReply: { kind: 'blocked' } });
+        assert.deepEqual(await flowOf(world, leaseSpy('taken')).flow.run(request()), { kind: 'refused', reason: 'status-not-ready' });
+        assert.equal(world.sent.length, 1);
+        assert.deepEqual(world.pauses, []);
+    });
+
+    test(`${kind} handoff: an earlier handoff with the same text is not mistaken for this one, and confirmation gives up after HANDOFF_OBSERVATIONS looks, one second apart, without a second send`, async () => {
+        const world = deliveryOf({ latest: TEXT });
+        assert.deepEqual(await flowOf(world, leaseSpy('taken')).flow.run(request()), { kind: 'failed', reason: 'unconfirmed' });
+        assert.deepEqual(world.pauses, Array.from({ length: HANDOFF_OBSERVATIONS }, () => HANDOFF_OBSERVE_MS));
+        assert.equal(world.sent.length, 1);
+    });
+
+    test(`${kind} handoff: a newer prompt that is not this handoff does not confirm it`, async () => {
+        const world = deliveryOf({ latest: 'older' });
+        world.onPause = (count: number): void => {
+            if (count === 1) {
+                world.latest = 'an unrelated prompt typed after the handoff';
+            }
+        };
+        assert.deepEqual(await flowOf(world, leaseSpy('taken')).flow.run(request()), { kind: 'failed', reason: 'unconfirmed' });
+        assert.equal(world.pauses.length, HANDOFF_OBSERVATIONS);
+    });
+
+    test(`${kind} handoff: a throw while reading confirmation evidence is failed unconfirmed, not transport, and the text is not sent again`, async () => {
+        const world = deliveryOf({ latest: 'older', faults: { status: true } });
+        assert.deepEqual(await flowOf(world, leaseSpy('taken')).flow.run(request()), { kind: 'failed', reason: 'unconfirmed' });
+        assert.equal(world.sent.length, 1);
+    });
+
+    test(`${kind} handoff: a fresh lane whose transcript appears during the looks is found by re-locating and delivered`, async () => {
+        const world = deliveryOf({ located: false, latest: null });
+        world.onPause = (count: number): void => {
+            if (count === 2) {
+                world.located = true;
+                world.latest = TEXT;
+            }
+        };
+        assert.deepEqual(await flowOf(world, leaseSpy('taken')).flow.run(request()), { kind: 'delivered' });
+        assert.equal(world.pauses.length, 2);
+    });
+
+    test(`${kind} handoff: a second lane of this kind in the same directory makes the directory transcript shared, so only status confirms when the kind is located by directory`, async () => {
+        const shared = pin.locatedBy === 'directory';
+        const idle = echoing(deliveryOf({ latest: 'older' }));
+        assert.deepEqual(await flowOf(idle, leaseSpy('taken'), { peer: true }).flow.run(request()), shared ? { kind: 'failed', reason: 'unconfirmed' } : { kind: 'delivered' });
+        const busy = echoing(deliveryOf({ latest: 'older', agentState: working }));
+        assert.deepEqual(await flowOf(busy, leaseSpy('taken'), { peer: true }).flow.run(request()), { kind: 'delivered' });
+    });
+
+    test(`${kind} handoff: a target whose locating key is not known is confirmed by status only`, async () => {
+        const idle = echoing(deliveryOf({ latest: 'older', session: null }));
+        assert.deepEqual(await flowOf(idle, leaseSpy('taken'), { targetKeyKnown: false }).flow.run(request()), { kind: 'failed', reason: 'unconfirmed' });
+        const busy = echoing(deliveryOf({ latest: 'older', session: null, agentState: working }));
+        assert.deepEqual(await flowOf(busy, leaseSpy('taken'), { targetKeyKnown: false }).flow.run(request()), { kind: 'delivered' });
+    });
+
+    test(`${kind} handoff: a target that is not ready starts no refresh, reads nothing and takes no claim`, async () => {
+        const h = handoffHarness({ targetAgent: kind, targetStatus: 'working' });
+        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+        assert.deepEqual(h.calls, []);
+        assert.equal(h.claims.has(String(TARGET)), false);
+    });
+
+    test(`${kind} handoff: a compaction already holding the target starts no refresh`, async () => {
+        const h = handoffHarness({ targetAgent: kind });
+        h.claims.claim(String(TARGET), 'compaction');
+        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
+        assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
+    });
+
+    test(`${kind} handoff: a refresh that gives a lane its first ledger renders the facts it produced`, async () => {
+        const f = fact('f1', 'goal', 'Ship the parser', NOW - 1000, { task: T1 });
+        const h = handoffHarness({ targetAgent: kind, recap: recapOf(), facts: [f], onRefresh: (): void => { h.world.recap = SOURCE_LISTED(); } });
+        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+        assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
+    });
+
+    test(`${kind} handoff: a refresh that moves the source lane to another task renders that task`, async () => {
+        const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { tab: TAB, key: 't2' } });
+        const h = handoffHarness({ targetAgent: kind, facts: [f], onRefresh: (): void => { h.world.recap = recapOf(task('t2', ['w1:p1'])); } });
+        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+        assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
+    });
+
+    test(`${kind} handoff: a target that turns working during the refresh is refused status-not-ready and nothing is typed`, async () => {
+        const world = deliveryOf({ latest: 'older' });
+        const typing = leaseSpy('taken');
+        const h = handoffHarness({ targetAgent: kind, onRefresh: (): void => { h.world.targetStatus = 'working'; } }, senderOf(world, typing.port));
+        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+        assert.deepEqual(world.sent, []);
+        assert.deepEqual(typing.acquired, []);
+    });
+}
+
+test('handoff confirmation is pinned to 20 looks, one second apart, for every kind', () => {
+    assert.deepEqual([HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS], [20, 1000]);
+});
+
+for (const kind of Object.keys(HANDOFF_PINS) as RegisteredKind[]) {
+    const pin = HANDOFF_PINS[kind];
+    if (pin.kind === 'supported') {
+        handoffRows(kind, pin);
+    } else {
+        test(`${kind} handoff: no plan is ${pin.kind} ${pin.reason} through the registry, and the flow types nothing`, async () => {
+            assert.deepEqual(handoffPlans.forKind(kind), { kind: 'unsupported', reason: pin.reason });
+            const h = handoffHarness({ targetAgent: kind });
+            assert.deepEqual(await h.flow.run(request()), { kind: 'unsupported', reason: 'no-plan' });
+            assert.deepEqual(h.sent, []);
+        });
+    }
+}

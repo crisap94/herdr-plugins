@@ -2,6 +2,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { READY } from '#src/recap/domain/status.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { CompactionEnd } from '#src/ports/compaction-records.ts';
@@ -11,6 +12,8 @@ import { linkAsk } from './compaction-asks.ts';
 import { failureStage } from '#src/protocol/exchange.ts';
 import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import { laneBusyRefusal, splitByClaim } from './compaction-lanes.ts';
+import type { Asked, Refusal } from './compaction-lanes.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { withNote } from '#src/recap/domain/continuation-note.ts';
@@ -33,18 +36,10 @@ import { Trail } from './compaction-trail.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
-const READY = new Set(['idle', 'done']);
 interface Link {
     readonly auto: boolean;
     readonly decision: string | null;
     readonly flow: CoverageFlow;
-}
-
-interface Refusal {
-    readonly stage: 'skipped' | 'failed';
-    readonly reason: CompactFailure;
-    readonly why: string;
-    readonly toast: string;
 }
 
 type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonly kind: 'proceed' } & Placed);
@@ -108,28 +103,32 @@ export class Compaction {
     }
 
     private claimed(lane: Lane, request: CompactRequest): boolean {
-        if (this.deps.claims.claim(String(lane.pane))) {
+        if (this.deps.claims.claim(String(lane.pane), 'compaction')) {
             return true;
         }
         this.joinRunning(lane, request);
         return false;
     }
 
-    private async gated(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<Gate> {
-        const gate = await this.gateOf(lane);
-        if (gate.kind === 'proceed') {
-            return gate;
-        }
-        const { refusal } = gate;
+    private async refuse(lane: Lane, tab: string, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
+        const { origin, request } = asked;
         if (trail === null) {
-            const id = this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-            linkAsk(this.deps.asks, request, String(lane.pane), id);
-            this.deps.events?.lane(String(lane.pane), COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
-            this.answer(request, String(lane.pane), failureStage(refusal.reason));
+            const pane = String(lane.pane);
+            const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
+            linkAsk(this.deps.asks, request, pane, id);
+            this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
+            this.answer(request, pane, failureStage(refusal.reason));
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
         await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
+    }
+
+    private async gated(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<Gate> {
+        const gate = await this.gateOf(lane);
+        if (gate.kind === 'refused') {
+            await this.refuse(lane, tab, trail, gate.refusal, { origin, request });
+        }
         return gate;
     }
 
@@ -248,11 +247,12 @@ export class Compaction {
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        const owned = targets.filter((lane) => this.claimed(lane, request));
-        if (owned.length === 0) {
-            return;
-        }
+        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
+            await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin: request.origin ?? 'operator', request })));
+            if (owned.length === 0) {
+                return;
+            }
             const gates = await Promise.all(owned.map(async (lane) => ({ lane, gate: await this.gated(lane, tab, null, request.origin ?? 'operator', request) })));
             const ready = gates.flatMap(({ lane, gate }) => (gate.kind === 'proceed' ? [{ lane, queued: gate.queued }] : []));
             if (ready.length === 0) {

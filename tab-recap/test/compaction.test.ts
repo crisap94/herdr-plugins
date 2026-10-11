@@ -7,7 +7,7 @@ import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import { QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -42,7 +42,7 @@ const queuingPlans: CompactionPlans = {
 
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: CompactionClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
@@ -67,7 +67,7 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
         },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new CompactionClaims(), refreshFails: false };
+    return { agents, typed, toasts, events, store, settling, settledAfter, laneEvents: [], lease: undefined, answered: [], claims: new LaneClaims(), refreshFails: false };
 }
 
 interface Briefing { readonly documents: string[]; readonly answer: string | null; readonly lastBreak?: number; readonly covered?: boolean }
@@ -118,7 +118,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         webs: { of: () => null },
         lanes: () => LANES,
         focused: () => Promise.resolve(focused),
-        refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve(); },
+        refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
         coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),

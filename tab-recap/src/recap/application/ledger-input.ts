@@ -1,5 +1,6 @@
+import type { Ledger } from '#src/ports/ledger.ts';
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
-import type { Fact, Section } from '#src/recap/domain/fact.ts';
+import type { Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import type { HiddenCounts, PositiveCount, WriterView } from '#src/recap/domain/writer-view.ts';
@@ -10,6 +11,10 @@ export interface TaskFacts {
     readonly key: string;
     readonly open: readonly Fact[];
     readonly closed: readonly Fact[];
+}
+
+export function taskFactsOf(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, task: TaskId, at: number): TaskFacts {
+    return { key: task.key, open: ledger.openOf(task), closed: ledger.recentlyClosed(task, at - CLOSED_SHOWN_MS) };
 }
 
 export interface Numbering {

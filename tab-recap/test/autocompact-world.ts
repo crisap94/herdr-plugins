@@ -11,7 +11,7 @@ import type { CompactRequest } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 
@@ -19,7 +19,7 @@ export const NOW = 10_000_000;
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
-export interface World { breakAt: number | null; readonly service: Autocompact; readonly claims: CompactionClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
+export interface World { breakAt: number | null; readonly service: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly reads: number[]; readonly clock: { at: number }; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
 
 export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<AutocompactTuning> = {}): World {
     const store = memoryStore();
@@ -28,12 +28,12 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const clock = { at: NOW };
     const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningOf(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
     const decider: Decider = { label: 'fake · m', ask: async (_state, questions) => { asked.push(Object.keys(questions).length); if (state.gate !== null) await state.gate; return state.decide(); } };
-    const claims = new CompactionClaims();
+    const claims = new LaneClaims();
     const queued = new Set<string>();
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason('test')) : observedFrom(runningCount(state.inFlight), state.background, flightReason(`${state.inFlight} running`))); },
         recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tab, pane) }, compactions: store.compactions, decisions: store.autocompact,
-        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve(); },
+        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); },
         lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); }, startedAt,
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },
         events: { lane: (pane, kind, detail) => { events.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },

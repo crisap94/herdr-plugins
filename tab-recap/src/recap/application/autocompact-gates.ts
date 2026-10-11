@@ -1,7 +1,7 @@
 import type { AutocompactRecords, LastDecision } from '#src/ports/autocompact-records.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { CompactionQueue } from '#src/ports/requests.ts';
-import type { CompactionClaims } from './compaction-claims.ts';
+import type { LaneClaims } from './lane-claims.ts';
 import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
 import { flightDetail } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
@@ -12,7 +12,7 @@ export const ASKED_FOR_MS = 5 * 60_000;
 export interface BusyReads {
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
     readonly decisions: Pick<AutocompactRecords, 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
-    readonly claims: Pick<CompactionClaims, 'has'>;
+    readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
 }
 

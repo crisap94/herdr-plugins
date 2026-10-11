@@ -1,11 +1,10 @@
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { FORBIDDEN, FORBIDDEN_PHRASE_PATTERN as PHRASES, FORBIDDEN_WORD_PATTERN as WORDS } from '#src/recap/domain/forbidden-words.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from './compaction-message.ts';
 
-export const FORBIDDEN = /\b(recaps?|plugins?|herdr|tabs?)\b/iu;
-const PHRASES = /\b(tab-recap|recap column)\b/giu;
-const WORDS = /\b(recaps?|plugins?|herdr|tabs?)\b/giu;
+export { FORBIDDEN };
 
 export type Vetted = { readonly kind: 'ok'; readonly text: string } | { readonly kind: 'bad'; readonly why: string };
 

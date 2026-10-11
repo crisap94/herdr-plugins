@@ -17,7 +17,9 @@ import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
 import { contextWindows } from '#src/adapters/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
+import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers, wireHandoffs } from './handoff.ts';
+import type { HandoffRunner } from './handoff.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { dispatchFor } from './dispatch-parts.ts';
@@ -88,6 +90,7 @@ interface Wired {
     readonly laneTokens: LaneTokenPublisher;
     readonly answers: CompactRequests;
     readonly events: EventStream;
+    readonly handoffs: HandoffRunner;
 }
 
 function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: (line: string) => void): void {
@@ -151,7 +154,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     box.informer = informer;
     const recent = new LaneRecent(transcripts, readPaneSession);
-    const claims = new CompactionClaims();
+    const claims = new LaneClaims();
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const sweep = new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log });
     const compaction = wireCompaction({
@@ -160,11 +163,11 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep, laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, pause: sleep, log }) };
 }
 
-function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events'>): void {
-    const { store, informer, compaction, curate, laneTokens, answers, events } = wired;
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
+    const { store, informer, compaction, curate, laneTokens, answers, events, handoffs } = wired;
     pidfile.beat();
     laneTokens.tick();
     answers.tick();
@@ -175,6 +178,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
     for (const asked of store.requests.takeCompactions()) {
         compaction.run(asked).catch((error: unknown) => { log(`compaction ${asked.tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
+    pollHandoffs({ runner: handoffs, requests: store.requests, log });
     for (const tab of store.requests.takeCurations()) {
         curate.run(tab).catch((error: unknown) => { log(`curator ${tab}: ${error instanceof Error ? error.message : String(error)}`); });
     }
@@ -207,7 +211,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep, events } = booted;
+    const { informer, fleet, backends, extensions, store, retention, sweep, events, handoffs } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -221,6 +225,7 @@ async function start(): Promise<number> {
     const restarted = answerRestart({
         exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
         enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
+        handoff: handoffRestartOf(handoffs),
         log, now: (): number => Date.now(), restartedWhy: messagesOf().compaction.stage.restarted,
     });
     if (restarted > 0) {
@@ -239,6 +244,7 @@ async function start(): Promise<number> {
         }
         informer.tick();
         store.asks.prune(Date.now() - ASK_KEEP_MS);
+        pruneHandoffAnswers({ answers: store.handoffs, now: (): number => Date.now() });
         events.prune(Date.now());
         sweep.tick();
         retention.tick();

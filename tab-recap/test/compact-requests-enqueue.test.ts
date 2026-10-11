@@ -71,6 +71,7 @@ test('a crash between recording the ask and enqueueing leaves an unfinished ask 
         tokens,
         enabled: (): boolean => true,
         local: (): void => undefined,
+        handoff: (): void => undefined,
         log: (): void => undefined,
         now: (): number => 1000,
         restartedWhy: 'restarted',

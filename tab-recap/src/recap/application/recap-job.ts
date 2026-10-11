@@ -14,7 +14,7 @@ import { DEFAULT_PIPELINE, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF } from '#src/recap/domain/debounce.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
-import { CLOSED_SHOWN_MS, type TaskFacts } from './ledger-input.ts';
+import { taskFactsOf, type TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
@@ -219,7 +219,7 @@ export class RecapJob {
 
     private factsOf(tab: string, tasks: readonly TaskShape[], now: number): readonly TaskFacts[] {
         const { ledger } = this.deps;
-        return tasks.map((task) => ({ key: task.id, open: ledger.openOf({ tab, key: task.id }), closed: ledger.recentlyClosed({ tab, key: task.id }, now - CLOSED_SHOWN_MS) }));
+        return tasks.map((task) => taskFactsOf(ledger, { tab, key: task.id }, now));
     }
 
     private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
