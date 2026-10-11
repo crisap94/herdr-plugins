@@ -66,13 +66,15 @@ test('a blocked target releases the lease and is refused as status-not-ready wit
     assert.equal(world.pauses.length, 0);
 });
 
-test('a send that throws is a transport failure, releases the lease and is never retried', async () => {
+test('a send that throws is a transport failure, logged once with its name and no text, releases the lease and is never retried', async () => {
     const world = worldOf({ latest: 'older', faults: { prompt: true } });
     const spy = leaseSpy('taken');
     assert.deepEqual(await senderOf(world, spy.port).send(readyClaude(), TEXT), TRANSPORT);
     assert.deepEqual(spy.released, [PANE]);
     assert.equal(world.sent.length, 1);
     assert.equal(world.pauses.length, 0);
+    assert.deepEqual(world.logs, [`handoff prompt ${PANE}: Error: send failed`]);
+    assert.equal(world.logs.some((line) => line.includes(TEXT)), false);
 });
 
 test('a send that reports an unknown reading is a transport failure and releases the lease', async () => {
@@ -100,6 +102,7 @@ test('a throw while reading confirmation evidence is unconfirmed, not transport,
     assert.deepEqual(await senderOf(world, spy.port).send(readyClaude(), TEXT), UNCONFIRMED);
     assert.equal(world.sent.length, 1, 'the send already happened');
     assert.deepEqual(spy.released, [PANE]);
+    assert.deepEqual(world.logs, [`handoff observe ${PANE}: Error: latest failed`]);
 });
 
 test('a throw while reading the baseline propagates before any send, and the lease is still released', async () => {

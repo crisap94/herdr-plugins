@@ -37,6 +37,7 @@ function confirmerOver(root: string, onPause: () => void): { readonly confirmer:
             pauses.push(ms);
             onPause();
         },
+        log: (): void => undefined,
     });
     return { confirmer, pauses };
 }

@@ -81,6 +81,7 @@ export interface Harness {
     readonly pauses: number[];
     readonly sent: { readonly target: Ready; readonly text: string }[];
     readonly renders: HandoffRenderInput[];
+    readonly logs: string[];
 }
 
 export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSender, 'send'> | null = null): Harness {
@@ -90,6 +91,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     const pauses: number[] = [];
     const sent: { readonly target: Ready; readonly text: string }[] = [];
     const renders: HandoffRenderInput[] = [];
+    const logs: string[] = [];
     const targetKey = world.targetKeyKnown ? { session: 'sess-2', cwd: '/other' } : { session: null, cwd: null };
     const lanes = (): readonly Lane[] => [
         laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: world.sourceStatus, session: 'sess-1', cwd: '/repo' }),
@@ -140,8 +142,9 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
             }
         },
         now: () => NOW,
+        log: (line) => { logs.push(line); },
     };
-    return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders };
+    return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders, logs };
 }
 
 export function request(over: Partial<HandoffRequestRow> = {}): HandoffRequestRow {

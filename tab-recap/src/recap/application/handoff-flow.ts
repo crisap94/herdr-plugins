@@ -4,6 +4,7 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
@@ -23,6 +24,7 @@ export interface HandoffFlowDeps {
     readonly sender: Pick<HandoffSender, 'send'>;
     readonly pause: (ms: number) => Promise<void>;
     readonly now: () => number;
+    readonly log: (line: string) => void;
 }
 
 export interface HandoffRun {
@@ -46,7 +48,8 @@ export class HandoffFlow {
     async execute(request: HandoffRequestRow): Promise<HandoffRun> {
         try {
             return await this.steps(request);
-        } catch {
+        } catch (error) {
+            this.deps.log(`handoff ${request.id}: ${failureCauseOf(error)}`);
             return unrendered({ kind: 'failed', reason: 'internal-error' });
         }
     }
@@ -98,7 +101,8 @@ export class HandoffFlow {
     private async refreshed(tab: TabId): Promise<RefreshStatus> {
         try {
             return await this.deps.refresh(String(tab), this.deps.lanes().filter((lane) => lane.tab === tab));
-        } catch {
+        } catch (error) {
+            this.deps.log(`handoff refresh ${tab}: ${failureCauseOf(error)}`);
             return 'failed';
         }
     }

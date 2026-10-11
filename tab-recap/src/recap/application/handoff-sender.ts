@@ -1,5 +1,6 @@
 import type { Agents, Prompted } from '#src/ports/agents.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Acquired } from './typing-lease.ts';
 import type { HandoffConfirmation } from './handoff-confirmation.ts';
 import type { Ready } from './handoff-target.ts';
@@ -14,6 +15,7 @@ export interface HandoffSenderDeps {
     readonly agents: Pick<Agents, 'prompt'>;
     readonly typing: HandoffTyping;
     readonly confirmation: HandoffConfirmation;
+    readonly log: (line: string) => void;
 }
 
 const NO_STALL = { acceptsStall: false };
@@ -37,7 +39,8 @@ export class HandoffSender {
         let sent: Prompted;
         try {
             sent = await this.deps.agents.prompt(String(target.lane.pane), text, undefined, NO_STALL);
-        } catch {
+        } catch (error) {
+            this.deps.log(`handoff prompt ${target.lane.pane}: ${failureCauseOf(error)}`);
             return { kind: 'failed', reason: 'transport' };
         }
         if (sent.kind === 'blocked') {

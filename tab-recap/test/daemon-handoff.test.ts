@@ -164,3 +164,11 @@ test('a refusal before the text is logged with its reason and no counts', async 
     await runner.take([taken]);
     assert.deepEqual(probe.logs, [`handoff ${taken.id}: refused ledger-empty`]);
 });
+
+test('a flow that throws is logged once with the request id and the error name, and the answer is internal-error', async () => {
+    const taken = row();
+    const { runner, probe, answers } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => { throw new Error('boom'); } } });
+    await runner.take([taken]);
+    assert.deepEqual(probe.logs, [`handoff ${taken.id}: Error: boom`, `handoff ${taken.id}: failed internal-error`]);
+    assert.deepEqual(answers.handoffAnswer(taken.id)?.outcome, 'failed');
+});

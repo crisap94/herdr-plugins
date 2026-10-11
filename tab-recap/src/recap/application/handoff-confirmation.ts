@@ -5,6 +5,7 @@ import { sessionId } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import type { CurrentSession } from './lane-recent.ts';
 import type { Ready } from './handoff-target.ts';
@@ -34,6 +35,7 @@ export interface ConfirmationDeps {
     readonly transcripts: TranscriptRegistry;
     readonly session: CurrentSession;
     readonly pause: (ms: number) => Promise<void>;
+    readonly log: (line: string) => void;
 }
 
 const prefixOf = (text: string): string => collapsedText(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join(''), 'space');
@@ -118,7 +120,8 @@ export class HandoffConfirmation {
                 if (seen.confirmed) {
                     return { kind: 'delivered' };
                 }
-            } catch {
+            } catch (error) {
+                this.deps.log(`handoff observe ${target.lane.pane}: ${failureCauseOf(error)}`);
                 return { kind: 'failed', reason: 'unconfirmed' };
             }
         }

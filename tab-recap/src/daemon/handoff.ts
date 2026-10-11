@@ -36,6 +36,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { parseHandoffId, sessionId, tabId } from '#src/recap/domain/ids.ts';
 import { awaitingNow } from './autocompact.ts';
 import { refreshedWithin } from './refresh-status.ts';
@@ -106,10 +107,15 @@ export class HandoffRunner {
             }
             const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
             this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: row.id });
-            this.finish(row.id, await this.deps.flow.execute(row).catch(internalError), key);
+            this.finish(row.id, await this.deps.flow.execute(row).catch((error: unknown) => this.crashed(row.id, error)), key);
         } catch (error) {
-            this.deps.log(`handoff ${row.id}: ${error instanceof Error ? error.message : String(error)}`);
+            this.deps.log(`handoff ${row.id}: ${failureCauseOf(error)}`);
         }
+    }
+
+    private crashed(id: HandoffId, error: unknown): HandoffRun {
+        this.deps.log(`handoff ${id}: ${failureCauseOf(error)}`);
+        return internalError();
     }
 
     private finish(id: HandoffId, run: HandoffRun, key: AskKey | null): void {
@@ -171,9 +177,10 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         sender: new HandoffSender({
             agents: fleet.agents(),
             typing: new TypingLease({ tokens: fleet, panes: fleet, now, pause, log }),
-            confirmation: new HandoffConfirmation({ agents: fleet.agents(), transcripts, session: readPaneSession, pause }),
+            confirmation: new HandoffConfirmation({ agents: fleet.agents(), transcripts, session: readPaneSession, pause, log }),
+            log,
         }),
-        pause, now,
+        pause, now, log,
     });
     return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, transaction: (work) => writeTx(store.db, work), now, log });
 }

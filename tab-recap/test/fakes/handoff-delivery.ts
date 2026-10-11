@@ -44,6 +44,7 @@ export interface World {
     locates: number;
     onPause: (count: number) => void;
     onSend: (text: string) => void;
+    logs: string[];
 }
 
 export function worldOf(over: Partial<World> = {}): World {
@@ -63,6 +64,7 @@ export function worldOf(over: Partial<World> = {}): World {
         locates: 0,
         onPause: (): void => undefined,
         onSend: (): void => undefined,
+        logs: [],
         ...over,
     };
 }
@@ -183,9 +185,9 @@ export function echoing(world: World): World {
 }
 
 export function confirmationOf(world: World): HandoffConfirmation {
-    return new HandoffConfirmation({ agents: agentsOf(world), transcripts: registryOf(world), session: sessionOf(world), pause: pauseOf(world) });
+    return new HandoffConfirmation({ agents: agentsOf(world), transcripts: registryOf(world), session: sessionOf(world), pause: pauseOf(world), log: (line) => { world.logs.push(line); } });
 }
 
 export function senderOf(world: World, typing: HandoffTyping): HandoffSender {
-    return new HandoffSender({ agents: agentsOf(world), typing, confirmation: confirmationOf(world) });
+    return new HandoffSender({ agents: agentsOf(world), typing, confirmation: confirmationOf(world), log: (line) => { world.logs.push(line); } });
 }
