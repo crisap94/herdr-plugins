@@ -25,6 +25,8 @@ export interface Placed {
     readonly queued: boolean;
 }
 
+export const NOT_QUEUED: Placed = { queued: false };
+
 interface Tried {
     readonly sent: Prompted;
     readonly verdict: Verdict | null;
@@ -142,7 +144,7 @@ export class Sender {
         return { tried: await this.attempt(lane, plan, trail, false), retried };
     }
 
-    async send(lane: Lane, text: Text, trail: Trail, placed: Placed = { queued: false }): Promise<Unsupported | undefined> {
+    async send(lane: Lane, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
         const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(String(lane.agent), text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
             trail.end('failed', { why: resolved.why });

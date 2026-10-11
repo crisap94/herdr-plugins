@@ -1,5 +1,5 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
@@ -62,20 +62,30 @@ export interface QueuedDeps extends OutcomeDeps {
     now(): number;
 }
 
+const TURN_ENDS = new Set(['idle', 'done']);
+const PACE_MS = 1000;
+
+const endsTurn = (settled: Settled): boolean => settled.kind === 'settled' && TURN_ENDS.has(settled.status);
+
 export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: number, onTurnEnd: () => void): Promise<Verdict> {
     const deadline = typedAt + WAIT_MS;
     let since = typedAt;
     let turnEnded = false;
     for (;;) {
-        const settled = await deps.settling.settled(String(lane.pane), since, Math.min(SLICE_MS, deadline - deps.now()));
+        const sliceStart = deps.now();
+        const settled = await deps.settling.settled(String(lane.pane), since, Math.min(SLICE_MS, deadline - sliceStart));
+        since = deps.now();
         const verdict = await outcomeOf(deps, lane, typedAt, false);
         if (verdict.outcome !== 'unconfirmed' || deps.now() >= deadline) {
             return verdict;
         }
-        if (settled.kind === 'settled' && !turnEnded) {
+        if (endsTurn(settled) && !turnEnded) {
             turnEnded = true;
             onTurnEnd();
         }
-        since = deps.now();
+        const waited = since - sliceStart;
+        if (!endsTurn(settled) && waited < SLICE_MS) {
+            await deps.pause(Math.min(PACE_MS, SLICE_MS - waited));
+        }
     }
 }
