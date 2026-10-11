@@ -72,3 +72,27 @@ test('a property typed by a literal union, and a named alias in a signature, pas
     assert.equal(run(probe('good-property-literal-union')).status, 0);
     assert.equal(run(probe('good-named-literal-union')).status, 0);
 });
+
+test('unknown as a type argument, a Date, a Buffer and a numeric enum fail, each naming its reason', () => {
+    const cases: readonly (readonly [string, RegExp])[] = [
+        ['bad-unknown-argument', /parseThing, parameter input is unknown/u],
+        ['bad-unknown-record', /Row, property fields is unknown/u],
+        ['bad-date', /take, parameter at resolves to Date/u],
+        ['bad-buffer', /take, parameter bytes resolves to Buffer/u],
+        ['bad-numeric-enum', /take, parameter level is a numeric enum/u],
+        ['bad-mixed-enum', /take, parameter value is a numeric enum/u],
+        ['bad-empty-object', /take, parameter value is an anonymous object-literal type/u],
+        ['bad-readonly-alias', /<anonymous>, property id resolves to string/u],
+    ];
+    cases.forEach(([name, reason]) => {
+        const result = run(probe(name));
+        assert.equal(result.status, 1, name);
+        assert.match(result.stderr, reason, name);
+    });
+});
+
+test('a string enum and a Readonly alias of branded fields pass', () => {
+    assert.equal(run(probe('good-string-enum')).status, 0);
+    assert.equal(run(probe('good-readonly-alias')).status, 0);
+    assert.equal(run(probe('good-same-name-type')).status, 0);
+});
