@@ -116,10 +116,10 @@
     "property": 1
   },
   "src/recap/application/compaction.ts": {
-    "parameter": 20,
-    "return": 8,
+    "parameter": 10,
+    "return": 4,
     "container": 1,
-    "property": 6
+    "property": 2
   },
   "src/recap/application/compare-imported.ts": {
     "parameter": 15,
