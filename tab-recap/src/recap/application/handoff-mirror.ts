@@ -69,6 +69,7 @@ export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: Pan
 
 export class HandoffMirror {
     private readonly deps: HandoffMirrorDeps;
+    private readonly pending = new Map<PaneId, Promise<void>>();
 
     constructor(deps: HandoffMirrorDeps) {
         this.deps = deps;
@@ -97,10 +98,22 @@ export class HandoffMirror {
         }
         const write = answerOf(handoff, must(requestId(route.id, 'token-safe')), stage);
         if (write.kind === 'ok') {
-            void reportWrite(this.deps.tokens, this.deps.log, route.source, write.value);
+            this.report(route.source, write.value);
         }
         const detail = kind === HANDOFF_EVENTS.failed ? must(parseText(`${route.id}:${stage}`)) : route.id;
         this.deps.events.lane(route.source, kind, detail);
         this.deps.events.lane(route.target, kind, detail);
+    }
+
+    private report(pane: PaneId, write: TokenWrite): void {
+        const { tokens, log } = this.deps;
+        const previous = this.pending.get(pane);
+        const next = previous === undefined ? reportWrite(tokens, log, pane, write) : previous.then(() => reportWrite(tokens, log, pane, write));
+        this.pending.set(pane, next);
+        void next.then(() => {
+            if (this.pending.get(pane) === next) {
+                this.pending.delete(pane);
+            }
+        });
     }
 }
