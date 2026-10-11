@@ -5,18 +5,17 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unreadableOf } from '#src/ports/unknowable.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 import type { HandoffLane } from './handoff-render.ts';
 import type { ClosedView } from './closed-view.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
-
-export type ClosedUnknownReason = 'store-unreadable' | 'ledger-unreadable';
 
 export type ClosedLaneResolution =
     | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view: ClosedView }
     | { readonly kind: 'expired'; readonly closedAt: Instant }
     | { readonly kind: 'never-seen' }
-    | { readonly kind: 'unknown'; readonly reason: ClosedUnknownReason };
+    | Unknown;
 
 export interface ClosedSourceDeps {
     readonly closures: Pick<ClosureReader, 'resolve'>;
@@ -45,7 +44,7 @@ export function factsAsOf(facts: readonly Fact[], closedAt: Instant): readonly F
 export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSourceDeps): ClosedLaneResolution {
     const read = deps.closures.resolve(identity);
     if (isUnknown(read)) {
-        return { kind: 'unknown', reason: 'store-unreadable' };
+        return read;
     }
     if (read.kind === 'absent') {
         return { kind: 'never-seen' };
@@ -65,8 +64,8 @@ export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSour
         const facts = factsAsOf(deps.ledger.allOf(task), record.closedAt);
         const view = { closedAt: record.closedAt, agent: record.agent, cwd: record.cwd, run: deps.runs.runAt(task, record.closedAt) };
         return { kind: 'found', task, facts, view };
-    } catch {
-        return { kind: 'unknown', reason: 'ledger-unreadable' };
+    } catch (error) {
+        return unreadableOf(error);
     }
 }
 

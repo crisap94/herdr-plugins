@@ -53,7 +53,7 @@ test('a tab with several tasks yields only the source task facts', () => {
         recap: recapWith(task('t1', ['w1:p1']), task('t2', ['w1:p2'])),
         facts: [mine, theirs],
     }));
-    assert.deepEqual(resolved, { kind: 'found', task: T1, facts: [mine] });
+    assert.deepEqual(resolved, { kind: 'found', source: 'live', task: T1, facts: [mine] });
 });
 
 test('a source lane listed by two tasks is task-ambiguous and renders no facts', () => {
@@ -88,14 +88,14 @@ test('a lane with no recap yet is unlisted', () => {
 });
 
 test('a task with no facts still resolves, so the flow decides ledger-empty after a refresh', () => {
-    assert.deepEqual(resolveSource('live', SOURCE, depsOf({ facts: [] })), { kind: 'found', task: T1, facts: [] });
+    assert.deepEqual(resolveSource('live', SOURCE, depsOf({ facts: [] })), { kind: 'found', source: 'live', task: T1, facts: [] });
 });
 
 test('closed facts count only inside the closed window', () => {
     const recent = fact('f1', 'done', 'recent', NOW - 1000, { task: T1, state: 'closed', closedAt: NOW - HANDOFF_CLOSED_WINDOW_MS + 1000, closedWhy: 'done' });
     const stale = fact('f2', 'done', 'stale', NOW - 1000, { task: T1, state: 'closed', closedAt: NOW - HANDOFF_CLOSED_WINDOW_MS - 1000, closedWhy: 'done' });
     const resolved = resolveSource('live', SOURCE, depsOf({ facts: [recent, stale] }));
-    assert.deepEqual(resolved, { kind: 'found', task: T1, facts: [recent] });
+    assert.deepEqual(resolved, { kind: 'found', source: 'live', task: T1, facts: [recent] });
 });
 
 test('a source that cannot be read is unknown', () => {

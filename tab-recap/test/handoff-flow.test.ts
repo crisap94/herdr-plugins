@@ -112,6 +112,13 @@ test('a source whose recap cannot be read is failed source-unreadable and nothin
     assert.equal(bothFree(h.claims), true);
 });
 
+test('an unreadable source is logged once with its cause', async () => {
+    const h = harness({ recapThrows: true });
+    const row = request();
+    await h.flow.run(row);
+    assert.deepEqual(h.logs, [`handoff ${row.id}: source unreadable (Error: unreadable recap)`]);
+});
+
 test('a source listed by two tasks is refused task-ambiguous', async () => {
     const h = harness({ recap: recapOf(task('t1', ['w1:p1']), task('t2', ['w1:p1'])) });
     assert.deepEqual(await h.flow.run(request()), { kind: 'refused', reason: 'task-ambiguous' });

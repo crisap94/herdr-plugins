@@ -20,7 +20,7 @@ import { must } from '#src/protocol/result.ts';
 import { renderHandoff } from './handoff-pipeline.ts';
 import type { HandoffLane } from './handoff-render.ts';
 import { resolveSource } from './handoff-source.ts';
-import type { SourceLane, SourceResolution } from './handoff-source.ts';
+import type { ClosedFound, SourceLane, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
@@ -103,13 +103,13 @@ export class PrintedHandoffs implements HandoffPrinter {
 
     private closed(store: PrintStore, request: PrintRequest, identity: ClosedLaneIdentity): Promise<PrintResult> {
         const deps = { closures: store.closures, ledger: store.ledger, runs: store.closures, closedDays: this.deps.closedDays, now: instant(this.deps.now()) };
-        return this.outcome(store, request, resolveSource('closed', identity, deps), null, identity);
+        return this.outcome(store, request, resolveSource('closed', identity, deps), null);
     }
 
-    private async outcome(store: PrintStore, request: PrintRequest, found: SourceResolution, live: Live | null, identity?: ClosedLaneIdentity): Promise<PrintResult> {
+    private async outcome(store: PrintStore, request: PrintRequest, found: SourceResolution, live: Live | null): Promise<PrintResult> {
         switch (found.kind) {
             case 'found':
-                return this.viewed(store, request, found.view === undefined ? this.liveView(store, request, found.facts, live) : this.closedView(identity, found.facts, found.view));
+                return this.viewed(store, request, found.source === 'closed' ? this.closedView(found) : this.liveView(store, request, found.facts, live));
             case 'unlisted':
                 return refusedWith('ledger-empty');
             case 'task-ambiguous':
@@ -134,11 +134,8 @@ export class PrintedHandoffs implements HandoffPrinter {
         return { lane: laneOf(live.tab, source), cursor, facts, closed: undefined };
     }
 
-    private closedView(identity: ClosedLaneIdentity | undefined, facts: readonly Fact[], view: ClosedView): View | null {
-        if (identity === undefined) {
-            return null;
-        }
-        return { lane: closedLaneOf(identity, view), cursor: null, facts, closed: view };
+    private closedView(found: ClosedFound): View {
+        return { lane: closedLaneOf(found.identity, found.view), cursor: null, facts: found.facts, closed: found.view };
     }
 
     private async viewed(store: PrintStore, request: PrintRequest, view: View | null): Promise<PrintResult> {
