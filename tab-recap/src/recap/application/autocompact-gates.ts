@@ -49,13 +49,19 @@ export interface DetailFacts {
 
 const asText = (result: Result<Text, ParseFailure>): Text | null => (result.kind === 'ok' ? result.value : null);
 
+const cooldownText = (facts: DetailFacts): Text | null => asText(parseText(`${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`));
+
+function flightText(facts: DetailFacts): Text | null {
+    if (facts.flight === null) return null;
+    const detail = flightDetail(facts.flight, facts.atCeiling);
+    return detail === null ? null : asText(parseText(detail));
+}
+
 export function detailOf(gate: Gate, facts: DetailFacts): Text | null {
     if (gate === 'busy') return facts.busy === null ? null : asText(parseText(facts.busy));
     if (gate === 'below-minimum') return asText(parseText(`below ${facts.minimum} %`));
-    if (gate === 'cooldown') return asText(parseText(`${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`));
+    if (gate === 'cooldown') return cooldownText(facts);
     if (gate === 'unchanged') return must(parseText('same tokens and mode as the last decision'));
     if (gate === 'coverage-backoff') return must(parseText('recent brief check failed'));
-    if (gate !== 'in-flight' || facts.flight === null) return null;
-    const detail = flightDetail(facts.flight, facts.atCeiling);
-    return detail === null ? null : asText(parseText(detail));
+    return gate === 'in-flight' ? flightText(facts) : null;
 }
