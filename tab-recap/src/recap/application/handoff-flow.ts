@@ -1,7 +1,7 @@
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -10,7 +10,7 @@ import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
 import { isLaneOfTab, resolveSource } from './handoff-source.ts';
-import type { SourceDeps, SourceResolution } from './handoff-source.ts';
+import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import { DeliveryMark } from './delivery-mark.ts';
@@ -46,7 +46,7 @@ export interface HandoffRun {
 
 export const unrendered = (outcome: HandoffOutcome): HandoffRun => ({ outcome, rendered: null });
 
-type FoundSource = Extract<SourceResolution, { readonly kind: 'found' }>;
+type RenderStep = Promise<HandoffRenderResult> | HandoffOutcome;
 
 export class HandoffFlow {
     private readonly deps: HandoffFlowDeps;
@@ -98,12 +98,11 @@ export class HandoffFlow {
         }
     }
 
-    private holdsOf(request: HandoffRequestRow): readonly string[] {
-        const target = String(request.toPane);
-        return request.source.kind === 'live' ? [String(request.pane), target] : [target];
+    private holdsOf(request: HandoffRequestRow): readonly PaneId[] {
+        return request.source.kind === 'live' ? [request.pane, request.toPane] : [request.toPane];
     }
 
-    private releaseAll(panes: readonly string[]): void {
+    private releaseAll(panes: readonly PaneId[]): void {
         for (const pane of panes) {
             this.deps.claims.release(pane);
         }
@@ -166,7 +165,7 @@ export class HandoffFlow {
         return resolveSource('live', { tab: request.tab, pane: request.pane }, { lanes: this.deps.lanes(), records: this.deps.records, ledger: this.deps.ledger, now: this.deps.now() });
     }
 
-    private renderOf(request: HandoffRequestRow, found: FoundSource, refresh: RefreshStatus): Promise<HandoffRenderResult> | HandoffOutcome {
+    private renderOf(request: HandoffRequestRow, found: FoundSource, refresh: RefreshStatus): RenderStep {
         if (found.view !== undefined) {
             const lane = closedLaneOf({ tab: request.tab, pane: request.pane, closedAt: found.view.closedAt }, found.view);
             return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor: null, facts: found.facts, note: request.note, refresh, closed: found.view });

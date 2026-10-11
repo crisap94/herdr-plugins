@@ -19,6 +19,8 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapJob } from './recap-job.ts';
 import type { LaneEvents } from './lane-events.ts';
 
+export type Sharing = 'on' | 'off';
+
 export interface DispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
@@ -29,7 +31,7 @@ export interface DispatchDeps {
     readonly contexts?: LaneContextSource;
     readonly closures?: ClosureRecorder;
     readonly events?: LaneEvents;
-    readonly sharing?: () => boolean;
+    readonly sharing?: () => Sharing;
     closedDays?(): ClosedLaneDays;
     settled?(lane: Lane): void;
     sizing(): Sizing;
@@ -116,7 +118,7 @@ export class Dispatch {
     }
 
     private announce(closed: ClosedLane): void {
-        if (this.deps.events === undefined || this.deps.sharing?.() !== true) {
+        if (this.deps.events === undefined || this.deps.sharing?.() !== 'on') {
             return;
         }
         const workspace = workspaceOfTab(closed.tab);

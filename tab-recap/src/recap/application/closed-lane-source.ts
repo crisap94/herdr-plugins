@@ -26,16 +26,20 @@ export interface ClosedSourceDeps {
     readonly now: Instant;
 }
 
-const openAt = (fact: Fact, closedAt: Instant): boolean =>
-    fact.firstAt <= closedAt && (fact.closedAt === null || fact.closedAt > closedAt);
+type Standing = 'present' | 'absent';
+
+type Recency = 'within' | 'outside';
+
+const openAt = (fact: Fact, closedAt: Instant): Standing =>
+    fact.firstAt <= closedAt && (fact.closedAt === null || fact.closedAt > closedAt) ? 'present' : 'absent';
 
 const asOpen = (fact: Fact): Fact => (fact.state === 'open' ? fact : { ...fact, state: 'open', closedAt: null, closedWhy: null });
 
-const closedWithin = (fact: Fact, closedAt: Instant): boolean =>
-    fact.closedAt !== null && fact.closedAt <= closedAt && fact.closedAt >= closedAt - CLOSED_SHOWN_MS;
+const closedWithin = (fact: Fact, closedAt: Instant): Recency =>
+    fact.closedAt !== null && fact.closedAt <= closedAt && fact.closedAt >= closedAt - CLOSED_SHOWN_MS ? 'within' : 'outside';
 
 export function factsAsOf(facts: readonly Fact[], closedAt: Instant): readonly Fact[] {
-    return [...facts.filter((fact) => openAt(fact, closedAt)).map(asOpen), ...facts.filter((fact) => closedWithin(fact, closedAt))];
+    return [...facts.filter((fact) => openAt(fact, closedAt) === 'present').map(asOpen), ...facts.filter((fact) => closedWithin(fact, closedAt) === 'within')];
 }
 
 export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSourceDeps): ClosedLaneResolution {
@@ -50,7 +54,7 @@ export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSour
     if (deps.closedDays === 0) {
         return { kind: 'never-seen' };
     }
-    if (!inWindow(record.closedAt, deps.now, deps.closedDays)) {
+    if (inWindow(record.closedAt, deps.now, deps.closedDays) === 'outside') {
         return { kind: 'expired', closedAt: record.closedAt };
     }
     if (record.association === null) {

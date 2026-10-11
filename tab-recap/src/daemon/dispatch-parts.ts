@@ -2,6 +2,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
+import type { Sharing } from '#src/recap/application/dispatch.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
@@ -12,6 +13,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { loadConfig } from './config.ts';
 
@@ -20,7 +22,18 @@ export interface Box {
     autocompact: Autocompact | null;
 }
 
-export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistry; readonly webs: LaneWebs; readonly contexts: LaneContexts; readonly events: LaneEvents; readonly sharing: () => boolean }, log: (line: string) => void): Dispatch {
+export interface DispatchParts {
+    readonly fleet: HerdrFleet;
+    readonly store: Store;
+    readonly recaps: RecapJob;
+    readonly transcripts: TranscriptRegistry;
+    readonly webs: LaneWebs;
+    readonly contexts: LaneContexts;
+    readonly events: LaneEvents;
+    readonly sharing: () => Sharing;
+}
+
+export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
         closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,

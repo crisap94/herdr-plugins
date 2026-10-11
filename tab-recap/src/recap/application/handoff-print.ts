@@ -13,7 +13,10 @@ import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 import { renderHandoff } from './handoff-pipeline.ts';
 import type { HandoffLane } from './handoff-render.ts';
 import { resolveSource } from './handoff-source.ts';
@@ -42,7 +45,7 @@ export interface PrintDeps {
 
 const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintResult => ({ kind: 'refused', reason });
 
-const transcriptOf = (cursor: LaneCursor | null): string | null => (cursor === null || cursor.transcript === '' ? null : cursor.transcript);
+const transcriptOf = (cursor: LaneCursor | null): Text | null => (cursor === null || cursor.transcript === '' ? null : must(parseText(cursor.transcript)));
 
 const laneOf = (tab: TabId, lane: TabLane): HandoffLane => ({
     tab,
@@ -145,7 +148,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         const render = renderHandoff({
             records: store.records,
             transcripts: this.deps.transcripts,
-            locate: (): Promise<string | null> => Promise.resolve(transcriptOf(view.cursor)),
+            locate: (): Promise<Text | null> => Promise.resolve(transcriptOf(view.cursor)),
             worksite: this.deps.worksite,
             tokens: this.deps.tokens,
         });

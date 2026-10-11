@@ -23,8 +23,15 @@ export interface SourceDeps {
     readonly now: number;
 }
 
+export interface FoundSource {
+    readonly kind: 'found';
+    readonly task: TaskId;
+    readonly facts: readonly Fact[];
+    readonly view?: ClosedView;
+}
+
 export type SourceResolution =
-    | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view?: ClosedView }
+    | FoundSource
     | { readonly kind: 'unlisted' }
     | { readonly kind: 'source-unavailable' }
     | { readonly kind: 'task-ambiguous' }
@@ -65,7 +72,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps) => {
     }
 };
 
-const closedResolver: SourceResolver<'closed'> = (identity, deps) => {
+const closedResolver: SourceResolver<'closed'> = (identity, deps): SourceResolution => {
     const resolution = resolveClosedLane(identity, deps);
     switch (resolution.kind) {
         case 'found':

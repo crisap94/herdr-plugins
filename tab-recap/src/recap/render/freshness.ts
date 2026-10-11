@@ -1,5 +1,8 @@
+import { must } from '#src/protocol/result.ts';
 import type { Brand } from '#src/recap/domain/brand.ts';
 import type { LastRunCause, NewerPrompts, RefreshStatus, Freshness } from '#src/recap/domain/freshness.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
@@ -37,7 +40,7 @@ const newerWords = (newer: NewerPrompts): string => {
 
 const statusWords = (status: LaneStatus): string => `lane status: ${status}`;
 
-const closedWords = (closedAt: Instant): string => `closed at ${new Date(closedAt).toISOString()}`;
+const closedWords = (closedAt: Instant): Text => must(parseText(`closed at ${new Date(closedAt).toISOString()}`));
 
 export function freshnessTextOf(freshness: Freshness, closedAt: Instant | null = null): FreshnessBlock {
     return [
