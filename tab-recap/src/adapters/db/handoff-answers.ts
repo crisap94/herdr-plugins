@@ -7,10 +7,6 @@ import { handoffBytesOf } from './handoff-ids.ts';
 import { guarded, maybeText, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 
-function storedOf(row: Row): StoredHandoffOutcome | null {
-    return storedOutcomeOf(text(row, 'outcome'), maybeText(row, 'reason'));
-}
-
 export class HandoffAnswersRepository implements HandoffAnswers {
     private readonly db: DatabaseSync;
     private readonly now: () => number;
@@ -43,7 +39,7 @@ export class HandoffAnswersRepository implements HandoffAnswers {
         const key = handoffBytesOf(id);
         return guarded(() => {
             const row = key === null ? null : one(this.read, key);
-            const stored = row === null ? null : storedOf(row);
+            const stored = row === null ? null : storedOutcomeOf(text(row, 'outcome'), maybeText(row, 'reason'));
             return row === null || stored === null ? null : { kind: stored.kind, reason: 'reason' in stored ? stored.reason : null, id, at: whole(row, 'at') };
         }, null);
     }

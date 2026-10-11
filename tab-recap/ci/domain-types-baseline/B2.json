@@ -212,8 +212,8 @@
     "property": 4
   },
   "src/recap/domain/handoff-outcome.ts": {
-    "parameter": 57,
-    "return": 117,
+    "parameter": 55,
+    "return": 116,
     "assertion": 1
   },
   "src/recap/domain/handoff-plan.ts": {

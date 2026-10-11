@@ -10,6 +10,7 @@ import { answer as answerOf, take } from '#src/protocol/responder.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
