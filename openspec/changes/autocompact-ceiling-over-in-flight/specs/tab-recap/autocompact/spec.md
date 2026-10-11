@@ -202,12 +202,22 @@ agent continues them after it: `Still waiting for: <names>. Still running: <tool
 from the `awaiting` token and the items from the reader's background part, through the plain-text sanitizer notes use,
 and the note SHALL be cut to 400 characters. With nothing to name the note SHALL be empty, as before. A reply or an end
 notice that arrives after the compaction SHALL reach the agent as before.
+The brief writer rewrites a note in its own words and may leave a name or a label out (measured: the whole note was kept
+in half of eight live samples); when the written brief of an automatic compaction does not contain every name, tool and label
+of the note as whole words, the plugin SHALL append the note to the brief whole, on the same line, and SHALL NOT change a brief that
+contains them all nor append an operator's note.
 
 #### Scenario: The note after a full lane compacts
 
 - **WHEN** a lane at 92 % awaiting `reviewer` with one `Monitor` labelled `open merge requests` is compacted
   automatically
 - **THEN** the compaction's note SHALL be `Still waiting for: reviewer. Still running: Monitor "open merge requests".`
+
+#### Scenario: The writer dropped what the lane waits for
+
+- **WHEN** the brief written for an automatic compaction of a lane awaiting `reviewer` with one `Monitor` labelled
+  `open merge requests` mentions neither
+- **THEN** the text typed after `/compact ` SHALL be the brief, a space, and the note
 
 #### Scenario: Nothing to name
 

@@ -42,10 +42,10 @@ test('past the tail: completed work launched 1 MB before the end (a 3 MB transcr
     assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [] });
 });
 
-test('past the tail: a background shell launched 1 MB before the end, with no end, is still one in flight', async () => {
+test('past the tail: a background shell launched 1 MB before the end, with no end, is still running, as background work', async () => {
     const shell = [launch('t9'), started('t9', 'b9')];
     const path = write('open.jsonl', transcript(2 * MB, [...pair, ...shell], 0.9 * MB, 0.25 * MB));
-    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 1, background: [] });
+    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
 });
 
 test('a file under the budget is read once: its notices end nothing it does not hold, so it is counted', async () => {
