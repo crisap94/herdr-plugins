@@ -21,6 +21,10 @@ export interface Text {
     readonly brief: string | null;
 }
 
+export interface Placed {
+    readonly queued: boolean;
+}
+
 interface Tried {
     readonly sent: Prompted;
     readonly verdict: Verdict | null;
@@ -128,7 +132,13 @@ export class Sender {
         await this.tell(compaction.title(String(lane.agent)), compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }));
     }
 
-    async send(lane: Lane, text: Text, trail: Trail): Promise<Unsupported | undefined> {
+    private async attemptedOnce(lane: Lane, plan: CompactionPlan): Promise<{ readonly tried: Tried; readonly retried: boolean }> {
+        const first = await this.attempt(lane, plan);
+        const retried = plan.retryOnSelfFailure && first.verdict?.outcome === 'failed';
+        return { tried: retried ? await this.attempt(lane, plan) : first, retried };
+    }
+
+    async send(lane: Lane, text: Text, trail: Trail, placed: Placed = { queued: false }): Promise<Unsupported | undefined> {
         const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(String(lane.agent), text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
             trail.end('failed', { why: resolved.why });
@@ -136,9 +146,8 @@ export class Sender {
         }
         const plan = resolved.plan;
         const began = this.deps.now();
-        let tried = await this.attempt(lane, plan);
-        const retried = plan.retryOnSelfFailure && tried.verdict?.outcome === 'failed';
-        tried = retried ? await this.attempt(lane, plan) : tried;
+        if (placed.queued) trail.to('compacting', { queued: true });
+        const { tried, retried } = await this.attemptedOnce(lane, plan);
         if (tried.sent.kind !== 'sent') {
             await this.refused(lane, trail, tried.sent);
             return undefined;

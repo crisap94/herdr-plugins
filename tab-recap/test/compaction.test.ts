@@ -5,7 +5,7 @@ import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
-import { unsupported } from '#src/recap/domain/compaction-plan.ts';
+import { QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
@@ -32,6 +32,12 @@ import { must } from '#src/protocol/result.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
+const queuingPlans: CompactionPlans = {
+    forKind: (kind, guidance) => {
+        const planned = compactionPlans.forKind(kind, guidance);
+        return planned.kind === 'supported' && kind === 'claude' ? { kind: 'supported', plan: { ...planned.plan, whileWorking: QUEUES } } : planned;
+    },
+};
 
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
 
@@ -555,4 +561,46 @@ test('an automatic request the coverage check stops is answered failed-skipped',
     await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'a brief' }).run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'r7' });
     assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-skipped']);
     assert.deepEqual(world.typed, [], 'nothing is typed');
+});
+
+test('a working claude whose plan queues is typed behind its turn: no refusal, the record is queued as it is typed, and two toasts in all', async () => {
+    const world = fleet({ 'w1:p1': 'working' });
+    const queuedAtTyping: boolean[] = [];
+    const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    await flow({ ...world, agents, plans: queuingPlans }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
+    assert.deepEqual(queuedAtTyping, [true]);
+    assert.equal(world.toasts.length, 2, 'one start toast and one outcome toast');
+    assert.match(world.toasts[0] ?? '', /Compacting claude: queued behind the current turn/);
+    assert.doesNotMatch(world.toasts.join('\n'), /is working|not compacted/);
+});
+
+test('a claude that starts working while its brief is written is typed queued, not refused', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const asked: string[] = [];
+    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'working' : 'idle' }); } };
+    const queuedAtTyping: boolean[] = [];
+    const typing: Agents = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    await flow({ ...world, agents: typing, plans: queuingPlans }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
+    assert.deepEqual(queuedAtTyping, [true]);
+    assert.equal(world.toasts.some((toast) => /is working|not compacted/.test(toast)), false, world.toasts.join('\n'));
+});
+
+test('a blocked claude is refused at the request whatever its plan says: nothing is typed', async () => {
+    const world = fleet({ 'w1:p1': 'blocked' });
+    await flow({ ...world, plans: queuingPlans }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed, []);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', en.badge.blocked]]);
+    assert.match(world.toasts.join('\n'), /claude is blocked: not compacted/);
+});
+
+test('a claude that turns blocked while its brief is written is refused again before typing, whatever its plan says', async () => {
+    const world = fleet({ 'w1:p1': 'idle' });
+    const asked: string[] = [];
+    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'blocked' : 'idle' }); } };
+    await flow({ ...world, agents, plans: queuingPlans }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed, []);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', en.badge.blocked]]);
+    assert.match(world.toasts.at(-1) ?? '', /claude is blocked: not compacted/);
 });

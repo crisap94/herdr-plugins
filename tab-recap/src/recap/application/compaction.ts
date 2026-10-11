@@ -26,6 +26,7 @@ import type { Material } from './compaction-message.ts';
 import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { Sender } from './compaction-send.ts';
+import type { Placed } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
 
@@ -45,6 +46,8 @@ interface Refusal {
     readonly toast: string;
 }
 
+type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonly kind: 'proceed' } & Placed);
+
 export class Compaction {
     private readonly deps: CompactionDeps;
     private readonly sender: Sender;
@@ -61,17 +64,23 @@ export class Compaction {
         }
     }
 
-    private async refusalOf(lane: Lane): Promise<Refusal | null> {
+    private queues(agent: string): boolean {
+        const plan = this.deps.compactionPlans.forKind(agent, '');
+        return plan.kind === 'supported' && plan.plan.whileWorking.kind === 'queues';
+    }
+
+    private async gateOf(lane: Lane): Promise<Gate> {
         const { compaction, badge } = this.deps.messages();
         const agent = String(lane.agent);
         const state = await this.deps.agents.status(String(lane.pane));
         if (isUnknown(state)) {
             const why = saying(state.why);
-            return { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: compaction.failed(agent, why) };
+            return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: compaction.failed(agent, why) } };
         }
-        if (READY.has(state.status)) return null;
+        if (READY.has(state.status)) return { kind: 'proceed', queued: false };
+        if (state.status === 'working' && this.queues(agent)) return { kind: 'proceed', queued: true };
         const reason = state.status === 'working' ? COMPACT_FAILURES.busy : COMPACT_FAILURES.skipped;
-        return { stage: 'skipped', reason, why: badge[state.status], toast: compaction.skipped(agent, state.status) };
+        return { kind: 'refused', refusal: { stage: 'skipped', reason, why: badge[state.status], toast: compaction.skipped(agent, state.status) } };
     }
 
     private answerOne(request: CompactRequest | null, pane: string, stage: string): void {
@@ -105,11 +114,12 @@ export class Compaction {
         return false;
     }
 
-    private async refused(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<boolean> {
-        const refusal = await this.refusalOf(lane);
-        if (refusal === null) {
-            return false;
+    private async gated(lane: Lane, tab: string, trail: Trail | null, origin: Origin = 'operator', request: CompactRequest | null = null): Promise<Gate> {
+        const gate = await this.gateOf(lane);
+        if (gate.kind === 'proceed') {
+            return gate;
         }
+        const { refusal } = gate;
         if (trail === null) {
             const id = this.deps.compactions.begin({ tab, pane: String(lane.pane), agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
             linkAsk(this.deps.asks, request, String(lane.pane), id);
@@ -119,7 +129,7 @@ export class Compaction {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
         await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
-        return true;
+        return gate;
     }
 
     private materialOf(tab: string, pane: string, note: string | null): Material {
@@ -188,7 +198,7 @@ export class Compaction {
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
     }
 
-    private async compact(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
+    private async compact(lane: Lane, tab: string, request: CompactRequest, queued: boolean): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), String(lane.agent), request.origin === 'auto'];
         const writing = this.deps.brief.enabled();
@@ -197,7 +207,8 @@ export class Compaction {
         this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
         const trail = new Trail(this.deps.compactions, id, () => this.deps.now(), (end, reason) => { this.ended(request, pane, id, end, reason); });
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
-        const beginning = writing ? compaction.writing(agent) : compaction.started(agent);
+        let beginning = writing ? compaction.writing(agent) : compaction.started(agent);
+        if (queued) beginning = compaction.startedQueued(agent);
         await this.tell(said(compaction.title(agent)), said(beginning));
         const material = this.materialOf(tab, pane, request.note);
         const link = this.linkedDecision(auto, tab, pane, id);
@@ -205,8 +216,9 @@ export class Compaction {
         if (await this.stoppedByCoverage({ lane, checked, flow: link.flow, trail, said, messages: compaction })) return;
         const { brief } = checked;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
-        if (!(await this.refused(lane, tab, trail))) {
-            const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: brief.text }, trail);
+        const gate = await this.gated(lane, tab, trail);
+        if (gate.kind === 'proceed') {
+            const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: brief.text }, trail, gate);
             if (unsupported !== undefined) {
                 const messages = this.deps.messages();
                 await this.tell(messages.compaction.title(String(lane.agent)), messages.compaction.failed(String(lane.agent), unsupported.why));
@@ -236,12 +248,13 @@ export class Compaction {
             return;
         }
         try {
-            const ready = (await Promise.all(owned.map(async (lane) => ((await this.refused(lane, tab, null, request.origin ?? 'operator', request)) ? [] : [lane])))).flat();
+            const gates = await Promise.all(owned.map(async (lane) => ({ lane, gate: await this.gated(lane, tab, null, request.origin ?? 'operator', request) })));
+            const ready = gates.flatMap(({ lane, gate }) => (gate.kind === 'proceed' ? [{ lane, queued: gate.queued }] : []));
             if (ready.length === 0) {
                 return;
             }
             await this.deps.refresh(tab, lanes);
-            await Promise.all(ready.map((lane) => this.compact(lane, tab, request)));
+            await Promise.all(ready.map(({ lane, queued }) => this.compact(lane, tab, request, queued)));
         } catch (error) {
             for (const lane of owned) {
                 this.answer(request, String(lane.pane), failureStage(COMPACT_FAILURES.error));
