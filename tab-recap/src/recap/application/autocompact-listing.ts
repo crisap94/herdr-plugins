@@ -15,8 +15,6 @@ const DAY_MS = 24 * 60 * 60_000;
 
 const EMPTY = must(parseText(''));
 const DASH = must(parseText('—'));
-const UTC = must(parseText('UTC'));
-const USAGE = must(parseText(AUTOCOMPACT_USAGE));
 
 export type Scope = 'all' | 'latest';
 
@@ -26,41 +24,39 @@ export interface ListingRow {
 
 export type ParsedListing = { readonly kind: 'options'; readonly all: Scope } | { readonly kind: 'usage'; readonly why: Text };
 
-const okOnly = (result: Result<Text, ParseFailure>): readonly Text[] => (result.kind === 'ok' ? [result.value] : []);
 
-const textOr = (result: Result<Text, ParseFailure>, fallback: Text): Text => (result.kind === 'ok' ? result.value : fallback);
 
 export function parseListing(argv: readonly string[]): ParsedListing {
     try {
         const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { all: { type: 'boolean' } } });
         const scope: Scope = values.all === true ? 'all' : 'latest';
-        return positionals.length > 0 ? { kind: 'usage', why: textOr(parseText(`unexpected ${positionals[0] ?? ''}`), USAGE) } : { kind: 'options', all: scope };
+        return positionals.length > 0 ? { kind: 'usage', why: must(parseText(`unexpected ${positionals[0] ?? ''}`)) } : { kind: 'options', all: scope };
     } catch (error) {
-        return { kind: 'usage', why: textOr(parseText(error instanceof Error ? error.message : String(error)), USAGE) };
+        return { kind: 'usage', why: must(parseText(error instanceof Error ? error.message : String(error))) };
     }
 }
 
-const HEAD: ListingRow = { cells: ['time', 'tab', 'pane', 'status', 'share', 'verdict', 'gate', 'decider', 'cost'].map(parseText).flatMap(okOnly) };
-const SKIPPED: ListingRow = { cells: ['time', 'tab', 'pane', 'share', 'gate', 'detail'].map(parseText).flatMap(okOnly) };
+const HEAD: ListingRow = { cells: ['time', 'tab', 'pane', 'status', 'share', 'verdict', 'gate', 'decider', 'cost'].map((line) => must(parseText(line))) };
+const SKIPPED: ListingRow = { cells: ['time', 'tab', 'pane', 'share', 'gate', 'detail'].map((line) => must(parseText(line))) };
 
 function stampOf(ms: Instant | null, zone: Text): Text {
     if (ms === null) {
         return DASH;
     }
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: zone, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(ms).map((part) => [part.type, part.value]));
-    return textOr(parseText(`${parts['month']}-${parts['day']} ${parts['hour']}:${parts['minute']}`), EMPTY);
+    return must(parseText(`${parts['month']}-${parts['day']} ${parts['hour']}:${parts['minute']}`));
 }
 
 const instantOf = (result: Result<Instant, ParseFailure>): Instant | null => (result.kind === 'ok' ? result.value : null);
 
 function rowOf(found: StoredDecision, zone: Text): ListingRow {
     const verdict = found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict;
-    const cells = [found.tab, found.pane, found.laneStatus ?? '—', `${found.share} %`, verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd)].map(parseText).flatMap(okOnly);
+    const cells = [found.tab, found.pane, found.laneStatus ?? '—', `${found.share} %`, verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd)].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 
 function skippedRow(found: Skip, zone: Text): ListingRow {
-    const cells = [found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—'].map(parseText).flatMap(okOnly);
+    const cells = [found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—'].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 
@@ -68,7 +64,7 @@ const everyOf = (ms: number): string => (ms % 60_000 === 0 ? `${ms / 60_000} min
 
 export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): Text {
     const { verdict } = tuning;
-    return textOr(parseText([
+    return must(parseText([
         `style ${tuning.style}`,
         `warnings at most ${verdict.safe.toFixed(2)}`,
         `closes at least ${verdict.closes.toFixed(2)}`,
@@ -80,21 +76,21 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, 
         settings.missedFacts(policy.missedFacts),
         `cooldown ${everyOf(policy.cooldownMs)}`,
         `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(tuning.recheckIdleMs)}`,
-    ].join(' · ')), EMPTY);
+    ].join(' · ')));
 }
 
 function table(head: ListingRow, rows: readonly ListingRow[]): readonly Text[] {
     const all = [head, ...rows];
     const widths = head.cells.map((_, at) => Math.max(...all.map((row) => (row.cells[at] ?? EMPTY).length)));
-    return all.flatMap((row) => okOnly(parseText(row.cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd())));
+    return all.flatMap((row) => [must(parseText(row.cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd()))]);
 }
 
 export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
-    const total = textOr(parseText(`last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`), EMPTY);
-    const zoneName = textOr(parseText(zone), UTC);
-    const header = ['no autocompact decisions yet'].map(parseText).flatMap(okOnly);
-    const decided = decisions.length === 0 ? [...header, total] : [...table(HEAD, decisions.map((found) => rowOf(found, zoneName))), EMPTY, total];
-    const stopped = skips.length === 0 ? [] : [EMPTY, ...['not decided now'].map(parseText).flatMap(okOnly), ...table(SKIPPED, skips.map((found) => skippedRow(found, zoneName)))];
+    const dayRecap = must(parseText(`last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`));
+    const zoneName = must(parseText(zone));
+    const header = ['no autocompact decisions yet'].map((line) => must(parseText(line)));
+    const decided = decisions.length === 0 ? [...header, dayRecap] : [...table(HEAD, decisions.map((found) => rowOf(found, zoneName))), EMPTY, dayRecap];
+    const stopped = skips.length === 0 ? [] : [EMPTY, ...['not decided now'].map((line) => must(parseText(line))), ...table(SKIPPED, skips.map((found) => skippedRow(found, zoneName)))];
     return [...decided, ...stopped];
 }

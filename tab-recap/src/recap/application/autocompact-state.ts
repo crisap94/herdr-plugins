@@ -33,43 +33,37 @@ const clip = (text: Text, limit: Count): Text => {
     if (text.length <= limit) {
         return text;
     }
-    const cut = parseText(`${text.slice(0, limit - 1)}…`);
-    return cut.kind === 'ok' ? cut.value : text;
+    return must(parseText(`${text.slice(0, limit - 1)}…`));
 };
 
 export const replyOf = (text: Text): Text => {
     if (text.length <= REPLY_HEAD + REPLY_TAIL) {
         return text;
     }
-    const cut = parseText(`${text.slice(0, REPLY_HEAD)}[…]${text.slice(-REPLY_TAIL)}`);
-    return cut.kind === 'ok' ? cut.value : text;
+    return must(parseText(`${text.slice(0, REPLY_HEAD)}[…]${text.slice(-REPLY_TAIL)}`));
 };
 
 const textOf = (entry: Entry | undefined): Text | null => {
     if (entry === undefined) {
         return null;
     }
-    const text = parseText(entry.text);
-    return text.kind === 'ok' ? text.value : null;
+    return must(parseText(entry.text));
 };
 
 const factTextOf = (fact: HistoryFact | undefined): Text | null => {
     if (fact === undefined) {
         return null;
     }
-    const text = parseText(fact.text);
-    return text.kind === 'ok' ? text.value : null;
+    return must(parseText(fact.text));
 };
 
 const turnOf = (entry: Entry): readonly Turn[] => {
-    const text = parseText(entry.role === 'tool' ? `${entry.kind ?? 'other'}: ${entry.text}` : entry.text);
-    return text.kind === 'ok' ? [{ role: entry.role, text: clip(text.value, TURN_CLIP) }] : [];
+    const text = must(parseText(entry.role === 'tool' ? `${entry.kind ?? 'other'}: ${entry.text}` : entry.text));
+    return [{ role: entry.role, text: clip(text, TURN_CLIP) }];
 };
 
 const openItemOf = (fact: HistoryFact): readonly OpenWorkItem[] => {
-    const section = parseText(fact.section);
-    const text = parseText(fact.text);
-    return section.kind === 'ok' && text.kind === 'ok' ? [{ section: section.value, text: text.value }] : [];
+    return [{ section: must(parseText(fact.section)), text: must(parseText(fact.text)) }];
 };
 
 export function autocompactState(recent: readonly Entry[], history: readonly HistoryFact[]): AutocompactState {
