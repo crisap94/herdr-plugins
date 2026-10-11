@@ -155,6 +155,15 @@ test('claude without a note: no trace of one', async () => {
     assert.ok(!/above all/i.test(world.typed[0]?.text ?? ''));
 });
 
+test('a request with an empty tab or an empty pane is answered like one with no target: nothing typed, no throw', async () => {
+    for (const request of [{ tab: '', pane: null, note: null }, { tab: 'w1:t1', pane: '', note: null }]) {
+        const world = fleet({ 'w1:p1': 'done' });
+        await assert.doesNotReject(flow(world).run(request));
+        assert.deepEqual(world.typed, []);
+        assert.ok(world.toasts.length > 0, 'the operator is told');
+    }
+});
+
 test('codex: its own /compact typed with Enter (a prompt reaches it as a message), then the restore message — in that order', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
     await flow(world, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: 'keep the schema' });

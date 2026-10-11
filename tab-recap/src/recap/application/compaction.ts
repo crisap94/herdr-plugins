@@ -25,7 +25,7 @@ import { Sender } from './compaction-send.ts';
 import type { Placed, Placement } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -233,19 +233,23 @@ export class Compaction {
         await this.tell(must(parseText(compaction.title(request.tab))), must(parseText(compaction.nothing)));
     }
 
-    private async targetsFor(request: CompactRequest, tab: TabId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
-        const focused = await this.deps.focused(tab);
-        return targetsOf(lanes, this.deps.target(), { pane: request.pane === null ? null : paneId(request.pane), focused: focused === null ? null : paneId(focused) });
+    private async targetsFor(request: CompactRequest, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+        const asked = request.pane === null ? null : parsePaneId(request.pane);
+        if (asked !== null && asked.kind === 'err') return [];
+        const focused = await this.deps.focused(request.tab);
+        const seen = focused === null ? null : parsePaneId(focused);
+        return targetsOf(lanes, this.deps.target(), { pane: asked === null ? null : asked.value, focused: seen === null || seen.kind === 'err' ? null : seen.value });
     }
 
     async run(request: CompactRequest): Promise<void> {
-        const tab = tabId(request.tab);
-        const lanes = this.deps.lanes(tab);
-        const targets = await this.targetsFor(request, tab, lanes);
-        if (targets.length === 0) {
+        const parsed = parseTabId(request.tab);
+        const lanes = this.deps.lanes(request.tab);
+        const targets = parsed.kind === 'err' ? [] : await this.targetsFor(request, lanes);
+        if (parsed.kind === 'err' || targets.length === 0) {
             await this.withoutTarget(request);
             return;
         }
+        const tab = parsed.value;
         const origin = request.origin ?? 'operator';
         const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
