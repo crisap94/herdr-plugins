@@ -1,30 +1,11 @@
-import { INTERRUPTED_REASON } from '../exchange.ts';
+import { HANDOFF_FAILURES, HANDOFF_REFUSALS, HANDOFF_UNSUPPORTED } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
 import { exchangeName, exchangeVersion } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const HANDOFF_STAGES = { queued: 'queued', running: 'running', delivered: 'delivered' } as const;
 
-export const HANDOFF_REFUSALS = [
-    'not-offered',
-    'bad-request',
-    'not-a-lane',
-    'target-elsewhere',
-    'source-unavailable',
-    'task-ambiguous',
-    'source-equals-target',
-    'status-not-ready',
-    'in-flight',
-    'lane-busy',
-    'typing-lease-busy',
-    'content-empty',
-    'ledger-empty',
-    'too-large',
-] as const;
-
-export const HANDOFF_UNSUPPORTED = ['no-plan'] as const;
-
-export const HANDOFF_FAILURES = ['transport', 'unconfirmed', 'internal-error', 'source-unreadable', 'expired', INTERRUPTED_REASON] as const;
+export { HANDOFF_FAILURES, HANDOFF_REFUSALS, HANDOFF_UNSUPPORTED } from '../reasons.ts';
 
 export const HANDOFF_EVENTS = {
     queued: 'handoff-queued',

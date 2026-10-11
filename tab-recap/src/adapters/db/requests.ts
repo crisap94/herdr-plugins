@@ -47,7 +47,9 @@ function closedAtOf(source: HandoffSource): Instant | null {
     return source.kind === 'live' ? null : source.closedAt;
 }
 
-export function parseRequester(input: unknown): Text | null {
+type Requester = Text;
+
+export function parseRequester(input: unknown): Requester | null {
     return input === null ? null : must(parseText(input));
 }
 

@@ -52,7 +52,7 @@ test('every descriptor refusal, unsupported and failure reason maps to one answe
         assert.ok(must(answerValue(handoff, 'x'.repeat(16), stage)).length <= 80, stage);
     }
     for (const reason of EXCHANGE_ONLY_REFUSALS) {
-        assert.ok((handoff.refusalReasons ?? []).includes(reason), `${reason} is a refusal of the descriptor`);
+        assert.ok((handoff.refusalReasons ?? []).some((each) => each === reason), `${reason} is a refusal of the descriptor`);
     }
 });
 

@@ -42,7 +42,7 @@ test('the published deadline is the handoff deadline: the take age bound plus th
 test('the descriptor declares every storable refusal, unsupported and failure of the handoff flow', () => {
     const declared = terminalsOf(handoff).map(terminalStage);
     for (const row of HANDOFF_OUTCOME_ROWS) {
-        if (row.storable && row.reason !== null && row.outcome !== 'delivered') {
+        if (row.storable && row.reason !== null) {
             assert.ok(declared.includes(`${row.outcome}-${row.reason}`), `${row.outcome}-${row.reason}`);
         }
     }

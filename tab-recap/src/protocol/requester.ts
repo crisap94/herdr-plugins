@@ -4,6 +4,7 @@ import type { Refusal, RequestId, ToolName } from './primitives.ts';
 import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf } from './exchange.ts';
 import type { Exchange, Terminal } from './exchange.ts';
 import type { ParsedValue } from './codec.ts';
+import type { ReasonWord } from './reasons.ts';
 import type { TokenMap, TokenWrite } from './tokens.ts';
 
 export type AnswerState =
@@ -13,8 +14,8 @@ export type AnswerState =
     | { readonly kind: 'done' }
     | { readonly kind: 'delivered' }
     | { readonly kind: 'failed'; readonly reason: string }
-    | { readonly kind: 'refused'; readonly reason: string }
-    | { readonly kind: 'unsupported'; readonly reason: string }
+    | { readonly kind: 'refused'; readonly reason: ReasonWord }
+    | { readonly kind: 'unsupported'; readonly reason: ReasonWord }
     | { readonly kind: 'foreign-id'; readonly id: string }
     | { readonly kind: 'unreadable' };
 
