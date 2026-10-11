@@ -152,6 +152,7 @@ while [ $# -gt 0 ]; do
 done
 echo "$method $url$data" >> "$CURL_LOG"
 case "$method $url" in
+    "GET "*merge_requests*page=2*) printf '%s' "${FAKE_LIST2:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
     "GET "*merge_requests*) printf '%s' "${FAKE_LIST:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
     "GET "*repository/tags/*) echo '{}' > "$out"; echo "${FAKE_TAG_CODE:-404}" ;;
     "POST "*merge_requests*) echo '{}' > "$out"; echo "${FAKE_MR_CODE:-201}" ;;
@@ -179,6 +180,9 @@ expect fail "no merge request opened while one is open" grep -q "POST .*merge_re
 FAKE_LIST='not json' expect fail "an open merge request list that is not JSON" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request list was not JSON" >&2; wrong=$((wrong + 1)); }
 expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_HOST bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
+full="$(node -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
+FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0"}]' expect pass "a release merge request on the second page of open merge requests" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed over a release merge request on the second page" >&2; wrong=$((wrong + 1)); }
 FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelated open merge request does not block the release" publish
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
@@ -221,6 +225,17 @@ expect fail "a version without its changelog link reference" nolink
 printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
 expect fail "a package.json on another version" tagit
 git checkout --quiet -- demo/package.json
+for file in herdr-plugin.toml package.json package-lock.json; do
+    sed -e 's/1\.1\.0/1.1.1/g' "demo/$file" > "$scratch/next.$file" && cp "$scratch/next.$file" "demo/$file"
+done
+git add -A && git commit --quiet -m "release 1.1.1"
+second_release="$(git rev-parse HEAD)"
+git commit --quiet --allow-empty -m "after the second release"
+sed -e 's/1\.1\.0/1.1.1/g' "$scratch/CHANGELOG.md" > "$scratch/changelog.next"
+: > "$CURL_LOG"
+second() { CI_COMMIT_SHA="$(git rev-parse HEAD)" CHANGELOG="$scratch/changelog.next" tagit; }
+expect pass "a second release among several commits" second
+expect pass "the tag is at the commit that set 1.1.1, not the root or the tip" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$second_release" "$CURL_LOG"
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
 [ "$wrong" -eq 0 ]

@@ -44,7 +44,7 @@ PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" >/dev/null 2>&1 \
 grep -q "^\\[$escaped\\]: " "$changelog" \
     || { echo "tag-release: 1 — CHANGELOG has no '[$version]: …' link reference: no tag" >&2; exit 1; }
 
-commit="$(git -C "$dir" log -1 --format=%H -S"version = \"$version\"" "$CI_COMMIT_SHA" -- herdr-plugin.toml)"
+commit="$(git -C "$dir" log -1 --format=%H -G"^version = \"$escaped\"" "$CI_COMMIT_SHA" -- herdr-plugin.toml)"
 [ -n "$commit" ] || { echo "tag-release: 3 — NOT COVERED: no commit that set version $version in the manifest (is the history shallow?)" >&2; exit 3; }
 code="$(api --request POST --data-urlencode "tag_name=$tag" --data-urlencode "ref=$commit" \
     --data-urlencode "message=$plugin $version" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/tags")"

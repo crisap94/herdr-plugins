@@ -27,17 +27,26 @@ body="$(mktemp)"
 trap 'rm -f "$body"' EXIT
 api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "PRIVATE-TOKEN: $RELEASE_TOKEN" "$@"; }
 
-code="$(api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests?state=opened&target_branch=$target&per_page=100")"
-[ "$code" = "200" ] || { echo "release-publish: 3 — NOT COVERED: listing the open merge requests answered HTTP $code" >&2; exit 3; }
-open="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(list.filter((mr) => String(mr.source_branch).startsWith(process.argv[2])).map((mr) => "!" + mr.iid + " " + mr.source_branch).join(", "));' "$body" "release/$plugin-v")" \
-    || { echo "release-publish: 3 — NOT COVERED: the open merge request list is not JSON" >&2; exit 3; }
+open=""
+page=1
+while [ "$page" -le 20 ]; do
+    code="$(api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests?state=opened&target_branch=$target&per_page=100&page=$page")"
+    [ "$code" = "200" ] || { echo "release-publish: 3 — NOT COVERED: listing the open merge requests answered HTTP $code" >&2; exit 3; }
+    listed="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(list.length); for (const mr of list) { if (String(mr.source_branch).startsWith(process.argv[2])) { console.log("!" + mr.iid + " " + mr.source_branch); } }' "$body" "release/$plugin-v")" \
+        || { echo "release-publish: 3 — NOT COVERED: the open merge request list is not JSON" >&2; exit 3; }
+    open="$open$(printf '%s\n' "$listed" | sed 1d | tr '\n' ' ')"
+    [ "$(printf '%s\n' "$listed" | head -n 1)" -ge 100 ] || break
+    page=$((page + 1))
+done
+[ "$page" -le 20 ] || { echo "release-publish: 3 — NOT COVERED: more than 2000 open merge requests" >&2; exit 3; }
 if [ -n "$open" ]; then
     echo "a release merge request is already open ($open): let it land before preparing another"
     exit 0
 fi
 
-git push --quiet --force "$push_url" "HEAD:refs/heads/$branch" \
-    || { echo "release-publish: 1 — could not push $branch" >&2; exit 1; }
+seen="$(git ls-remote "$push_url" "refs/heads/$branch" | cut -f1)"
+git push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
+    || { echo "release-publish: 1 — could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 1; }
 
 description="## What changes for the user
 
