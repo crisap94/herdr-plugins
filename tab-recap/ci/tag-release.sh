@@ -43,6 +43,8 @@ PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" >/dev/null 2>&1 \
     || { echo "tag-release: 1 — the manifest, package.json and package-lock.json do not agree on $version: no tag" >&2; exit 1; }
 grep -q "^\\[$escaped\\]: " "$changelog" \
     || { echo "tag-release: 1 — CHANGELOG has no '[$version]: …' link reference: no tag" >&2; exit 1; }
+CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" >/dev/null 2>&1 \
+    || { echo "tag-release: 1 — the CHANGELOG section for $version is missing or empty: no tag" >&2; exit 1; }
 
 commit="$(git -C "$dir" log -1 --format=%H -G"^version = \"$escaped\"" "$CI_COMMIT_SHA" -- herdr-plugin.toml)"
 [ -n "$commit" ] || { echo "tag-release: 3 — NOT COVERED: no commit that set version $version in the manifest (is the history shallow?)" >&2; exit 3; }

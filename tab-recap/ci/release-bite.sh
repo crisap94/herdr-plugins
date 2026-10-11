@@ -222,6 +222,8 @@ expect fail "a version below the newest release" tagit
 git tag -d demo-v1.2.0 >/dev/null
 nolink() { sed -e '/^\[1.1.0\]: /d' "$scratch/CHANGELOG.md" > "$scratch/changelog.nolink"; CHANGELOG="$scratch/changelog.nolink" tagit; }
 expect fail "a version without its changelog link reference" nolink
+emptysection() { sed -e '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}' "$scratch/CHANGELOG.md" > "$scratch/changelog.empty"; CHANGELOG="$scratch/changelog.empty" tagit; }
+expect fail "a version whose changelog section is empty" emptysection
 printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
 expect fail "a package.json on another version" tagit
 git checkout --quiet -- demo/package.json
