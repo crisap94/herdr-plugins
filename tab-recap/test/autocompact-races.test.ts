@@ -80,3 +80,28 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     await new AutocompactSweep({ board: (): Board => boardOf([...lanes, idle30]), autocompact: (): Considers => w.service, log: (): void => undefined }).sweep();
     assert.equal(rows(w).find((row) => row.pane === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
 });
+
+test('the late check at the ceiling: an awaited reply that appears after the gate does not skip a full lane', async () => {
+    const w = world();
+    w.share = 92;
+    w.lateAwaiting = 'reviewer';
+    await w.service.consider(lane());
+    assert.deepEqual([w.store.autocompact.skips().length, rows(w)[0]?.gate, rows(w)[0]?.why, w.requests.map((request) => request.note)], [0, 'ceiling', 'ceiling-overrides-wait (awaiting reviewer)', ['Still waiting for: reviewer.']]);
+});
+
+test('the late check below the ceiling: an awaited reply that appears after the gate skips the lane at 70 %', async () => {
+    const w = world();
+    w.share = 70;
+    w.lateAwaiting = 'reviewer';
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked.length, w.requests.length, rows(w).length, w.store.autocompact.skips().map((skip) => [skip.gate, skip.detail])], [1, 0, 0, [['in-flight', 'awaiting reviewer']]]);
+});
+
+test('an unknown awaiting answer at 92 % still skips the lane', async () => {
+    const w = world();
+    w.share = 92;
+    w.awaitingUnknown = true;
+    await w.service.consider(lane());
+    assert.deepEqual([w.asked.length, w.requests.length, w.store.autocompact.skips().map((skip) => skip.gate)], [0, 0, ['in-flight']]);
+    assert.notEqual(w.store.autocompact.skips()[0]?.detail, null);
+});
