@@ -100,7 +100,7 @@ test('an unreadable store is unknown with the store cause', () => {
 
 test('a throwing ledger is unknown and carries the cause of the throw', () => {
     const throwing: Pick<Ledger, 'allOf'> = { allOf: () => { throw new Error('store locked'); } };
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger: throwing })), { kind: 'unknown', why: { why: 'unreadable', detail: 'Error: store locked' } });
+    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger: throwing })), { kind: 'unknown', why: { why: 'unreadable', detail: 'Error' } });
 });
 
 test('after a prune an expired closure becomes never-seen', () => {

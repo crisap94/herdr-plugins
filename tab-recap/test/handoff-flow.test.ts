@@ -116,7 +116,7 @@ test('an unreadable source is logged once with its cause', async () => {
     const h = harness({ recapThrows: true });
     const row = request();
     await h.flow.run(row);
-    assert.deepEqual(h.logs, [`handoff ${row.id}: source unreadable (Error: unreadable recap)`]);
+    assert.deepEqual(h.logs, [`handoff ${row.id}: source unreadable (Error)`]);
 });
 
 test('a source listed by two tasks is refused task-ambiguous', async () => {

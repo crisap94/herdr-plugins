@@ -1,3 +1,4 @@
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -80,7 +81,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps) => {
         const closed = deps.ledger.recentlyClosed(task, deps.now - HANDOFF_CLOSED_WINDOW_MS);
         return { kind: 'found', source: 'live', task, facts: [...open, ...closed] };
     } catch (error) {
-        return { kind: 'unknown', why: String(error) };
+        return { kind: 'unknown', why: failureCauseOf(error) };
     }
 };
 

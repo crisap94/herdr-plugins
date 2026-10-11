@@ -100,5 +100,5 @@ test('closed facts count only inside the closed window', () => {
 
 test('a source that cannot be read is unknown', () => {
     const broken: Pick<RecapRecords, 'readRecap'> = { readRecap: () => { throw new Error('store locked'); } };
-    assert.deepEqual(resolveSource('live', SOURCE, depsOf({ records: broken })), { kind: 'unknown', why: 'Error: store locked' });
+    assert.deepEqual(resolveSource('live', SOURCE, depsOf({ records: broken })), { kind: 'unknown', why: 'Error' });
 });
