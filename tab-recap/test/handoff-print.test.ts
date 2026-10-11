@@ -9,7 +9,7 @@ import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
 import { MemoryLedger } from './fakes/memory-ledger.ts';

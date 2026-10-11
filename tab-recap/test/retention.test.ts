@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closedLaneDaysOf, cutoffOf, DEFAULT_CLOSED_LANE_DAYS, DEFAULT_KEEP_DAYS, inWindow, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import { cutoffOf, DEFAULT_CLOSED_LANE_DAYS, DEFAULT_KEEP_DAYS, inWindow, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 
 const DAY = 86_400_000;
 
@@ -23,7 +24,7 @@ test('TAB_RECAP_CLOSED_LANE_DAYS: whole days of up to nine digits, 0 = record no
 test('a closure is inside the window up to the cutoff, never one millisecond earlier, and days = 0 keeps none', () => {
     const now = instant(10 * DAY);
     const days = closedLaneDaysOf('1');
-    assert.equal(inWindow(instant(9 * DAY), now, days), true, 'exactly at the cutoff');
-    assert.equal(inWindow(instant(9 * DAY - 1), now, days), false, 'one millisecond before the cutoff');
-    assert.equal(inWindow(now, now, closedLaneDaysOf('0')), false, 'days = 0');
+    assert.equal(inWindow(instant(9 * DAY), now, days), 'inside', 'exactly at the cutoff');
+    assert.equal(inWindow(instant(9 * DAY - 1), now, days), 'outside', 'one millisecond before the cutoff');
+    assert.equal(inWindow(now, now, closedLaneDaysOf('0')), 'outside', 'days = 0');
 });

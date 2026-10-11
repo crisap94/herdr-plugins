@@ -5,7 +5,7 @@ import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';

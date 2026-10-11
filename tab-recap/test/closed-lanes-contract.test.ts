@@ -7,7 +7,7 @@ import type { ClosedLaneRecord, ClosureReader, ClosureRecorder, ClosureSweep } f
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';

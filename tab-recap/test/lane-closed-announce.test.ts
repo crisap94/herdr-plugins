@@ -12,7 +12,7 @@ import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
@@ -51,7 +51,7 @@ function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?
         feedback: noop, closedDays: () => closedLaneDaysOf(options.days),
         ...(options.closures === undefined ? {} : { closures: options.closures }),
         ...(options.events === undefined ? {} : { events: options.events }),
-        ...(options.sharing === undefined ? {} : { sharing: (): boolean => options.sharing === true }),
+        ...(options.sharing === undefined ? {} : { sharing: () => (options.sharing === true ? 'on' : 'off') }),
     });
 }
 

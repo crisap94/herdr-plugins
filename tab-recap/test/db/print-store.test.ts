@@ -9,7 +9,7 @@ import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { RecapRecordsRepository } from '#src/adapters/db/recap-records.ts';
 import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';
 
 const BEFORE_HANDOFF = MIGRATIONS.length - 1;

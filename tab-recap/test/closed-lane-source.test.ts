@@ -12,7 +12,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
-import { closedLaneDaysOf } from '#src/recap/domain/retention.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { MemoryClosedLanes } from '#test/fakes/closed-lanes-memory.ts';
 import { fact } from '#test/fakes/fact-at.ts';
