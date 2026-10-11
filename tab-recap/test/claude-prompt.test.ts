@@ -5,11 +5,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promptBodyOf } from '#src/adapters/claude-prompt.ts';
 import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import type { Located } from '#src/ports/transcripts.ts';
 import { laneWith } from './fakes/handoff-delivery.ts';
 
 const BODY = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const wrapped = (body: string, id = 'a1b2'): string => `\n\n<pasted_content id="${id}">\n${body}\n</pasted_content id="${id}">\n`;
 const userRow = (content: string): string => `${JSON.stringify({ type: 'user', message: { content } })}\n`;
+
+function sourceOf(located: Located): string {
+    if (located.kind !== 'located') {
+        throw new Error('the transcript must be located');
+    }
+    return located.source;
+}
 
 test('a stored multi-line paste comes back as the text that was sent', () => {
     assert.equal(promptBodyOf(wrapped(BODY)), BODY);
@@ -54,12 +62,8 @@ test('the Claude reader returns the inner text of a wrapped multi-line prompt', 
         mkdirSync(join(root, 'proj'));
         writeFileSync(join(root, 'proj', 's1.jsonl'), `${userRow('an earlier question')}${userRow(wrapped(BODY))}`);
         const reader = new ClaudeTranscripts(root);
-        const located = await reader.locate(laneWith({ session: 's1' }));
-        assert.equal(located.kind, 'located');
-        if (located.kind !== 'located') {
-            return;
-        }
-        assert.deepEqual(await reader.latestPrompt(located.source, 65_536), { kind: 'prompt', text: BODY });
+        const source = sourceOf(await reader.locate(laneWith({ session: 's1' })));
+        assert.deepEqual(await reader.latestPrompt(source, 65_536), { kind: 'prompt', text: BODY });
     } finally {
         rmSync(root, { recursive: true });
     }
@@ -71,11 +75,8 @@ test('the Claude reader returns the inner text of a wrapped last-prompt record w
         mkdirSync(join(root, 'proj'));
         writeFileSync(join(root, 'proj', 's1.jsonl'), `${JSON.stringify({ type: 'last-prompt', lastPrompt: wrapped(BODY) })}\n`);
         const reader = new ClaudeTranscripts(root);
-        const located = await reader.locate(laneWith({ session: 's1' }));
-        if (located.kind !== 'located') {
-            assert.fail('the transcript must be located');
-        }
-        assert.deepEqual(await reader.latestPrompt(located.source, 65_536), { kind: 'prompt', text: BODY });
+        const source = sourceOf(await reader.locate(laneWith({ session: 's1' })));
+        assert.deepEqual(await reader.latestPrompt(source, 65_536), { kind: 'prompt', text: BODY });
     } finally {
         rmSync(root, { recursive: true });
     }
@@ -88,11 +89,8 @@ test('the Claude reader returns the inner text of a wrapped prompt sent as the n
         const queued = `${JSON.stringify({ type: 'attachment', attachment: { type: 'queued_command', prompt: wrapped(BODY), origin: { kind: 'human' } } })}\n`;
         writeFileSync(join(root, 'proj', 's1.jsonl'), queued);
         const reader = new ClaudeTranscripts(root);
-        const located = await reader.locate(laneWith({ session: 's1' }));
-        if (located.kind !== 'located') {
-            assert.fail('the transcript must be located');
-        }
-        assert.deepEqual(await reader.latestPrompt(located.source, 65_536), { kind: 'prompt', text: BODY });
+        const source = sourceOf(await reader.locate(laneWith({ session: 's1' })));
+        assert.deepEqual(await reader.latestPrompt(source, 65_536), { kind: 'prompt', text: BODY });
     } finally {
         rmSync(root, { recursive: true });
     }
