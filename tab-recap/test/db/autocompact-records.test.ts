@@ -8,7 +8,7 @@ import { decode } from '#src/adapters/db/checked-fact-codec.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
     tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: 1_000, mode: 'shadow', share: 61, tokens: 610_000, window: 1_000_000, gate: 'ask', verdict: 'compact',
-    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, ...over,
+    askedVerdict: 'compact', answers: { closes_request: 0.95, stuck: 0.01 }, coverage: null, decider: 'jev · jev-1.13.0', costUsd: 0.000031, tookMs: 550, why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, ...over,
 });
 
 function seeded(): Store {

@@ -46,7 +46,7 @@ export interface Decision {
     readonly costUsd: number;
     readonly tookMs: number | null;
     readonly why: string | null;
-    readonly laneStatus?: LaneStatusAtDecision | null;
+    readonly laneStatus: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
     readonly coverageMs: number | null;
     readonly coverageCostUsd: number | null;
