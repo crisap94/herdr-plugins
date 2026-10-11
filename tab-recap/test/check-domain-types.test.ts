@@ -80,6 +80,7 @@ test('unknown as a type argument, a Date, a Buffer and a numeric enum fail, each
         ['bad-date', /take, parameter at resolves to Date/u],
         ['bad-buffer', /take, parameter bytes resolves to Buffer/u],
         ['bad-numeric-enum', /take, parameter level is a numeric enum/u],
+        ['bad-mixed-enum', /take, parameter value is a numeric enum/u],
         ['bad-empty-object', /take, parameter value is an anonymous object-literal type/u],
         ['bad-readonly-alias', /<anonymous>, property id resolves to string/u],
     ];
@@ -93,4 +94,5 @@ test('unknown as a type argument, a Date, a Buffer and a numeric enum fail, each
 test('a string enum and a Readonly alias of branded fields pass', () => {
     assert.equal(run(probe('good-string-enum')).status, 0);
     assert.equal(run(probe('good-readonly-alias')).status, 0);
+    assert.equal(run(probe('good-same-name-type')).status, 0);
 });
