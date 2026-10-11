@@ -18,10 +18,8 @@
     "assertion": 1
   },
   "src/recap/application/autocompact-gates.ts": {
-    "parameter": 7,
-    "return": 3,
-    "container": 2,
-    "property": 9
+    "parameter": 1,
+    "property": 1
   },
   "src/recap/application/autocompact-line.ts": {
     "parameter": 1
@@ -32,10 +30,10 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 18,
-    "return": 6,
-    "container": 6,
-    "property": 18
+    "parameter": 7,
+    "return": 2,
+    "container": 2,
+    "property": 8
   },
   "src/recap/application/boundaries.ts": {
     "parameter": 2
