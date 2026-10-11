@@ -128,7 +128,7 @@ test('against real git: a repository on a branch, a subdirectory, and a director
 });
 
 test('the shared git prefix is read-only, so no reader can extend it for every call', () => {
-    // @ts-expect-error the prefix is a read-only list
+    // @ts-expect-error
     const writable: string[] = GIT;
     assert.deepEqual([...writable], ['-c', 'core.fsmonitor=false']);
 });
