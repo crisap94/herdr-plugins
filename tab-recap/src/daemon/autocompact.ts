@@ -1,5 +1,5 @@
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
-import { Autocompact, type FlightAnswer, type Waiting } from '#src/recap/application/autocompact.ts';
+import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
@@ -14,6 +14,8 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { bounded } from './bounded.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { awaitingOf } from '#src/recap/domain/coordination.ts';
+import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
+import type { Observed } from '#src/recap/domain/in-flight.ts';
 import { readPaneTokens } from '#src/adapters/herdr-fleet.ts';
 import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -25,21 +27,23 @@ import { capabilityWording } from '#src/ports/capability-reasons.ts';
 const RECAP_WAIT_MS = 90_000;
 const TAIL_BYTES = 512 * 1024;
 
-async function inFlightOf(transcripts: TranscriptRegistry, lane: Lane): Promise<FlightAnswer> {
+const cannotRead = (why: string): Observed => unreadable(flightReason(why));
+
+async function inFlightOf(transcripts: TranscriptRegistry, lane: Lane): Promise<Observed> {
     const agent = String(lane.agent);
     const registered = registeredKindOf(agent);
     if (registered !== null) {
         const capability = IN_FLIGHT_CAPABILITIES[registered];
-        if (capability.kind === 'unsupported') return { count: 'unknown', why: capabilityWording(capability.why, agent) };
+        if (capability.kind === 'unsupported') return cannotRead(capabilityWording(capability.why, agent));
     }
     const exact = transcripts.exact(agent);
     const reader = exact ?? transcripts.readerFor(agent);
-    if (reader === undefined) return { count: 'unknown', why: inFlightReason('unregistered-reader', agent) };
+    if (reader === undefined) return cannotRead(inFlightReason('unregistered-reader', agent));
     const located = await reader.locate(lane);
-    if (isUnknown(located)) return { count: 'unknown', why: exact === undefined ? inFlightReason('unregistered-reader', agent) : saying(located.why) };
-    if (reader.inFlight.kind === 'unsupported') return { count: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };
+    if (isUnknown(located)) return cannotRead(exact === undefined ? inFlightReason('unregistered-reader', agent) : saying(located.why));
+    if (reader.inFlight.kind === 'unsupported') return cannotRead(inFlightReason(reader.inFlight.why, agent));
     const found = await reader.inFlight.read(located.source, TAIL_BYTES);
-    return isUnknown(found) ? { count: 'unknown', why: saying(found.why) } : { count: found.count, why: `${found.count} running` };
+    return isUnknown(found) ? cannotRead(saying(found.why)) : observedFrom(runningCount(found.count), found.background, flightReason(`${found.count} running`));
 }
 
 async function awaitingNow(pane: string): Promise<Waiting> {

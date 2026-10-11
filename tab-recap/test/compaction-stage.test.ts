@@ -10,12 +10,13 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 
-const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, why: null, origin: 'operator' };
+const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'operator' };
 const done = { finishedAt: 1, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 };
 
 const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] = [
     ['briefing', { stage: 'briefing' }, 8000],
     ['compacting', { stage: 'compacting' }, 12_000],
+    ['queued behind the current turn', { stage: 'compacting', queued: true }, 12_000],
     ['restoring', { stage: 'restoring' }, 3000],
     ['compacted', { stage: 'compacted', ...done }, 0],
     ['compacted with the template', { stage: 'compacted', brief: 'template', ...done }, 0],
@@ -42,6 +43,7 @@ const GOLDEN = {
         column: [
             ['● idle · claude w1:p1', '✎ writing what to keep… (codex · gpt-6-luna', '  · high) 0:08'],
             ['● idle · claude w1:p1', '◐ compacting… 0:12'],
+            ['● idle · claude w1:p1', '◐ queued behind the current turn… 0:12'],
             ['● idle · claude w1:p1', '◐ telling it where things stand…'],
             ['● idle · claude w1:p1', '✓ compacted 39.5k → 3.1k · 16 s'],
             ['● idle · claude w1:p1', '✓ compacted 39.5k → 3.1k · 16 s · template'],
@@ -51,7 +53,7 @@ const GOLDEN = {
             ['● idle · claude w1:p1', '– not compacted: working'],
         ],
         bar: [
-            '📝● ✎ writing what claude keeps… 0:08', '📝● ◐ compacting claude… 0:12', '📝● ◐ telling claude where things stand…', '📝● ✓ claude compacted 39.5k → 3.1k · 16 s',
+            '📝● ✎ writing what claude keeps… 0:08', '📝● ◐ compacting claude… 0:12', '📝● ◐ claude: queued behind the current turn…', '📝● ◐ telling claude where things stand…', '📝● ✓ claude compacted 39.5k → 3.1k · 16 s',
             '📝● ✓ claude compacted 39.5k → 3.1k · 16 s', '📝● ✓ claude compacted 1 min 30 s', '📝● ✗ claude not compacted: working', '📝● ? claude not confirmed — check it', '📝● – claude not compacted: working',
         ],
     },
@@ -59,6 +61,7 @@ const GOLDEN = {
         column: [
             ['● en pausa · claude w1:p1', '✎ escribiendo qué conservar… (codex ·', '  gpt-6-luna · high) 0:08'],
             ['● en pausa · claude w1:p1', '◐ compactando… 0:12'],
+            ['● en pausa · claude w1:p1', '◐ en cola tras el turno actual… 0:12'],
             ['● en pausa · claude w1:p1', '◐ recordándole cómo van las cosas…'],
             ['● en pausa · claude w1:p1', '✓ compactado 39.5k → 3.1k · 16 s'],
             ['● en pausa · claude w1:p1', '✓ compactado 39.5k → 3.1k · 16 s · plantilla'],
@@ -68,7 +71,7 @@ const GOLDEN = {
             ['● en pausa · claude w1:p1', '– no se compactó: trabajando'],
         ],
         bar: [
-            '📝● ✎ escribiendo qué conserva claude… 0:08', '📝● ◐ compactando claude… 0:12', '📝● ◐ recordándole a claude cómo van las', '📝● ✓ claude compactado 39.5k → 3.1k · 16 s',
+            '📝● ✎ escribiendo qué conserva claude… 0:08', '📝● ◐ compactando claude… 0:12', '📝● ◐ claude: en cola tras el turno actual…', '📝● ◐ recordándole a claude cómo van las', '📝● ✓ claude compactado 39.5k → 3.1k · 16 s',
             '📝● ✓ claude compactado 39.5k → 3.1k · 16 s', '📝● ✓ claude compactado 1 min 30 s', '📝● ✗ claude no se compactó: trabajando', '📝● ? claude sin confirmar — revísalo', '📝● – claude no se compactó: trabajando',
         ],
     },

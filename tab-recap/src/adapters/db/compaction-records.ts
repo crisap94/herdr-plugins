@@ -18,6 +18,11 @@ function stageOf(row: Row): Stage {
     return word as Stage;
 }
 
+function queuedOf(queued: boolean | undefined): number | null {
+    if (queued === undefined) return null;
+    return queued ? 1 : 0;
+}
+
 function briefOf(row: Row): BriefOrigin | null {
     const word = maybeText(row, 'brief');
     return word === 'written' || word === 'template' ? word : null;
@@ -29,7 +34,7 @@ function recordOf(row: Row): CompactionRecord {
         stage: stageOf(row), brief: briefOf(row), writer: maybeText(row, 'writer'), templateWhy: maybeText(row, 'template_why'),
         startedAt: whole(row, 'started_at'), stageAt: whole(row, 'stage_at'), finishedAt: maybeWhole(row, 'finished_at'),
         tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), tookMs: maybeWhole(row, 'took_ms'),
-        retried: flag(row, 'retried'), why: maybeText(row, 'why'), origin: originOf(text(row, 'origin')),
+        retried: flag(row, 'retried'), queued: flag(row, 'queued'), why: maybeText(row, 'why'), origin: originOf(text(row, 'origin')),
     };
 }
 
@@ -49,7 +54,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     constructor(db: DatabaseSync) {
         this.db = db;
         this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why) WHERE id = ? AND finished_at IS NULL');
+        this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why), queued = COALESCE(?, queued) WHERE id = ? AND finished_at IS NULL');
         this.finishStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, finished_at = ?, tokens_before = ?, tokens_after = ?, took_ms = ?, retried = ?, why = ? WHERE id = ? AND finished_at IS NULL');
         this.dismiss = db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL');
         this.interrupt = db.prepare("UPDATE compaction SET stage = 'unconfirmed', stage_at = ?, finished_at = ?, why = ? WHERE finished_at IS NULL");
@@ -67,7 +72,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     advance(id: string, stage: ActiveStage, facts: StageFacts): void {
         const key = idOf('compaction', id);
         if (key !== null) {
-            writeTx(this.db, () => { this.advanceStage.run(stage, facts.at, facts.brief ?? null, facts.writer ?? null, facts.templateWhy ?? null, key); });
+            writeTx(this.db, () => { this.advanceStage.run(stage, facts.at, facts.brief ?? null, facts.writer ?? null, facts.templateWhy ?? null, queuedOf(facts.queued), key); });
         }
     }
 

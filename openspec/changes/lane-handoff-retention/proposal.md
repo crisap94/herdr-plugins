@@ -28,7 +28,7 @@ Not every disappearance is a closure. A `/clear` or a new session in a surviving
 
 ## Impact
 
-The migration is forward-only and follows the handoff migration: it is migration 017, after the token protocol's ask ledger (015) and the handoff migration (016). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
+The migration is forward-only and follows the handoff migration: it is migration 018, after the token protocol's ask ledger (015), the queued compaction (016) and the handoff migration (016). It adds one nullable lane column (`since`), one nullable request column (`closed_at`) and the `closed_lane` table. A `ClosedLanes` port with three role interfaces and its own repository owns closure records; tab retention takes the protected tabs as input instead of reading the table. Pure settings parsing and the window function are added to `domain/retention.ts`. All persisted state remains in the plugin's state directory. No runtime dependency is added.
 
 ## Out of scope
 
@@ -53,7 +53,7 @@ token-protocol → lane-handoff (slice 1) → lane-handoff-retention (this chang
 
 What changed from the reviewed head d15911b:
 
-- The migration is 017, not 016: the token protocol's ask ledger takes 015 and the handoff 016, in landing order.
+- The migration is 018: the token protocol's ask ledger takes 015, the queued compaction 016 and the handoff 017, in landing order.
 - One closure detector: the fold's `lane-closed` intent also drives the `lane-closed` event (lane-tokens modified), so the
   publisher's own diff no longer decides closures and the two can never disagree.
 - The restated handoff requirements follow slice 1: a handoff interrupted by a restart is answered `failed{interrupted}`

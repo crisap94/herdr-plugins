@@ -102,6 +102,7 @@ export interface Messages {
         readonly writing: (agent: string) => string;
         readonly outcome: (agent: string, outcome: 'compacted' | 'failed' | 'unconfirmed', retried: boolean, figures: { readonly tokens: string; readonly took: string }) => string;
         readonly stage: {
+            readonly queued: (agent: string | null, clock: string) => string;
             readonly briefing: (agent: string | null, writer: string | null, clock: string) => string;
             readonly compacting: (agent: string | null, clock: string) => string;
             readonly restoring: (agent: string | null) => string;
@@ -116,6 +117,7 @@ export interface Messages {
             readonly took: (seconds: number) => string;
         };
         readonly started: (agent: string) => string;
+        readonly startedQueued: (agent: string) => string;
         readonly auto: (text: string) => string;
         readonly coverageMissed: (agent: string) => string;
         readonly coverageCeiling: (count: number) => string;

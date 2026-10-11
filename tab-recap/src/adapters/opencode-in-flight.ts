@@ -9,5 +9,5 @@ export function opencodeInFlight(db: DatabaseSync, session: string, messageLimit
         const state = obj(part['state']);
         return part['type'] === 'tool' && (state['status'] === 'pending' || state['status'] === 'running') ? total + 1 : total;
     }, 0);
-    return { kind: 'in-flight', count };
+    return { kind: 'in-flight', count, background: [] };
 }

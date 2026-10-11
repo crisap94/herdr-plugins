@@ -35,7 +35,7 @@ export function stageLine(record: CompactionRecord, now: number, view: View, age
         case 'briefing':
             return style.yellow(`✎ ${stage.briefing(agent, record.writer, clock)}`);
         case 'compacting':
-            return style.yellow(`◐ ${stage.compacting(agent, clock)}`);
+            return style.yellow(`◐ ${record.queued ? stage.queued(agent, clock) : stage.compacting(agent, clock)}`);
         case 'restoring':
             return style.yellow(`◐ ${stage.restoring(agent)}`);
         case 'compacted':

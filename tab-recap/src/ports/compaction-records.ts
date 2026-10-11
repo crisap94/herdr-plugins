@@ -21,6 +21,7 @@ export interface CompactionRecord {
     readonly tokensAfter: number | null;
     readonly tookMs: number | null;
     readonly retried: boolean;
+    readonly queued: boolean;
     readonly why: string | null;
     readonly origin: Origin;
 }
@@ -42,6 +43,7 @@ export interface StageFacts {
     readonly brief?: BriefOrigin | null;
     readonly writer?: string | null;
     readonly templateWhy?: string | null;
+    readonly queued?: boolean;
 }
 
 export interface CompactionEnd {

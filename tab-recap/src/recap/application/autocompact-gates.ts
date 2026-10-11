@@ -3,15 +3,11 @@ import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { CompactionQueue } from '#src/ports/requests.ts';
 import type { CompactionClaims } from './compaction-claims.ts';
 import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
+import { flightDetail } from '#src/recap/domain/in-flight.ts';
+import type { Flight } from '#src/recap/domain/in-flight.ts';
 
 export const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
 export const ASKED_FOR_MS = 5 * 60_000;
-
-export interface FlightAnswer {
-    readonly count: number | 'unknown';
-    readonly why: string;
-    readonly detail?: string;
-}
 
 export interface BusyReads {
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
@@ -44,7 +40,8 @@ export interface DetailFacts {
     readonly lastBreakAt: number | null;
     readonly lastDecisionAt: number | null;
     readonly busy: string | null;
-    readonly flight: FlightAnswer | null;
+    readonly flight: Flight | null;
+    readonly atCeiling: boolean;
 }
 
 export function detailOf(gate: Gate, facts: DetailFacts): string | null {
@@ -53,7 +50,5 @@ export function detailOf(gate: Gate, facts: DetailFacts): string | null {
     if (gate === 'cooldown') return `${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`;
     if (gate === 'unchanged') return 'same tokens and mode as the last decision';
     if (gate === 'coverage-backoff') return 'recent brief check failed';
-    return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight) : null;
+    return gate === 'in-flight' && facts.flight !== null ? flightDetail(facts.flight, facts.atCeiling) : null;
 }
-
-const flightDetail = (flight: FlightAnswer): string => flight.detail ?? (flight.count === 'unknown' ? flight.why : `${flight.count} running`);

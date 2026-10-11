@@ -70,7 +70,7 @@ function dayDir(root: string, back: number): string {
 
 export class CodexTranscripts implements Transcripts {
     readonly agent = 'codex';
-    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
+    readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: string;
     private readonly readTail: typeof tailOf;
 
