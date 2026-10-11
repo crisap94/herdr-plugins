@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
 import type { HandoffRunnerDeps } from '#src/daemon/handoff.ts';
-import { HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
+import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
@@ -31,6 +31,7 @@ interface Probe {
     readonly flowRuns: string[];
     readonly asksSeenAtRun: number[];
     readonly logs: string[];
+    readonly released: string[];
 }
 
 interface Runner {
@@ -46,10 +47,10 @@ function runnerOf(
 ): Runner {
     const asks = new MemoryAskLedger();
     const answers = new MemoryHandoffAnswers(isStorablePair, () => NOW);
-    const probe: Probe = { flowRuns: [], asksSeenAtRun: [], logs: [] };
+    const probe: Probe = { flowRuns: [], asksSeenAtRun: [], logs: [], released: [] };
     const runner = new HandoffRunner({
         flow: { execute: async (request): Promise<HandoffRun> => { probe.flowRuns.push(String(request.id)); probe.asksSeenAtRun.push(asks.unfinished().length); return unrendered(await flowRun(request, probe)); } },
-        asks, answers, transaction: <T>(work: () => T): T => work(), now: (): number => NOW, log: (line: string): void => { probe.logs.push(line); }, ...over,
+        asks, answers, claims: { release: (pane: string): void => { probe.released.push(pane); } }, transaction: <T>(work: () => T): T => work(), now: (): number => NOW, log: (line: string): void => { probe.logs.push(line); }, ...over,
     });
     return { runner, asks, answers, probe };
 }
@@ -171,4 +172,29 @@ test('a flow that throws is logged once with the request id and the error name, 
     await runner.take([taken]);
     assert.deepEqual(probe.logs, [`handoff ${taken.id}: Error: boom`, `handoff ${taken.id}: failed internal-error`]);
     assert.deepEqual(answers.handoffAnswer(taken.id)?.outcome, 'failed');
+});
+
+test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const taken = row();
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
+    const running = runner.take([taken]);
+    t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
+    return running.then(() => {
+        assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'expired' });
+        assert.deepEqual(probe.released, [String(taken.pane), String(taken.toPane)]);
+        assert.deepEqual(probe.logs, [`handoff ${taken.id}: failed expired`]);
+    });
+});
+
+test('a flow that never finishes after typing is answered unconfirmed at the bound, and its lanes stay claimed until the flow ends', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const taken = row();
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark): Promise<HandoffRun> => { mark.claim(); mark.type(); return new Promise<HandoffRun>(() => undefined); } } });
+    const running = runner.take([taken]);
+    t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
+    return running.then(() => {
+        assert.deepEqual(answers.handoffAnswer(taken.id), { id: taken.id, at: NOW, outcome: 'failed', reason: 'unconfirmed' });
+        assert.deepEqual(probe.released, []);
+    });
 });

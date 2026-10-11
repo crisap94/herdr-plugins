@@ -24,10 +24,11 @@ import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import type { HandoffLane } from '#src/recap/application/handoff-render.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
+import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
-import { HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
+import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { isStorable } from '#src/recap/domain/handoff-outcome.ts';
@@ -39,12 +40,14 @@ import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { parseHandoffId, sessionId, tabId } from '#src/recap/domain/ids.ts';
 import { awaitingNow } from './autocompact.ts';
+import { within } from './bounded.ts';
 import { refreshedWithin } from './refresh-status.ts';
 
 export interface HandoffRunnerDeps {
     readonly flow: Pick<HandoffFlow, 'execute'>;
     readonly asks: AskLedger;
     readonly answers: HandoffAnswers;
+    readonly claims: Pick<LaneClaims, 'release'>;
     readonly transaction: <T>(work: () => T) => T;
     readonly now: () => number;
     readonly log: (line: string) => void;
@@ -107,10 +110,24 @@ export class HandoffRunner {
             }
             const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
             this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: row.id });
-            this.finish(row.id, await this.deps.flow.execute(row).catch((error: unknown) => this.crashed(row.id, error)), key);
+            this.finish(row.id, await this.flowOf(row), key);
         } catch (error) {
             this.deps.log(`handoff ${row.id}: ${failureCauseOf(error)}`);
         }
+    }
+
+    private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
+        const mark = new DeliveryMark();
+        const run = await within<HandoffRun | null>(this.deps.flow.execute(row, mark).catch((error: unknown) => this.crashed(row.id, error)), HANDOFF_FLOW_MAX_MS, null);
+        if (run !== null) {
+            return run;
+        }
+        const abandoned = mark.abandon();
+        if (abandoned === 'claimed') {
+            this.deps.claims.release(String(row.pane));
+            this.deps.claims.release(String(row.toPane));
+        }
+        return unrendered({ kind: 'failed', reason: abandoned === 'typed' ? 'unconfirmed' : 'expired' });
     }
 
     private crashed(id: HandoffId, error: unknown): HandoffRun {
@@ -182,5 +199,5 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         }),
         pause, now, log,
     });
-    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, transaction: (work) => writeTx(store.db, work), now, log });
+    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, transaction: (work) => writeTx(store.db, work), now, log });
 }
