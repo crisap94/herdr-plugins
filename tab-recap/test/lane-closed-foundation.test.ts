@@ -33,13 +33,14 @@ test('the lane status at a decision is idle, done or working, and nothing else',
     }
 });
 
-const answering = (error: Error): Wire => () => Promise.reject(error);
+const goneWire: Wire = () => Promise.reject(Object.assign(new Error('agent.get: agent target w1:p9 not found [agent_not_found]'), { code: 'agent_not_found' }));
+const silentWire: Wire = () => Promise.reject(Object.assign(new Error('socket closed'), { code: 'socket_closed' }));
 
 test('herdr answering agent_not_found is a lane that is gone; any other failure stays unreachable', async () => {
-    const gone = await new HerdrAgents(answering(Object.assign(new Error('agent.get: agent target w1:p9 not found [agent_not_found]'), { code: 'agent_not_found' })), { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
+    const gone = await new HerdrAgents(goneWire, { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
     assert.ok(isUnknown(gone));
     assert.equal(gone.why.why, 'not-found');
-    const silent = await new HerdrAgents(answering(Object.assign(new Error('socket closed'), { code: 'socket_closed' })), { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
+    const silent = await new HerdrAgents(silentWire, { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
     assert.ok(isUnknown(silent));
     assert.equal(silent.why.why, 'unreachable');
     assert.match(saying(silent.why), /socket closed/);

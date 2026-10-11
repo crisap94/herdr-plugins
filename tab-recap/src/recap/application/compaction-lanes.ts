@@ -4,13 +4,16 @@ import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
+import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import type { LaneClaims } from './lane-claims.ts';
 
 export interface Refusal {
     readonly stage: 'skipped' | 'failed';
     readonly reason: CompactFailure;
     readonly why: string;
-    readonly toast: string;
+    readonly toast: string | null;
+    readonly closedAt?: ClosePoint;
 }
 
 export interface Asked {
@@ -22,6 +25,10 @@ const LANE_BUSY_WHY = 'lane busy';
 
 export function laneBusyRefusal(messages: Messages, lane: Lane): Refusal {
     return { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: messages.compaction.failed(String(lane.agent), LANE_BUSY_WHY) };
+}
+
+export function laneClosedRefusal(point: ClosePoint): Refusal {
+    return { stage: 'skipped', reason: COMPACT_FAILURES.skipped, why: LANE_CLOSED, toast: null, closedAt: point };
 }
 
 export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly Lane[], claim: (lane: Lane) => boolean): { readonly owned: Lane[]; readonly held: Lane[] } {
