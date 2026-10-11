@@ -33,6 +33,5 @@ test('a closed source whose pane id is the target pane is queued as a closed req
     const outcome = await deliverHandoff({ from: PANE, to: PANE, note: null, refresh: false, closed: { tab: tabId('w1:t1'), pane: PANE, closedAt: CLOSED_AT } }, deps);
     assert.notEqual(outcome.kind, 'refused');
     assert.equal(taken.length, 1);
-    assert.deepEqual(taken[0]?.source, { kind: 'closed', closedAt: CLOSED_AT });
-    assert.equal(taken[0]?.tab, 'w1:t1');
+    assert.deepEqual(taken.map((row) => [row.source, row.tab]), [[{ kind: 'closed', closedAt: CLOSED_AT }, 'w1:t1']]);
 });

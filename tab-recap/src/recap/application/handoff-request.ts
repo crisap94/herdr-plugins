@@ -66,7 +66,7 @@ function sourceOf(closed: ClosedLaneIdentity | null): HandoffSource {
     return closed === null ? { kind: 'live' } : { kind: 'closed', closedAt: closed.closedAt };
 }
 
-export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps): Promise<HandoffOutcome> {
+function refusedBeforeStore(request: DeliverRequest, deps: DeliverDeps): HandoffOutcome | null {
     if (request.closed === null && request.from === request.to) {
         return refused('source-equals-target');
     }
@@ -74,25 +74,41 @@ export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps)
     if (daemon.pid === null) {
         return refused('daemon-not-running');
     }
-    if (deps.cliVersion === null || daemon.version !== deps.cliVersion) {
-        return refused('daemon-outdated');
+    return deps.cliVersion === null || daemon.version !== deps.cliVersion ? refused('daemon-outdated') : null;
+}
+
+function tabOfRequest(request: DeliverRequest, store: HandoffStore): string | null {
+    return request.closed === null ? store.views.tabOf(request.from) : String(request.closed.tab);
+}
+
+async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverDeps, refresh: boolean): Promise<HandoffOutcome> {
+    const answer = await awaitAnswer(store.handoffs, id, deps.pacing, refresh ? HANDOFF_WAIT_REFRESH_MS : HANDOFF_WAIT_MS);
+    if (answer !== null) {
+        return outcomeOf(answer);
+    }
+    if (store.requests.withdrawHandoff(id)) {
+        return failed('not-answered-withdrawn');
+    }
+    const late = store.handoffs.handoffAnswer(id);
+    return late === null ? failed('not-answered-taken') : outcomeOf(late);
+}
+
+function queuedOf(request: DeliverRequest, store: HandoffStore, tab: string): HandoffId {
+    return store.requests.requestHandoff({ tab: tabId(tab), pane: request.from, toPane: request.to, note: request.note, refreshFirst: request.refresh, source: sourceOf(request.closed) });
+}
+
+export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps): Promise<HandoffOutcome> {
+    const refusal = refusedBeforeStore(request, deps);
+    if (refusal !== null) {
+        return refusal;
     }
     const store = deps.openStore();
     try {
-        const tab = request.closed === null ? store.views.tabOf(request.from) : String(request.closed.tab);
+        const tab = tabOfRequest(request, store);
         if (tab === null) {
             return refused('source-unavailable');
         }
-        const id = store.requests.requestHandoff({ tab: tabId(tab), pane: request.from, toPane: request.to, note: request.note, refreshFirst: request.refresh, source: sourceOf(request.closed) });
-        const answer = await awaitAnswer(store.handoffs, id, deps.pacing, request.refresh ? HANDOFF_WAIT_REFRESH_MS : HANDOFF_WAIT_MS);
-        if (answer !== null) {
-            return outcomeOf(answer);
-        }
-        if (store.requests.withdrawHandoff(id)) {
-            return failed('not-answered-withdrawn');
-        }
-        const late = store.handoffs.handoffAnswer(id);
-        return late === null ? failed('not-answered-taken') : outcomeOf(late);
+        return await settledOutcome(queuedOf(request, store, tab), store, deps, request.refresh);
     } finally {
         store.close();
     }

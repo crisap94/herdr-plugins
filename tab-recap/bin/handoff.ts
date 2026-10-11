@@ -114,21 +114,15 @@ function closedAtOf(raw: string): Instant | null {
     return Number.isSafeInteger(ms) ? instant(ms) : null;
 }
 
-function closedOf(values: HandoffValues): ClosedLaneIdentity | HandoffProblem | null {
-    const parts = [values['from-closed'], values.tab, values['closed-at']];
-    if (parts.every((part) => part === undefined)) {
-        return null;
-    }
-    if (parts.some((part) => part === undefined)) {
-        return problem('--from-closed, --tab and --closed-at go together');
-    }
-    const [panes = [], tabs = [], instants = []] = parts;
-    if (panes.length > 1 || tabs.length > 1 || instants.length > 1) {
-        return problem('a closed-source option is given more than once');
-    }
-    const [rawPane] = panes;
-    const [rawTab] = tabs;
-    const [rawAt] = instants;
+const CLOSED_OPTIONS = ['from-closed', 'tab', 'closed-at'] as const;
+
+const hasAnyClosedOption = (values: HandoffValues): boolean => CLOSED_OPTIONS.some((key) => values[key] !== undefined);
+
+const hasEveryClosedOption = (values: HandoffValues): boolean => CLOSED_OPTIONS.every((key) => values[key] !== undefined);
+
+const repeatsClosedOption = (values: HandoffValues): boolean => CLOSED_OPTIONS.some((key) => (values[key] ?? []).length > 1);
+
+function identityOf(rawPane: string | undefined, rawTab: string | undefined, rawAt: string | undefined): ClosedLaneIdentity | HandoffProblem {
     const pane = paneOf(rawPane);
     if (rawTab === undefined || pane === null) {
         return problem('--from-closed needs a pane id and --tab a tab id');
@@ -137,20 +131,33 @@ function closedOf(values: HandoffValues): ClosedLaneIdentity | HandoffProblem | 
     return closedAt === null ? problem('--closed-at needs a non-negative integer') : { tab: tabId(rawTab), pane, closedAt };
 }
 
-function shapeProblem(values: HandoffValues, positionals: readonly string[], closed: ClosedLaneIdentity | null): string | null {
-    if (positionals.length > 1) {
-        return 'handoff takes no argument';
+function closedOf(values: HandoffValues): ClosedLaneIdentity | HandoffProblem | null {
+    if (!hasAnyClosedOption(values)) {
+        return null;
     }
-    const froms = values.from ?? [];
+    if (!hasEveryClosedOption(values)) {
+        return problem('--from-closed, --tab and --closed-at go together');
+    }
+    if (repeatsClosedOption(values)) {
+        return problem('a closed-source option is given more than once');
+    }
+    const [rawPane] = values['from-closed'] ?? [];
+    const [rawTab] = values.tab ?? [];
+    const [rawAt] = values['closed-at'] ?? [];
+    return identityOf(rawPane, rawTab, rawAt);
+}
+
+function sourceProblem(froms: readonly string[], closed: ClosedLaneIdentity | null): string | null {
     if (closed === null && froms.length === 0) {
         return '--from is required';
     }
     if (froms.length > 1) {
         return '--from given more than once';
     }
-    if (closed !== null && froms.length > 0) {
-        return '--from and --from-closed are exclusive';
-    }
+    return closed !== null && froms.length > 0 ? '--from and --from-closed are exclusive' : null;
+}
+
+function targetProblem(values: HandoffValues, closed: ClosedLaneIdentity | null): string | null {
     if ((values.to ?? []).length > 1) {
         return '--to given more than once';
     }
@@ -158,6 +165,13 @@ function shapeProblem(values: HandoffValues, positionals: readonly string[], clo
         return '--from-closed does not go with --refresh';
     }
     return values.print === true && values.refresh === true ? '--refresh does not go with --print' : null;
+}
+
+function shapeProblem(values: HandoffValues, positionals: readonly string[], closed: ClosedLaneIdentity | null): string | null {
+    if (positionals.length > 1) {
+        return 'handoff takes no argument';
+    }
+    return sourceProblem(values.from ?? [], closed) ?? targetProblem(values, closed);
 }
 
 function listingOf(values: HandoffValues, positionals: readonly string[]): HandoffArguments | HandoffProblem {

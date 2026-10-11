@@ -9,16 +9,16 @@ import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const CLOSED_AT = instant(Date.parse('2026-10-11T09:00:00Z'));
+const DEL = 127;
+const SPACE = 32;
+const isControl = (code: number): boolean => code < SPACE || code === DEL;
 const RUN = { at: Date.parse('2026-10-11T08:30:00Z'), cause: 'turn-ended' as const };
 const VIEW: ClosedView = { closedAt: CLOSED_AT, agent: agentKind('claude'), cwd: '/work/tree', run: RUN };
 
 test('a closed freshness says closed at the close instant in place of the lane status, and its newer prompts are unknown', () => {
     const outcome = closedFreshnessOf(VIEW);
-    assert.equal(outcome.kind, 'fresh');
-    if (outcome.kind !== 'fresh') {
-        return;
-    }
-    const text = freshnessTextOf(outcome.freshness, CLOSED_AT);
+    const freshness = outcome.kind === 'fresh' ? outcome.freshness : assert.fail('the closed view has a run, so it is fresh');
+    const text = freshnessTextOf(freshness, CLOSED_AT);
     assert.match(text, /closed at 2026-10-11T09:00:00\.000Z/);
     assert.doesNotMatch(text, /lane status/);
     assert.match(text, /newer prompts: unknown/);
@@ -52,7 +52,8 @@ test('the closed listing is one tab-separated line per identity, in the order gi
 
 test('a task name with an escape sequence or a newline is printed without a control character', () => {
     const text = serializeClosedListing([record('w1:p1', 1000, 'bad\u001b[31m\nname')]);
-    assert.doesNotMatch(text, /[\u0000-\u001f\u007f]/);
+    const controls = [...text].filter((character) => isControl(character.codePointAt(0) ?? 0));
+    assert.deepEqual(controls, []);
     assert.equal(text.split('\t').length, 4);
 });
 
