@@ -1,0 +1,20 @@
+[
+  "src/adapters/claude-prompt.ts",
+  "src/recap/domain/autocompact.ts",
+  "src/recap/domain/backend.ts",
+  "src/recap/domain/byte-budget.ts",
+  "src/recap/domain/compaction-plan.ts",
+  "src/recap/domain/continuation-note.ts",
+  "src/recap/domain/count.ts",
+  "src/recap/domain/fact.ts",
+  "src/recap/domain/failure-cause.ts",
+  "src/recap/domain/handoff-sanitize.ts",
+  "src/recap/domain/ids.ts",
+  "src/recap/domain/in-flight.ts",
+  "src/recap/domain/lane-closed.ts",
+  "src/recap/domain/text.ts",
+  "src/recap/domain/time.ts",
+  "src/recap/domain/writer-view.ts",
+  "src/recap/render/freshness.ts",
+  "src/recap/render/worksite.ts"
+]

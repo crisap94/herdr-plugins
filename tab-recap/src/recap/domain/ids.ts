@@ -1,4 +1,7 @@
-import type { Brand } from './brand.ts';
+import { ok, type Result } from '#src/protocol/result.ts';
+import { brand, type Brand } from './brand.ts';
+import { parseNonEmptyText } from './text.ts';
+import type { ParseFailure } from './parse-failure.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
 export type TabId = Brand<string, 'TabId'>;
@@ -67,4 +70,52 @@ export function parseHandoffId(raw: unknown): HandoffId | null {
 
 export function agentKind(raw: string): AgentKind {
     return nonEmpty(raw, 'an agent kind') as AgentKind;
+}
+
+export function parsePaneId(input: unknown): Result<PaneId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'PaneId'>(text.value));
+}
+
+export function parseTabId(input: unknown): Result<TabId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'TabId'>(text.value));
+}
+
+export function parseWorkspaceId(input: unknown): Result<WorkspaceId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'WorkspaceId'>(text.value));
+}
+
+export function parseSessionId(input: unknown): Result<SessionId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'SessionId'>(text.value));
+}
+
+export function parseSessionPath(input: unknown): Result<SessionPath, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'SessionPath'>(text.value));
+}
+
+export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'AgentKind'>(text.value));
 }

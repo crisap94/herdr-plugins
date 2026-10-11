@@ -1,0 +1,373 @@
+{
+  "src/recap/domain/ask-outcome.ts": {
+    "parameter": 1,
+    "return": 3
+  },
+  "src/recap/domain/autocompact-style.ts": {
+    "parameter": 7,
+    "return": 3,
+    "property": 2
+  },
+  "src/recap/domain/autocompact-verdict.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 2,
+    "property": 4,
+    "assertion": 2
+  },
+  "src/recap/domain/autocompact.ts": {
+    "parameter": 21,
+    "return": 9,
+    "container": 4,
+    "property": 19,
+    "assertion": 2
+  },
+  "src/recap/domain/backend.ts": {
+    "parameter": 2,
+    "return": 9,
+    "container": 3,
+    "property": 1,
+    "assertion": 3
+  },
+  "src/recap/domain/backoff.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/recap/domain/board.ts": {
+    "return": 1,
+    "container": 3,
+    "property": 5
+  },
+  "src/recap/domain/boundary.ts": {
+    "parameter": 6,
+    "return": 3,
+    "container": 2,
+    "property": 12
+  },
+  "src/recap/domain/byte-budget.ts": {
+    "parameter": 2,
+    "return": 1,
+    "assertion": 1
+  },
+  "src/recap/domain/compact-note.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/compact-request.ts": {
+    "parameter": 5,
+    "return": 5,
+    "container": 1
+  },
+  "src/recap/domain/compaction-plan.ts": {
+    "parameter": 5,
+    "property": 3,
+    "assertion": 3
+  },
+  "src/recap/domain/compaction.ts": {
+    "parameter": 12,
+    "return": 10,
+    "container": 4,
+    "property": 8
+  },
+  "src/recap/domain/continuation-note.ts": {
+    "parameter": 8,
+    "return": 6,
+    "container": 2,
+    "assertion": 2
+  },
+  "src/recap/domain/coordination.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 4,
+    "property": 2
+  },
+  "src/recap/domain/curation.ts": {
+    "parameter": 4,
+    "return": 3,
+    "container": 8,
+    "property": 3,
+    "assertion": 1
+  },
+  "src/recap/domain/debounce.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/effort.ts": {
+    "parameter": 2,
+    "return": 1
+  },
+  "src/recap/domain/event-token.ts": {
+    "parameter": 4,
+    "return": 2
+  },
+  "src/recap/domain/fact.ts": {
+    "return": 2,
+    "property": 11
+  },
+  "src/recap/domain/failure-cause.ts": {
+    "parameter": 1,
+    "assertion": 2
+  },
+  "src/recap/domain/fold.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 3,
+    "property": 9,
+    "assertion": 8
+  },
+  "src/recap/domain/forbidden-words.ts": {
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/domain/freshness.ts": {
+    "parameter": 3,
+    "property": 3
+  },
+  "src/recap/domain/gates/duplicate.ts": {
+    "return": 1
+  },
+  "src/recap/domain/gates/g10-close-why.ts": {
+    "container": 1
+  },
+  "src/recap/domain/gates/g11-anchor.ts": {
+    "parameter": 3,
+    "return": 2,
+    "container": 1
+  },
+  "src/recap/domain/gates/g12-answered.ts": {
+    "container": 1
+  },
+  "src/recap/domain/gates/g2-ledger-duplicate.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/gates/g6-unknown-id.ts": {
+    "container": 1
+  },
+  "src/recap/domain/gates/gate.ts": {
+    "return": 1,
+    "container": 3,
+    "property": 7
+  },
+  "src/recap/domain/gates/gatekeeper.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 4
+  },
+  "src/recap/domain/gates/index.ts": {
+    "return": 1
+  },
+  "src/recap/domain/gates/item-gate.ts": {
+    "parameter": 3,
+    "return": 2,
+    "container": 5,
+    "property": 6
+  },
+  "src/recap/domain/gates/item-gates.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/domain/gates/jaccard.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/domain/gates/language.ts": {
+    "parameter": 1,
+    "return": 3,
+    "container": 2
+  },
+  "src/recap/domain/gates/link.ts": {
+    "parameter": 2,
+    "return": 3
+  },
+  "src/recap/domain/gates/narrator.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 1,
+    "property": 1
+  },
+  "src/recap/domain/gates/pronoun.ts": {
+    "return": 1
+  },
+  "src/recap/domain/gates/specific.ts": {
+    "parameter": 2,
+    "return": 3
+  },
+  "src/recap/domain/gates/why.ts": {
+    "return": 1
+  },
+  "src/recap/domain/gates/words.ts": {
+    "parameter": 3,
+    "return": 2,
+    "container": 4
+  },
+  "src/recap/domain/grouping.ts": {
+    "parameter": 2,
+    "return": 3,
+    "container": 6,
+    "property": 5
+  },
+  "src/recap/domain/handoff-content.ts": {
+    "parameter": 2,
+    "return": 1,
+    "property": 4
+  },
+  "src/recap/domain/handoff-outcome.ts": {
+    "parameter": 57,
+    "return": 117,
+    "assertion": 1
+  },
+  "src/recap/domain/handoff-plan.ts": {
+    "property": 2
+  },
+  "src/recap/domain/handoff-sanitize.ts": {
+    "parameter": 1,
+    "assertion": 1
+  },
+  "src/recap/domain/handoff-vetting.ts": {
+    "return": 1
+  },
+  "src/recap/domain/herdr-events.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/ids.ts": {
+    "parameter": 12,
+    "return": 1,
+    "assertion": 8
+  },
+  "src/recap/domain/in-flight.ts": {
+    "parameter": 7,
+    "return": 2,
+    "container": 2,
+    "assertion": 9
+  },
+  "src/recap/domain/intent.ts": {
+    "property": 1
+  },
+  "src/recap/domain/job-tag.ts": {
+    "assertion": 1
+  },
+  "src/recap/domain/job.ts": {
+    "parameter": 12,
+    "return": 9,
+    "container": 2,
+    "property": 3
+  },
+  "src/recap/domain/lane-closed.ts": {
+    "assertion": 1
+  },
+  "src/recap/domain/lane-tokens.ts": {
+    "parameter": 4,
+    "return": 3,
+    "container": 8,
+    "property": 4
+  },
+  "src/recap/domain/lane.ts": {
+    "parameter": 1,
+    "return": 1,
+    "property": 10
+  },
+  "src/recap/domain/layout.ts": {
+    "parameter": 2,
+    "return": 8,
+    "property": 11
+  },
+  "src/recap/domain/ledger-view.ts": {
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/domain/ops.ts": {
+    "parameter": 4,
+    "return": 3,
+    "container": 1,
+    "property": 15
+  },
+  "src/recap/domain/origin.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/pipeline.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/recap/domain/policy.ts": {
+    "parameter": 3,
+    "return": 8,
+    "container": 4,
+    "property": 3
+  },
+  "src/recap/domain/quote.ts": {
+    "parameter": 4,
+    "return": 2
+  },
+  "src/recap/domain/reconciliation.ts": {
+    "parameter": 8,
+    "return": 15,
+    "container": 23,
+    "property": 5,
+    "assertion": 2
+  },
+  "src/recap/domain/registered-kinds.ts": {
+    "parameter": 1,
+    "container": 1,
+    "property": 4,
+    "assertion": 2
+  },
+  "src/recap/domain/retention.ts": {
+    "parameter": 3,
+    "return": 2
+  },
+  "src/recap/domain/session-facts.ts": {
+    "parameter": 1,
+    "return": 3,
+    "container": 13,
+    "property": 41
+  },
+  "src/recap/domain/session-identity.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/shape.ts": {
+    "container": 7,
+    "property": 1
+  },
+  "src/recap/domain/status.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/recap/domain/tasks.ts": {
+    "container": 1,
+    "property": 3
+  },
+  "src/recap/domain/telemetry-tags.ts": {
+    "parameter": 1
+  },
+  "src/recap/domain/text-collapse.ts": {
+    "parameter": 2,
+    "return": 2
+  },
+  "src/recap/domain/time.ts": {
+    "parameter": 2,
+    "assertion": 2
+  },
+  "src/recap/domain/token-registry.ts": {
+    "parameter": 1,
+    "return": 2
+  },
+  "src/recap/domain/typing-lease.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 1
+  },
+  "src/recap/domain/visibility.ts": {
+    "return": 2,
+    "assertion": 2
+  },
+  "src/recap/domain/worksite.ts": {
+    "container": 2,
+    "property": 11
+  },
+  "src/recap/domain/writer-view.ts": {
+    "parameter": 5,
+    "return": 1,
+    "property": 2,
+    "assertion": 3
+  }
+}
