@@ -83,6 +83,12 @@
     "container": 1,
     "property": 4
   },
+  "src/recap/application/compaction-briefing.ts": {
+    "parameter": 12,
+    "return": 1,
+    "container": 1,
+    "property": 2
+  },
   "src/recap/application/compaction-coverage.ts": {
     "parameter": 9,
     "return": 4,
@@ -91,8 +97,8 @@
     "assertion": 2
   },
   "src/recap/application/compaction-deps.ts": {
-    "parameter": 14,
-    "return": 5,
+    "parameter": 15,
+    "return": 6,
     "container": 1,
     "property": 3
   },
@@ -132,10 +138,10 @@
     "property": 1
   },
   "src/recap/application/compaction.ts": {
-    "parameter": 30,
-    "return": 8,
-    "container": 3,
-    "property": 7
+    "parameter": 22,
+    "return": 9,
+    "container": 1,
+    "property": 6
   },
   "src/recap/application/compare-imported.ts": {
     "parameter": 15,

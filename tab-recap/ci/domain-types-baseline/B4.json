@@ -13,13 +13,13 @@
     "container": 3
   },
   "src/i18n/en.ts": {
-    "parameter": 87,
-    "return": 66,
+    "parameter": 89,
+    "return": 67,
     "container": 1
   },
   "src/i18n/es.ts": {
-    "parameter": 87,
-    "return": 66,
+    "parameter": 89,
+    "return": 67,
     "container": 1
   },
   "src/i18n/index.ts": {
@@ -27,8 +27,8 @@
     "return": 3
   },
   "src/i18n/messages.ts": {
-    "parameter": 89,
-    "return": 67,
+    "parameter": 91,
+    "return": 68,
     "container": 13,
     "property": 133
   },

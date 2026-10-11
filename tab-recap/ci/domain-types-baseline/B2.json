@@ -16,7 +16,7 @@
     "assertion": 2
   },
   "src/recap/domain/autocompact.ts": {
-    "parameter": 20,
+    "parameter": 21,
     "return": 9,
     "container": 4,
     "property": 19,
@@ -34,6 +34,7 @@
     "return": 1
   },
   "src/recap/domain/board.ts": {
+    "return": 1,
     "container": 3,
     "property": 5
   },
@@ -250,6 +251,9 @@
     "return": 9,
     "container": 2,
     "property": 3
+  },
+  "src/recap/domain/lane-closed.ts": {
+    "assertion": 1
   },
   "src/recap/domain/lane-tokens.ts": {
     "parameter": 4,

@@ -12,7 +12,7 @@
   "src/adapters/db/autocompact-records.ts": {
     "parameter": 20,
     "return": 16,
-    "container": 15,
+    "container": 17,
     "property": 2,
     "assertion": 9
   },
@@ -175,6 +175,10 @@
     "parameter": 6,
     "return": 1,
     "property": 2
+  },
+  "src/adapters/db/schema/018-lane-status.ts": {
+    "parameter": 1,
+    "return": 1
   },
   "src/adapters/db/scratch.ts": {
     "property": 1
