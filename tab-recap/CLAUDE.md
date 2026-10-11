@@ -45,8 +45,8 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `transport-boundary` (dependency-cruiser) | only `adapters/herdr-fleet.ts` imports the transport |
 | `brand-importers` (dependency-cruiser) | only the files that declare a brand of `brand.ts` import it (`ci/brand-importers.json`, held by `test/brand-importers.test.ts`) |
-| `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane |
-| `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`: the one prompt (codex, opencode) or typed line (claude) of a compaction the operator asked for (`recap/application/compaction.ts`, reached only from the request queue) |
+| `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane; the only prompts are the two operator paths of `recap-prompt-boundary` (compaction, handoff), each started only because the operator asked |
+| `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`. Two operator paths reach it, and only because the operator asked: the compaction (`recap/application/compaction.ts`, from the compaction request queue: one prompt for codex and opencode, a typed line for claude) and the handoff (`recap/application/handoff-flow.ts`, from the handoff request queue: one prompt). This is a documented convention for who may reach the agent port: the rule matches the herdr method names in that one adapter and does not see the callers |
 | `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
 | `recap-write-transactions` | no bare `BEGIN`: a transaction is `writeTx` (`BEGIN IMMEDIATE`, rollback on a throw), in `adapters/db/connection.ts` only |
 | `recap-host-probes-at-the-edge` | `process.platform`, `os.platform()`/`os.type()`, `process.env.PATH` only in `src/host/` and the `*-posix`/`*-windows`/`*-xdg` adapters: the rest asks the Host, ProcessControl or ConfigPaths port |
@@ -79,3 +79,6 @@ npm install            # tsgo, oxlint (dev only — the plugin itself has zero d
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, tsgo, oxlint, and a seed they must reject
 bash ci/test.sh        # node --test
 ```
+
+On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test run one at a time across every checkout,
+and `TEST_CONCURRENCY=<n>` to cap the test runner's parallel files (`ci/host-limits.sh`). Unset, both do nothing.

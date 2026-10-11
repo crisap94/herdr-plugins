@@ -201,6 +201,14 @@
                 "kind": "value",
                 "value": "r7:failed-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
             }
+        },
+        {
+            "id": "r7",
+            "stage": "failed-lane-busy",
+            "expect": {
+                "kind": "value",
+                "value": "r7:failed-lane-busy"
+            }
         }
     ],
     "badIds": [
@@ -554,6 +562,26 @@
                         "expect": {
                             "kind": "failed",
                             "reason": "error"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "a request for a lane held by a handoff is observed as failed with reason lane-busy",
+            "steps": [
+                {
+                    "write": {
+                        "name": "tab-recap-compact",
+                        "value": "r6:failed-lane-busy"
+                    }
+                },
+                {
+                    "observe": {
+                        "id": "r6",
+                        "expect": {
+                            "kind": "failed",
+                            "reason": "lane-busy"
                         }
                     }
                 }

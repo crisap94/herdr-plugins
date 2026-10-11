@@ -2,7 +2,7 @@
 
 ## Context
 
-Slice 1 builds the handoff as a daemon flow fed by `handoff` request rows (`request` table, kind `handoff`, migration 016)
+Slice 1 builds the handoff as a daemon flow fed by `handoff` request rows (`request` table, kind `handoff`, migration 017)
 that the operator's command writes, and answers each with one closed outcome in `handoff_answer`. The token protocol
 builds the exchange model: a descriptor per exchange, one answer token per exchange keyed by id, the ask ledger
 (migration 015) with `failed-interrupted` after a restart, consideration on every read of a pane's tokens, and the

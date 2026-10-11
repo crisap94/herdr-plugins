@@ -1,5 +1,5 @@
 import type { Board } from '#src/recap/domain/board.ts';
-import { READY } from '#src/recap/domain/autocompact.ts';
+import { READY } from '#src/recap/domain/status.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 
 export const SWEEP_EVERY = 5;

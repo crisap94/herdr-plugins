@@ -279,7 +279,8 @@ this order, before asking any model:
   long since it, counts as changed (the re-check), and the decision log says `unchanged → recheck`;
 - the lane is not held by the coverage backoff: below the ceiling, a lane whose last decision was a failed brief
   check (`wait` with gate `coverage`) stays held for its backoff (`coverage-backoff`), as set out below;
-- nothing is in flight inside the agent, and a reader that cannot tell counts as in flight.
+- no foreground work is in flight inside the agent, and a reader that cannot tell counts as in flight; background
+  work that survives a compaction does not count, and below the ceiling an awaited reply counts, as set out below.
 
 A share at or above the ceiling SHALL give the verdict `compact` without a model call. The ceiling is
 `TAB_RECAP_AUTOCOMPACT_CEILING` when set (10–95, above the minimum), else the style's: 80 with `balanced`, 85 with
@@ -294,8 +295,7 @@ no recap yet SHALL have one written first.
 
 #### Scenario: A background job is still running
 
-- **WHEN** a Claude agent at 62 % becomes idle while a shell it started in the background has not reported
-  its end
+- **WHEN** a Codex agent at 62 % becomes idle while a script cell it started is still running
 - **THEN** no model SHALL be asked, no compaction SHALL be requested, and the lane's skip SHALL be `in-flight`
 
 #### Scenario: Over the ceiling
@@ -480,9 +480,9 @@ After a `coverage` wait, a lane below the ceiling SHALL be skipped with gate `co
 restart neither drops nor restarts it. It SHALL end when its time has passed, when the lane's tokens have grown by more
 than 10 % of its window since that decision, or when a boundary came after that decision. The gate SHALL sit after
 `unchanged` and before `in-flight`, so no decider is asked and no brief is written during a backoff. A lane that reaches
-the ceiling SHALL NOT be held by the backoff; the in-flight gate still applies first, as it does today. The default is
-`0`, which turns the backoff off. A value that is not 0 and not between 60 000 and 86 400 000 ms SHALL fall back to the
-default.
+the ceiling SHALL NOT be held by the backoff; the in-flight gate applies first, with the ceiling rule for an awaited
+reply and the rule for background work. The default is `0`, which turns the backoff off. A value that is not 0 and not
+between 60 000 and 86 400 000 ms SHALL fall back to the default.
 
 #### Scenario: A backoff holds a lane
 
@@ -522,3 +522,84 @@ default.
 - **WHEN** `TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS` is 0 and the same lane is idle at 120 500 tokens ten minutes after
   the wait
 - **THEN** the lane SHALL be considered again through the remaining gates
+
+### Requirement: Background work that survives a compaction does not hold a lane
+
+Each kind's in-flight reader SHALL answer two parts: foreground work, which a compaction would cut, as a count or
+unknown; and background work, which the harness keeps running across a compaction, as items, each with its tool and
+the short label of its launch. Only the foreground part SHALL hold the in-flight gate, at any share. A kind whose
+reader cannot tell the two apart SHALL count all its work as foreground and SHALL say so by name in its capability;
+Codex and opencode do, until a measurement shows otherwise. Claude's reader SHALL report what it counts today as
+background items, once the live check that they survive a compaction has passed; until then Claude counts them as
+foreground. A decision that background work did not hold SHALL record the detail `background: <n> kept running`.
+
+#### Scenario: A monitor keeps running
+
+- **WHEN** a Claude agent at 45 % becomes idle with a `Monitor` it started still running and nothing else in flight,
+  after the live check passed
+- **THEN** the lane SHALL go on to the decider as if nothing were in flight, and the decision SHALL record
+  `background: 1 kept running`
+
+#### Scenario: A kind that cannot tell
+
+- **WHEN** an opencode agent at 85 % becomes idle with a tool part still `running`
+- **THEN** the lane's skip SHALL be `in-flight`, and the capability SHALL name why its work counts as foreground
+
+#### Scenario: Before the live check
+
+- **WHEN** the live check that background work survives a compaction has not passed, and a Claude agent at 85 % becomes
+  idle with a background shell still running
+- **THEN** the lane's skip SHALL be `in-flight`, as before this change
+
+### Requirement: At the ceiling, a wait does not hold a lane
+
+At or above the ceiling, an awaited reply (the `awaiting` token) SHALL NOT hold the in-flight gate, neither when the
+gates run nor in the check made just before the decision is recorded. The decision SHALL be `compact` with gate
+`ceiling` and the detail `ceiling-overrides-wait (awaiting <names>)`. Below the ceiling an awaited reply SHALL hold the
+lane as before. Foreground work in flight, or a reader that cannot tell, SHALL hold the lane at any share.
+
+#### Scenario: A full lane waits for two others
+
+- **WHEN** an idle Claude lane at 92 % carries `awaiting-coordinator` = `reviewer,tester` and nothing is in flight in
+  the foreground
+- **THEN** the decision SHALL be `compact` with gate `ceiling`, no model SHALL be asked, and the detail SHALL be
+  `ceiling-overrides-wait (awaiting reviewer,tester)`
+
+#### Scenario: Below the ceiling it still waits
+
+- **WHEN** the same lane is at 60 % with the same token
+- **THEN** the lane's skip SHALL be `in-flight` with the detail `awaiting reviewer,tester`
+
+#### Scenario: A foreground call is not cut
+
+- **WHEN** a Codex lane at 92 % has an open function call and an `awaiting` token
+- **THEN** the lane's skip SHALL be `in-flight`, whatever the share
+
+### Requirement: An automatic compaction names what the lane was waiting for
+
+An automatic compaction of a lane that waits for a reply or runs background work SHALL carry a note naming them, so the
+agent continues them after it: `Still waiting for: <names>. Still running: <tool> "<label>", …`. The names SHALL come
+from the `awaiting` token and the items from the reader's background part, through the plain-text sanitizer notes use,
+and the note SHALL be cut to 400 characters. With nothing to name the note SHALL be empty, as before. A reply or an end
+notice that arrives after the compaction SHALL reach the agent as before.
+The brief writer rewrites a note in its own words and may leave a name or a label out (measured: the whole note was kept
+in half of eight live samples); when the written brief of an automatic compaction does not contain every name, tool and label
+of the note as whole words, the plugin SHALL append the note to the brief whole, on the same line, and SHALL NOT change a brief that
+contains them all nor append an operator's note.
+
+#### Scenario: The note after a full lane compacts
+
+- **WHEN** a lane at 92 % awaiting `reviewer` with one `Monitor` labelled `open merge requests` is compacted
+  automatically
+- **THEN** the compaction's note SHALL be `Still waiting for: reviewer. Still running: Monitor "open merge requests".`
+
+#### Scenario: The writer dropped what the lane waits for
+
+- **WHEN** the brief written for an automatic compaction of a lane awaiting `reviewer` with one `Monitor` labelled
+  `open merge requests` mentions neither
+- **THEN** the text typed after `/compact ` SHALL be the brief, a space, and the note
+
+#### Scenario: Nothing to name
+
+- **WHEN** a lane at 85 % with nothing awaited and no background work is compacted automatically
+- **THEN** its note SHALL be empty

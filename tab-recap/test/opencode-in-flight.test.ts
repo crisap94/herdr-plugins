@@ -4,7 +4,15 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { splitReason } from '#src/ports/capability-reasons.ts';
 import { opencodeFixture, toolPart } from '#test/opencode-fixture.ts';
+
+test('opencode: all its in-flight work is foreground, and the capability says so by name', () => {
+    const { split } = new OpencodeTranscripts().inFlight;
+    if (split.kind !== 'foreground-only') throw new Error('opencode cannot tell its background work apart, so it must declare foreground-only');
+    assert.equal(split.why, 'opencode-parts');
+    assert.equal(splitReason(split.why, 'opencode'), 'opencode cannot tell background work that survives a compaction');
+});
 
 test('opencode: running or pending tool parts count; completed and error parts do not', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-flight-'));
@@ -15,7 +23,7 @@ test('opencode: running or pending tool parts count; completed and error parts d
         fixture.add({ id: 'msg-running', session: 'ses_new', role: 'assistant', updated: 120, data: { finish: null }, parts: [toolPart('running', { input: { command: 'x' }, time: { start: 3 } })] });
         fixture.add({ id: 'msg-pending', session: 'ses_new', role: 'assistant', updated: 130, data: { finish: 'stop' }, parts: [toolPart('pending', { input: { command: 'x' } })] });
         const reader = fixtureReader(fixture.db);
-        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 2 });
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 2, background: [] });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });
@@ -28,7 +36,7 @@ test('opencode: a running part with only time.start counts', async () => {
     try {
         fixture.add({ id: 'msg-running', session: 'ses_new', role: 'assistant', updated: 100, data: { finish: null }, parts: [toolPart('running', { time: { start: 3 } })] });
         const reader = fixtureReader(fixture.db);
-        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 1 });
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 1, background: [] });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });
@@ -43,7 +51,7 @@ test('opencode: a running part from another session is not counted', async () =>
         fixture.add({ id: 'msg-other', session: 'ses_other', role: 'assistant', updated: 110, parts: [toolPart('running')] });
         fixture.add({ id: 'msg-other-2', session: 'ses_other', role: 'assistant', updated: 120, parts: [toolPart('running')] });
         const reader = fixtureReader(fixture.db);
-        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 1 });
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 1, background: [] });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });
@@ -59,7 +67,7 @@ test('opencode: a running part in a message older than the newest-message limit 
             fixture.add({ id: `msg-new-${index}`, session: 'ses_new', role: 'assistant', updated: 200 + index, parts: [] });
         }
         const reader = fixtureReader(fixture.db);
-        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 0 });
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 1), { kind: 'in-flight', count: 0, background: [] });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });
@@ -72,7 +80,7 @@ test('opencode: a running-looking non-tool part is not counted', async () => {
     try {
         fixture.add({ id: 'msg-current', session: 'ses_new', role: 'assistant', updated: 100, parts: [{ type: 'text', state: { status: 'running' } }] });
         const reader = fixtureReader(fixture.db);
-        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 0 });
+        assert.deepEqual(await reader.inFlight.read(`${fixture.db}#ses_new`, 10), { kind: 'in-flight', count: 0, background: [] });
     } finally {
         fixture.close();
         rmSync(dir, { recursive: true, force: true });

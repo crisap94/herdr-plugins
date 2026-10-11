@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
 import { stateStore } from '#src/adapters/db/database.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
@@ -19,14 +18,17 @@ import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { hasModel } from '#src/recap/domain/backend.ts';
+import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
 import { compactCommand } from './compact.ts';
+import { handoffCommand, productionWiring } from './handoff.ts';
+import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 
 const OK = 0;
 const FAILED = 1;
-const USAGE = 2;
+const USAGE = USAGE_EXIT;
 const NOT_COVERED = 3;
 
 const m = (): Messages => messagesOf();
@@ -186,6 +188,7 @@ async function show(): Promise<number> {
 const commands: Readonly<Record<string, (arg: string | undefined) => number | Promise<number>>> = {
     show,
     compact,
+    handoff: () => (handoffArgs === null ? USAGE : handoffCommand(handoffArgs, productionWiring())),
     configure,
     start: () => { pidfile.disabled = false; return launch(); },
     startup: () => (pidfile.disabled ? OK : launch()),
@@ -231,23 +234,12 @@ const HELP_FLAGS = new Set(['--help', '-h']);
 const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
 
-function parseArguments(argv: readonly string[]): { positionals: string[]; note: string | undefined } | { problem: string } {
-    try {
-        const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { help: { type: 'boolean', short: 'h' }, note: { type: 'string' } } });
-        if (values.note !== undefined && positionals[0] !== 'compact') {
-            return { problem: '--note applies to compact only' };
-        }
-        return { positionals, note: values.note };
-    } catch (error) {
-        return { problem: error instanceof Error ? error.message : String(error) };
-    }
-}
-
 const usage = (): string => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT].join('|'));
 const argv = process.argv.slice(2);
-const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]], note: undefined } : parseArguments(argv);
+const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]], note: undefined, handoff: null } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
 const noteArg = 'positionals' in parsed ? parsed.note : undefined;
+const handoffArgs = 'positionals' in parsed ? parsed.handoff : null;
 
 function commandOf(word: string | undefined): ((arg: string | undefined) => number | Promise<number>) | undefined {
     const own: Readonly<Record<string, () => number | Promise<number>>> = { [EVAL]: () => evalCommand(argv.slice(1)), [AUTOCOMPACT]: () => autocompactCommand(argv.slice(1)) };

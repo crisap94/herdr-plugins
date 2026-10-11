@@ -1,0 +1,13 @@
+run: R01-settle-and-handoff-proof
+experiment: EXP-003-handoff-live
+status: valid
+date: 2026-10-11
+code: tab-recap at 108d8cb on feat/lane-handoff (the branch started at 5d69365; see the experiment's manifest.yaml)
+command: "herdr --session handoff-test server; node src/daemon/launch.mjs (scratch state directory); trial.sh <kind> <delay> <n> run four at a time with xargs -P 4"
+files:
+  m4-trials.jsonl: a2807170fd2b30d10bb4b501b842ffcc731c9ea70d47cf28fdffcdbc02a94b4d
+  summary.md: 286544f98ee890359753969866838aaee07586047d3bc94f97c015fcaf2342b7
+rule: settle = the smallest nominal delay from which every larger delay was fully received (decision rule fixed before the data was read; the margin is chosen by the maintainer)
+ran_by: a test lane (Sonnet 5.5), unattended
+note: metrics only; no ledger or transcript content. The host was heavily loaded (load 60 to 190 on 8 cores). The OpenCode trials were cut from n=10 to n=3 to 5 per delay once they were all lost, to save host load.
+raw: the trial script and the scratch repository are not kept; each trial row carries its own timings and outcome

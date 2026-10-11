@@ -2,6 +2,7 @@ import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 import { claudeNamedCall } from './claude-tool-calls.ts';
+import { promptBodyOf } from './claude-prompt.ts';
 import { toolEntry } from './tool-calls.ts';
 
 const NOISE = ['<command-', '<local-command', '<system-reminder', '<task-notification', 'Caveat: The messages below', '[Request interrupted by user'];
@@ -28,7 +29,8 @@ function noteMeta(row: Row, meta: Meta): void {
     if (row['type'] === 'ai-title') {
         meta.title = str(row['aiTitle']) ?? meta.title;
     } else if (row['type'] === 'last-prompt') {
-        meta.lastPrompt = str(row['lastPrompt']) ?? meta.lastPrompt;
+        const last = str(row['lastPrompt']);
+        meta.lastPrompt = last === null ? meta.lastPrompt : promptBodyOf(last);
     } else if (row['type'] === 'system' && row['subtype'] === 'away_summary') {
         meta.claudeRecap = str(row['content']) ?? meta.claudeRecap;
     }
@@ -38,7 +40,7 @@ function userEntry(row: Row): Entry | null {
     if (row['isSidechain'] === true || row['isMeta'] === true || row['isCompactSummary'] === true) {
         return null;
     }
-    const text = textOf(obj(row['message'])['content']);
+    const text = promptBodyOf(textOf(obj(row['message'])['content']));
     const head = text.trimStart();
     const at = timeOf(row);
     return text === '' || NOISE.some((noise) => head.startsWith(noise)) ? null : { role: 'user', text, ...(at === undefined ? {} : { at }) };
@@ -46,7 +48,8 @@ function userEntry(row: Row): Entry | null {
 
 function queuedEntry(row: Row): Entry | null {
     const attachment = obj(row['attachment']);
-    const text = str(attachment['prompt']);
+    const raw = str(attachment['prompt']);
+    const text = raw === null ? null : promptBodyOf(raw);
     const at = timeOf(attachment) ?? timeOf(row);
     if (attachment['type'] !== 'queued_command' || obj(attachment['origin'])['kind'] !== 'human' || text === null || row['isSidechain'] === true) {
         return null;

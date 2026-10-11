@@ -3,6 +3,7 @@ import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { SetupNote } from '#src/recap/domain/setup-note.ts';
+import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 
 export type Locale = 'en' | 'es';
 
@@ -102,6 +103,7 @@ export interface Messages {
         readonly writing: (agent: string) => string;
         readonly outcome: (agent: string, outcome: 'compacted' | 'failed' | 'unconfirmed', retried: boolean, figures: { readonly tokens: string; readonly took: string }) => string;
         readonly stage: {
+            readonly queued: (agent: string | null, clock: string) => string;
             readonly briefing: (agent: string | null, writer: string | null, clock: string) => string;
             readonly compacting: (agent: string | null, clock: string) => string;
             readonly restoring: (agent: string | null) => string;
@@ -116,6 +118,7 @@ export interface Messages {
             readonly took: (seconds: number) => string;
         };
         readonly started: (agent: string) => string;
+        readonly startedQueued: (agent: string) => string;
         readonly auto: (text: string) => string;
         readonly coverageMissed: (agent: string) => string;
         readonly coverageCeiling: (count: number) => string;
@@ -169,6 +172,7 @@ export interface Messages {
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;
         readonly statusConfig: string;
+        readonly handoff: Readonly<Record<HandoffMessageKey, string>>;
         readonly none: string;
     };
 }

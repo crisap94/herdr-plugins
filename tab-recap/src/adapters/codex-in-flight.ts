@@ -89,5 +89,5 @@ export function codexInFlight(lines: readonly string[], truncated: boolean): InF
     if (truncated && found.openCall) {
         return unknown({ why: 'unreadable', detail: 'the truncated rollout tail contains an open call' });
     }
-    return { kind: 'in-flight', count: found.count };
+    return { kind: 'in-flight', count: found.count, background: [] };
 }

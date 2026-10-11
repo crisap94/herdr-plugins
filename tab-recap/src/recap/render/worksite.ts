@@ -1,0 +1,97 @@
+import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
+import type { Brand } from '#src/recap/domain/brand.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
+
+export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
+
+const blockOf = (composed: string): WorksiteBlock => composed as WorksiteBlock;
+
+export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf('worksite unavailable');
+
+const encoder = new TextEncoder();
+
+const bytesOf = (text: string): number => encoder.encode(text).byteLength;
+
+function linesOf(facts: WorksiteFacts): WorksiteBlock {
+    const lines = ['## Worksite', `- directory: ${sanitizeHandoffText(facts.directory)}`];
+    if (facts.repository !== null) {
+        const branch = facts.repository.branch === null ? '' : ` (branch ${sanitizeHandoffText(facts.repository.branch)})`;
+        lines.push(`- repository: ${sanitizeHandoffText(facts.repository.root)}${branch}`);
+    }
+    if (facts.lastCommit !== null) {
+        lines.push(`- last commit: ${sanitizeHandoffText(facts.lastCommit.hash)} ${sanitizeHandoffText(facts.lastCommit.subject)}`);
+    }
+    if (facts.uncommitted !== null) {
+        lines.push(`- ${facts.uncommitted.count} uncommitted paths`);
+        lines.push(...facts.uncommitted.paths.map((path) => `  - ${sanitizeHandoffText(path)}`));
+    }
+    if (facts.edited.length > 0) {
+        lines.push('- most edited files:');
+        lines.push(...facts.edited.map((file) => `  - ${sanitizeHandoffText(file.path)} (${file.edits} edits)`));
+    }
+    if (facts.tokens.length > 0) {
+        lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
+    }
+    return blockOf(lines.join('\n'));
+}
+
+function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts> {
+    yield facts;
+    const untokened = { ...facts, tokens: [] };
+    yield untokened;
+    const bare = { ...untokened, edited: [] };
+    yield bare;
+    if (bare.uncommitted !== null) {
+        const { count, paths } = bare.uncommitted;
+        for (let shown = paths.length - 1; shown >= 0; shown -= 1) {
+            yield { ...bare, uncommitted: { count, paths: paths.slice(0, shown) } };
+        }
+    }
+}
+
+function largestFitting(max: number, fitsAt: (kept: number) => boolean): number {
+    let low = 0;
+    let high = max;
+    while (low < high) {
+        const mid = Math.ceil((low + high) / 2);
+        if (fitsAt(mid)) {
+            low = mid;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return low;
+}
+
+function cutToBytes(text: WorksiteBlock, budget: ByteBudget): WorksiteBlock {
+    const points = Array.from(text);
+    const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(points.slice(0, count).join(''))));
+    return blockOf(points.slice(0, kept).join(''));
+}
+
+function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock {
+    if (bare.lastCommit === null) {
+        return linesOf(bare);
+    }
+    const { hash, subject } = bare.lastCommit;
+    const points = Array.from(subject);
+    const cutAt = (count: number): WorksiteFacts => ({ ...bare, lastCommit: { hash, subject: points.slice(0, count).join('') } });
+    const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(linesOf(cutAt(count)))));
+    return linesOf(cutAt(kept));
+}
+
+export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): WorksiteBlock {
+    if (snapshot.kind === 'unavailable') {
+        return WORKSITE_UNAVAILABLE;
+    }
+    for (const candidate of shrinking(snapshot)) {
+        const text = linesOf(candidate);
+        if (fits(budget, bytesOf(text))) {
+            return text;
+        }
+    }
+    const bare = { ...snapshot, tokens: [], edited: [], uncommitted: snapshot.uncommitted === null ? null : { count: snapshot.uncommitted.count, paths: [] } };
+    const subjectCut = withSubjectCut(bare, budget);
+    return fits(budget, bytesOf(subjectCut)) ? subjectCut : cutToBytes(subjectCut, budget);
+}

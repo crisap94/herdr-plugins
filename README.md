@@ -21,7 +21,7 @@ is finished is not thrown away: it is closed with a reason and stays in the stor
 [expanded view](#the-expanded-view) shows in full. A coding agent of your choice writes the facts at
 the end of each turn. Every merge request, commit, branch, file and URL in them is a
 link you can open with Ctrl-click. It only reads transcripts; it never types into an agent on its own —
-the exceptions are the [compaction](#compact-an-agent) you ask for and, only when you set it to `on`,
+the exceptions are the [compaction](#compact-an-agent) you ask for, the `tab-recap handoff` you ask for, and, only when you set it to `on`,
 [autocompact](#autocompact).
 
 Every item is held to one [rubric](tab-recap/schema/recap-rubric.md) (atomic, specific, about the work, with the reason for a

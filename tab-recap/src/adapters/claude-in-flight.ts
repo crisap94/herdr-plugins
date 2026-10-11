@@ -1,5 +1,7 @@
-import type { InFlightResult } from '#src/ports/transcripts.ts';
+import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { backgroundItem, backgroundLabel, backgroundTool } from '#src/recap/domain/in-flight.ts';
+import type { BackgroundItem, BackgroundLabel } from '#src/recap/domain/in-flight.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
@@ -8,7 +10,9 @@ export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 const ENDED = new Set(['completed', 'failed', 'killed', 'stopped']);
 const LAUNCHERS = new Set(['Agent', 'Task', 'Monitor']);
 
-interface Launch { readonly agentTool: boolean; readonly tasks: Set<string>; readonly startedAt: number | null; readonly expiresAfter: number | null }
+export const CLAUDE_SPLIT: BackgroundSplit = { kind: 'separates' };
+
+interface Launch { readonly agentTool: boolean; readonly item: BackgroundItem; readonly tasks: Set<string>; readonly startedAt: number | null; readonly expiresAfter: number | null }
 
 const textOf = (content: unknown): string =>
     typeof content === 'string' ? content : arr(content).map((block) => str(block['text']) ?? '').join('');
@@ -27,13 +31,18 @@ function taskOf(result: Row, text: string): string | null {
 
 const asynchronous = (result: Row, text: string): boolean => result['isAsync'] === true || result['status'] === 'async_launched' || text.startsWith('Async agent launched');
 
+const labelOf = (input: Row): BackgroundLabel | null => {
+    const description = str(input['description']);
+    return description === null || description.trim() === '' ? null : backgroundLabel(description);
+};
+
 function launchOf(block: Row, row: Row): { readonly id: string; readonly launch: Launch } | null {
     const name = str(block['name']) ?? '';
     const id = str(block['id']);
     const input = obj(block['input']);
     if (block['type'] !== 'tool_use' || id === null || (input['run_in_background'] !== true && !LAUNCHERS.has(name))) return null;
     const timeout = name === 'Monitor' && typeof input['timeout_ms'] === 'number' ? input['timeout_ms'] : null;
-    return { id, launch: { agentTool: name === 'Agent' || name === 'Task', tasks: new Set(), startedAt: stamped(row), expiresAfter: timeout } };
+    return { id, launch: { agentTool: name === 'Agent' || name === 'Task', item: backgroundItem(backgroundTool(name), labelOf(input)), tasks: new Set(), startedAt: stamped(row), expiresAfter: timeout } };
 }
 
 function launched(row: Row, launches: Map<string, Launch>): void {
@@ -93,7 +102,7 @@ function newestOf(rows: readonly Row[]): number | null {
     }, null);
 }
 
-export interface TailScan { readonly count: number; readonly unseen: boolean }
+export interface TailScan { readonly count: number; readonly items: readonly BackgroundItem[]; readonly unseen: boolean }
 
 export function scanFlight(lines: readonly string[]): TailScan | null {
     const rows = lines.map((line) => parse(line)).filter((row): row is Row => row !== null);
@@ -108,15 +117,16 @@ export function scanFlight(lines: readonly string[]): TailScan | null {
         if (notice === 'none' && row['type'] === 'user') answered(row, launches);
     }
     const newest = newestOf(rows);
-    return { count: [...launches.values()].filter((launch) => !expired(launch, newest)).length, unseen };
+    const live = [...launches.values()].filter((launch) => !expired(launch, newest));
+    return { count: live.length, items: live.map((launch) => launch.item), unseen };
 }
 
-export function claudeInFlight(lines: readonly string[], truncated = false): InFlightResult {
-    return answerOf(scanFlight(lines), truncated);
+export function claudeInFlight(lines: readonly string[], truncated = false, split: BackgroundSplit = CLAUDE_SPLIT): InFlightResult {
+    return answerOf(scanFlight(lines), truncated, split);
 }
 
-export function answerOf(scan: TailScan | null, truncated: boolean): InFlightResult {
+export function answerOf(scan: TailScan | null, truncated: boolean, split: BackgroundSplit): InFlightResult {
     if (scan === null) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
     if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
-    return { kind: 'in-flight', count: scan.count };
+    return split.kind === 'separates' ? { kind: 'in-flight', count: 0, background: scan.items } : { kind: 'in-flight', count: scan.count, background: [] };
 }

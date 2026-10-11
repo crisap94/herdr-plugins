@@ -8,7 +8,7 @@ import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { readJsonl, tailLines, tailOf } from './jsonl.ts';
 import { claudeObserved } from './claude-context.ts';
 import { extractClaude } from './claude-rows.ts';
-import { IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts';
+import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './claude-in-flight.ts';
 
 export { extractClaude };
 
@@ -23,7 +23,7 @@ function answerAt(source: string, budget: number): InFlightResult {
         tail = tailOf(source, bytes);
         scan = scanFlight(tail.lines);
     }
-    return answerOf(scan, tail.truncated);
+    return answerOf(scan, tail.truncated, CLAUDE_SPLIT);
 }
 
 export const KEPT_UNKNOWN_MAX = 256;
@@ -32,7 +32,7 @@ export class ClaudeTranscripts implements Transcripts {
     readonly agent = CLAUDE_KIND;
     private readonly root: string;
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
-    readonly inFlight: SupportedInFlight = { kind: 'supported', read: (source, budget) => this.readInFlight(source, budget) };
+    readonly inFlight: SupportedInFlight = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
 
     constructor(root = join(homedir(), '.claude', 'projects')) {
         this.root = root;
