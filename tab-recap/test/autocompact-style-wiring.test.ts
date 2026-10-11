@@ -38,7 +38,7 @@ function inertTranscripts(): Transcripts {
         locate: (): Promise<Located> => Promise.resolve({ kind: 'located', source: 's' }),
         read: (): Promise<never> => Promise.reject(new Error('unused')),
         latestPrompt: (): Promise<never> => Promise.reject(new Error('unused')),
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'survival-unproven' }, read: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
     };
 }
 
@@ -58,7 +58,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         locate: () => Promise.resolve({ kind: 'located', source: 'transcript' }),
         read: () => Promise.reject(new Error('not read here')),
         latestPrompt: () => Promise.reject(new Error('not read here')),
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'survival-unproven' }, read: () => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
     };
     const service = wireAutocompact({
         config: () => configOf(keys),

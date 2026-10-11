@@ -30,3 +30,19 @@ export function continuationNote(awaiting: Awaiting, background: readonly Backgr
     const parts = [...waitingPart(awaiting), ...runningPart(background)];
     return parts.length === 0 ? null : (cutNote(parts.join(' '), limit) as ContinuationNote);
 }
+
+const LEADS = /Still (?:waiting for|running):/g;
+const WORD = /[\p{L}\p{N}]+/gu;
+const EDGE_BEFORE = '(?<![\\p{L}\\p{N}])';
+const EDGE_AFTER = '(?![\\p{L}\\p{N}])';
+
+const mentions = (brief: string, word: string): boolean => new RegExp(`${EDGE_BEFORE}${word}${EDGE_AFTER}`, 'iu').test(brief);
+
+export function keepsNote(brief: string, note: string): boolean {
+    const words = note.replaceAll(LEADS, ' ').match(WORD) ?? [];
+    return words.every((word) => mentions(brief, word));
+}
+
+export function withNote(brief: string, note: string): string {
+    return keepsNote(brief, note) ? brief : `${brief} ${note}`;
+}
