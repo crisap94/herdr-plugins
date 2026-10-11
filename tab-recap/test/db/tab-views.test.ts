@@ -2,8 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { openDatabase } from '#src/adapters/db/open.ts';
 import { openStore } from '#src/adapters/db/database.ts';
+import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
+import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { memoryStore, must, scratchDir } from './support.ts';
 
 const lane = (pane: string, over: Partial<TabLane> = {}): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null, ...over });
@@ -35,6 +41,59 @@ test('each write replaces the lanes; an unknown tab, and a tab with only a recap
     assert.equal(views.readTab('missing'), null);
     records.advance({ tab: 'w1:t9', at: 1, error: null, lanes: [] });
     assert.equal(views.readTab('w1:t9'), null);
+});
+
+test('a lane\'s since is written with its view and listed live across tabs; readTab does not carry it', () => {
+    const { views } = memoryStore();
+    views.writeTab(view({ lanes: [lane('w1:p1', { since: instant(5) }), lane('w1:p2')] }));
+    views.writeTab(view({ tab: 'w1:t2', lanes: [lane('w1:p3', { since: instant(7) })] }));
+    assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [
+        { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(5), cwd: null },
+        { tab: tabId('w1:t1'), pane: paneId('w1:p2'), agent: agentKind('claude'), since: null, cwd: null },
+        { tab: tabId('w1:t2'), pane: paneId('w1:p3'), agent: agentKind('claude'), since: instant(7), cwd: null },
+    ] });
+    assert.equal(Object.keys(must(views.readTab('w1:t1')).lanes[0] ?? {}).includes('since'), false);
+});
+
+test('a read-only open of a database below the since column lists no lanes and still reads the views', () => {
+    const dir = scratchDir('views-before-since');
+    try {
+        const path = join(dir, 'tab-recap.db');
+        const old = openDatabase(path, MIGRATIONS.slice(0, MIGRATIONS.length - 1));
+        if (old.kind !== 'ready') {
+            throw new Error('a fresh file is never newer');
+        }
+        old.db.exec("INSERT INTO tab (id, first_seen, last_seen, view_at) VALUES ('w1:t1', 1, 1, 1)");
+        old.db.exec("INSERT INTO lane (tab_id, pane, position, agent, status) VALUES ('w1:t1', 'w1:p1', 0, 'claude', 'idle')");
+        old.db.close();
+        const reader = new DatabaseSync(path, { readOnly: true });
+        const views = new TabViewsRepository(reader);
+        assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [] });
+        assert.equal(must(views.readTab('w1:t1')).lanes.length, 1);
+        reader.close();
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('a write to a database below the since column keeps the old lane shape', () => {
+    const dir = scratchDir('views-write-before-since');
+    try {
+        const path = join(dir, 'tab-recap.db');
+        const old = openDatabase(path, MIGRATIONS.slice(0, MIGRATIONS.length - 1));
+        if (old.kind !== 'ready') {
+            throw new Error('a fresh file is never newer');
+        }
+        old.db.close();
+        const writer = new DatabaseSync(path);
+        const views = new TabViewsRepository(writer);
+        views.writeTab(view({ lanes: [lane('w1:p1', { since: instant(5) })] }));
+        assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [] });
+        assert.equal(must(views.readTab('w1:t1')).lanes.at(0)?.pane, 'w1:p1');
+        writer.close();
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });
 
 test('a view carries the version of the daemon that wrote it; one written by no daemon reads back null', () => {

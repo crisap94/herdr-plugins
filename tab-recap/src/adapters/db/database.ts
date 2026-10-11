@@ -12,7 +12,7 @@ import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { Retention } from '#src/ports/retention.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
 import { AutocompactBriefsRepository } from './autocompact-briefs.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
@@ -41,7 +41,7 @@ export interface Store {
     readonly db: DatabaseSync;
     readonly records: RecapRecords;
     readonly ledger: Ledger;
-    readonly views: TabViews;
+    readonly views: TabViews & LiveLanes;
     readonly visibility: ColumnVisibility;
     readonly requests: Requests & CompactionQueue;
     readonly handoffs: HandoffAnswers;

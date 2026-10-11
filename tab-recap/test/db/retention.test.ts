@@ -5,6 +5,8 @@ import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { Removed } from '#src/ports/retention.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { sweep } from '#src/recap/application/retention.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore } from './support.ts';
 
@@ -79,12 +81,20 @@ test('TAB_RECAP_KEEP_DAYS=0 removes nothing; another number moves the line', () 
     assert.deepEqual([count(short.store.db, 'tab', 'w1:week'), count(short.store.db, 'tab', 'w1:fresh')], [0, 1]);
 });
 
+test('a tab the protected list names is never offered for removal, however old', () => {
+    const { store } = world(30);
+    tab(store, 'w1:old', 31);
+    tab(store, 'w1:older', 32);
+    assert.deepEqual(store.retention.expired(NOW - 30 * DAY, []), [tabId('w1:old'), tabId('w1:older')]);
+    assert.deepEqual(store.retention.expired(NOW - 30 * DAY, [tabId('w1:old')]), [tabId('w1:older')]);
+});
+
 test('one tab that cannot be removed does not stop the sweep', () => {
     const { store, lines } = world(30);
     tab(store, 'w1:a', 40);
     tab(store, 'w1:b', 41);
     const real = store.retention;
-    const flaky = { expired: (cutoff: number): readonly string[] => real.expired(cutoff), remove: (id: string): Removed => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(id); } };
+    const flaky = { expired: (cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] => real.expired(cutoff, protectedTabs), remove: (id: string): Removed => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(id); } };
     assert.equal(sweep({ retention: flaky, clock: { now: () => instant(NOW) }, days: () => 30, log: (line) => { lines.push(line); } }), 1);
     assert.match(lines.join('\n'), /could not remove w1:a: locked[^]*removed w1:b/);
     assert.deepEqual([count(store.db, 'tab', 'w1:a'), count(store.db, 'tab', 'w1:b')], [1, 0]);

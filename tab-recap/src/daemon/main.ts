@@ -52,6 +52,7 @@ import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
+import { restoredObservation } from './restored-lanes.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
@@ -232,6 +233,10 @@ async function start(): Promise<number> {
         log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`);
     }
     informer.push({ kind: 'hidden-restored', state: store.visibility.readHidden() });
+    const persisted = restoredObservation(store.views, log);
+    if (persisted !== null) {
+        informer.push(persisted);
+    }
     setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
     setInterval(() => {

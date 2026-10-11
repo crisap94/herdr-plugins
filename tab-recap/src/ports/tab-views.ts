@@ -1,6 +1,8 @@
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Forge } from './lane-repo.ts';
+import type { Unknown } from './unknowable.ts';
 
 export interface LaneWeb {
     readonly base: string;
@@ -32,4 +34,10 @@ export interface TabViews {
     readTab(tab: string): TabView | null;
     writeTab(view: TabView): void;
     tabOf(pane: string): string | null;
+}
+
+export type LiveLanesRead = { readonly kind: 'read'; readonly lanes: readonly RestoredLane[] } | Unknown;
+
+export interface LiveLanes {
+    liveLanes(): LiveLanesRead;
 }

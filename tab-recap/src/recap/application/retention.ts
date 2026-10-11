@@ -1,6 +1,9 @@
 import type { Clock } from '#src/ports/clock.ts';
 import type { Retention } from '#src/ports/retention.ts';
 import { cutoffOf } from '#src/recap/domain/retention.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
+
+const NO_PROTECTED_TABS: readonly TabId[] = [];
 
 export interface SweepDeps {
     readonly retention: Retention;
@@ -15,7 +18,7 @@ export function sweep(deps: SweepDeps): number {
         return 0;
     }
     let gone = 0;
-    for (const tab of deps.retention.expired(cutoff)) {
+    for (const tab of deps.retention.expired(cutoff, NO_PROTECTED_TABS)) {
         try {
             const taken = deps.retention.remove(tab);
             gone += 1;
