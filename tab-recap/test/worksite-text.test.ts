@@ -159,3 +159,15 @@ test('the labels and the fixed words of a worksite section contain no forbidden 
     };
     assert.equal(FORBIDDEN.test(worksiteTextOf(known(neutral), LIMIT)), false);
 });
+
+test('a repository whose path, branch and commit subject contain forbidden words is rendered whole: the worksite is never blanked for its name', () => {
+    const named: WorksiteFacts = {
+        directory: '/work/herdr-tab-plugins', repository: { root: '/work/herdr-tab-plugins', branch: 'herdr/tab' }, lastCommit: { hash: 'a1b2c3d', subject: 'herdr tab fix' },
+        uncommitted: { count: 0, paths: [] }, edited: [], tokens: [],
+    };
+    const text = worksiteTextOf(known(named), LIMIT);
+    assert.equal(FORBIDDEN.test(text), true);
+    assert.match(text, /^- directory: \/work\/herdr-tab-plugins$/m);
+    assert.match(text, /^- repository: \/work\/herdr-tab-plugins \(branch herdr\/tab\)$/m);
+    assert.match(text, /^- last commit: a1b2c3d herdr tab fix$/m);
+});
