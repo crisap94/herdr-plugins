@@ -75,7 +75,24 @@ const NOW = Date.parse('2026-10-07T10:00:00Z');
 const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
 const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+interface Clock { t: number }
+interface Slice { readonly settled: boolean; readonly after?: number }
+
+function ticking(clock: Clock, slices: readonly Slice[] = []): LaneSettling {
+    let call = 0;
+    return { settled: (_pane, _since, timeoutMs) => {
+        const slice = slices[call] ?? { settled: false };
+        call += 1;
+        clock.t += slice.after ?? (slice.settled ? 0 : timeoutMs);
+        return Promise.resolve(slice.settled ? { kind: 'settled', status: 'idle' } : { kind: 'timeout' });
+    } };
+}
+
+function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly Slice[] = [], marksAt: (at: number) => readonly Mark[] = () => []): ReturnType<typeof fleet> & { readonly plans: CompactionPlans; readonly clock: () => number; readonly marks: () => Promise<readonly Mark[]> } {
+    return { ...world, plans: queuingPlans, clock: () => clock.t, settling: ticking(clock, slices), marks: () => Promise.resolve(marksAt(clock.t)) };
+}
+
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
@@ -94,8 +111,8 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
             write: (document) => { world.events.push('brief'); briefing?.documents.push(document); return Promise.resolve({ text: briefing?.answer ?? null, why: briefing?.answer === null ? 'the answer is empty' : null }); },
         },
         recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
-        now: () => NOW,
-        marks: () => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); },
+        now: () => world.clock?.() ?? NOW,
+        marks: world.marks ?? (() => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); }),
         pause: () => Promise.resolve(),
         webs: { of: () => null },
         lanes: () => LANES,
@@ -567,7 +584,7 @@ test('a working claude whose plan queues is typed behind its turn: no refusal, t
     const world = fleet({ 'w1:p1': 'working' });
     const queuedAtTyping: boolean[] = [];
     const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
-    await flow({ ...world, agents, plans: queuingPlans }).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow({ ...queuing(world, { t: NOW }), agents }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
     assert.equal(world.toasts.length, 2, 'one start toast and one outcome toast');
@@ -581,7 +598,7 @@ test('a claude that starts working while its brief is written is typed queued, n
     const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'working' : 'idle' }); } };
     const queuedAtTyping: boolean[] = [];
     const typing: Agents = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
-    await flow({ ...world, agents: typing, plans: queuingPlans }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow({ ...queuing(world, { t: NOW }), agents: typing }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
     assert.equal(world.toasts.some((toast) => /is working|not compacted/.test(toast)), false, world.toasts.join('\n'));
@@ -589,7 +606,7 @@ test('a claude that starts working while its brief is written is typed queued, n
 
 test('a blocked claude is refused at the request whatever its plan says: nothing is typed', async () => {
     const world = fleet({ 'w1:p1': 'blocked' });
-    await flow({ ...world, plans: queuingPlans }).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow(queuing(world, { t: NOW })).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed, []);
     assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', en.badge.blocked]]);
     assert.match(world.toasts.join('\n'), /claude is blocked: not compacted/);
@@ -599,8 +616,45 @@ test('a claude that turns blocked while its brief is written is refused again be
     const world = fleet({ 'w1:p1': 'idle' });
     const asked: string[] = [];
     const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'blocked' : 'idle' }); } };
-    await flow({ ...world, agents, plans: queuingPlans }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow({ ...queuing(world, { t: NOW }), agents }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed, []);
     assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', en.badge.blocked]]);
     assert.match(world.toasts.at(-1) ?? '', /claude is blocked: not compacted/);
+});
+
+test('The turn ends before the compaction: the record is queued while the turn runs, not after its end; the mark a later settle brings confirms it', async () => {
+    const world = fleet({ 'w1:p1': 'working' });
+    const clock = { t: NOW };
+    const seen: boolean[] = [];
+    const base = queuing(world, clock, [{ settled: true }, { settled: true, after: 40_000 }], (at) => (at >= NOW + 40_000 ? [{ kind: 'compacted', at: NOW + 40_000 }] : []));
+    const marks = (): Promise<readonly Mark[]> => { seen.push(records(world)[0]?.queued === true); return base.marks(); };
+    await flow({ ...base, marks }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.equal(world.typed.length, 1, 'typed once');
+    assert.deepEqual([seen[0], seen.at(-1)], [true, false], 'queued until the turn ends, then not');
+    assert.deepEqual(records(world).map((r) => [r.stage, r.queued]), [['compacted', false]]);
+    assert.equal(world.toasts.length, 2, 'one start toast, one outcome toast');
+    assert.match(world.toasts[0] ?? '', /queued behind the current turn/);
+    assert.match(world.toasts[1] ?? '', /claude compacted/);
+});
+
+test('No mark within the bound: unconfirmed after the ten minutes, and the command is typed once', async () => {
+    const world = fleet({ 'w1:p1': 'working' });
+    const clock = { t: NOW };
+    await flow(queuing(world, clock)).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.equal(world.typed.length, 1, 'typed once');
+    assert.deepEqual(records(world).map((r) => r.stage), ['unconfirmed']);
+    assert.equal(clock.t - NOW, 10 * 60_000, 'the wait ran to the bound');
+});
+
+test('a failed mark after a queued compaction: the retry is typed once, and the record is no longer queued when it is typed', async () => {
+    const world = fleet({ 'w1:p1': 'working' });
+    const clock = { t: NOW };
+    const queuedAtTyping: boolean[] = [];
+    const base = queuing(world, clock, [], () => []);
+    const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const marks = (): Promise<readonly Mark[]> => Promise.resolve(world.typed.length >= 2 ? [{ kind: 'compacted', at: clock.t }] : [{ kind: 'compaction-failed', at: NOW + 5000 }]);
+    await flow({ ...base, agents, marks }).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.equal(world.typed.length, 2, 'typed for the retry');
+    assert.deepEqual(queuedAtTyping, [true, false]);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.retried]), [['compacted', true]]);
 });

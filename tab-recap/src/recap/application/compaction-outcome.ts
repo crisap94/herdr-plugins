@@ -5,6 +5,7 @@ import type { Mark } from '#src/ports/transcripts.ts';
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
 
 const WAIT_MS = 10 * 60_000;
+const SLICE_MS = 60_000;
 const REREADS = 3;
 const REREAD_MS = 300;
 
@@ -55,4 +56,26 @@ export async function outcomeOf(deps: OutcomeDeps, lane: Lane, since: number, se
         verdict = verdictFrom(await deps.marks(lane), since);
     }
     return verdict;
+}
+
+export interface QueuedDeps extends OutcomeDeps {
+    now(): number;
+}
+
+export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: number, onTurnEnd: () => void): Promise<Verdict> {
+    const deadline = typedAt + WAIT_MS;
+    let since = typedAt;
+    let turnEnded = false;
+    for (;;) {
+        const settled = await deps.settling.settled(String(lane.pane), since, Math.min(SLICE_MS, deadline - deps.now()));
+        const verdict = await outcomeOf(deps, lane, typedAt, false);
+        if (verdict.outcome !== 'unconfirmed' || deps.now() >= deadline) {
+            return verdict;
+        }
+        if (settled.kind === 'settled' && !turnEnded) {
+            turnEnded = true;
+            onTurnEnd();
+        }
+        since = deps.now();
+    }
 }
