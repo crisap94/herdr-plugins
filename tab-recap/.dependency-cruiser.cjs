@@ -6,6 +6,7 @@ const brandFile = exact('src/recap/domain/brand.ts');
 module.exports = {
   options: {
     tsPreCompilationDeps: true,
+    doNotFollow: { path: 'node_modules' },
   },
   forbidden: [
     {
