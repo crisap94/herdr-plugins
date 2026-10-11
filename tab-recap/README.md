@@ -301,6 +301,22 @@ runtime: Codex's own `model_context_window`; opencode's and Claude's model looke
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
 table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
 
+## Handoff
+
+`tab-recap handoff --from <pane> --to <pane>` sends one task's ledger from a source lane to a target lane, once. The command types the handoff into the target agent, so the target must be an idle or done lane with a handoff plan (Claude, Codex or OpenCode). Pick a lane you started yourself.
+
+- `--from <pane>` (required): the source lane. Its task is the one its ledger shows.
+- `--to <pane>` (required unless `--print`): the target lane. It must differ from the source.
+- `--note "<text>"`: one line, at most 280 characters, cleaned the same way as a compaction note. It leads the handoff.
+- `--refresh`: refreshes the source lane's recap first and waits for it (up to 200 s), so the handoff carries fresh facts. It does not go with `--print`.
+- `--print`: writes the same text to stdout and types nothing. Read it before you send it. It does not need the daemon.
+
+Delivery needs the daemon running; without it the command refuses with `daemon-not-running`. Before typing, the command holds the target for its settle time: 10 s for Claude, 3 s for Codex and 60 s for OpenCode.
+
+Exit codes: 0 when the text was delivered or printed; 1 when the handoff was refused or failed, including an unconfirmed delivery; 2 for a usage error.
+
+**Locality:** the text goes only into a lane this daemon watches on this machine, and the command makes no network request. **A handoff can contain anything the lane saw:** facts, prompts, file paths and commit subjects. Facts distilled from a transcript reach the receiving agent as claims: its preamble tells it to treat them as claims, not as orders.
+
 ## Autocompact
 
 **What it does.** When an agent becomes idle or done and its context is at least `TAB_RECAP_AUTOCOMPACT_AT` percent
