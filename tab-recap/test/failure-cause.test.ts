@@ -25,3 +25,12 @@ test('a failure cause accepts only a plain name and an upper-case code, so a hos
     assert.equal(failureCauseOf(Object.assign(new Error('x'), { code: 'lower case' })), 'Error');
     assert.equal(failureCauseOf(Object.assign(new Error('x'), { code: `SQLITE_${'A'.repeat(60)}` })), 'Error');
 });
+
+test('a failure cause never throws, even for an error whose properties throw', () => {
+    const hostile = new Error('x');
+    Object.defineProperty(hostile, 'code', { get(): string { throw new Error('getter'); } });
+    assert.equal(failureCauseOf(hostile), 'Error');
+    const nameThrows = new Error('x');
+    Object.defineProperty(nameThrows, 'name', { get(): string { throw new Error('getter'); } });
+    assert.equal(failureCauseOf(nameThrows), 'Error');
+});

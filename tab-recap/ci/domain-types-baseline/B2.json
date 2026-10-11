@@ -104,7 +104,7 @@
   },
   "src/recap/domain/failure-cause.ts": {
     "parameter": 1,
-    "assertion": 2
+    "assertion": 1
   },
   "src/recap/domain/fold.ts": {
     "parameter": 4,
