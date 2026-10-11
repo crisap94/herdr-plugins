@@ -2,6 +2,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { err, type Result } from '#src/protocol/result.ts';
+import { isAssertion, isInlineLiteralUnion, isLibraryContext, predicateName } from './domain-syntax.ts';
 import { BRAND_FILE } from './domain-exceptions.ts';
 import { categoryIn, type Finding } from './domain-findings.ts';
 import { runReport } from './domain-ratchet.ts';
@@ -145,12 +146,6 @@ const inspect = (scan: Scan, frame: Frame, type: ts.Type, inAlias: boolean): voi
     }
 };
 
-const predicateName = (node: ts.SignatureDeclaration): string | undefined => {
-    const predicate = node.type;
-    const target = predicate !== undefined && ts.isTypePredicateNode(predicate) ? predicate.type : undefined;
-    return target !== undefined && ts.isTypeReferenceNode(target) && ts.isIdentifier(target.typeName) ? target.typeName.text : undefined;
-};
-
 const namesOf = (statement: ts.Statement): readonly string[] => {
     if (ts.isVariableStatement(statement)) {
         return statement.declarationList.declarations.flatMap((declaration) => (ts.isIdentifier(declaration.name) ? [declaration.name.text] : []));
@@ -176,19 +171,6 @@ const allowsUnknown = (node: ts.SignatureDeclaration): boolean => {
     return domain === undefined ? guarded !== undefined && declaresName(file, guarded) : isExported(node) && declaresName(file, domain);
 };
 
-const isLibraryContext = (scan: Scan, node: ts.SignatureDeclaration): boolean => {
-    if (!ts.isArrowFunction(node) && !ts.isFunctionExpression(node)) {
-        return false;
-    }
-    const declared = scan.checker.getContextualType(node)?.getCallSignatures()[0]?.declaration;
-    return declared !== undefined && declared.getSourceFile().isDeclarationFile;
-};
-
-const isInlineLiteralUnion = (type: ts.TypeNode | undefined): boolean =>
-    type !== undefined &&
-    ts.isUnionTypeNode(type) &&
-    type.types.some((member) => ts.isLiteralTypeNode(member) && (ts.isStringLiteral(member.literal) || ts.isNumericLiteral(member.literal)));
-
 const reportInlineUnion = (scan: Scan, annotation: ts.TypeNode | undefined, place: Place): void => {
     if (isInlineLiteralUnion(annotation)) {
         report(scan, place, 'is an inline literal union; name it with a type alias');
@@ -199,7 +181,7 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
     const owner = ownerName(node);
     const unknownParameter = allowsUnknown(node);
     node.parameters.forEach((parameter) => {
-        if (parameter.type === undefined && isLibraryContext(scan, node)) {
+        if (parameter.type === undefined && isLibraryContext(scan.checker, node)) {
             return;
         }
         const name = parameter.name.getText();
@@ -207,7 +189,7 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
         reportInlineUnion(scan, parameter.type, place);
         inspect(scan, frameOf(place, unknownParameter), scan.checker.getTypeAtLocation(parameter), false);
     });
-    const noReturn = ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || (node.type !== undefined && ts.isTypePredicateNode(node.type)) || (node.type === undefined && isLibraryContext(scan, node));
+    const noReturn = ts.isConstructorDeclaration(node) || ts.isSetAccessorDeclaration(node) || (node.type !== undefined && ts.isTypePredicateNode(node.type)) || (node.type === undefined && isLibraryContext(scan.checker, node));
     const signature = noReturn ? undefined : scan.checker.getSignatureFromDeclaration(node);
     if (signature === undefined) {
         return;
@@ -216,10 +198,6 @@ const checkSignature = (scan: Scan, node: ts.SignatureDeclaration): void => {
     reportInlineUnion(scan, node.type, place);
     inspect(scan, frameOf(place, false), scan.checker.getReturnTypeOfSignature(signature), false);
 };
-
-const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAssertion =>
-    ts.isTypeAssertionExpression(node) ||
-    (ts.isAsExpression(node) && !(ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName) && node.type.typeName.text === 'const'));
 
 const scanNode = (scan: Scan, node: ts.Node): void => {
     if (ts.isFunctionLike(node) && !ts.isIndexSignatureDeclaration(node)) {
