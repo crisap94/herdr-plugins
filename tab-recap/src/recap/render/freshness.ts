@@ -1,6 +1,9 @@
+import type { Brand } from '#src/recap/domain/brand.ts';
 import type { LastRunCause, NewerPrompts, RefreshStatus, Freshness } from '#src/recap/domain/freshness.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { utcMinuteText } from './handoff-markdown.ts';
+
+export type FreshnessBlock = Brand<string, 'FreshnessBlock'>;
 
 const CAUSE_WORDS: Readonly<Record<LastRunCause, string>> = {
     'turn-ended': 'after a turn',
@@ -33,11 +36,11 @@ const newerWords = (newer: NewerPrompts): string => {
 
 const statusWords = (status: LaneStatus): string => `lane status: ${status}`;
 
-export function freshnessTextOf(freshness: Freshness): string {
+export function freshnessTextOf(freshness: Freshness): FreshnessBlock {
     return [
         `last run: ${utcMinuteText(freshness.lastRun.at)}, ${CAUSE_WORDS[freshness.lastRun.cause]}`,
         statusWords(freshness.status),
         newerWords(freshness.newerPrompts),
         REFRESH_WORDS[freshness.refresh],
-    ].join('\n');
+    ].join('\n') as FreshnessBlock;
 }

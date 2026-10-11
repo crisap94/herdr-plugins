@@ -16,8 +16,10 @@ import { handoffId } from '#src/recap/domain/ids.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fitHandoff } from '#src/recap/render/handoff-budget.ts';
 import type { FittedHandoff, HandoffFit } from '#src/recap/render/handoff-budget.ts';
+import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { omittedTotal, serializeHandoff } from '#src/recap/render/handoff-markdown.ts';
 import type { OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
+import { worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
@@ -31,7 +33,7 @@ const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
 const BIG = byteBudgetOf(10_000_000);
 const FRESHNESS: Freshness = { lastRun: { at: AT - 60_000, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
-const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: AT }, freshnessText: 'last run: after a turn', worksiteText: null };
+const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: AT }, freshnessText: freshnessTextOf(FRESHNESS), worksiteText: null };
 
 const bytesOf = (text: string): number => new TextEncoder().encode(text).byteLength;
 
@@ -70,7 +72,10 @@ const omittedLineOf = (text: string): RegExpExecArray | null => /^(\d+) facts om
 
 const filler = (size: number): string => 'x'.repeat(size);
 
-const WORKSITE_BLOCK = `## Worksite\n${'w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n'.length)}`;
+const WORKSITE_BLOCK = worksiteTextOf(
+    { kind: 'known', directory: 'w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n- directory: '.length), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] },
+    byteBudgetOf(HANDOFF_WORKSITE_BYTES),
+);
 
 const countOf = (fit: HandoffFit, id: HandoffGroupId): number => fit.groups.filter((group) => group.id === id).reduce((sum, group) => sum + group.capped + group.entries.length, 0);
 

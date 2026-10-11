@@ -1,38 +1,39 @@
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import { plainText } from '#src/recap/domain/coordination.ts';
+import type { Brand } from '#src/recap/domain/brand.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
-export const WORKSITE_UNAVAILABLE = 'worksite unavailable';
+export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
+
+const blockOf = (composed: string): WorksiteBlock => composed as WorksiteBlock;
+
+export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf('worksite unavailable');
 
 const encoder = new TextEncoder();
 
 const bytesOf = (text: string): number => encoder.encode(text).byteLength;
 
-const FORMAT_CHARACTERS = /\p{Cf}/gu;
-
-const worksiteText = (value: string): string => plainText(value.replaceAll(FORMAT_CHARACTERS, ''));
-
-function linesOf(facts: WorksiteFacts): string {
-    const lines = ['## Worksite', `- directory: ${worksiteText(facts.directory)}`];
+function linesOf(facts: WorksiteFacts): WorksiteBlock {
+    const lines = ['## Worksite', `- directory: ${sanitizeHandoffText(facts.directory)}`];
     if (facts.repository !== null) {
-        const branch = facts.repository.branch === null ? '' : ` (branch ${worksiteText(facts.repository.branch)})`;
-        lines.push(`- repository: ${worksiteText(facts.repository.root)}${branch}`);
+        const branch = facts.repository.branch === null ? '' : ` (branch ${sanitizeHandoffText(facts.repository.branch)})`;
+        lines.push(`- repository: ${sanitizeHandoffText(facts.repository.root)}${branch}`);
     }
     if (facts.lastCommit !== null) {
-        lines.push(`- last commit: ${worksiteText(facts.lastCommit.hash)} ${worksiteText(facts.lastCommit.subject)}`);
+        lines.push(`- last commit: ${sanitizeHandoffText(facts.lastCommit.hash)} ${sanitizeHandoffText(facts.lastCommit.subject)}`);
     }
     if (facts.uncommitted !== null) {
         lines.push(`- ${facts.uncommitted.count} uncommitted paths`);
-        lines.push(...facts.uncommitted.paths.map((path) => `  - ${worksiteText(path)}`));
+        lines.push(...facts.uncommitted.paths.map((path) => `  - ${sanitizeHandoffText(path)}`));
     }
     if (facts.edited.length > 0) {
         lines.push('- most edited files:');
-        lines.push(...facts.edited.map((file) => `  - ${worksiteText(file.path)} (${file.edits} edits)`));
+        lines.push(...facts.edited.map((file) => `  - ${sanitizeHandoffText(file.path)} (${file.edits} edits)`));
     }
     if (facts.tokens.length > 0) {
-        lines.push(`- tokens: ${facts.tokens.map(worksiteText).join(', ')}`);
+        lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
     }
-    return lines.join('\n');
+    return blockOf(lines.join('\n'));
 }
 
 function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts> {
@@ -63,13 +64,13 @@ function largestFitting(max: number, fitsAt: (kept: number) => boolean): number 
     return low;
 }
 
-function cutToBytes(text: string, budget: ByteBudget): string {
+function cutToBytes(text: WorksiteBlock, budget: ByteBudget): WorksiteBlock {
     const points = Array.from(text);
     const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(points.slice(0, count).join(''))));
-    return points.slice(0, kept).join('');
+    return blockOf(points.slice(0, kept).join(''));
 }
 
-function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): string {
+function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock {
     if (bare.lastCommit === null) {
         return linesOf(bare);
     }
@@ -80,7 +81,7 @@ function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): string {
     return linesOf(cutAt(kept));
 }
 
-export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): string {
+export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): WorksiteBlock {
     if (snapshot.kind === 'unavailable') {
         return WORKSITE_UNAVAILABLE;
     }

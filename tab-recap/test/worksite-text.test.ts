@@ -133,6 +133,25 @@ test('invisible format characters in a value are removed: bidi overrides, zero-w
     assert.match(text, /^- tokens: note-tool$/mu);
 });
 
+test('every value passes the one sanitizer: a variation selector, a combining grapheme joiner, a tag payload, a byte order mark and a line separator in a path, branch, hash, subject, token or edited file come out clean', () => {
+    const hostile: WorksiteFacts = {
+        directory: '/work/\u{FE0F}pro\u{34F}ject\u{E0100}',
+        repository: { root: '/work/project\u{FEFF}', branch: 'feat/x\u{2028}y\u{FE0F}' },
+        lastCommit: { hash: 'a1b2\u{34F}c3d', subject: 'fix\u{E0100}\u{FEFF} rows' },
+        uncommitted: { count: 1, paths: ['src/\u{34F}a\u{FE0F}.ts'] },
+        edited: [{ path: 'src/\u{E0100}b.ts', edits: 2 }],
+        tokens: ['note\u{FEFF}-tool'],
+    };
+    const text = worksiteTextOf(known(hostile), LIMIT);
+    assert.doesNotMatch(text, /[\u{FE0F}\u{34F}\u{E0100}\u{FEFF}\u{2028}]/u);
+    assert.match(text, /^- directory: \/work\/project$/mu);
+    assert.match(text, /^- repository: \/work\/project \(branch feat\/x y\)$/mu);
+    assert.match(text, /^- last commit: a1b2c3d fix rows$/mu);
+    assert.match(text, /^  - src\/a\.ts$/mu);
+    assert.match(text, /^  - src\/b\.ts \(2 edits\)$/mu);
+    assert.match(text, /^- tokens: note-tool$/mu);
+});
+
 test('the labels and the fixed words of a worksite section contain no forbidden word', () => {
     const neutral: WorksiteFacts = {
         directory: '/srv/app', repository: { root: '/srv/app', branch: 'main' }, lastCommit: { hash: 'a1b2c3d', subject: 'fix' },

@@ -3,14 +3,16 @@ import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { compareIds } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
+import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 import type { HandoffReference, OmittedCounts } from './handoff-markdown.ts';
 import { serializeHandoff } from './handoff-markdown.ts';
 
 export interface HandoffFit {
     readonly reference: HandoffReference;
     readonly note: HandoffText | null;
-    readonly freshnessText: string;
-    readonly worksiteText: string | null;
+    readonly freshnessText: FreshnessBlock;
+    readonly worksiteText: WorksiteBlock | null;
     readonly groups: readonly HandoffGroup[];
     readonly withheld: number;
 }

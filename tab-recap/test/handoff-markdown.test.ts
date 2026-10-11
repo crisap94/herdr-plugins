@@ -4,19 +4,24 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { HANDOFF_PREFIX_CODE_POINTS } from '#src/recap/application/handoff-limits.ts';
+import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
+import type { Freshness } from '#src/recap/domain/freshness.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
+import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { HANDOFF_PREAMBLE, serializeHandoff, utcMinuteText } from '#src/recap/render/handoff-markdown.ts';
 import type { HandoffParts, OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
+import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
 const ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ab');
 const OTHER_ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ac');
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const ZERO: OmittedCounts = { done: 0, links: 0, closed: 0, now: 0, next: 0, withheld: 0 };
+const FRESHNESS: Freshness = { lastRun: { at: AT, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const HEADINGS: ReadonlySet<string> = new Set(['## Freshness', '## Goal', '## Now', '## Needs', '## Done', '## Decisions', '## Next', '## Links', '## Rules', '## Recently closed']);
 const prefixOf = (text: string): string => Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('');
 
@@ -33,7 +38,7 @@ const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 
 const partsOf = (groups: readonly HandoffGroup[] = [], more: Partial<HandoffParts> = {}): HandoffParts => ({
     reference: { kind: 'handoff', id: ID, at: AT },
     note: null,
-    freshnessText: 'last run: after a turn',
+    freshnessText: freshnessTextOf(FRESHNESS),
     worksiteText: null,
     groups,
     omitted: ZERO,
@@ -100,14 +105,14 @@ test('the note comes right after the reference line, as one line with its own pr
 });
 
 test('the freshness text is rendered under its heading, and the unavailable worksite line follows with no heading around it', () => {
-    const text = serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { worksiteText: 'worksite unavailable' }));
-    assert.ok(text.includes('## Freshness\nlast run: after a turn\n'));
+    const text = serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { worksiteText: WORKSITE_UNAVAILABLE }));
+    assert.ok(text.includes('## Freshness\nlast run: 2026-10-10 12:00Z, after a turn\n'));
     assert.ok(text.endsWith('\n\nworksite unavailable'));
     assert.equal(text.includes('## Worksite'), false);
 });
 
 test('a known worksite block is appended exactly as given', () => {
-    const block = '## Worksite\ndirectory: /work/repo\nbranch: main';
+    const block = worksiteTextOf({ kind: 'known', directory: '/work/repo', repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] }, byteBudgetOf(2_048));
     const text = serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { worksiteText: block }));
     assert.ok(text.endsWith(`\n\n${block}`));
 });
