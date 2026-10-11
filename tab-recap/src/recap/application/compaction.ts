@@ -25,6 +25,8 @@ import { Sender } from './compaction-send.ts';
 import type { Placed } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
@@ -104,7 +106,7 @@ export class Compaction {
         if (trail === null) {
             const pane = String(lane.pane);
             const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-            linkAsk(this.deps.asks, request, pane, id);
+            linkAsk(this.deps.asks, request, paneId(pane), id);
             if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
             this.answer(request, pane, failureStage(refusal.reason));
         } else {
@@ -133,7 +135,7 @@ export class Compaction {
 
     private begun(request: CompactRequest, start: { readonly tab: string; readonly pane: string; readonly agent: string; readonly stage: 'briefing' | 'compacting'; readonly writer: string | null }): string {
         const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
-        linkAsk(this.deps.asks, request, start.pane, id);
+        linkAsk(this.deps.asks, request, paneId(start.pane), id);
         this.deps.events?.lane(start.pane, COMPACT_EVENTS.queued, id);
         return id;
     }
@@ -149,7 +151,7 @@ export class Compaction {
         const id = this.begun(request, { tab, pane, agent, stage: this.deps.brief.enabled() ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, COMPACT_STAGES.running);
         this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
-        return new Trail(this.deps.compactions, id, () => this.deps.now(), (end, reason) => { this.ended(request, pane, id, end, reason); });
+        return new Trail(this.deps.compactions, id, () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
     private beginning(agent: string, queued: boolean): string {
@@ -221,7 +223,8 @@ export class Compaction {
     async run(request: CompactRequest): Promise<void> {
         const { tab } = request;
         const lanes = this.deps.lanes(tab);
-        const targets = targetsOf(lanes, this.deps.target(), { pane: request.pane, focused: await this.deps.focused(tab) });
+        const focused = await this.deps.focused(tab);
+        const targets = targetsOf(lanes, this.deps.target(), { pane: request.pane === null ? null : paneId(request.pane), focused: focused === null ? null : paneId(focused) });
         if (targets.length === 0) {
             await this.withoutTarget(request);
             return;

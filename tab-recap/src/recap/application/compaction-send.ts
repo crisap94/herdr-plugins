@@ -3,10 +3,11 @@ import type { CompactionPlan, CompactionPlanResult, Unsupported } from '#src/rec
 import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
-import { outcomeOf, queuedOutcomeOf } from './compaction-outcome.ts';
+import { confirmedOutcomeOf, outcomeOf, queuedOutcomeOf } from './compaction-outcome.ts';
 import type { QueuedDeps, Verdict } from './compaction-outcome.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
 import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
@@ -41,7 +42,11 @@ export class Sender {
         this.deps = deps;
     }
 
-    private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
+    private now(): Instant {
+        return instant(this.deps.now());
+    }
+
+    private async typed(pane: PaneId, type: () => Promise<Prompted>): Promise<Prompted> {
         const typing = this.deps.typing;
         const lease: Lease | undefined = typing === undefined ? undefined : { acquire: () => typing.acquire(pane), release: () => typing.release(pane) };
         const leased = await withTypingLease(lease, type);
@@ -49,8 +54,8 @@ export class Sender {
     }
 
     private async attempt(lane: Lane, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<Tried> {
-        const since = this.deps.now();
-        const pane = String(lane.pane);
+        const since = this.now();
+        const pane = lane.pane;
         const sent = await this.typed(pane, async () => {
             for (const line of plan.lines) {
                 const typed = await this.deps.agents.typeLine(pane, line, { enterDelay: plan.enterDelay });
@@ -66,16 +71,16 @@ export class Sender {
         return { sent, verdict: await this.confirmed(lane, since, plan, trail, queued) };
     }
 
-    private async confirmed(lane: Lane, since: number, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<Verdict> {
-        const deps: QueuedDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms), now: () => this.deps.now() };
+    private async confirmed(lane: Lane, since: Instant, plan: CompactionPlan, trail: Trail, queued: boolean): Promise<Verdict> {
+        const deps: QueuedDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms), now: () => this.now() };
         switch (plan.confirm.kind) {
             case 'turn-end':
-                return queued ? queuedOutcomeOf(deps, lane, since, () => { trail.to('compacting', { queued: false }); }) : outcomeOf(deps, lane, since, true);
+                return queued ? queuedOutcomeOf(deps, lane, since, () => { trail.to('compacting', { queued: false }); }) : outcomeOf(deps, lane, since);
             case 'poll': {
-                let verdict = await outcomeOf(deps, lane, since, false);
+                let verdict = await confirmedOutcomeOf(deps, lane, since);
                 for (let read = 1; read < plan.confirm.reads && verdict.outcome === 'unconfirmed'; read += 1) {
                     await this.deps.pause(plan.confirm.every);
-                    verdict = await outcomeOf(deps, lane, since, false);
+                    verdict = await confirmedOutcomeOf(deps, lane, since);
                 }
                 return verdict;
             }
@@ -107,8 +112,8 @@ export class Sender {
         }
         trail.to('restoring');
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
-        const pane = String(lane.pane);
-        const since = this.deps.now();
+        const pane = lane.pane;
+        const since = this.now();
         const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: followUp.acceptsStall }));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(pane, since, RESTORING_MS);
@@ -116,7 +121,7 @@ export class Sender {
         }
     }
 
-    private async conclude(lane: Lane, trail: Trail, ended: { readonly verdict: Verdict; readonly retried: boolean; readonly began: number }): Promise<void> {
+    private async conclude(lane: Lane, trail: Trail, ended: { readonly verdict: Verdict; readonly retried: boolean; readonly began: Instant }): Promise<void> {
         const { verdict, retried } = ended;
         const { compaction } = this.deps.messages();
         const figures = { tokensBefore: verdict.tokensBefore ?? null, tokensAfter: verdict.tokensAfter ?? null, tookMs: verdict.tookMs ?? this.deps.now() - ended.began };
@@ -142,7 +147,7 @@ export class Sender {
             return resolved;
         }
         const plan = resolved.plan;
-        const began = this.deps.now();
+        const began = this.now();
         if (placed.queued) trail.to('compacting', { queued: true });
         const { tried, retried } = await this.attemptedOnce(lane, plan, trail, placed.queued);
         if (tried.sent.kind !== 'sent') {

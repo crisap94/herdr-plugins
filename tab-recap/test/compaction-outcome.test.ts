@@ -5,6 +5,7 @@ import { extractCodex } from '#src/adapters/codex-transcripts.ts';
 import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-outcome.ts';
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const row = (fields: Record<string, unknown>): string => JSON.stringify({ timestamp: '2026-10-07T10:00:05Z', ...fields });
 const AT = Date.parse('2026-10-07T10:00:05Z');
@@ -27,7 +28,7 @@ test('codex: a `compacted` row is a compaction', () => {
 });
 
 test('the verdict: the newest mark from the command on wins; none, older or undated is unconfirmed', () => {
-    const since = AT - 1000;
+    const since = instant(AT - 1000);
     assert.equal(verdictOf([], since), 'unconfirmed');
     assert.equal(verdictOf([{ kind: 'compacted', at: since - 1 }], since), 'unconfirmed');
     assert.equal(verdictOf([{ kind: 'compacted', at: null }], since), 'unconfirmed');
@@ -43,9 +44,9 @@ test('a queued compaction: every settle with no mark keeps the wait, the first t
         settling: { settled: () => { clock.t += 60_000; return Promise.resolve({ kind: 'settled', status: 'idle' }); } },
         marks: () => Promise.resolve([]),
         pause: () => Promise.resolve(),
-        now: () => clock.t,
+        now: () => instant(clock.t),
     };
-    const verdict = await queuedOutcomeOf(deps, laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }), AT, () => { turnEnds += 1; });
+    const verdict = await queuedOutcomeOf(deps, laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }), instant(AT), () => { turnEnds += 1; });
     assert.deepEqual([verdict.outcome, turnEnds, clock.t - AT], ['unconfirmed', 1, 10 * 60_000]);
 });
 
@@ -71,7 +72,7 @@ const queuedWorld = (pushes: readonly Push[], markAt: number | null, unknownSett
         },
         marks: () => { markReads.n += 1; return Promise.resolve(markAt !== null && clock.t >= markAt ? [{ kind: 'compacted', at: markAt }] : []); },
         pause: (ms) => { clock.t += ms; return Promise.resolve(); },
-        now: () => clock.t,
+        now: () => instant(clock.t),
     };
     return { deps, clock, settleCalls, turnEnds: 0, markReads };
 };
@@ -80,21 +81,21 @@ const queuedLane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1'
 
 test('a queued compaction: a settle heard while the marks are read is seen by the next slice at once, and the turn end is reported once', async () => {
     const world = queuedWorld([{ at: AT + 5000, status: 'idle' }, { at: AT + 5500, status: 'done' }], AT + 7000);
-    const verdict = await queuedOutcomeOf(world.deps, queuedLane, AT, () => { world.turnEnds += 1; });
+    const verdict = await queuedOutcomeOf(world.deps, queuedLane, instant(AT), () => { world.turnEnds += 1; });
     assert.deepEqual([verdict.outcome, world.turnEnds], ['compacted', 1]);
     assert.ok(world.settleCalls[2] !== undefined && world.settleCalls[2] - AT < 10_000, 'the push heard during the first marks read ends the second wait at once');
 });
 
 test('a queued compaction: a settle heard before a slice began does not end that slice again', async () => {
     const world = queuedWorld([{ at: AT + 5000, status: 'idle' }], AT + 200_000);
-    const verdict = await queuedOutcomeOf(world.deps, queuedLane, AT, () => { world.turnEnds += 1; });
+    const verdict = await queuedOutcomeOf(world.deps, queuedLane, instant(AT), () => { world.turnEnds += 1; });
     assert.deepEqual([verdict.outcome, world.turnEnds], ['compacted', 1]);
     assert.ok(world.settleCalls.length < 10, `slices of the wait: ${world.settleCalls.length}`);
 });
 
 test('a queued compaction: a status that is not a turn end is not one, and the marks are read about once a second at most', async () => {
     const world = queuedWorld([], AT + 30_000, true);
-    const verdict = await queuedOutcomeOf(world.deps, queuedLane, AT, () => { world.turnEnds += 1; });
+    const verdict = await queuedOutcomeOf(world.deps, queuedLane, instant(AT), () => { world.turnEnds += 1; });
     assert.deepEqual([verdict.outcome, world.turnEnds], ['compacted', 0]);
     assert.ok(world.settleCalls.length <= 31, `waits in 30 s of fake clock: ${world.settleCalls.length}`);
 });

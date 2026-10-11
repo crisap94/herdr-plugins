@@ -222,9 +222,9 @@ test('an agent named by its pane is the one compacted, whatever is focused; a pa
 test('target resolution: focused agent, else the only agent; never a guess among several', () => {
     const [claude, codex] = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex')];
     const focusedSetting = targetOf('focused');
-    assert.deepEqual(targetsOf([claude, codex], focusedSetting, { pane: null, focused: 'w1:p2' }).map((each) => String(each.pane)), ['w1:p2']);
-    assert.deepEqual(targetsOf([claude, codex], focusedSetting, { pane: null, focused: 'w1:p9' }), []);
-    assert.deepEqual(targetsOf([claude], focusedSetting, { pane: null, focused: 'w1:p9' }).map((each) => String(each.pane)), ['w1:p1']);
+    assert.deepEqual(targetsOf([claude, codex], focusedSetting, { pane: null, focused: paneId('w1:p2') }).map((each) => String(each.pane)), ['w1:p2']);
+    assert.deepEqual(targetsOf([claude, codex], focusedSetting, { pane: null, focused: paneId('w1:p9') }), []);
+    assert.deepEqual(targetsOf([claude], focusedSetting, { pane: null, focused: paneId('w1:p9') }).map((each) => String(each.pane)), ['w1:p1']);
 });
 
 
