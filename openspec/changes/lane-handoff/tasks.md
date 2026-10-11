@@ -52,10 +52,10 @@ Implementation paths are under `tab-recap/`. This change specifies work only; do
 
 ## 6. Freshness and worksite adapters
 
-- [ ] Compute the Freshness block: the ledger's last run and cause, the lane status, the newer prompts through the lane's reader from the cursor (applying the cursor only while the stored transcript equals the located source), as a sum. The daemon locates with `CurrentSession`; the CLI reads the cursor's stored transcript through `modalTranscriptRegistry()` and does not locate; both call one Freshness function.
-- [ ] Add the `WorksiteReader` port and its git adapter beside `git-lane-repo.ts`: last commit through `git log -1`, uncommitted paths through `git status --porcelain=v2 -z` with a small hand-written parser (renames, untracked, unmerged), `GIT_OPTIONAL_LOCKS=0`, `core.fsmonitor=false`, the shared timeout. Compose the section from the store's lane row, `LaneRepo`, `EditCounts` (top five), and a new names-only function beside `awaitingOf`/`notesOf` for non-empty `awaiting*` and `note*` tokens, capped at 2 048 bytes with the shrink order of the spec. Add a `WorksiteReader` contract test run against the git adapter and a fake.
+- [x] Compute the Freshness block: the ledger's last run and cause, the lane status, the newer prompts through the lane's reader from the cursor (applying the cursor only while the stored transcript equals the located source), as a sum. The daemon locates with `CurrentSession`; the CLI reads the cursor's stored transcript through `modalTranscriptRegistry()` and does not locate; both call one Freshness function. (!94)
+- [x] Add the `WorksiteReader` port and its git adapter beside `git-lane-repo.ts`: last commit through `git log -1`, uncommitted paths through `git status --porcelain=v2 -z` with a small hand-written parser (renames, untracked, unmerged), `GIT_OPTIONAL_LOCKS=0`, `core.fsmonitor=false`, the shared timeout. Compose the section from the store's lane row, `LaneRepo`, `EditCounts` (top five), and a new names-only function beside `awaitingOf`/`notesOf` for non-empty `awaiting*` and `note*` tokens, capped at 2 048 bytes with the shrink order of the spec. Add a `WorksiteReader` contract test run against the git adapter and a fake. (!94)
 - [ ] Verify: ledger with newer prompts, none, unknown; working source; refresh succeeded/failed/timed out; no refresh without the flag; clean worktree; 31 uncommitted paths; rename and untracked; vanished directory; git timeout; token names without values; the cap's shrink order; and that a captured daemon log line contains no fact text.
-- [ ] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`.
+- [x] Run `bash ci/lint.sh` and `bash ci/test.sh` from `tab-recap/`. (!94)
 
 ## 7. CLI and i18n
 
