@@ -12,8 +12,10 @@ export interface SourceRequest {
     readonly pane: PaneId;
 }
 
+export type SourceLane = Pick<Lane, 'pane' | 'tab'>;
+
 export interface SourceDeps {
-    readonly lanes: readonly Lane[];
+    readonly lanes: readonly SourceLane[];
     readonly records: Pick<RecapRecords, 'readRecap'>;
     readonly ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>;
     readonly now: number;
@@ -28,7 +30,7 @@ export type SourceResolution =
 
 export type SourceResolver = (source: SourceRequest, deps: SourceDeps) => SourceResolution;
 
-export function isLaneOfTab(lanes: readonly Lane[], source: SourceRequest): boolean {
+export function isLaneOfTab(lanes: readonly SourceLane[], source: SourceRequest): boolean {
     return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab);
 }
 

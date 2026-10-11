@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handoffReport, notYetWired, type HandoffArguments, type HandoffWiring } from '../bin/handoff.ts';
+import { handoffReport, type HandoffArguments, type HandoffWiring } from '../bin/handoff.ts';
 import { messagesOf } from '#src/daemon/config.ts';
 import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { DeliverRequest } from '#src/recap/application/handoff-request.ts';
@@ -18,7 +18,7 @@ interface Recorded {
     readonly printed: PrintRequest[];
 }
 
-function wiring(outcome: HandoffOutcome, printResult: PrintResult = { kind: 'text', text: 'the handoff' }): Recorded {
+function wiring(outcome: HandoffOutcome, printResult: PrintResult = { kind: 'text', text: 'the handoff', info: null }): Recorded {
     const delivered: DeliverRequest[] = [];
     const printed: PrintRequest[] = [];
     const value: HandoffWiring = {
@@ -75,6 +75,3 @@ test('print with a refused reason reports that reason exactly as a delivery does
     assert.deepEqual(delivered, []);
 });
 
-test('until the content builder lands, print fails with exit 1 and says so', async () => {
-    await assert.rejects(notYetWired(), /print needs the content builder/);
-});

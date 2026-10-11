@@ -1,9 +1,17 @@
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databasePath, stateStore } from '#src/adapters/db/database.ts';
+import { openPrintStore } from '#src/adapters/db/print-store.ts';
+import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
+import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
+import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { SystemClock } from '#src/adapters/system-clock.ts';
+import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { messagesOf, stateDir } from '#src/daemon/config.ts';
-import type { HandoffPrinter, PrintResult } from '#src/ports/handoff-print.ts';
+import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { requestNoteOf } from '#src/recap/application/compact-start.ts';
+import { EditCounts } from '#src/recap/application/edit-counts.ts';
+import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest } from '#src/recap/application/handoff-request.ts';
 import { exitCodeOf, messageKeyOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { paneId, type PaneId } from '#src/recap/domain/ids.ts';
@@ -37,10 +45,6 @@ export interface HandoffReport {
 
 const OK = 0;
 
-export const notYetWired = async (): Promise<PrintResult> => {
-    throw new Error('print needs the content builder');
-};
-
 function reportOf(outcome: HandoffOutcome): HandoffReport {
     const key = messageKeyOf(outcome);
     const text = key === null ? '' : messagesOf().cli.handoff[key];
@@ -51,7 +55,7 @@ function reportOf(outcome: HandoffOutcome): HandoffReport {
 export async function handoffReport(args: HandoffArguments, wiring: HandoffWiring): Promise<HandoffReport> {
     if (args.mode === 'print') {
         const printed = await wiring.printer.renderForPrint({ from: args.from, to: args.to, note: args.note });
-        return printed.kind === 'text' ? { exit: OK, out: printed.text, err: null } : reportOf(printed);
+        return printed.kind === 'text' ? { exit: OK, out: printed.text, err: printed.info === null ? null : `tab-recap: ${printed.info}` } : reportOf(printed);
     }
     return reportOf(await wiring.deliver(args));
 }
@@ -143,9 +147,22 @@ function deliverDeps(): DeliverDeps {
     };
 }
 
+function printerOf(): HandoffPrinter {
+    const transcripts = modalTranscriptRegistry();
+    const fleet = new HerdrFleet(stateDir());
+    return new PrintedHandoffs({
+        openStore: () => openPrintStore(databasePath(stateDir())),
+        transcripts,
+        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditCounts(transcripts) },
+        tokens: fleet,
+        target: { status: (pane) => fleet.agents().status(pane) },
+        now: () => Date.now(),
+    });
+}
+
 export function productionWiring(): HandoffWiring {
     return {
-        printer: { renderForPrint: notYetWired },
+        printer: printerOf(),
         deliver: (request) => deliverHandoff(request, deliverDeps()),
     };
 }

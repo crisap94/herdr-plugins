@@ -87,11 +87,11 @@ test('a source that is a label rather than a lane is refused source-unavailable 
     }, runningDaemon(codeVersion() ?? 'unknown'));
 });
 
-test('print with no content builder yet exits 1, says so on stderr, and opens no database', () => {
+test('print with no state database exits 1 on stderr and creates no database', () => {
     withRun(['handoff', '--from', 'w1:p1', '--print'], (ran) => {
         assert.equal(ran.status, 1, ran.stderr);
         assert.equal(ran.stdout, '');
-        assert.match(ran.stderr, /print needs the content builder/);
+        assert.match(ran.stderr, /^tab-recap: 1 — /);
         assert.equal(ran.database, false);
     });
 });

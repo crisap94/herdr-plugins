@@ -8,8 +8,8 @@ export interface PrintRequest {
 }
 
 export type PrintResult =
-    | { readonly kind: 'text'; readonly text: string }
-    | Extract<HandoffOutcome, { readonly kind: 'refused' }>;
+    | { readonly kind: 'text'; readonly text: string; readonly info: string | null }
+    | Extract<HandoffOutcome, { readonly kind: 'refused' | 'failed' }>;
 
 export interface HandoffPrinter {
     renderForPrint(request: PrintRequest): Promise<PrintResult>;
