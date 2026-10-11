@@ -128,9 +128,9 @@ test('a path named in the skip list is not expected in the map; a folder entry s
     const skip = written('skip.txt', '# listed\ntab-recap/src/protocol/result.ts\ntab-recap/test/fixtures/\nexperiments/\n');
     const without = mapWithout('src/protocol/result.ts');
     assert.equal(generate(without, skip).status, 1, 'the folder entry leaves its files out of the map');
-    const both = mapWithout('test/fixtures/');
-    assert.equal(generate(both, skip).status, 1, 'the listed source file is still in this map');
-    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(both, 'utf8'));
+    const withoutFixtures = mapWithout('test/fixtures/');
+    assert.equal(generate(withoutFixtures, skip).status, 1, 'the listed source file is still in this map');
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(withoutFixtures, 'utf8'));
     for (const name of Object.keys(parsed.lanes)) parsed.lanes[name] = (parsed.lanes[name] ?? []).filter((file) => file !== 'src/protocol/result.ts');
     const all = written(`all-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
     assert.equal(generate(all, skip).status, 0);
