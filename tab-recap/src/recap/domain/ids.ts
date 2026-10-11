@@ -34,7 +34,11 @@ export function tabId(raw: string): TabId {
 }
 
 export function workspaceId(raw: string): WorkspaceId {
-    return nonEmpty(raw, 'a workspace id') as WorkspaceId;
+    const parsed = parseWorkspaceId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a workspace id cannot be empty');
+    }
+    return parsed.value;
 }
 
 export function workspaceOfTab(tab: TabId): WorkspaceId | null {

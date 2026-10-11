@@ -1,12 +1,14 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
+import { parseInstant } from '#src/recap/domain/time.ts';
 import type { LaneWeb, LiveLanes, LiveLanesRead, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { writeTx } from './connection.ts';
-import { all, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
+import { BadRow, all, guarded, isRow, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { TabRow } from './tab-row.ts';
 
@@ -31,14 +33,41 @@ const laneOf = (row: Row): TabLane => ({
     pane: text(row, 'pane'), agent: text(row, 'agent'), status: text(row, 'status'), title: maybeText(row, 'title'), cwd: maybeText(row, 'cwd'), lastPrompt: maybeText(row, 'last_prompt'), web: webOf(row), context: contextOf(row),
 });
 
-const sinceOf = (row: Row): Instant | null => {
-    const value = maybeWhole(row, 'since');
-    return value === null ? null : instant(value);
-};
+type RestoredRow = RestoredLane;
 
-const restoredOf = (row: Row): RestoredLane => ({
-    tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), since: sinceOf(row), cwd: maybeText(row, 'cwd'),
-});
+export function parseRestoredRow(input: unknown): Result<RestoredRow, ParseFailure> {
+    if (!isRow(input)) {
+        return err({ kind: 'not-a-row' });
+    }
+    const tab = parseTabId(input.tab_id);
+    if (tab.kind === 'err') {
+        return tab;
+    }
+    const pane = parsePaneId(input.pane);
+    if (pane.kind === 'err') {
+        return pane;
+    }
+    const agent = parseAgentKind(input.agent);
+    if (agent.kind === 'err') {
+        return agent;
+    }
+    const since = input.since === null ? ok(null) : parseInstant(input.since);
+    if (since.kind === 'err') {
+        return since;
+    }
+    const cwd = input.cwd === null ? ok(null) : parseDirectory(input.cwd);
+    if (cwd.kind === 'err') {
+        return cwd;
+    }
+    return ok({ tab: tab.value, pane: pane.value, agent: agent.value, since: since.value, cwd: cwd.value });
+}
+
+function restoredOrThrow(result: Result<RestoredRow, ParseFailure>): RestoredRow {
+    if (result.kind === 'err') {
+        throw new BadRow(`restored lane is ${result.error.kind}`);
+    }
+    return result.value;
+}
 
 const LANE_COLUMNS = 'tab_id, pane, position, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch, context_tokens, context_window, context_source';
 
@@ -89,7 +118,7 @@ export class TabViewsRepository implements TabViews, LiveLanes {
             return { kind: 'read', lanes: [] };
         }
         try {
-            return { kind: 'read', lanes: all(this.live).map(restoredOf) };
+            return { kind: 'read', lanes: all(this.live).map((row) => restoredOrThrow(parseRestoredRow(row))) };
         } catch (error) {
             return { kind: 'unknown', why: { why: 'unreadable', detail: String(error) } };
         }

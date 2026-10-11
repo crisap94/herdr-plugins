@@ -1,9 +1,10 @@
 import type { Migration } from './migration.ts';
 
-const uuid = (column: string): string =>
-    `lower(substr(hex(${column}),1,8)||'-'||substr(hex(${column}),9,4)||'-'||substr(hex(${column}),13,4)||'-'||substr(hex(${column}),17,4)||'-'||substr(hex(${column}),21,12))`;
+const REQUEST_ID_TEXT = "lower(substr(hex(id),1,8)||'-'||substr(hex(id),9,4)||'-'||substr(hex(id),13,4)||'-'||substr(hex(id),17,4)||'-'||substr(hex(id),21,12))";
 
-const REQUEST_READABLE = `CREATE VIEW request_readable AS SELECT ${uuid('id')} AS id, at, kind, target, hidden, pane, note, origin, to_pane, refresh_first, closed_at FROM request`;
+const TASK_ID_TEXT = "lower(substr(hex(task_id),1,8)||'-'||substr(hex(task_id),9,4)||'-'||substr(hex(task_id),13,4)||'-'||substr(hex(task_id),17,4)||'-'||substr(hex(task_id),21,12))";
+
+const REQUEST_READABLE = `CREATE VIEW request_readable AS SELECT ${REQUEST_ID_TEXT} AS id, at, kind, target, hidden, pane, note, origin, to_pane, refresh_first, closed_at FROM request`;
 
 const CLOSED_LANE = `CREATE TABLE closed_lane (
   tab_id    TEXT    NOT NULL REFERENCES tab(id) ON DELETE CASCADE,
@@ -16,7 +17,7 @@ const CLOSED_LANE = `CREATE TABLE closed_lane (
   PRIMARY KEY (tab_id, pane, closed_at)
 ) STRICT, WITHOUT ROWID`;
 
-const CLOSED_LANE_READABLE = `CREATE VIEW closed_lane_readable AS SELECT tab_id, pane, closed_at, agent, cwd, CASE WHEN task_id IS NULL THEN NULL ELSE ${uuid('task_id')} END AS task_id, task_name FROM closed_lane`;
+const CLOSED_LANE_READABLE = `CREATE VIEW closed_lane_readable AS SELECT tab_id, pane, closed_at, agent, cwd, CASE WHEN task_id IS NULL THEN NULL ELSE ${TASK_ID_TEXT} END AS task_id, task_name FROM closed_lane`;
 
 export const m019: Migration = {
     version: 19,

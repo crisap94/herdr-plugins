@@ -1,4 +1,5 @@
 import type { AgentKind, PaneId, TabId } from './ids.ts';
+import type { Directory } from './directory.ts';
 import type { Lane } from './lane.ts';
 import type { Instant } from './time.ts';
 
@@ -13,7 +14,7 @@ export interface ClosedLane {
     readonly pane: PaneId;
     readonly agent: AgentKind;
     readonly since: Instant | null;
-    readonly cwd: Lane['cwd'];
+    readonly cwd: Directory | null;
     readonly closedAt: Instant;
 }
 
@@ -22,7 +23,7 @@ export interface RestoredLane {
     readonly pane: PaneId;
     readonly agent: AgentKind;
     readonly since: Instant | null;
-    readonly cwd: Lane['cwd'];
+    readonly cwd: Directory | null;
 }
 
 type Incarnation = Pick<ClosedLane, 'tab' | 'pane' | 'agent' | 'since' | 'cwd'>;
@@ -31,8 +32,10 @@ export function closureOf(lane: Incarnation, closedAt: Instant): ClosedLane {
     return { tab: lane.tab, pane: lane.pane, agent: lane.agent, since: lane.since, cwd: lane.cwd, closedAt };
 }
 
-const keeps = (after: ReadonlyMap<PaneId, Lane>, prior: Pick<Incarnation, 'pane' | 'agent'>): boolean =>
-    after.get(prior.pane)?.agent === prior.agent;
+export type Kept = 'kept' | 'gone';
+
+const keeps = (after: ReadonlyMap<PaneId, Lane>, prior: Pick<Incarnation, 'pane' | 'agent'>): Kept =>
+    after.get(prior.pane)?.agent === prior.agent ? 'kept' : 'gone';
 
 export function closuresBetween(
     before: ReadonlyMap<PaneId, Lane>,
@@ -40,7 +43,7 @@ export function closuresBetween(
     persisted: readonly RestoredLane[],
     now: Instant,
 ): readonly ClosedLane[] {
-    const held = [...before.values()].filter((lane) => !keeps(after, lane));
-    const restored = persisted.filter((lane) => !before.has(lane.pane) && !keeps(after, lane));
+    const held = [...before.values()].filter((lane) => keeps(after, lane) === 'gone');
+    const restored = persisted.filter((lane) => !before.has(lane.pane) && keeps(after, lane) === 'gone');
     return [...held, ...restored].map((lane) => closureOf(lane, now));
 }

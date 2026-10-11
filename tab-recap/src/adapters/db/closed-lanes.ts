@@ -1,19 +1,27 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { TaskId } from '#src/recap/domain/fact.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
+import { parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
+import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { cutoffOf } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseTaskName } from '#src/recap/domain/task-name.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant, parseInstant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
-import { all, maybeText, one, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
+import { BadRow, all, isRow, one } from './rows.ts';
 
 interface Statements {
     readonly insert: StatementSync;
@@ -25,11 +33,46 @@ interface Statements {
     readonly prune: StatementSync;
 }
 
+type WindowOff = 0 | 1;
+
+interface ClosedWindow {
+    readonly off: WindowOff;
+    readonly cutoff: Instant;
+}
+
+type ClosedLaneRow = ClosedLaneRecord;
+
+type Association = ClosureAssociation | null;
+
+export type RunCause = LastRun['cause'];
+
 const ROW = 'SELECT c.pane, c.closed_at, c.agent, c.cwd, c.task_name, k.key FROM closed_lane c LEFT JOIN task k ON k.id = c.task_id';
 
 const LAST_RUN_AT = 'SELECT r.at AS at, r.cause AS cause FROM run r JOIN run_task rt ON rt.run_id = r.id JOIN task k ON k.id = rt.task_id WHERE k.tab_id = ? AND k.key = ? AND r.at <= ? ORDER BY r.at DESC, r.id DESC LIMIT 1';
 
-const causeOf = (raw: string): LastRun['cause'] | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
+const NO_COUNT = countOrThrow(parseCount(0));
+
+function countOrThrow(result: Result<Count, ParseFailure>): Count {
+    if (result.kind === 'err') {
+        throw new BadRow(`count is ${result.error.kind}`);
+    }
+    return result.value;
+}
+
+function readOrThrow(result: Result<ClosedLaneRow, ParseFailure>): ClosedLaneRow {
+    if (result.kind === 'err') {
+        throw new BadRow(`closed lane is ${result.error.kind}`);
+    }
+    return result.value;
+}
+
+export function parseRunCause(input: unknown): Result<RunCause, ParseFailure> {
+    if (input === 'imported') {
+        return ok('imported');
+    }
+    const cause = RECAP_CAUSES.find((candidate) => candidate === input);
+    return cause === undefined ? err({ kind: 'out-of-range' }) : ok(cause);
+}
 
 const ASSOCIATE = `WITH hit AS (
   SELECT l.task_id, rt.name AS name FROM run_task_lane l
@@ -43,26 +86,57 @@ const ASSOCIATE = `WITH hit AS (
 INSERT OR IGNORE INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name)
 SELECT ?, ?, ?, ?, ?, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`;
 
-const unreadable = (error: unknown): Unknown => ({ kind: 'unknown', why: { why: 'unreadable', detail: String(error) } });
+const unreadable = (cause: FailureCause): Unknown => ({ kind: 'unknown', why: { why: 'unreadable', detail: cause } });
 
-const windowOf = (now: Instant, days: ClosedLaneDays): { readonly off: number; readonly cutoff: number } => {
+const windowOf = (now: Instant, days: ClosedLaneDays): ClosedWindow => {
     const cutoff = cutoffOf(now, days);
-    return cutoff === null ? { off: 1, cutoff: 0 } : { off: 0, cutoff };
+    return cutoff === null ? { off: 1, cutoff: instant(0) } : { off: 0, cutoff };
 };
 
-const associationOf = (row: Row, tab: TabId): ClosureAssociation | null => {
-    const key = maybeText(row, 'key');
-    return key === null ? null : { task: { tab, key }, name: maybeText(row, 'task_name') };
-};
+export function parseAssociation(input: unknown, tab: TabId): Result<Association, ParseFailure> {
+    if (!isRow(input)) {
+        return err({ kind: 'not-a-row' });
+    }
+    if (input.key === null) {
+        return ok(null);
+    }
+    const key = parseText(input.key);
+    if (key.kind === 'err') {
+        return key;
+    }
+    const name = input.task_name === null ? ok(null) : parseTaskName(input.task_name);
+    if (name.kind === 'err') {
+        return name;
+    }
+    return ok({ task: { tab, key: key.value }, name: name.value });
+}
 
-const recordOf = (row: Row, tab: TabId): ClosedLaneRecord => ({
-    tab,
-    pane: paneId(text(row, 'pane')),
-    agent: agentKind(text(row, 'agent')),
-    closedAt: instant(whole(row, 'closed_at')),
-    cwd: maybeText(row, 'cwd'),
-    association: associationOf(row, tab),
-});
+export function parseClosedLaneRow(input: unknown, tab: TabId): Result<ClosedLaneRow, ParseFailure> {
+    if (!isRow(input)) {
+        return err({ kind: 'not-a-row' });
+    }
+    const pane = parsePaneId(input.pane);
+    if (pane.kind === 'err') {
+        return pane;
+    }
+    const agent = parseAgentKind(input.agent);
+    if (agent.kind === 'err') {
+        return agent;
+    }
+    const closedAt = parseInstant(input.closed_at);
+    if (closedAt.kind === 'err') {
+        return closedAt;
+    }
+    const cwd = input.cwd === null ? ok(null) : parseDirectory(input.cwd);
+    if (cwd.kind === 'err') {
+        return cwd;
+    }
+    const association = parseAssociation(input, tab);
+    if (association.kind === 'err') {
+        return association;
+    }
+    return ok({ tab, pane: pane.value, agent: agent.value, closedAt: closedAt.value, cwd: cwd.value, association: association.value });
+}
 
 export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, ClosureRuns, ClosureSweep {
     private readonly db: DatabaseSync;
@@ -103,16 +177,20 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
         }
         try {
             const row = one(statements.byKey, identity.tab, identity.pane, identity.closedAt);
-            return row === null ? { kind: 'absent' } : { kind: 'row', record: recordOf(row, identity.tab) };
+            return row === null ? { kind: 'absent' } : { kind: 'row', record: readOrThrow(parseClosedLaneRow(row, identity.tab)) };
         } catch (error) {
-            return unreadable(error);
+            return unreadable(failureCauseOf(error));
         }
     }
 
     runAt(task: TaskId, at: Instant): LastRun | null {
         const row = one(this.lastRunAt, task.tab, task.key, at);
-        const cause = row === null ? null : causeOf(text(row, 'cause'));
-        return row === null || cause === null ? null : { at: whole(row, 'at'), cause };
+        if (row === null) {
+            return null;
+        }
+        const cause = parseRunCause(row.cause);
+        const when = parseInstant(row.at);
+        return cause.kind === 'ok' && when.kind === 'ok' ? { at: when.value, cause: cause.value } : null;
     }
 
     listOf(tab: TabId, now: Instant): ClosedLaneList {
@@ -122,9 +200,9 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
         }
         try {
             const { off, cutoff } = windowOf(now, this.days);
-            return { kind: 'listed', records: all(statements.listed, tab, off, cutoff).map((row) => recordOf(row, tab)) };
+            return { kind: 'listed', records: all(statements.listed, tab, off, cutoff).map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
         } catch (error) {
-            return unreadable(error);
+            return unreadable(failureCauseOf(error));
         }
     }
 
@@ -134,7 +212,10 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             return [];
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return all(statements.protectedTabs, off, cutoff).map((row) => tabId(text(row, 'id')));
+        return all(statements.protectedTabs, off, cutoff).flatMap((row) => {
+            const tab = parseTabId(row.id);
+            return tab.kind === 'ok' ? [tab.value] : [];
+        });
     }
 
     expiredTabs(now: Instant): readonly TabId[] {
@@ -143,20 +224,26 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             return [];
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return all(statements.expiredTabs, off, cutoff).map((row) => tabId(text(row, 'id')));
+        return all(statements.expiredTabs, off, cutoff).flatMap((row) => {
+            const tab = parseTabId(row.id);
+            return tab.kind === 'ok' ? [tab.value] : [];
+        });
     }
 
-    countOf(tab: TabId): number {
-        const statements = this.statements;
-        return statements === null ? 0 : whole(one(statements.countOf, tab) ?? { n: 0 }, 'n');
-    }
-
-    pruneTab(tab: TabId, now: Instant): number {
+    countOf(tab: TabId): Count {
         const statements = this.statements;
         if (statements === null) {
-            return 0;
+            return NO_COUNT;
+        }
+        return countOrThrow(parseCount(one(statements.countOf, tab)?.n ?? 0));
+    }
+
+    pruneTab(tab: TabId, now: Instant): Count {
+        const statements = this.statements;
+        if (statements === null) {
+            return NO_COUNT;
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return writeTx(this.db, () => Number(statements.prune.run(tab, off, cutoff).changes));
+        return countOrThrow(parseCount(writeTx(this.db, () => Number(statements.prune.run(tab, off, cutoff).changes))));
     }
 }

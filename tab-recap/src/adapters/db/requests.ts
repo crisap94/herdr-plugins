@@ -1,12 +1,15 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
+import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { CompactionQueue, CompactRequest, HandoffRequestRow, NewHandoffRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { originOf } from '#src/recap/domain/origin.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
+import { parseInstant } from '#src/recap/domain/time.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { handoffBytesOf, handoffIdOf } from './handoff-ids.ts';
-import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
+import { all, blob, flag, guarded, isRow, maybeText, text, whole } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
 import type { Row } from './rows.ts';
 
@@ -22,11 +25,23 @@ function compactionOf(row: Row): CompactRequest | null {
     return tab === '' ? null : { tab, pane: maybeText(row, 'pane'), note: maybeText(row, 'note'), origin: originOf(text(row, 'origin')), ...(answer === null ? {} : { answer }) };
 }
 
-function sourceOf(row: Row): HandoffSource {
-    return row.closed_at === null ? { kind: 'live' } : { kind: 'closed', closedAt: instant(whole(row, 'closed_at')) };
+type SourceRow = HandoffSource;
+
+export function parseSourceRow(input: unknown): Result<SourceRow, ParseFailure> {
+    if (!isRow(input)) {
+        return err({ kind: 'not-a-row' });
+    }
+    if (input.closed_at === null) {
+        return ok({ kind: 'live' });
+    }
+    const closedAt = parseInstant(input.closed_at);
+    if (closedAt.kind === 'err') {
+        return closedAt;
+    }
+    return ok({ kind: 'closed', closedAt: closedAt.value });
 }
 
-function closedAtOf(source: HandoffSource): number | null {
+function closedAtOf(source: HandoffSource): Instant | null {
     return source.kind === 'live' ? null : source.closedAt;
 }
 
@@ -34,7 +49,8 @@ function handoffRowOf(row: Row): HandoffRequestRow | null {
     const tab = text(row, 'target');
     const pane = maybeText(row, 'pane');
     const toPane = maybeText(row, 'to_pane');
-    return tab === '' || pane === null || toPane === null ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: sourceOf(row) };
+    const source = parseSourceRow(row);
+    return tab === '' || pane === null || toPane === null || source.kind === 'err' ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: source.value };
 }
 
 function wordOf(hidden: boolean | 'toggle'): string {
