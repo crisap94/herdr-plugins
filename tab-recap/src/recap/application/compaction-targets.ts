@@ -1,7 +1,10 @@
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactionDeps } from './compaction-deps.ts';
 
 export interface TargetWhere {
     readonly pane: PaneId | null;
@@ -24,4 +27,28 @@ export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where:
     }
     const focused = eligible.filter((lane) => lane.pane === where.focused);
     return focused.length > 0 || lanes.length !== 1 ? focused : eligible;
+}
+
+export interface Scope {
+    readonly tab: TabId;
+    readonly lanes: readonly Lane[];
+    readonly targets: readonly Lane[];
+}
+
+type Targeting = Pick<CompactionDeps, 'lanes' | 'focused' | 'target'>;
+
+async function targetsFor(deps: Targeting, request: CompactRequest, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+    const asked = request.pane === null ? null : parsePaneId(request.pane);
+    if (asked !== null && asked.kind === 'err') return [];
+    const focused = await deps.focused(request.tab);
+    const seen = focused === null ? null : parsePaneId(focused);
+    return targetsOf(lanes, deps.target(), { pane: asked === null ? null : asked.value, focused: seen === null || seen.kind === 'err' ? null : seen.value });
+}
+
+export async function scopeOf(deps: Targeting, request: CompactRequest): Promise<Scope | null> {
+    const parsed = parseTabId(request.tab);
+    if (parsed.kind === 'err') return null;
+    const lanes = deps.lanes(request.tab);
+    const targets = await targetsFor(deps, request, lanes);
+    return targets.length === 0 ? null : { tab: parsed.value, lanes, targets };
 }
