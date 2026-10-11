@@ -165,10 +165,7 @@ export function loadConfig(): Config {
     const get = (key: string): string | undefined => given(key) ?? file.get(key);
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
-    const writerViewSettings = prunedWriterView(
-        keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)),
-        nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)),
-    );
+    const writerViewSettings = prunedWriterView(keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)), nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)));
     const kinds = get('TAB_RECAP_AGENTS');
     const screenAgents = screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS'));
     const only = get('TAB_RECAP_TABS');

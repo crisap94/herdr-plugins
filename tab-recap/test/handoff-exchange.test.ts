@@ -115,7 +115,7 @@ test('asked and queued: one handoff row from the source to the target, answered 
         { kind: 'handoff-queued', pane: 'w1:p1', detail: 'h1' },
         { kind: 'handoff-queued', pane: 'w1:p2', detail: 'h1' },
     ]);
-    assert.deepEqual(run.asks.unfinished().map((ask) => [ask.requester, ask.id, ask.pane, ask.ref]), [['coordinator', 'h1', 'w1:p1', HID]]);
+    assert.deepEqual(run.asks.unfinished().map((each) => [each.requester, each.id, each.pane, each.ref]), [['coordinator', 'h1', 'w1:p1', HID]]);
 });
 
 test('a refresh is asked by the flag', () => {
