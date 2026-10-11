@@ -76,16 +76,15 @@
     "property": 2
   },
   "src/recap/application/compaction-briefing.ts": {
-    "parameter": 12,
-    "return": 1,
+    "parameter": 3,
     "container": 1,
-    "property": 2
+    "property": 1
   },
   "src/recap/application/compaction-coverage.ts": {
-    "parameter": 9,
-    "return": 4,
+    "parameter": 5,
+    "return": 3,
     "container": 6,
-    "property": 13,
+    "property": 12,
     "assertion": 2
   },
   "src/recap/application/compaction-deps.ts": {

@@ -25,8 +25,10 @@ import { Sender } from './compaction-send.ts';
 import type { Placed, Placement } from './compaction-send.ts';
 import { targetsOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
@@ -170,9 +172,9 @@ export class Compaction {
         }
         const said = (text: string): string => (auto ? compaction.auto(text) : text);
         await this.tell(said(compaction.title(agent)), said(this.beginning(agent, placement)));
-        const material = this.briefing.materialOf(tab, pane, request.note);
-        const link = this.briefing.linkedDecision(auto, tab, pane, trail.id);
-        const verified = await this.briefing.verified(lane, tab, material, link);
+        const material = this.briefing.materialOf(tabId(tab), paneId(pane), request.note === null ? null : must(parseText(request.note)));
+        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tabId(tab), paneId(pane), trail.id);
+        const verified = await this.briefing.verified(lane, tabId(tab), material, link);
         if (verified.kind === 'closed') {
             this.endClosed(lane, trail, verified.at);
             return;
