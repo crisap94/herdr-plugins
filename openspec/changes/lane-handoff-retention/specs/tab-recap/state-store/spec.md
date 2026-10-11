@@ -2,7 +2,7 @@
 
 ### Requirement: The closed-lane window is one environment setting
 
-`TAB_RECAP_CLOSED_LANE_DAYS` SHALL be read once by `loadConfig()` through a pure parser, after the value is trimmed of surrounding whitespace. The parser SHALL accept only ASCII digits, at most nine characters, and SHALL return that value as a day count. Any other value, including a missing, empty, whitespace-only, negative, fractional, exponent, hexadecimal, or signed value, SHALL fall back to 14. A day count of 0 SHALL mean disabled. The setting SHALL NOT appear in the setup modal. One pure function SHALL define the window: a closure is inside it when its close instant is at or after `now` minus the day count, and a day count of 0 SHALL put nothing inside it; the statements that protect, list and prune SHALL take their cutoff from that function.
+`TAB_RECAP_CLOSED_LANE_DAYS` SHALL be read once by `loadConfig()` through a pure parser, after the value is trimmed of surrounding whitespace. The parser SHALL accept only ASCII digits, at most nine characters, and SHALL return that value as a day count. Any other value, including a missing, empty, whitespace-only, negative, fractional, exponent, hexadecimal, or signed value, SHALL fall back to 14. A day count of 0 SHALL mean disabled. The setting SHALL NOT appear in the setup modal. The window SHALL be taken when the store opens, and the command line SHALL open its store with the same configured value as the daemon. One pure function SHALL define the window: a closure is inside it when its close instant is at or after `now` minus the day count, and a day count of 0 SHALL put nothing inside it; the statements that protect, list and prune SHALL take their cutoff from that function.
 
 #### Scenario: Default window
 
