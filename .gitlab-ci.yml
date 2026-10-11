@@ -49,6 +49,19 @@ test:floor:
     - xmllint --version
     - bash ci/test.sh
 
+# A Phase B lane of the domain-type-gates change edits only the files ci/lanes.json gives it; the lane is
+# named by the branch (lane/B3-something).
+lane-scope:
+  extends: .tab-recap
+  stage: check
+  variables:
+    GIT_DEPTH: "0"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\/B[1-8]-/
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" node ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
+
 # Only the atalaya branch is held to the allowlist; main never needs it.
 atalaya-branch-guard:
   stage: guard
