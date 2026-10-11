@@ -11,6 +11,8 @@ export type Exchange = {
     readonly request: readonly FieldSpec[];
     readonly answerStages: readonly string[];
     readonly failureReasons: readonly string[];
+    readonly refusalReasons?: readonly string[];
+    readonly unsupportedReasons?: readonly string[];
     readonly events: readonly string[];
     readonly optIn: string | null;
     readonly timing: Readonly<Record<string, number>>;
@@ -21,6 +23,10 @@ export const ANSWER_PREFIX = 'tab-recap-';
 
 export const FAILURE_PREFIX = 'failed-';
 
+export const REFUSED_PREFIX = 'refused-';
+
+export const UNSUPPORTED_PREFIX = 'unsupported-';
+
 export const INTERRUPTED_REASON = 'interrupted';
 
 export const defineExchange = (exchange: Exchange): Exchange => exchange;
@@ -28,6 +34,24 @@ export const defineExchange = (exchange: Exchange): Exchange => exchange;
 export const failureStage = (reason: string): string => `${FAILURE_PREFIX}${reason}`;
 
 export const isFailureStage = (stage: string): boolean => stage.startsWith(FAILURE_PREFIX);
+
+export type TerminalKind = 'failed' | 'refused' | 'unsupported';
+
+export type Terminal = { readonly kind: TerminalKind; readonly reason: string };
+
+const TERMINAL_PREFIX: Readonly<Record<TerminalKind, string>> = {
+    failed: FAILURE_PREFIX,
+    refused: REFUSED_PREFIX,
+    unsupported: UNSUPPORTED_PREFIX,
+};
+
+export const terminalStage = (terminal: Terminal): string => `${TERMINAL_PREFIX[terminal.kind]}${terminal.reason}`;
+
+export const terminalsOf = (exchange: Exchange): readonly Terminal[] => [
+    ...exchange.failureReasons.map((reason): Terminal => ({ kind: 'failed', reason })),
+    ...(exchange.refusalReasons ?? []).map((reason): Terminal => ({ kind: 'refused', reason })),
+    ...(exchange.unsupportedReasons ?? []).map((reason): Terminal => ({ kind: 'unsupported', reason })),
+];
 
 export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => tokenName(`${ANSWER_PREFIX}${exchange.name}`);
 

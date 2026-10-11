@@ -24,6 +24,8 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
+import { handoffRequestsOf } from '#src/recap/domain/handoff-requests.ts';
+import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
@@ -70,6 +72,7 @@ export interface Config {
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
     readonly herdrEvents: HerdrEvents;
+    readonly handoffRequests: HandoffRequests;
     readonly compactNote: CompactNote;
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;
@@ -170,6 +173,7 @@ export function loadConfig(): Config {
     const only = get('TAB_RECAP_TABS');
     const backend = backendOf(get('TAB_RECAP_BACKEND'));
     const locale = localeOf(get('TAB_RECAP_LOCALE'), process.env);
+    const herdrEvents = herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS'));
     return {
         locale,
         recapLanguage: recapLanguageOf(get('TAB_RECAP_RECAP_LANG'), locale),
@@ -209,7 +213,8 @@ export function loadConfig(): Config {
         closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: glow === 'on' || glow === 'off' ? glow : 'auto',
         timeoutMs: number(get('TAB_RECAP_TIMEOUT_MS'), 180_000),
-        herdrEvents: herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS')),
+        herdrEvents,
+        handoffRequests: handoffRequestsOf(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,

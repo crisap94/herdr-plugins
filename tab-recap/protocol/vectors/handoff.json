@@ -1,0 +1,76 @@
+{
+  "exchange": "handoff",
+  "exchangeVersion": 1,
+  "requestPrefix": "handoff-req-",
+  "answerToken": "tab-recap-handoff",
+  "timing": {
+    "deadline-ms": 150000
+  },
+  "requests": [
+    { "raw": "h1:w2:p7", "expect": { "kind": "parsed", "id": "h1", "note": null } },
+    { "raw": "h1:w2:p7:refresh", "expect": { "kind": "parsed", "id": "h1", "note": null } },
+    { "raw": "h1:w2:refresh", "expect": { "kind": "refused", "reason": "bad-characters", "subject": "pane" } },
+    { "raw": "h1:w2", "expect": { "kind": "refused", "reason": "bad-grammar", "subject": "pane" } },
+    { "raw": "h1:w2:p7:urgent", "expect": { "kind": "refused", "reason": "bad-grammar", "subject": "layout" } },
+    { "raw": "h1:w2:p7:refresh:extra", "expect": { "kind": "refused", "reason": "bad-grammar", "subject": "layout" } },
+    { "raw": "h1:w2:p-7", "expect": { "kind": "refused", "reason": "bad-characters", "subject": "pane" } },
+    { "raw": "h1234567890123456x:w2:p7", "expect": { "kind": "refused", "reason": "too-long", "subject": "RequestId" } }
+  ],
+  "serializes": [
+    { "value": { "id": "h1", "workspace": "w2", "pane": "p7", "refresh": false }, "expect": { "kind": "value", "value": "h1:w2:p7" } },
+    { "value": { "id": "h1", "workspace": "w2", "pane": "p7", "refresh": true }, "expect": { "kind": "value", "value": "h1:w2:p7:refresh" } },
+    { "value": { "id": "h1", "workspace": "w2", "pane": null, "refresh": true }, "expect": { "kind": "refused", "reason": "bad-grammar", "subject": "pane" } }
+  ],
+  "answers": [
+    { "id": "h1", "stage": "queued", "expect": { "kind": "value", "value": "h1:queued" } },
+    { "id": "h1", "stage": "delivered", "expect": { "kind": "value", "value": "h1:delivered" } },
+    { "id": "h1", "stage": "refused-target-elsewhere", "expect": { "kind": "value", "value": "h1:refused-target-elsewhere" } },
+    { "id": "a1b2c3d4e5f6g7h8", "stage": "refused-source-equals-target", "expect": { "kind": "value", "value": "a1b2c3d4e5f6g7h8:refused-source-equals-target" } }
+  ],
+  "badIds": [],
+  "traces": [
+    {
+      "name": "asked, queued, running and delivered",
+      "steps": [
+        { "write": { "name": "handoff-req-coordinator", "value": "h1:w2:p7" } },
+        { "take": { "taken": [{ "tool": "coordinator", "id": "h1", "note": null }], "refused": [] } },
+        { "answer": { "id": "h1", "stage": "queued" } },
+        { "observe": { "id": "h1", "expect": { "kind": "queued" } } },
+        { "answer": { "id": "h1", "stage": "running" } },
+        { "observe": { "id": "h1", "expect": { "kind": "running" } } },
+        { "answer": { "id": "h1", "stage": "delivered" } },
+        { "observe": { "id": "h1", "expect": { "kind": "delivered" } } },
+        { "take": { "taken": [], "refused": [] } }
+      ]
+    },
+    {
+      "name": "a refused handoff is observed with its reason",
+      "steps": [
+        { "write": { "name": "handoff-req-coordinator", "value": "h2:w2:p7:refresh" } },
+        { "take": { "taken": [{ "tool": "coordinator", "id": "h2", "note": null }], "refused": [] } },
+        { "answer": { "id": "h2", "stage": "refused-target-elsewhere" } },
+        { "observe": { "id": "h2", "expect": { "kind": "refused", "reason": "target-elsewhere" } } }
+      ]
+    },
+    {
+      "name": "a failed and an unsupported stage are observed with their reasons",
+      "steps": [
+        { "write": { "name": "handoff-req-coordinator", "value": "h3:w2:p7" } },
+        { "take": { "taken": [{ "tool": "coordinator", "id": "h3", "note": null }], "refused": [] } },
+        { "answer": { "id": "h3", "stage": "failed-expired" } },
+        { "observe": { "id": "h3", "expect": { "kind": "failed", "reason": "expired" } } },
+        { "answer": { "id": "h3", "stage": "unsupported-no-plan" } },
+        { "observe": { "id": "h3", "expect": { "kind": "unsupported", "reason": "no-plan" } } }
+      ]
+    },
+    {
+      "name": "an answer for another id is foreign",
+      "steps": [
+        { "write": { "name": "handoff-req-coordinator", "value": "h4:w2:p7" } },
+        { "take": { "taken": [{ "tool": "coordinator", "id": "h4", "note": null }], "refused": [] } },
+        { "answer": { "id": "h4", "stage": "queued" } },
+        { "observe": { "id": "h5", "expect": { "kind": "foreign-id", "id": "h4" } } }
+      ]
+    }
+  ]
+}

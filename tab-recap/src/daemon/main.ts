@@ -64,6 +64,7 @@ import { factsOf } from '#src/recap/application/lane-facts.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { handoff } from '#src/protocol/exchanges/handoff.ts';
 
 const REQUEST_POLL_MS = 1000;
 const RESYNC_MS = 60_000;
@@ -102,7 +103,9 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
 
 const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
 
-const switchOn = (setting: string): boolean => herdrEventsOf(configGetter()(setting)) === 'on';
+const handoffRequestsOn = (): boolean => loadConfig().handoffRequests === 'on';
+
+const switchOn = (setting: string): boolean => (setting === handoff.optIn ? handoffRequestsOn() : herdrEventsOf(configGetter()(setting)) === 'on');
 
 function wantsScreen(agent: string): boolean {
     const { screenAgents } = loadConfig();

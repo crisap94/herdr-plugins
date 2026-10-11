@@ -12,19 +12,20 @@ import { COMPACT_TOKEN, OWNED_TOKENS, PANE_WRITABLE, WORKSPACE_WRITABLE } from '
 import { compact } from '#src/protocol/exchanges/compact.ts';
 
 test('the capability value for compact alone is compact1,kinds1', () => {
-    assert.deepEqual(capabilityValue(EXCHANGES, must(exchangeVersion(1))), { kind: 'ok', value: 'compact1,kinds1' });
+    const compactOnly = (setting: string): boolean => setting === 'TAB_RECAP_HERDR_EVENTS';
+    assert.deepEqual(capabilityValue(EXCHANGES, must(exchangeVersion(1)), compactOnly), { kind: 'ok', value: 'compact1,kinds1' });
 });
 
 test('the compact names are derived from its descriptor: request prefix and answer token', () => {
     assert.equal(compact.requestPrefix, 'compact-req-');
     assert.equal(COMPACT_TOKEN, 'tab-recap-compact');
-    assert.deepEqual(ANSWER_TOKENS, ['tab-recap-compact']);
+    assert.deepEqual(ANSWER_TOKENS, ['tab-recap-compact', 'tab-recap-handoff']);
 });
 
-test('the owner tables are derived: lane names and the answer cleared with the lane, the capability token, the pane and workspace writers', () => {
-    assert.deepEqual(OWNED_TOKENS, ['tab-recap-api', 'tab-recap-share', 'tab-recap-recap', 'tab-recap-needs', 'tab-recap-compact', 'tab-recap-x']);
+test('the owner tables are derived: lane names and the answers cleared with the lane, the capability token, the pane and workspace writers', () => {
+    assert.deepEqual(OWNED_TOKENS, ['tab-recap-api', 'tab-recap-share', 'tab-recap-recap', 'tab-recap-needs', 'tab-recap-compact', 'tab-recap-handoff', 'tab-recap-x']);
     assert.deepEqual([...PANE_WRITABLE].toSorted(), [
-        'tab-recap-api', 'tab-recap-compact', 'tab-recap-event', 'tab-recap-needs', 'tab-recap-recap', 'tab-recap-share', 'tab-recap-x', 'typing-tab-recap',
+        'tab-recap-api', 'tab-recap-compact', 'tab-recap-event', 'tab-recap-handoff', 'tab-recap-needs', 'tab-recap-recap', 'tab-recap-share', 'tab-recap-x', 'typing-tab-recap',
     ]);
     assert.deepEqual(WORKSPACE_WRITABLE, ['tab-recap-event']);
 });

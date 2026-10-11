@@ -1,5 +1,6 @@
 import { CAPABILITY_TOKEN, capabilityValue } from '#src/protocol/capability.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
+import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { KINDS_VERSION } from '#src/protocol/kinds.ts';
 import { must } from '#src/protocol/result.ts';
@@ -10,7 +11,7 @@ import { EVENT_TOKEN } from './event-token.ts';
 export const PROTOCOL_VERSION = '1';
 export const COMPACT_TOKEN = answerNameOf(compact);
 export const capabilityOf = (isOn: (setting: string) => boolean): string => must(capabilityValue(EXCHANGES, KINDS_VERSION, isOn));
-export const CAPABILITY_VALUE = capabilityOf(() => true);
+export const CAPABILITY_VALUE = capabilityOf((setting) => setting !== handoff.optIn);
 
 const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 

@@ -2,7 +2,7 @@ import { err, ok } from './result.ts';
 import type { Result } from './result.ts';
 import { LIMITS, exchangeName, exchangeVersion } from './primitives.ts';
 import type { TokenName } from './primitives.ts';
-import { answerToken, failureStage, INTERRUPTED_REASON } from './exchange.ts';
+import { answerToken, INTERRUPTED_REASON, terminalStage, terminalsOf } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
 
 export type RegistryRefusal = {
@@ -24,8 +24,8 @@ const firstPrefixOfAnother = (prefixes: readonly string[]): string | null =>
 
 function longestAnswer(exchange: Exchange): number {
     const stages = exchange.answerStages.map((stage) => stage.length);
-    const failures = exchange.failureReasons.map((reason) => failureStage(reason).length);
-    return Math.max(0, ...stages, ...failures);
+    const terminals = terminalsOf(exchange).map((terminal) => terminalStage(terminal).length);
+    return Math.max(0, ...stages, ...terminals);
 }
 
 function checkExchange(exchange: Exchange): Result<TokenName, RegistryRefusal> {

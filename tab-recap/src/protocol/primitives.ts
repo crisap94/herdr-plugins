@@ -28,6 +28,12 @@ export type Refusal = { readonly reason: RefusalReason; readonly subject: string
 
 export const WORD_SHAPE = /^[A-Za-z0-9_-]+$/;
 
+export const PANE_PART_SHAPE = /^(?!refresh$)[A-Za-z0-9]+$/;
+
+export type WordShape = 'word' | 'pane-part';
+
+export const WORD_SHAPES: Readonly<Record<WordShape, RegExp>> = { word: WORD_SHAPE, 'pane-part': PANE_PART_SHAPE };
+
 const REQUEST_ID_SHAPE: Readonly<Record<IdGrammar, RegExp>> = {
     'legacy-length': /^[^:]+$/,
     'token-safe': WORD_SHAPE,
