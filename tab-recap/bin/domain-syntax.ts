@@ -24,14 +24,14 @@ export const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAss
     ts.isTypeAssertionExpression(node) ||
     (ts.isAsExpression(node) && !(ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName) && node.type.typeName.text === 'const'));
 
-const LIBRARY_OBJECTS: ReadonlySet<string> = new Set(['Object', 'Function', 'Date', 'Buffer']);
+const BUILTIN_OBJECTS: ReadonlySet<string> = new Set(['Object', 'Function', 'Date', 'Buffer']);
 
 export const isNumericEnum = (type: ts.Type): boolean => {
     const members = type.isUnion() ? type.types : [type];
     return (type.flags & ts.TypeFlags.EnumLike) !== 0 && members.some((member) => (member.flags & ts.TypeFlags.NumberLiteral) !== 0);
 };
 
-export const isLibraryObject = (type: ts.Type): boolean => {
+export const isBuiltinObject = (type: ts.Type): boolean => {
     const symbol = type.getSymbol();
-    return symbol !== undefined && LIBRARY_OBJECTS.has(symbol.getName()) && (symbol.declarations ?? []).some((declaration) => declaration.getSourceFile().isDeclarationFile);
+    return symbol !== undefined && BUILTIN_OBJECTS.has(symbol.getName()) && (symbol.declarations ?? []).some((declaration) => declaration.getSourceFile().isDeclarationFile);
 };

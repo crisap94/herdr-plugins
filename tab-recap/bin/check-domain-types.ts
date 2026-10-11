@@ -2,7 +2,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { err, type Result } from '#src/protocol/result.ts';
-import { isAssertion, isInlineLiteralUnion, isLibraryContext, isLibraryObject, isNumericEnum, predicateName } from './domain-syntax.ts';
+import { isAssertion, isInlineLiteralUnion, isLibraryContext, isBuiltinObject, isNumericEnum, predicateName } from './domain-syntax.ts';
 import { BRAND_FILE } from './domain-exceptions.ts';
 import { categoryIn, type Finding } from './domain-findings.ts';
 import { runReport } from './domain-ratchet.ts';
@@ -85,7 +85,7 @@ const isPrimitive = (type: ts.Type): boolean => (type.flags & PRIMITIVE) !== 0;
 
 const isBareType = (type: ts.Type): boolean =>
     isPrimitive(type) ||
-    isLibraryObject(type) ||
+    isBuiltinObject(type) ||
     (type.isIntersection() && type.types.some(isPrimitive));
 
 const isReference = (type: ts.Type): type is ts.TypeReference => {
