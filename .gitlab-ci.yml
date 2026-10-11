@@ -27,6 +27,8 @@ stages: [check, guard, release]
 lint:
   extends: .tab-recap
   stage: check
+  variables:
+    GIT_DEPTH: "0"
   script:
     - bash ci/lint.sh
 
