@@ -12,6 +12,8 @@ import { linkAsk } from './compaction-asks.ts';
 import { failureStage } from '#src/protocol/exchange.ts';
 import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import { laneBusyRefusal, splitByClaim } from './compaction-lanes.ts';
+import type { Refusal } from './compaction-lanes.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { clean } from './compaction-brief.ts';
@@ -32,19 +34,10 @@ import { Trail } from './compaction-trail.ts';
 
 export type { CompactionDeps } from './compaction-deps.ts';
 
-const LANE_BUSY_WHY = 'lane busy';
-
 interface Link {
     readonly auto: boolean;
     readonly decision: string | null;
     readonly flow: CoverageFlow;
-}
-
-interface Refusal {
-    readonly stage: 'skipped' | 'failed';
-    readonly reason: CompactFailure;
-    readonly why: string;
-    readonly toast: string;
 }
 
 export class Compaction {
@@ -107,19 +100,6 @@ export class Compaction {
         return false;
     }
 
-    private split(lanes: readonly Lane[], request: CompactRequest): { readonly owned: Lane[]; readonly held: Lane[] } {
-        const owned: Lane[] = [];
-        const held: Lane[] = [];
-        for (const lane of lanes) {
-            if (this.deps.claims.kindOf(String(lane.pane)) === 'handoff') {
-                held.push(lane);
-            } else if (this.claimed(lane, request)) {
-                owned.push(lane);
-            }
-        }
-        return { owned, held };
-    }
-
     private recordRefusal(lane: Lane, tab: string, refusal: Refusal, origin: Origin, request: CompactRequest | null): void {
         const pane = String(lane.pane);
         const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
@@ -143,10 +123,9 @@ export class Compaction {
     }
 
     private async heldByHandoff(lane: Lane, tab: string, request: CompactRequest): Promise<void> {
-        const agent = String(lane.agent);
-        const refusal: Refusal = { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: this.deps.messages().compaction.failed(agent, LANE_BUSY_WHY) };
+        const refusal = laneBusyRefusal(this.deps.messages(), lane);
         this.recordRefusal(lane, tab, refusal, request.origin ?? 'operator', request);
-        await this.tell(this.deps.messages().compaction.title(agent), refusal.toast);
+        await this.tell(this.deps.messages().compaction.title(String(lane.agent)), refusal.toast);
     }
 
     private materialOf(tab: string, pane: string, note: string | null): Material {
@@ -258,7 +237,7 @@ export class Compaction {
             await this.tell(this.deps.messages().compaction.title(tab), this.deps.messages().compaction.nothing);
             return;
         }
-        const { owned, held } = this.split(targets, request);
+        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
             await Promise.all(held.map((lane) => this.heldByHandoff(lane, tab, request)));
             if (owned.length === 0) {
