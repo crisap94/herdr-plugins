@@ -7,8 +7,15 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState, replyOf } from '#src/recap/application/autocompact-state.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-verdict.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-const fact = (section: string, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text, why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2, ...over });
+const unwrap = (raw: string): Text => {
+    const parsed = parseText(raw);
+    if (parsed.kind === 'err') throw new Error(`not text: ${raw}`);
+    return parsed.value;
+};
+
+const fact =(section: string, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text, why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2, ...over });
 const FIELDS = ['last_prompt', 'last_reply', 'recent_turns', 'goal', 'open_work'];
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'autocompact');
 const OFFERS: Readonly<Record<string, true>> = { closes_request: true, announces_continuation: true };
@@ -55,8 +62,8 @@ test('the state: last prompt and reply, the last six turns (tools as kind: comma
 
 test('a long reply keeps its first 600 and last 1 200 characters around […]', () => {
     const long = `${'a'.repeat(600)}${'m'.repeat(500)}${'z'.repeat(1200)}`;
-    assert.equal(replyOf(long), `${'a'.repeat(600)}[…]${'z'.repeat(1200)}`);
-    assert.equal(replyOf('short'), 'short');
+    assert.equal(replyOf(unwrap(long)), `${'a'.repeat(600)}[…]${'z'.repeat(1200)}`);
+    assert.equal(replyOf(unwrap('short')), 'short');
 });
 
 test('an offer to the operator closes the request and is not a continuation: the criteria say so, and both offer fixtures end with the offer', () => {

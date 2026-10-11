@@ -27,8 +27,8 @@ test('the total counts only the last day\'s decisions; one is singular; none say
 });
 
 test('the options: none or --all; anything else is a usage error that names it', () => {
-    assert.deepEqual(parseListing([]), { kind: 'options', all: false });
-    assert.deepEqual(parseListing(['--all']), { kind: 'options', all: true });
+    assert.deepEqual(parseListing([]), { kind: 'options', all: 'latest' });
+    assert.deepEqual(parseListing(['--all']), { kind: 'options', all: 'all' });
     assert.match(JSON.stringify(parseListing(['--nope'])), /"usage".*--nope/);
     assert.match(JSON.stringify(parseListing(['w1:t1'])), /"usage".*w1:t1/);
 });
