@@ -65,3 +65,9 @@ test('--tab is accepted by eval and refused by every other command that is not h
     assert.deepEqual(parseArguments(['eval', '--tab', 'w1:t2']), { positionals: ['eval'], note: undefined, handoff: null });
     assert.deepEqual(parseArguments(['status', '--tab', 'w1:t2']), { problem: '--tab applies to handoff and eval only' });
 });
+
+test('--closed-at accepts the latest instant a date can hold and refuses the next one', () => {
+    assert.equal('problem' in handoffArgumentsOf({ ...CLOSED, 'closed-at': ['8640000000000000'], to: [TO] }, ['handoff']), false);
+    assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'closed-at': ['8640000000000001'], to: [TO] }, ['handoff']), { problem: '--closed-at needs a non-negative integer' });
+    assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'closed-at': ['9007199254740991'], to: [TO] }, ['handoff']), { problem: '--closed-at needs a non-negative integer' });
+});
