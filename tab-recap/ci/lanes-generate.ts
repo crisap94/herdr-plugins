@@ -121,6 +121,7 @@ function problems(current: string): readonly string[] {
 }
 
 function withoutSkipped(text: string): string {
+    if (SKIPPED.length === 0) return text;
     const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== 'object' || parsed === null || !('lanes' in parsed) || typeof parsed.lanes !== 'object' || parsed.lanes === null) return text;
     const lanes = Object.fromEntries(Object.entries(parsed.lanes).map(([lane, files]: [string, unknown]) => [lane, Array.isArray(files) ? files.filter((file) => typeof file !== 'string' || !skipped(file)) : files]));

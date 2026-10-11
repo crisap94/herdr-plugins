@@ -142,3 +142,10 @@ test('a skip list does not hide an unexpected top-level property of the map', ()
     const extra = written(`extra-${String(Math.random())}.json`, `${JSON.stringify({ ...parsed, note: 'x' }, null, 2)}\n`);
     assert.equal(generate(extra, skip).status, 1);
 });
+
+test('with an empty skip list the map is compared as written: a formatting-only edit is refused', () => {
+    const empty = written('empty-skip.txt', '# nothing\n');
+    const parsed: unknown = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
+    const compact = written(`compact-${String(Math.random())}.json`, JSON.stringify(parsed));
+    assert.equal(generate(compact, empty).status, 1);
+});
