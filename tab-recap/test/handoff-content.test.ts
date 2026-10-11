@@ -263,6 +263,11 @@ test('an oversized note is cut to the note limit in code points', () => {
     assert.equal(Array.from(body.note ?? '').length, NOTE_LIMIT);
 });
 
+test('the note cut trims the space it lands on: a space at the note limit leaves no trailing space', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: `${'a'.repeat(NOTE_LIMIT - 1)} ${'b'.repeat(20)}` })));
+    assert.equal(body.note, 'a'.repeat(NOTE_LIMIT - 1));
+});
+
 test('a blank note is no note', () => {
     const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: '   \n\t ' })));
     assert.equal(body.note, null);

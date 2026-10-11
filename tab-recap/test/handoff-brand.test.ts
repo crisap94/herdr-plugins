@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import type { FactId } from '#src/recap/domain/fact.ts';
 import type { HandoffEntry } from '#src/recap/domain/handoff-content.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import type { HandoffFit } from '#src/recap/render/handoff-budget.ts';
+import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import type { HandoffParts } from '#src/recap/render/handoff-markdown.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -35,13 +37,14 @@ for (const brand of Object.keys(BRAND_MODULES) as BrandName[]) {
     });
 }
 
-const rawEntry = (text: string): HandoffEntry => ({
+const rawEntry = (text: string, reason: string): HandoffEntry => ({
     id: 'x' as FactId,
     firstAt: 0,
     lastAt: 0,
     // @ts-expect-error
     text,
-    reason: null,
+    // @ts-expect-error
+    reason,
 });
 
 const rawParts = (note: string, freshness: string, worksite: string): HandoffParts => ({
@@ -56,12 +59,24 @@ const rawParts = (note: string, freshness: string, worksite: string): HandoffPar
     omitted: { done: 0, links: 0, closed: 0, now: 0, next: 0, withheld: 0 },
 });
 
+const rawFit = (note: string): HandoffFit => ({
+    reference: { kind: 'dry-run' },
+    // @ts-expect-error
+    note,
+    freshnessText: freshnessTextOf({ lastRun: { at: 0, cause: 'imported' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' }),
+    worksiteText: null,
+    groups: [],
+    withheld: 0,
+});
+
 const rawForbidden = (raw: string): boolean =>
     // @ts-expect-error
     isForbidden(raw);
 
 test('raw text is not accepted where sanitized text or a renderer block is required', () => {
-    assert.equal(rawEntry('plain').text, 'plain');
+    assert.equal(rawEntry('plain', 'why').text, 'plain');
+    assert.equal(rawEntry('plain', 'why').reason, 'why');
+    assert.equal(rawFit('plain').note, 'plain');
     assert.equal(rawParts('plain', 'last run', 'worksite').note, 'plain');
     assert.equal(rawParts('plain', 'last run', 'worksite').freshnessText, 'last run');
     assert.equal(rawParts('plain', 'last run', 'worksite').worksiteText, 'worksite');
