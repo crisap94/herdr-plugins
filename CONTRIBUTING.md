@@ -22,7 +22,7 @@ Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3
 Run both from the plugin directory before you send anything:
 
 ```bash
-bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, tsgo typecheck, oxlint
+bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
 bash ci/test.sh      # node --test
 ```
 
