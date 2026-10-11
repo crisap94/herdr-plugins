@@ -1,0 +1,228 @@
+{
+  "src/adapters/db/ask-ledger.ts": {
+    "parameter": 9,
+    "return": 3,
+    "container": 2
+  },
+  "src/adapters/db/autocompact-briefs.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 1
+  },
+  "src/adapters/db/autocompact-records.ts": {
+    "parameter": 20,
+    "return": 16,
+    "container": 17,
+    "property": 2,
+    "assertion": 9
+  },
+  "src/adapters/db/backup.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 1
+  },
+  "src/adapters/db/boundaries.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 1
+  },
+  "src/adapters/db/boundary-read.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 2,
+    "assertion": 2
+  },
+  "src/adapters/db/checked-fact-codec.ts": {
+    "container": 1,
+    "property": 1,
+    "assertion": 2
+  },
+  "src/adapters/db/column-visibility.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/db/compaction-records.ts": {
+    "parameter": 8,
+    "return": 6,
+    "container": 6,
+    "assertion": 1
+  },
+  "src/adapters/db/connection.ts": {
+    "parameter": 2
+  },
+  "src/adapters/db/database.ts": {
+    "parameter": 4,
+    "return": 2,
+    "property": 1
+  },
+  "src/adapters/db/handoff-answers.ts": {
+    "parameter": 3,
+    "return": 10,
+    "container": 2
+  },
+  "src/adapters/db/import/equivalence.ts": {
+    "parameter": 2,
+    "return": 1,
+    "container": 3,
+    "assertion": 2
+  },
+  "src/adapters/db/import/import-facts.ts": {
+    "parameter": 2,
+    "return": 1,
+    "container": 2,
+    "property": 2
+  },
+  "src/adapters/db/import/import-files.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 1,
+    "property": 7,
+    "assertion": 1
+  },
+  "src/adapters/db/import/import-rows.ts": {
+    "parameter": 3,
+    "return": 2,
+    "container": 1,
+    "assertion": 2
+  },
+  "src/adapters/db/import/items-to-facts.ts": {
+    "parameter": 2,
+    "return": 4,
+    "container": 2,
+    "property": 23
+  },
+  "src/adapters/db/import/legacy-files.ts": {
+    "parameter": 13,
+    "return": 4,
+    "container": 7,
+    "property": 8,
+    "assertion": 5
+  },
+  "src/adapters/db/imported-chapters.ts": {
+    "parameter": 2,
+    "container": 2
+  },
+  "src/adapters/db/imported.ts": {
+    "parameter": 2
+  },
+  "src/adapters/db/ledger-history.ts": {
+    "parameter": 2,
+    "return": 1
+  },
+  "src/adapters/db/ledger-rows.ts": {
+    "parameter": 4,
+    "container": 3,
+    "assertion": 1
+  },
+  "src/adapters/db/ledger.ts": {
+    "parameter": 4,
+    "container": 2
+  },
+  "src/adapters/db/migrate.ts": {
+    "return": 2,
+    "assertion": 1
+  },
+  "src/adapters/db/open.ts": {
+    "parameter": 4,
+    "property": 3
+  },
+  "src/adapters/db/operator-anchors.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/db/print-store.ts": {
+    "parameter": 1
+  },
+  "src/adapters/db/rebuild.ts": {
+    "container": 1,
+    "property": 3
+  },
+  "src/adapters/db/recap-read.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 9,
+    "property": 2
+  },
+  "src/adapters/db/recap-records.ts": {
+    "parameter": 6,
+    "return": 2,
+    "assertion": 2
+  },
+  "src/adapters/db/requests.ts": {
+    "parameter": 5,
+    "return": 11,
+    "container": 28,
+    "property": 2
+  },
+  "src/adapters/db/retention.ts": {
+    "parameter": 3,
+    "return": 2,
+    "container": 1
+  },
+  "src/adapters/db/rows.ts": {
+    "parameter": 6,
+    "return": 5,
+    "container": 22
+  },
+  "src/adapters/db/run-inputs.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 8,
+    "property": 1,
+    "assertion": 1
+  },
+  "src/adapters/db/run-write.ts": {
+    "parameter": 6,
+    "return": 1,
+    "property": 2
+  },
+  "src/adapters/db/schema/018-lane-status.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/adapters/db/scratch.ts": {
+    "property": 1
+  },
+  "src/adapters/db/sections-rows.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 1,
+    "property": 3
+  },
+  "src/adapters/db/session-source.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 4,
+    "property": 2
+  },
+  "src/adapters/db/stories.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 1,
+    "assertion": 1
+  },
+  "src/adapters/db/tab-row.ts": {
+    "parameter": 2
+  },
+  "src/adapters/db/tab-views.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 9
+  },
+  "src/adapters/db/transcripts.ts": {
+    "parameter": 5,
+    "property": 3,
+    "assertion": 2
+  },
+  "src/adapters/db/typeid.ts": {
+    "parameter": 2,
+    "return": 2
+  },
+  "src/adapters/db/uuid7.ts": {
+    "return": 4
+  },
+  "src/adapters/db/verdicts.ts": {
+    "parameter": 2,
+    "container": 5
+  }
+}

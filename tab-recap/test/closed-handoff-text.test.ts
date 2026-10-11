@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { closedFreshnessOf } from '#src/recap/application/freshness-block.ts';
-import type { ClosedView } from '#src/recap/application/closed-lane-source.ts';
+import type { ClosedView } from '#src/recap/application/closed-view.ts';
 import type { ClosedLaneRecord } from '#src/ports/closed-lanes.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';

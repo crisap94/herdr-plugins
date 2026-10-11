@@ -6,7 +6,8 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
-import type { ClosedSourceDeps, ClosedView } from './closed-lane-source.ts';
+import type { ClosedSourceDeps } from './closed-lane-source.ts';
+import type { ClosedView } from './closed-view.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;

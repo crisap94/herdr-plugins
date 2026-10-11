@@ -1,0 +1,7 @@
+[
+  {
+    "class": "migration",
+    "file": "src/adapters/db/schema/099-new.ts",
+    "reason": "probe: a migration added after the latest release is not released"
+  }
+]

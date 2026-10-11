@@ -1,0 +1,273 @@
+{
+  "src/ports/agents.ts": {
+    "parameter": 6,
+    "container": 1,
+    "property": 3
+  },
+  "src/ports/ask-ledger.ts": {
+    "parameter": 5,
+    "return": 1,
+    "property": 17
+  },
+  "src/ports/autocompact-briefs.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 1
+  },
+  "src/ports/autocompact-records.ts": {
+    "parameter": 19,
+    "return": 5,
+    "container": 7,
+    "property": 42
+  },
+  "src/ports/boundaries.ts": {
+    "parameter": 4,
+    "return": 2,
+    "property": 4
+  },
+  "src/ports/capability-reasons.ts": {
+    "parameter": 11,
+    "return": 14
+  },
+  "src/ports/capability.ts": {
+    "parameter": 2
+  },
+  "src/ports/columns.ts": {
+    "parameter": 3,
+    "property": 5
+  },
+  "src/ports/compaction-briefs.ts": {
+    "parameter": 2,
+    "property": 3
+  },
+  "src/ports/compaction-plans.ts": {
+    "parameter": 2
+  },
+  "src/ports/compaction-records.ts": {
+    "parameter": 8,
+    "return": 3,
+    "property": 30
+  },
+  "src/ports/config-paths.ts": {
+    "property": 2
+  },
+  "src/ports/context-windows.ts": {
+    "parameter": 1
+  },
+  "src/ports/curators.ts": {
+    "parameter": 1,
+    "property": 2
+  },
+  "src/ports/decider.ts": {
+    "parameter": 1,
+    "container": 3,
+    "property": 12
+  },
+  "src/ports/enumerators.ts": {
+    "parameter": 1,
+    "property": 4
+  },
+  "src/ports/extension.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 2,
+    "property": 5
+  },
+  "src/ports/fleet-source.ts": {
+    "container": 4,
+    "property": 4
+  },
+  "src/ports/handoff-answers.ts": {
+    "parameter": 1,
+    "return": 3,
+    "property": 2
+  },
+  "src/ports/handoff-plans.ts": {
+    "parameter": 1
+  },
+  "src/ports/handoff-print.ts": {
+    "property": 3
+  },
+  "src/ports/harness.ts": {
+    "parameter": 1,
+    "return": 1,
+    "property": 6
+  },
+  "src/ports/harnesses.ts": {
+    "container": 1
+  },
+  "src/ports/imported-recaps.ts": {
+    "property": 2
+  },
+  "src/ports/in-flight.ts": {
+    "property": 3
+  },
+  "src/ports/judge.ts": {
+    "parameter": 1,
+    "property": 6
+  },
+  "src/ports/lane-repo.ts": {
+    "parameter": 1,
+    "property": 3
+  },
+  "src/ports/lane-settling.ts": {
+    "parameter": 3,
+    "property": 1
+  },
+  "src/ports/lane-tokens.ts": {
+    "parameter": 2,
+    "container": 1
+  },
+  "src/ports/ledger.ts": {
+    "parameter": 4,
+    "container": 1,
+    "property": 7
+  },
+  "src/ports/model-catalogue.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/ports/notifier.ts": {
+    "parameter": 2
+  },
+  "src/ports/pane-tokens.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/ports/process-control.ts": {
+    "parameter": 3,
+    "container": 1,
+    "property": 8
+  },
+  "src/ports/recap-input.ts": {
+    "container": 2,
+    "property": 31
+  },
+  "src/ports/recap-records.ts": {
+    "parameter": 6,
+    "return": 1,
+    "property": 27
+  },
+  "src/ports/requests.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 1,
+    "property": 12
+  },
+  "src/ports/retention.ts": {
+    "parameter": 2,
+    "container": 1,
+    "property": 5
+  },
+  "src/ports/run-inputs.ts": {
+    "parameter": 4,
+    "return": 2,
+    "container": 1,
+    "property": 17
+  },
+  "src/ports/screens.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 3
+  },
+  "src/ports/session-identity.ts": {
+    "parameter": 1
+  },
+  "src/ports/session-source.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 3,
+    "property": 2
+  },
+  "src/ports/stories.ts": {
+    "parameter": 3,
+    "property": 5
+  },
+  "src/ports/summarizer.ts": {
+    "container": 2,
+    "property": 10
+  },
+  "src/ports/tab-views.ts": {
+    "parameter": 2,
+    "return": 1,
+    "property": 12
+  },
+  "src/ports/transcript-registry.ts": {
+    "parameter": 5,
+    "return": 3,
+    "container": 2
+  },
+  "src/ports/transcripts.ts": {
+    "parameter": 8,
+    "property": 19
+  },
+  "src/ports/unknowable.ts": {
+    "parameter": 1,
+    "return": 1,
+    "property": 6
+  },
+  "src/ports/verdicts.ts": {
+    "parameter": 2,
+    "container": 1,
+    "property": 18
+  },
+  "src/ports/worksite-reader.ts": {
+    "parameter": 2,
+    "container": 1,
+    "property": 3
+  },
+  "src/ports/workspace-tokens.ts": {
+    "parameter": 2,
+    "container": 2
+  },
+  "src/protocol/capability.ts": {
+    "parameter": 5,
+    "return": 7,
+    "container": 1,
+    "property": 4,
+    "assertion": 1
+  },
+  "src/protocol/codec.ts": {
+    "parameter": 5,
+    "return": 1,
+    "container": 7,
+    "property": 10
+  },
+  "src/protocol/exchange.ts": {
+    "parameter": 10,
+    "return": 5,
+    "container": 11,
+    "property": 7,
+    "assertion": 1
+  },
+  "src/protocol/owners.ts": {
+    "container": 2
+  },
+  "src/protocol/primitives.ts": {
+    "parameter": 12,
+    "container": 6,
+    "property": 1,
+    "assertion": 3
+  },
+  "src/protocol/registry.ts": {
+    "parameter": 1,
+    "return": 3,
+    "container": 5,
+    "property": 1
+  },
+  "src/protocol/requester.ts": {
+    "parameter": 5,
+    "container": 2,
+    "property": 2,
+    "assertion": 1
+  },
+  "src/protocol/responder.ts": {
+    "parameter": 8,
+    "return": 2,
+    "container": 2,
+    "property": 5
+  },
+  "src/protocol/tokens.ts": {
+    "property": 2
+  }
+}

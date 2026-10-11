@@ -60,6 +60,7 @@ export interface Store {
     readonly boundaries: Boundaries;
     readonly retention: Retention;
     readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
+    readonly closedDays: ClosedLaneDays;
     checkpoint(): void;
     close(): void;
 }
@@ -81,6 +82,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),
         closedLanes: new ClosedLanesRepository(db, options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS),
+        closedDays: options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS,
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
         close: (): void => { db.close(); },
     };

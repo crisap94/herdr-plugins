@@ -2,7 +2,7 @@ import type { Brand } from '#src/recap/domain/brand.ts';
 import type { LastRunCause, NewerPrompts, RefreshStatus, Freshness } from '#src/recap/domain/freshness.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
-import { utcMinuteText } from './handoff-markdown.ts';
+import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
 
 export type FreshnessBlock = Brand<string, 'FreshnessBlock'>;
 

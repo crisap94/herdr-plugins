@@ -36,7 +36,7 @@ const ASSOCIATE = `WITH hit AS (
   JOIN transcript t ON t.id = l.transcript_id
   JOIN run r ON r.id = l.run_id
   JOIN run_task rt ON rt.run_id = l.run_id AND rt.task_id = l.task_id
-  WHERE t.tab_id = ? AND t.pane = ? AND t.first_seen >= ? AND t.first_seen <= ?
+  WHERE t.tab_id = ? AND t.pane = ? AND t.first_seen >= ? AND t.first_seen <= ? AND r.at <= ?
   ORDER BY r.at DESC, r.id DESC
   LIMIT 1
 )
@@ -92,7 +92,7 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
         }
         const { insert } = this.statements;
         writeTx(this.db, () => {
-            insert.run(closed.tab, closed.pane, closed.since, closed.closedAt, closed.tab, closed.pane, closed.closedAt, closed.agent, closed.cwd);
+            insert.run(closed.tab, closed.pane, closed.since, closed.closedAt, closed.closedAt, closed.tab, closed.pane, closed.closedAt, closed.agent, closed.cwd);
         });
     }
 

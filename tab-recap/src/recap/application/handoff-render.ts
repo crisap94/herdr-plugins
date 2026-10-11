@@ -4,7 +4,7 @@ import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { AgentKind, HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
-import type { ClosedView } from './closed-lane-source.ts';
+import type { ClosedView } from './closed-view.ts';
 
 export interface HandoffLane {
     readonly tab: TabId;

@@ -1,24 +1,16 @@
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { inWindow } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
-import type { LastRun } from '#src/ports/recap-records.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { HandoffLane } from './handoff-render.ts';
+import type { ClosedView } from './closed-view.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 
 export type ClosedUnknownReason = 'store-unreadable' | 'ledger-unreadable';
-
-export interface ClosedView {
-    readonly closedAt: Instant;
-    readonly agent: AgentKind;
-    readonly cwd: string | null;
-    readonly run: LastRun | null;
-}
 
 export type ClosedLaneResolution =
     | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view: ClosedView }

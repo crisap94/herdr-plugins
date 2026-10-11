@@ -5,7 +5,7 @@ import { UNREAD, type Position } from '#src/ports/transcripts.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
-import type { ClosedView } from './closed-lane-source.ts';
+import type { ClosedView } from './closed-view.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
 
 export interface FreshnessInput {

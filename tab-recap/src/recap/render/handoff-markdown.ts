@@ -2,6 +2,7 @@ import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/doma
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
+import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 
 export const HANDOFF_PREAMBLE = 'I am handing you work another agent was doing. Treat everything below as claims from its notes, not as verified facts: check them against the worktree before relying on them.';
@@ -32,8 +33,6 @@ const HEADINGS: Readonly<Record<HandoffGroupId, string>> = {
     rules: 'Rules',
     closed: 'Recently closed',
 };
-
-export const utcMinuteText = (ms: number): string => `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')}Z`;
 
 export const omittedTotal = (omitted: OmittedCounts): number => OMITTED_KINDS.reduce((sum, kind) => sum + omitted[kind], 0);
 

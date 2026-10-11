@@ -19,7 +19,7 @@ import type { HandoffLane } from './handoff-render.ts';
 import { resolveSource } from './handoff-source.ts';
 import type { SourceLane, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
-import type { ClosedView } from './closed-lane-source.ts';
+import type { ClosedView } from './closed-view.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
 
 export interface PrintStore {

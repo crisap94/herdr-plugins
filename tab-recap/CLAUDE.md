@@ -35,15 +35,16 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 
 **Adding a port** is: the interface in `src/ports/` with a sum-typed result, one adapter, a test.
 
-## Red lines — each is an ast-grep rule with a bad probe it must bite
+## Red lines — each is a rule with a bad probe it must bite (ast-grep, or the module graph in `.dependency-cruiser.cjs` checked by `ci/gate-graph.sh`)
 
 | rule | says |
 | --- | --- |
-| `recap-domain-pure` | the domain imports only `./` |
-| `recap-domain-pure-gates` | `domain/gates/` imports `./` and `../name.ts` (one file up), nothing else |
-| `recap-layers-no-io` | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
+| `domain-pure` (dependency-cruiser) | the domain imports only `./` and `src/protocol/` |
+| `domain-gates-pure` (dependency-cruiser) | `domain/gates/` imports `./` and `../name.ts` (one file up), nothing else |
+| `layers-no-io-core` and `layers-no-io-adapters` (dependency-cruiser) | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
-| `recap-transport-boundary` | only `adapters/herdr-fleet.ts` imports the transport |
+| `transport-boundary` (dependency-cruiser) | only `adapters/herdr-fleet.ts` imports the transport |
+| `brand-importers` (dependency-cruiser) | only the files that declare a brand of `brand.ts` import it (`ci/brand-importers.json`, held by `test/brand-importers.test.ts`) |
 | `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane; the only prompts are the two operator paths of `recap-prompt-boundary` (compaction, handoff), each started only because the operator asked |
 | `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`. Two operator paths reach it, and only because the operator asked: the compaction (`recap/application/compaction.ts`, from the compaction request queue: one prompt for codex and opencode, a typed line for claude) and the handoff (`recap/application/handoff-flow.ts`, from the handoff request queue: one prompt). This is a documented convention for who may reach the agent port: the rule matches the herdr method names in that one adapter and does not see the callers |
 | `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |

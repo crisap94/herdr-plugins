@@ -23,7 +23,7 @@ export interface Box {
 export function dispatchFor(box: Box, parts: { readonly fleet: HerdrFleet; readonly store: Store; readonly recaps: RecapJob; readonly transcripts: TranscriptRegistry; readonly webs: LaneWebs; readonly contexts: LaneContexts; readonly events: LaneEvents; readonly sharing: () => boolean }, log: (line: string) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
-        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => loadConfig().closedLaneDays, events: parts.events, sharing: parts.sharing,
+        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

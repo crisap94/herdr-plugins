@@ -54,6 +54,21 @@ node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail 
 echo "oxlint (type-aware, the house configuration):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
+echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
+bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
+
+echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
+bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
+
+echo "lane map (every file of src and test belongs to exactly one lane):"
+node ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
+
+echo "domain types (the signature check fails its bad probes and passes its good ones):"
+bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
+
+echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
+node bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run node bin/check-domain-types.ts --json and lower or fix"
+
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
 

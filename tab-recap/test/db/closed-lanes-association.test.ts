@@ -96,6 +96,18 @@ test('a later incarnation of the pane, first seen after the close, is not attrib
     db.close();
 });
 
+test('a run that finished after the close instant is not the association, even when it is stored before the closure is recorded', () => {
+    const db = freshDb();
+    seedTab(db);
+    const transcript = seedTranscript(db, 's1', 1000);
+    seedRun(db, 2000, transcript, 'k1', 'before');
+    seedRun(db, 4500, transcript, 'k2', 'after the close');
+    const repository = new ClosedLanesRepository(db, FOURTEEN);
+    repository.record(closure(500, 4000));
+    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { tab: 'w1:t1', key: 'k1' }, name: 'before' });
+    db.close();
+});
+
 test('a lane without an incarnation start gets no association', () => {
     const db = freshDb();
     seedTab(db);
