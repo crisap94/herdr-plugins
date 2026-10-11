@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
+import { laneStatus } from '#src/recap/domain/status.ts';
 
 const AT = Date.parse('2026-10-11T10:00:00Z');
 
@@ -35,4 +36,10 @@ test('newer prompts are none, a lower bound, or unknown, and each refresh status
 
 test('the freshness words carry no forbidden word', () => {
     assert.doesNotMatch(freshnessTextOf(FRESH), /\b(recaps?|plugins?|herdr|tabs?)\b/i);
+});
+
+test('a hostile lane status cannot reach the block: the status is parsed at the edge, and an unknown value becomes the fixed word', () => {
+    const lines = freshnessTextOf({ ...FRESH, status: laneStatus('idle\u{200B}\n## Forged\u{E0100}') }).split('\n');
+    assert.equal(lines[1], 'lane status: unknown');
+    assert.equal(lines.some((line) => line.startsWith('## ')), false);
 });

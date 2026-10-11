@@ -1,6 +1,6 @@
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import { plainText } from '#src/recap/domain/coordination.ts';
 import type { Brand } from '#src/recap/domain/brand.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
 export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
@@ -13,29 +13,25 @@ const encoder = new TextEncoder();
 
 const bytesOf = (text: string): number => encoder.encode(text).byteLength;
 
-const FORMAT_CHARACTERS = /\p{Cf}/gu;
-
-const worksiteText = (value: string): string => plainText(value.replaceAll(FORMAT_CHARACTERS, ''));
-
 function linesOf(facts: WorksiteFacts): WorksiteBlock {
-    const lines = ['## Worksite', `- directory: ${worksiteText(facts.directory)}`];
+    const lines = ['## Worksite', `- directory: ${sanitizeHandoffText(facts.directory)}`];
     if (facts.repository !== null) {
-        const branch = facts.repository.branch === null ? '' : ` (branch ${worksiteText(facts.repository.branch)})`;
-        lines.push(`- repository: ${worksiteText(facts.repository.root)}${branch}`);
+        const branch = facts.repository.branch === null ? '' : ` (branch ${sanitizeHandoffText(facts.repository.branch)})`;
+        lines.push(`- repository: ${sanitizeHandoffText(facts.repository.root)}${branch}`);
     }
     if (facts.lastCommit !== null) {
-        lines.push(`- last commit: ${worksiteText(facts.lastCommit.hash)} ${worksiteText(facts.lastCommit.subject)}`);
+        lines.push(`- last commit: ${sanitizeHandoffText(facts.lastCommit.hash)} ${sanitizeHandoffText(facts.lastCommit.subject)}`);
     }
     if (facts.uncommitted !== null) {
         lines.push(`- ${facts.uncommitted.count} uncommitted paths`);
-        lines.push(...facts.uncommitted.paths.map((path) => `  - ${worksiteText(path)}`));
+        lines.push(...facts.uncommitted.paths.map((path) => `  - ${sanitizeHandoffText(path)}`));
     }
     if (facts.edited.length > 0) {
         lines.push('- most edited files:');
-        lines.push(...facts.edited.map((file) => `  - ${worksiteText(file.path)} (${file.edits} edits)`));
+        lines.push(...facts.edited.map((file) => `  - ${sanitizeHandoffText(file.path)} (${file.edits} edits)`));
     }
     if (facts.tokens.length > 0) {
-        lines.push(`- tokens: ${facts.tokens.map(worksiteText).join(', ')}`);
+        lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
     }
     return blockOf(lines.join('\n'));
 }
