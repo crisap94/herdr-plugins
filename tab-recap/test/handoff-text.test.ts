@@ -272,6 +272,14 @@ test('the handoff text is identical for identical inputs and changes only its re
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);
 });
 
+test('a fact and a note with format characters, bidi overrides, tag characters and separators render the text of the same fact without them', () => {
+    const withCharacters = contentOf([fact('g1', 'goal', 'the goal', AT - 2_000), fact('n1', 'now', 'the\u{200B}\u{2028} la\u{202D}ne\u0085 done\u{E0041}', AT - 1_000)], [], 'focus\u{202E} here');
+    const without = contentOf([fact('g1', 'goal', 'the goal', AT - 2_000), fact('n1', 'now', 'the lane done', AT - 1_000)], [], 'focus here');
+    const text = shownOf(renderOf(without)).text;
+    assert.ok(text.endsWith('- 2026-10-10 11:59Z the lane done'));
+    assert.equal(shownOf(renderOf(withCharacters)).text, text);
+});
+
 test('a task whose pane has session history renders none of it, only the ledger facts', () => {
     const ledger = {
         openOf: (): readonly Fact[] => [fact('g1', 'goal', 'the ledger goal', AT - 1_000)],

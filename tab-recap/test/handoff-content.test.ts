@@ -285,6 +285,38 @@ test('a decision reason whose control character would join a forbidden word is w
     assert.equal(body.withheld, 1);
 });
 
+test('a fact whose zero-width character would join a forbidden word is withheld, and a byte order mark is not a space', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 3_000), fact('x1', 'next', 'her\u{200B}dr lane', NOW - 2_000), fact('x2', 'next', 'her\u{FEFF}dr lane', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'next'), []);
+    assert.equal(body.withheld, 2);
+});
+
+test('format characters, bidi overrides and tag characters are removed from a stored fact text', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'ship\u{202E} the\u{2066} lane\u{E0041}\u{E0042}', NOW - 1_000)]))));
+    assert.deepEqual(textsOf(body, 'goal'), ['ship the lane']);
+});
+
+test('U+2028, U+2029 and U+0085 in a fact and in a decision reason collapse to one space', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'a\u{2028}b\u{2029}c', NOW - 1_000, { why: 'x\u0085y' }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
+    assert.deepEqual(textsOf(body, 'decisions'), ['a b c']);
+    assert.equal(firstOf(body, 'decisions').reason, 'x y');
+});
+
+test('the focus note goes through the same sanitizer: format characters and separators are removed or spaced', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: 'focus\u{202E} on\u{2028}the\u0085parser\u{200B}' })));
+    assert.equal(body.note, 'focus on the parser');
+});
+
+test('a focus note made only of format characters is no note', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: '\u{200B}\u{2066} \u{FEFF}' })));
+    assert.equal(body.note, null);
+});
+
+test('a focus note whose format character would join a forbidden word is dropped', () => {
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW)]), { note: 'her\u{200B}dr' })));
+    assert.equal(body.note, null);
+});
+
 test('the done, links and recently closed groups each keep their newest 15 and count the rest', () => {
     const open = [
         fact('g1', 'goal', 'the goal', NOW - 1_000),

@@ -2,8 +2,8 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
+import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
-import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { requestNoteOf } from './compact-start.ts';
 import { HANDOFF_CLOSED_SHOWN, HANDOFF_DONE_SHOWN, HANDOFF_LINKS_SHOWN } from './handoff-limits.ts';
@@ -28,14 +28,12 @@ const CAPS: Partial<Record<HandoffGroupId, number>> = { done: HANDOFF_DONE_SHOWN
 const newestFirst = (a: HandoffEntry, b: HandoffEntry): number => b.lastAt - a.lastAt || compareIds(a.id, b.id);
 const oldestFirst = (a: HandoffEntry, b: HandoffEntry): number => a.firstAt - b.firstAt || compareIds(a.id, b.id);
 
-const normalized = (text: string): string => collapsedText(text, 'remove');
-
 const entryOf = (fact: Fact, reason: string | null): HandoffEntry => ({
     id: fact.id,
-    text: normalized(fact.text),
+    text: sanitizeHandoffText(fact.text),
     firstAt: fact.firstAt,
     lastAt: fact.lastAt,
-    reason: reason === null ? null : normalized(reason),
+    reason: reason === null ? null : sanitizeHandoffText(reason),
 });
 
 const closedInWindow = (at: number) => (fact: Fact): boolean => fact.closedAt !== null && fact.closedAt >= at - CLOSED_SHOWN_MS;
@@ -61,7 +59,7 @@ const noteOf = (raw: string | null): string | null => {
     if (raw === null) {
         return null;
     }
-    const note = requestNoteOf(raw);
+    const note = requestNoteOf(sanitizeHandoffText(raw));
     return note === null || isForbidden(note) ? null : note;
 };
 
