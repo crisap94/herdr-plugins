@@ -59,7 +59,7 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
-- **Read-only, but for what you ask for.** It reads transcripts and does not type into an agent on its own. A lint rule keeps the raw-input methods out of every module and the prompt method in one adapter; who may reach that adapter is a documented convention, which the lint does not check. The exceptions are [compaction](#compaction), from the compaction queue, and `tab-recap handoff`, from the handoff queue, and only when you ask for them.
+- **Read-only, but for what you ask for.** It reads transcripts and does not type into an agent on its own. A lint rule keeps the raw-input methods out of every module and the prompt method in one adapter; who may reach that adapter is a documented convention, which the lint does not check. The exceptions are [compaction](#compaction), from the compaction queue, and `tab-recap handoff`, from the handoff queue, and only when you ask for them. The handoff exchange (below) is a third path, and only when you turn on `TAB_RECAP_HANDOFF_REQUESTS`.
 - **Handoff, only when you ask for it.** `tab-recap handoff --from <pane> --to <pane>` sends one task's ledger, its freshness and its worksite snapshot (the directory, repository, branch, last commit, uncommitted paths, most edited files and the names of its tokens, never their values) to another idle agent, once. **Locality:** the text goes only into a lane this daemon watches on this machine, and the command makes no network request; it writes nothing outside the state directory except that one delivery, and it never writes the text to a log. **A handoff can contain anything the lane saw:** its facts, its prompts, file paths, commit subjects and whatever else the transcript held. You are choosing to send it. `--print` shows the same text on stdout and types nothing, so read it first.
 
 ## What the recap is
@@ -626,6 +626,7 @@ off unless `TAB_RECAP_HERDR_EVENTS=on`; with it off, nothing below is written an
 | `tab-recap-recap` | epoch ms of the tab's last recap | when a recap is written |
 | `tab-recap-needs` | the number of open needs of the tab | when it changes |
 | `tab-recap-compact` | `<id>:<stage>`, the answer to a request | as the compaction goes |
+| `tab-recap-handoff` | `<id>:<stage>`, the answer to a `handoff-req-<tool>` request (only with `TAB_RECAP_HANDOFF_REQUESTS=on`) | as the handoff goes |
 | `tab-recap-event` | `<seq>:<kind>[:<detail>]`, one event | for each event of the lane (`lane-closed` goes to the workspace) |
 | `typing-tab-recap` | epoch ms of tab-recap's typing lease | while it types into the pane, whatever the setting |
 
@@ -642,6 +643,19 @@ off is not answered.
 
 **Limits.** An id is 1 to 16 characters; `compact-req-<tool>` is at most 32 characters, so `<tool>` is at most 20. An empty id or a longer
 one is answered `failed-bad-id` with its first 16 characters. A note is plain text: control characters become spaces and it is cut to fit.
+
+**Handoff requests** are opt-in: `TAB_RECAP_HANDOFF_REQUESTS=on` (`off` by default) needs `TAB_RECAP_HERDR_EVENTS=on`, and with
+either setting off no `handoff-req-<tool>` is answered. A tool writes `handoff-req-<tool>` = `<id>:<workspace>:<pane>` (or
+`<id>:<workspace>:<pane>:refresh` to refresh the source agent's context first) on the source lane's pane. The id is 1 to 16
+characters of `[A-Za-z0-9_-]`; the workspace and the pane are each `[A-Za-z0-9]+`, and the target must be a lane in the source
+lane's workspace. The request carries no text: tab-recap builds the handoff from its own ledger, and a note stays the operator's.
+tab-recap answers in `tab-recap-handoff` = `<id>:<stage>`: `queued`, `running`, then `delivered`, or `refused-<reason>`,
+`unsupported-<reason>` or `failed-<reason>`. The exchange itself refuses with `refused-not-offered` (sharing on, the setting off),
+`refused-bad-request`, `refused-not-a-lane` and `refused-target-elsewhere`, and writes no row for those. The published deadline is
+200 000 ms from `queued` to a terminal stage; a request taken later than 30 000 ms after it was queued is answered
+`failed-expired` and nothing is typed. A restart that interrupts an ask writes `failed-interrupted`, and an interrupted request
+is never delivered late. The events are `handoff-queued`, `handoff-running`, `handoff-delivered` and `handoff-failed`. A requester
+that reads a `delivered` written by any other process must still check the target's own reaction: the exchange is not authenticated.
 
 **Coordination tokens another tool may write:** `typing-<tool>` = its epoch ms while it types into the pane (tab-recap waits for an
 earlier one); `awaiting` or `awaiting-<tool>` = what the pane waits for (autocompact counts the lane as in flight, and says why); and
@@ -707,7 +721,7 @@ protocol. Token names are `[A-Za-z0-9_-]`, 1 to 32 characters.
 `config.env` in `herdr plugin config-dir tab-recap` — see [`config.example.env`](config.example.env).
 Environment variables win over the file; it is re-read on every recap (keys marked *restart* in the example excepted). The one to know: **`TAB_RECAP_MIN_TAB_COLS=110`** — narrower tabs (a phone client) get a bar instead of a side column.
 
-Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: lanes are shared on herdr's event stream as pane tokens, and another tool's `compact-req-<tool>` request is answered in `tab-recap-compact`; see the setting "Herdr events"). Off writes no token and answers no request; the typing leases and `awaiting` tokens of other tools are honoured either way.
+Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: lanes are shared on herdr's event stream as pane tokens, and another tool's `compact-req-<tool>` request is answered in `tab-recap-compact`; see the setting "Herdr events"). Off writes no token and answers no request; the typing leases and `awaiting` tokens of other tools are honoured either way. `TAB_RECAP_HANDOFF_REQUESTS` (`off` by default, or `on`, effective only with herdr events on) lets another tool ask for a handoff of its lane, answered in `tab-recap-handoff` (see "For other tools").
 
 Keys new in 2.1: `TAB_RECAP_PIPELINE` (`one` by default, `enumerate`, `enumerate+gates` or `full`: the steps a run's new turns go through) and `TAB_RECAP_RECONCILE_EVERY` (turns between two reconciliations of the ledger by the curator, default 8).
 

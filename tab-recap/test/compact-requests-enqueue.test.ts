@@ -66,6 +66,7 @@ test('a crash between recording the ask and enqueueing leaves an unfinished ask 
     answerRestart({
         exchanges: REGISTRY.exchanges,
         ledger: asks,
+        withdraw: (): void => undefined,
         requests: { takeAnswered: (): readonly { readonly pane: string; readonly answer: string }[] => [] },
         compactions: { interrupted: (): number => 0 },
         tokens,

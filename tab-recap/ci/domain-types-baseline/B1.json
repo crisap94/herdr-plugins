@@ -235,7 +235,7 @@
   "src/protocol/exchange.ts": {
     "parameter": 10,
     "return": 5,
-    "container": 11,
+    "container": 10,
     "property": 7,
     "assertion": 1
   },

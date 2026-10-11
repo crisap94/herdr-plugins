@@ -6,23 +6,21 @@ import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
 import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
-import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
-import type { Ask, AskKey, AskLedger } from '#src/ports/ask-ledger.ts';
+import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswers, HandoffVerdict } from '#src/ports/handoff-answers.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { HandoffRequestRow, Requests } from '#src/ports/requests.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { requestId, type RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import type { RequestId } from '#src/protocol/primitives.ts';
+import { HandoffFlow, unrendered, type HandoffRun } from '#src/recap/application/handoff-flow.ts';
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
-import { HandoffFlow, unrendered } from '#src/recap/application/handoff-flow.ts';
-import type { HandoffRun } from '#src/recap/application/handoff-flow.ts';
 import { EditCounts } from '#src/recap/application/edit-counts.ts';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import type { HandoffLane } from '#src/recap/application/handoff-render.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
+import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
@@ -30,15 +28,13 @@ import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
-import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import { isStorable } from '#src/recap/domain/handoff-outcome.ts';
-import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
+import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
+import { isStorable, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
-import { parseHandoffId, sessionId, tabId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, sessionId, tabId, type HandoffId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { awaitingNow } from './autocompact.ts';
 import { within } from './bounded.ts';
@@ -49,6 +45,7 @@ export interface HandoffRunnerDeps {
     readonly asks: AskLedger;
     readonly answers: HandoffAnswers;
     readonly claims: Pick<LaneClaims, 'release'>;
+    readonly mirror: HandoffMirror;
     readonly transaction: <T>(work: () => T) => T;
     readonly now: () => number;
     readonly log: (line: string) => void;
@@ -104,21 +101,48 @@ export class HandoffRunner {
 
     private async serve(row: HandoffRequestRow): Promise<void> {
         try {
-            if (this.deps.now() - row.at > HANDOFF_TAKE_MAX_AGE_MS) {
-                this.finish(row.id, unrendered({ kind: 'failed', reason: 'expired' }), null);
-                return;
+            if (row.answer === undefined || row.answer === null) {
+                await this.serveLocal(row);
+            } else {
+                await this.serveAsked(row);
             }
-            const id = askIdOf(row.id);
-            if (id === null) {
-                this.deps.log(`handoff ${row.id}: not a handoff id; not run`);
-                return;
-            }
-            const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
-            this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: row.id });
-            this.finish(row.id, await this.flowOf(row), key);
         } catch (error) {
             this.deps.log(`handoff ${row.id}: ${failureCauseOf(error)}`);
         }
+    }
+
+    private async serveLocal(row: HandoffRequestRow): Promise<void> {
+        if (this.deps.now() - row.at > HANDOFF_TAKE_MAX_AGE_MS) {
+            this.finish(row.id, unrendered({ kind: 'failed', reason: 'expired' }), null);
+            return;
+        }
+        const id = askIdOf(row.id);
+        if (id === null) {
+            this.deps.log(`handoff ${row.id}: not a handoff id; not run`);
+            return;
+        }
+        const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
+        this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: row.id });
+        this.finish(row.id, await this.flowOf(row), key);
+    }
+
+    private async serveAsked(row: HandoffRequestRow): Promise<void> {
+        const route = this.deps.mirror.routeOf(row);
+        if (route === null) {
+            this.deps.log(`handoff ${row.id}: no ask recorded for it; not run`);
+            return;
+        }
+        if (this.deps.now() - row.at > HANDOFF_TAKE_MAX_AGE_MS) {
+            this.concludeAsked(row, route, unrendered({ kind: 'failed', reason: 'expired' }));
+            return;
+        }
+        this.deps.mirror.running(route);
+        this.concludeAsked(row, route, await this.flowOf(row));
+    }
+
+    private concludeAsked(row: HandoffRequestRow, route: Route, run: HandoffRun): void {
+        this.finish(row.id, run, askKeyOf(route));
+        this.deps.mirror.terminal(route, run.outcome);
     }
 
     private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
@@ -200,6 +224,7 @@ export interface HandoffWiring {
     readonly claims: LaneClaims;
     readonly recaps: Pick<RecapJob, 'refreshNow'>;
     readonly board: () => Board;
+    readonly mirror: HandoffMirror;
     readonly pause: (ms: number) => Promise<void>;
     readonly log: (line: string) => void;
 }
@@ -221,7 +246,7 @@ async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lan
 }
 
 export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
-    const { store, fleet, transcripts, repos, claims, recaps, board, pause, log } = parts;
+    const { store, fleet, transcripts, repos, claims, recaps, board, mirror, pause, log } = parts;
     const flow = new HandoffFlow({
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
@@ -242,5 +267,5 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         }),
         pause, now, log,
     });
-    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, transaction: (work) => writeTx(store.db, work), now, log });
+    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, mirror, transaction: (work) => writeTx(store.db, work), now, log });
 }

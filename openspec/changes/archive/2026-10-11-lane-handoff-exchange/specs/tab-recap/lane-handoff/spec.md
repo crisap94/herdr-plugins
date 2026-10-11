@@ -53,6 +53,8 @@ A non-print handoff SHALL run only in the daemon, from a `handoff` request row t
 - **WHEN** `TAB_RECAP_HANDOFF_REQUESTS` is `off`
 - **THEN** no `handoff` row SHALL be written for a token request and nothing SHALL be typed because of one
 
+## ADDED Requirements
+
 ### Requirement: The token answer mirrors the handoff's closed outcome
 
 For a `handoff` row queued by the handoff exchange, the daemon SHALL write the answer token `tab-recap-handoff` =
