@@ -1,0 +1,12 @@
+run: R02-claude-transcript-confirmation
+experiment: EXP-003-handoff-live
+status: valid
+date: 2026-10-11
+code: tab-recap at f4a23bc on feat/lane-handoff
+command: "herdr --session <scratch> server; node src/daemon/launch.mjs (scratch state, empty plugin configuration directory); tab-recap handoff --from <source> --to <target> --note <short>; the real ClaudeTranscripts.latestPrompt on the target transcript"
+files:
+  summary.md: 1c6fd5d3168db818a3202ebfabb4909a9e7beea5ebb9bf79bf27fa688e701d97
+rule: delivered outcome, plus the stored prompt wrapped and the real reader returning the sent byte count
+ran_by: an attended agent session (Sonnet 5.5)
+note: counts only; no ledger or transcript content. One delivery; it shows the reader side live, not which evidence confirmed.
+raw: none kept (counts are in summary.md)

@@ -1,16 +1,20 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { Advance, FailedRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, LastRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
+import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
+import type { RecapCause } from '#src/recap/domain/intent.ts';
 import { BoundaryRows } from './boundaries.ts';
 import { writeTx } from './connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { RecapReader } from './recap-read.ts';
-import { guarded } from './rows.ts';
+import { guarded, one, text, whole } from './rows.ts';
 import { RunRows } from './run-write.ts';
 import { TabRow } from './tab-row.ts';
 import { TranscriptRows } from './transcripts.ts';
 import { typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
+
+const causeOf = (raw: string): RecapCause | 'imported' | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
 
 export class RecapRecordsRepository implements RecapRecords {
     private readonly db: DatabaseSync;
@@ -23,6 +27,7 @@ export class RecapRecordsRepository implements RecapRecords {
     private readonly begin: StatementSync;
     private readonly settleStatement: StatementSync;
     private readonly errorOnly: StatementSync;
+    private readonly lastGood: StatementSync;
 
     constructor(db: DatabaseSync) {
         this.db = db;
@@ -35,10 +40,19 @@ export class RecapRecordsRepository implements RecapRecords {
         this.begin = db.prepare('UPDATE tab SET running = 1, backend = ? WHERE id = ?');
         this.settleStatement = db.prepare('UPDATE tab SET running = 0, backend = ?, error = ? WHERE id = ?');
         this.errorOnly = db.prepare('UPDATE tab SET error = ? WHERE id = ?');
+        this.lastGood = db.prepare('SELECT r.at, r.cause FROM run r JOIN last_good_run g ON g.run_id = r.id WHERE g.tab_id = ?');
     }
 
     readRecap(tab: string): TabRecap | null {
         return guarded(() => this.reader.read(tab), null);
+    }
+
+    lastRunOf(tab: string): LastRun | null {
+        return guarded(() => {
+            const row = one(this.lastGood, tab);
+            const cause = row === null ? null : causeOf(text(row, 'cause'));
+            return row === null || cause === null ? null : { at: whole(row, 'at'), cause };
+        }, null);
     }
 
     beginRun(tab: string, backend: string | null, at: number): void {

@@ -11,7 +11,7 @@ import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
-import type { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
@@ -24,10 +24,9 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { bounded } from './bounded.ts';
+import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
+import { refreshedWithin } from './refresh-status.ts';
 import { loadConfig, messagesOf } from './config.ts';
-
-const RECAP_WAIT_MS = 90_000;
 
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
     return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
@@ -52,7 +51,7 @@ export function wireCompaction(parts: {
     readonly asks: AskLedger;
     readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
     readonly events: LaneEvents;
-    readonly claims: CompactionClaims;
+    readonly claims: LaneClaims;
     log(line: string): void;
 }): Compaction {
     const { fleet, informer, recaps } = parts;
@@ -66,9 +65,7 @@ export function wireCompaction(parts: {
             const layout = await fleet.layout(tabId(tab));
             return isUnknown(layout) ? null : layout.focused;
         },
-        refresh: async (tab, lanes) => {
-            await bounded(recaps.refreshNow(tabId(tab), lanes), RECAP_WAIT_MS);
-        },
+        refresh: (tab, lanes) => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,

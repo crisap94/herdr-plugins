@@ -9,7 +9,7 @@ import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
 import { HerdrAgents } from '#src/adapters/herdr-agents.ts';
 import type { Wire } from '#src/adapters/herdr-agents.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
-import { CompactionClaims } from '#src/recap/application/compaction-claims.ts';
+import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
@@ -76,7 +76,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
         compactionPlans,
-        claims: new CompactionClaims(),
+        claims: new LaneClaims(),
         agents: { status: () => Promise.resolve({ kind: 'agent', agent: world.harness.agent, status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
@@ -89,7 +89,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => clock,
         webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
-        refresh: () => Promise.resolve(), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
+        refresh: () => Promise.resolve('refreshed'), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };
 }

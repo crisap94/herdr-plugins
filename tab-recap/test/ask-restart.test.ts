@@ -4,6 +4,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
+import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
@@ -35,7 +36,7 @@ function daemon(asks: MemoryAskLedger, tokens: RecordingTokens, on = true): Daem
     return { asked, handler };
 }
 
-function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: string[], on = true): RestartDeps {
+function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: string[], on = true, handoffAsks: string[] = []): RestartDeps {
     return {
         exchanges: [...REGISTRY.exchanges, handoffLike],
         ledger: asks,
@@ -44,14 +45,15 @@ function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: 
         tokens,
         enabled: (): boolean => on,
         local: (ask: Ask): void => { localAsks.push(ask.id); },
+        handoff: (ask: Ask): void => { handoffAsks.push(ask.id); },
         log: (): void => undefined,
         now: (): number => 1000,
         restartedWhy: 'restarted',
     };
 }
 
-function restart(asks: MemoryAskLedger, tokens: RecordingTokens, on = true, localAsks: string[] = []): number {
-    return answerRestart(restartDeps(asks, tokens, localAsks, on));
+function restart(asks: MemoryAskLedger, tokens: RecordingTokens, on = true, localAsks: string[] = [], handoffAsks: string[] = []): number {
+    return answerRestart(restartDeps(asks, tokens, localAsks, on, handoffAsks));
 }
 
 const lastOf = (tokens: RecordingTokens, pane: string): unknown => tokens.reports.findLast((report) => report.pane === pane)?.tokens;
@@ -117,6 +119,16 @@ test('a local requester\'s ask is interrupted with no token: the local channel h
     const localAsks: string[] = [];
     restart(asks, tokens, true, localAsks);
     assert.deepEqual([localAsks, tokens.reports, asks.unfinished()], [['l1'], [], []]);
+});
+
+test('a local handoff ask goes to the handoff channel, not the local stub, and writes no token', () => {
+    const asks = new MemoryAskLedger();
+    const tokens = new RecordingTokens();
+    asks.record({ exchange: HANDOFF_EXCHANGE, requester: 'cli', id: rid('h9'), pane: paneId('w1:p1'), at: 1, ref: 'hnd_handoff' });
+    const localAsks: string[] = [];
+    const handoffAsks: string[] = [];
+    restart(asks, tokens, true, localAsks, handoffAsks);
+    assert.deepEqual([handoffAsks, localAsks, tokens.reports], [['h9'], [], []]);
 });
 
 test('an unfinished ask of an exchange with no descriptor here is settled interrupted and writes no token', () => {

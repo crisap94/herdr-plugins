@@ -2,12 +2,13 @@ id: recap-never-types
 language: typescript
 severity: error
 message: >-
-  tab-recap never types into a lane. It reads transcripts and renders a column; it
-  does not send raw input to an agent. (The one prompt the operator asks for is
-  `recap-prompt-boundary`.)
+  tab-recap never types into a lane. It reads transcripts and renders a column; it does not send raw input
+  to an agent. The only prompts the operator asks for are the compaction and the handoff, both reached through
+  the two operator paths named in `recap-prompt-boundary`.
 note: >-
-  The red line is «no send_keys, ever», and it is stricter than that: no raw input of any
-  kind except the one compaction the operator asked for, which has its own rule.
+  The red line is «no send_keys, ever», and it is stricter than that: no raw input of any kind. The two
+  operator paths are the compaction flow (from the compaction request queue) and the handoff flow (from the
+  handoff request queue); each starts only because the operator asked, and neither sends raw input.
 files:
   - "**/src/**"
   - "**/bin/**"

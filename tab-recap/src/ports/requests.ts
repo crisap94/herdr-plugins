@@ -1,4 +1,4 @@
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 
 export interface VisibilityRequest {
@@ -14,7 +14,34 @@ export interface CompactRequest {
     readonly answer?: string;
 }
 
-export interface Requests {
+export interface HandoffRequestRow {
+    readonly id: HandoffId;
+    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly toPane: PaneId;
+    readonly refreshFirst: boolean;
+    readonly note: string | null;
+}
+
+export interface NewHandoffRequest {
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly toPane: PaneId;
+    readonly note: string | null;
+    readonly refreshFirst: boolean;
+}
+
+export interface HandoffRequester {
+    requestHandoff(request: NewHandoffRequest): HandoffId;
+    withdrawHandoff(id: HandoffId): boolean;
+}
+
+export interface HandoffResponder {
+    takeHandoffs(): readonly HandoffRequestRow[];
+}
+
+export interface Requests extends HandoffRequester, HandoffResponder {
     request(tab: string): void;
     requestVisibility(request: VisibilityRequest): void;
     requestCompact(request: CompactRequest): void;

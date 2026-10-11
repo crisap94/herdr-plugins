@@ -1,5 +1,7 @@
 export type LaneStatus = 'working' | 'blocked' | 'idle' | 'done' | 'unknown';
 
+export const READY: ReadonlySet<string> = new Set(['idle', 'done']);
+
 const KNOWN: readonly LaneStatus[] = ['working', 'blocked', 'idle', 'done', 'unknown'];
 
 export function laneStatus(raw: string | null | undefined): LaneStatus {

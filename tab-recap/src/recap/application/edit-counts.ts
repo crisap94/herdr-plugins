@@ -3,8 +3,7 @@ import { isScreenSource } from '#src/ports/screens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-
-const BUDGET_BYTES = 4 * 1024 * 1024;
+import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
 
 export interface FileCount {
     readonly path: string;
@@ -31,7 +30,7 @@ export class EditCounts {
         if (reader === undefined || lane.transcript === '' || isScreenSource(lane.transcript)) {
             return [];
         }
-        const chunk = await reader.read(lane.transcript, UNREAD, BUDGET_BYTES);
+        const chunk = await reader.read(lane.transcript, UNREAD, TRANSCRIPT_READ_BUDGET_BYTES);
         return isUnknown(chunk) ? [] : chunk.entries.filter((entry) => entry.role === 'tool' && entry.kind === 'edit' && entry.text !== '').map((entry) => entry.text);
     }
 

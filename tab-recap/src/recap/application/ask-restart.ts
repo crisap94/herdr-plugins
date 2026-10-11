@@ -10,6 +10,7 @@ import type { TokenWrite } from '#src/protocol/tokens.ts';
 import { answer } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { ANSWER_TTL_MS } from '#src/recap/domain/compact-request.ts';
+import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 
 export interface RestartDeps {
     readonly exchanges: readonly Exchange[];
@@ -19,6 +20,7 @@ export interface RestartDeps {
     readonly tokens: Pick<LaneTokens, 'report'>;
     readonly enabled: () => boolean;
     readonly local: (ask: Ask) => void;
+    readonly handoff: (ask: Ask) => void;
     readonly log: (line: string) => void;
     readonly now: () => number;
     readonly restartedWhy: string;
@@ -59,7 +61,9 @@ export function answerRestart(deps: RestartDeps): number {
     }
     const restarted = deps.compactions.interrupted(deps.now(), deps.restartedWhy);
     for (const ask of deps.ledger.unfinished()) {
-        if (ask.requester === LOCAL_REQUESTER) {
+        if (ask.requester === LOCAL_REQUESTER && ask.exchange === HANDOFF_EXCHANGE) {
+            deps.handoff(ask);
+        } else if (ask.requester === LOCAL_REQUESTER) {
             deps.local(ask);
             deps.ledger.settle(ask, INTERRUPTED);
         } else {

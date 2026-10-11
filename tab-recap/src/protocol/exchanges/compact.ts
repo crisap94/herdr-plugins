@@ -12,6 +12,7 @@ export const COMPACT_FAILURES = {
     noTarget: 'no-target',
     skipped: 'skipped',
     busy: 'busy',
+    laneBusy: 'lane-busy',
     error: 'error',
 } as const;
 

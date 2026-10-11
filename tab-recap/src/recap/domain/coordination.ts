@@ -1,3 +1,5 @@
+import { collapsedText } from './text-collapse.ts';
+
 const AWAITING = /^awaiting(?:-.+)?$/;
 const NOTE = /^note(?:-(.+))?$/;
 
@@ -11,12 +13,19 @@ export interface NoteToken {
     readonly value: string;
 }
 
-export const plainText = (raw: string): string => raw.replace(/\p{Cc}/gu, ' ').replace(/ {2,}/g, ' ').trim();
+export const plainText = (raw: string): string => collapsedText(raw, 'space');
 
 export function notesOf(tokens: Readonly<Record<string, string>>): readonly NoteToken[] {
     return Object.keys(tokens).toSorted().flatMap((name): NoteToken[] => {
         const found = NOTE.exec(name);
         const value = plainText(tokens[name] ?? '');
         return found === null || value === '' ? [] : [{ label: found[1] ?? 'note', value }];
+    });
+}
+
+export function coordinationNamesOf(tokens: Readonly<Record<string, string>>): readonly string[] {
+    return Object.keys(tokens).toSorted().filter((name) => {
+        const raw = tokens[name] ?? '';
+        return AWAITING.test(name) ? raw !== '' : NOTE.test(name) && plainText(raw) !== '';
     });
 }

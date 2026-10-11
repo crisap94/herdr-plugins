@@ -104,7 +104,7 @@ test('--note on another command is a usage error naming it, and a --note with no
     const other = run(['show', '--note', 'keep']);
     try {
         assert.equal(other.status, 2);
-        assert.match(other.stderr, /--note applies to compact only/);
+        assert.match(other.stderr, /--note applies to compact and handoff only/);
     } finally {
         other.done();
     }

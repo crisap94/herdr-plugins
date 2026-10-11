@@ -67,8 +67,14 @@ export interface Advance {
     readonly lanes: readonly LaneCursor[];
 }
 
+export interface LastRun {
+    readonly at: number;
+    readonly cause: RecapCause | 'imported';
+}
+
 export interface RecapRecords {
     readRecap(tab: string): TabRecap | null;
+    lastRunOf(tab: string): LastRun | null;
     beginRun(tab: string, backend: string | null, at: number): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;

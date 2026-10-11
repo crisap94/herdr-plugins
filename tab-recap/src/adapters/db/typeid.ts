@@ -1,6 +1,6 @@
 const ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz';
 
-export const PREFIXES = { transcript: 'tscr', chapter: 'chap', boundary: 'bnd', task: 'task', run: 'run', request: 'req', compaction: 'cmp', verdict: 'vrd', fact: 'fct', decision: 'dcn' } as const;
+export const PREFIXES = { transcript: 'tscr', chapter: 'chap', boundary: 'bnd', task: 'task', run: 'run', request: 'req', handoff: 'hnd', compaction: 'cmp', verdict: 'vrd', fact: 'fct', decision: 'dcn' } as const;
 
 export type Entity = keyof typeof PREFIXES;
 

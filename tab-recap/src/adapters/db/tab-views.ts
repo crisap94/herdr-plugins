@@ -36,6 +36,7 @@ export class TabViewsRepository implements TabViews {
     private readonly update: StatementSync;
     private readonly clear: StatementSync;
     private readonly insert: StatementSync;
+    private readonly paneTab: StatementSync;
 
     constructor(db: DatabaseSync, daemonVersion: string | null = null) {
         this.db = db;
@@ -45,7 +46,15 @@ export class TabViewsRepository implements TabViews {
         this.lanes = db.prepare('SELECT pane, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch, context_tokens, context_window, context_source FROM lane WHERE tab_id = ? ORDER BY position');
         this.update = db.prepare('UPDATE tab SET column_pane = ?, view_at = ?, daemon_version = ? WHERE id = ?');
         this.clear = db.prepare('DELETE FROM lane WHERE tab_id = ?');
+        this.paneTab = db.prepare('SELECT tab_id FROM lane WHERE pane = ? LIMIT 1');
         this.insert = db.prepare('INSERT INTO lane (tab_id, pane, position, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch, context_tokens, context_window, context_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    }
+
+    tabOf(pane: string): string | null {
+        return guarded(() => {
+            const row = one(this.paneTab, pane);
+            return row === null ? null : text(row, 'tab_id');
+        }, null);
     }
 
     readTab(tab: string): TabView | null {

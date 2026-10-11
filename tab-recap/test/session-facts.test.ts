@@ -3,6 +3,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
 import assert from 'node:assert/strict';
 import { EditCache, EditCounts, countEdits } from '#src/recap/application/edit-counts.ts';
+import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { SessionInputs } from '#src/recap/domain/session-facts.ts';
 import { en } from '#src/i18n/en.ts';
@@ -91,6 +92,20 @@ test('edit calls are counted through each lane\'s own reader; screens, unreadabl
     const lanes = [cursor('w1:p1'), { ...cursor('w1:p2'), agent: 'codex' }, { ...cursor('w1:p3'), agent: 'gemini' }, { ...cursor('w1:p4'), transcript: 'screen:w1:p4' }, { ...cursor('w1:p5'), transcript: '' }];
     assert.deepEqual(await counts.of(lanes), [{ path: 'src/a.ts', count: 2 }, { path: 'src/b.ts', count: 1 }]);
     assert.deepEqual(await new EditCounts(registryWith({})).of(lanes), []);
+});
+
+test('the edit counts read each transcript with the one shared read budget, 4 MiB', async () => {
+    const budgets: number[] = [];
+    const recording: Transcripts = {
+        ...reader('claude', [{ role: 'tool', kind: 'edit', text: 'src/a.ts' }]),
+        read: (source, was, budget) => {
+            budgets.push(budget);
+            return reader('claude', []).read(source, was, budget);
+        },
+    };
+    await new EditCounts(registryWith({ claude: recording })).of([cursor('w1:p1')]);
+    assert.deepEqual(budgets, [TRANSCRIPT_READ_BUDGET_BYTES]);
+    assert.equal(TRANSCRIPT_READ_BUDGET_BYTES, 4 * 1024 * 1024);
 });
 
 test('the cache answers at once with what it has and refreshes in the background once a minute', async () => {

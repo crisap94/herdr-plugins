@@ -29,4 +29,5 @@ export interface TabView {
 export interface TabViews {
     readTab(tab: string): TabView | null;
     writeTab(view: TabView): void;
+    tabOf(pane: string): string | null;
 }

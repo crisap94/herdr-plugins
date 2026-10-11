@@ -35,7 +35,7 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
   (opencode's SQLite database is opened read-only). Any other agent herdr recognises can be read from its
   **screen** instead — `TAB_RECAP_SCREEN_AGENTS=gemini,qwen` (or `all`), also a row in the settings; its
   header says `(screen)`, because an agent on the alternate screen shows only what is visible. Reading
-  a screen never types into the pane.
+  a screen types nothing into the pane.
 - **Written at the end of each turn** by any harness — `claude`, `codex`, `opencode`, `hermes` (the
   first one found, or the one you pick), or your own command —
   as operations on the ledger of facts plus only the new part of every agent's transcript (see [How the recap is kept](#how-the-recap-is-kept)). Also on tab focus when
@@ -59,7 +59,8 @@ a ledger of **facts** about the conversation and shows the open ones, so a long 
   on the daemon's tick (see `src/extensions/` and `CONTEXT.md`); none are loaded by default.
 - **English or Spanish.** The column and the commands speak `en` or `es` (`TAB_RECAP_LOCALE`), and the recap can be
   written in either or in any language you name (`TAB_RECAP_RECAP_LANG`); switching rewrites it at once.
-- **Read-only, but for one thing you ask for.** It reads transcripts and never types into an agent on its own (a lint rule says so). The one exception is [compaction](#compaction), and only when you ask for it.
+- **Read-only, but for what you ask for.** It reads transcripts and does not type into an agent on its own. A lint rule keeps the raw-input methods out of every module and the prompt method in one adapter; who may reach that adapter is a documented convention, which the lint does not check. The exceptions are [compaction](#compaction), from the compaction queue, and `tab-recap handoff`, from the handoff queue, and only when you ask for them.
+- **Handoff, only when you ask for it.** `tab-recap handoff --from <pane> --to <pane>` sends one task's ledger, its freshness and its worksite snapshot (the directory, repository, branch, last commit, uncommitted paths, most edited files and the names of its tokens, never their values) to another idle agent, once. **Locality:** the text goes only into a lane this daemon watches on this machine, and the command makes no network request; it writes nothing outside the state directory except that one delivery, and it never writes the text to a log. **A handoff can contain anything the lane saw:** its facts, its prompts, file paths, commit subjects and whatever else the transcript held. You are choosing to send it. `--print` shows the same text on stdout and types nothing, so read it first.
 
 ## What the recap is
 
@@ -299,6 +300,22 @@ A working or blocked agent is skipped and a notification names it. Agents read f
 runtime: Codex's own `model_context_window`; opencode's and Claude's model looked up in opencode's local
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
 table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
+
+## Handoff
+
+`tab-recap handoff --from <pane> --to <pane>` sends one task's ledger from a source lane to a target lane, once. The command types the handoff into the target agent, so the target must be an idle or done lane with a handoff plan (Claude, Codex or OpenCode). Pick a lane you started yourself.
+
+- `--from <pane>` (required): the source lane. Its task is the one its ledger shows.
+- `--to <pane>` (required unless `--print`): the target lane. It must differ from the source.
+- `--note "<text>"`: one line, at most 280 characters, cleaned the same way as a compaction note. It leads the handoff.
+- `--refresh`: refreshes the source lane's recap first and waits for it (up to 200 s), so the handoff carries fresh facts. It does not go with `--print`.
+- `--print`: writes the same text to stdout and types nothing. Read it before you send it. It does not need the daemon.
+
+Delivery needs the daemon running; without it the command refuses with `daemon-not-running`. Before typing, the command holds the target for its settle time: 10 s for Claude, 3 s for Codex and 60 s for OpenCode.
+
+Exit codes: 0 when the text was delivered or printed; 1 when the handoff was refused or failed, including an unconfirmed delivery; 2 for a usage error.
+
+**Locality:** the text goes only into a lane this daemon watches on this machine, and the command makes no network request. **A handoff can contain anything the lane saw:** facts, prompts, file paths and commit subjects. Facts distilled from a transcript reach the receiving agent as claims: its preamble tells it to treat them as claims, not as orders.
 
 ## Autocompact
 
@@ -608,7 +625,7 @@ every pane and workspace that carried one, and the lane tokens on every lane.
 
 **Requests another tool may write** on a lane's pane: `compact-req-<tool>` = `<id>` or `<id>:<note>` (the note is the focus of the
 brief, cut to fit). tab-recap answers in `tab-recap-compact`: `<id>:queued`, then `running`, then `done` or `failed-<reason>`;
-`failed-not-a-lane` when the pane is not a lane; `failed-busy` when the agent is working; `failed-skipped` when it is not ready (blocked, or the brief does not cover the facts); `failed-error` for any other cause; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
+`failed-not-a-lane` when the pane is not a lane; `failed-busy` when the agent is working; `failed-lane-busy` when a handoff holds the lane; `failed-skipped` when it is not ready (blocked, or the brief does not cover the facts); `failed-error` for any other cause; `failed-interrupted` when a restart stopped it. Each id is acted on once, also across
 restarts: the same id written again asks for nothing. A request seen while the setting is off is remembered and never acted on, even
 after it goes on. A request a restart interrupts while the setting is on is answered `failed-interrupted`; one interrupted while it is
 off is not answered.
