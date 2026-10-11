@@ -7,7 +7,6 @@ export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;
 export type AgentKind = Brand<string, 'AgentKind'>;
-export type HandoffId = Brand<string, 'HandoffId'>;
 export type AgentSession =
     | { readonly kind: 'id'; readonly value: SessionId }
     | { readonly kind: 'path'; readonly value: SessionPath };

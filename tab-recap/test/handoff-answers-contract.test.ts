@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
+import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
@@ -11,12 +12,9 @@ interface Subject {
     readonly make: (clock: { now: number }) => HandoffAnswers;
 }
 
-const STORABLE = new Set(['interrupted', 'source-unreadable']);
-const storable = (reason: string): boolean => STORABLE.has(reason);
-
 const subjects: readonly Subject[] = [
-    { name: 'SQLite', make: (clock) => memoryStore({ storable, now: () => clock.now }).handoffs },
-    { name: 'in-memory double', make: (clock) => new MemoryHandoffAnswers(storable, () => clock.now) },
+    { name: 'SQLite', make: (clock) => memoryStore({ now: () => clock.now }).handoffs },
+    { name: 'in-memory double', make: (clock) => new MemoryHandoffAnswers(isStorablePair, () => clock.now) },
 ];
 
 for (const { name, make } of subjects) {
@@ -46,9 +44,9 @@ for (const { name, make } of subjects) {
     test(`${name}: one answer per handoff id: a second answer is refused`, () => {
         const answers = make({ now: 1 });
         const id = handoffIdOf(ids.next());
-        answers.answerHandoff(id, { outcome: 'refused', reason: 'interrupted' });
+        answers.answerHandoff(id, { outcome: 'failed', reason: 'interrupted' });
         assert.throws(() => { answers.answerHandoff(id, { outcome: 'delivered', reason: null }); });
-        assert.equal(answers.handoffAnswer(id)?.outcome, 'refused');
+        assert.equal(answers.handoffAnswer(id)?.outcome, 'failed');
     });
 
     test(`${name}: prune removes answers older than the cut and keeps the rest`, () => {

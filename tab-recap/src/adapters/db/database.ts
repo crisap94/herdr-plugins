@@ -32,7 +32,8 @@ import { SessionSourceRepository } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views.ts';
-import { HandoffAnswersRepository } from './handoff-answers.ts';
+import { HandoffAnswersRepository, type StorablePair } from './handoff-answers.ts';
+import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 
 export interface Store {
@@ -62,16 +63,14 @@ export interface StoreOptions {
     readonly daemonVersion?: string | null;
     readonly now?: () => number;
     readonly log?: (line: string) => void;
-    readonly storable?: (reason: string) => boolean;
+    readonly storable?: StorablePair;
 }
-
-const NOTHING_STORABLE = (): boolean => false;
 
 export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), handoffs: new HandoffAnswersRepository(db, options.storable ?? NOTHING_STORABLE, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskLedgerRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), handoffs: new HandoffAnswersRepository(db, options.storable ?? isStorablePair, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskLedgerRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),

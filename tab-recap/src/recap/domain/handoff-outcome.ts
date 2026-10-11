@@ -71,3 +71,5 @@ export function exitCodeOf(outcome: HandoffOutcome): HandoffExitCode {
 export function messageKeyOf(outcome: HandoffOutcome): HandoffMessageKey | null {
     return rowOf(outcome)?.message ?? null;
 }
+
+export const isStorablePair = (kind: string, reason: string | null): boolean => storedOutcomeOf(kind, reason) !== null;

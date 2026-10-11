@@ -8,6 +8,8 @@ import type { Row } from './rows.ts';
 
 export class UnstorableHandoffReason extends Error {}
 
+export type StorablePair = (outcome: string, reason: string | null) => boolean;
+
 function verdictOf(row: Row): HandoffVerdict | null {
     const reason = maybeText(row, 'reason');
     const outcome = text(row, 'outcome');
@@ -19,13 +21,13 @@ function verdictOf(row: Row): HandoffVerdict | null {
 
 export class HandoffAnswersRepository implements HandoffAnswers {
     private readonly db: DatabaseSync;
-    private readonly storable: (reason: string) => boolean;
+    private readonly storable: StorablePair;
     private readonly now: () => number;
     private readonly insert: StatementSync;
     private readonly read: StatementSync;
     private readonly drop: StatementSync;
 
-    constructor(db: DatabaseSync, storable: (reason: string) => boolean, now: () => number = Date.now) {
+    constructor(db: DatabaseSync, storable: StorablePair, now: () => number = Date.now) {
         this.db = db;
         this.storable = storable;
         this.now = now;
@@ -39,8 +41,8 @@ export class HandoffAnswersRepository implements HandoffAnswers {
         if (key === null) {
             throw new RangeError('not a handoff id');
         }
-        if (verdict.reason !== null && !this.storable(verdict.reason)) {
-            throw new UnstorableHandoffReason(`handoff reason ${verdict.reason} is not storable`);
+        if (!this.storable(verdict.outcome, verdict.reason)) {
+            throw new UnstorableHandoffReason(`handoff ${verdict.outcome} ${verdict.reason ?? 'delivered'} is not storable`);
         }
         writeTx(this.db, () => { this.insert.run(key, this.now(), verdict.outcome, verdict.reason); });
     }
