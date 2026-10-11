@@ -12,6 +12,8 @@ import type { CompactionDeps } from './compaction-deps.ts';
 import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
 import type { Trail } from './compaction-trail.ts';
+import { withTypingLease } from './typing-scope.ts';
+import type { Lease } from './typing-scope.ts';
 
 const RESTORING_MS = 2 * 60_000;
 const RESTORE_SETTLE_MS = 15_000;
@@ -35,20 +37,9 @@ export class Sender {
 
     private async typed(pane: string, type: () => Promise<Prompted>): Promise<Prompted> {
         const typing = this.deps.typing;
-        if (typing === undefined) {
-            return type();
-        }
-        const acquired = await typing.acquire(pane);
-        if (acquired === 'busy') {
-            return unknown({ why: 'lease', after: duration(LEASE_TTL_MS) });
-        }
-        try {
-            return await type();
-        } finally {
-            if (acquired === 'taken') {
-                await typing.release(pane);
-            }
-        }
+        const lease: Lease | undefined = typing === undefined ? undefined : { acquire: () => typing.acquire(pane), release: () => typing.release(pane) };
+        const leased = await withTypingLease(lease, type);
+        return leased.kind === 'busy' ? unknown({ why: 'lease', after: duration(LEASE_TTL_MS) }) : leased.value;
     }
 
     private async attempt(lane: Lane, plan: CompactionPlan): Promise<Tried> {
