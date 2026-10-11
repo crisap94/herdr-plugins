@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
+import { silentClosures } from './fakes/silent-closures.ts';
 import assert from 'node:assert/strict';
 import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
@@ -131,7 +132,7 @@ function dispatchWith(prompts: LivePromptSource): { dispatch: Dispatch; written:
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
         columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
-        board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined,
+        board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, ...silentClosures,
     });
     return { dispatch, written };
 }
