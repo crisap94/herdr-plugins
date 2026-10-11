@@ -82,7 +82,7 @@ for (const file of stray) {
     process.stderr.write(`  outside lane ${lane}: ${file}${detailOf(file, owner)}\n`);
 }
 for (const file of changedFiles().filter(adaptsForeignSource)) {
-    process.stdout.write(`  adapting ${file} (owned by ${otherOwner.get(file)})\n`);
+    process.stdout.write(`  adapting ${file} (owned by ${otherOwner.get(file) ?? 'no lane'})\n`);
 }
 process.stdout.write(stray.length === 0 ? `check-lane: ${lane} clean\n` : `check-lane: 1 — ${stray.length} file(s) outside lane ${lane}\n`);
 process.exit(stray.length === 0 ? 0 : 1);
