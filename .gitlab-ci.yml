@@ -120,9 +120,12 @@ release:prepare:
 release:tag:
   stage: release
   needs: [lint, test, "test:floor"]
+  variables:
+    GIT_DEPTH: "0"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
   script:
+    - git fetch --quiet --tags origin
     - bash tab-recap/ci/tag-release.sh
 
 # A tag `tab-recap-v<x.y.z>`: check that it is a release we can publish, take the notes from the

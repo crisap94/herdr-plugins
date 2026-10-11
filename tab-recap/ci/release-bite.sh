@@ -176,6 +176,12 @@ FAKE_LIST_CODE=500 expect fail "a merge request list that does not answer" publi
 FAKE_LIST='[{"iid":7,"source_branch":"release/demo-v1.0.0"}]' expect pass "a release merge request that is open already" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a second release branch was pushed while a release merge request is open" >&2; wrong=$((wrong + 1)); }
 expect fail "no merge request opened while one is open" grep -q "POST .*merge_requests" "$CURL_LOG"
+FAKE_LIST='not json' expect fail "an open merge request list that is not JSON" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request list was not JSON" >&2; wrong=$((wrong + 1)); }
+expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_HOST bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
+FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelated open merge request does not block the release" publish
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 : > "$CURL_LOG"
@@ -185,12 +191,19 @@ expect pass "the merge request carries the label land" grep -q "POST .*merge_req
 expect pass "the merge request is from the release branch to main" grep -q "source_branch=release/demo-v1.1.0 target_branch=main" "$CURL_LOG"
 expect fail "the release creates no tag" grep -q "POST .*repository/tags" "$CURL_LOG"
 git commit --quiet --amend --allow-empty -m "another release commit"
-expect fail "a release branch that already exists with other history" publish
+expect pass "a release branch left by an earlier run is overwritten" publish
+[ "$(git --git-dir="$scratch/remote.git" rev-parse refs/heads/release/demo-v1.1.0)" = "$(git rev-parse HEAD)" ] || { echo "bite: the stale release branch was not overwritten" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 
 : > "$CURL_LOG"
+export CI_COMMIT_SHA="$(git rev-parse HEAD)"
 expect pass "a merged release gets its tag" tagit
-expect pass "the tag is created at the commit with the API" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$CI_COMMIT_SHA" "$CURL_LOG"
+release_commit="$(git rev-list --max-parents=0 HEAD)"
+expect pass "the tag is created at the commit with the API" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$release_commit" "$CURL_LOG"
+git commit --quiet --allow-empty -m "a later commit on main"
+: > "$CURL_LOG"
+CI_COMMIT_SHA="$(git rev-parse HEAD)" expect pass "a tag run on a later tip" tagit
+expect pass "the tag is at the release commit, not at the later tip" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$release_commit" "$CURL_LOG"
 : > "$CURL_LOG"
 FAKE_TAG_CODE=200 expect pass "a version that is tagged already" tagit
 expect fail "no second tag for a tagged version" grep -q "POST " "$CURL_LOG"
@@ -200,6 +213,14 @@ expect pass "a version without a dated changelog section is not a release" undat
 expect fail "nothing is asked or created for it" test -s "$CURL_LOG"
 FAKE_TAG_CODE=500 expect fail "a tag lookup that does not answer" tagit
 FAKE_TAG_POST_CODE=500 expect fail "a tag the forge refuses" tagit
+git tag demo-v1.2.0
+expect fail "a version below the newest release" tagit
+git tag -d demo-v1.2.0 >/dev/null
+nolink() { sed -e '/^\[1.1.0\]: /d' "$scratch/CHANGELOG.md" > "$scratch/changelog.nolink"; CHANGELOG="$scratch/changelog.nolink" tagit; }
+expect fail "a version without its changelog link reference" nolink
+printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
+expect fail "a package.json on another version" tagit
+git checkout --quiet -- demo/package.json
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
 [ "$wrong" -eq 0 ]

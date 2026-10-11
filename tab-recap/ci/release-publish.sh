@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # release:prepare, second half — the release commit is checked out here: push it as the branch
 # release/<plugin>-v<version> and open a merge request labelled `land` for the merge train. main is
-# never pushed; the tag is created by release:tag once the merge request has landed (tag-release.sh).
+# never pushed. The release branch is the bot's own: it is overwritten when no release merge request is
+# open (a retry after a refused merge request, or the stale branch of a closed one). The tag is created
+# by release:tag once the merge request has landed (tag-release.sh).
 # usage: release-publish.sh <plugin> <version> <previous>
 # env: RELEASE_TOKEN (api + write_repository) · CI_API_V4_URL · CI_PROJECT_ID · CI_PROJECT_PATH
 #      CI_SERVER_HOST · CI_DEFAULT_BRANCH (main) · PUSH_URL · CURL
@@ -15,21 +17,27 @@ previous="${3:-}"
     || { echo "release-publish: 3 — NOT COVERED: RELEASE_TOKEN, CI_API_V4_URL or CI_PROJECT_ID is not set" >&2; exit 3; }
 target="${CI_DEFAULT_BRANCH:-main}"
 branch="release/$plugin-v$version"
-push_url="${PUSH_URL:-https://oauth2:${RELEASE_TOKEN}@${CI_SERVER_HOST:-}/${CI_PROJECT_PATH:-}.git}"
+if [ -z "${PUSH_URL:-}" ]; then
+    [ -n "${CI_SERVER_HOST:-}" ] && [ -n "${CI_PROJECT_PATH:-}" ] \
+        || { echo "release-publish: 3 — NOT COVERED: CI_SERVER_HOST or CI_PROJECT_PATH is not set" >&2; exit 3; }
+    PUSH_URL="https://oauth2:${RELEASE_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+fi
+push_url="$PUSH_URL"
 body="$(mktemp)"
 trap 'rm -f "$body"' EXIT
 api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "PRIVATE-TOKEN: $RELEASE_TOKEN" "$@"; }
 
 code="$(api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests?state=opened&target_branch=$target&per_page=100")"
 [ "$code" = "200" ] || { echo "release-publish: 3 — NOT COVERED: listing the open merge requests answered HTTP $code" >&2; exit 3; }
-open="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(list.filter((mr) => String(mr.source_branch).startsWith(process.argv[2])).map((mr) => "!" + mr.iid + " " + mr.source_branch).join(", "));' "$body" "release/$plugin-v")"
+open="$(node -e 'const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(list.filter((mr) => String(mr.source_branch).startsWith(process.argv[2])).map((mr) => "!" + mr.iid + " " + mr.source_branch).join(", "));' "$body" "release/$plugin-v")" \
+    || { echo "release-publish: 3 — NOT COVERED: the open merge request list is not JSON" >&2; exit 3; }
 if [ -n "$open" ]; then
     echo "a release merge request is already open ($open): let it land before preparing another"
     exit 0
 fi
 
-git push --quiet "$push_url" "HEAD:refs/heads/$branch" \
-    || { echo "release-publish: 1 — could not push $branch (does the branch exist already? delete it and run the job again)" >&2; exit 1; }
+git push --quiet --force "$push_url" "HEAD:refs/heads/$branch" \
+    || { echo "release-publish: 1 — could not push $branch" >&2; exit 1; }
 
 description="## What changes for the user
 

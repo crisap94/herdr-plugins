@@ -28,6 +28,11 @@ if [ -z "$version" ]; then
     exit 0
 fi
 echo "release due: $version (after $previous, $(printf '%s' "$json" | field bump))"
+manifest="$(sed -nE 's/^version = "([^"]+)".*/\1/p' tab-recap/herdr-plugin.toml | head -n 1)"
+if [ "$manifest" != "${previous#tab-recap-v}" ]; then
+    echo "prepare-release: 1 — the manifest says $manifest but the previous tag is $previous: a release is already prepared and untagged; let release:tag tag it (or tag it by hand) before preparing another" >&2
+    exit 1
+fi
 
 section="$(mktemp)"
 trap 'rm -f "$section"' EXIT
