@@ -2,7 +2,6 @@ import { SECTION_IDS } from './fact.ts';
 import type { FactId } from './fact.ts';
 import type { Freshness } from './freshness.ts';
 import type { HandoffReason } from './handoff-outcome.ts';
-import type { HandoffId } from './ids.ts';
 import type { WorksiteSnapshot } from './worksite.ts';
 
 export const HANDOFF_GROUP_IDS = [...SECTION_IDS, 'closed'] as const;
@@ -31,8 +30,6 @@ export interface HandoffGroup {
 
 export interface HandoffBody {
     readonly kind: 'content';
-    readonly id: HandoffId;
-    readonly at: number;
     readonly note: string | null;
     readonly freshness: Freshness;
     readonly worksite: WorksiteSnapshot;

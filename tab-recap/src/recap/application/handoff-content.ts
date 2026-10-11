@@ -3,7 +3,6 @@ import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
-import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { requestNoteOf } from './compact-start.ts';
@@ -12,9 +11,8 @@ import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import type { TaskFacts } from './ledger-input.ts';
 
 export interface HandoffInput {
-    readonly id: HandoffId;
     readonly at: number;
-    readonly task: TaskFacts;
+    readonly task: Pick<TaskFacts, 'open' | 'closed'>;
     readonly freshness: Freshness;
     readonly worksite: WorksiteSnapshot;
     readonly note: string | null;
@@ -78,5 +76,5 @@ export function buildHandoffContent(input: HandoffInput): HandoffContent {
     if (groups.every((group) => group.entries.length === 0)) {
         return { kind: 'refused', reason: 'content-empty' };
     }
-    return { kind: 'content', id: input.id, at: input.at, note: noteOf(input.note), freshness: input.freshness, worksite: input.worksite, groups, withheld: candidates.length - kept.length };
+    return { kind: 'content', note: noteOf(input.note), freshness: input.freshness, worksite: input.worksite, groups, withheld: candidates.length - kept.length };
 }

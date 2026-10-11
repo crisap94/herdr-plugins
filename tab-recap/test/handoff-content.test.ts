@@ -10,14 +10,11 @@ import { FORBIDDEN_PHRASES, FORBIDDEN_WORDS } from '#src/recap/domain/forbidden-
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
-import { handoffId } from '#src/recap/domain/ids.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
-const ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ab');
-const OTHER_ID = handoffId('0190f5a4-7c2e-7b1a-9d3f-0123456789ac');
 const TASK: TaskId = { tab: 'w1:t1', key: 't1' };
 
 const FRESHNESS: Freshness = { lastRun: { at: NOW - 60_000, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
@@ -28,7 +25,7 @@ const closedFact = (id: string, section: Fact['section'], text: string, closedAt
 
 const taskOf = (open: readonly Fact[], closed: readonly Fact[] = []): TaskFacts => ({ key: TASK.key, open, closed });
 
-const inputOf = (task: TaskFacts, more: Partial<HandoffInput> = {}): HandoffInput => ({ id: ID, at: NOW, task, freshness: FRESHNESS, worksite: WORKSITE, note: null, ...more });
+const inputOf = (task: TaskFacts, more: Partial<HandoffInput> = {}): HandoffInput => ({ at: NOW, task, freshness: FRESHNESS, worksite: WORKSITE, note: null, ...more });
 
 const bodyOf = (content: HandoffContent): HandoffBody => (content.kind === 'content' ? content : assert.fail(`refused ${content.reason}`));
 
@@ -72,8 +69,6 @@ test('every fact class is rendered in its group with its text and last-seen time
     assert.equal(firstOf(body, 'decisions').lastAt, NOW - 5_000);
     assert.equal(body.freshness, FRESHNESS);
     assert.equal(body.worksite, WORKSITE);
-    assert.equal(body.at, NOW);
-    assert.equal(body.id, ID);
 });
 
 test('a decision keeps its recorded reason and a closed fact keeps the reason it closed', () => {
@@ -132,13 +127,9 @@ test('the same ledger renders the same content, whatever order the ledger return
     assert.deepEqual(first, second);
 });
 
-test('identical inputs including the HandoffId give identical output, and a different HandoffId changes only the id', () => {
+test('identical inputs give identical output', () => {
     const task = taskOf([fact('g1', 'goal', 'the goal', NOW - 1_000)]);
     assert.deepEqual(buildHandoffContent(inputOf(task)), buildHandoffContent(inputOf(task)));
-    const first = bodyOf(buildHandoffContent(inputOf(task)));
-    const second = bodyOf(buildHandoffContent(inputOf(task, { id: OTHER_ID })));
-    assert.notEqual(first.id, second.id);
-    assert.deepEqual({ ...first, id: second.id }, second);
 });
 
 test('the injected instant decides the recently closed window', () => {

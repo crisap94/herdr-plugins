@@ -5,6 +5,8 @@ import type { HandoffRunnerDeps } from '#src/daemon/handoff.ts';
 import { HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { unrendered } from '#src/recap/application/handoff-flow.ts';
+import type { HandoffRun } from '#src/recap/application/handoff-flow.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
@@ -46,7 +48,7 @@ function runnerOf(
     const answers = new MemoryHandoffAnswers(isStorablePair, () => NOW);
     const probe: Probe = { flowRuns: [], asksSeenAtRun: [], logs: [] };
     const runner = new HandoffRunner({
-        flow: { run: async (request): Promise<HandoffOutcome> => { probe.flowRuns.push(String(request.id)); probe.asksSeenAtRun.push(asks.unfinished().length); return flowRun(request, probe); } },
+        flow: { execute: async (request): Promise<HandoffRun> => { probe.flowRuns.push(String(request.id)); probe.asksSeenAtRun.push(asks.unfinished().length); return unrendered(await flowRun(request, probe)); } },
         asks, answers, transaction: <T>(work: () => T): T => work(), now: (): number => NOW, log: (line: string): void => { probe.logs.push(line); }, ...over,
     });
     return { runner, asks, answers, probe };
@@ -127,7 +129,7 @@ test('a restart answers an unfinished handoff ask failed interrupted, settles it
 test('on the SQLite store the restart finds the ask again (its id parses) and writes the interrupted answer in one transaction', async () => {
     const store = memoryStore({ now: (): number => NOW });
     const runner = new HandoffRunner({
-        flow: { run: (): Promise<HandoffOutcome> => new Promise<HandoffOutcome>(() => undefined) },
+        flow: { execute: (): Promise<HandoffRun> => new Promise<HandoffRun>(() => undefined) },
         asks: store.asks, answers: store.handoffs, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
     });
     const taken = row();
@@ -141,7 +143,7 @@ test('on the SQLite store the restart finds the ask again (its id parses) and wr
 test('on the SQLite store a delivered handoff writes its answer and settles its ask in the same transaction', async () => {
     const store = memoryStore({ now: (): number => NOW });
     const runner = new HandoffRunner({
-        flow: { run: async (): Promise<HandoffOutcome> => ({ kind: 'delivered' }) },
+        flow: { execute: async (): Promise<HandoffRun> => unrendered({ kind: 'delivered' }) },
         asks: store.asks, answers: store.handoffs, transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
     });
     const taken = row();

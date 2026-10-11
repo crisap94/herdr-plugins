@@ -57,7 +57,7 @@ const bodyOf = (content: HandoffContent): HandoffBody => (content.kind === 'cont
 const renderOf = (content: HandoffContent): FittedHandoff => handoffTextOf(bodyOf(content), BLOCKS);
 
 const contentOf = (open: readonly Fact[], closed: readonly Fact[] = [], note: string | null = null): HandoffContent =>
-    buildHandoffContent({ id: ID, at: AT, task: { key: TASK.key, open, closed }, freshness: FRESHNESS, worksite: WORKSITE, note });
+    buildHandoffContent({ at: AT, task: { open, closed }, freshness: FRESHNESS, worksite: WORKSITE, note });
 
 const omittedLineOf = (text: string): RegExpExecArray | null => /^(\d+) facts omitted \((.*)\)$/m.exec(text);
 

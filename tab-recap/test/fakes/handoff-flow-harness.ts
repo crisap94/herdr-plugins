@@ -67,7 +67,7 @@ export function worldOf(over: Partial<FlowWorld> = {}): FlowWorld {
     return {
         sourceStatus: 'idle', targetStatus: 'idle', targetAgent: 'claude', targetPresent: true, targetKeyKnown: true, peer: false,
         recap: SOURCE_LISTED(), facts: [], awaiting: CLEAR, flight: IDLE_FLIGHT, refreshed: 'refreshed', refreshThrows: false,
-        renderResult: { kind: 'text', text: TEXT }, renderThrows: false, sendOutcome: { kind: 'delivered' }, sendThrows: false, pauseThrows: false, recapThrows: false,
+        renderResult: { kind: 'text', text: TEXT, bytes: TEXT.length, omitted: 0, withheld: 0 }, renderThrows: false, sendOutcome: { kind: 'delivered' }, sendThrows: false, pauseThrows: false, recapThrows: false,
         onRefresh: (): void => undefined, onPause: (): void => undefined,
         ...over,
     };
@@ -97,7 +97,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         ...(world.targetPresent && world.peer ? [laneFrom({ paneId: 'w1:p3', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: 'idle', session: 'sess-3', cwd: '/other' })] : []),
     ];
     const inFlight: InFlight = { read: async () => { calls.push('flight'); return world.flight; } };
-    const render: HandoffRender = (input) => {
+    const render: HandoffRender = async (input) => {
         calls.push('render');
         renders.push(input);
         if (world.renderThrows) {

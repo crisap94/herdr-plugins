@@ -94,7 +94,7 @@ test('a refresh that creates the ledger of a lane that had none is rendered from
     const f = fact('f1', 'goal', 'Ship the parser', NOW - 1000, { task: T1 });
     const h = harness({ recap: recapOf(), facts: [f], onRefresh: (): void => { h.world.recap = SOURCE_LISTED(); } });
     assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
-    assert.deepEqual(h.renders.map((input) => input.task), [T1]);
+    assert.deepEqual(h.renders.map((input) => input.lane.pane), [SOURCE]);
     assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
 });
 
