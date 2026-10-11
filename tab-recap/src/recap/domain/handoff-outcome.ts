@@ -42,14 +42,25 @@ export type StoredHandoffOutcome = OutcomeOfRow<Extract<HandoffOutcomeRow, { rea
 
 const reasonOf = (outcome: HandoffOutcome): string | null => ('reason' in outcome ? outcome.reason : null);
 
-const rowOf = (outcome: HandoffOutcome): HandoffOutcomeRow | undefined =>
-    HANDOFF_OUTCOME_ROWS.find((row) => row.outcome === outcome.kind && row.reason === reasonOf(outcome));
+const rowFor = (kind: string, reason: string | null): HandoffOutcomeRow | undefined =>
+    HANDOFF_OUTCOME_ROWS.find((row) => row.outcome === kind && row.reason === reason);
+
+const rowOf = (outcome: HandoffOutcome): HandoffOutcomeRow | undefined => rowFor(outcome.kind, reasonOf(outcome));
+
+const requiredRowOf = (outcome: HandoffOutcome): HandoffOutcomeRow => {
+    const row = rowOf(outcome);
+    if (row === undefined) {
+        const reason = reasonOf(outcome);
+        throw new Error(`no handoff outcome row for ${reason === null ? outcome.kind : `${outcome.kind} ${reason}`}`);
+    }
+    return row;
+};
 
 const outcomeOfRow = (row: HandoffOutcomeRow): HandoffOutcome =>
     (row.reason === null ? { kind: row.outcome } : { kind: row.outcome, reason: row.reason }) as HandoffOutcome;
 
 export function handoffOutcomeOf(kind: string, reason: string | null): HandoffOutcome | null {
-    const row = HANDOFF_OUTCOME_ROWS.find((each) => each.outcome === kind && each.reason === reason);
+    const row = rowFor(kind, reason);
     return row === undefined ? null : outcomeOfRow(row);
 }
 
@@ -61,15 +72,11 @@ export function storedOutcomeOf(kind: string, reason: string | null): StoredHand
 }
 
 export function exitCodeOf(outcome: HandoffOutcome): HandoffExitCode {
-    const row = rowOf(outcome);
-    if (row === undefined) {
-        throw new Error(`no handoff outcome row for ${outcome.kind}`);
-    }
-    return row.exit;
+    return requiredRowOf(outcome).exit;
 }
 
 export function messageKeyOf(outcome: HandoffOutcome): HandoffMessageKey | null {
-    return rowOf(outcome)?.message ?? null;
+    return requiredRowOf(outcome).message;
 }
 
 export const isStorablePair = (kind: string, reason: string | null): boolean => storedOutcomeOf(kind, reason) !== null;
