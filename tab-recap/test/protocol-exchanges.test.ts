@@ -13,8 +13,9 @@ import { ANSWER_TOKENS, REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { COMPACT_TOKEN, OWNED_TOKENS, PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
 
+const compactOnly = (setting: string): boolean => setting === 'TAB_RECAP_HERDR_EVENTS';
+
 test('the capability value for compact alone is compact1,kinds1', () => {
-    const compactOnly = (setting: string): boolean => setting === 'TAB_RECAP_HERDR_EVENTS';
     assert.deepEqual(capabilityValue(EXCHANGES, must(exchangeVersion(1)), compactOnly), { kind: 'ok', value: 'compact1,kinds1' });
 });
 

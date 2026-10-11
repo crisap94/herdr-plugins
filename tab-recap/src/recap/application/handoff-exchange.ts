@@ -138,7 +138,7 @@ export class HandoffExchangeResponder {
         this.remember(pane, tool, id, { kind: 'settled' });
         const write = answerOf(handoff, must(requestId(id, GRAMMAR)), terminalStage({ kind: 'refused', reason }));
         if (write.kind === 'ok') {
-            reportWrite(this.deps.tokens, this.deps.log, pane, write.value);
+            void reportWrite(this.deps.tokens, this.deps.log, pane, write.value);
         }
     }
 

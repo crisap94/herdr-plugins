@@ -38,21 +38,21 @@ test('slice 1 outcome table is unchanged by the handoff exchange: the same outco
 });
 
 test('the exchange-only refusals are not outcomes of the flow', () => {
-    const reasons: readonly (string | null)[] = HANDOFF_OUTCOME_ROWS.map((row) => row.reason);
-    assert.deepEqual(EXCHANGE_ONLY_REFUSALS.filter((reason) => reasons.includes(reason)), []);
+    const reasons = new Set<string | null>(HANDOFF_OUTCOME_ROWS.map((row) => row.reason));
+    assert.deepEqual(EXCHANGE_ONLY_REFUSALS.filter((reason) => reasons.has(reason)), []);
 });
 
 test('every descriptor refusal, unsupported and failure reason maps to one answer value of at most 80 characters', () => {
     const stages = [
-        ...(handoff.refusalReasons ?? []).map((reason) => `refused-${reason}`),
-        ...(handoff.unsupportedReasons ?? []).map((reason) => `unsupported-${reason}`),
+        ...handoff.refusalReasons.map((reason) => `refused-${reason}`),
+        ...handoff.unsupportedReasons.map((reason) => `unsupported-${reason}`),
         ...handoff.failureReasons.map((reason) => `failed-${reason}`),
     ];
     for (const stage of stages) {
         assert.ok(must(answerValue(handoff, 'x'.repeat(16), stage)).length <= 80, stage);
     }
     for (const reason of EXCHANGE_ONLY_REFUSALS) {
-        assert.ok((handoff.refusalReasons ?? []).some((each) => each === reason), `${reason} is a refusal of the descriptor`);
+        assert.ok(handoff.refusalReasons.some((each) => each === reason), `${reason} is a refusal of the descriptor`);
     }
 });
 

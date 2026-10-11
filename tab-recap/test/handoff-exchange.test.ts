@@ -24,6 +24,8 @@ import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
+const ask = (ref: string | null): Ask => ({ exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref, outcome: null });
+
 const lanes = ['w1:p1', 'w1:p2', 'w2:p7'].map((pane) => laneFrom({ paneId: pane, tabId: pane.replace(':p', ':t'), workspaceId: pane.split(':')[0] ?? '', agent: 'claude', status: 'idle' }));
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
@@ -56,7 +58,7 @@ function setup(offer: HandoffOffer = 'offered', asks = new MemoryAskLedger()): H
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
     const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (current.value !== 'sharing-off' ? 'on' : 'off'), log: (): void => undefined });
-    const requests = { requestHandoff: (request: NewHandoffRequest) => { queued.push(request); return HID; } };
+    const requests = { requestHandoff: (request: NewHandoffRequest): HandoffId => { queued.push(request); return HID; } };
     const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, requests, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { responder, queued, tokens, events, asks, offer: current };
 }
@@ -136,7 +138,6 @@ test('the same id is queued once, also after a restart over the same asks; a rew
 test('restart withdraws the queued row of an exchange ask, and only one that carries a handoff id', () => {
     const withdrawn: HandoffId[] = [];
     const requests = { withdrawHandoff: (id: HandoffId): boolean => { withdrawn.push(id); return true; } };
-    const ask = (ref: string | null): Ask => ({ exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref, outcome: null });
     withdrawAsked(requests, ask(HID));
     withdrawAsked(requests, ask(null));
     assert.deepEqual(withdrawn, [HID]);

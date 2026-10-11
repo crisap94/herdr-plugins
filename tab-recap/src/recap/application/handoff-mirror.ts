@@ -14,6 +14,7 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { LaneEvents } from './lane-events.ts';
@@ -55,12 +56,15 @@ export interface HandoffMirrorDeps {
 
 export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(requestId(route.id, 'token-safe')), pane: route.source });
 
-export function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: PaneId, write: TokenWrite): void {
-    void tokens.report(pane, { [write.name]: write.value }, HANDOFF_ANSWER_TTL_MS).then((done) => {
+export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
+    try {
+        const done = await tokens.report(pane, { [write.name]: write.value }, HANDOFF_ANSWER_TTL_MS);
         if (isUnknown(done)) {
             log(must(parseText(`handoff answer on ${pane}: not written (${saying(done.why)})`)));
         }
-    });
+    } catch (error) {
+        log(must(parseText(`handoff answer on ${pane}: not written (${failureCauseOf(error)})`)));
+    }
 }
 
 export class HandoffMirror {
@@ -93,7 +97,7 @@ export class HandoffMirror {
         }
         const write = answerOf(handoff, must(requestId(route.id, 'token-safe')), stage);
         if (write.kind === 'ok') {
-            reportWrite(this.deps.tokens, this.deps.log, route.source, write.value);
+            void reportWrite(this.deps.tokens, this.deps.log, route.source, write.value);
         }
         const detail = kind === HANDOFF_EVENTS.failed ? must(parseText(`${route.id}:${stage}`)) : route.id;
         this.deps.events.lane(route.source, kind, detail);
