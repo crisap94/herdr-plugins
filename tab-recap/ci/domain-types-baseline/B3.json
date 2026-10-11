@@ -89,9 +89,7 @@
     "property": 3
   },
   "src/recap/application/compaction-input.ts": {
-    "parameter": 1,
-    "return": 1,
-    "property": 10
+    "property": 8
   },
   "src/recap/application/compaction-lanes.ts": {
     "return": 2,
