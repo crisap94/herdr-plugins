@@ -12,7 +12,11 @@ import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { Retention } from '#src/ports/retention.ts';
+import type { ClosureReader, ClosureRecorder, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
+import { ClosedLanesRepository } from './closed-lanes.ts';
+import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
 import { AutocompactBriefsRepository } from './autocompact-briefs.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
@@ -55,6 +59,7 @@ export interface Store {
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
     readonly retention: Retention;
+    readonly closedLanes: ClosureRecorder & ClosureReader & ClosureSweep;
     checkpoint(): void;
     close(): void;
 }
@@ -64,6 +69,7 @@ export interface StoreOptions {
     readonly now?: () => number;
     readonly log?: (line: string) => void;
     readonly storable?: StorablePair;
+    readonly closedDays?: ClosedLaneDays;
 }
 
 export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
@@ -74,6 +80,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),
+        closedLanes: new ClosedLanesRepository(db, options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
         close: (): void => { db.close(); },
     };

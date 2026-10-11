@@ -4,9 +4,12 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/layout.ts';
 import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
+import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
+import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
@@ -22,6 +25,8 @@ export interface DispatchDeps {
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
+    readonly closures?: ClosureRecorder;
+    closedDays?(): ClosedLaneDays;
     settled?(lane: Lane): void;
     sizing(): Sizing;
     board(): Board;
@@ -96,11 +101,23 @@ export class Dispatch {
                 this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
                 return;
             case 'lane-closed':
+                this.keep(intent.closed);
                 return;
             default: {
                 const exhaustive: never = intent;
                 this.deps.log(`unhandled intent ${String(exhaustive)}`);
             }
+        }
+    }
+
+    private keep(closed: ClosedLane): void {
+        if (this.deps.closures === undefined || (this.deps.closedDays?.() ?? 0) === 0) {
+            return;
+        }
+        try {
+            this.deps.closures.record(closed);
+        } catch (error) {
+            this.deps.log(`lane ${closed.pane}: closure not recorded (${error instanceof Error ? error.message : String(error)})`);
         }
     }
 
