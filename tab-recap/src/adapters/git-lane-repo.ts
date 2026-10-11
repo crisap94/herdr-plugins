@@ -11,7 +11,7 @@ export const TIMEOUT_MS = 1500;
 const NOT_A_REPOSITORY = 128;
 const ENOENT = 127;
 
-export const GIT = ['-c', 'core.fsmonitor=false'];
+export const GIT: readonly string[] = ['-c', 'core.fsmonitor=false'];
 export const ROOT_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel'];
 export const BRANCH_ARGS: readonly string[] = [...GIT, 'symbolic-ref', '--short', '-q', 'HEAD'];
 
