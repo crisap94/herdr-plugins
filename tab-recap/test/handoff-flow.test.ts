@@ -187,3 +187,9 @@ test('an error in the settle hold is failed internal-error, types nothing and re
     assert.equal(h.calls.includes('send'), false);
     assert.equal(bothFree(h.claims), true);
 });
+
+test('a working source is handed over: only the target must be idle', async () => {
+    const h = harness({ sourceStatus: 'working' });
+    assert.deepEqual(await h.flow.run(request()), { kind: 'delivered' });
+    assert.deepEqual(h.sent.map((sent) => sent.text), [TEXT]);
+});
