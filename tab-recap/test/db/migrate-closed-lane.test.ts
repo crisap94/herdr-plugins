@@ -46,7 +46,7 @@ const insertHandoff = (db: DatabaseSync, closedAt: number | null): void => {
 
 const countOf = (db: DatabaseSync, table: string): number => (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
 
-test('migration 18 from the previous version keeps every lane and request row, leaves since and closed_at null, ends with the fresh shape, and backs up as version 17', () => {
+test('migration 19 from the previous version keeps every lane and request row, leaves since and closed_at null, ends with the fresh shape, and backs up as version 17', () => {
     const dir = scratchDir('closed-lane-upgrade');
     try {
         const path = join(dir, 'tab-recap.db');
@@ -65,7 +65,7 @@ test('migration 18 from the previous version keeps every lane and request row, l
         assert.deepEqual(db.prepare('SELECT kind, closed_at FROM request').all().map((row) => Object.values(row)), [['handoff', null]]);
         assert.deepEqual(shapeOf(db), shapeOf(freshDb()), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
-        assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v17.bak']);
+        assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v18.bak']);
         db.close();
     } finally {
         rmSync(dir, { recursive: true, force: true });

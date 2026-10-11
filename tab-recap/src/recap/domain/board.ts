@@ -61,6 +61,10 @@ export function lanesOf(board: Board, tab: TabId): readonly Lane[] {
     return [...board.lanes.values()].filter((lane) => lane.tab === tab);
 }
 
+export function listsPane(board: Board, pane: PaneId): boolean {
+    return board.lanes.has(pane);
+}
+
 export function tabsWithLanes(board: Board): readonly TabId[] {
     return [...new Set([...board.lanes.values()].map((lane) => lane.tab))].toSorted();
 }

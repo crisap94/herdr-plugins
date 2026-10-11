@@ -79,5 +79,5 @@ bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, tsgo, 
 bash ci/test.sh        # node --test
 ```
 
-On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test run one at a time across every checkout,
-and `TEST_CONCURRENCY=<n>` to cap the test runner's parallel files (`ci/host-limits.sh`). Unset, both do nothing.
+On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test queue across every checkout (`TEST_HOST_SLOTS=<n>` lets n run at
+once), and `TEST_CONCURRENCY=<n>` to cap the test runner's parallel files (`ci/host-limits.sh`). Unset, they do nothing.

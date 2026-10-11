@@ -88,7 +88,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         missedFacts: () => options.missedFacts ?? 'append',
         checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: 'go' }]), marks: () => Promise.resolve([{ kind: 'compacted', at: NOW + 5000 }]), pause: () => Promise.resolve(), now: () => clock,
-        webs: { of: () => null }, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
+        webs: { of: () => null }, listsPane: () => true, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
         refresh: () => Promise.resolve('refreshed'), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };
@@ -98,7 +98,7 @@ const OK: Coverage = { ok: true, missing: [], missingFacts: [], answers: { keeps
 const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], missingFacts: [{ index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: null }, parts: ['text'] }], answers: { keeps_1: 0.2 }, unknown: null };
 
 function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
-    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
+    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
     return id;
 }
 

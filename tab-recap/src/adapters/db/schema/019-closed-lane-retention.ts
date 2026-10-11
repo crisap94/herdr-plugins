@@ -18,8 +18,8 @@ const CLOSED_LANE = `CREATE TABLE closed_lane (
 
 const CLOSED_LANE_READABLE = `CREATE VIEW closed_lane_readable AS SELECT tab_id, pane, closed_at, agent, cwd, CASE WHEN task_id IS NULL THEN NULL ELSE ${uuid('task_id')} END AS task_id, task_name FROM closed_lane`;
 
-export const m018: Migration = {
-    version: 18,
+export const m019: Migration = {
+    version: 19,
     name: 'closed-lane-retention',
     up: [
         'ALTER TABLE lane ADD COLUMN since INTEGER',
