@@ -28,6 +28,11 @@ export interface Reconciliation {
     readonly widths: ReadonlyMap<string, number>;
 }
 
+export interface RestoredObservation {
+    readonly kind: 'restored';
+    readonly lanes: readonly RestoredLane[];
+}
+
 export type Observation =
     | { readonly kind: 'detected'; readonly lane: SeenLane }
     | { readonly kind: 'closed'; readonly pane: PaneId }
@@ -41,7 +46,7 @@ export type Observation =
     | { readonly kind: 'switched'; readonly enabled: boolean }
     | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
     | { readonly kind: 'hidden-restored'; readonly state: HiddenState }
-    | { readonly kind: 'restored'; readonly lanes: readonly RestoredLane[] };
+    | RestoredObservation;
 
 export interface Outcome {
     readonly board: Board;

@@ -7,13 +7,14 @@ import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { directoryOf, taskNameOf } from './fakes/closed-values.ts';
 
 const CLOSED_AT = instant(Date.parse('2026-10-11T09:00:00Z'));
 const DEL = 127;
 const SPACE = 32;
 const isControl = (code: number): boolean => code < SPACE || code === DEL;
 const RUN = { at: Date.parse('2026-10-11T08:30:00Z'), cause: 'turn-ended' as const };
-const VIEW: ClosedView = { closedAt: CLOSED_AT, agent: agentKind('claude'), cwd: '/work/tree', run: RUN };
+const VIEW: ClosedView = { closedAt: CLOSED_AT, agent: agentKind('claude'), cwd: directoryOf('/work/tree'), run: RUN };
 
 test('a closed freshness says closed at the close instant in place of the lane status, and its newer prompts are unknown', () => {
     const outcome = closedFreshnessOf(VIEW);
@@ -41,7 +42,7 @@ function record(pane: string, closedAt: number, name: string | null): ClosedLane
         agent: agentKind('claude'),
         closedAt: instant(closedAt),
         cwd: null,
-        association: name === null ? null : { task: { tab: tabId('w1:t1'), key: 'k1' }, name },
+        association: name === null ? null : { task: { tab: tabId('w1:t1'), key: 'k1' }, name: taskNameOf(name) },
     };
 }
 

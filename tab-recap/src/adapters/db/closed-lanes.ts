@@ -14,7 +14,7 @@ import { parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.t
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { cutoffOf } from '#src/recap/domain/retention.ts';
+import { closedCutoffOf } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { parseTaskName } from '#src/recap/domain/task-name.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -89,7 +89,7 @@ SELECT ?, ?, ?, ?, ?, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`;
 const unreadable = (cause: FailureCause): Unknown => ({ kind: 'unknown', why: { why: 'unreadable', detail: cause } });
 
 const windowOf = (now: Instant, days: ClosedLaneDays): ClosedWindow => {
-    const cutoff = cutoffOf(now, days);
+    const cutoff = closedCutoffOf(now, days);
     return cutoff === null ? { off: 1, cutoff: instant(0) } : { off: 0, cutoff };
 };
 
@@ -244,6 +244,6 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             return NO_COUNT;
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return countOrThrow(parseCount(writeTx(this.db, () => Number(statements.prune.run(tab, off, cutoff).changes))));
+        return writeTx(this.db, () => countOrThrow(parseCount(Number(statements.prune.run(tab, off, cutoff).changes))));
     }
 }

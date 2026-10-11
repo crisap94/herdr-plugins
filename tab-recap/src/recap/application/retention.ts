@@ -5,14 +5,13 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { cutoffOf } from '#src/recap/domain/retention.ts';
-import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 export interface SweepDeps {
     readonly retention: Retention;
     readonly closures: ClosureSweep;
     readonly clock: Clock;
-    days(): ClosedLaneDays;
+    days(): number;
     log(line: string): void;
 }
 

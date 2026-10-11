@@ -43,4 +43,6 @@ export function inWindow(closedAt: Instant, now: Instant, days: ClosedLaneDays):
     return days !== 0 && closedAt >= now - days * DAY_MS ? 'inside' : 'outside';
 }
 
-export const cutoffOf = (now: Instant, days: ClosedLaneDays): Instant | null => (days === 0 ? null : instant(now - days * DAY_MS));
+export const cutoffOf = (now: number, days: number): number | null => (days === 0 ? null : now - days * DAY_MS);
+
+export const closedCutoffOf = (now: Instant, days: ClosedLaneDays): Instant | null => (days === 0 ? null : instant(now - days * DAY_MS));

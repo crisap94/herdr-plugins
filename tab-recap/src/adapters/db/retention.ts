@@ -2,7 +2,6 @@ import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { Removed, Retention } from '#src/ports/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { all, one, text, whole } from './rows.ts';
 
@@ -32,7 +31,7 @@ export class RetentionRepository implements Retention {
         this.visibility = db.prepare('DELETE FROM tab_visibility WHERE tab_id = ?');
     }
 
-    expired(cutoff: Instant, protectedTabs: readonly TabId[]): readonly TabId[] {
+    expired(cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] {
         const kept = new Set<string>(protectedTabs);
         return all(this.old, cutoff).map((row) => tabId(text(row, 'id'))).filter((tab) => !kept.has(tab));
     }

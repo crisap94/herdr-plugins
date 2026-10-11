@@ -12,6 +12,7 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { MemoryClosedLanes } from './fakes/closed-lanes-memory.ts';
+import { directoryOf } from './fakes/closed-values.ts';
 
 interface Harness {
     readonly recorder: ClosureRecorder;
@@ -54,7 +55,7 @@ const closure = (tab: TabId, pane: string, closedAt: Instant): ClosedLane => ({
     pane: paneId(pane),
     agent: agentKind('claude'),
     since: null,
-    cwd: '/work',
+    cwd: directoryOf('/work'),
     closedAt,
 });
 
@@ -73,7 +74,7 @@ function suite(name: string, make: (days: ClosedLaneDays) => Harness): void {
         harness.recorder.record(closure(TAB, 'w1:p1', NOW));
         assert.deepEqual(harness.reader.resolve({ tab: TAB, pane: paneId('w1:p1'), closedAt: NOW }), {
             kind: 'row',
-            record: { tab: TAB, pane: paneId('w1:p1'), agent: agentKind('claude'), closedAt: NOW, cwd: '/work', association: null },
+            record: { tab: TAB, pane: paneId('w1:p1'), agent: agentKind('claude'), closedAt: NOW, cwd: directoryOf('/work'), association: null },
         });
     });
 

@@ -11,6 +11,8 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import type { TaskName } from '#src/recap/domain/task-name.ts';
+import { taskNameOf } from './fakes/closed-values.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -31,7 +33,7 @@ const DISABLED = closedLaneDaysOf('0');
 
 const readOf = (read: ClosedLaneRead): Pick<ClosureReader, 'resolve'> => ({ resolve: () => read });
 
-const rowOf = (closedAt: number, association: { readonly task: TaskId; readonly name: string | null } | null = { task: T1, name: 'alpha' }): ClosedLaneRead => ({
+const rowOf = (closedAt: number, association: { readonly task: TaskId; readonly name: TaskName | null } | null = { task: T1, name: taskNameOf('alpha') }): ClosedLaneRead => ({
     kind: 'row',
     record: { tab: TAB, pane: PANE, agent: AGENT, closedAt: instant(closedAt), cwd: null, association },
 });

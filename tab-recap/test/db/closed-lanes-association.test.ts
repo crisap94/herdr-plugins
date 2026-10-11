@@ -12,6 +12,7 @@ import type { ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
+import { directoryOf } from '../fakes/closed-values.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { scratchDir } from './support.ts';
 
@@ -51,7 +52,7 @@ function seedRun(db: DatabaseSync, at: number, transcript: Uint8Array, key: stri
 }
 
 function closure(since: number | null, closedAt: number): ClosedLane {
-    return { tab: TAB, pane: PANE, agent: agentKind('claude'), since: since === null ? null : instant(since), cwd: '/work', closedAt: instant(closedAt) };
+    return { tab: TAB, pane: PANE, agent: agentKind('claude'), since: since === null ? null : instant(since), cwd: directoryOf('/work'), closedAt: instant(closedAt) };
 }
 
 function resolvedAssociation(repository: ClosedLanesRepository, closedAt: number): unknown {
