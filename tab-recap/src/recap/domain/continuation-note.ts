@@ -1,4 +1,5 @@
 import type { Brand } from './brand.ts';
+import { plainText } from './coordination.ts';
 import type { Awaiting, BackgroundItem } from './in-flight.ts';
 
 export type ContinuationNote = Brand<string, 'ContinuationNote'>;
@@ -8,7 +9,7 @@ export const NOTE_LIMIT = 400 as NoteLimit;
 
 const ELLIPSIS = '…';
 
-const plain = (text: string): string => text.replaceAll(/[\p{Cc}\p{Cf}]/gu, ' ').replaceAll('"', "'").replaceAll(/\s+/g, ' ').trim();
+const plain = (text: string): string => plainText(text.replaceAll(/\p{Cf}/gu, ' ').replaceAll('"', "'").replaceAll(/\s+/g, ' '));
 
 const itemText = (item: BackgroundItem): string => `${plain(String(item.tool))} "${plain(String(item.label))}"`;
 
