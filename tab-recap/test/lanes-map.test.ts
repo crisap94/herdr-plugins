@@ -135,3 +135,10 @@ test('a path in the skip list that the map still lists is not an error: the bran
     const skip = written('listed-skip.txt', 'tab-recap/src/protocol/result.ts\ntab-recap/test/fixtures/\n');
     assert.equal(generate(null, skip).status, 0);
 });
+
+test('a skip list does not hide an unexpected top-level property of the map', () => {
+    const skip = written('extra-skip.txt', 'tab-recap/src/protocol/result.ts\n');
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
+    const extra = written(`extra-${String(Math.random())}.json`, `${JSON.stringify({ ...parsed, note: 'x' }, null, 2)}\n`);
+    assert.equal(generate(extra, skip).status, 1);
+});

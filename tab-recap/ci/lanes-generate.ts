@@ -124,7 +124,7 @@ function withoutSkipped(text: string): string {
     const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== 'object' || parsed === null || !('lanes' in parsed) || typeof parsed.lanes !== 'object' || parsed.lanes === null) return text;
     const lanes = Object.fromEntries(Object.entries(parsed.lanes).map(([lane, files]: [string, unknown]) => [lane, Array.isArray(files) ? files.filter((file) => typeof file !== 'string' || !skipped(file)) : files]));
-    return `${JSON.stringify({ lanes }, null, 2)}\n`;
+    return `${JSON.stringify({ ...parsed, lanes }, null, 2)}\n`;
 }
 
 if (process.argv.includes('--check')) {
