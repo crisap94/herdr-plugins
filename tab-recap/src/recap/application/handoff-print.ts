@@ -149,7 +149,7 @@ export class PrintedHandoffs implements HandoffPrinter {
             worksite: this.deps.worksite,
             tokens: this.deps.tokens,
         });
-        const result = await render({ handoff: null, at: this.deps.now(), lane: view.lane, cursor: view.cursor, facts: view.facts, note: request.note, refresh: 'not-requested', closed: view.closed });
+        const result = await render({ handoff: null, at: this.deps.now(), lane: view.lane, cursor: view.cursor, facts: view.facts, note: request.note, refresh: 'not-requested', ...(view.closed === undefined ? {} : { closed: view.closed }) });
         return result.kind === 'text' ? { kind: 'text', text: result.text, info: await this.targetInfo(request.to) } : result;
     }
 

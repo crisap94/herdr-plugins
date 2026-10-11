@@ -4,6 +4,7 @@ import { factsAsOf, resolveClosedLane } from '#src/recap/application/closed-lane
 import type { ClosedLaneResolution } from '#src/recap/application/closed-lane-source.ts';
 import type { ClosedSourceDeps } from '#src/recap/application/closed-lane-source.ts';
 import { resolveSource } from '#src/recap/application/handoff-source.ts';
+import type { SourceResolution } from '#src/recap/application/handoff-source.ts';
 import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
 import type { ClosedLaneRead, ClosureReader } from '#src/ports/closed-lanes.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -45,7 +46,7 @@ function depsOf(read: ClosedLaneRead, parts: { readonly ledger?: Pick<Ledger, 'a
     };
 }
 
-const withoutView = (resolution: ClosedLaneResolution): object => (resolution.kind === 'found' ? { kind: resolution.kind, task: resolution.task, facts: resolution.facts } : resolution);
+const withoutView = (resolution: ClosedLaneResolution | SourceResolution): object => (resolution.kind === 'found' ? { kind: resolution.kind, task: resolution.task, facts: resolution.facts } : resolution);
 
 const F_OPEN = fact('f1', 'goal', 'open before the close', CLOSED - 5000, { task: T1 });
 const F_LATER = fact('f2', 'now', 'closed after the close', CLOSED - 1000, { task: T1, state: 'closed', closedAt: CLOSED + 1000, closedWhy: 'done' });
