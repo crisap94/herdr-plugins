@@ -2,8 +2,10 @@
   "src/recap/domain/autocompact.ts",
   "src/recap/domain/backend.ts",
   "src/recap/domain/compaction-plan.ts",
+  "src/recap/domain/count.ts",
   "src/recap/domain/fact.ts",
   "src/recap/domain/ids.ts",
+  "src/recap/domain/text.ts",
   "src/recap/domain/time.ts",
   "src/recap/domain/writer-view.ts"
 ]
