@@ -4,6 +4,7 @@ import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
 import { upkeep } from '#src/daemon/upkeep.ts';
 import type { Extension, Note, NotesResult, UpkeepResult } from '#src/ports/extension.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const note = (label: string): Note => ({ label, at: null, details: [] });
 
@@ -35,7 +36,7 @@ test('upkeep logs what was done and what failed, stays quiet when idle, and surv
     await upkeep([
         { id: 'idle', upkeep: async (): Promise<UpkeepResult> => ({ kind: 'idle' }) },
         { id: 'acts', upkeep: async (): Promise<UpkeepResult> => ({ kind: 'acted', saying: 'did it' }) },
-        { id: 'fails', upkeep: async (): Promise<UpkeepResult> => unknown({ why: 'failed', code: 1, detail: 'no' }) },
+        { id: 'fails', upkeep: async (): Promise<UpkeepResult> => unknown({ why: 'failed', code: 1, detail: causeOf('no') }) },
         { id: 'boom', upkeep: async (): Promise<UpkeepResult> => { throw new Error('bang'); } },
         { id: 'none' },
     ], (line) => { lines.push(line); });

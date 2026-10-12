@@ -9,10 +9,11 @@ import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendOf, modelsOf } from '#src/daemon/config.ts';
 import type { HarnessesResult } from '#src/ports/harnesses.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const found = (...ids: string[]): HarnessesResult => ({ kind: 'available', ids });
 const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];
-const down = unknown({ why: 'unreachable', detail: 'no socket' });
+const down = unknown({ why: 'unreachable', detail: causeOf('no socket') });
 
 test('auto: the first of claude → codex → opencode → hermes that is available; a named one is taken as named', () => {
     assert.equal(pick('auto', ['hermes', 'opencode', 'codex']), 'codex');

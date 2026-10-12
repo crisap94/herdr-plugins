@@ -1,6 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -59,7 +62,7 @@ export class ClaudeHarness implements Harness {
         }
         const result = resultOf(ran.stdout);
         if (ran.code !== 0 || result === null) {
-            return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
+            return unknown({ why: 'failed', code: ran.code, detail: causeOf(must(parseText((ran.stderr || ran.stdout).trim().slice(0, 300)))) });
         }
         return { kind: 'ran', text: result.text, costUsd: result.cost };
     }

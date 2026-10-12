@@ -1,6 +1,9 @@
 import type { CompactionBriefs, Briefed } from '#src/ports/compaction-briefs.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { BRIEF_INSTRUCTIONS } from './brief-instructions.ts';
 import { leaf } from '#src/recap/application/xml.ts';
 import { unfenced } from './recap-prompt.ts';
@@ -22,7 +25,7 @@ export class HarnessBrief implements CompactionBriefs {
         const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, correction)}`;
         const call = { instructions: BRIEF_INSTRUCTIONS, input: document };
         if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(BRIEF_INSTRUCTIONS) > this.harness.limit) {
-            return unknown({ why: 'unreadable', detail: `the document is too long for ${this.harness.id}` });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });
         }
         const ran = await this.harness.run(call, this.settings);
         return isUnknown(ran) ? ran : { kind: 'briefed', text: unfenced(ran.text) };

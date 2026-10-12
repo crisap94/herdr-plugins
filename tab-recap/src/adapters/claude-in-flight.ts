@@ -1,5 +1,8 @@
 import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { backgroundItem, backgroundLabel, backgroundTool } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem, BackgroundLabel } from '#src/recap/domain/in-flight.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
@@ -126,7 +129,7 @@ export function claudeInFlight(lines: readonly string[], truncated = false, spli
 }
 
 export function answerOf(scan: TailScan | null, truncated: boolean, split: BackgroundSplit): InFlightResult {
-    if (scan === null) return unknown({ why: 'unreadable', detail: 'no line of the transcript tail parses' });
-    if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: 'the tail ends work that started before it' });
+    if (scan === null) return unknown({ why: 'unreadable', detail: causeOf(must(parseText('no line of the transcript tail parses'))) });
+    if (truncated && scan.unseen) return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the tail ends work that started before it'))) });
     return split.kind === 'separates' ? { kind: 'in-flight', count: 0, background: scan.items } : { kind: 'in-flight', count: scan.count, background: [] };
 }

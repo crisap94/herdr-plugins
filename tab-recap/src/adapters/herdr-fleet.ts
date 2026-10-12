@@ -16,6 +16,9 @@ import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { refusalOf } from './token-refusal.ts';
@@ -30,6 +33,7 @@ export const SETUP_ENTRYPOINT = 'setup';
 
 const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
+
 const MODAL_SIZE = '96%';
 
 export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
@@ -38,7 +42,7 @@ export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
         const tokens = typeof info === 'object' && info !== null ? (info as Json)['tokens'] : undefined;
         return { kind: 'tokens', tokens: typeof tokens === 'object' && tokens !== null ? Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {} };
     } catch (error) {
-        return unknown({ why: 'unreachable', detail: detail(error) });
+        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
     }
 }
 
@@ -47,7 +51,7 @@ export async function readPaneSession(pane: string): Promise<string | null | Unk
         const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
         return typeof info === 'object' && info !== null ? sessionOf(info as Record<string, unknown>, sessionOfForKind) : null;
     } catch (error) {
-        return unknown({ why: 'unreachable', detail: detail(error) });
+        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
     }
 }
 
@@ -74,7 +78,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             const focused = str(snap['focused_tab_id']);
             return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused, paneTokens: paneTokensOf(snap) };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -84,7 +88,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             const live = await subscribe(topics.map((topic) => ({ ...topic })), (pushed: Pushed) => { queue.push(pushed); }, () => { queue.end(); });
             return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -93,7 +97,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             const layout = list((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
             return layout === undefined ? unknown({ why: 'not-found', what: `the layout of ${tab}` }) : layoutOf(layout);
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -110,9 +114,9 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             });
             const info = typeof result['plugin_pane'] === 'object' && result['plugin_pane'] !== null ? (result['plugin_pane'] as Json) : {};
             const pane = typeof info['pane'] === 'object' && info['pane'] !== null ? str((info['pane'] as Json)['pane_id']) : '';
-            return pane === '' ? unknown({ why: 'unreadable', detail: 'plugin.pane.open returned no pane' }) : { kind: 'opened', pane: paneId(pane) };
+            return pane === '' ? unknown({ why: 'unreadable', detail: causeOf(must(parseText('plugin.pane.open returned no pane'))) }) : { kind: 'opened', pane: paneId(pane) };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -141,7 +145,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             });
             return { kind: 'opened' };
         } catch (error) {
-            return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: detail(error) });
+            return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -152,7 +156,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 .map((entry) => str(entry['target']));
             return { kind: 'available', ids };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -162,9 +166,9 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             const fields = typeof read === 'object' && read !== null ? (read as Json) : {};
             return typeof fields['text'] === 'string'
                 ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
-                : unknown({ why: 'unreadable', detail: `pane.read of ${pane} returned no text` });
+                : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`pane.read of ${pane} returned no text`))) });
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -187,7 +191,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             const found = list((await rpc('workspace.list', {}))['workspaces']);
             return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -205,9 +209,9 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             }
             const why = `refused: ${verb} ${pane} — it hosts an agent`;
             process.stderr.write(`${new Date().toISOString()} ${why}\n`);
-            return unknown({ why: 'failed', code: 1, detail: why });
+            return unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(why))) });
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: `refused: ${verb} ${pane} — could not check it hosts no agent (${detail(error)})` });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(`refused: ${verb} ${pane} — could not check it hosts no agent (${detail(error)})`))) });
         }
     }
 
@@ -236,7 +240,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             }
             return { kind: 'closed', closed, failed };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -245,7 +249,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             await rpc(method, params);
             return { kind: 'done' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 }

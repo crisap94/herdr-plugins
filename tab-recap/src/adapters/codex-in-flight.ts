@@ -1,5 +1,8 @@
 import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { arr, obj, parse, str } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
@@ -87,7 +90,7 @@ function scanRows(lines: readonly string[]): FlightScan {
 export function codexInFlight(lines: readonly string[], truncated: boolean): InFlightResult {
     const found = scanRows(lines);
     if (truncated && found.openCall) {
-        return unknown({ why: 'unreadable', detail: 'the truncated rollout tail contains an open call' });
+        return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the truncated rollout tail contains an open call'))) });
     }
     return { kind: 'in-flight', count: found.count, background: [] };
 }

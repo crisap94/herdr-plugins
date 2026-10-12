@@ -2,6 +2,9 @@ import { duration } from '#src/recap/domain/time.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { webOf } from './remote-web.ts';
 import { run, scrubbedEnv } from './process.ts';
 import type { Runner, RunResult } from './process.ts';
@@ -26,9 +29,9 @@ export function failure(result: RunResult): Unknown {
         return unknown({ why: 'timeout', after: duration(TIMEOUT_MS) });
     }
     if (result.code === ENOENT) {
-        return unknown({ why: 'unreachable', detail: 'git is not installed' });
+        return unknown({ why: 'unreachable', detail: causeOf(must(parseText('git is not installed'))) });
     }
-    return unknown({ why: 'failed', code: result.code, detail: result.stderr.trim().slice(0, 200) });
+    return unknown({ why: 'failed', code: result.code, detail: causeOf(must(parseText(result.stderr.trim().slice(0, 200)))) });
 }
 
 export class GitLaneRepo implements LaneRepo {

@@ -9,6 +9,7 @@ import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
 import type { ClosedLaneRead, ClosureReader } from '#src/ports/closed-lanes.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
@@ -95,7 +96,7 @@ test('days = 0 answers never-seen even for a stored row', () => {
 });
 
 test('an unreadable store is unknown with the store cause', () => {
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: { why: 'unreadable', detail: 'locked' } });
+    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(unknown({ why: 'unreadable', detail: causeOf('locked') }))), { kind: 'unknown', why: { why: 'unreadable', detail: causeOf('locked') } });
 });
 
 test('a throwing ledger is unknown and carries the cause of the throw', () => {
@@ -120,7 +121,7 @@ test('the closed registry entry answers found, source-unavailable or unknown', (
     assert.deepEqual({ task: found.task, facts: found.facts, identity: found.identity }, { task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE], identity: IDENTITY });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(NOW - 14 * DAY - 1))), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
-    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'unreadable: locked' });
+    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: causeOf('locked') }))), { kind: 'unknown', why: 'unreadable: locked' });
 });
 
 test('a closure past the window is expired, and once the sweep has pruned it the same identity is never-seen', () => {

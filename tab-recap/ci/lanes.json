@@ -872,6 +872,7 @@
       "test/db/schema.test.ts",
       "test/domain-baseline.test.ts",
       "test/fakes/ask-ledger.ts",
+      "test/fakes/cause.ts",
       "test/fakes/closed-days.ts",
       "test/fakes/closed-lanes-memory.ts",
       "test/fakes/closed-values.ts",

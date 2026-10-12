@@ -10,6 +10,7 @@ import { shouldRoll } from '#src/adapters/plugin-version.ts';
 import { shutDown } from '#src/daemon/shutdown.ts';
 import type { ClosedAll } from '#src/ports/columns.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 
@@ -46,7 +47,7 @@ const run = async (closeEvery: () => Promise<ClosedAll>, ms?: number): Promise<s
 test('shutDown: singular, failures, an unreachable herdr and a batch that takes too long are each said — and each returns', async () => {
     assert.equal(await run(() => Promise.resolve({ kind: 'closed', closed: 1, failed: 0 })), 'stopping: closed 1 column');
     assert.equal(await run(() => Promise.resolve({ kind: 'closed', closed: 3, failed: 2 })), 'stopping: closed 3 columns, 2 could not be closed');
-    assert.match(await run(() => Promise.resolve(unknown({ why: 'unreachable', detail: 'no socket' }))), /could not close the columns \(unreachable: no socket\)/);
+    assert.match(await run(() => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') }))), /could not close the columns \(unreachable: no socket\)/);
     assert.match(await run(() => new Promise<ClosedAll>(() => undefined), 30), /took more than 0.03 s; leaving/);
 });
 

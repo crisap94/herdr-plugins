@@ -103,8 +103,7 @@
     "property": 11
   },
   "src/recap/domain/failure-cause.ts": {
-    "parameter": 1,
-    "assertion": 1
+    "parameter": 1
   },
   "src/recap/domain/fold.ts": {
     "parameter": 4,

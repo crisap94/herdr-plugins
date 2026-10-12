@@ -3,10 +3,10 @@ import type { Duration } from '#src/recap/domain/time.ts';
 
 export type Unknowable =
     | { readonly why: 'timeout'; readonly after: Duration }
-    | { readonly why: 'unreadable'; readonly detail: string }
-    | { readonly why: 'unreachable'; readonly detail: string }
+    | { readonly why: 'unreadable'; readonly detail: FailureCause }
+    | { readonly why: 'unreachable'; readonly detail: FailureCause }
     | { readonly why: 'not-found'; readonly what: string }
-    | { readonly why: 'failed'; readonly code: number; readonly detail: string }
+    | { readonly why: 'failed'; readonly code: number; readonly detail: FailureCause }
     | { readonly why: 'lease'; readonly after: Duration };
 
 export type Unknown = { readonly kind: 'unknown'; readonly why: Unknowable };

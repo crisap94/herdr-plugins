@@ -1,6 +1,18 @@
+import { must } from '#src/protocol/result.ts';
+import { brand } from './brand.ts';
 import type { Brand } from './brand.ts';
+import { parseText } from './text.ts';
+import type { Text } from './text.ts';
 
 export type FailureCause = Brand<string, 'FailureCause'>;
+
+export function parseFailureCause(input: Text): FailureCause {
+    return brand<string, 'FailureCause'>(input);
+}
+
+export function causeOf(text: Text): FailureCause {
+    return parseFailureCause(text);
+}
 
 const NAME_SHAPE = /^[A-Za-z][A-Za-z0-9]{0,39}$/;
 
@@ -21,5 +33,5 @@ export function failureCauseOf(error: unknown): FailureCause {
     } catch {
         text = GENERIC_NAME;
     }
-    return text as FailureCause;
+    return parseFailureCause(must(parseText(text)));
 }

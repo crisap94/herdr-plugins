@@ -12,6 +12,7 @@ import { es } from '#src/i18n/es.ts';
 import { sessionLines, spanOf } from '#src/recap/render/session-lines.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { cursor } from '#test/db/support.ts';
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
@@ -81,7 +82,7 @@ test('edit counts: per path, most edited first, ties by path', () => {
 
 const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: string }[] | 'unreadable'): Transcripts => ({
     agent, inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: 'x' }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
-    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: 'x' }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
+    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
 });
 
 test('edit calls are counted through each lane\'s own reader; screens, unreadable records and other calls count nothing', async () => {

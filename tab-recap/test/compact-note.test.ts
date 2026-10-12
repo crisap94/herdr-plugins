@@ -9,6 +9,7 @@ import type { Draft } from '#src/recap/application/setup-keys.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const TAB = 'w1:t1';
 const PANE = 'w1:p2';
@@ -86,10 +87,10 @@ test('control characters are not sent: a tab or a newline is a space, an escape 
 });
 
 test('a request that cannot be queued, or a popup that does not open, is reported as unknown', async () => {
-    const queueFails = recorder(unknown({ why: 'unreadable', detail: 'the state store is not ready' }));
+    const queueFails = recorder(unknown({ why: 'unreadable', detail: causeOf('the state store is not ready') }));
     const queued = await startCompact(TAB, PANE, undefined, 'skip', queueFails.start);
     assert.equal(queued.kind, 'unknown');
-    const popupFails = recorder(unknown({ why: 'unreachable', detail: 'no herdr' }));
+    const popupFails = recorder(unknown({ why: 'unreachable', detail: causeOf('no herdr') }));
     const asked = await startCompact(TAB, PANE, undefined, 'ask', popupFails.start);
     assert.equal(asked.kind, 'unknown');
 });

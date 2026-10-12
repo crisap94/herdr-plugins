@@ -9,6 +9,7 @@ import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
@@ -18,7 +19,7 @@ import { registryWith } from './fakes/transcript-registry.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
-const UNREACHABLE: AgentState = unknown({ why: 'unreachable', detail: 'no herdr' });
+const UNREACHABLE: AgentState = unknown({ why: 'unreachable', detail: causeOf('no herdr') });
 const VIEW: TabView = { tab: 'w1:t1', column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW };
 
 interface Spy {
@@ -30,12 +31,18 @@ interface World {
     readonly tab?: string | null;
     readonly lastRun?: LastRun | null;
     readonly target?: AgentState;
+    readonly unreadable?: boolean;
 }
 
-function printerWith(spy: Spy, world: World = {}): PrintedHandoffs {
+function printerWith(spy: Spy, world: World = {}, logged: string[] = []): PrintedHandoffs {
     const base = depsOf();
     const records: Pick<PrintStore['records'], 'readRecap' | 'lastRunOf'> = {
-        readRecap: (): TabRecap => ({ ...recapOf(task('t1', ['w1:p1'])), lanes: [CURSOR] }),
+        readRecap: (): TabRecap => {
+            if (world.unreadable === true) {
+                throw Object.assign(new Error('/home/coder/secret/db.sqlite is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' });
+            }
+            return { ...recapOf(task('t1', ['w1:p1'])), lanes: [CURSOR] };
+        },
         lastRunOf: (): LastRun | null => (world.lastRun === undefined ? LAST_RUN : world.lastRun),
     };
     const store = (): PrintStore => {
@@ -56,6 +63,7 @@ function printerWith(spy: Spy, world: World = {}): PrintedHandoffs {
         target: { status: async () => world.target ?? UNREACHABLE },
         closedDays: closedLaneDaysOf('14'),
         now: () => NOW,
+        log: (line) => { logged.push(line); },
     });
 }
 
@@ -94,6 +102,14 @@ test('print refuses the same lane before it opens the store', async () => {
 test('print refuses a source that no tab lists with source-unavailable and closes the store', async () => {
     const spy: Spy = { opened: 0, closed: 0 };
     assert.deepEqual(await printerWith(spy, { tab: null }).renderForPrint(request()), { kind: 'refused', reason: 'source-unavailable' });
+    assert.deepEqual([spy.opened, spy.closed], [1, 1]);
+});
+
+test('print of a source that cannot be read fails source-unreadable and logs the cause code only', async () => {
+    const spy: Spy = { opened: 0, closed: 0 };
+    const logged: string[] = [];
+    assert.deepEqual(await printerWith(spy, { unreadable: true }, logged).renderForPrint(request()), { kind: 'failed', reason: 'source-unreadable' });
+    assert.deepEqual(logged, ['handoff print: source unreadable (SqliteError: SQLITE_BUSY)']);
     assert.deepEqual([spy.opened, spy.closed], [1, 1]);
 });
 

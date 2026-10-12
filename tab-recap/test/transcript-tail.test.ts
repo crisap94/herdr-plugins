@@ -9,6 +9,7 @@ import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';
 import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
 import { cursor } from '#test/db/support.ts';
@@ -21,7 +22,7 @@ const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[
     read: (source, was): Promise<ChunkResult> => {
         asked.push({ source, was });
         const entries = bySource[source];
-        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: source }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 9, tail: null }, grew: true });
+        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 9, tail: null }, grew: true });
     },
 });
 const lane = (pane: string, agent: string, transcript: string): LaneCursor => ({ ...cursor(pane), agent, transcript });

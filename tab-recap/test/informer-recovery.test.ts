@@ -9,6 +9,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 class StrictHerdr implements FleetSource {
     live = new Set<string>(['w1:p1']);
@@ -24,7 +25,7 @@ class StrictHerdr implements FleetSource {
     subscribe(topics: readonly Topic[]): Promise<StreamResult> {
         this.attempts += 1;
         if (topics.some((topic) => topic.pane_id !== undefined && !this.live.has(topic.pane_id))) {
-            return Promise.resolve(unknown({ why: 'unreachable', detail: 'events.subscribe: closed before the ack' }));
+            return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('events.subscribe: closed before the ack') }));
         }
         this.acked += 1;
         const queue = new AsyncQueue<Frame>();
@@ -68,8 +69,8 @@ test('a pane that died while we were not told must not blind the daemon for good
 
 test('with herdr unreachable the retries back off instead of hammering', async () => {
     const down: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve(unknown({ why: 'unreachable', detail: 'no socket' })),
-        subscribe: (): Promise<StreamResult> => { attempts += 1; return Promise.resolve(unknown({ why: 'unreachable', detail: 'no socket' })); },
+        snapshot: (): Promise<SnapshotResult> => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })),
+        subscribe: (): Promise<StreamResult> => { attempts += 1; return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })); },
     };
     let attempts = 0;
     const informer = new Informer(down, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {

@@ -12,6 +12,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
@@ -115,7 +116,7 @@ test('the same language with nothing new does NOT call the summarizer (no cost f
 test('a recap stored before languages existed counts as English; a failed rewrite keeps the old language so it is retried', async () => {
     const legacy = await rewriteWith('es', undefined, 'requested');
     assert.equal(legacy.calls[0]?.previousLanguage, 'en');
-    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: 'x' } }) };
+    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: causeOf('x') } }) };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
@@ -232,7 +233,7 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
 });
 
 test('a run logs how long it took and why it ran, written or failed', async () => {
-    for (const [reply, want] of [[{ kind: 'written', text: answer({ ...add('goal', 'x'), anchor: 'go' }), costUsd: 0 }, 'recap w1:t1: written in 12.4 s (turn-ended)'], [{ kind: 'unknown', why: { why: 'unreadable', detail: 'x' } }, 'recap w1:t1: failed in 12.4 s (turn-ended)']] as const) {
+    for (const [reply, want] of [[{ kind: 'written', text: answer({ ...add('goal', 'x'), anchor: 'go' }), costUsd: 0 }, 'recap w1:t1: written in 12.4 s (turn-ended)'], [{ kind: 'unknown', why: { why: 'unreadable', detail: causeOf('x') } }, 'recap w1:t1: failed in 12.4 s (turn-ended)']] as const) {
         const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve(reply) };
         const [store, lines] = [memoryStore(), [] as string[]];
         let ticks = -1;

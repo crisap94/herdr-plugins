@@ -153,6 +153,7 @@ function printerOf(): HandoffPrinter {
         target: { status: (pane) => fleet.agents().status(pane) },
         closedDays: loadConfig().closedLaneDays,
         now: () => Date.now(),
+        log: (line) => { console.error(`tab-recap: ${line}`); },
     });
 }
 
