@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { silentClosures } from './fakes/silent-closures.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -48,7 +49,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     const visibility = {} as ColumnVisibility;
     const dispatch = new Dispatch({
         columns, views, visibility, recaps: {} as RecapJob, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
-        sizing, feedback: (observation): void => { fed.push(observation); },
+        sizing, feedback: (observation): void => { fed.push(observation); }, ...silentClosures,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'bar' });
     assert.deepEqual(calls, [
@@ -68,7 +69,7 @@ test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new Dispatch({
         columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
-        sizing, feedback: noop,
+        sizing, feedback: noop, ...silentClosures,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });
     assert.match(calls[1] ?? '', /^open w1:t1 next to w1:p[12] as side$/);

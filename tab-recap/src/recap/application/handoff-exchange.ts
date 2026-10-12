@@ -1,6 +1,6 @@
 import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import type { HandoffRequester } from '#src/ports/requests.ts';
+import type { HandoffQueue, HandoffRequester } from '#src/ports/requests.ts';
 import { idGrammarOf, idTextOf } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { parseRequest, terminalStage } from '#src/protocol/exchange.ts';
@@ -10,16 +10,17 @@ import { answer as answerOf, take } from '#src/protocol/responder.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import type { HandoffId, PaneId } from '#src/recap/domain/ids.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import { paneId, parseHandoffId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { askKeyOf, HandoffMirror, reportWrite } from './handoff-mirror.ts';
+import { HandoffMirror, reportWrite } from './handoff-mirror.ts';
 import type { HandoffLog, Route } from './handoff-mirror.ts';
 
 export type TokenEntries = ReadonlyMap<Text, Text>;
@@ -41,7 +42,7 @@ const PREFIX = handoff.requestPrefix;
 export interface HandoffExchangeDeps {
     readonly offer: () => HandoffOffer;
     readonly board: () => Board;
-    readonly requests: Pick<HandoffRequester, 'requestHandoff'>;
+    readonly queue: HandoffQueue;
     readonly asks: AskLedger;
     readonly mirror: HandoffMirror;
     readonly tokens: LaneTokens;
@@ -120,17 +121,13 @@ export class HandoffExchangeResponder {
     private queue(source: Lane, target: PaneId, tool: Text, id: Text, refresh: RefreshAsk): void {
         const key = { exchange: HANDOFF_EXCHANGE, id: must(requestId(id, GRAMMAR)), pane: source.pane };
         const requester = must(toolName(tool));
-        this.deps.asks.record({ ...key, requester, at: this.deps.now(), ref: null });
         const route: Route = { source: source.pane, target, id };
-        let handoffId: HandoffId;
         try {
-            handoffId = this.deps.requests.requestHandoff({ tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh === 'refresh', source: { kind: 'live' }, answer: id });
+            this.deps.queue.queueHandoff({ ...key, requester, at: this.deps.now(), ref: null }, { tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh === 'refresh', source: { kind: 'live' }, answer: id });
         } catch (error) {
-            this.deps.asks.withdraw({ exchange: HANDOFF_EXCHANGE, requester, id: key.id });
-            this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${error instanceof Error ? error.message : String(error)})`)));
+            this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${failureCauseOf(error)})`)));
             return;
         }
-        this.deps.asks.attach(askKeyOf(route), handoffId);
         this.deps.mirror.queued(route);
     }
 

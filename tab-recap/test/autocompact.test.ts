@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { silentClosures } from './fakes/silent-closures.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -192,6 +193,7 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
         columns: {} as Columns, views: { writeTab: (): void => undefined } as unknown as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
         prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, settled: (found): void => { told.push(`${found.pane}:${found.status}`); },
+        ...silentClosures,
     });
     for (const status of ['idle', 'done', 'working', 'blocked']) await dispatch.send({ kind: 'read-prompt', lane: lane('claude', status) });
     assert.deepEqual(told, ['w1:p1:idle', 'w1:p1:done']);

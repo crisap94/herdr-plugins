@@ -1,4 +1,5 @@
 import { lanesOf } from '#src/recap/domain/board.ts';
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -16,6 +17,9 @@ import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { RecapJob } from './recap-job.ts';
 import type { LaneEvents } from './lane-events.ts';
 
@@ -29,15 +33,15 @@ export interface DispatchDeps {
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
-    readonly closures?: ClosureRecorder;
-    readonly events?: LaneEvents;
-    readonly sharing?: () => Sharing;
-    closedDays?(): ClosedLaneDays;
+    readonly closures: ClosureRecorder;
+    readonly events: LaneEvents;
+    readonly sharing: () => Sharing;
+    closedDays(): ClosedLaneDays;
     settled?(lane: Lane): void;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export interface LivePromptSource {
@@ -88,7 +92,7 @@ export class Dispatch {
                 await this.open(intent.tab, intent.shape);
                 return;
             case 'close-column':
-                this.deps.log(`tab ${intent.tab}: closing column ${intent.column}`);
+                this.deps.log(must(parseText(`tab ${intent.tab}: closing column ${intent.column}`)));
                 await this.shut(intent.tab, intent.column);
                 return;
             case 'publish':
@@ -104,7 +108,7 @@ export class Dispatch {
                 this.deps.visibility.writeHidden(intent.state);
                 return;
             case 'give-up':
-                this.deps.log(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`);
+                this.deps.log(must(parseText(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`)));
                 return;
             case 'lane-closed':
                 this.keep(intent.closed);
@@ -112,35 +116,35 @@ export class Dispatch {
                 return;
             default: {
                 const exhaustive: never = intent;
-                this.deps.log(`unhandled intent ${String(exhaustive)}`);
+                this.deps.log(must(parseText(`unhandled intent ${String(exhaustive)}`)));
             }
         }
     }
 
     private announce(closed: ClosedLane): void {
-        if (this.deps.events === undefined || this.deps.sharing?.() !== 'on') {
+        if (this.deps.sharing() !== 'on') {
             return;
         }
         const workspace = workspaceOfTab(closed.tab);
         if (workspace === null) {
-            this.deps.log('lane closure not announced (malformed tab id)');
+            this.deps.log(must(parseText('lane closure not announced (malformed tab id)')));
             return;
         }
         try {
             this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
         } catch (error) {
-            this.deps.log(`lane ${closed.pane}: closure not announced (${error instanceof Error ? error.message : String(error)})`);
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(error)})`)));
         }
     }
 
     private keep(closed: ClosedLane): void {
-        if (this.deps.closures === undefined || (this.deps.closedDays?.() ?? 0) === 0) {
+        if (this.deps.closedDays() === 0) {
             return;
         }
         try {
             this.deps.closures.record(closed);
         } catch (error) {
-            this.deps.log(`lane ${closed.pane}: closure not recorded (${error instanceof Error ? error.message : String(error)})`);
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not recorded (${failureCauseOf(error)})`)));
         }
     }
 
@@ -159,14 +163,14 @@ export class Dispatch {
     }
 
     private failed(tab: TabId, why: string): void {
-        this.deps.log(`tab ${tab}: column not opened (${why})`);
+        this.deps.log(must(parseText(`tab ${tab}: column not opened (${why})`)));
         this.deps.feedback({ kind: 'column-failed', tab });
     }
 
     private async shut(tab: TabId, pane: PaneId): Promise<void> {
         const done = await this.deps.columns.close(pane);
         if (isUnknown(done)) {
-            this.deps.log(`tab ${tab}: column not closed (${pane}, ${saying(done.why)})`);
+            this.deps.log(must(parseText(`tab ${tab}: column not closed (${pane}, ${saying(done.why)})`)));
             this.deps.feedback({ kind: 'column-failed', tab });
         }
     }
@@ -190,7 +194,7 @@ export class Dispatch {
         }
         const cells = shape === 'side' ? targetCols(layout.width, this.deps.sizing()) : BAR_ROWS;
         await this.narrow(tab, opened.pane, axis, cells);
-        this.deps.log(`tab ${tab}: column opened (${opened.pane}, ${shape})`);
+        this.deps.log(must(parseText(`tab ${tab}: column opened (${opened.pane}, ${shape})`)));
         this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: Date.now() });
     }
 

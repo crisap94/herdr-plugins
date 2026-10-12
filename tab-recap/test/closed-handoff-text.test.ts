@@ -20,7 +20,7 @@ test('a closed freshness says closed at the close instant in place of the lane s
     const outcome = closedFreshnessOf(VIEW);
     const freshness = outcome.kind === 'fresh' ? outcome.freshness : assert.fail('the closed view has a run, so it is fresh');
     const text = freshnessTextOf(freshness, CLOSED_AT);
-    assert.match(text, /closed at 2026-10-11T09:00:00\.000Z/);
+    assert.match(text, /closed at 2026-10-11 09:00Z/);
     assert.doesNotMatch(text, /lane status/);
     assert.match(text, /newer prompts: unknown/);
 });

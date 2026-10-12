@@ -1,6 +1,6 @@
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Shape, Visibility, VisibilityTarget } from './board.ts';
-import { closureOf, closuresBetween } from './closures.ts';
+import { closureOf, closuresBetween, incarnating } from './closures.ts';
 import type { ClosedLane, RestoredLane } from './closures.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
@@ -92,10 +92,6 @@ function onDetected(held: Board, seen: SeenLane, now: Instant, policy: Policy): 
 
 function closedIntents(closures: readonly ClosedLane[]): readonly Intent[] {
     return closures.map((closed) => ({ kind: 'lane-closed', closed }));
-}
-
-function incarnating(lane: Lane, prior: Pick<Lane, 'agent' | 'since'> | undefined, now: Instant): Lane {
-    return { ...lane, since: prior !== undefined && prior.agent === lane.agent ? prior.since : now };
 }
 
 function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Step {

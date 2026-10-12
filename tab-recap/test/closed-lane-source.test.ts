@@ -94,13 +94,13 @@ test('days = 0 answers never-seen even for a stored row', () => {
     assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { closedDays: DISABLED })), { kind: 'never-seen' });
 });
 
-test('an unreadable store is unknown with reason store-unreadable', () => {
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', reason: 'store-unreadable' });
+test('an unreadable store is unknown with the store cause', () => {
+    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: { why: 'unreadable', detail: 'locked' } });
 });
 
-test('a throwing ledger is unknown with reason ledger-unreadable', () => {
+test('a throwing ledger is unknown and carries the cause of the throw', () => {
     const throwing: Pick<Ledger, 'allOf'> = { allOf: () => { throw new Error('store locked'); } };
-    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger: throwing })), { kind: 'unknown', reason: 'ledger-unreadable' });
+    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger: throwing })), { kind: 'unknown', why: { why: 'unreadable', detail: 'Error' } });
 });
 
 test('after a prune an expired closure becomes never-seen', () => {
@@ -115,10 +115,12 @@ test('after a prune an expired closure becomes never-seen', () => {
 
 test('the closed registry entry answers found, source-unavailable or unknown', () => {
     const ledger = new MemoryLedger().seed(...LEDGER_FACTS);
-    assert.deepEqual(withoutView(resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger }))), { kind: 'found', task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE] });
+    const found = resolveSource('closed', IDENTITY, depsOf(rowOf(CLOSED), { ledger }));
+    assert.ok(found.kind === 'found' && found.source === 'closed');
+    assert.deepEqual({ task: found.task, facts: found.facts, identity: found.identity }, { task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE], identity: IDENTITY });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(NOW - 14 * DAY - 1))), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
-    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'store-unreadable' });
+    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: 'locked' }))), { kind: 'unknown', why: 'unreadable: locked' });
 });
 
 test('a closure past the window is expired, and once the sweep has pruned it the same identity is never-seen', () => {

@@ -104,7 +104,7 @@
   },
   "src/recap/domain/failure-cause.ts": {
     "parameter": 1,
-    "assertion": 2
+    "assertion": 1
   },
   "src/recap/domain/fold.ts": {
     "parameter": 4,
@@ -212,8 +212,8 @@
     "property": 4
   },
   "src/recap/domain/handoff-outcome.ts": {
-    "parameter": 57,
-    "return": 117,
+    "parameter": 55,
+    "return": 116,
     "assertion": 1
   },
   "src/recap/domain/handoff-plan.ts": {

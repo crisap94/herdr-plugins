@@ -13,6 +13,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
+import { silentClosures } from './fakes/silent-closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
@@ -48,7 +49,7 @@ function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?
     return new Dispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
         prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
-        feedback: noop, closedDays: () => closedLaneDaysOf(options.days),
+        feedback: noop, ...silentClosures, closedDays: () => closedLaneDaysOf(options.days),
         ...(options.closures === undefined ? {} : { closures: options.closures }),
         ...(options.events === undefined ? {} : { events: options.events }),
         ...(options.sharing === undefined ? {} : { sharing: () => (options.sharing === true ? 'on' : 'off') }),
@@ -119,5 +120,5 @@ test('a publisher that throws does not stop the closure from being recorded, and
     const closures: ClosureRecorder = { record: (value: ClosedLane): void => { recorded.push(value); } };
     await dispatchWith({ events: throwing, sharing: true, closures, days: '14', log: (line: string): void => { lines.push(line); } }).send({ kind: 'lane-closed', closed });
     assert.deepEqual(recorded, [closed]);
-    assert.deepEqual(lines, ['lane w1:p1: closure not announced (socket closed)']);
+    assert.deepEqual(lines, ['lane w1:p1: closure not announced (Error)']);
 });

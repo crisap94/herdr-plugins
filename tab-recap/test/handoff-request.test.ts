@@ -4,7 +4,6 @@ import { MemoryRequests } from './fakes/requests.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import type { HandoffAnswerRow } from '#src/ports/handoff-answers.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest, type DaemonReading } from '#src/recap/application/handoff-request.ts';
-import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import { paneId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
@@ -34,7 +33,7 @@ interface Setup {
 
 function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading; cli?: string | null; onSleep?: (daemon: Daemon) => void } = {}): Setup {
     const requests = new MemoryRequests(() => NOW);
-    const answers = new MemoryHandoffAnswers(isStorablePair, () => NOW);
+    const answers = new MemoryHandoffAnswers(() => NOW);
     const sleeps: number[] = [];
     const log = { opened: 0, closed: 0 };
     let now = NOW;
@@ -104,7 +103,7 @@ test('the answer the daemon writes is reported at the first poll that finds it, 
         tabs: TABS,
         onSleep: ({ requests, answers }) => {
             for (const row of requests.takeHandoffs()) {
-                answers.answerHandoff(row.id, { outcome: 'delivered', reason: null });
+                answers.answerHandoff(row.id, { kind: 'delivered' });
             }
         },
     });
@@ -141,7 +140,7 @@ test('an answer written between the last poll and the withdrawal is reported, no
     const withdraw = s.requests.withdrawHandoff.bind(s.requests);
     s.requests.withdrawHandoff = (id: HandoffId): boolean => {
         s.requests.takeHandoffs();
-        s.answers.answerHandoff(id, { outcome: 'refused', reason: 'source-unavailable' });
+        s.answers.answerHandoff(id, { kind: 'refused', reason: 'source-unavailable' });
         return withdraw(id);
     };
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'refused', reason: 'source-unavailable' });
@@ -149,7 +148,7 @@ test('an answer written between the last poll and the withdrawal is reported, no
 
 test('an answer row whose pair the outcome table does not know is reported as internal-error', async () => {
     const s = setup({ tabs: TABS });
-    s.answers.handoffAnswer = (id: HandoffId): HandoffAnswerRow => ({ id, at: NOW, outcome: 'failed', reason: 'not-a-reason' });
+    s.answers.handoffAnswer = (id: HandoffId): HandoffAnswerRow => ({ id, at: NOW, kind: 'failed', reason: 'not-a-reason' });
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'failed', reason: 'internal-error' });
 });
 
@@ -160,7 +159,7 @@ test('an answer stays readable: reading it twice returns it twice', async () => 
         onSleep: ({ requests, answers }) => {
             for (const row of requests.takeHandoffs()) {
                 taken.push(row.id);
-                answers.answerHandoff(row.id, { outcome: 'failed', reason: 'transport' });
+                answers.answerHandoff(row.id, { kind: 'failed', reason: 'transport' });
             }
         },
     });

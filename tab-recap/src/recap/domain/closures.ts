@@ -32,6 +32,10 @@ export function closureOf(lane: Incarnation, closedAt: Instant): ClosedLane {
     return { tab: lane.tab, pane: lane.pane, agent: lane.agent, since: lane.since, cwd: lane.cwd, closedAt };
 }
 
+export function incarnating(lane: Lane, prior: Pick<Lane, 'agent' | 'since'> | undefined, now: Instant): Lane {
+    return { ...lane, since: prior !== undefined && prior.agent === lane.agent ? prior.since : now };
+}
+
 export type Kept = 'kept' | 'gone';
 
 const keeps = (after: ReadonlyMap<PaneId, Lane>, prior: Pick<Incarnation, 'pane' | 'agent'>): Kept =>
