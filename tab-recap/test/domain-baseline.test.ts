@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import { filesAbove, guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCRATCH = mkdtempSync(join(tmpdir(), 'domain-baseline-'));
@@ -194,4 +194,10 @@ test('a finding in a legacy file is counted and ratcheted under the legacy categ
     assert.deepEqual(parsed.counts['src/domain/legacy.ts'], { legacy: 2 });
     check(dir, '--write-baseline', join(dir, 'baseline'));
     assert.deepEqual(JSON.parse(readFileSync(join(dir, 'baseline/B1.json'), 'utf8')), { 'src/domain/legacy.ts': { legacy: 2 } });
+});
+
+test('the files above their entry are named from the counts, not from the printed lines: stale and equal files are not among them', () => {
+    const found = { [FILE]: { parameter: 3 }, [OTHER]: { return: 1 }, 'src/domain/equal.ts': { parameter: 1 }, 'src/domain/lower.ts': { parameter: 1 } };
+    const baseline = { [FILE]: { parameter: 2 }, 'src/domain/equal.ts': { parameter: 1 }, 'src/domain/lower.ts': { parameter: 2 }, 'src/domain/gone.ts': { return: 1 } };
+    assert.deepEqual([...filesAbove(found, baseline)].toSorted(), [FILE, OTHER].toSorted());
 });
