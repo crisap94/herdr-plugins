@@ -77,6 +77,9 @@ export const ratchet = (found: Counts, baseline: Counts): readonly string[] =>
         }),
     );
 
+export const filesAbove = (found: Counts, baseline: Counts): ReadonlySet<string> =>
+    new Set(Object.keys(found).filter((file) => CATEGORIES.some((category) => (found[file]?.[category] ?? 0) > (baseline[file]?.[category] ?? 0))));
+
 export const countsOf = (findings: readonly Finding[]): Counts => {
     const counts: Record<string, Partial<Record<Finding['category'], number>>> = {};
     findings.forEach((finding) => {
