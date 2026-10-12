@@ -364,6 +364,7 @@
       "src/recap/application/autocompact-line.ts",
       "src/recap/application/autocompact-listing.ts",
       "src/recap/application/autocompact-questions.ts",
+      "src/recap/application/autocompact-shapes.ts",
       "src/recap/application/autocompact-state.ts",
       "src/recap/application/autocompact.ts",
       "src/recap/application/boundaries.ts",

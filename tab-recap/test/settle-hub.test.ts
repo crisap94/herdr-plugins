@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { outcomeOf } from '#src/recap/application/compaction-outcome.ts';
+import { confirmedOutcomeOf, outcomeOf } from '#src/recap/application/compaction-outcome.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import type { SettleHubDeps } from '#src/recap/application/settle-hub.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
@@ -72,12 +73,12 @@ test('the outcome: after the push the records are read at once; they say nothing
     const settling: LaneSettling = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     let reads = 0;
     const deps = { settling, pause: (ms: number): Promise<void> => { pauses.push(ms); return Promise.resolve(); }, marks: (): Promise<readonly Mark[]> => { reads += 1; return Promise.resolve(reads >= 3 ? [compacted(2000)] : []); } };
-    assert.deepEqual(await outcomeOf(deps, lane, 1000), { outcome: 'compacted', tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 });
+    assert.deepEqual(await outcomeOf(deps, lane, instant(1000)), { outcome: 'compacted', tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 });
     assert.deepEqual([settled, reads, pauses], [['w1:p1'], 3, [300, 300]]);
     reads = 0;
     pauses.length = 0;
     const never = { ...deps, marks: (): Promise<readonly Mark[]> => { reads += 1; return Promise.resolve([]); } };
-    assert.deepEqual(await outcomeOf(never, lane, 1000), { outcome: 'unconfirmed' });
+    assert.deepEqual(await outcomeOf(never, lane, instant(1000)), { outcome: 'unconfirmed' });
     assert.deepEqual([reads, pauses], [4, [300, 300, 300]]);
 });
 
@@ -86,7 +87,7 @@ test('the outcome: a failure mark is not re-read; the numbers a record lacks are
     const settling: LaneSettling = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'timeout' }); } };
     const pauses: number[] = [];
     const base = { settling, pause: (ms: number): Promise<void> => { pauses.push(ms); return Promise.resolve(); } };
-    assert.deepEqual(await outcomeOf({ ...base, marks: (): Promise<readonly Mark[]> => Promise.resolve([{ kind: 'compaction-failed', at: 2000 }]) }, lane, 1000), { outcome: 'failed' });
-    assert.deepEqual(await outcomeOf({ ...base, marks: (): Promise<readonly Mark[]> => Promise.resolve([{ kind: 'compacted', at: 2000 }]) }, lane, 1000, false), { outcome: 'compacted' });
+    assert.deepEqual(await outcomeOf({ ...base, marks: (): Promise<readonly Mark[]> => Promise.resolve([{ kind: 'compaction-failed', at: 2000 }]) }, lane, instant(1000)), { outcome: 'failed' });
+    assert.deepEqual(await confirmedOutcomeOf({ ...base, marks: (): Promise<readonly Mark[]> => Promise.resolve([{ kind: 'compacted', at: 2000 }]) }, lane, instant(1000)), { outcome: 'compacted' });
     assert.deepEqual([settled, pauses], [['w1:p1'], []]);
 });

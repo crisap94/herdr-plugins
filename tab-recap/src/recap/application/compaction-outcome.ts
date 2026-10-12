@@ -2,7 +2,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseDuration, type Duration } from '#src/recap/domain/time.ts';
+import { duration, parseDuration, type Duration, type Instant } from '#src/recap/domain/time.ts';
 
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
 
@@ -11,9 +11,9 @@ const SLICE_MS = 60_000;
 const REREADS = 3;
 const REREAD_MS = 300;
 
-const latestOf = (marks: readonly Mark[], since: number): Mark | undefined => marks.findLast((mark) => mark.at !== null && mark.at >= since);
+const latestOf = (marks: readonly Mark[], since: Instant): Mark | undefined => marks.findLast((mark) => mark.at !== null && mark.at >= since);
 
-export function verdictOf(marks: readonly Mark[], since: number): Outcome {
+export function verdictOf(marks: readonly Mark[], since: Instant): Outcome {
     const latest = latestOf(marks, since);
     if (latest === undefined) {
         return 'unconfirmed';
@@ -28,7 +28,7 @@ export interface Verdict {
     readonly tookMs?: Duration;
 }
 
-function verdictFrom(marks: readonly Mark[], since: number): Verdict {
+function verdictFrom(marks: readonly Mark[], since: Instant): Verdict {
     const outcome = verdictOf(marks, since);
     const mark = latestOf(marks, since);
     if (outcome !== 'compacted' || mark === undefined) {
@@ -48,23 +48,25 @@ function verdictFrom(marks: readonly Mark[], since: number): Verdict {
 export interface OutcomeDeps {
     readonly settling: LaneSettling;
     marks(lane: Lane): Promise<readonly Mark[]>;
-    pause(ms: number): Promise<void>;
+    pause(ms: Duration): Promise<void>;
 }
 
-export async function outcomeOf(deps: OutcomeDeps, lane: Lane, since: number, settle = true): Promise<Verdict> {
-    if (settle) {
-        await deps.settling.settled(String(lane.pane), since, WAIT_MS);
-    }
+export async function outcomeOf(deps: OutcomeDeps, lane: Lane, since: Instant): Promise<Verdict> {
+    await deps.settling.settled(String(lane.pane), since, WAIT_MS);
+    return confirmedOutcomeOf(deps, lane, since);
+}
+
+export async function confirmedOutcomeOf(deps: OutcomeDeps, lane: Lane, since: Instant): Promise<Verdict> {
     let verdict = verdictFrom(await deps.marks(lane), since);
     for (let read = 0; read < REREADS && verdict.outcome === 'unconfirmed'; read += 1) {
-        await deps.pause(REREAD_MS);
+        await deps.pause(duration(REREAD_MS));
         verdict = verdictFrom(await deps.marks(lane), since);
     }
     return verdict;
 }
 
 export interface QueuedDeps extends OutcomeDeps {
-    now(): number;
+    now(): Instant;
 }
 
 const TURN_ENDS = new Set(['idle', 'done']);
@@ -74,7 +76,7 @@ type Turn = 'ended' | 'running';
 
 const turnOf = (settled: Settled): Turn => (settled.kind === 'settled' && TURN_ENDS.has(settled.status) ? 'ended' : 'running');
 
-export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: number, onTurnEnd: () => void): Promise<Verdict> {
+export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: Instant, onTurnEnd: () => void): Promise<Verdict> {
     const deadline = typedAt + WAIT_MS;
     let since = typedAt;
     let turnEnded = false;
@@ -82,7 +84,7 @@ export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: num
         const sliceStart = deps.now();
         const settled = await deps.settling.settled(String(lane.pane), since, Math.min(SLICE_MS, deadline - sliceStart));
         since = deps.now();
-        const verdict = await outcomeOf(deps, lane, typedAt, false);
+        const verdict = await confirmedOutcomeOf(deps, lane, typedAt);
         if (verdict.outcome !== 'unconfirmed' || deps.now() >= deadline) {
             return verdict;
         }
@@ -92,7 +94,7 @@ export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: num
         }
         const waited = since - sliceStart;
         if (turnOf(settled) === 'running' && waited < SLICE_MS) {
-            await deps.pause(Math.min(PACE_MS, SLICE_MS - waited));
+            await deps.pause(duration(Math.min(PACE_MS, SLICE_MS - waited)));
         }
     }
 }

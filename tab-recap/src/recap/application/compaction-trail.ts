@@ -1,5 +1,6 @@
 import type { ActiveStage, CompactionEnd, CompactionRecords, StageFacts } from '#src/ports/compaction-records.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
 export type Records = Pick<CompactionRecords, 'begin' | 'advance' | 'finish'>;
 
@@ -8,10 +9,10 @@ export type EndObserver = (end: CompactionEnd, reason: CompactFailure | null) =>
 export class Trail {
     readonly id: string;
     private readonly records: Records;
-    private readonly now: () => number;
+    private readonly now: () => Instant;
     private readonly observe: EndObserver | undefined;
 
-    constructor(records: Records, id: string, now: () => number, observe?: EndObserver) {
+    constructor(records: Records, id: string, now: () => Instant, observe?: EndObserver) {
         this.records = records;
         this.id = id;
         this.now = now;

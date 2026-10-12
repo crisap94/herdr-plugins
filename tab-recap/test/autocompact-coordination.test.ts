@@ -6,6 +6,7 @@ import type { DecidedResult } from '#src/ports/decider.ts';
 import type { Decision } from '#src/ports/autocompact-records.ts';
 import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
 import { milliseconds } from '#src/recap/domain/autocompact.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 
 const monitor = backgroundItem(backgroundTool('Monitor'), backgroundLabel('open merge requests'));
 
@@ -102,8 +103,8 @@ test('the wait answered, the lane goes through the remaining gates again', async
 });
 
 test('the in-flight count still applies when nothing awaits: the same detail as before', () => {
-    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: false }), '2 running');
-    assert.equal(detailOf('in-flight', { now: 0, minimum: 10, cooldownMs: 0, lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: false }), 'awaiting reviewer');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: 10, cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: 'below-ceiling' }), '2 running');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: 10, cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: 'below-ceiling' }), 'awaiting reviewer');
 });
 
 test('events: a skip is written when its gate changes, not on each sweep; a decision is written with its verdict and share', async () => {
