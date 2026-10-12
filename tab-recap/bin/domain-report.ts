@@ -39,9 +39,15 @@ export const projectOf = (args: readonly string[], fallback: string): Result<str
     return option.kind === 'err' ? option : ok(option.value ?? fallback);
 };
 
-export const printReport = (report: Report, json: boolean, problems: readonly string[] | null): number => {
+export interface RatchetOutcome {
+    readonly problems: readonly string[];
+    readonly above: ReadonlySet<string>;
+}
+
+export const printReport = (report: Report, json: boolean, outcome: RatchetOutcome | null): number => {
     const { findings, stale, counts } = report;
-    const failing = problems === null ? findings : findings.filter((finding) => problems.some((problem) => problem.startsWith(`above baseline: ${finding.file}:`)));
+    const problems = outcome === null ? null : outcome.problems;
+    const failing = outcome === null ? findings : findings.filter((finding) => outcome.above.has(finding.file));
     const lines = [...(problems ?? []), ...stale];
     const total = problems === null ? findings.length + stale.length : lines.length;
     if (json) {

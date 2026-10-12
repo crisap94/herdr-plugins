@@ -1,12 +1,12 @@
 import { join } from 'node:path';
 import { ok, type Result } from '#src/protocol/result.ts';
-import { loadBaseline, ratchet, writeBaseline } from './domain-baseline.ts';
+import { filesAbove, loadBaseline, ratchet, writeBaseline } from './domain-baseline.ts';
 import { optionOf, printReport, type Report } from './domain-report.ts';
 import { loadLanes } from './lane-map.ts';
 
 export type Mode =
     | { readonly kind: 'plain' }
-    | { readonly kind: 'ratchet'; readonly problems: readonly string[] }
+    | { readonly kind: 'ratchet'; readonly problems: readonly string[]; readonly above: ReadonlySet<string> }
     | { readonly kind: 'written'; readonly message: string };
 
 type Option = Result<string | null, string>;
@@ -35,7 +35,7 @@ const modeOf = (root: string, args: readonly string[], report: Report): Result<M
         return written.kind === 'err' ? written : ok({ kind: 'written', message: written.value });
     }
     const baseline = loadBaseline(dir, lanes.value);
-    return baseline.kind === 'err' ? baseline : ok({ kind: 'ratchet', problems: ratchet(report.counts, baseline.value) });
+    return baseline.kind === 'err' ? baseline : ok({ kind: 'ratchet', problems: ratchet(report.counts, baseline.value), above: filesAbove(report.counts, baseline.value) });
 };
 
 const notCovered = (message: string): number => {
@@ -55,5 +55,5 @@ export const runReport = (root: string, args: readonly string[], found: Result<R
         console.log(`domain types: wrote ${mode.value.message}`);
         return 0;
     }
-    return printReport(found.value, args.includes('--json'), mode.value.kind === 'ratchet' ? mode.value.problems : null);
+    return printReport(found.value, args.includes('--json'), mode.value.kind === 'ratchet' ? { problems: mode.value.problems, above: mode.value.above } : null);
 };
