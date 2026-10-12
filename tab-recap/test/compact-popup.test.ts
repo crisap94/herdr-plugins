@@ -37,7 +37,7 @@ test('a note: printable keys, Backspace, Ctrl-U, pasted text on one line, trimme
 });
 
 test('the popup names the agent and shows the note with a cursor, in both languages; the footer fits', () => {
-    assert.deepEqual(compactView({ note: 'keep x' }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
+    assert.deepEqual(compactView({ note: noteOf('keep x') ?? EMPTY_NOTE.note }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
     assert.match(compactView(EMPTY_NOTE, es, 'codex', 40, plain).join('\n'), /Compactar codex[\s\S]*¿Algo que deba conservar\?/);
     for (const m of [en, es]) {
         assert.ok(visibleLength(compactFooter(m, 40, plain)) <= 40);

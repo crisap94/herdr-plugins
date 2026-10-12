@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { outcomeOf } from '#src/recap/application/compaction-outcome.ts';
 import type { OutcomeDeps } from '#src/recap/application/compaction-outcome.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Mark, Transcripts } from '#src/ports/transcripts.ts';
@@ -29,7 +30,7 @@ function confirm(recent: LaneRecent, lane: Lane): Promise<string> {
         marks: (each) => recent.marks(each),
         pause: () => Promise.resolve(),
     };
-    return outcomeOf(deps, lane, SINCE, true).then((verdict) => verdict.outcome);
+    return outcomeOf(deps, lane, instant(SINCE)).then((verdict) => verdict.outcome);
 }
 
 test('a brand-new agent: its lane has no session yet, herdr reports one now, and the compaction is confirmed in that session', async () => {

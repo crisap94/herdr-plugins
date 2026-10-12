@@ -1,11 +1,11 @@
 import { parseArgs } from 'node:util';
 import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
-import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import { milliseconds, type AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { must, type Result } from '#src/protocol/result.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import { parseInstant, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 
@@ -60,7 +60,7 @@ function skippedRow(found: Skip, zone: Text): ListingRow {
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 
-const everyOf = (ms: number): string => (ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`);
+const everyOf = (ms: Milliseconds): Text => must(parseText(ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`));
 
 export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): Text {
     const { verdict } = tuning;
@@ -74,8 +74,8 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, 
         settings.ceilingOverride(policy.ceilingPolicy === 'overrides-check'),
         settings.coverageBackoff(policy.coverageBackoff.kind === 'off' ? 'off' : everyOf(policy.coverageBackoff.ms)),
         settings.missedFacts(policy.missedFacts),
-        `cooldown ${everyOf(policy.cooldownMs)}`,
-        `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(tuning.recheckIdleMs)}`,
+        `cooldown ${everyOf(milliseconds(policy.cooldownMs))}`,
+        `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(milliseconds(tuning.recheckIdleMs))}`,
     ].join(' · ')));
 }
 
@@ -85,7 +85,12 @@ function table(head: ListingRow, rows: readonly ListingRow[]): readonly Text[] {
     return all.flatMap((row) => [must(parseText(row.cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd()))]);
 }
 
-export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
+export interface Spend {
+    readonly since: number;
+    readonly costUsd: number;
+}
+
+export function listing(decisions: readonly StoredDecision[], spent: Spend, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
     const dayRecap = must(parseText(`last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`));
     const zoneName = must(parseText(zone));

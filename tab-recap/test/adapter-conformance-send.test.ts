@@ -4,12 +4,12 @@ import { NOT_QUEUED, Sender } from '#src/recap/application/compaction-send.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: 'keep the schema' }, brief: null };
 
-const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => 'cmp_t0', advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, 'cmp_t0', () => NOW);
+const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => 'cmp_t0', advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, 'cmp_t0', () => instant(NOW));
 
 test('opencode: its own /compact is confirmed on the second look, then restored; pins today: four reads per look and a one second gap', async () => {
     const world = typingFleet({ 'w1:p4': 'idle' });
