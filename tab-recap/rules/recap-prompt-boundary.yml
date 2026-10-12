@@ -3,15 +3,16 @@ language: typescript
 severity: error
 message: >-
   `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, src/adapters/herdr-agents.ts.
-  Two operator paths reach it, and nothing else does: the compaction flow, from the compaction request queue
-  (the one prompt or typed line of a compaction the operator asked for), and the handoff flow, from the handoff
-  request queue (the one prompt of a handoff the operator asked for). Everything else reaches an agent only
-  through the Agents port, never on its own.
+  Three entry points reach it, and nothing else does: the compaction flow, from the compaction request queue
+  (the one prompt or typed line of a compaction the operator asked for); the handoff flow, from a handoff row the
+  operator's command wrote (the one prompt of a handoff the operator asked for); and the same handoff flow, from a
+  row the handoff exchange queued because the operator enabled TAB_RECAP_HANDOFF_REQUESTS. Everything else reaches
+  an agent only through the Agents port, never on its own.
 note: >-
   This keeps «a recap never types into a lane» true in every other file: typing is one adapter, reached only
-  through those two operator paths, and each path starts only because an operator asked. This is a documented
-  convention for who may reach the agent port. The rule matches herdr method names in that one adapter; it does
-  not see which module calls the port.
+  through those three entry points, and each starts only because an operator asked (the exchange is asked by the
+  operator's setting, and the requester sends no text). This is a documented convention for who may reach the
+  agent port. The rule matches herdr method names in that one adapter; it does not see which module calls the port.
 files:
   - "**/src/**"
   - "**/bin/**"

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import type { ClosedListing } from '#src/recap/application/handoff-listing.ts';
 import { handoffReport, type HandoffArguments, type HandoffWiring } from '../bin/handoff.ts';
 import { messagesOf } from '#src/daemon/config.ts';
 import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
@@ -9,8 +10,8 @@ import { paneId } from '#src/recap/domain/ids.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
-const DELIVER: HandoffArguments = { mode: 'deliver', from: FROM, to: TO, note: null, refresh: false };
-const PRINT: HandoffArguments = { mode: 'print', from: FROM, to: null, note: 'keep the tests' };
+const DELIVER: HandoffArguments = { mode: 'deliver', from: FROM, to: TO, note: null, refresh: false, closed: null };
+const PRINT: HandoffArguments = { mode: 'print', from: FROM, to: null, note: 'keep the tests', closed: null };
 
 interface Recorded {
     readonly value: HandoffWiring;
@@ -28,6 +29,7 @@ function wiring(outcome: HandoffOutcome, printResult: PrintResult = { kind: 'tex
                 return printResult;
             },
         },
+        list: (): ClosedListing => ({ kind: 'listed', records: [] }),
         deliver: async (request: DeliverRequest): Promise<HandoffOutcome> => {
             delivered.push(request);
             return outcome;
@@ -65,7 +67,7 @@ test('the deliver path hands the request to the wiring and never calls the print
 test('print writes only the handoff text to stdout, exits 0, and never calls the deliver path', async () => {
     const { value, delivered, printed } = wiring({ kind: 'delivered' });
     assert.deepEqual(await handoffReport(PRINT, value), { exit: 0, out: 'the handoff', err: null });
-    assert.deepEqual(printed, [{ from: FROM, to: null, note: 'keep the tests' }]);
+    assert.deepEqual(printed, [{ from: FROM, to: null, note: 'keep the tests', closed: null }]);
     assert.deepEqual(delivered, []);
 });
 

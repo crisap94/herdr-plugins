@@ -4,6 +4,7 @@ import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { AgentKind, HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
+import type { ClosedView } from './closed-view.ts';
 
 export interface HandoffLane {
     readonly tab: TabId;
@@ -21,6 +22,7 @@ export interface HandoffRenderInput {
     readonly facts: readonly Fact[];
     readonly note: string | null;
     readonly refresh: RefreshStatus;
+    readonly closed?: ClosedView;
 }
 
 export type RenderRefusal = Extract<HandoffOutcome, { readonly kind: 'refused'; readonly reason: 'ledger-empty' | 'content-empty' | 'too-large' }>;

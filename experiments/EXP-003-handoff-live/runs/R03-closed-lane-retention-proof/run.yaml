@@ -1,0 +1,12 @@
+run: R03-closed-lane-retention-proof
+experiment: EXP-003-handoff-live
+status: valid
+date: 2026-10-11
+code: tab-recap at 8bc5495 on feat/lane-handoff-retention
+command: "herdr --session <scratch> server; node src/daemon/launch.mjs (scratch state, empty plugin configuration directory); tab-recap handoff --list-closed --tab <tab>; tab-recap handoff --from-closed <pane> --tab <tab> --closed-at <instant> --to <target>; tab-recap handoff --print --from-closed ..."
+files:
+  summary.md: 5e6c31c155f55d0d8170b4fd03d410a0624d801ce5e69fc6b4657dc03ffe688c
+rule: a live closure and a restart closure each leave one closure row; the listing shows it; the handoff from it is delivered; the read-only commands write nothing
+ran_by: an attended agent session (Sonnet 5.5)
+note: counts, sizes and identifiers only; no ledger or transcript content. Two earlier script attempts failed for script reasons and are described in summary.md.
+raw: none kept (the counts are in summary.md)

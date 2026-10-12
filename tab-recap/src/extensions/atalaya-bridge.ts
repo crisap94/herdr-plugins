@@ -3,23 +3,46 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { obj, parse, str } from '#src/adapters/jsonl.ts';
 import { run } from '#src/adapters/process.ts';
-import type { RunOptions, RunResult } from '#src/adapters/process.ts';
+import type { Runner } from '#src/adapters/process.ts';
 import type { Locale } from '#src/i18n/messages.ts';
 import type { Extension, ExtensionFactory, Note, NotesResult, UpkeepResult } from '#src/ports/extension.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 
 const UNIT = 'atalaya-bridge.service';
 const STALE_MS = 180_000;
 const HEAL_EVERY_MS = 300_000;
 const MINUTE_MS = 60_000;
 
-export type Runner = (command: string, args: readonly string[], options: RunOptions) => Promise<RunResult>;
+export type { Runner } from '#src/adapters/process.ts';
 
-function expandHome(path: string): string {
-    return path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path;
+type Heal = 'on' | 'off';
+
+function currentUid(): Count | undefined {
+    const uid = parseCount(process.getuid?.());
+    return uid.kind === 'ok' ? uid.value : undefined;
 }
 
-export function userBusEnv(base: NodeJS.ProcessEnv, uid: number | undefined): NodeJS.ProcessEnv {
+interface Alert {
+    readonly pane: PaneId;
+    readonly note: Note;
+}
+
+interface Cache {
+    readonly mtime: Instant | null;
+    readonly notes: ReadonlyMap<PaneId, readonly Note[]>;
+}
+
+function expandHome(path: Text): Text {
+    return path === '~' || path.startsWith('~/') ? must(parseText(join(homedir(), path.slice(1)))) : path;
+}
+
+export function userBusEnv(base: NodeJS.ProcessEnv, uid: Count | undefined): NodeJS.ProcessEnv {
     if (uid === undefined) {
         return base;
     }
@@ -31,62 +54,62 @@ export function userBusEnv(base: NodeJS.ProcessEnv, uid: number | undefined): No
     };
 }
 
-function alertOf(line: string): [string, Note] | null {
+function alertOf(line: Text): Alert | null {
     const row = parse(line);
     const episode = obj(row?.['episode']);
-    const pane = str(episode['pane']);
+    const pane = parsePaneId(str(episode['pane']));
     const kind = str(episode['kind']);
-    if (row === null || pane === null || kind === null) {
+    if (row === null || pane.kind === 'err' || kind === null) {
         return null;
     }
     const evidence = obj(row['evidence']);
     const unmerged = evidence['unmerged'];
     const details = [str(evidence['branch']), typeof unmerged === 'number' ? `${unmerged} unmerged` : null, str(evidence['tree'])];
-    return [pane, { label: kind, at: typeof row['at'] === 'number' ? row['at'] : 0, details: details.filter((part) => part !== null) }];
+    return { pane: pane.value, note: { label: kind, at: typeof row['at'] === 'number' ? row['at'] : 0, details: details.filter((part) => part !== null) } };
 }
 
-function silence(locale: Locale, ms: number): string {
-    const minutes = Math.max(1, Math.round(ms / MINUTE_MS));
-    return locale === 'es'
+function silence(locale: Locale, silent: Duration): Text {
+    const minutes = Math.max(1, Math.round(silent / MINUTE_MS));
+    return must(parseText(locale === 'es'
         ? `atalaya-bridge sin señal desde hace ${minutes} min — intentando arrancarlo`
-        : `atalaya-bridge silent for ${minutes} min — healing`;
+        : `atalaya-bridge silent for ${minutes} min — healing`));
 }
 
 export class AtalayaBridge implements Extension {
     readonly id = 'atalaya-bridge';
-    private readonly dir: string;
-    private readonly get: (key: string) => string | undefined;
+    private readonly dir: Directory;
+    private readonly healing: () => Heal;
     private readonly runner: Runner;
-    private readonly clock: () => number;
+    private readonly clock: () => Instant;
     private readonly env: NodeJS.ProcessEnv;
-    private cache: { mtime: number; notes: ReadonlyMap<string, readonly Note[]> } = { mtime: -1, notes: new Map() };
-    private lastHeal = 0;
+    private cache: Cache = { mtime: null, notes: new Map() };
+    private lastHeal: Instant = instant(0);
 
-    constructor(dir: string, get: (key: string) => string | undefined, runner: Runner = run, clock: () => number = Date.now, env: NodeJS.ProcessEnv = process.env) {
+    constructor(dir: Directory, healing: () => Heal, runner: Runner = run, clock: () => Instant = (): Instant => instant(Date.now()), env: NodeJS.ProcessEnv = process.env) {
         this.env = env;
         this.dir = dir;
-        this.get = get;
+        this.healing = healing;
         this.runner = runner;
         this.clock = clock;
     }
 
-    private heartbeat(): number | null {
+    private heartbeat(): Instant | null {
         try {
             const at = Number(readFileSync(join(this.dir, 'heartbeat'), 'utf8').trim());
-            return Number.isFinite(at) && at > 0 ? at : null;
+            return Number.isFinite(at) && at > 0 ? instant(at) : null;
         } catch {
             return null;
         }
     }
 
-    private latest(): ReadonlyMap<string, readonly Note[]> {
+    private latest(): ReadonlyMap<PaneId, readonly Note[]> {
         const log = join(this.dir, 'atalaya-log.jsonl');
-        const mtime = statSync(log).mtimeMs;
+        const mtime = instant(statSync(log).mtimeMs);
         if (mtime !== this.cache.mtime) {
-            const notes = new Map<string, readonly Note[]>();
-            for (const found of readFileSync(log, 'utf8').split('\n').map(alertOf)) {
+            const notes = new Map<PaneId, readonly Note[]>();
+            for (const found of readFileSync(log, 'utf8').split('\n').map((line) => alertOf(must(parseText(line))))) {
                 if (found !== null) {
-                    notes.set(found[0], [found[1]]);
+                    notes.set(found.pane, [found.note]);
                 }
             }
             this.cache = { mtime, notes };
@@ -102,20 +125,20 @@ export class AtalayaBridge implements Extension {
         }
     }
 
-    warning(locale: Locale): string | null {
+    warning(locale: Locale): Text | null {
         const beat = this.heartbeat();
-        const age = beat === null ? 0 : this.clock() - beat;
+        const age = duration(beat === null ? 0 : this.clock() - beat);
         return age < STALE_MS ? null : silence(locale, age);
     }
 
     async upkeep(): Promise<UpkeepResult> {
         const beat = this.heartbeat();
         const now = this.clock();
-        if (this.get('TAB_RECAP_BRIDGE_HEAL') === '0' || beat === null || now - beat < STALE_MS || now - this.lastHeal < HEAL_EVERY_MS) {
+        if (this.healing() === 'off' || beat === null || now - beat < STALE_MS || now - this.lastHeal < HEAL_EVERY_MS) {
             return { kind: 'idle' };
         }
         this.lastHeal = now;
-        const opts = { input: '', timeoutMs: 15_000, cwd: this.dir, env: userBusEnv(this.env, process.getuid?.()) };
+        const opts = { input: '', timeoutMs: 15_000, cwd: this.dir, env: userBusEnv(this.env, currentUid()) };
         if ((await this.runner('systemctl', ['--user', 'is-active', '--quiet', UNIT], opts)).code === 0) {
             return { kind: 'idle' };
         }
@@ -127,9 +150,9 @@ export class AtalayaBridge implements Extension {
 }
 
 export const atalayaBridge: ExtensionFactory = (get) => {
-    const dir = expandHome(get('TAB_RECAP_BRIDGE_DIR') ?? join(homedir(), '.local', 'state', 'atalaya-bridge'));
+    const dir = parseDirectory(expandHome(must(parseText(get('TAB_RECAP_BRIDGE_DIR') ?? join(homedir(), '.local', 'state', 'atalaya-bridge')))));
     try {
-        return dir !== '' && statSync(dir).isDirectory() ? new AtalayaBridge(dir, get) : null;
+        return dir.kind === 'ok' && statSync(dir.value).isDirectory() ? new AtalayaBridge(dir.value, () => (get('TAB_RECAP_BRIDGE_HEAL') === '0' ? 'off' : 'on')) : null;
     } catch {
         return null;
     }

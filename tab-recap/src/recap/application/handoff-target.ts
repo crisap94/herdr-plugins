@@ -57,8 +57,8 @@ export async function readinessOf(lane: Lane, plan: HandoffPlan, deps: Pick<Targ
     return { kind: 'ready', ownTranscript };
 }
 
-export async function resolveTarget(source: PaneId, target: PaneId, deps: TargetDeps): Promise<TargetResolution> {
-    if (source === target) {
+export async function resolveTarget(source: PaneId | null, target: PaneId, deps: TargetDeps): Promise<TargetResolution> {
+    if (source !== null && source === target) {
         return { kind: 'refused', reason: 'source-equals-target' };
     }
     const lane = deps.lanes.find((each) => each.pane === target);

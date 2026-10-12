@@ -4,7 +4,8 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation, Outcome, SeenColumn } from '#src/recap/domain/fold.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -195,6 +196,66 @@ function playAt(steps: readonly (readonly [number, Observation])[], start: Board
     const all = each.flat();
     return { board, each, closes: all.filter((i) => i.kind === 'close-column'), opens: all.filter((i) => i.kind === 'open-column'), gaveUp: all.filter((i) => i.kind === 'give-up') };
 }
+
+const restored = (pane: string, tab: string, agent: string, since: number): Observation => ({
+    kind: 'restored',
+    lanes: [{ tab: tabId(tab), pane: paneId(pane), agent: agentKind(agent), since: instant(since), cwd: null }],
+});
+const observedAfter = (prefix: readonly Observation[], next: Observation): Outcome => observe(run(prefix).board, next, instant(prefix.length * 1000), DEFAULT_POLICY);
+const closures = (intents: readonly Intent[]): readonly ClosedLane[] => intents.flatMap((intent) => (intent.kind === 'lane-closed' ? [intent.closed] : []));
+
+test('an explicit close emits lane-closed before its publish', () => {
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], closed('w1:p1'));
+    assert.deepEqual(outcome.intents.slice(0, 2), [
+        { kind: 'lane-closed', closed: { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(0), cwd: null, closedAt: instant(1000) } },
+        { kind: 'publish', tab: tabId('w1:t1') },
+    ]);
+});
+
+test('a session observation closes nothing', () => {
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], { kind: 'session', pane: paneId('w1:p1'), session: 's-2' });
+    assert.deepEqual(closures(outcome.intents), []);
+});
+
+test('a repeated close of a pane already off the board emits nothing', () => {
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')]), closed('w1:p1')], closed('w1:p1'));
+    assert.deepEqual(closures(outcome.intents), []);
+});
+
+test('a reconciliation that drops the last lane of a tab closes it and publishes the tab', () => {
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], seen([]));
+    assert.equal(outcome.intents[0]?.kind, 'lane-closed');
+    assert.ok(outcome.intents.some((intent) => intent.kind === 'publish' && intent.tab === 'w1:t1'));
+});
+
+test('an agent kind change in a surviving pane closes the old incarnation and starts a new one', () => {
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], { kind: 'detected', lane: lane('w1:p1', 'w1:t1', 'idle', 'codex') });
+    assert.deepEqual(closures(outcome.intents).map((gone) => [gone.agent, gone.since, gone.closedAt]), [['claude', 0, 1000]]);
+    assert.equal(outcome.board.lanes.get(paneId('w1:p1'))?.since, 1000);
+});
+
+test('a surviving lane keeps its since, and a pane that closes and comes back starts a new one', () => {
+    assert.equal(run([seen([lane('w1:p1', 'w1:t1')]), seen([lane('w1:p1', 'w1:t1')])]).board.lanes.get(paneId('w1:p1'))?.since, 0);
+    const returned = run([seen([lane('w1:p1', 'w1:t1')]), closed('w1:p1'), { kind: 'detected', lane: lane('w1:p1', 'w1:t1') }]);
+    assert.equal(returned.board.lanes.get(paneId('w1:p1'))?.since, 2000);
+});
+
+test('a restored lane the first snapshot lacks is closed at the snapshot instant', () => {
+    const outcome = observedAfter([restored('w1:p1', 'w1:t1', 'claude', 5)], seen([]));
+    assert.deepEqual(closures(outcome.intents), [{ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(5), cwd: null, closedAt: instant(1000) }]);
+    assert.equal(outcome.board.persisted, null);
+});
+
+test('a restored lane the snapshot still wants keeps its since and emits nothing', () => {
+    const outcome = observedAfter([restored('w1:p1', 'w1:t1', 'claude', 5)], seen([lane('w1:p1', 'w1:t1')]));
+    assert.deepEqual(closures(outcome.intents), []);
+    assert.equal(outcome.board.lanes.get(paneId('w1:p1'))?.since, 5);
+});
+
+test('a restored lane the snapshot lists with another agent kind is closed', () => {
+    const outcome = observedAfter([restored('w1:p1', 'w1:t1', 'claude', 5)], seen([lane('w1:p1', 'w1:t1', 'idle', 'codex')]));
+    assert.deepEqual(closures(outcome.intents).map((gone) => [gone.agent, gone.closedAt]), [['claude', 1000]]);
+});
 
 test('a close that does not take effect is asked once, opens no second column, and ends in a give-up', () => {
     const ready = run([bars(60), ...barsOpened]).board;

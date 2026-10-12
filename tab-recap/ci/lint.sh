@@ -8,8 +8,8 @@ cd "$HERE"
 # the pinned devDependency first, so CI and a checkout run the same ast-grep
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
 [ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'npm install'" >&2; exit 3; }
-[ -x node_modules/.bin/tsgo ] && [ -x node_modules/.bin/oxlint ] \
-    || { echo "lint: 3 — NOT COVERED: run 'npm install' (tsgo, oxlint)" >&2; exit 3; }
+[ -x node_modules/.bin/oxlint ] \
+    || { echo "lint: 3 — NOT COVERED: run 'npm install' (oxlint)" >&2; exit 3; }
 
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
@@ -48,11 +48,23 @@ bash ci/check-version.sh || fail "the plugin's version is not one number"
 echo "the release scripts bite (what is right passes, what is wrong fails):"
 bash ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
 
-echo "typecheck (tsgo, strict + exactOptionalPropertyTypes + erasableSyntaxOnly):"
-node_modules/.bin/tsgo --noEmit -p tsconfig.json && echo "  ok    tsgo" || fail "tsgo"
-
-echo "oxlint (type-aware, the house configuration):"
+echo "oxlint (type-aware: one program type-checks the tree with the tsconfig flags and runs the house rules):"
 node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
+
+echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
+bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
+
+echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
+bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
+
+echo "lane map (every file of src and test belongs to exactly one lane):"
+node ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
+
+echo "domain types (the signature check fails its bad probes and passes its good ones):"
+bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
+
+echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
+node bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run node bin/check-domain-types.ts --json and lower or fix"
 
 echo "released migrations are untouched (no tag yet is clean):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
@@ -64,7 +76,7 @@ echo "protocol names (no copy of a wire name outside src/protocol):"
 node bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
 
 echo "the linters bite (a seeded violation must fail them):"
-bash ci/verify-bite.sh && echo "  ok    tsgo and oxlint both reject the seed" || fail "a linter accepted the seeded violation"
+bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the seeded type errors" || fail "a linter accepted the seeded violation"
 
 [ "$failures" -eq 0 ] && { echo "lint: clean"; exit 0; }
 echo "lint: $failures finding(s)"; exit 1

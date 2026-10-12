@@ -22,7 +22,7 @@ test('the three live stages of the own id are observed as their kind', () => {
 });
 
 test('a declared failure stage is observed with its reason', () => {
-    assert.deepEqual(observeOwn('r1:failed-refused', 'r1'), { kind: 'failed', reason: 'refused' });
+    assert.deepEqual(observeOwn('r1:failed-error', 'r1'), { kind: 'failed', reason: 'error' });
     assert.deepEqual(observeOwn('r1:failed-bad-id', 'r1'), { kind: 'failed', reason: 'bad-id' });
 });
 

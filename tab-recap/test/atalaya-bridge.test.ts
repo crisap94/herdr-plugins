@@ -6,16 +6,20 @@ import { join } from 'node:path';
 import { AtalayaBridge, atalayaBridge, userBusEnv } from '#src/extensions/atalaya-bridge.ts';
 import type { Runner } from '#src/extensions/atalaya-bridge.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const NOW = 10_000_000;
 const alert = (pane: string, kind: string, at: number, evidence: object): string => JSON.stringify({ at, episode: { pane, kind }, evidence });
 
-function fixture(files: Readonly<Record<string, string>>): { dir: string; done: () => void } {
+function fixture(files: Readonly<Record<string, string>>): { dir: Directory; done: () => void } {
     const dir = mkdtempSync(join(tmpdir(), 'recap-bridge-'));
     for (const [name, text] of Object.entries(files)) {
         writeFileSync(join(dir, name), text);
     }
-    return { dir, done: (): void => { rmSync(dir, { recursive: true }); } };
+    return { dir: must(parseDirectory(dir)), done: (): void => { rmSync(dir, { recursive: true }); } };
 }
 
 function recorder(codes: Readonly<Record<string, number>> = {}): { runner: Runner; calls: string[]; envs: NodeJS.ProcessEnv[] } {
@@ -29,8 +33,8 @@ function recorder(codes: Readonly<Record<string, number>> = {}): { runner: Runne
     return { runner, calls, envs };
 }
 
-const noKeys = (): undefined => undefined;
-const off = (key: string): string | undefined => (key === 'TAB_RECAP_BRIDGE_HEAL' ? '0' : undefined);
+const noKeys = (): 'on' => 'on';
+const off = (): 'off' => 'off';
 
 test('notes: the latest alert per pane becomes a Note — kind, time, branch · N unmerged · tree', () => {
     const { dir, done } = fixture({
@@ -67,11 +71,11 @@ test('warning: silent until the heartbeat is 3 minutes old; then en and es say h
     const stale = fixture({ heartbeat: String(NOW - 240_000) });
     const none = fixture({});
     try {
-        assert.equal(new AtalayaBridge(fresh.dir, noKeys, recorder().runner, () => NOW).warning('en'), null);
-        const bridge = new AtalayaBridge(stale.dir, noKeys, recorder().runner, () => NOW);
+        assert.equal(new AtalayaBridge(fresh.dir, noKeys, recorder().runner, () => instant(NOW)).warning('en'), null);
+        const bridge = new AtalayaBridge(stale.dir, noKeys, recorder().runner, () => instant(NOW));
         assert.equal(bridge.warning('en'), 'atalaya-bridge silent for 4 min — healing');
         assert.equal(bridge.warning('es'), 'atalaya-bridge sin señal desde hace 4 min — intentando arrancarlo');
-        assert.equal(new AtalayaBridge(none.dir, noKeys, recorder().runner, () => NOW).warning('en'), null, 'no heartbeat file: nothing to say');
+        assert.equal(new AtalayaBridge(none.dir, noKeys, recorder().runner, () => instant(NOW)).warning('en'), null, 'no heartbeat file: nothing to say');
     } finally {
         [fresh, stale, none].forEach((item) => { item.done(); });
     }
@@ -95,18 +99,18 @@ test('heal: gated by the heartbeat, the switch and the rate limit — and never 
     const none = fixture({});
     try {
         const idle = recorder();
-        assert.deepEqual(await new AtalayaBridge(fresh.dir, noKeys, idle.runner, () => NOW).upkeep(), { kind: 'idle' });
-        assert.deepEqual(await new AtalayaBridge(none.dir, noKeys, idle.runner, () => NOW).upkeep(), { kind: 'idle' });
-        assert.deepEqual(await new AtalayaBridge(stale.dir, off, idle.runner, () => NOW).upkeep(), { kind: 'idle' });
+        assert.deepEqual(await new AtalayaBridge(fresh.dir, noKeys, idle.runner, () => instant(NOW)).upkeep(), { kind: 'idle' });
+        assert.deepEqual(await new AtalayaBridge(none.dir, noKeys, idle.runner, () => instant(NOW)).upkeep(), { kind: 'idle' });
+        assert.deepEqual(await new AtalayaBridge(stale.dir, off, idle.runner, () => instant(NOW)).upkeep(), { kind: 'idle' });
         assert.deepEqual(idle.calls, [], 'no systemctl in any of those');
 
         const running = recorder({ 'is-active': 0 });
-        assert.deepEqual(await new AtalayaBridge(stale.dir, noKeys, running.runner, () => NOW).upkeep(), { kind: 'idle' });
+        assert.deepEqual(await new AtalayaBridge(stale.dir, noKeys, running.runner, () => instant(NOW)).upkeep(), { kind: 'idle' });
         assert.deepEqual(running.calls, ['systemctl --user is-active --quiet atalaya-bridge.service'], 'a running unit is never restarted');
 
         const down = recorder({ 'is-active': 3, start: 0 });
         let now = NOW;
-        const bridge = new AtalayaBridge(stale.dir, noKeys, down.runner, () => now);
+        const bridge = new AtalayaBridge(stale.dir, noKeys, down.runner, () => instant(now));
         assert.deepEqual(await bridge.upkeep(), { kind: 'acted', saying: 'atalaya-bridge.service was down: started it' });
         assert.deepEqual(down.calls.at(-1), 'systemctl --user start atalaya-bridge.service');
         now += 60_000;
@@ -115,7 +119,7 @@ test('heal: gated by the heartbeat, the switch and the rate limit — and never 
         assert.equal(down.calls.length, before, 'rate-limited: not again within 5 minutes');
 
         const failing = recorder({ 'is-active': 3, start: 1 });
-        const result = await new AtalayaBridge(stale.dir, noKeys, failing.runner, () => NOW).upkeep();
+        const result = await new AtalayaBridge(stale.dir, noKeys, failing.runner, () => instant(NOW)).upkeep();
         assert.ok(isUnknown(result) && result.why.why === 'failed');
     } finally {
         [stale, fresh, none].forEach((item) => { item.done(); });
@@ -126,7 +130,7 @@ test('heal: systemctl --user gets the user session bus in its environment when t
     const stale = fixture({ heartbeat: String(NOW - 240_000) });
     try {
         const down = recorder({ 'is-active': 3, start: 0 });
-        await new AtalayaBridge(stale.dir, noKeys, down.runner, () => NOW, { PATH: '/usr/bin' }).upkeep();
+        await new AtalayaBridge(stale.dir, noKeys, down.runner, () => instant(NOW), { PATH: '/usr/bin' }).upkeep();
         const uid = process.getuid?.();
         assert.equal(down.envs.length, 2, 'both is-active and start');
         for (const env of down.envs) {
@@ -140,7 +144,7 @@ test('heal: systemctl --user gets the user session bus in its environment when t
 });
 
 test('userBusEnv: values that are already set are kept, empty ones are filled, no uid changes nothing', () => {
-    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' }, 1000), { XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' });
-    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '' }, 1000), { XDG_RUNTIME_DIR: '/run/user/1000', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/run/user/1000/bus' });
+    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' }, must(parseCount(1000))), { XDG_RUNTIME_DIR: '/custom', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/custom/bus' });
+    assert.deepEqual(userBusEnv({ XDG_RUNTIME_DIR: '' }, must(parseCount(1000))), { XDG_RUNTIME_DIR: '/run/user/1000', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/run/user/1000/bus' });
     assert.deepEqual(userBusEnv({ A: '1' }, undefined), { A: '1' });
 });

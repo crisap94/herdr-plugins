@@ -13,7 +13,8 @@ import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
-import { HANDOFF_PREAMBLE, serializeHandoff, utcMinuteText } from '#src/recap/render/handoff-markdown.ts';
+import { HANDOFF_PREAMBLE, serializeHandoff } from '#src/recap/render/handoff-markdown.ts';
+import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
 import type { HandoffParts, OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
@@ -170,7 +171,7 @@ test('two handoffs differ within their first 400 code points, by HandoffId and b
 
 test('the rendered minute is the UTC minute under a non-UTC time zone', () => {
     const instant = Date.parse('2026-10-11T07:30:00Z');
-    const script = `import { utcMinuteText } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'src', 'recap', 'render', 'handoff-markdown.ts')).href)};
+    const script = `import { utcMinuteText } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'src', 'recap', 'render', 'utc-minute.ts')).href)};
 process.stdout.write(utcMinuteText(${instant}));`;
     const child = spawnSync(process.execPath, ['--input-type=module', '--eval', script], { encoding: 'utf8', env: { ...process.env, TZ: 'America/Los_Angeles' } });
     assert.equal(child.status, 0, child.stderr);

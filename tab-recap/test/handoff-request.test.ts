@@ -15,7 +15,7 @@ const RUNNING: DaemonReading = { pid: 4242, version: '2.4.0' };
 const TABS = { 'w1:p1': 'w1:t1' };
 
 function request(over: Partial<DeliverRequest> = {}): DeliverRequest {
-    return { from: SOURCE, to: TARGET, note: null, refresh: false, ...over };
+    return { from: SOURCE, to: TARGET, note: null, refresh: false, closed: null, ...over };
 }
 
 interface Daemon {

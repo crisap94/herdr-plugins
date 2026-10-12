@@ -1,4 +1,7 @@
-import type { Brand } from './brand.ts';
+import { ok, type Result } from '#src/protocol/result.ts';
+import { brand, type Brand } from './brand.ts';
+import { parseNonEmptyText } from './text.ts';
+import type { ParseFailure } from './parse-failure.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
 export type TabId = Brand<string, 'TabId'>;
@@ -31,7 +34,20 @@ export function tabId(raw: string): TabId {
 }
 
 export function workspaceId(raw: string): WorkspaceId {
-    return nonEmpty(raw, 'a workspace id') as WorkspaceId;
+    const parsed = parseWorkspaceId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a workspace id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function workspaceOfTab(tab: TabId): WorkspaceId | null {
+    const raw = String(tab);
+    const colon = raw.indexOf(':');
+    if (colon === -1 || raw.slice(0, colon).trim() === '' || raw.slice(colon + 1).trim() === '') {
+        return null;
+    }
+    return raw.slice(0, colon) as WorkspaceId;
 }
 
 export function sessionId(raw: string): SessionId {
@@ -67,4 +83,52 @@ export function parseHandoffId(raw: unknown): HandoffId | null {
 
 export function agentKind(raw: string): AgentKind {
     return nonEmpty(raw, 'an agent kind') as AgentKind;
+}
+
+export function parsePaneId(input: unknown): Result<PaneId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'PaneId'>(text.value));
+}
+
+export function parseTabId(input: unknown): Result<TabId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'TabId'>(text.value));
+}
+
+export function parseWorkspaceId(input: unknown): Result<WorkspaceId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'WorkspaceId'>(text.value));
+}
+
+export function parseSessionId(input: unknown): Result<SessionId, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'SessionId'>(text.value));
+}
+
+export function parseSessionPath(input: unknown): Result<SessionPath, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'SessionPath'>(text.value));
+}
+
+export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> {
+    const text = parseNonEmptyText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'AgentKind'>(text.value));
 }

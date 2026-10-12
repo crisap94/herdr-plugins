@@ -1,6 +1,8 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseDuration, type Duration } from '#src/recap/domain/time.ts';
 
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
 
@@ -21,9 +23,9 @@ export function verdictOf(marks: readonly Mark[], since: number): Outcome {
 
 export interface Verdict {
     readonly outcome: Outcome;
-    readonly tokensBefore?: number;
-    readonly tokensAfter?: number;
-    readonly tookMs?: number;
+    readonly tokensBefore?: Count;
+    readonly tokensAfter?: Count;
+    readonly tookMs?: Duration;
 }
 
 function verdictFrom(marks: readonly Mark[], since: number): Verdict {
@@ -32,11 +34,14 @@ function verdictFrom(marks: readonly Mark[], since: number): Verdict {
     if (outcome !== 'compacted' || mark === undefined) {
         return { outcome };
     }
+    const tokensBefore = parseCount(mark.tokensBefore);
+    const tokensAfter = parseCount(mark.tokensAfter);
+    const tookMs = parseDuration(mark.tookMs);
     return {
         outcome,
-        ...(mark.tokensBefore === undefined ? {} : { tokensBefore: mark.tokensBefore }),
-        ...(mark.tokensAfter === undefined ? {} : { tokensAfter: mark.tokensAfter }),
-        ...(mark.tookMs === undefined ? {} : { tookMs: mark.tookMs }),
+        ...(tokensBefore.kind === 'ok' ? { tokensBefore: tokensBefore.value } : {}),
+        ...(tokensAfter.kind === 'ok' ? { tokensAfter: tokensAfter.value } : {}),
+        ...(tookMs.kind === 'ok' ? { tookMs: tookMs.value } : {}),
     };
 }
 
@@ -65,7 +70,9 @@ export interface QueuedDeps extends OutcomeDeps {
 const TURN_ENDS = new Set(['idle', 'done']);
 const PACE_MS = 1000;
 
-const endsTurn = (settled: Settled): boolean => settled.kind === 'settled' && TURN_ENDS.has(settled.status);
+type Turn = 'ended' | 'running';
+
+const turnOf = (settled: Settled): Turn => (settled.kind === 'settled' && TURN_ENDS.has(settled.status) ? 'ended' : 'running');
 
 export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: number, onTurnEnd: () => void): Promise<Verdict> {
     const deadline = typedAt + WAIT_MS;
@@ -79,12 +86,12 @@ export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: num
         if (verdict.outcome !== 'unconfirmed' || deps.now() >= deadline) {
             return verdict;
         }
-        if (endsTurn(settled) && !turnEnded) {
+        if (turnOf(settled) === 'ended' && !turnEnded) {
             turnEnded = true;
             onTurnEnd();
         }
         const waited = since - sliceStart;
-        if (!endsTurn(settled) && waited < SLICE_MS) {
+        if (turnOf(settled) === 'running' && waited < SLICE_MS) {
             await deps.pause(Math.min(PACE_MS, SLICE_MS - waited));
         }
     }

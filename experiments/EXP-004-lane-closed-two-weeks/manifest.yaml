@@ -1,0 +1,7 @@
+experiment: EXP-004
+code: measure.mjs (this folder)
+plugin_version_at_start: 2.5.0
+store: the live tab-recap.db, opened read-only
+baseline: 15 agent_not_found failures in about 38 hours (2026-10-10 to 2026-10-11), measured 2026-10-11 08:05 UTC
+window_start: 2026-10-11T11:30:00Z
+planned_run: 2026-10-25

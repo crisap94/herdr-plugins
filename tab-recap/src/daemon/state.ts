@@ -4,7 +4,7 @@ import { importFiles } from '#src/adapters/db/import/import-files.ts';
 import { LegacyFiles } from '#src/adapters/db/import/legacy-files.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
-import { messagesOf } from './config.ts';
+import { loadConfig, messagesOf } from './config.ts';
 
 async function refuse(notifier: Notifier, log: (line: string) => void, why: string): Promise<null> {
     log(why);
@@ -13,7 +13,7 @@ async function refuse(notifier: Notifier, log: (line: string) => void, why: stri
 }
 
 export async function openState(root: string, notifier: Notifier, log: (line: string) => void): Promise<Store | null> {
-    const store = stateStore(root, { daemonVersion: codeVersion(), log });
+    const store = stateStore(root, { daemonVersion: codeVersion(), log, closedDays: loadConfig().closedLaneDays });
     if (store.kind === 'newer-db') {
         store.db.close();
         return refuse(notifier, log, `tab-recap: ${messagesOf().database.newer(store.backup)}`);

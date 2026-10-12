@@ -105,7 +105,7 @@ export class Compaction {
             const pane = String(lane.pane);
             const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
             linkAsk(this.deps.asks, request, pane, id);
-            this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
+            if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
             this.answer(request, pane, failureStage(refusal.reason));
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
@@ -140,6 +140,7 @@ export class Compaction {
 
     private ended(request: CompactRequest, pane: string, id: string, end: CompactionEnd, reason: CompactFailure | null): void {
         this.answer(request, pane, finalAnswerOf(end.stage, reason));
+        if (end.why === LANE_CLOSED) return;
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
     }
 

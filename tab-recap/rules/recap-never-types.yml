@@ -4,11 +4,12 @@ severity: error
 message: >-
   tab-recap never types into a lane. It reads transcripts and renders a column; it does not send raw input
   to an agent. The only prompts the operator asks for are the compaction and the handoff, both reached through
-  the two operator paths named in `recap-prompt-boundary`.
+  the three entry points named in `recap-prompt-boundary` (the handoff also from a row the enabled handoff exchange queued).
 note: >-
-  The red line is «no send_keys, ever», and it is stricter than that: no raw input of any kind. The two
-  operator paths are the compaction flow (from the compaction request queue) and the handoff flow (from the
-  handoff request queue); each starts only because the operator asked, and neither sends raw input.
+  The red line is «no send_keys, ever», and it is stricter than that: no raw input of any kind. The three
+  entry points are the compaction flow (from the compaction request queue), the handoff flow (from a handoff
+  row the operator's command wrote) and the same handoff flow from a row the operator-enabled exchange queued;
+  each starts only because the operator asked, and none sends raw input.
 files:
   - "**/src/**"
   - "**/bin/**"

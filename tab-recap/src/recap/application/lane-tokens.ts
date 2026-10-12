@@ -25,7 +25,6 @@ export interface LaneTokenDeps {
 interface Held {
     readonly values: TokenValues;
     readonly at: number;
-    readonly workspace: string;
 }
 
 export class LaneTokenPublisher {
@@ -46,9 +45,8 @@ export class LaneTokenPublisher {
         this.lastTick = now;
         const lanes = this.deps.enabled() ? [...this.deps.board().lanes.values()] : [];
         const live = new Set(lanes.map((lane) => String(lane.pane)));
-        for (const [pane, held] of this.written) {
+        for (const pane of this.written.keys()) {
             if (!live.has(pane)) {
-                this.deps.events?.inWorkspace(held.workspace, 'lane-closed', pane);
                 this.clear(pane);
             }
         }
@@ -69,7 +67,7 @@ export class LaneTokenPublisher {
             return;
         }
         this.announceNeeds(lane, previous?.values, due);
-        this.written.set(pane, { values: due, at: now, workspace: String(lane.workspace) });
+        this.written.set(pane, { values: due, at: now });
         void this.send(pane, { ...due, ...clearing(STATE_TOKENS.filter((name) => !(name in due))) }, now);
     }
 

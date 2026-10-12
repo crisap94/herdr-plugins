@@ -1,0 +1,12 @@
+run: R04-handoff-exchange-proof
+experiment: EXP-003-handoff-live
+status: valid
+date: 2026-10-11
+code: tab-recap on feat/lane-handoff-exchange
+command: "herdr --session <scratch> server; node src/daemon/launch.mjs (scratch state, empty plugin configuration directory, TAB_RECAP_HERDR_EVENTS=on, TAB_RECAP_HANDOFF_REQUESTS=on then unset); herdr pane report-metadata <source pane> --source <tool> --token handoff-req-<tool>=<id>:<workspace>:<pane>"
+files:
+  summary.md: 67379ee0ffaf4b745afdd42df6ab84595d793383fc1c9e9d3dbb115c68f42612
+rule: with the setting on a request naming an idle lane is answered queued, running, delivered and delivered once; with the setting off the same request is answered refused-not-offered and writes no row
+ran_by: an attended agent session (Sonnet 5.5)
+note: counts, stage names and identifiers only; no ledger or transcript content
+raw: none kept (the stage sequence is in summary.md)

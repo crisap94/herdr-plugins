@@ -1,0 +1,21 @@
+id: recap-one-brand-cast
+language: typescript
+severity: error
+message: >-
+  A type assertion outside src/recap/domain/brand.ts. Parse the value with the parser of its own type
+  instead. Only `as const` is allowed.
+note: >-
+  Refuses the `as` form other than `as const` and the angle-bracket form, so `as readonly string[]` and
+  `as unknown as X` are refused too: each launders a type the same way.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-one-brand-cast/**"
+ignores:
+  - "**/src/recap/domain/brand.ts"
+rule:
+  any:
+    - kind: type_assertion
+    - kind: as_expression
+      not:
+        regex: "as const$"

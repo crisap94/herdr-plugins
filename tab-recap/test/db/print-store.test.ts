@@ -9,6 +9,7 @@ import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { RecapRecordsRepository } from '#src/adapters/db/recap-records.ts';
 import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
+import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';
 
 const BEFORE_HANDOFF = MIGRATIONS.length - 1;
@@ -34,7 +35,7 @@ test('print reads a database not yet upgraded to the handoff tables, and writes 
         seeded.db.close();
         const before = rowCounts(path);
 
-        const print = openPrintStore(path);
+        const print = openPrintStore(path, closedLaneDaysOf('14'));
         assert.equal(print.records.readRecap('w1:t1')?.tab, 'w1:t1', 'the recap reads');
         assert.deepEqual(print.records.lastRunOf('w1:t1'), { at, cause: 'focused' });
         assert.equal(print.views.tabOf('w1:p1'), 'w1:t1');

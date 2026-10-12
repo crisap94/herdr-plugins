@@ -1,3 +1,4 @@
+import type { ClosedLane } from './closures.ts';
 import type { Lane } from './lane.ts';
 import type { HiddenState, Shape } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
@@ -12,6 +13,7 @@ export type Intent =
     | { readonly kind: 'publish'; readonly tab: TabId }
     | { readonly kind: 'read-prompt'; readonly lane: Lane }
     | { readonly kind: 'save-hidden'; readonly state: HiddenState }
-    | { readonly kind: 'give-up'; readonly tab: TabId; readonly reopens: number };
+    | { readonly kind: 'give-up'; readonly tab: TabId; readonly reopens: number }
+    | { readonly kind: 'lane-closed'; readonly closed: ClosedLane };
 
 export type IntentName = Intent['kind'];

@@ -7,7 +7,9 @@ import type { AgentState } from '#src/ports/agents.ts';
 import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
+import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
 import { MemoryLedger } from './fakes/memory-ledger.ts';
@@ -42,6 +44,7 @@ function printerWith(spy: Spy, world: World = {}): PrintedHandoffs {
             ledger: new MemoryLedger().seed(...FACTS),
             records,
             views: { tabOf: () => (world.tab === undefined ? 'w1:t1' : world.tab), readTab: () => VIEW },
+            closures: { resolve: (): ClosedLaneRead => ({ kind: 'absent' }), listOf: (): ClosedLaneList => ({ kind: 'listed', records: [] }), runAt: (): LastRun | null => null },
             close: (): void => { spy.closed += 1; },
         };
     };
@@ -51,11 +54,12 @@ function printerWith(spy: Spy, world: World = {}): PrintedHandoffs {
         worksite: base.worksite,
         tokens: base.tokens,
         target: { status: async () => world.target ?? UNREACHABLE },
+        closedDays: closedLaneDaysOf('14'),
         now: () => NOW,
     });
 }
 
-const request = (over: Partial<PrintRequest> = {}): PrintRequest => ({ from: FROM, to: null, note: null, ...over });
+const request = (over: Partial<PrintRequest> = {}): PrintRequest => ({ from: FROM, to: null, note: null, closed: null, ...over });
 
 const bodyOf = (text: string): string => text.replace(/^Handoff reference: .*$/m, '');
 

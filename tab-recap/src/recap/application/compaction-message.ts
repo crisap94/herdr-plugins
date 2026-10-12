@@ -1,6 +1,8 @@
 import { linkify } from '#src/recap/render/links.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 export const MESSAGE_LIMIT = 3000;
 
@@ -13,36 +15,53 @@ export interface Material {
 }
 
 interface Priorities {
-    readonly goal: string;
-    readonly decisions: readonly string[];
-    readonly waiting: readonly string[];
-    readonly unfinished: readonly string[];
-    readonly rules: readonly string[];
-    readonly references: readonly string[];
+    readonly goal: Text;
+    readonly decisions: readonly Text[];
+    readonly waiting: readonly Text[];
+    readonly unfinished: readonly Text[];
+    readonly rules: readonly Text[];
+    readonly references: readonly Text[];
 }
 
-function resolved(line: string, web: LaneWeb | null): string {
-    return linkify(line, [web]).map((piece) => (piece.url === undefined || piece.url === piece.text ? piece.text : `${piece.text} (${piece.url})`)).join('');
+type Label = 'Decisions we made, and why' | 'Questions waiting for my answer' | 'Unfinished work and next steps' | 'Standing rules I gave you' | 'Exact references to keep as written';
+
+const KEEP = must(parseText('When you summarize this conversation, keep these, most important first:'));
+const DROP = must(parseText('Drop raw command output, the details of steps that are finished, and dead ends we already resolved.'));
+const CARRY_ON = must(parseText('Keep these in mind from here on. Nothing needs doing yet: do not start anything or run any command, just answer "ok".'));
+const RESTORE_LEAD = must(parseText('We just compacted this conversation. This is where things stand:'));
+
+
+
+function resolved(line: Text, web: LaneWeb | null): Text {
+    const joined = linkify(line, [web]).map((part) => (part.url === undefined || part.url === part.text ? part.text : `${part.text} (${part.url})`)).join('');
+    return must(parseText(joined));
 }
 
 const prioritiesOf = ({ sections, web }: Material): Priorities => ({
-    goal: sections.goal,
-    decisions: sections.decisions,
-    waiting: sections.needs,
-    unfinished: [...sections.now, ...sections.next],
-    rules: sections.rules,
-    references: sections.links.map((line) => resolved(line, web)),
+    goal: must(parseText(sections.goal)),
+    decisions: sections.decisions.map((line) => must(parseText(line))),
+    waiting: sections.needs.map((line) => must(parseText(line))),
+    unfinished: [...sections.now, ...sections.next].map((line) => must(parseText(line))),
+    rules: sections.rules.map((line) => must(parseText(line))),
+    references: sections.links.map((line) => must(parseText(line))).map((line) => resolved(line, web)),
 });
 
-const noteOf = (material: Material): string => (material.note ?? '').replace(/\s+/g, ' ').trim();
+const noteOf = (material: Material): Text => must(parseText((material.note ?? '').replace(/\s+/g, ' ').trim()));
 
-const stopped = (text: string): string => (/[.?!]$/u.test(text) ? text : `${text}.`);
-const list = (label: string, items: readonly string[]): string[] => (items.length === 0 ? [] : [`- ${label}: ${stopped(items.join('; '))}`]);
+const stopped = (text: Text): Text => (/[.?!]$/u.test(text) ? text : must(parseText(`${text}.`)));
 
-function linesOf(note: string, p: Priorities, lead: string): string[] {
+function list(label: Label, items: readonly Text[]): readonly Text[] {
+    if (items.length === 0) {
+        return [];
+    }
+    const body = stopped(must(parseText(items.join('; '))));
+    return [must(parseText(`- ${label}: ${body}`))];
+}
+
+function linesOf(note: Text, p: Priorities, lead: Text): readonly Text[] {
     const priorities = [
-        ...(note === '' ? [] : [`- Above all, keep: ${note}`]),
-        ...(p.goal === '' ? [] : [`- What I want: ${p.goal}`]),
+        ...(note === '' ? [] : [`- Above all, keep: ${note}`].map((line) => must(parseText(line)))),
+        ...(p.goal === '' ? [] : [`- What I want: ${p.goal}`].map((line) => must(parseText(line)))),
         ...list('Decisions we made, and why', p.decisions),
         ...list('Questions waiting for my answer', p.waiting),
         ...list('Unfinished work and next steps', p.unfinished),
@@ -54,30 +73,28 @@ function linesOf(note: string, p: Priorities, lead: string): string[] {
 
 const CUTS: readonly ('references' | 'unfinished' | 'decisions')[] = ['references', 'unfinished', 'decisions'];
 
-function fitted(build: (p: Priorities) => string, p: Priorities): string {
+function fitted(build: (p: Priorities) => Text, p: Priorities): Text {
     const key = CUTS.find((cut) => p[cut].length > 0);
     return build(p).length <= MESSAGE_LIMIT || key === undefined ? build(p) : fitted(build, { ...p, [key]: p[key].slice(0, -1) });
 }
 
-const KEEP = 'When you summarize this conversation, keep these, most important first:';
-const DROP = 'Drop raw command output, the details of steps that are finished, and dead ends we already resolved.';
-const CARRY_ON = 'Keep these in mind from here on. Nothing needs doing yet: do not start anything or run any command, just answer "ok".';
-
-function numbered(bullets: readonly string[]): string[] {
-    return bullets.map((bullet, at) => `(${at + 1}) ${bullet.replace(/^- /u, '')}`);
+function numbered(bullets: readonly Text[]): readonly Text[] {
+    return bullets.map((bullet, at) => must(parseText(`(${at + 1}) ${bullet.replace(/^- /u, '')}`)));
 }
 
-export function guidanceOf(material: Material): string {
+export function guidanceOf(material: Material): Text {
     const note = noteOf(material);
     return fitted((p) => {
         const [lead = KEEP, ...bullets] = linesOf(note, p, KEEP);
-        return [lead, ...numbered(bullets), DROP].join(' ').replace(/\s+/gu, ' ');
+        return must(parseText([lead, ...numbered(bullets), DROP].join(' ').replace(/\s+/gu, ' ')));
     }, prioritiesOf(material));
 }
 
-export function restoreOf(material: Material): string {
+export function restoreOf(material: Material): Text {
     const note = noteOf(material);
-    return fitted((p) => [...linesOf(note, p, 'We just compacted this conversation. This is where things stand:'), CARRY_ON].join('\n'), prioritiesOf(material));
+    return fitted((p) => must(parseText([...linesOf(note, p, RESTORE_LEAD), CARRY_ON].join('\n'))), prioritiesOf(material));
 }
 
-export const restoreFrom = (brief: string): string => `We just compacted this conversation. This is where things stand: ${brief} Nothing needs doing yet: just answer "ok".`;
+export function restoreFrom(brief: string): Text {
+    return must(parseText(`We just compacted this conversation. This is where things stand: ${brief} Nothing needs doing yet: just answer "ok".`));
+}

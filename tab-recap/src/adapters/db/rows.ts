@@ -2,6 +2,8 @@ import type { StatementSync } from 'node:sqlite';
 
 export type Row = Readonly<Record<string, unknown>>;
 
+export const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
+
 export class BadRow extends Error {}
 
 export function text(row: Row, key: string): string {
