@@ -120,8 +120,16 @@ function problems(current: string): readonly string[] {
     ];
 }
 
+function withoutSkipped(text: string): string {
+    if (SKIPPED.length === 0) return text;
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== 'object' || parsed === null || !('lanes' in parsed) || typeof parsed.lanes !== 'object' || parsed.lanes === null) return text;
+    const lanes = Object.fromEntries(Object.entries(parsed.lanes).map(([lane, files]: [string, unknown]) => [lane, Array.isArray(files) ? files.filter((file) => typeof file !== 'string' || !skipped(file)) : files]));
+    return `${JSON.stringify({ ...parsed, lanes }, null, 2)}\n`;
+}
+
 if (process.argv.includes('--check')) {
-    const current = existsSync(target) ? readFileSync(target, 'utf8') : '';
+    const current = existsSync(target) ? withoutSkipped(readFileSync(target, 'utf8')) : '';
     const found = current === '' ? ['ci/lanes.json is absent'] : problems(current);
     for (const line of found) process.stderr.write(`lanes: ${line}\n`);
     if (found.length === 0 && current !== fresh) process.stderr.write('lanes: ci/lanes.json differs from the generated map: run node ci/lanes-generate.ts\n');
