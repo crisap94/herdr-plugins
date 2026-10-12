@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 
 const ROOT = new URL('../', import.meta.url).pathname;
@@ -118,34 +118,65 @@ test('a foreign source edit fails without the adapts label and passes with it, b
     assert.equal(lane('B2', ['tab-recap/src/recap/application/zz-unowned.ts'], { LANE_ADAPTS: '1' }).status, 1);
 });
 
+const TREE = ['src/protocol/result.ts', 'src/recap/application/thing.ts', 'test/thing.test.ts', 'test/fixtures/data.txt'] as const;
+
+function treeWith(files: readonly string[]): string {
+    const root = mkdtempSync(join(SCRATCH, 'tree-'));
+    mkdirSync(join(root, 'ci'));
+    copyFileSync(join(ROOT, 'ci/lanes-generate.ts'), join(root, 'ci/lanes-generate.ts'));
+    for (const file of files) {
+        mkdirSync(join(root, dirname(file)), { recursive: true });
+        writeFileSync(join(root, file), '');
+    }
+    return root;
+}
+
+function inTree(root: string, args: readonly string[], skip: string | null = null): ReturnType<typeof spawnSync> {
+    const env = { ...process.env, ...(skip === null ? {} : { LANES_SKIP_LIST: skip }) };
+    return spawnSync('node', ['ci/lanes-generate.ts', ...args], { cwd: root, encoding: 'utf8', env });
+}
+
+function mapped(files: readonly string[]): string {
+    const root = treeWith(files);
+    assert.equal(inTree(root, []).status, 0);
+    return root;
+}
+
 test('a path named in the skip list is not expected in the map; a folder entry skips what is under it', () => {
-    const skip = written('skip.txt', '# listed\ntab-recap/src/protocol/result.ts\ntab-recap/test/fixtures/\nexperiments/\n');
-    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
-    for (const name of Object.keys(parsed.lanes)) parsed.lanes[name] = (parsed.lanes[name] ?? []).filter((file) => file !== 'src/protocol/result.ts' && !file.startsWith('test/fixtures/'));
-    const without = written(`without-${String(Math.random())}.json`, `${JSON.stringify(parsed, null, 2)}\n`);
-    assert.equal(generate(without, skip).status, 0);
-    assert.equal(generate(without).status, 1, 'without the list the same map misses those files');
+    const root = mapped(TREE);
+    writeFileSync(join(root, 'src/recap/application/own.ts'), '');
+    mkdirSync(join(root, 'test/fixtures/sub'), { recursive: true });
+    writeFileSync(join(root, 'test/fixtures/sub/more.txt'), '');
+    const skip = written('skip.txt', '# listed\ntab-recap/src/recap/application/own.ts\ntab-recap/test/fixtures/sub/\nexperiments/\n');
+    assert.equal(inTree(root, ['--check']).status, 1, 'without the list the new files are missing from the map');
+    assert.equal(inTree(root, ['--check'], skip).status, 0);
 });
 
 test('a skip list that is absent changes nothing', () => {
-    assert.equal(generate(null, join(SCRATCH, 'no-such-list.txt')).status, 0);
+    const root = mapped(TREE);
+    assert.equal(inTree(root, ['--check'], join(SCRATCH, 'no-such-list.txt')).status, 0);
+    writeFileSync(join(root, 'src/recap/application/own.ts'), '');
+    assert.equal(inTree(root, ['--check'], join(SCRATCH, 'no-such-list.txt')).status, 1);
 });
 
 test('a path in the skip list that the map still lists is not an error: the branch that skips it keeps main\'s map', () => {
+    const root = mapped(TREE);
     const skip = written('listed-skip.txt', 'tab-recap/src/protocol/result.ts\ntab-recap/test/fixtures/\n');
-    assert.equal(generate(null, skip).status, 0);
+    assert.equal(inTree(root, ['--check'], skip).status, 0);
 });
 
 test('a skip list does not hide an unexpected top-level property of the map', () => {
+    const root = mapped(TREE);
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(root, 'ci/lanes.json'), 'utf8'));
+    writeFileSync(join(root, 'ci/lanes.json'), `${JSON.stringify({ ...parsed, note: 'x' }, null, 2)}\n`);
     const skip = written('extra-skip.txt', 'tab-recap/src/protocol/result.ts\n');
-    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
-    const extra = written(`extra-${String(Math.random())}.json`, `${JSON.stringify({ ...parsed, note: 'x' }, null, 2)}\n`);
-    assert.equal(generate(extra, skip).status, 1);
+    assert.equal(inTree(root, ['--check'], skip).status, 1);
 });
 
 test('with an empty skip list the map is compared as written: a formatting-only edit is refused', () => {
+    const root = mapped(TREE);
+    const parsed: unknown = JSON.parse(readFileSync(join(root, 'ci/lanes.json'), 'utf8'));
+    writeFileSync(join(root, 'ci/lanes.json'), JSON.stringify(parsed));
     const empty = written('empty-skip.txt', '# nothing\n');
-    const parsed: unknown = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8'));
-    const compact = written(`compact-${String(Math.random())}.json`, JSON.stringify(parsed));
-    assert.equal(generate(compact, empty).status, 1);
+    assert.equal(inTree(root, ['--check'], empty).status, 1);
 });
