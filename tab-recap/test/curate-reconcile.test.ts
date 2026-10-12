@@ -7,6 +7,7 @@ import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { reconcileInput } from '#src/recap/application/curator-input.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
@@ -47,7 +48,7 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue]: [string[], Rig['calls'], { now: number }, Curated[]] = [[], [], { now: NOW }, [...answers]];
-    const writer: Curators = { backend: 'fake/test', write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: 'no more answers' })); } };
+    const writer: Curators = { backend: 'fake/test', write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
     const curate = new Curate({
         records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): number => clock.now, zone: (): string => 'UTC', language: (): string => 'en', rubric: RUBRIC.items,
         tail: (): Promise<readonly Entry[]> => Promise.resolve(over.tail ?? TAIL), every: (): number => over.every ?? RECONCILE_EVERY, log: (line): void => { logs.push(line); },

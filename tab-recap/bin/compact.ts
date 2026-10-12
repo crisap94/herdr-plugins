@@ -5,6 +5,9 @@ import { opensPopup, requestNoteOf, startCompact } from '#src/recap/application/
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -13,7 +16,7 @@ function queueCompaction(request: CompactRequest): Done {
     const store = openCliStore();
     if (store.kind !== 'ready') {
         console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
-        return unknown({ why: 'unreadable', detail: 'the state store is not ready' });
+        return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the state store is not ready'))) });
     }
     store.requests.requestCompact(request);
     store.close();

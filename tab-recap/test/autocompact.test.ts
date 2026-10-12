@@ -15,6 +15,7 @@ import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { must } from './db/support.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 
@@ -171,7 +172,7 @@ test('three lanes in a row with the decider down: three unknown decisions and on
     w.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, stuck: 0.9 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
     w.share = 63;
     await w.service.consider(lane());
-    w.decide = (): DecidedResult => unknown({ why: 'unreachable', detail: 'x' });
+    w.decide = (): DecidedResult => unknown({ why: 'unreachable', detail: causeOf('x') });
     w.share = 64;
     await w.service.consider(lane());
     assert.equal(w.logs.filter((line) => line.includes('the decider is unreachable')).length, 2);

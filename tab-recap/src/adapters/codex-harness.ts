@@ -2,6 +2,9 @@ import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -53,7 +56,7 @@ export class CodexHarness implements Harness {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }
         if (ran.code !== 0 || text.trim() === '') {
-            return unknown({ why: 'failed', code: ran.code, detail: ran.stderr.trim().slice(-300) });
+            return unknown({ why: 'failed', code: ran.code, detail: causeOf(must(parseText(ran.stderr.trim().slice(-300)))) });
         }
         return { kind: 'ran', text, costUsd: 0 };
     }

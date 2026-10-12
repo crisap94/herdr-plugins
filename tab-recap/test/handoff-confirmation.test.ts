@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -50,7 +51,7 @@ test('a session re-read that answers unknown keeps the session of the previous o
     const world = worldOf({ session: 'sess-new', located: true, latest: 'an earlier prompt' });
     world.onPause = (count: number): void => {
         if (count === 2) {
-            world.session = unknown({ why: 'unreachable', detail: 'herdr' });
+            world.session = unknown({ why: 'unreachable', detail: causeOf('herdr') });
             world.latest = TEXT;
         }
     };

@@ -2,6 +2,9 @@ import { mkdirSync } from 'node:fs';
 import { basename } from 'node:path';
 import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { run, scrubbedEnv } from './process.ts';
 
@@ -57,7 +60,7 @@ export class CustomHarness implements Harness {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }
         if (ran.code !== 0 || ran.stdout.trim() === '') {
-            return unknown({ why: 'failed', code: ran.code, detail: (ran.stderr || ran.stdout).trim().slice(0, 300) });
+            return unknown({ why: 'failed', code: ran.code, detail: causeOf(must(parseText((ran.stderr || ran.stdout).trim().slice(0, 300)))) });
         }
         return { kind: 'ran', text: ran.stdout, costUsd: 0 };
     }

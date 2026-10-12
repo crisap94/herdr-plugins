@@ -4,6 +4,9 @@ import { parseLastCommit, parsePorcelainV2 } from './git-porcelain.ts';
 import { run } from './process.ts';
 import type { Runner } from './process.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import type { LastCommitResult, UncommittedResult, WorksiteReader } from '#src/ports/worksite-reader.ts';
 
 export const LAST_COMMIT_ARGS: readonly string[] = [...GIT, 'log', '-1', '--no-show-signature', '--format=%h%x00%s'];
@@ -48,6 +51,6 @@ export class GitWorksiteReader implements WorksiteReader {
         if (result.timedOut || result.code !== 0) {
             return failure(result);
         }
-        return parse(result.stdout) ?? unknown({ why: 'unreadable', detail: 'git output did not parse' });
+        return parse(result.stdout) ?? unknown({ why: 'unreadable', detail: causeOf(must(parseText('git output did not parse'))) });
     }
 }

@@ -5,6 +5,9 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { opencodeObserved } from './opencode-context.ts';
 import { parse, str } from './jsonl.ts';
@@ -114,7 +117,7 @@ export class OpencodeTranscripts implements Transcripts {
     }
 
     private unreadable(error: unknown): Unknown {
-        return unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) });
+        return unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
     }
 
     private withDatabase<T>(use: (db: DatabaseSync) => T): T {

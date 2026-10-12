@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { TokenNotes, TTL_MS } from '#src/extensions/token-notes.ts';
 import type { PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 
 const lane = (pane: string): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
@@ -37,7 +38,7 @@ test('the plugin\'s own tokens are no note; a bare `note` is labelled `note`', a
 
 test('a lane whose read failed keeps what it had, and is read again once its back-off has passed', async () => {
     let fail = false;
-    const { notes, reads, clock } = notesWith(() => (fail ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'tokens', tokens: { 'note-x': 'kept' } }));
+    const { notes, reads, clock } = notesWith(() => (fail ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'tokens', tokens: { 'note-x': 'kept' } }));
     notes.notes([lane('w1:p1')]);
     await flush();
     fail = true;

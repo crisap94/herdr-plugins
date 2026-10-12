@@ -10,6 +10,7 @@ import type { Decider, DecidedResult } from '#src/ports/decider.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
@@ -44,7 +45,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
 }
 
 function awaitingOf(state: { awaiting: string | null; lateAwaiting: string | null; awaitingReads: number; awaitingUnknown: boolean }): Waiting {
-    if (state.awaitingUnknown) return unknown({ why: 'unreachable', detail: 'pane.get' });
+    if (state.awaitingUnknown) return unknown({ why: 'unreachable', detail: causeOf('pane.get') });
     const value = state.awaitingReads > 1 && state.lateAwaiting !== null ? state.lateAwaiting : state.awaiting;
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value };
 }

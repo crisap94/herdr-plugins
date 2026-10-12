@@ -1,6 +1,9 @@
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { unfenced } from './recap-prompt.ts';
 
 const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
@@ -44,13 +47,13 @@ export class HarnessDecider implements Decider {
     async ask(state: object, questions: Readonly<Record<string, Noul>>): Promise<DecidedResult> {
         const call = { instructions: deciderInstructions(questions), input: JSON.stringify(state) };
         const bytes = Buffer.byteLength(call.instructions) + Buffer.byteLength(call.input);
-        if (this.harness.limit !== null && bytes > this.harness.limit) return unknown({ why: 'unreadable', detail: `the state is too long for ${this.harness.id}` });
+        if (this.harness.limit !== null && bytes > this.harness.limit) return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the state is too long for ${this.harness.id}`))) });
         const began = this.now();
         const ran = await this.harness.run(call, this.settings);
         if (isUnknown(ran)) return ran;
         const answers = probabilitiesOf(ran.text, Object.keys(questions));
         return answers === null
-            ? unknown({ why: 'unreadable', detail: `${this.harness.id} did not answer with one probability per question` })
+            ? unknown({ why: 'unreadable', detail: causeOf(must(parseText(`${this.harness.id} did not answer with one probability per question`))) })
             : { kind: 'decided', answers, tokens: Math.ceil(bytes / 4), costUsd: ran.costUsd, tookMs: this.now() - began, model: this.harness.label(this.settings) };
     }
 }

@@ -1,5 +1,8 @@
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { obj } from './jsonl.ts';
 
@@ -42,13 +45,13 @@ export class JevDecider implements Decider {
         } catch (error) {
             return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
                 ? unknown({ why: 'timeout', after: duration(JEV_TIMEOUT_MS) })
-                : unknown({ why: 'unreachable', detail: `the decider did not answer (${error instanceof Error ? error.name : 'error'})` });
+                : unknown({ why: 'unreachable', detail: causeOf(must(parseText(`the decider did not answer (${error instanceof Error ? error.name : 'error'})`))) });
         }
-        if (!response.ok) return unknown({ why: 'failed', code: response.status, detail: failure(response.status) });
+        if (!response.ok) return unknown({ why: 'failed', code: response.status, detail: causeOf(must(parseText(failure(response.status)))) });
         try {
             return { kind: 'body', body: await response.json() };
         } catch {
-            return unknown({ why: 'unreadable', detail: 'the decider answered with something that is not JSON' });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the decider answered with something that is not JSON'))) });
         }
     }
 }
@@ -63,7 +66,7 @@ function answered(body: unknown, ids: readonly string[], meta: { model: string; 
     const [reply, answers] = [obj(body), {} as Record<string, number>];
     for (const id of ids) {
         const noul = obj(obj(reply['answers'])[id])['noul'];
-        if (typeof noul !== 'number' || !Number.isFinite(noul) || noul < 0 || noul > 1) return unknown({ why: 'unreadable', detail: `no usable answer for ${id}` });
+        if (typeof noul !== 'number' || !Number.isFinite(noul) || noul < 0 || noul > 1) return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`no usable answer for ${id}`))) });
         answers[id] = noul;
     }
     const used = obj(reply['usage'])['input_tokens'];

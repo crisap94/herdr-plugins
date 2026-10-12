@@ -8,6 +8,7 @@ import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { echoing, laneWith, leaseSpy, PANE, planWith, readyOf, senderOf, worldOf } from './fakes/handoff-delivery.ts';
@@ -35,7 +36,7 @@ test('an earlier live lease of another tool returns typing-lease-busy without pa
     const clock = { at: 1000 };
     const herdr = new FakePanes(() => clock.at);
     const tokens: LaneTokens = {
-        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: 'fake' })),
+        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
     const panes: PaneTokens = { read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: herdr.read(pane) }) };
     const leasePauses: number[] = [];
@@ -78,7 +79,7 @@ test('a send that throws is a transport failure, logged once with its name and n
 });
 
 test('a send that reports an unknown reading is a transport failure and releases the lease', async () => {
-    const world = worldOf({ latest: 'older', sendReply: unknown({ why: 'unreachable', detail: 'socket closed' }) });
+    const world = worldOf({ latest: 'older', sendReply: unknown({ why: 'unreachable', detail: causeOf('socket closed') }) });
     const spy = leaseSpy('taken');
     assert.deepEqual(await senderOf(world, spy.port).send(readyClaude(), TEXT), TRANSPORT);
     assert.deepEqual(spy.released, [PANE]);

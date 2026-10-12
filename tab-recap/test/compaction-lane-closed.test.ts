@@ -6,6 +6,7 @@ import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { AgentState, Agents } from '#src/ports/agents.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { compactionDeps, compacted, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import type { Fleet } from '#test/fakes/compaction-fleet.ts';
 
@@ -115,7 +116,7 @@ test('herdr answers agent_not_found at the very first status check: skipped lane
 });
 
 test('herdr does not answer: the compaction fails as before, with its reason and the failure toast', async () => {
-    const run = hostile({ statuses: [unknown({ why: 'unreachable', detail: 'socket closed' })] });
+    const run = hostile({ statuses: [unknown({ why: 'unreachable', detail: causeOf('socket closed') })] });
     await run.compaction.run(AUTO);
     assert.deepEqual(stages(run.world), [['failed', 'unreachable: socket closed']]);
     assert.match(run.world.toasts.join('\n'), /Could not compact claude: unreachable: socket closed/u);
@@ -165,7 +166,7 @@ test('a lane closed end publishes no compact-failed event, whichever step saw th
 });
 
 test('a failure that is not a closed lane still publishes compact-failed', async () => {
-    const run = hostile({ statuses: [unknown({ why: 'unreachable', detail: 'socket closed' })] });
+    const run = hostile({ statuses: [unknown({ why: 'unreachable', detail: causeOf('socket closed') })] });
     await run.compaction.run(AUTO);
     assert.equal(failedEvents(run.world).length, 1);
 });

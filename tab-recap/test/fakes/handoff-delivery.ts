@@ -2,6 +2,7 @@ import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
 import type { AgentState, Agents, Prompted, PromptBehavior, PromptWait } from '#src/ports/agents.ts';
 import type { Located, PromptResult, Transcripts, ChunkResult } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './cause.ts';
 import type { Acquired } from '#src/recap/application/typing-lease.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
 import type { HandoffTyping } from '#src/recap/application/handoff-sender.ts';
@@ -80,12 +81,12 @@ function transcriptsOf(world: World): Transcripts {
             const key = world.locatedBy === 'session' ? lane.session : lane.cwd;
             return world.located && key !== null ? { kind: 'located', source: 'transcript-1' } : unknown({ why: 'not-found', what: 'transcript' });
         },
-        read: async (): Promise<ChunkResult> => unknown({ why: 'unreadable', detail: 'not used by handoff' }),
+        read: async (): Promise<ChunkResult> => unknown({ why: 'unreadable', detail: causeOf('not used by handoff') }),
         latestPrompt: async (): Promise<PromptResult> => {
             if (world.faults.latest) {
                 throw new Error('latest failed');
             }
-            return world.unreadable ? unknown({ why: 'unreadable', detail: 'tail' }) : { kind: 'prompt', text: world.latest };
+            return world.unreadable ? unknown({ why: 'unreadable', detail: causeOf('tail') }) : { kind: 'prompt', text: world.latest };
         },
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     };

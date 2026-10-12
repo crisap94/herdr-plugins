@@ -3,6 +3,9 @@ import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prom
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 type Json = Readonly<Record<string, unknown>>;
 export type Wire = (method: string, params: Json, timeoutMs?: number) => Promise<Json>;
@@ -32,9 +35,9 @@ export class HerdrAgents implements Agents {
             const fields = typeof found === 'object' && found !== null ? (found as Json) : {};
             return typeof fields['agent'] === 'string'
                 ? { kind: 'agent', agent: fields['agent'], status: laneStatus(typeof fields['agent_status'] === 'string' ? fields['agent_status'] : null) }
-                : unknown({ why: 'unreadable', detail: `agent.get of ${pane} returned no agent` });
+                : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`agent.get of ${pane} returned no agent`))) });
         } catch (error) {
-            return codeOf(error) === 'agent_not_found' ? unknown({ why: 'not-found', what: `agent ${pane}` }) : unknown({ why: 'unreachable', detail: detail(error) });
+            return codeOf(error) === 'agent_not_found' ? unknown({ why: 'not-found', what: `agent ${pane}` }) : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -47,14 +50,14 @@ export class HerdrAgents implements Agents {
             if (codeOf(error) === 'agent_prompt_stalled' && behavior.acceptsStall) {
                 return { kind: 'sent' };
             }
-            return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: detail(error) });
+            return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
     async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
         const pieces = line.pieces;
         if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
-            return unknown({ why: 'unreadable', detail: 'a typed line has no line break' });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText('a typed line has no line break'))) });
         }
         try {
             for (const piece of pieces) {
@@ -64,7 +67,7 @@ export class HerdrAgents implements Agents {
             await this.wire('pane.send_keys', { pane_id: pane, keys: ['enter'] });
             return { kind: 'sent' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 
@@ -76,7 +79,7 @@ export class HerdrAgents implements Agents {
             });
             return { kind: 'done' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: detail(error) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }
     }
 }

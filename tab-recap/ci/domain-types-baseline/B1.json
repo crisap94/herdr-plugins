@@ -202,7 +202,7 @@
   "src/ports/unknowable.ts": {
     "parameter": 1,
     "return": 1,
-    "property": 6
+    "property": 3
   },
   "src/ports/verdicts.ts": {
     "parameter": 2,

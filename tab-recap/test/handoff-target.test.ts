@@ -6,6 +6,7 @@ import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -57,7 +58,7 @@ test('a live awaiting token is in-flight and starts no transcript read', async (
 });
 
 test('an awaiting token that cannot be read is in-flight', async () => {
-    const deps = depsOf([freshClaude], notStarted, unknown({ why: 'unreadable', detail: 'tokens' }));
+    const deps = depsOf([freshClaude], notStarted, unknown({ why: 'unreadable', detail: causeOf('tokens') }));
     assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'refused', reason: 'in-flight' });
 });
 

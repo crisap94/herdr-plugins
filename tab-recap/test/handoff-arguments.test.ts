@@ -71,3 +71,9 @@ test('--closed-at accepts the latest instant a date can hold and refuses the nex
     assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'closed-at': ['8640000000000001'], to: [TO] }, ['handoff']), { problem: '--closed-at needs a non-negative integer' });
     assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'closed-at': ['9007199254740991'], to: [TO] }, ['handoff']), { problem: '--closed-at needs a non-negative integer' });
 });
+
+test('a repeated closed-source option is a usage problem, whichever of the three repeats', () => {
+    assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'from-closed': [FROM, 'w1:p3'], to: [TO] }, ['handoff']), { problem: 'a closed-source option is given more than once' });
+    assert.deepEqual(handoffArgumentsOf({ ...CLOSED, tab: ['w1:t1', 'w1:t2'], to: [TO] }, ['handoff']), { problem: 'a closed-source option is given more than once' });
+    assert.deepEqual(handoffArgumentsOf({ ...CLOSED, 'closed-at': ['1000', '2000'], to: [TO] }, ['handoff']), { problem: 'a closed-source option is given more than once' });
+});
