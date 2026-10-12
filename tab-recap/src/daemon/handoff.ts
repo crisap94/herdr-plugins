@@ -7,7 +7,7 @@ import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
 import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
-import type { HandoffAnswers, HandoffVerdict } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -30,7 +30,7 @@ import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } f
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import { isStorable, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { storedOf, type HandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
@@ -56,16 +56,6 @@ const askIdOf = (id: HandoffId): RequestId | null => {
     return bytes === null ? null : must(requestId(Buffer.from(bytes).toString('hex').slice(-16), 'legacy-length'));
 };
 
-function verdictOf(outcome: HandoffOutcome): HandoffVerdict {
-    if (outcome.kind === 'delivered') {
-        return { outcome: 'delivered', reason: null };
-    }
-    if (!isStorable(outcome) || !('reason' in outcome)) {
-        return { outcome: 'failed', reason: 'internal-error' };
-    }
-    return { outcome: outcome.kind, reason: outcome.reason };
-}
-
 const internalError = (): HandoffRun => unrendered({ kind: 'failed', reason: 'internal-error' });
 
 const settledOf = (outcome: HandoffOutcome): AskOutcome => ({ kind: outcome.kind === 'delivered' ? 'done' : 'settled' });
@@ -87,7 +77,7 @@ export class HandoffRunner {
             const { asks, answers, transaction } = this.deps;
             transaction(() => {
                 if (id !== null) {
-                    answers.answerHandoff(id, { outcome: 'failed', reason: 'interrupted' });
+                    answers.answerHandoff(id, { kind: 'failed', reason: 'interrupted' });
                 }
                 asks.settle({ exchange: ask.exchange, id: ask.id, pane: ask.pane }, { kind: 'interrupted' });
             });
@@ -166,17 +156,17 @@ export class HandoffRunner {
 
     private finish(id: HandoffId, run: HandoffRun, key: AskKey | null): void {
         const { outcome, rendered } = run;
-        this.record(id, verdictOf(outcome), key, settledOf(outcome));
+        this.record(id, storedOf(outcome), key, settledOf(outcome));
         const reason = 'reason' in outcome ? ` ${outcome.reason}` : '';
         const text = rendered === null ? '' : ` bytes ${rendered.bytes} omitted ${rendered.omitted} withheld ${rendered.withheld}`;
         this.deps.log(`handoff ${id}: ${outcome.kind}${reason}${text}`);
     }
 
-    private record(id: HandoffId, verdict: HandoffVerdict, key: AskKey | null, settled: AskOutcome): void {
+    private record(id: HandoffId, stored: StoredHandoffOutcome, key: AskKey | null, settled: AskOutcome): void {
         const { asks, answers, transaction } = this.deps;
         const write = (): void => {
             transaction(() => {
-                answers.answerHandoff(id, verdict);
+                answers.answerHandoff(id, stored);
                 if (key !== null) {
                     asks.settle(key, settled);
                 }

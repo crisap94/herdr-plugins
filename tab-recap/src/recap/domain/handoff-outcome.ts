@@ -71,6 +71,10 @@ export function storedOutcomeOf(kind: string, reason: string | null): StoredHand
     return outcome !== null && isStorable(outcome) ? outcome : null;
 }
 
+const INTERNAL_FAILURE: StoredHandoffOutcome = { kind: 'failed', reason: 'internal-error' };
+
+export const storedOf = (outcome: HandoffOutcome): StoredHandoffOutcome => (isStorable(outcome) ? outcome : INTERNAL_FAILURE);
+
 export function exitCodeOf(outcome: HandoffOutcome): HandoffExitCode {
     return requiredRowOf(outcome).exit;
 }
@@ -78,5 +82,3 @@ export function exitCodeOf(outcome: HandoffOutcome): HandoffExitCode {
 export function messageKeyOf(outcome: HandoffOutcome): HandoffMessageKey | null {
     return requiredRowOf(outcome).message;
 }
-
-export const isStorablePair = (kind: string, reason: string | null): boolean => storedOutcomeOf(kind, reason) !== null;

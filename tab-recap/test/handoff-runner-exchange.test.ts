@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
-import type { HandoffAnswerRow, HandoffAnswers, HandoffVerdict } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
+import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -22,10 +23,10 @@ const HID: HandoffId = handoffIdOf(new Uint8Array(16).fill(7));
 const events: LaneEvents = { lane: (): void => undefined, inWorkspace: (): void => undefined };
 
 class MemoryAnswers implements HandoffAnswers {
-    readonly rows = new Map<HandoffId, HandoffVerdict>();
+    readonly rows = new Map<HandoffId, StoredHandoffOutcome>();
 
-    answerHandoff(id: HandoffId, verdict: HandoffVerdict): void {
-        this.rows.set(id, verdict);
+    answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void {
+        this.rows.set(id, outcome);
     }
 
     handoffAnswer(): HandoffAnswerRow | null {
@@ -54,8 +55,9 @@ const row = (at: number): HandoffRequestRow => ({ id: HID, at, tab: tabId('w1:t1
 test('an exchange row runs: running, then delivered on the source pane; its answer row is written and its ask settled', async () => {
     const run = setup(1000);
     await run.runner.take([row(1000)]);
+    await new Promise((resolve) => { setImmediate(resolve); });
     assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-handoff': 'h1:running' }, { 'tab-recap-handoff': 'h1:delivered' }]);
-    assert.deepEqual(run.answers.rows.get(HID), { outcome: 'delivered', reason: null });
+    assert.deepEqual(run.answers.rows.get(HID), { kind: 'delivered' });
     assert.deepEqual(run.asks.unfinished(), []);
 });
 
@@ -64,6 +66,6 @@ test('an exchange row taken too late is answered failed-expired on the source pa
     await run.runner.take([row(0)]);
     assert.deepEqual(run.ran, []);
     assert.deepEqual(run.tokens.reports.map((report) => [report.pane, report.tokens]), [['w1:p1', { 'tab-recap-handoff': 'h1:failed-expired' }]]);
-    assert.deepEqual(run.answers.rows.get(HID), { outcome: 'failed', reason: 'expired' });
+    assert.deepEqual(run.answers.rows.get(HID), { kind: 'failed', reason: 'expired' });
     assert.deepEqual(run.asks.unfinished(), []);
 });

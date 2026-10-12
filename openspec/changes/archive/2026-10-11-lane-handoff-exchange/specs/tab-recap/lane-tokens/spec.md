@@ -156,4 +156,4 @@ deadline. When the exchange is enabled, `tab-recap-x` SHALL list `handoff1`.
 #### Scenario: The deadline is published
 
 - **WHEN** another tool reads the published protocol vectors
-- **THEN** it SHALL find the handoff's `deadline-ms`, equal to 150 000 while the handoff's constants are unchanged
+- **THEN** it SHALL find the handoff's `deadline-ms`, equal to 200 000 while the handoff's constants are unchanged

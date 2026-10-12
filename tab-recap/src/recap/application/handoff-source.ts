@@ -1,3 +1,4 @@
+import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -8,6 +9,7 @@ import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
+import { saying } from '#src/ports/unknowable.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;
@@ -23,12 +25,23 @@ export interface SourceDeps {
     readonly now: number;
 }
 
-export interface FoundSource {
+interface FoundFacts {
     readonly kind: 'found';
     readonly task: TaskId;
     readonly facts: readonly Fact[];
-    readonly view?: ClosedView;
 }
+
+export interface LiveFound extends FoundFacts {
+    readonly source: 'live';
+}
+
+export interface ClosedFound extends FoundFacts {
+    readonly source: 'closed';
+    readonly identity: ClosedLaneIdentity;
+    readonly view: ClosedView;
+}
+
+export type FoundSource = LiveFound | ClosedFound;
 
 export type SourceResolution =
     | FoundSource
@@ -66,9 +79,9 @@ const liveResolver: SourceResolver<'live'> = (source, deps) => {
         const task: TaskId = { tab: source.tab, key: only.id };
         const open = deps.ledger.openOf(task);
         const closed = deps.ledger.recentlyClosed(task, deps.now - HANDOFF_CLOSED_WINDOW_MS);
-        return { kind: 'found', task, facts: [...open, ...closed] };
+        return { kind: 'found', source: 'live', task, facts: [...open, ...closed] };
     } catch (error) {
-        return { kind: 'unknown', why: String(error) };
+        return { kind: 'unknown', why: failureCauseOf(error) };
     }
 };
 
@@ -76,9 +89,9 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps): SourceResolut
     const resolution = resolveClosedLane(identity, deps);
     switch (resolution.kind) {
         case 'found':
-            return { kind: 'found', task: resolution.task, facts: resolution.facts, view: resolution.view };
+            return { kind: 'found', source: 'closed', identity, task: resolution.task, facts: resolution.facts, view: resolution.view };
         case 'unknown':
-            return { kind: 'unknown', why: resolution.reason };
+            return { kind: 'unknown', why: saying(resolution.why) };
         default:
             return { kind: 'source-unavailable' };
     }

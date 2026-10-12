@@ -174,7 +174,7 @@
     "return": 3
   },
   "src/recap/application/dispatch.ts": {
-    "parameter": 13,
+    "parameter": 12,
     "return": 3,
     "container": 3
   },
@@ -290,7 +290,6 @@
   "src/recap/application/handoff-request.ts": {
     "parameter": 2,
     "return": 1,
-    "container": 3,
     "property": 5
   },
   "src/recap/application/handoff-sender.ts": {

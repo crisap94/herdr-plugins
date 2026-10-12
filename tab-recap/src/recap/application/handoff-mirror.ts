@@ -56,6 +56,20 @@ export interface HandoffMirrorDeps {
 
 export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(requestId(route.id, 'token-safe')), pane: route.source });
 
+const REPORT_BOUND_MS = 5_000;
+
+async function settledOrBound(done: Promise<void>): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    const bound = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, REPORT_BOUND_MS);
+    });
+    try {
+        await Promise.race([done.catch(() => undefined), bound]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
     try {
         const done = await tokens.report(pane, { [write.name]: write.value }, HANDOFF_ANSWER_TTL_MS);
@@ -69,6 +83,7 @@ export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: Pan
 
 export class HandoffMirror {
     private readonly deps: HandoffMirrorDeps;
+    private readonly pending = new Map<PaneId, Promise<void>>();
 
     constructor(deps: HandoffMirrorDeps) {
         this.deps = deps;
@@ -97,10 +112,25 @@ export class HandoffMirror {
         }
         const write = answerOf(handoff, must(requestId(route.id, 'token-safe')), stage);
         if (write.kind === 'ok') {
-            void reportWrite(this.deps.tokens, this.deps.log, route.source, write.value);
+            this.report(route.source, write.value);
         }
         const detail = kind === HANDOFF_EVENTS.failed ? must(parseText(`${route.id}:${stage}`)) : route.id;
         this.deps.events.lane(route.source, kind, detail);
         this.deps.events.lane(route.target, kind, detail);
+    }
+
+    private report(pane: PaneId, write: TokenWrite): void {
+        const { tokens, log } = this.deps;
+        const previous = this.pending.get(pane);
+        const next = previous === undefined ? reportWrite(tokens, log, pane, write) : settledOrBound(previous).then(() => reportWrite(tokens, log, pane, write));
+        this.pending.set(pane, next);
+        void this.release(pane, next);
+    }
+
+    private async release(pane: PaneId, done: Promise<void>): Promise<void> {
+        await done.catch(() => undefined);
+        if (this.pending.get(pane) === done) {
+            this.pending.delete(pane);
+        }
     }
 }

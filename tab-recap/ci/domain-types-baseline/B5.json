@@ -56,9 +56,8 @@
     "property": 1
   },
   "src/adapters/db/handoff-answers.ts": {
-    "parameter": 3,
-    "return": 10,
-    "container": 2
+    "parameter": 1,
+    "return": 3
   },
   "src/adapters/db/import/equivalence.ts": {
     "parameter": 2,

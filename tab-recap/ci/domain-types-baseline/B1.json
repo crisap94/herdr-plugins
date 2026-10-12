@@ -79,7 +79,6 @@
   },
   "src/ports/handoff-answers.ts": {
     "parameter": 1,
-    "return": 3,
     "property": 2
   },
   "src/ports/handoff-plans.ts": {

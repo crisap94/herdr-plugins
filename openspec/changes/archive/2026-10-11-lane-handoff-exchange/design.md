@@ -64,11 +64,11 @@ outcome table (which keeps only outcomes of the flow).
 ### D4. A published deadline
 
 The descriptor carries `deadline-ms`: the longest time between `<id>:queued` and a terminal stage. The formula is slice 1's,
-stated there once and cited here: `HANDOFF_DEADLINE_MS` (150 000) = `HANDOFF_TAKE_MAX_AGE_MS` (30 000, the largest age at
-which a row is still run) + `HANDOFF_FLOW_MAX_MS` (120 000: refresh wait 90 000, settle hold 10 000, confirmation window
+stated there once and cited here: `HANDOFF_DEADLINE_MS` (200 000) = `HANDOFF_TAKE_MAX_AGE_MS` (30 000, the largest age at
+which a row is still run) + `HANDOFF_FLOW_MAX_MS` (170 000: refresh wait 90 000, settle hold up to 60 000, confirmation window
 20 000). A queued row older than `HANDOFF_TAKE_MAX_AGE_MS` when taken is answered `<id>:failed-expired` and nothing is typed,
 so tab-recap never types after the deadline another tool waits for. The protocol module cannot import slice 1's constants
-(it is self-contained), so the descriptor declares the number 150 000 and a test outside the module pins it to
+(it is self-contained), so the descriptor declares the number 200 000 and a test outside the module pins it to
 `HANDOFF_DEADLINE_MS` and the equation. The value is published in the protocol vectors.
 
 Alternative rejected: let each tool pick its own timeout. A tool that gives up earlier than tab-recap can still deliver

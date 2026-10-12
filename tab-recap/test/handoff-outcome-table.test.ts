@@ -5,8 +5,7 @@ import { answerValue } from '#src/protocol/exchange.ts';
 import { must } from '#src/protocol/result.ts';
 import { eventValue } from '#src/recap/domain/event-token.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
-
-const EXCHANGE_ONLY_REFUSALS = ['not-offered', 'bad-request', 'target-elsewhere'];
+import { HANDOFF_EXCHANGE_REFUSALS } from '#src/protocol/reasons.ts';
 
 test('slice 1 outcome table is unchanged by the handoff exchange: the same outcome, reason and storable triples', () => {
     assert.deepEqual(HANDOFF_OUTCOME_ROWS.map((row) => [row.outcome, row.reason, row.storable]), [
@@ -39,7 +38,7 @@ test('slice 1 outcome table is unchanged by the handoff exchange: the same outco
 
 test('the exchange-only refusals are not outcomes of the flow', () => {
     const reasons = new Set<string | null>(HANDOFF_OUTCOME_ROWS.map((row) => row.reason));
-    assert.deepEqual(EXCHANGE_ONLY_REFUSALS.filter((reason) => reasons.has(reason)), []);
+    assert.deepEqual(HANDOFF_EXCHANGE_REFUSALS.filter((reason) => reasons.has(reason)), []);
 });
 
 test('every descriptor refusal, unsupported and failure reason maps to one answer value of at most 80 characters', () => {
@@ -51,7 +50,7 @@ test('every descriptor refusal, unsupported and failure reason maps to one answe
     for (const stage of stages) {
         assert.ok(must(answerValue(handoff, 'x'.repeat(16), stage)).length <= 80, stage);
     }
-    for (const reason of EXCHANGE_ONLY_REFUSALS) {
+    for (const reason of HANDOFF_EXCHANGE_REFUSALS) {
         assert.ok(handoff.refusalReasons.some((each) => each === reason), `${reason} is a refusal of the descriptor`);
     }
 });

@@ -1,23 +1,18 @@
-import type { HandoffAnswerRow, HandoffAnswers, HandoffVerdict } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import type { StorablePair } from '#src/adapters/db/handoff-answers.ts';
 
 export class MemoryHandoffAnswers implements HandoffAnswers {
-    private readonly storable: StorablePair;
     private readonly now: () => number;
     private readonly rows = new Map<HandoffId, HandoffAnswerRow>();
 
-    constructor(storable: StorablePair, now: () => number) {
-        this.storable = storable;
+    constructor(now: () => number) {
         this.now = now;
     }
 
-    answerHandoff(id: HandoffId, verdict: HandoffVerdict): void {
-        if (!this.storable(verdict.outcome, verdict.reason)) {
-            throw new Error(`handoff ${verdict.outcome} ${verdict.reason ?? 'delivered'} is not storable`);
-        }
+    answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void {
         if (!this.rows.has(id)) {
-            this.rows.set(id, { ...verdict, id, at: this.now() });
+            this.rows.set(id, { kind: outcome.kind, reason: 'reason' in outcome ? outcome.reason : null, id, at: this.now() });
         }
     }
 

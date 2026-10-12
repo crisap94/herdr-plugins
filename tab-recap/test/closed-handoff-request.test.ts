@@ -4,7 +4,6 @@ import { MemoryRequests } from './fakes/requests.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import { deliverHandoff, type DaemonReading, type DeliverDeps } from '#src/recap/application/handoff-request.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
-import { isStorablePair } from '#src/recap/domain/handoff-outcome.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
@@ -15,7 +14,7 @@ const CLOSED_AT = instant(NOW - 60_000);
 
 test('a closed source whose pane id is the target pane is queued as a closed request, not refused source-equals-target', async () => {
     const requests = new MemoryRequests(() => NOW);
-    const answers = new MemoryHandoffAnswers(isStorablePair, () => NOW);
+    const answers = new MemoryHandoffAnswers(() => NOW);
     const taken: HandoffRequestRow[] = [];
     let now = NOW;
     const deps: DeliverDeps = {

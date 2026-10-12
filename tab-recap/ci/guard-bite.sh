@@ -21,7 +21,7 @@ bash "$guard" >/dev/null 2>&1 && { echo "bite: a history without main passed" >&
 
 # the migration guard: a released migration may not change; a new one, and the registry, may
 migrations="$HERE/ci/check-migrations.sh"
-export MIGRATIONS_DIR=schema
+export MIGRATIONS_DIR=schema MIGRATIONS_BASE=main
 git switch --quiet main
 bash "$migrations" >/dev/null 2>&1 || { echo "bite: no release tag yet must pass" >&2; exit 1; }
 mkdir schema; echo 'export const m001 = 1;' > schema/001-initial.ts; echo 'export const all = [];' > schema/index.ts

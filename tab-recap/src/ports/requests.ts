@@ -1,3 +1,4 @@
+import type { NewAsk } from '#src/ports/ask-ledger.ts';
 import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
@@ -41,6 +42,10 @@ export interface NewHandoffRequest {
 export interface HandoffRequester {
     requestHandoff(request: NewHandoffRequest): HandoffId;
     withdrawHandoff(id: HandoffId): boolean;
+}
+
+export interface HandoffQueue {
+    queueHandoff(ask: NewAsk, request: NewHandoffRequest): void;
 }
 
 export interface HandoffResponder {

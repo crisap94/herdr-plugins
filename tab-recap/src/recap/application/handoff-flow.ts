@@ -149,6 +149,7 @@ export class HandoffFlow {
             case 'source-unavailable':
                 return { kind: 'refused', reason: 'source-unavailable' };
             case 'unknown':
+                this.deps.log(`handoff ${request.id}: source unreadable (${found.why})`);
                 return { kind: 'failed', reason: 'source-unreadable' };
             default: {
                 const exhaustive: never = found;
@@ -166,8 +167,8 @@ export class HandoffFlow {
     }
 
     private renderOf(request: HandoffRequestRow, found: FoundSource, refresh: RefreshStatus): RenderStep {
-        if (found.view !== undefined) {
-            const lane = closedLaneOf({ tab: request.tab, pane: request.pane, closedAt: found.view.closedAt }, found.view);
+        if (found.source === 'closed') {
+            const lane = closedLaneOf(found.identity, found.view);
             return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor: null, facts: found.facts, note: request.note, refresh, closed: found.view });
         }
         const lane = this.deps.lanes().find((candidate) => candidate.pane === request.pane);

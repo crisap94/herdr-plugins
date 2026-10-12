@@ -13,11 +13,10 @@ export const COMPACT_FAILURES = {
 
 export type CompactFailure = (typeof COMPACT_FAILURES)[keyof typeof COMPACT_FAILURES];
 
-export const HANDOFF_REFUSALS = [
-    'not-offered',
-    'bad-request',
+export const HANDOFF_EXCHANGE_REFUSALS = ['not-offered', 'bad-request', 'target-elsewhere'] as const;
+
+export const HANDOFF_FLOW_REFUSALS = [
     'not-a-lane',
-    'target-elsewhere',
     'source-unavailable',
     'task-ambiguous',
     'source-equals-target',
@@ -29,6 +28,8 @@ export const HANDOFF_REFUSALS = [
     'ledger-empty',
     'too-large',
 ] as const;
+
+export const HANDOFF_REFUSALS = [...HANDOFF_EXCHANGE_REFUSALS, ...HANDOFF_FLOW_REFUSALS] as const;
 
 export const HANDOFF_UNSUPPORTED = ['no-plan'] as const;
 

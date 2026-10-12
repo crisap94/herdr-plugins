@@ -24,7 +24,7 @@ test('the poll hands the taken rows to the runner, and a rejected take is logged
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(seen.length, 1);
     assert.strictEqual(seen[0], rows);
-    assert.deepEqual(logs, ['handoff poll: Error: store locked']);
+    assert.deepEqual(logs, ['handoff poll: Error']);
 });
 
 test('the answer prune cuts at the answer time-to-live before now', () => {
