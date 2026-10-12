@@ -30,6 +30,7 @@ lint:
   variables:
     GIT_DEPTH: "0"
   script:
+    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
     - bash ci/lint.sh
 
 # The writer's document is validated against its DTD with xmllint (the node images do not ship it).
