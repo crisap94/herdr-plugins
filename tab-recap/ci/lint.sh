@@ -66,8 +66,11 @@ bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-ty
 echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
 node bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run node bin/check-domain-types.ts --json and lower or fix"
 
-echo "released migrations are untouched (no tag yet is clean):"
-bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed: add a new numbered one"
+echo "migrations (a released one is untouched; a new one is numbered the base's highest plus one):"
+bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"
+
+echo "the migration numbering bites (the next number and a run of them pass; a gap, a repeat and a duplicate fail):"
+bash ci/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
 
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
 bash ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"

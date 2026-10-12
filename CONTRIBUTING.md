@@ -117,6 +117,10 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   `up` is a list of SQL statements, or a function taking the database.
 - **Never edit a released migration** (one that is in a `tab-recap-v*` tag): a fix is a new number. `ci/check-migrations.sh`
   (part of `ci/lint.sh`) fails when a released file changed or was deleted.
+- **Number it exactly one above `main`'s highest** (and consecutively when a branch adds several): a gap makes a database skip the
+  numbers between, and a number already taken collides with a migration that landed first. `ci/check-migrations.sh` reads
+  `origin/main` (`MIGRATIONS_BASE`) and fails any other number; `ci/migration-number-bite.sh` proves it fails a gap, a repeat and a
+  duplicate. After another migration lands, rebase and renumber.
 - **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
   drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
   Use only SQL the SQLite bundled with Node 24.21 supports (SQLite 3.53).
