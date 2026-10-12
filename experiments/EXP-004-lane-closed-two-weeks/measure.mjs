@@ -26,7 +26,7 @@ const withWriter = closed.filter((row) => (row.finished_at ?? row.started_at) - 
 const remaining = ends.filter((row) => row.stage === 'failed' && String(row.why).includes('agent_not_found'));
 const typed = ends.filter((row) => ['compacted', 'failed', 'unconfirmed'].includes(row.stage) || (row.stage === 'skipped' && row.why === 'lane closed'));
 
-const statusOf = rows("SELECT hex(compaction_id) AS cid, lane_status FROM autocompact_decision WHERE compaction_id IS NOT NULL AND at >= ?", SINCE);
+const statusOf = rows("SELECT hex(compaction_id) AS cid, lane_status FROM autocompact_decision WHERE compaction_id IS NOT NULL AND at >= ? AND at < ?", SINCE, UNTIL);
 const byCompaction = new Map(statusOf.map((row) => [row.cid, row.lane_status]));
 const idHex = (readable) => readable.replaceAll('-', '').toUpperCase();
 const autoClosed = closed.filter((row) => row.origin === 'auto');
