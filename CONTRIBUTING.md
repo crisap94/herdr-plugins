@@ -169,8 +169,26 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
 2. On `main`'s pipeline, run the manual **`release:prepare`** job. It works out the next version
    (`ci/next-release.sh` prints it with the section it will write), updates the manifest,
    `package.json`, the lockfile and `CHANGELOG.md` (one bullet per MR: title and `(!number)`, grouped
-   under Breaking/Added/Changed/Fixed, `internal` left out), pushes that commit to `main` and creates
-   the annotated tag `tab-recap-vX.Y.Z`. If nothing is due it says so and stops.
+   under Breaking/Added/Changed/Fixed, `internal` left out), commits that on the branch
+   `release/tab-recap-vX.Y.Z` and opens a merge request from it labelled `land` (`ci/release-publish.sh`);
+   it never pushes `main`. If nothing is due it says so and stops; while a release merge request is open
+   it will not prepare another, and it refuses while a prepared release is still untagged (the manifest
+   is ahead of the newest tag). When the merge train has landed that merge request, **`release:tag`**
+   (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a
+   dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the newest commit
+   that touched the manifest or `CHANGELOG.md` (the release commit, or the merge request that completed
+   its changelog afterwards), after checking that the version is above every tag, the three versions
+   agree, the changelog has its link and a non-empty section, and `ci/next-release.sh` run up to that
+   commit calls for exactly this version and lists no merge request the section lacks. A merge request
+   that lands between the preparation and the landing of the release merge request is not in that
+   section: `release:tag` then refuses and names it (exit 1, a warning job, `allow_failure`, so `main`
+   stays green; a lookup error or a tag the forge refuses is exit 3 and fails the job); add its line
+   to `CHANGELOG.md` in a normal merge request and the next pipeline on `main` tags the release at that
+   merge request's commit. If the merge requests call for another version (or for none), change the
+   version in a normal merge request (the manifest, `package.json`, the lockfile, the CHANGELOG heading
+   and its link reference) or tag the release commit by hand; `release:prepare` refuses meanwhile. A
+   merge request without a `changelog::` label anywhere in the range also stops the job (exit 3) until
+   it is labelled.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the
