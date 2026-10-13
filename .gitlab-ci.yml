@@ -1,3 +1,8 @@
+include:
+  - project: 'homelab/ci-templates'
+    ref: '$TEMPLATE_REF'
+    file: '/templates/gates.yml'
+
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
   NODE_IMAGE: node:24
@@ -17,7 +22,7 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-stages: [check, guard, release]
+stages: [lint, test, check, guard, release]
 
 .tab-recap:
   before_script:
@@ -163,3 +168,130 @@ release:
     tag_name: $CI_COMMIT_TAG
     name: $CI_COMMIT_TAG
     description: ./notes.md
+
+# Gate-file parity jobs.
+atalaya-gate:lint:tab-recap:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap"
+
+atalaya-gate:lint:tab-recap-branch-guard:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-branch-guard"
+
+atalaya-gate:lint:tab-recap-check-domain-baseline:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-check-domain-baseline"
+
+atalaya-gate:lint:tab-recap-check-migrations:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-check-migrations"
+
+atalaya-gate:lint:tab-recap-check-mr:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-check-mr"
+
+atalaya-gate:lint:tab-recap-check-release:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-check-release"
+
+atalaya-gate:lint:tab-recap-check-version:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-check-version"
+
+atalaya-gate:lint:tab-recap-gate-domain-types:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-gate-domain-types"
+
+atalaya-gate:lint:tab-recap-gate-graph:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-gate-graph"
+
+atalaya-gate:lint:tab-recap-gate-rules:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-gate-rules"
+
+atalaya-gate:lint:tab-recap-guard-bite:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-guard-bite"
+
+atalaya-gate:lint:tab-recap-host-limits:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-host-limits"
+
+atalaya-gate:lint:tab-recap-migration-number-bite:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-migration-number-bite"
+
+atalaya-gate:lint:tab-recap-release-bite:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-release-bite"
+
+atalaya-gate:lint:tab-recap-release-publish:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-release-publish"
+
+atalaya-gate:lint:tab-recap-tag-release:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-tag-release"
+
+atalaya-gate:lint:tab-recap-verify-bite:
+  extends: .atalaya-gate
+  stage: lint
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "lint:tab-recap-verify-bite"
+
+atalaya-gate:test:tab-recap:
+  extends: .atalaya-gate
+  stage: test
+  image: harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33
+  variables:
+    GATE: "test:tab-recap"

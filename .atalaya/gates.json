@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "images": {
+    "checks": "harbor.devel.crisaac.dev/homelab/ci-checks:v1@sha256:718216ebd35bb8c2313ddabdd0b9a35597e0c3baf4c92dfc2bce059bb7aa1b33"
+  },
+  "installs": {
+    "tab-recap": {
+      "kind": "npm-ci",
+      "directory": "tab-recap"
+    }
+  },
+  "gates": {
+    "lint:tab-recap": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/lint.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-branch-guard": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/branch-guard.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-check-domain-baseline": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-domain-baseline.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-check-migrations": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-migrations.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-check-mr": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-mr.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-check-release": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-release.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-check-version": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-version.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-gate-domain-types": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-domain-types.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-gate-graph": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-graph.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-gate-rules": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-rules.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-guard-bite": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/guard-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-host-limits": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/host-limits.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-migration-number-bite": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/migration-number-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-release-bite": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/release-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-release-publish": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/release-publish.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-tag-release": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/tag-release.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "lint:tab-recap-verify-bite": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/verify-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    },
+    "test:tab-recap": {
+      "image": "checks",
+      "directory": "tab-recap",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/test.sh"
+      ],
+      "timeout": "10m",
+      "executor": "local"
+    }
+  }
+}
