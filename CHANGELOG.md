@@ -8,6 +8,23 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [2.6.0] — 2026-10-14
+
+#### Added
+
+- Continue a closed lane: list retained closures and hand one over (!121)
+- feat(tab-recap): another tool can ask for a lane handoff by token, when the setting is on (!129)
+
+#### Changed
+
+- Keep worktree status in the tab-recap daemon, from events (!142)
+
+#### Fixed
+
+- fix(tab-recap): a lane that closes mid-compaction is skipped, not failed, and the flow stops spending (!119)
+- fix(tab-recap): a lane closed end publishes no compact-failed event (!125)
+- fix(tab-recap): token writes of a request are ordered, its ask and row are one step, and failure causes are code-only (!131)
+
 ### [2.5.0] — 2026-10-11
 
 #### Added
@@ -250,7 +267,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.5.0...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.6.0...HEAD
+[2.6.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.5.0...tab-recap-v2.6.0
 [2.5.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.4.0...tab-recap-v2.5.0
 [2.4.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.3.0...tab-recap-v2.4.0
 [2.3.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.2.1...tab-recap-v2.3.0
