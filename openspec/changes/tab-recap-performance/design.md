@@ -168,7 +168,7 @@ scratch session **off CT 103**, then set its budget. Provisional target: ≤ 400
 
 | item | budget | today |
 | --- | --- | --- |
-| plugin panes | = tabs with an agent | 101 for 28 |
+| plugin panes (after MR 5 only; held constant for the measurement) | = tabs with an agent | 101 for 28 |
 | column RSS / CPU (all) | ≤ 45 MiB each; ≤ 5 % of one core total | ≈ 215 MiB each; ≈ 45 % |
 | daemon RSS / CPU (excl. summarizer children) | ≤ 400 MiB; ≤ 10 % avg | 652 MiB; 12 % avg over 9.5 h |
 | git status / min (fleet) | ≤ 20, ≤ 0.1 concurrent | ≈ 336, 0.8 |
@@ -206,7 +206,7 @@ the same 24 h before and after.
 
 ## 6. Plan
 
-**Where:** one OpenSpec change in `homelab/herdr-plugins`, `openspec/changes/tab-recap-performance/`, ending with its own Archive MR. Three
+**Where:** one OpenSpec change in `homelab/herdr-plugins`, `openspec/changes/tab-recap-performance/`, ending with its own Archive MR. Five
 landings, each one reversible on its own:
 
 | # | MR | files | reversible by |

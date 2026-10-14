@@ -8,11 +8,15 @@ Paths are under `tab-recap/` unless named. Design: `design.md` (the architect's 
 - [x] 0.1 Baseline with three tools over 60 s: /proc ticks including git children, the LXC cgroup `cpu.stat`, 1 s sampling of running
       `git status`, and RSS. Done: `evidence/baseline-20261014T1108.txt`.
 
-## 1. Restored columns and budgets that cost nothing (MR 1)
+## Constraints that keep the proof valid (design §5)
 
-- [ ] 1.1 The `retire-restored-column` intent: a pane is a restored column only when label `Recap`, cwd = plugin root, no agent, title not
-      `tab-recap`, and `pane.process_info` shows only an idle login shell; checked in column-panes, the fold and `HerdrFleet.close`.
-      Waits for the operator's ruling on the fifth red line (design Q2).
+- The column entry stays `src/column/launch.mjs` and the daemon `src/daemon/launch.mjs` (MR 3 swaps what the column imports, not its
+  path); every status call keeps the prefix `git -c core.fsmonitor=false status`. A rename would make `measure.sh` silently score 0.
+- Targets on `measure.sh` (median of three 60 s runs at comparable load, same 142 panes as the baseline): tab-recap CPU ≤ 12 CPU-s per 60 s
+  (baseline 119.9), RSS ≤ 2 GiB (6,648 MiB), ≤ 15 `git status` samples (223). Summaries are judged from `daemon.log` over 24 h before and after.
+
+## 1. Budgets that cost nothing (MR 1)
+
 - [ ] 1.2 `TAB_RECAP_RUN_DEBOUNCE_MS` defaults to 120 000; at most two summaries run at once; none runs when there is no new text; the
       log line carries the tokens. Waits for design Q3.
 
@@ -30,10 +34,16 @@ Paths are under `tab-recap/` unless named. Design: `design.md` (the architect's 
 ## 4. Proof
 
 - [ ] 4.1 `bin/tab-recap.mjs status --perf`, `ci/perf-bench.sh` and its CI job; the daemon heap investigation.
-- [ ] 4.2 After each MR: `evidence/measure.sh` on the same panes as the baseline; targets about 15 `git status` per minute (from about
-      336), column RSS about 1.1 GiB (from 5.8 GiB), column CPU under 5 %.
+- [ ] 4.2 After each of MR 1, 2 and 3: `evidence/measure.sh <outdir> 60` three times on the same panes, median against the baseline, to
+      attribute the gain; the targets are in the constraints above.
 - [ ] 4.3 Open the herdr upstream issue: plugin panes are restored as shells (design Q5).
 
-## 5. Archive
+## 5. Restored columns, last and off by default (MR 5)
 
-- [ ] 5.1 Archive the change after groups 1–4.
+- [ ] 5.0 The `retire-restored-column` intent under the five-part identity (label `Recap`, cwd = plugin root, no agent, title not
+      `tab-recap`, only an idle login shell), checked in column-panes, the fold and `HerdrFleet.close`; off by default, shipped only after
+      the after-measurement (4.2). Waits for the operator's ruling on the fifth red line (design Q2).
+
+## 6. Archive
+
+- [ ] 6.1 Archive the change after groups 1–5.
