@@ -7,6 +7,9 @@ by one import and one array entry in `src/extensions/index.ts`. Nothing else dif
 ## What it adds
 
 - **A note under each lane's header:** the lane's latest alert, `⚑ idle 2m ago · main · 2 unmerged · dirty`.
+  The daemon reads `atalaya-log.jsonl` once: from byte 0 at start, then only what is appended (one watch on the
+  bridge's directory; a half-written line waits for its newline; a shorter log starts it over) and puts each alert
+  into the store as a **pane alert** (`source` `atalaya-bridge`). The columns draw it from the store and never read the log.
 - **A warning above the lanes** when atalaya-bridge's heartbeat is older than 3 minutes
   ("atalaya-bridge silent for N min — healing" / "…sin señal desde hace N min…").
 - **Heal**, on the daemon's 60 s tick: start `atalaya-bridge.service` when it is stale and not
