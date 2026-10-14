@@ -1,4 +1,5 @@
 import type { Locale } from '#src/i18n/messages.ts';
+import type { PaneAlertWriter } from '#src/ports/pane-alerts.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { Unknown } from './unknowable.ts';
 
@@ -22,4 +23,8 @@ export interface Extension {
     upkeep?(): Promise<UpkeepResult>;
 }
 
-export type ExtensionFactory = (get: (key: string) => string | undefined) => Extension | null;
+export interface ExtensionStore {
+    readonly alerts: PaneAlertWriter;
+}
+
+export type ExtensionFactory = (get: (key: string) => string | undefined, store?: ExtensionStore) => Extension | null;

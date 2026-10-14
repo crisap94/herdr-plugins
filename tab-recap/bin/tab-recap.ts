@@ -13,6 +13,7 @@ import { nodeHost } from '#src/host/node-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
+import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
@@ -116,7 +117,7 @@ function status(): number {
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
-        t.statusExtensions(loadExtensions(configGetter()).map((extension) => extension.id).join(', ') || t.none),
+        t.statusExtensions([...loadExtensions(configGetter()).map((extension) => extension.id), STORED_NOTES_ID].join(', ')),
         `${t.statusState} ${stateDir()}`,
         `${t.statusConfig} ${join(configDir(), 'config.env')}`,
     ].join('\n'));
