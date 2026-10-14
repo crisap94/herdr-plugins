@@ -2,6 +2,7 @@ import { messagesFor } from '#src/i18n/index.ts';
 import type { Locale } from '#src/i18n/messages.ts';
 import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
+import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { parsePaneId } from '#src/recap/domain/ids.ts';
@@ -14,6 +15,7 @@ export const GIT_NOTE_MARK = '⎇';
 export interface StoredNotesDeps {
     readonly statuses: WorktreeStatusReader;
     readonly notes: PaneNoteReader;
+    readonly alerts: PaneAlertReader;
     readonly gitNote: () => WorktreeSwitch;
 }
 
@@ -38,12 +40,16 @@ class StoredNotes implements Extension {
         const showGit = this.deps.gitNote() === 'on';
         for (const lane of lanes) {
             const pane = parsePaneId(lane.pane);
-            const found = pane.kind === 'ok' ? [...(showGit ? this.gitNotes(pane.value, locale) : []), ...this.tokenNotes(pane.value)] : [];
+            const found = pane.kind === 'ok' ? [...this.alertNotes(pane.value), ...(showGit ? this.gitNotes(pane.value, locale) : []), ...this.tokenNotes(pane.value)] : [];
             if (found.length > 0) {
                 byPane.set(lane.pane, found);
             }
         }
         return { kind: 'notes', byPane };
+    }
+
+    private alertNotes(pane: PaneId): readonly Note[] {
+        return this.deps.alerts.alertsOf(pane).map((alert): Note => ({ label: alert.label, at: alert.at, details: alert.details }));
     }
 
     private gitNotes(pane: PaneId, locale: Locale): readonly Note[] {

@@ -21,6 +21,15 @@ const PANE_NOTE = `CREATE TABLE pane_note (
   PRIMARY KEY (pane, label)
 ) STRICT, WITHOUT ROWID`;
 
+const PANE_ALERT = `CREATE TABLE pane_alert (
+  source  TEXT    NOT NULL CHECK (source <> ''),
+  pane    TEXT    NOT NULL,
+  label   TEXT    NOT NULL,
+  at      INTEGER NOT NULL CHECK (at >= 0),
+  details TEXT    NOT NULL,
+  PRIMARY KEY (source, pane)
+) STRICT, WITHOUT ROWID`;
+
 export const m020: Migration = {
     version: 20,
     name: 'worktree-status',
@@ -29,5 +38,7 @@ export const m020: Migration = {
         PANE_WORKTREE,
         'CREATE INDEX pane_worktree_by_root ON pane_worktree(root)',
         PANE_NOTE,
+        PANE_ALERT,
+        'CREATE INDEX pane_alert_by_pane ON pane_alert(pane)',
     ],
 };

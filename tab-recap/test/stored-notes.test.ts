@@ -2,7 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gitNoteOf, storedNotes, STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { FACTORIES } from '#src/extensions/index.ts';
-import type { NotesResult } from '#src/ports/extension.ts';
+import { loadExtensions } from '#src/extensions/load.ts';
+import type { ExtensionFactory, ExtensionStore, NotesResult } from '#src/ports/extension.ts';
+import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
+import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
+import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';
@@ -30,11 +35,24 @@ test('gitNoteOf: ⎇, en and es; clean and not ahead is just the branch; changed
     assert.deepEqual(gitNoteOf(status(null, 0, null), 'en').details, []);
 });
 
-function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, { label: string; value: string }[]>, mode: { gitNote: WorktreeSwitch }): ReturnType<typeof storedNotes> {
+const alertAt = (pane: string, label: string, at: number, details: string[]): PaneAlert => ({
+    source: must(parseAlertSource('bridge')), pane: paneId(pane), label: must(parseText(label)), at: instant(at), details: details.map((detail) => must(parseText(detail))),
+});
+
+function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, { label: string; value: string }[]>, mode: { gitNote: WorktreeSwitch }, alerts: Record<string, PaneAlert[]> = {}): ReturnType<typeof storedNotes> {
     const statuses: WorktreeStatusReader = { statusOf: (pane: PaneId): WorktreeStatus | null => known[pane] ?? null };
     const notes: PaneNoteReader = { notesOf: (pane: PaneId) => tokens[pane] ?? [] };
-    return storedNotes({ statuses, notes, gitNote: (): WorktreeSwitch => mode.gitNote });
+    const raised: PaneAlertReader = { alertsOf: (pane: PaneId): readonly PaneAlert[] => alerts[pane] ?? [] };
+    return storedNotes({ statuses, notes, alerts: raised, gitNote: (): WorktreeSwitch => mode.gitNote });
 }
+
+test('an alert a source raised is drawn first, with its own time and details, then the git note and the pane\'s notes', () => {
+    const mode = { gitNote: 'on' as WorktreeSwitch };
+    const extension = stored({ 'w1:p1': status(0, 0, 0) }, { 'w1:p1': [{ label: 'note', value: 'hold' }] }, mode, { 'w1:p1': [alertAt('w1:p1', 'unmerged', 5, ['feat/x', '3 unmerged'])] });
+    const result = extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() };
+    assert.deepEqual(labels(result), [['w1:p1', '⚑ unmerged feat/x|3 unmerged ; ⎇ main  ; ⚑ note hold']]);
+    assert.equal(result.kind === 'notes' && result.byPane.get('w1:p1')?.[0]?.at, 5);
+});
 
 test('the git note and the pane\'s note tokens are drawn under their lane, git first; nothing for a lane with neither', () => {
     const mode = { gitNote: 'on' as WorktreeSwitch };
@@ -52,6 +70,15 @@ test('TAB_RECAP_GIT_NOTE=off hides the git note at call time and keeps the pane\
 });
 
 test('the extension has a name, and the registry no longer carries a column-side git or token extension', () => {
-    assert.equal(storedNotes({ statuses: { statusOf: () => null }, notes: { notesOf: () => [] }, gitNote: (): WorktreeSwitch => 'on' }).id, STORED_NOTES_ID);
+    assert.equal(storedNotes({ statuses: { statusOf: () => null }, notes: { notesOf: () => [] }, alerts: { alertsOf: () => [] }, gitNote: (): WorktreeSwitch => 'on' }).id, STORED_NOTES_ID);
     assert.deepEqual(FACTORIES, []);
+});
+
+test('a factory receives the store the loader was given, and none when the loader has none', () => {
+    const seen: (ExtensionStore | undefined)[] = [];
+    const factory: ExtensionFactory = (_get, store) => { seen.push(store); return null; };
+    const store: ExtensionStore = { alerts: { put: (): void => undefined, clear: (): void => undefined, forgetPane: (): void => undefined } };
+    loadExtensions(() => undefined, [factory], store);
+    loadExtensions(() => undefined, [factory]);
+    assert.deepEqual(seen, [store, undefined]);
 });

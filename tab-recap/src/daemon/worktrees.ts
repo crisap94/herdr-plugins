@@ -29,7 +29,7 @@ export function wireWorktrees(store: Store, log: (line: Text) => void): Worktree
         clock,
         perf,
         enabled: worktreeSwitch,
-        gone: (pane): void => { feed.forget(pane); },
+        gone: (pane): void => { feed.forget(pane); store.paneAlerts.forgetPane(pane); },
         settle: duration(WORKTREE_SETTLE_MS),
         every: duration(WORKTREE_SAFETY_MS),
     });

@@ -41,7 +41,7 @@ const startedVersion = codeVersion();
 let settled = { at: 0, locale: config.locale, version: startedVersion };
 let candidate: string | null = null;
 let rollFailed = false;
-const extensions = [...loadExtensions(configGetter()), ...(store === null ? [] : [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, gitNote: worktreeSwitch })])];
+const extensions = [...loadExtensions(configGetter()), ...(store === null ? [] : [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })])];
 const glow = glowRenderer(config.glow);
 const style = styleFor(process.stdout);
 const RESET = style === coloured ? `${ESC}[0m` : '';
