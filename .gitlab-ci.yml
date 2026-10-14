@@ -1,3 +1,12 @@
+include:
+  - project: 'homelab/ci-templates'
+    ref: v0.10.0
+    file: '/templates/gates.yml'
+
+lint:gates:
+  image: harbor.devel.crisaac.dev/homelab/atalaya-gates:0.1.5665@sha256:d8fcad6b99bd38bf33aaa7ed73aa6a831f44179bfb2d1d01ac0f96106f0f7640
+  needs: []
+
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
   NODE_IMAGE: node:24
@@ -17,7 +26,7 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-stages: [check, guard, release]
+stages: [lint, test, check, guard, release]
 
 .tab-recap:
   before_script:
@@ -163,3 +172,112 @@ release:
     tag_name: $CI_COMMIT_TAG
     name: $CI_COMMIT_TAG
     description: ./notes.md
+
+.tab-recap-gate:
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GIT_DEPTH: "0"
+    GIT_CONFIG_COUNT: "1"
+    GIT_CONFIG_KEY_0: safe.directory
+    GIT_CONFIG_VALUE_0: "$CI_PROJECT_DIR"
+  before_script:
+    - cd tab-recap
+    - npm ci
+    - cd "$CI_PROJECT_DIR"
+    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
+  script:
+    - sh .atalaya/run/dispatch.sh "$GATE"
+
+.tab-recap-test-gate:
+  extends: .tab-recap-gate
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq libxml2-utils
+    - cd tab-recap
+    - npm ci
+    - cd "$CI_PROJECT_DIR"
+    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
+
+# Gate-file parity jobs.
+lint:atalaya-gate-tab-recap:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap"
+
+lint:atalaya-gate-tab-recap-check-domain-baseline:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-check-domain-baseline"
+
+lint:atalaya-gate-tab-recap-check-migrations:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-check-migrations"
+
+lint:atalaya-gate-tab-recap-check-version:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-check-version"
+
+lint:atalaya-gate-tab-recap-gate-domain-types:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-gate-domain-types"
+
+lint:atalaya-gate-tab-recap-gate-graph:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-gate-graph"
+
+lint:atalaya-gate-tab-recap-gate-rules:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-gate-rules"
+
+lint:atalaya-gate-tab-recap-guard-bite:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-guard-bite"
+
+lint:atalaya-gate-tab-recap-migration-number-bite:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-migration-number-bite"
+
+lint:atalaya-gate-tab-recap-release-bite:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-release-bite"
+
+lint:atalaya-gate-tab-recap-verify-bite:
+  extends: [.atalaya-gate, .tab-recap-gate]
+  stage: lint
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "lint:tab-recap-verify-bite"
+
+test:atalaya-gate-tab-recap:
+  extends: [.atalaya-gate, .tab-recap-test-gate]
+  stage: test
+  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+  variables:
+    GATE: "test:tab-recap"
