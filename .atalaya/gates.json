@@ -19,6 +19,10 @@
         "tab-recap/ci/lint.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-check-domain-baseline": {
@@ -30,6 +34,10 @@
         "tab-recap/ci/check-domain-baseline.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-check-migrations": {
@@ -41,6 +49,10 @@
         "tab-recap/ci/check-migrations.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-check-version": {
@@ -52,6 +64,10 @@
         "tab-recap/ci/check-version.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-gate-domain-types": {
@@ -63,6 +79,10 @@
         "tab-recap/ci/gate-domain-types.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-gate-graph": {
@@ -74,6 +94,10 @@
         "tab-recap/ci/gate-graph.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-gate-rules": {
@@ -85,6 +109,10 @@
         "tab-recap/ci/gate-rules.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-guard-bite": {
@@ -96,6 +124,10 @@
         "tab-recap/ci/guard-bite.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-migration-number-bite": {
@@ -107,6 +139,10 @@
         "tab-recap/ci/migration-number-bite.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-release-bite": {
@@ -118,6 +154,10 @@
         "tab-recap/ci/release-bite.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "lint:tab-recap-verify-bite": {
@@ -129,6 +169,10 @@
         "tab-recap/ci/verify-bite.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     },
     "test:tab-recap": {
@@ -140,6 +184,10 @@
         "tab-recap/ci/test.sh"
       ],
       "timeout": "10m",
+      "resources": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
       "executor": "cluster"
     }
   }
