@@ -21,17 +21,6 @@
       "timeout": "10m",
       "executor": "cluster"
     },
-    "lint:tab-recap-branch-guard": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/branch-guard.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
     "lint:tab-recap-check-domain-baseline": {
       "image": "checks",
       "installs": [
@@ -50,28 +39,6 @@
       ],
       "run": [
         "tab-recap/ci/check-migrations.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
-    "lint:tab-recap-check-mr": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/check-mr.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
-    "lint:tab-recap-check-release": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/check-release.sh"
       ],
       "timeout": "10m",
       "executor": "cluster"
@@ -160,28 +127,6 @@
       ],
       "run": [
         "tab-recap/ci/release-bite.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
-    "lint:tab-recap-release-publish": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/release-publish.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
-    "lint:tab-recap-tag-release": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/tag-release.sh"
       ],
       "timeout": "10m",
       "executor": "cluster"

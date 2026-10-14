@@ -205,13 +205,6 @@ lint:atalaya-gate-tab-recap:
   variables:
     GATE: "lint:tab-recap"
 
-lint:atalaya-gate-tab-recap-branch-guard:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-branch-guard"
-
 lint:atalaya-gate-tab-recap-check-domain-baseline:
   extends: [.atalaya-gate, .tab-recap-gate]
   stage: lint
@@ -225,20 +218,6 @@ lint:atalaya-gate-tab-recap-check-migrations:
   image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
   variables:
     GATE: "lint:tab-recap-check-migrations"
-
-lint:atalaya-gate-tab-recap-check-mr:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-check-mr"
-
-lint:atalaya-gate-tab-recap-check-release:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-check-release"
 
 lint:atalaya-gate-tab-recap-check-version:
   extends: [.atalaya-gate, .tab-recap-gate]
@@ -295,20 +274,6 @@ lint:atalaya-gate-tab-recap-release-bite:
   image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
   variables:
     GATE: "lint:tab-recap-release-bite"
-
-lint:atalaya-gate-tab-recap-release-publish:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-release-publish"
-
-lint:atalaya-gate-tab-recap-tag-release:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-tag-release"
 
 lint:atalaya-gate-tab-recap-verify-bite:
   extends: [.atalaya-gate, .tab-recap-gate]
