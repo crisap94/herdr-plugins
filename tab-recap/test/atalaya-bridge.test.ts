@@ -120,7 +120,7 @@ test('the extension follows the log only when the loader gave it a store', async
     try {
         const column = atalayaBridge(get);
         assert.equal(column?.id, 'atalaya-bridge');
-        assert.equal(typeof column?.notes, 'undefined', 'the column draws alerts from the store, not from the extension');
+        assert.equal(typeof column.notes, 'undefined', 'the column draws alerts from the store, not from the extension');
         await quiet();
         assert.deepEqual(events, []);
         const daemon = atalayaBridge(get, { alerts });
