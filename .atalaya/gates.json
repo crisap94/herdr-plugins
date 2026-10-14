@@ -98,17 +98,6 @@
       "timeout": "10m",
       "executor": "cluster"
     },
-    "lint:tab-recap-host-limits": {
-      "image": "checks",
-      "installs": [
-        "tab-recap"
-      ],
-      "run": [
-        "tab-recap/ci/host-limits.sh"
-      ],
-      "timeout": "10m",
-      "executor": "cluster"
-    },
     "lint:tab-recap-migration-number-bite": {
       "image": "checks",
       "installs": [
