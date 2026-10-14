@@ -20,6 +20,13 @@ Paths are under `tab-recap/` unless named. Design: `design.md` (the architect's 
 - [ ] 1.2 `TAB_RECAP_RUN_DEBOUNCE_MS` defaults to 120 000; at most two summaries run at once; none runs when there is no new text; the
       log line carries the tokens. Waits for design Q3.
 
+- [ ] 1.3 The summary call spends the fewest tokens possible (operator 2026-10-14: "no MCP configurations, no nothing"). Measured
+      2026-10-14 on one minimal call: today's flags (`--tools ''`, `--setting-sources ''`, `--strict-mcp-config` with no config, own
+      `--system-prompt`, effort low) already load no CLAUDE.md, skill, plugin or MCP server: 616 input tokens with or without
+      `--safe-mode --disable-slash-commands`. Add both flags anyway, so a future user CLAUDE.md, skill or plugin can never leak in, and a test
+      that pins the full argument list. `--bare` is not usable: it refuses OAuth. The log line gains the call's input, cache and output
+      tokens, so each recap's cost is visible.
+
 ## 2. Worktree status in the daemon, from events (MR 2)
 
 - [ ] 2.1 `WorktreeStatus` registry and port; a git-dir watcher adapter; the two-tier status (cheap tracked status on change,
