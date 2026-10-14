@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AtalayaBridge, atalayaBridge, userBusEnv } from '#src/extensions/atalaya-bridge.ts';
+import { alertOf, AtalayaBridge, atalayaBridge, BridgeTail, userBusEnv } from '#src/extensions/atalaya-bridge.ts';
+import type { PaneAlertWriter } from '#src/ports/pane-alerts.ts';
+import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import type { Runner } from '#src/extensions/atalaya-bridge.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -36,31 +39,93 @@ function recorder(codes: Readonly<Record<string, number>> = {}): { runner: Runne
 const noKeys = (): 'on' => 'on';
 const off = (): 'off' => 'off';
 
-test('notes: the latest alert per pane becomes a Note — kind, time, branch · N unmerged · tree', () => {
-    const { dir, done } = fixture({
-        'atalaya-log.jsonl': [
-            alert('w1:p1', 'blocked', 1, { branch: 'old' }),
-            alert('w1:p1', 'idle', 5000, { branch: 'main', unmerged: 2, tree: 'dirty' }),
-            alert('w1:p2', 'done', 7, {}),
-            'not json',
-            JSON.stringify({ episode: { pane: 'w1:p3' } }),
-        ].join('\n'),
-    });
+const seen = (found: PaneAlert): string => `${found.pane} ${found.label} ${found.at} ${found.details.join('|')}`;
+
+function writer(): { alerts: PaneAlertWriter; events: string[] } {
+    const events: string[] = [];
+    const alerts: PaneAlertWriter = {
+        put: (found): void => { events.push(`put ${seen(found)}`); },
+        clear: (source): void => { events.push(`clear ${source}`); },
+        forgetPane: (pane): void => { events.push(`forget ${pane}`); },
+    };
+    return { alerts, events };
+}
+
+const until = async (done: () => boolean): Promise<void> => {
+    for (let waited = 0; waited < 3000 && !done(); waited += 20) {
+        await new Promise<void>((resolve) => { setTimeout(resolve, 20); });
+    }
+};
+
+const quiet = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 150); });
+
+test('alertOf: a line becomes an alert — kind, time, branch · N unmerged · tree; a line without a pane or a kind is none', () => {
+    const first = alertOf(must(parseText(alert('w1:p1', 'idle', 5000, { branch: 'main', unmerged: 2, tree: 'dirty' }))));
+    const second = alertOf(must(parseText(alert('w1:p2', 'done', 7, {}))));
+    assert.deepEqual([first, second].map((found) => (found === null ? null : seen(found))), ['w1:p1 idle 5000 main|2 unmerged|dirty', 'w1:p2 done 7 ']);
+    assert.equal(alertOf(must(parseText('not json'))), null);
+    assert.equal(alertOf(must(parseText(JSON.stringify({ episode: { pane: 'w1:p3' } })))), null);
+});
+
+test('the tail reads the log once from the start, then only what is appended, and a half-written line waits for its end', async () => {
+    const { dir, done } = fixture({ 'atalaya-log.jsonl': [alert('w1:p1', 'blocked', 1, { branch: 'old' }), alert('w1:p1', 'idle', 5000, { branch: 'main' }), 'not json', alert('w1:p2', 'done', 7, {})].join('\n') + '\n' });
+    const { alerts, events } = writer();
+    const tail = new BridgeTail(dir, alerts);
     try {
-        const result = new AtalayaBridge(dir, noKeys).notes();
-        assert.ok(result.kind === 'notes');
-        assert.deepEqual(result.byPane.get('w1:p1'), [{ label: 'idle', at: 5000, details: ['main', '2 unmerged', 'dirty'] }]);
-        assert.deepEqual(result.byPane.get('w1:p2'), [{ label: 'done', at: 7, details: [] }]);
-        assert.equal(result.byPane.has('w1:p3'), false);
+        tail.start();
+        assert.deepEqual(events, ['clear atalaya-bridge', 'put w1:p1 blocked 1 old', 'put w1:p1 idle 5000 main', 'put w1:p2 done 7 ']);
+        const log = join(dir, 'atalaya-log.jsonl');
+        const whole = alert('w1:p3', 'idle', 9, { tree: 'dirty' });
+        appendFileSync(log, whole.slice(0, 20));
+        await quiet();
+        assert.equal(events.length, 4, 'a line without its newline is not read');
+        appendFileSync(log, `${whole.slice(20)}\n`);
+        await until(() => events.length > 4);
+        assert.deepEqual(events.slice(4), ['put w1:p3 idle 9 dirty']);
     } finally {
+        tail.stop();
         done();
     }
 });
 
-test('notes: a missing outbox is an Unknown, not a throw', () => {
+test('the tail starts over when the log is replaced by a shorter one, waits for a log that does not exist yet, and stops when told', async () => {
     const { dir, done } = fixture({});
+    const { alerts, events } = writer();
+    const tail = new BridgeTail(dir, alerts);
     try {
-        assert.ok(isUnknown(new AtalayaBridge(dir, noKeys).notes()));
+        tail.start();
+        assert.deepEqual(events, ['clear atalaya-bridge'], 'no log yet: nothing read, nothing thrown');
+        const log = join(dir, 'atalaya-log.jsonl');
+        writeFileSync(log, `${alert('w1:p1', 'blocked', 1, { branch: 'a-long-branch-name' })}\n`);
+        await until(() => events.length > 1);
+        assert.deepEqual(events.slice(1), ['put w1:p1 blocked 1 a-long-branch-name']);
+        writeFileSync(log, `${alert('w1:p2', 'done', 2, {})}\n`);
+        await until(() => events.length > 3);
+        assert.deepEqual(events.slice(2), ['clear atalaya-bridge', 'put w1:p2 done 2 ']);
+        tail.stop();
+        await quiet();
+        appendFileSync(log, `${alert('w1:p9', 'idle', 3, {})}\n`);
+        await quiet();
+        assert.equal(events.length, 4, 'a stopped tail reads nothing more');
+    } finally {
+        tail.stop();
+        done();
+    }
+});
+
+test('the extension follows the log only when the loader gave it a store', async () => {
+    const { dir, done } = fixture({ 'atalaya-log.jsonl': `${alert('w1:p1', 'idle', 5, {})}\n` });
+    const { alerts, events } = writer();
+    const get = (key: string): string | undefined => (key === 'TAB_RECAP_BRIDGE_DIR' ? dir : undefined);
+    try {
+        const column = atalayaBridge(get);
+        assert.equal(column?.id, 'atalaya-bridge');
+        assert.equal(typeof column.notes, 'undefined', 'the column draws alerts from the store, not from the extension');
+        await quiet();
+        assert.deepEqual(events, []);
+        const daemon = atalayaBridge(get, { alerts });
+        assert.equal(daemon?.id, 'atalaya-bridge');
+        assert.deepEqual(events, ['clear atalaya-bridge', 'put w1:p1 idle 5 ']);
     } finally {
         done();
     }
