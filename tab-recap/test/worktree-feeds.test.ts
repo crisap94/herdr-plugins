@@ -7,7 +7,9 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
+import type { UsageSample } from '#src/ports/process-usage.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
 function store(): { readonly writer: PaneNoteWriter; readonly calls: string[] } {
     const calls: string[] = [];
@@ -39,8 +41,8 @@ test('the perf ledger logs one line per tick with the counts and the cpu of the 
     let now = 1000;
     let cpu = 500;
     const ledger = new PerfLedger({
-        usage: { sample: () => ({ cpu: duration(cpu), rss: must(parseCount(120)) }) },
-        clock: { now: () => instant(now) },
+        usage: { sample: (): UsageSample => ({ cpu: duration(cpu), rss: must(parseCount(120)) }) },
+        clock: { now: (): Instant => instant(now) },
         log: (line): void => { lines.push(line); },
     });
     ledger.bump('status-full');

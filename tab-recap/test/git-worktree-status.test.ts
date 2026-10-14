@@ -20,6 +20,8 @@ const until = async (done: () => boolean): Promise<void> => {
 };
 const quiet = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 150); });
 
+const reply = (result: RunResult): GitWorktreeProbe => new GitWorktreeProbe(() => Promise.resolve(result));
+
 function repo(): { readonly root: string; readonly clean: () => void } {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'worktree-status-')));
     git(root, 'init', '-q', '-b', 'main');
@@ -51,7 +53,6 @@ test('the probe asks in the root with no optional lock and the timeout of its ti
 });
 
 test('the probe says why it could not read: a timeout, a failed exit and an answer it cannot parse', async () => {
-    const reply = (result: RunResult): GitWorktreeProbe => new GitWorktreeProbe(() => Promise.resolve(result));
     const timedOut = await reply({ code: 0, stdout: '', stderr: '', timedOut: true }).read(dir('/w/r'), 'full');
     assert.equal(timedOut.kind === 'unknown' && timedOut.why.why, 'timeout');
     const failed = await reply({ code: 128, stdout: '', stderr: 'fatal', timedOut: false }).read(dir('/w/r'), 'full');
@@ -67,9 +68,6 @@ test('against a real repository: the root is found from a subfolder; the tracked
         writeFileSync(join(fixture.root, 'src', 'other.txt'), 'x\n');
         const located = await new GitWorktreeLocator().locate(dir(join(fixture.root, 'src')));
         assert.equal(located.kind, 'worktree');
-        if (located.kind !== 'worktree') {
-            return;
-        }
         assert.deepEqual([located.worktree.root, located.worktree.gitDir, located.worktree.commonDir], [fixture.root, join(fixture.root, '.git'), join(fixture.root, '.git')]);
         const probe = new GitWorktreeProbe();
         const cheap = await probe.read(located.worktree.root, 'tracked');
@@ -88,11 +86,9 @@ test('a linked worktree has its own git dir and shares the common one', async ()
         git(fixture.root, 'worktree', 'add', '-q', '-b', 'side', linked);
         const found = await new GitWorktreeLocator().locate(dir(linked));
         assert.equal(found.kind, 'worktree');
-        if (found.kind === 'worktree') {
-            assert.equal(found.worktree.root, realpathSync(linked));
-            assert.equal(found.worktree.commonDir, join(fixture.root, '.git'));
-            assert.match(found.worktree.gitDir, /\.git\/worktrees\/[^/]+$/);
-        }
+        assert.equal(found.worktree.root, realpathSync(linked));
+        assert.equal(found.worktree.commonDir, join(fixture.root, '.git'));
+        assert.match(found.worktree.gitDir, /\.git\/worktrees\/[^/]+$/);
     } finally {
         rmSync(linked, { recursive: true, force: true });
         fixture.clean();
@@ -113,9 +109,6 @@ test('the watcher fires for a stage, a commit and a branch switch, not for a loc
     try {
         const located = await new GitWorktreeLocator().locate(dir(fixture.root));
         assert.equal(located.kind, 'worktree');
-        if (located.kind !== 'worktree') {
-            return;
-        }
         let fired = 0;
         const watch = new FsGitDirWatcher().watch(located.worktree, () => { fired += 1; });
         await quiet();

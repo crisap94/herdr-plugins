@@ -87,10 +87,11 @@ test('the run of a root: requests merge into the strongest tier, one run at a ti
 
 const laneAt = (pane: string, cwd: string | null, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd });
 
+const lanes = (...all: Lane[]): ReadonlyMap<PaneId, Lane> => new Map(all.map((lane): [PaneId, Lane] => [lane.pane, lane]));
+
 test('movesOf: a new lane attaches, a moved cwd attaches again, a gone lane detaches, a working lane that stops ended its turn', () => {
     const p1 = paneId('w1:p1');
     const p2 = paneId('w1:p2');
-    const lanes = (...all: Lane[]): ReadonlyMap<PaneId, Lane> => new Map(all.map((lane): [PaneId, Lane] => [lane.pane, lane]));
     const first = movesOf(new Map(), lanes(laneAt('w1:p1', '/a', 'working'), laneAt('w1:p2', null, 'idle')));
     assert.deepEqual(first.attach.map((one) => [one.pane, one.cwd]), [[p1, '/a'], [p2, null]]);
     assert.deepEqual([first.detach, first.ended], [[], []]);

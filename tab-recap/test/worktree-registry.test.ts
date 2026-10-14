@@ -17,11 +17,18 @@ import type { PerfCounter } from '#src/recap/domain/perf.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { StatusTier, WorktreeStatus, WorktreeSwitch, WorktreeWatch } from '#src/recap/domain/worktree.ts';
 
 const dir = (path: string): Directory => must(parseDirectory(path));
 const reading = (tracked: number, untracked: number): PorcelainReading => ({ branch: must(parseText('main')), ahead: null, tracked: must(parseCount(tracked)), untracked: must(parseCount(untracked)) });
 const settle = (): Promise<void> => new Promise((done) => { setTimeout(done, 25); });
+
+function holdOpen(): { readonly gate: Promise<void>; readonly release: () => void } {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((done) => { release = done; });
+    return { gate, release };
+}
 
 interface Rig {
     readonly registry: WorktreeRegistry;
@@ -81,7 +88,7 @@ function rig(): Rig {
     };
     const registry = new WorktreeRegistry({
         locator, probe, watcher, store,
-        clock: { now: () => instant(clock.at) },
+        clock: { now: (): Instant => instant(clock.at) },
         perf: { bump: (counter): void => { counts.set(counter, (counts.get(counter) ?? 0) + 1); } },
         enabled: (): WorktreeSwitch => mode.enabled,
         gone: (pane): void => { gone.push(pane); },
@@ -134,15 +141,15 @@ test('a change during a read is read again afterwards, never at the same time', 
     const { registry, reads, watching, mode } = rig();
     registry.beat(boardOf(laneAt('w1:p1', '/w/repo', 'idle')));
     await settle();
-    let release: () => void = () => undefined;
-    mode.gate = new Promise<void>((done) => { release = done; });
+    const held = holdOpen();
+    mode.gate = held.gate;
     watching.get('/w/repo')?.fire();
     await settle();
     watching.get('/w/repo')?.fire();
     await settle();
     assert.equal(reads.length, 2, 'one running read, the second change waits');
     mode.gate = null;
-    release();
+    held.release();
     await settle();
     assert.deepEqual(reads, ['/w/repo full', '/w/repo tracked', '/w/repo tracked']);
 });

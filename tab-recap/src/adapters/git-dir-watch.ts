@@ -33,7 +33,7 @@ function targetsOf(worktree: WorktreeWatch): readonly Target[] {
 function open(target: Target, changed: () => void): GitDirWatch | null {
     try {
         const watcher = watch(target.dir, { persistent: false, recursive: target.accepts === 'refs' }, (_event, name) => {
-            const file = name === null ? '' : String(name);
+            const file = name ?? '';
             if (target.accepts === 'git-dir' ? GIT_DIR_NAMES.has(file) : !file.endsWith(LOCK_SUFFIX)) {
                 changed();
             }
