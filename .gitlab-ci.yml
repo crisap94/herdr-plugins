@@ -5,6 +5,7 @@ include:
 
 lint:gates:
   image: harbor.devel.crisaac.dev/homelab/atalaya-gates:0.1.5665@sha256:d8fcad6b99bd38bf33aaa7ed73aa6a831f44179bfb2d1d01ac0f96106f0f7640
+  needs: []
 
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
