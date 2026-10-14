@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "images": {
+    "checks": "harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0"
+  },
+  "installs": {
+    "tab-recap": {
+      "kind": "npm-ci",
+      "directory": "tab-recap"
+    }
+  },
+  "gates": {
+    "lint:tab-recap": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/lint.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-check-domain-baseline": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-domain-baseline.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-check-migrations": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-migrations.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-check-version": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/check-version.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-gate-domain-types": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-domain-types.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-gate-graph": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-graph.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-gate-rules": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/gate-rules.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-guard-bite": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/guard-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-migration-number-bite": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/migration-number-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-release-bite": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/release-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "lint:tab-recap-verify-bite": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/verify-bite.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    },
+    "test:tab-recap": {
+      "image": "checks",
+      "installs": [
+        "tab-recap"
+      ],
+      "run": [
+        "tab-recap/ci/test.sh"
+      ],
+      "timeout": "10m",
+      "executor": "cluster"
+    }
+  }
+}
