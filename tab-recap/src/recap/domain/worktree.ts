@@ -77,8 +77,10 @@ export function refreshDue(since: Instant, now: Instant, every: Duration): Statu
     return now - since >= every ? 'full' : null;
 }
 
+export type RunPhase = 'resting' | 'reading';
+
 export interface RootRun {
-    readonly running: boolean;
+    readonly phase: RunPhase;
     readonly wanted: StatusTier | null;
 }
 
@@ -87,25 +89,25 @@ export interface RunStep {
     readonly start: StatusTier | null;
 }
 
-export const IDLE_ROOT: RootRun = { running: false, wanted: null };
+export const IDLE_ROOT: RootRun = { phase: 'resting', wanted: null };
 
 export function strongest(wanted: StatusTier | null, tier: StatusTier): StatusTier {
     return wanted === 'full' || tier === 'full' ? 'full' : 'tracked';
 }
 
 export function wantRun(state: RootRun, tier: StatusTier): RootRun {
-    return { running: state.running, wanted: strongest(state.wanted, tier) };
+    return { phase: state.phase, wanted: strongest(state.wanted, tier) };
 }
 
 export function takeRun(state: RootRun): RunStep {
-    if (state.running || state.wanted === null) {
+    if (state.phase === 'reading' || state.wanted === null) {
         return { state, start: null };
     }
-    return { state: { running: true, wanted: null }, start: state.wanted };
+    return { state: { phase: 'reading', wanted: null }, start: state.wanted };
 }
 
 export function runDone(state: RootRun): RootRun {
-    return { running: false, wanted: state.wanted };
+    return { phase: 'resting', wanted: state.wanted };
 }
 
 export interface LaneGlance {

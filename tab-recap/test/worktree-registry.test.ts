@@ -24,8 +24,10 @@ const dir = (path: string): Directory => must(parseDirectory(path));
 const reading = (tracked: number, untracked: number): PorcelainReading => ({ branch: must(parseText('main')), ahead: null, tracked: must(parseCount(tracked)), untracked: must(parseCount(untracked)) });
 const settle = (): Promise<void> => new Promise((done) => { setTimeout(done, 25); });
 
+const NOTHING = (): void => undefined;
+
 function holdOpen(): { readonly gate: Promise<void>; readonly release: () => void } {
-    let release: () => void = () => undefined;
+    let release = NOTHING;
     const gate = new Promise<void>((done) => { release = done; });
     return { gate, release };
 }

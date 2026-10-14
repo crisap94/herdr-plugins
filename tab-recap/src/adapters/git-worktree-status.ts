@@ -1,4 +1,4 @@
-import { parsePorcelain } from '#src/recap/domain/porcelain.ts';
+import { parsePorcelainReading } from '#src/recap/domain/porcelain.ts';
 import { parseWorktreeWatch } from '#src/recap/domain/worktree.ts';
 import type { StatusTier } from '#src/recap/domain/worktree.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
@@ -55,7 +55,7 @@ export class GitWorktreeProbe implements WorktreeProbe {
         if (result.code !== 0) {
             return failure(result);
         }
-        const parsed = parsePorcelain(result.stdout);
+        const parsed = parsePorcelainReading(result.stdout);
         return parsed.kind === 'ok' ? { kind: 'read', reading: parsed.value } : unknown({ why: 'unreadable', detail: 'status printed an unexpected answer' });
     }
 }

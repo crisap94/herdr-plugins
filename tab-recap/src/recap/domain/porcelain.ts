@@ -54,7 +54,7 @@ export function parseUntrackedCount(input: unknown): Result<UntrackedCount, Pars
     return raw.kind === 'err' ? raw : parseCount((raw.value.match(UNTRACKED_LINES) ?? []).length);
 }
 
-export function parsePorcelain(input: unknown): Result<PorcelainReading, ParseFailure> {
+export function parsePorcelainReading(input: unknown): Result<PorcelainReading, ParseFailure> {
     const branch = parseBranchName(input);
     if (branch.kind === 'err') {
         return branch;

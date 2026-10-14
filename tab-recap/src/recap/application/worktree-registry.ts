@@ -182,7 +182,7 @@ export class WorktreeRegistry {
             return;
         }
         const waiting = this.scheduled.has(root);
-        if (waiting || open.run.running) {
+        if (waiting || open.run.phase === 'reading') {
             this.deps.perf.bump('status-coalesced');
         }
         open.run = wantRun(open.run, tierOf(trigger));

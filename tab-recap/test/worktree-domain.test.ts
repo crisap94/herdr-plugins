@@ -18,7 +18,7 @@ import {
     changedOf, foldReading, IDLE_ROOT, movesOf, parseWorktreeSwitch, parseWorktreeWatch, refreshDue, runDone, strongest, takeRun, tierOf, wantRun,
 } from '#src/recap/domain/worktree.ts';
 import type { LaneGlance } from '#src/recap/domain/worktree.ts';
-import { parsePorcelain } from '#src/recap/domain/porcelain.ts';
+import { parsePorcelainReading } from '#src/recap/domain/porcelain.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
 
 const PORCELAIN = [
@@ -32,14 +32,14 @@ const text = (raw: string): Text => must(parseText(raw));
 const reading = (tracked: number, untracked: number, ahead: number | null = null): PorcelainReading => ({ branch: text('main'), ahead: ahead === null ? null : count(ahead), tracked: count(tracked), untracked: count(untracked) });
 
 test('parsePorcelain: branch, ahead, tracked paths and untracked paths are told apart; ignored paths do not count', () => {
-    const parsed = must(parsePorcelain(PORCELAIN));
+    const parsed = must(parsePorcelainReading(PORCELAIN));
     assert.deepEqual([parsed.branch, parsed.ahead, parsed.tracked, parsed.untracked], ['main', 2, 3, 2]);
 });
 
 test('parsePorcelain: no upstream means ahead null; a detached HEAD shows the short oid; a non-string is refused', () => {
-    assert.equal(must(parsePorcelain('# branch.oid abc\n# branch.head feat/x\n')).ahead, null);
-    assert.equal(must(parsePorcelain('# branch.oid 0123456789abcdef\n# branch.head (detached)\n')).branch, '0123456');
-    assert.equal(parsePorcelain(7).kind, 'err');
+    assert.equal(must(parsePorcelainReading('# branch.oid abc\n# branch.head feat/x\n')).ahead, null);
+    assert.equal(must(parsePorcelainReading('# branch.oid 0123456789abcdef\n# branch.head (detached)\n')).branch, '0123456');
+    assert.equal(parsePorcelainReading(7).kind, 'err');
 });
 
 test('parseWorktreeWatch: the three lines of rev-parse; a missing line is refused', () => {
@@ -77,7 +77,7 @@ test('the run of a root: requests merge into the strongest tier, one run at a ti
     const wanted = wantRun(wantRun(IDLE_ROOT, 'tracked'), 'full');
     const first = takeRun(wanted);
     assert.equal(first.start, 'full');
-    assert.deepEqual(first.state, { running: true, wanted: null });
+    assert.deepEqual(first.state, { phase: 'reading', wanted: null });
     const during = wantRun(first.state, 'tracked');
     assert.equal(takeRun(during).start, null, 'nothing starts while one is running');
     const next = takeRun(runDone(during));
