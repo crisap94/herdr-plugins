@@ -73,22 +73,10 @@
   "src/daemon/upkeep.ts": {
     "parameter": 1
   },
-  "src/extensions/git-note.ts": {
-    "parameter": 9,
-    "return": 2,
-    "container": 3,
-    "property": 6
-  },
   "src/extensions/load.ts": {
     "parameter": 1,
     "return": 1,
     "container": 2
-  },
-  "src/extensions/token-notes.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 5,
-    "property": 4
   },
   "src/setup/main.ts": {
     "parameter": 2,

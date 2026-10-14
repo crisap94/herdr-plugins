@@ -16,7 +16,7 @@ import { directoryOf } from '../fakes/closed-values.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { scratchDir } from './support.ts';
 
-const BEFORE = MIGRATIONS.length - 1;
+const BEFORE = 18;
 const TAB = tabId('w1:t1');
 const PANE = paneId('w1:p1');
 const FOURTEEN = closedLaneDaysOf('14');
