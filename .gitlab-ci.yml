@@ -1,6 +1,6 @@
 include:
   - project: 'homelab/ci-templates'
-    ref: v0.9.0
+    ref: v0.10.0
     file: '/templates/gates.yml'
 
 # The images are variables so a project or group can point them at a mirror or registry proxy.
