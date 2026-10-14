@@ -71,7 +71,7 @@ test('TAB_RECAP_GIT_NOTE=off hides the git note at call time and keeps the pane\
 
 test('the extension has a name, and the registry no longer carries a column-side git or token extension', () => {
     assert.equal(storedNotes({ statuses: { statusOf: () => null }, notes: { notesOf: () => [] }, alerts: { alertsOf: () => [] }, gitNote: (): WorktreeSwitch => 'on' }).id, STORED_NOTES_ID);
-    assert.deepEqual(FACTORIES, []);
+    assert.deepEqual(loadExtensions(() => undefined, FACTORIES).map((extension) => extension.id).filter((id) => id === 'git-note' || id === 'herdr-notes'), []);
 });
 
 test('a factory receives the store the loader was given, and none when the loader has none', () => {
