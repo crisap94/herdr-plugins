@@ -1,0 +1,1 @@
+window 60s; tab-recap processes 29 incl. their git children: 119.9 CPU-s (200% of a core), RSS 6648 MiB; whole LXC cgroup 206.2 CPU-s (344% of a core); git status seen in 60 1-s samples: 223; load 27.93
