@@ -64,6 +64,8 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
+import { notesOf } from '#src/recap/domain/coordination.ts';
+import { wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 
 const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
@@ -84,6 +86,7 @@ interface Wired {
     readonly answers: CompactRequests;
     readonly events: EventStream;
     readonly handoffs: HandoffRunner;
+    readonly worktrees: Worktrees;
 }
 
 function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: (line: string) => void): void {
@@ -121,6 +124,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     });
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
+    const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
@@ -140,9 +144,9 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
-        onBeat: (): void => { },
+        onBeat: (): void => { worktrees.registry.beat(board()); },
         onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
-        onPaneTokens: (pane, tokens): void => { answers.onPaneTokens(pane, tokens); exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]))); },
+        onPaneTokens: (pane, tokens): void => { worktrees.feed.update(paneId(pane), notesOf(tokens)); answers.onPaneTokens(pane, tokens); exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]))); },
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
@@ -155,7 +159,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
+    return { informer, fleet, backends, extensions: loadExtensions(configGetter()), store, compaction, retention, curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
@@ -203,7 +207,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep, events, handoffs } = booted;
+    const { informer, fleet, backends, extensions, store, retention, sweep, events, handoffs, worktrees } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -238,6 +242,8 @@ async function start(): Promise<number> {
         events.prune(Date.now());
         sweep.tick();
         retention.tick();
+        worktrees.registry.tick(informer.current);
+        worktrees.perf.tick();
         void backends.refresh();
         void upkeep(extensions, log);
     }, RESYNC_MS).unref();

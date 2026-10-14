@@ -59,7 +59,7 @@ test('a read-only open of a database below the since column lists no lanes and s
     const dir = scratchDir('views-before-since');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, MIGRATIONS.length - 1));
+        const old = openDatabase(path, MIGRATIONS.slice(0, 18));
         if (old.kind !== 'ready') {
             throw new Error('a fresh file is never newer');
         }
@@ -80,7 +80,7 @@ test('a write to a database below the since column keeps the old lane shape', ()
     const dir = scratchDir('views-write-before-since');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, MIGRATIONS.length - 1));
+        const old = openDatabase(path, MIGRATIONS.slice(0, 18));
         if (old.kind !== 'ready') {
             throw new Error('a fresh file is never newer');
         }

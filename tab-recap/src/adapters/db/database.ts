@@ -38,6 +38,9 @@ import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views.ts';
 import { HandoffAnswersRepository } from './handoff-answers.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { PaneNoteReader, PaneNoteWriter, WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
+import { PaneNotesRepository } from './pane-notes.ts';
+import { WorktreeStatusRepository } from './worktree-status.ts';
 
 export interface Store {
     readonly kind: 'ready';
@@ -60,6 +63,8 @@ export interface Store {
     readonly retention: Retention;
     readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
     readonly closedDays: ClosedLaneDays;
+    readonly worktrees: WorktreeStatusWriter & WorktreeStatusReader;
+    readonly paneNotes: PaneNoteWriter & PaneNoteReader;
     checkpoint(): void;
     close(): void;
 }
@@ -81,6 +86,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),
         closedLanes: new ClosedLanesRepository(db, options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS),
         closedDays: options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS,
+        worktrees: new WorktreeStatusRepository(db), paneNotes: new PaneNotesRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
         close: (): void => { db.close(); },
     };
