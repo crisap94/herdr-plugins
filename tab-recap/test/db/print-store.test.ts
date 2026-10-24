@@ -12,7 +12,7 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';
 
-const BEFORE_HANDOFF = MIGRATIONS.length - 1;
+const BEFORE_HANDOFF = 18;
 
 const rowCounts = (path: string): readonly number[] => {
     const db = connectReadOnly(path);

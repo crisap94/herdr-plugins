@@ -12,7 +12,11 @@ failures=0
 for probe in "$probes"/bad-*/; do
     name="$(basename "$probe")"
     [ -f "$probe/expect" ] || { echo "  FAIL  $name: no expect file"; failures=$((failures + 1)); continue; }
-    out="$(node bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
+    if [ -x "$probe/run-probe.sh" ]; then
+        out="$("$probe/run-probe.sh" 2>&1)"
+    else
+        out="$(node bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
+    fi
     status=$?
     if [ "$status" -ne 1 ]; then
         echo "  FAIL  $name: exit $status, expected 1"; failures=$((failures + 1)); continue

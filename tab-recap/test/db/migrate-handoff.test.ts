@@ -10,7 +10,7 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir, shapeOf } from './support.ts';
 
-const BEFORE = MIGRATIONS.length - 1;
+const BEFORE = 18;
 
 const freshDb = (): DatabaseSync => {
     const opened = openDatabase(MEMORY);

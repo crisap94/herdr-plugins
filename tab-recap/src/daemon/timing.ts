@@ -5,3 +5,5 @@ export const RETENTION_EVERY = 1440;
 export const INTENT_MS = 90_000;
 export const ASK_KEEP_MS = 30 * 24 * 60 * 60_000;
 export const EVENT_STOP_MS = 2_000;
+export const WORKTREE_SETTLE_MS = 500;
+export const WORKTREE_SAFETY_MS = 120_000;

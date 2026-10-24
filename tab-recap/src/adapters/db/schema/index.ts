@@ -17,6 +17,7 @@ import { m016 } from './016-queued-compaction.ts';
 import { m017 } from './017-handoff.ts';
 import { m018 } from './018-lane-status.ts';
 import { m019 } from './019-closed-lane-retention.ts';
+import { m020 } from './020-worktree-status.ts';
 import type { Migration } from './migration.ts';
 
-export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019];
+export const MIGRATIONS: readonly Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011, m012, m013, m014, m015, m016, m017, m018, m019, m020];
