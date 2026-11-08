@@ -20,4 +20,4 @@ commit="$(GIT_AUTHOR_NAME='Probe Fixture' GIT_AUTHOR_EMAIL='probe@example.invali
 git --git-dir="$repo" tag tab-recap-v1.0.0 "$commit"
 
 cd "$PACKAGE"
-GIT_DIR="$repo" node bin/check-domain-types.ts --project "$HERE/tsconfig.json"
+GIT_DIR="$repo" bun bin/check-domain-types.ts --project "$HERE/tsconfig.json"

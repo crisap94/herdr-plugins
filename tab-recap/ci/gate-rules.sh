@@ -4,10 +4,13 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
+# the native tsgolint: the node_modules/.bin shim is a node script, and the bun image has no node
+tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
+[ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
-[ -n "$AST" ] || { echo "gate-rules: 3 — NOT COVERED: no ast-grep: run 'npm install'" >&2; exit 3; }
-[ -x node_modules/.bin/oxlint ] || { echo "gate-rules: 3 — NOT COVERED: run 'npm install' (oxlint)" >&2; exit 3; }
+[ -n "$AST" ] || { echo "gate-rules: 3 — NOT COVERED: no ast-grep: run 'bun install'" >&2; exit 3; }
+[ -x node_modules/.bin/oxlint ] || { echo "gate-rules: 3 — NOT COVERED: run 'bun install' (oxlint)" >&2; exit 3; }
 
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
@@ -26,7 +29,7 @@ done < <(find "$probes" -name 'good*.ts' 2>/dev/null)
 [ "$failures" -eq 0 ] && echo "  ok    $id (pending: bad probes bite, good probes pass)"
 
 oxprobe="rules/probes/oxlint-unsafe-any"
-oxlint_run() { node_modules/.bin/oxlint --type-aware -c "$oxprobe/oxlintrc.json" --tsconfig "$1/tsconfig.json" "$1/src/index.ts" >/dev/null 2>&1; }
+oxlint_run() { bun --bun node_modules/.bin/oxlint --type-aware -c "$oxprobe/oxlintrc.json" --tsconfig "$1/tsconfig.json" "$1/src/index.ts" >/dev/null 2>&1; }
 oxlint_run "$oxprobe/bad" && fail "oxlint-unsafe-any — the bad probe (const id: PaneId = JSON.parse) passes: the unsafe-any rules do not bite"
 oxlint_run "$oxprobe/good" || fail "oxlint-unsafe-any — the good probe fails: the unsafe-any rules over-reach"
 [ "$failures" -eq 0 ] && echo "  ok    oxlint unsafe-any (bad probe bites, good probe passes)"

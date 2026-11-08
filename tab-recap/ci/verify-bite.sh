@@ -9,6 +9,9 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
+# the native tsgolint: the node_modules/.bin shim is a node script, and the bun image has no node
+tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
+[ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 dir="src/recap/domain"
 rule_seed="$dir/zz-bite-$$-rule.ts"
 type_seed="$dir/zz-bite-$$-type.ts"
@@ -40,7 +43,7 @@ for seed in $root_seeds; do
 export const seededCount: number = 'not a number';
 TS
 done
-output="$(NO_COLOR=1 node_modules/.bin/oxlint --type-aware --format unix . 2>&1)"
+output="$(NO_COLOR=1 bun --bun node_modules/.bin/oxlint --type-aware --format unix . 2>&1)"
 status=$?
 rejected=1
 [ "$status" -ne 0 ] \

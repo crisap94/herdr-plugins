@@ -3,13 +3,16 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
+# the native tsgolint: the node_modules/.bin shim is a node script, and the bun image has no node
+tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
+[ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 . ci/host-limits.sh
 
 # the pinned devDependency first, so CI and a checkout run the same ast-grep
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
-[ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'npm install'" >&2; exit 3; }
+[ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'bun install'" >&2; exit 3; }
 [ -x node_modules/.bin/oxlint ] \
-    || { echo "lint: 3 — NOT COVERED: run 'npm install' (oxlint)" >&2; exit 3; }
+    || { echo "lint: 3 — NOT COVERED: run 'bun install' (oxlint)" >&2; exit 3; }
 
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
@@ -42,14 +45,14 @@ for word in $banned; do
     grep -q "\`$word\`" CONTEXT.md && echo "  ok    $word" || fail "'$word' is banned but CONTEXT.md does not say what replaces it"
 done
 
-echo "versions agree (manifest = package.json = lockfile):"
+echo "versions agree (manifest = package.json):"
 bash ci/check-version.sh || fail "the plugin's version is not one number"
 
 echo "the release scripts bite (what is right passes, what is wrong fails):"
 bash ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
 
 echo "oxlint (type-aware: one program type-checks the tree with the tsconfig flags and runs the house rules):"
-node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
+bun --bun node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
 echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
 bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
@@ -58,13 +61,13 @@ echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtu
 bash ci/gate-graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
 
 echo "lane map (every file of src and test belongs to exactly one lane):"
-node ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
+bun ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
 
 echo "domain types (the signature check fails its bad probes and passes its good ones):"
 bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
 
 echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
-node bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run node bin/check-domain-types.ts --json and lower or fix"
+bun bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run bun bin/check-domain-types.ts --json and lower or fix"
 
 echo "migrations (a released one is untouched; a new one is numbered the base's highest plus one):"
 bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"
@@ -76,7 +79,7 @@ echo "the branch guard bites (an allowed change passes; a stray file and a forei
 bash ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"
 
 echo "protocol names (no copy of a wire name outside src/protocol):"
-node bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
+bun bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
 
 echo "the linters bite (a seeded violation must fail them):"
 bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the seeded type errors" || fail "a linter accepted the seeded violation"
