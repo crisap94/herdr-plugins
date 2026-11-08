@@ -1,6 +1,5 @@
 [
   "src/adapters/claude-prompt.ts",
-  "src/adapters/hc-core-wire.ts",
   "src/recap/domain/autocompact.ts",
   "src/recap/domain/backend.ts",
   "src/recap/domain/byte-budget.ts",
