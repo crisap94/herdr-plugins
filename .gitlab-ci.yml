@@ -1,4 +1,7 @@
 include:
+  # GitLab's free scanners (SAST, Secret Detection); their jobs run in the existing test stage.
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
   - project: 'homelab/ci-templates'
     ref: v0.10.0
     file: '/templates/gates.yml'
