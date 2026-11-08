@@ -2,7 +2,7 @@
 # Sourced by the heavy gates (lint, test). On a shared machine, set
 #   TEST_HOST_LOCK=<file>   to queue heavy gates across every checkout and agent
 #   TEST_HOST_SLOTS=<n>     to let n heavy gates run at once (default 1; slot files <file>.0 .. <file>.n-1)
-#   TEST_CONCURRENCY=<n>    to cap the node test runner's parallel files
+#   TEST_CONCURRENCY=<n>    to cap the bun test runner's parallel files
 # Unset (CI, a laptop), all are no-ops.
 if [ -n "${TEST_HOST_LOCK:-}" ]; then
     if command -v flock >/dev/null 2>&1; then
@@ -28,4 +28,4 @@ if [ -n "${TEST_HOST_LOCK:-}" ]; then
     fi
 fi
 TEST_RUNNER_FLAGS=()
-if [ -n "${TEST_CONCURRENCY:-}" ]; then TEST_RUNNER_FLAGS+=("--test-concurrency=$TEST_CONCURRENCY"); fi
+if [ -n "${TEST_CONCURRENCY:-}" ]; then TEST_RUNNER_FLAGS+=("--parallel=$TEST_CONCURRENCY"); fi
