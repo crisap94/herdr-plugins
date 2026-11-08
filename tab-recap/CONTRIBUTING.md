@@ -6,11 +6,11 @@ What is shared by every plugin (labels, commits, pull requests) is in the reposi
 ## Setup
 
 ```bash
-npm install          # the dev tools (tsgo, oxlint, ast-grep) and the one runtime dependency, @stateforge-labs/herdr-sdk
+bun install          # the dev tools (tsgo, oxlint, ast-grep) and the one runtime dependency, @stateforge-labs/herdr-sdk
 herdr plugin link .  # run your checkout inside herdr
 ```
 
-Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3.2 as well as on Linux: write `ci/*.sh` without `mapfile` and other bash 4 features. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
+Needs Bun ≥ 1.4.4 and herdr ≥ 0.9.0. Bun only, no Node fallback: `bun.lock` is the lockfile, and the gates below run under Bun. The gates run on macOS' stock bash 3.2 as well as on Linux: write `ci/*.sh` without `mapfile` and other bash 4 features. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
 
 ## Gates
 
@@ -18,16 +18,17 @@ Run both from the plugin directory before you send anything:
 
 ```bash
 bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
-bash ci/test.sh      # node --test
+bash ci/test.sh      # bun test, 30 s per-test timeout (one file: bun test test/<file>.test.ts)
+bun run typecheck    # tsgo --noEmit
 ```
 
 `lint.sh` checks that every architecture rule passes on the tree **and** fires on its bad probe
 (a rule that cannot fail is not a rule), that identifiers use the vocabulary, that the code
 typechecks, and that a seeded violation is rejected. Exit codes: `0` clean, `1` a finding, `3`
-could not look (a tool is missing — run `npm install`).
+could not look (a tool is missing — run `bun install`).
 
 Both also run on GitHub Actions (Linux and macOS) for every push and pull request to `main`, and in
-the upstream CI.
+the upstream CI. The CI floor job runs Bun 1.4.4.
 
 ## Real-herdr proofs
 
@@ -48,9 +49,9 @@ agent acting as the test lane runs them, never a person by hand.
 
 ## House rules
 
-- **TypeScript on Node ≥ 24.21.0, run directly.** No build step. One runtime dependency, `@stateforge-labs/herdr-sdk` (the herdr-core client, itself dependency-free), which herdr installs
-  with `npm ci --omit=dev` (the `[[build]]` entry of `herdr-plugin.toml`); no other. The files herdr runs first (the
-  `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Node can say it is too old; anything that
+- **TypeScript on Bun ≥ 1.4.4, run directly.** No build step. No Node fallback. One runtime dependency, `@stateforge-labs/herdr-sdk` (the herdr-core client, itself dependency-free), which herdr installs
+  with `bun install --frozen-lockfile --production` (the `[[build]]` entry of `herdr-plugin.toml`); no other. The files herdr runs first (the
+  `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Bun can say it is too old; anything that
   depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
   rules enforce the syntax boundaries and dependency-cruiser (`.dependency-cruiser.cjs`) enforces
@@ -66,8 +67,8 @@ Every parameter, return and property in `tab-recap/src/` is a domain type: a `Br
 closed union of literals. Run the check from the plugin directory:
 
 ```bash
-node bin/check-domain-types.ts --baseline ci/domain-types-baseline   # what lint runs
-node bin/check-domain-types.ts --json                                # every finding, by file and category
+bun bin/check-domain-types.ts --baseline ci/domain-types-baseline   # what lint runs
+bun bin/check-domain-types.ts --json                                # every finding, by file and category
 ```
 
 - **Read a `not supported:` line.** It names the file, line, function and the parameter, return or property, says what the type
@@ -84,7 +85,7 @@ node bin/check-domain-types.ts --json                                # every fin
   and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
 - **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
   its files, its baseline, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
-  `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`node ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
+  `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`bun ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
 
 ## Changing the database schema
 
@@ -101,7 +102,7 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   duplicate. After another migration lands, rebase and renumber.
 - **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
   drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
-  Use only SQL the SQLite bundled with Node 24.21 supports (SQLite 3.53).
+  Use only SQL the SQLite behind `node:sqlite` supports (SQLite 3.53).
 - **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
   millionths, times as epoch milliseconds.
 - **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
@@ -120,8 +121,8 @@ The README's pictures are drawn from the plugin's own views with invented data. 
 what the column, bar or settings modal show, regenerate and commit them:
 
 ```bash
-npm install --no-save playwright-core && npx playwright-core install chromium   # once
-node docs/screens/shoot.mjs      # docs/screens/render.ts (gated) → HTML → docs/screens/*.png
+bun add --no-save playwright-core && bunx playwright-core install chromium   # once
+bun docs/screens/shoot.mjs      # docs/screens/render.ts (gated) → HTML → docs/screens/*.png
 ```
 
 ## Cutting a release
@@ -168,5 +169,5 @@ with a new patch version; never move a tag.
 ## Bug reports
 
 Along with what the shared guide asks for, include the plugin's `status` output
-(`herdr plugin action invoke tab-recap.status`, or `node bin/tab-recap.ts status` in this folder) and the
+(`herdr plugin action invoke tab-recap.status`, or `bun bin/tab-recap.ts status` in this folder) and the
 relevant lines of the daemon log, at the path `status` prints.

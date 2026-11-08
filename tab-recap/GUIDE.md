@@ -30,7 +30,7 @@ and one headline. Tap it to open the [expanded view](#the-expanded-view).
 ## Requirements
 
 - herdr ≥ 0.9.0 (Linux or macOS)
-- Node ≥ 24.21.0 (runs the TypeScript directly, nothing to build)
+- Bun ≥ 1.4.4 (runs the TypeScript directly, nothing to build; no Node fallback)
 - at least one coding agent on your `PATH`: `claude`, `codex`, `opencode` or `hermes` (or your own
   command, see [Who writes the recap](#who-writes-the-recap))
 - optional: [`glow`](https://github.com/charmbracelet/glow), for nicer Markdown
@@ -252,8 +252,8 @@ By default (`auto`) the first agent found on your `PATH` writes it, in this orde
 `codex`, `opencode`, `hermes`. To choose, use the settings modal (`tab-recap.configure`), or from a checkout:
 
 ```bash
-node bin/tab-recap.ts backend codex gpt-6-luna   # an agent and, optionally, a model
-node bin/tab-recap.ts backend auto               # back to the default
+bun bin/tab-recap.ts backend codex gpt-6-luna   # an agent and, optionally, a model
+bun bin/tab-recap.ts backend auto               # back to the default
 ```
 
 Each agent remembers its own model; leave it empty
