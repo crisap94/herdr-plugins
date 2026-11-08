@@ -22,4 +22,4 @@ After the closed-lane end, the board checks between the expensive steps and the 
 
 ## Method
 
-`measure.mjs` opens `tab-recap.db` read-only and prints the tables and the verdicts of the rules; the points where compactions were (before the brief, after it, before a rewrite, before typing) come from the daemon log lines `compaction: <agent> <pane> closed, skipped (<point>)`, which rotate, so they can undercount. Command: `node experiments/EXP-004-lane-closed-two-weeks/measure.mjs 2026-10-11T11:30:00Z 2026-10-25T12:00:00Z`.
+`measure.mjs` opens `tab-recap.db` read-only and prints the tables and the verdicts of the rules; the points where compactions were (before the brief, after it, before a rewrite, before typing) come from the daemon log lines `compaction: <agent> <pane> closed, skipped (<point>)`, which rotate, so they can undercount. Command: `node tab-recap/experiments/EXP-004-lane-closed-two-weeks/measure.mjs 2026-10-11T11:30:00Z 2026-10-25T12:00:00Z`.

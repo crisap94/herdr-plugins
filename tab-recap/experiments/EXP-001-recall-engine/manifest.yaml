@@ -1,6 +1,6 @@
 experiment: EXP-001-recall-engine
 status: concluded 2026-10-07 (R05–R07, R09 valid; R08 invalid; R04 superseded); writer comparison R10 added 2026-10-08 (valid)
-prereg: experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-engine at b56ce24, 2026-10-07)
+prereg: tab-recap/experiments/EXP-001-recall-engine/PREREG.md (frozen as OpenSpec recall-engine at b56ce24, 2026-10-07)
 code:
   spec: b56ce24 (openspec/changes/recall-engine, main)
   recall-a: 9575e0f feat/tab-recap-recall-judge, merged to main as b0e31b9 (!42) — state ruler, anchors, G11/G12, short retry, kappa, per-chapter comparison

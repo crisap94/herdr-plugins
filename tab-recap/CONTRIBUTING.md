@@ -1,0 +1,171 @@
+# Contributing to Tab Recap
+
+What is shared by every plugin (labels, commits, pull requests) is in the repository's
+[CONTRIBUTING.md](../CONTRIBUTING.md). This page is what is particular to this plugin.
+
+## Setup
+
+```bash
+npm install          # dev tools only (tsgo, oxlint, ast-grep); the plugin has zero runtime dependencies
+herdr plugin link .  # run your checkout inside herdr
+```
+
+Needs Node ≥ 24.21.0 and herdr ≥ 0.9.0. The gates run on macOS' stock bash 3.2 as well as on Linux: write `ci/*.sh` without `mapfile` and other bash 4 features. The tests that validate the writer's document against `schema/recap-input.dtd` use `xmllint` (`libxml2-utils`; preinstalled on macOS); without it they are skipped locally and fail in CI.
+
+## Gates
+
+Run both from the plugin directory before you send anything:
+
+```bash
+bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
+bash ci/test.sh      # node --test
+```
+
+`lint.sh` checks that every architecture rule passes on the tree **and** fires on its bad probe
+(a rule that cannot fail is not a rule), that identifiers use the vocabulary, that the code
+typechecks, and that a seeded violation is rejected. Exit codes: `0` clean, `1` a finding, `3`
+could not look (a tool is missing — run `npm install`).
+
+Both also run on GitHub Actions (Linux and macOS) for every push and pull request to `main`, and in
+the upstream CI.
+
+## Real-herdr proofs
+
+A change that must be shown working on a real herdr says so in a "Real herdr" task group. These proofs are automated: a coding
+agent acting as the test lane runs them, never a person by hand.
+
+- Work in a scratch herdr workspace created for the run and closed after it. Start throwaway agents there for the test and close
+  them at the end; never prompt, close or read an existing lane.
+- Run the build under test as a scratch daemon with `HERDR_PLUGIN_STATE_DIR` and `HERDR_PLUGIN_CONFIG_DIR` pointed at a temporary
+  directory, so it has its own database and configuration; never the maintainer's running daemon, database or config.
+- A herdr command honoured only from inside a pane is run by the throwaway agent from its own shell, at the test lane's request. A
+  typed step (`/clear`, a resume, a task) goes through `herdr agent prompt`, and a command in a fresh shell pane through
+  `herdr pane run`. Nothing is sent as key presses.
+- Record evidence without secrets or transcript content: commands, exit codes, timings, the herdr and harness versions. Metrics go
+  under `experiments/` in this folder and are linked from the merge request.
+- What only the maintainer can give is its own task: a credential, a decision, a label on a judged sample, or turning a setting on
+  in the maintainer's own daemon for a measurement on real work.
+
+## House rules
+
+- **TypeScript on Node ≥ 24.21.0, run directly.** No build step, no runtime dependencies. The files herdr runs first (the
+  `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Node can say it is too old; anything that
+  depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.
+- **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
+  rules enforce the syntax boundaries and dependency-cruiser (`.dependency-cruiser.cjs`) enforces
+  the import boundaries. Each rule ships a bad/good probe it must bite. A new rule needs both
+  probes. See [`tab-recap/CLAUDE.md`](CLAUDE.md).
+- **Use the vocabulary.** A word means one thing; banned synonyms fail lint. See
+  [`tab-recap/CONTEXT.md`](CONTEXT.md), and add new terms there first.
+- **Tests with the change.** Domain decisions are tested as plain folds, without fakes or timers.
+
+## Domain types in signatures
+
+Every parameter, return and property in `tab-recap/src/` is a domain type: a `Brand` of a primitive, a named value object or a
+closed union of literals. Run the check from the plugin directory:
+
+```bash
+node bin/check-domain-types.ts --baseline ci/domain-types-baseline   # what lint runs
+node bin/check-domain-types.ts --json                                # every finding, by file and category
+```
+
+- **Read a `not supported:` line.** It names the file, line, function and the parameter, return or property, says what the type
+  resolves to (`string`, an array of them, an anonymous object, a hand-rolled brand) and asks for a value object or domain type.
+- **Raw input is `unknown`, parsed once.** A parser is `parse<Name>(input: unknown): Result<Name, E>`, exported from the file that
+  declares `<Name>`; a type guard lives in the same file. `unknown` anywhere else fails, including as a type argument (`Record<string, unknown>`, `Promise<unknown>`). A `Date`, a `Buffer` and a numeric `enum` fail too (use a branded instant, a branded byte value or a closed union of string literals; a string `enum` passes). A parameter or a return written as an inline literal union (`state: 'open' | 'closed'`) needs a named alias; a property may be typed by a literal or an inline union of literals. `brand()` is called only by the parser of
+  the value it brands, and no other file casts to a brand.
+- **Exceptions are per symbol, never per file or folder.** `ci/domain-types-exceptions/<lane>.json` lists a file, a function and a
+  parameter or return with a reason, for one of three classes: a Node or third-party callback that forces a primitive, a released
+  migration (named by file, derived from the latest `tab-recap-v*` tag), and the one brand function. An entry that no finding
+  hits fails.
+- **The ratchet.** While the tree is converted, `ci/domain-types-baseline/<lane>.json` holds one count per category per file. A count
+  above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
+  and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
+- **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
+  its files, its baseline, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
+  `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`node ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
+
+## Changing the database schema
+
+The plugin's state is one SQLite file, `tab-recap.db`, in its state directory (which must be on a local disk: WAL does not
+work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/schema/` as **numbered migrations**.
+
+- **Add a file** `NNN-name.ts` exporting `{ version: NNN, name, up }` and list it in `schema/index.ts` (the only registry).
+  `up` is a list of SQL statements, or a function taking the database.
+- **Never edit a released migration** (one that is in a `tab-recap-v*` tag): a fix is a new number. `ci/check-migrations.sh`
+  (part of `ci/lint.sh`) fails when a released file changed or was deleted.
+- **Number it exactly one above `main`'s highest** (and consecutively when a branch adds several): a gap makes a database skip the
+  numbers between, and a number already taken collides with a migration that landed first. `ci/check-migrations.sh` reads
+  `origin/main` (`MIGRATIONS_BASE`) and fails any other number; `ci/migration-number-bite.sh` proves it fails a gap, a repeat and a
+  duplicate. After another migration lands, rebase and renumber.
+- **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
+  drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
+  Use only SQL the SQLite bundled with Node 24.21 supports (SQLite 3.53).
+- **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
+  millionths, times as epoch milliseconds.
+- **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
+  one and compares it with a fresh install.
+- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`).
+
+An upgrade first copies the database to `tab-recap.db.v<old>.bak` (the newest three are kept). A database written by a
+**newer** plugin than the one running is opened read-only and left alone: the daemon says so and exits, the columns show the
+message. **Rolling back** a schema change: stop the daemon (`tab-recap.stop`), put the plugin's older version back, restore the
+backup (`cp tab-recap.db.v<n>.bak tab-recap.db`, and delete `tab-recap.db-wal` / `-shm`), start it. To go back to 1.5.1, see the
+plugin's README ("State and rolling back").
+
+## Screenshots
+
+The README's pictures are drawn from the plugin's own views with invented data. After a change to
+what the column, bar or settings modal show, regenerate and commit them:
+
+```bash
+npm install --no-save playwright-core && npx playwright-core install chromium   # once
+node docs/screens/shoot.mjs      # docs/screens/render.ts (gated) → HTML → docs/screens/*.png
+```
+
+## Cutting a release
+
+Maintainers only. The version and the notes come from the labels of the merge requests merged since
+the previous `tab-recap-v*` tag: any `breaking` makes a major release, else any `added` a minor one,
+else any `fixed`/`changed` a patch; only `internal` means no release.
+
+1. Merge the merge requests (each with its label) into `main`.
+2. On `main`'s pipeline, run the manual **`release:prepare`** job. It works out the next version
+   (`ci/next-release.sh` prints it with the section it will write), updates the manifest,
+   `package.json`, the lockfile and `CHANGELOG.md` (one bullet per MR: title and `(!number)`, grouped
+   under Breaking/Added/Changed/Fixed, `internal` left out), commits that on the branch
+   `release/tab-recap-vX.Y.Z` and opens a merge request from it labelled `land` (`ci/release-publish.sh`);
+   it never pushes `main`. If nothing is due it says so and stops; while a release merge request is open
+   it will not prepare another, and it refuses while a prepared release is still untagged (the manifest
+   is ahead of the newest tag). When the merge train has landed that merge request, **`release:tag`**
+   (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a
+   dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the newest commit
+   that touched the manifest or `CHANGELOG.md` (the release commit, or the merge request that completed
+   its changelog afterwards), after checking that the version is above every tag, the three versions
+   agree, the changelog has its link and a non-empty section, and `ci/next-release.sh` run up to that
+   commit calls for exactly this version and lists no merge request the section lacks. A merge request
+   that lands between the preparation and the landing of the release merge request is not in that
+   section: `release:tag` then refuses and names it (exit 1, a warning job, `allow_failure`, so `main`
+   stays green; a lookup error or a tag the forge refuses is exit 3 and fails the job); add its line
+   to `CHANGELOG.md` in a normal merge request and the next pipeline on `main` tags the release at that
+   merge request's commit. If the merge requests call for another version (or for none), change the
+   version in a normal merge request (the manifest, `package.json`, the lockfile, the CHANGELOG heading
+   and its link reference) or tag the release commit by hand; `release:prepare` refuses meanwhile. A
+   merge request without a `changelog::` label anywhere in the range also stops the job (exit 3) until
+   it is labelled.
+3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
+   version above the previous one, the three versions equal, a dated and non-empty changelog section
+   with its link, a manifest whose command files exist, no release for the tag yet), then the
+   release is created from that section. The mirror carries the tag to GitHub, whose workflow tests
+   it on Linux and macOS and creates the GitHub release from the same section.
+
+`[Unreleased]` in the changelog stays empty: entries are written only by `release:prepare`
+(a hand-written entry makes it stop). To preview a release, run `bash tab-recap/ci/next-release.sh`
+with `CI_API_V4_URL`, `CI_PROJECT_ID` and a token in the environment. If a release is wrong, fix it
+with a new patch version; never move a tag.
+
+## Bug reports
+
+Along with what the shared guide asks for, include the plugin's `status` output
+(`herdr plugin action invoke tab-recap.status`, or `node bin/tab-recap.ts status` in this folder) and the
+relevant lines of the daemon log, at the path `status` prints.

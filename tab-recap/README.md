@@ -531,7 +531,7 @@ Built-in harnesses are not affected.
 
 ## Install
 
-See the [quick start in the root README](../README.md#tab-recap): install, first run, everyday use
+See the [user guide](GUIDE.md): install, first run, everyday use
 and troubleshooting. In short:
 
 ```bash
