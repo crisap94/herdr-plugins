@@ -1,0 +1,8 @@
+working 0.043
+idle 0.052
+working 0.047
+idle 0.051
+working 0.054
+idle 0.055
+working 0.053
+idle 0.052

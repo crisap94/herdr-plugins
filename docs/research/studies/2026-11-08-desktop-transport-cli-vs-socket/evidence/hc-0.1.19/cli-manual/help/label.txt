@@ -1,0 +1,11 @@
+Set labels (key=value; key= removes)
+
+Usage: hc label [OPTIONS] <TERMINAL> <K=V>...
+
+Arguments:
+  <TERMINAL>  The terminal: `t7`, a name, or `machine/t7`
+  <K=V>...    Labels to set, key=value; `key=` removes one
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

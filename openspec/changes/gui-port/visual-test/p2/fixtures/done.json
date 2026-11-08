@@ -1,0 +1,182 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "done",
+ "at": 1794047400000,
+ "recapAt": 1794047040000,
+ "writing": "resting",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p1",
+   "agent": "claude",
+   "status": "done",
+   "title": "api orchestrator",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Merge request is ready for review",
+   "branch": "feat/cart",
+   "contextPercent": 40,
+   "since": 1794046500000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 80000,
+    "window": 200000,
+    "share": 40,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": {
+    "branch": "feat/cart",
+    "ahead": 1,
+    "changed": 3
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/cart"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "name": "Cart totals",
+   "sections": {
+    "goal": "Cart totals match the server within one cent",
+    "now": [],
+    "needs": [],
+    "done": [
+     "Rounding fix merged into the feature branch",
+     "Cart test suite passes"
+    ],
+    "decisions": [
+     "Round at the line level, not the total"
+    ],
+    "next": [],
+    "links": [],
+    "rules": []
+   },
+   "markdown": "## Goal\nCart totals match the server within one cent\n\n## Now\n\n## Needs",
+   "facts": [
+    {
+     "id": "g1",
+     "section": "goal",
+     "text": "Cart totals match the server within one cent",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "dn1",
+     "section": "done",
+     "text": "Rounding fix merged into the feature branch",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794044100000,
+     "lastAt": 1794046200000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794045600000
+    },
+    {
+     "id": "dn2",
+     "section": "done",
+     "text": "Cart test suite passes",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794044700000,
+     "lastAt": 1794046200000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794046200000
+    },
+    {
+     "id": "d1",
+     "section": "decisions",
+     "text": "Round at the line level, not the total",
+     "spans": null,
+     "why": "The server rounds per line",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794043200000,
+     "lastAt": 1794046200000,
+     "state": "closed",
+     "closedWhy": "answered",
+     "closedAt": 1794043800000
+    }
+   ],
+   "regions": {
+    "goal": [
+     "g1"
+    ],
+    "now": [],
+    "needs": [],
+    "decisions": [
+     "d1"
+    ],
+    "next": [],
+    "rules": [],
+    "links": []
+   },
+   "timeline": [
+    {
+     "kind": "fact",
+     "fact": "d1",
+     "at": 1794043800000,
+     "clock": "09:30",
+     "day": null,
+     "closed": "answered"
+    },
+    {
+     "kind": "fact",
+     "fact": "dn1",
+     "at": 1794045600000,
+     "clock": "10:00",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "dn2",
+     "at": 1794046200000,
+     "clock": "10:10",
+     "day": null,
+     "closed": "done"
+    }
+   ],
+   "story": null,
+   "curating": "no",
+   "needsWaitedMs": []
+  }
+ ],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": "claude",
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [],
+ "claudeRecaps": [],
+ "groups": [],
+ "breaks": [],
+ "session": null,
+ "cuts": []
+}

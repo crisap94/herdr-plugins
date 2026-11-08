@@ -1,0 +1,11 @@
+Press named keys (enter, esc, up, ctrl+c, alt+x, f5, a...)
+
+Usage: hc keys [OPTIONS] <TERMINAL> <KEYS>...
+
+Arguments:
+  <TERMINAL>  The terminal: `t7`, a name, or `machine/t7`
+  <KEYS>...   Key names: enter, esc, tab, up, ctrl+c, alt+x, f5, a, ...
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

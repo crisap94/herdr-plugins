@@ -1,0 +1,38 @@
+2026-11-08T16:13:17.522Z start agent a1 on tb1: {"address":"t5","agent":"bash","cwd":"~","name":"a1","state":"live","turn":0} 
+2026-11-08T16:13:17.528Z start agent a2 on tb2: {"address":"t6","agent":"bash","cwd":"~","name":"a2","state":"live","turn":0} 
+2026-11-08T16:13:18.330Z daemon pid 2045720 mode=cli
+2026-11-08T16:13:18.654Z index has 2 rows after 323 ms: [["tb2","idle"],["tb1","idle"]]
+2026-11-08T16:13:18.654Z rss at start 124720 kB
+2026-11-08T16:14:48.656Z idle 90s: hc spawns through PATH shim since start of idle = 21
+2026-11-08T16:14:48.656Z   shim: 1794154398.654796746 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.656Z   shim: 1794154398.659644392 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.656Z   shim: 1794154398.660783364 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.656Z   shim: 1794154413.660023499 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154413.664680813 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154413.665399143 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z   shim: 1794154428.659746610 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154428.663827753 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154428.664956605 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z   shim: 1794154443.660243173 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154443.665032335 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154443.666345920 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z   shim: 1794154458.659999653 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154458.664438267 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154458.665839559 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z   shim: 1794154459.023562725 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154459.028172786 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154459.029767948 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z   shim: 1794154473.660168305 ppid=2045720 args=ls --json
+2026-11-08T16:14:48.657Z   shim: 1794154473.664370178 ppid=2045720 args=get t5 --json
+2026-11-08T16:14:48.657Z   shim: 1794154473.665527936 ppid=2045720 args=get t6 --json
+2026-11-08T16:14:48.657Z hc spawns from daemon start to end of idle = 26
+2026-11-08T16:14:48.718Z status a1->working: index shows it after 61 ms
+2026-11-08T16:14:48.779Z status a1->blocked: index shows it after 61 ms
+2026-11-08T16:14:48.820Z status a1->done: index shows it after 40 ms
+2026-11-08T16:14:48.880Z status a1->idle: index shows it after 61 ms
+2026-11-08T16:14:48.921Z status a2->blocked: index shows it after 40 ms
+2026-11-08T16:14:48.982Z status a2->working: index shows it after 61 ms
+2026-11-08T16:14:48.982Z rows now: [["tb2","working"],["tb1","idle"]]
+2026-11-08T16:14:49.007Z after kill a2: row={"tab":"tb2","name":"tb2","status":"idle","at":1794154488998,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]} (20 ms)
+2026-11-08T16:14:52.017Z after rm a2: tb2 row STILL PRESENT {"tab":"tb2","name":"tb2","status":"idle","at":1794154488998,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]}; rows [["tb1","idle"],["tb2","idle"]]
+2026-11-08T16:14:52.017Z total shim calls over whole run: 60

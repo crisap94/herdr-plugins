@@ -19,6 +19,12 @@ Status: **shipped** = released · *planned* = intended, not started.
 - **[1.1.0](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.1.0)** — a key to hide and show columns, a fixed seven-section recap, and a checked release pipeline with CI and screenshots.
 - **[1.0.1](https://github.com/crisap94/herdr-plugins/releases/tag/tab-recap-v1.0.1)** — stability: quieter event subscriptions, safer process handling, no leftover opencode sessions.
 
+### Desktop app *(in progress)*
+
+- A recap overlay and an optional chip for the Herdr desktop app, next to the terminal UI, from the same engine and version.
+- Session lookup for Codex, opencode and Hermes by folder and newest transcript (Claude Code is found by its process).
+- Typing into agents (compaction, handoff, autocompact) once the desktop key command can type punctuation.
+
 ### 2.1 *(planned)*
 
 - Drop the 1.x `item` table, which 2.0 keeps read-only after importing it into facts.

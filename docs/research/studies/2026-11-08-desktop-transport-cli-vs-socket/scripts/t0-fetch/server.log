@@ -1,0 +1,7 @@
+0.0s listening 47811
+25.8s GET /hold?s=28 headers[content-length,accept] bodyLen=0 body=
+25.8s GET /ping headers[content-length,accept] bodyLen=0 body=
+25.8s POST /post headers[content-type,content-length,accept] bodyLen=7 body={"a":1}
+25.8s GET /big headers[content-length,accept] bodyLen=0 body=
+25.8s GET /auth headers[authorization=Bearer spike-token,content-length,accept] bodyLen=0 body=
+53.8s hold answering

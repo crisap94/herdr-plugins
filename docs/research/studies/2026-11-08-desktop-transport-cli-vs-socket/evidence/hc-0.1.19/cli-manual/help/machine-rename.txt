@@ -1,0 +1,11 @@
+Give a machine a new name here
+
+Usage: hc machine rename [OPTIONS] <MACHINE> <NEW_NAME>
+
+Arguments:
+  <MACHINE>   The machine's name now
+  <NEW_NAME>  Its new name. Addresses with the old one stop working
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

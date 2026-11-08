@@ -1,0 +1,12 @@
+Write what is piped in as the file, making missing folders
+
+Usage: hc file write [OPTIONS] <PATH>
+
+Arguments:
+  <PATH>  The file: absolute, or from `cwd`
+
+Options:
+      --json          JSON output even in a terminal
+      --on <MACHINE>  On another machine (see `hc machine ls`)
+      --cwd <CWD>     Where a relative path starts (default: where hc runs; through the API, the core's; with --on, that machine's home)
+  -h, --help          Print help

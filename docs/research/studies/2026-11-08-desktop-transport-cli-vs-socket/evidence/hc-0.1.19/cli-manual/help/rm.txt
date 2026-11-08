@@ -1,0 +1,10 @@
+Remove a finished terminal
+
+Usage: hc rm [OPTIONS] [TERMINAL]
+
+Arguments:
+  [TERMINAL]  The terminal: `t7`, a name, or `machine/t7`
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

@@ -1,0 +1,7 @@
+Every API method with its JSON Schema, for app builders
+
+Usage: hc schema [OPTIONS]
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

@@ -1,0 +1,163 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "blocked",
+ "at": 1794047400000,
+ "recapAt": 1794047040000,
+ "writing": "resting",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p2",
+   "agent": "claude",
+   "status": "blocked",
+   "title": "checkout worker",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Point the sandbox client at staging and replay the failed charges",
+   "branch": "feat/retry",
+   "contextPercent": 40,
+   "since": 1794045000000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 80000,
+    "window": 200000,
+    "share": 40,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": {
+    "branch": "feat/retry",
+    "ahead": 0,
+    "changed": 2
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/retry"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "name": "Checkout retries",
+   "sections": {
+    "goal": "Failed charges retry with backoff and never double-charge",
+    "now": [],
+    "needs": [
+     "Need the staging sandbox key from the operator",
+     "Confirm the retry ceiling of five attempts"
+    ],
+    "done": [],
+    "decisions": [
+     "Idempotency key is the order id plus the attempt number"
+    ],
+    "next": [],
+    "links": [],
+    "rules": []
+   },
+   "markdown": "## Goal\nFailed charges retry with backoff and never double-charge\n\n## Now\n\n## Needs\n- Need the staging sandbox key from the operator\n- Confirm the retry ceiling of five attempts",
+   "facts": [
+    {
+     "id": "g1",
+     "section": "goal",
+     "text": "Failed charges retry with backoff and never double-charge",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "n1",
+     "section": "needs",
+     "text": "Need the staging sandbox key from the operator",
+     "spans": null,
+     "why": "Replay is blocked until the key is set",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "n2",
+     "section": "needs",
+     "text": "Confirm the retry ceiling of five attempts",
+     "spans": null,
+     "why": "The ceiling is not in the spec",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "d1",
+     "section": "decisions",
+     "text": "Idempotency key is the order id plus the attempt number",
+     "spans": null,
+     "why": "Keeps replays safe",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794043200000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    }
+   ],
+   "regions": {
+    "goal": [
+     "g1"
+    ],
+    "now": [],
+    "needs": [
+     "n1",
+     "n2"
+    ],
+    "decisions": [
+     "d1"
+    ],
+    "next": [],
+    "rules": [],
+    "links": []
+   },
+   "timeline": [],
+   "story": null,
+   "curating": "no",
+   "needsWaitedMs": [
+    240000,
+    480000
+   ]
+  }
+ ],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": "claude",
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [],
+ "claudeRecaps": [],
+ "groups": [],
+ "breaks": [],
+ "session": null,
+ "cuts": []
+}

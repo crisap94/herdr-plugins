@@ -1,0 +1,1 @@
+TR.meter=(p,w)=>`<span class="meter" role="meter" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="context ${p}%, hint at ${TR.C.HINT}%"${w?` style="width:${w}px"`:''}><i class="${p>=TR.C.HINT?'warn':''}" style="width:${p}%"></i><b style="left:${TR.C.HINT}%"></b></span>`;

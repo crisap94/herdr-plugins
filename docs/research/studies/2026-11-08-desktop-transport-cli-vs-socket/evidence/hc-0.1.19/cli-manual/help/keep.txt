@@ -1,0 +1,11 @@
+Keep a live terminal after loss (--off disables)
+
+Usage: hc keep [OPTIONS] <TERMINAL>
+
+Arguments:
+  <TERMINAL>  The terminal: `t7`, a name, or `machine/t7`
+
+Options:
+      --json  JSON output even in a terminal
+      --off   Keep this live terminal after loss. Existing streams end with the loss reason; reattach after `restarted`
+  -h, --help  Print help
