@@ -137,7 +137,7 @@ test('two processes open a brand new database at the same moment: the schema is 
         const path = join(dir, 'race.db');
         const code = `import { openDatabase } from '#src/adapters/db/open.ts'; const r = openDatabase(${JSON.stringify(path)}); process.exit(r.kind === 'ready' ? 0 : 3);`;
         const run = (): Promise<number | null> => new Promise((resolve) => {
-            spawn(process.execPath, ['--input-type=module', '-e', code], { cwd: join(import.meta.dirname, '..', '..'), stdio: 'ignore' }).on('exit', resolve);
+            spawn(process.execPath, ['-e', code], { cwd: join(import.meta.dirname, '..', '..'), stdio: 'ignore' }).on('exit', resolve);
         });
         assert.deepEqual(await Promise.all([run(), run(), run()]), [0, 0, 0]);
         const db = new DatabaseSync(path);

@@ -8,7 +8,7 @@ import { join } from 'node:path';
 const ENTRY = join(import.meta.dirname, '..', 'bin', 'tab-recap-desktop.ts');
 
 function desktop(args: string[], env: Record<string, string>): { status: number | null; out: string; err: string } {
-    const done = spawnSync(process.execPath, ['--no-warnings', ENTRY, ...args], {
+    const done = spawnSync(process.execPath, [ENTRY, ...args], {
         encoding: 'utf8', timeout: 20_000,
         env: { ...process.env, TAB_RECAP_STATE: '', HERDR_PLUGIN_STATE_DIR: '', TAB_RECAP_LOCALE: 'en', ...env },
     });

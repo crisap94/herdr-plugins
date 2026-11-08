@@ -139,7 +139,7 @@ test('opencode: the reader cannot write — the handle is read-only', () => {
             `const db = new DatabaseSync(${JSON.stringify(fixture.db)}, { readOnly: true });`,
             "try { db.exec(\"INSERT INTO session VALUES ('x', '/', NULL, 't', 1, NULL)\"); console.log('wrote'); } catch (error) { console.log('refused'); }",
         ].join('\n');
-        assert.equal(execFileSync(process.execPath, ['--input-type=module', '-e', probe], { encoding: 'utf8' }).trim(), 'refused');
+        assert.equal(execFileSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).trim(), 'refused');
     } finally {
         rmSync(dir, { recursive: true });
     }
@@ -153,7 +153,7 @@ test('node:sqlite prints nothing on stderr when run the way the plugin launches 
         fixture.close();
         const adapter = new URL('../src/adapters/opencode-transcripts.ts', import.meta.url).href;
         const script = `import { OpencodeTranscripts } from ${JSON.stringify(adapter)};\nconst r = new OpencodeTranscripts(${JSON.stringify(fixture.db)});\nconst l = await r.locate({ cwd: '/repo', pane: 'p' });\nconsole.log(l.kind);`;
-        const ran = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' });
+        const ran = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
         assert.equal(ran.stdout.trim(), 'located');
         assert.equal(ran.stderr, '', 'no ExperimentalWarning (nor anything else) on stderr');
     } finally {
