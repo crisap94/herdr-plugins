@@ -6,6 +6,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const GUI_ROOT = join(HERE, '..', '..', '..', '..', 'desktop', 'mods', 'tab-recap');
 const STORAGE = 'localStorage';
 const HOST_ZONE = 'UTC';
+const SETTLE_ROUNDS = 5;
+const SETTLE_TICK_MS = 8;
 process.env['TZ'] = HOST_ZONE;
 
 export const guiPath = (relative: string): string => join(GUI_ROOT, relative);
@@ -43,7 +45,12 @@ export async function loadGui<T>(relative: string): Promise<T> {
 }
 
 export const settle = async (): Promise<void> => {
-    for (let round = 0; round < 5; round += 1) {
+    for (let round = 0; round < SETTLE_ROUNDS; round += 1) {
         await new Promise<void>((done) => { setImmediate(done); });
     }
+};
+
+export const settleSlow = async (): Promise<void> => {
+    await settle();
+    await new Promise<void>((done) => { setTimeout(done, SETTLE_TICK_MS); });
 };

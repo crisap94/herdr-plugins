@@ -6,7 +6,7 @@ import { fleet, readJson, type Json } from './support/fixture.ts';
 import { makeCx } from './support/cx.ts';
 import { mount, type Mounted } from './support/mount.ts';
 import type { ModuleOf, Role } from './support/api.ts';
-import { loadGui, settle, storage } from './support/register.ts';
+import { loadGui, settleSlow, storage } from './support/register.ts';
 import { text } from './support/tree.ts';
 
 interface Forgetful {
@@ -81,7 +81,7 @@ test('the daemon-down notice also follows a vanished api.json', async () => {
 test('in pure file mode, where the API was never seen, there is no down notice', async () => {
     const view = await brief();
     backoff(view);
-    await settle();
+    await settleSlow();
     assert.ok(!shown(view).includes(DOWN));
 });
 
@@ -98,12 +98,12 @@ test('an api.json whose pid or startedAt is not the answering daemon is stale: n
     const impostor = await serve();
     impostor.advertise(impostor.token, { pid: impostor.pid + 1 });
     const view = await brief();
-    await settle();
+    await settleSlow();
     assert.deepEqual(impostor.calls.filter((call) => call.path !== HEALTH), []);
     assert.ok(impostor.calls.every((call) => call.auth === ''));
     impostor.advertise(impostor.token, { startedAt: impostor.startedAt + 1 });
     backoff(view);
-    await settle();
+    await settleSlow();
     assert.ok(impostor.calls.every((call) => call.auth === ''));
     assert.equal(impostor.holds.length, 0);
     impostor.advertise();
@@ -152,9 +152,9 @@ test('a strip runs no long-poll and no watcher of its own, and still shows the r
     api.advertise();
     const strip = await mount({ role: 'strip', pane: 'w1:p1' });
     views.push(strip);
-    await settle();
+    await settleSlow();
     strip.cx.advance(120_000);
-    await settle();
+    await settleSlow();
     assert.equal(api.count('/v1/events'), 0);
     assert.equal(api.holds.length, 0);
     assert.equal(world.watchWaiters.length, 0);
@@ -164,7 +164,7 @@ test('a strip without the API reads the files without watching them, and one chi
     world.panes = [{ pane: 'w1:p1', tab: 'w1:t1', terminal: 'w1:p1', title: 'claude', status: 'blocked' }];
     const strip = await mount({ role: 'strip', pane: 'w1:p1' });
     views.push(strip);
-    await settle();
+    await settleSlow();
     assert.equal(world.watchWaiters.length, 0);
     assert.match(text(strip.render()), /./);
     const api = await serve();
@@ -173,10 +173,10 @@ test('a strip without the API reads the files without watching them, and one chi
     views.push(chip);
     const more = await mount({ role: 'strip', pane: 'w1:p2' });
     views.push(more);
-    await settle();
+    await settleSlow();
     backoff(chip);
     await until(() => api.holds.length === 1, 'the chip long-poll');
-    await settle();
+    await settleSlow();
     assert.equal(api.holds.length, 1);
 });
 
@@ -188,9 +188,9 @@ test('six strips, one chip and one window hold exactly two long-polls: the chip 
     views.push(await mount({ role: 'chip' }));
     views.push(await mount({ role: 'fleet' }));
     await until(() => api.holds.length === 2, 'two held long-polls');
-    await settle();
+    await settleSlow();
     strips.forEach((strip) => { strip.cx.advance(120_000); });
-    await settle();
+    await settleSlow();
     assert.equal(api.holds.length, 2);
     assert.equal(api.count('/v1/events'), 2);
 });
@@ -200,11 +200,11 @@ test('a daemon that is replaced on the same port mid-session never gets the toke
     api.advertise();
     await brief();
     await until(() => api.holds.length === 1 && docs(api) === 1 && api.count('/v1/tabs/w1%3At1/open') === 1);
-    await settle();
+    await settleSlow();
     api.pid += 1;
     const before = api.calls.length;
     api.publish('index');
-    await settle();
+    await settleSlow();
     await until(() => api.calls.length > before + 1, 'the mod to notice');
     assert.ok(api.calls.slice(before).every((call) => call.auth === ''));
     assert.equal(api.holds.length, 0);
@@ -219,7 +219,7 @@ test('a role closed while it is still starting never opens a long-poll afterward
     const cx = makeCx();
     mod.init(null, cx);
     await mod.close(cx);
-    for (let round = 0; round < 40; round += 1) await settle();
+    for (let round = 0; round < 40; round += 1) await settleSlow();
     assert.equal(api.count('/v1/events'), 0);
 });
 
@@ -229,6 +229,6 @@ test('a failed ensure does not show the down notice while the API answers', asyn
     world.execReply = (_command, argv): { code: number; stdout: string; stderr: string } | null => (argv[0] === 'ensure' ? { code: 1, stdout: '', stderr: '' } : null);
     const view = await brief();
     await until(() => api.holds.length === 1);
-    await settle();
+    await settleSlow();
     assert.ok(!shown(view).includes(DOWN));
 });
