@@ -8,14 +8,14 @@ import { join } from 'node:path';
 const ROOT = join(import.meta.dirname, '..');
 const LAUNCH = new URL('../src/host/launch.mjs', import.meta.url).href;
 const ENTRY = new URL('./fixtures/launch-entry.mjs', import.meta.url).href;
-const OLD = { nodeVersion: 'v20.11.0', execPath: '/old/bin/node', platform: 'macos', path: '' };
-const NEW = { ...OLD, nodeVersion: 'v24.21.0' };
+const OLD = { bunVersion: '1.0.0', execPath: '/old/bin/bun', platform: 'macos', path: '' };
+const NEW = { ...OLD, bunVersion: '1.4.4' };
 
 function launched(kind: string, host: object, argv: string[] = [], locale = 'en'): { status: number | null; out: string; err: string } {
     const home = mkdtempSync(join(tmpdir(), 'tab-recap-launch-'));
     try {
         const script = `import { launch } from ${JSON.stringify(LAUNCH)}; await launch(${JSON.stringify(kind)}, ${JSON.stringify(ENTRY)}, ${JSON.stringify({ host, argv })});`;
-        const done = spawnSync(process.execPath, ['--no-warnings', '--input-type=module', '-e', script], {
+        const done = spawnSync(process.execPath, ['-e', script], {
             encoding: 'utf8', timeout: 10_000,
             env: { ...process.env, HERDR_PLUGIN_CONFIG_DIR: home, TAB_RECAP_STATE: home, TAB_RECAP_LOCALE: locale },
         });
@@ -35,8 +35,8 @@ test('a supported host loads the entry, whatever the kind, without a word of its
 test('an unsupported host stops a command: stderr, exit 1, the entry never loaded', () => {
     const done = launched('command', OLD, ['refresh']);
     assert.equal(done.status, 1);
-    assert.match(done.err, /needs Node >= 24\.21\.0, but this is v20\.11\.0 \(\/old\/bin\/node\)/);
-    assert.match(done.err, /brew install node[\s\S]*herdr server stop[\s\S]*launchctl setenv PATH/, 'the macOS steps');
+    assert.match(done.err, /needs Bun >= 1\.4\.4, but this is 1\.0\.0 \(\/old\/bin\/bun\)/);
+    assert.match(done.err, /brew install oven-sh\/bun\/bun[\s\S]*herdr server stop[\s\S]*launchctl setenv PATH/, 'the macOS steps');
     assert.doesNotMatch(done.err, /\n\s+at /, 'no stack trace');
     assert.doesNotMatch(done.out, /entry ran/);
 });
@@ -49,19 +49,19 @@ test('`status` goes on: it loads the entry and reports itself', () => {
 test('an unsupported host stops the daemon with one dated line in its log and exit 1', () => {
     const done = launched('daemon', { ...OLD, platform: 'linux' });
     assert.equal(done.status, 1);
-    assert.match(done.err, /^\d{4}-\d\d-\d\dT[\d:.]+Z tab-recap needs Node >= 24\.21\.0, but this is v20\.11\.0/);
+    assert.match(done.err, /^\d{4}-\d\d-\d\dT[\d:.]+Z tab-recap needs Bun >= 1\.4\.4, but this is 1\.0\.0/);
     assert.match(done.err, /nvm install 24 · mise use -g node@24 · n 24/, 'the Linux steps');
     assert.doesNotMatch(done.out, /entry ran/);
 });
 
 test('the refusal follows the interface language', () => {
-    assert.match(launched('command', OLD, [], 'es').err, /necesita Node >= 24\.21\.0, pero este es v20\.11\.0/);
+    assert.match(launched('command', OLD, [], 'es').err, /necesita Bun >= 1\.4\.4, pero este es 1\.0\.0/);
 });
 
 test('a pane shows the refusal and stays until SIGTERM, then leaves quietly', async () => {
     const script = `import { launch } from ${JSON.stringify(LAUNCH)}; await launch('pane', ${JSON.stringify(ENTRY)}, { host: ${JSON.stringify(OLD)} });`;
     const home = mkdtempSync(join(tmpdir(), 'tab-recap-launch-'));
-    const child = spawn(process.execPath, ['--no-warnings', '--input-type=module', '-e', script], { env: { ...process.env, TAB_RECAP_LOCALE: 'en', HERDR_PLUGIN_CONFIG_DIR: home, TAB_RECAP_STATE: home } });
+    const child = spawn(process.execPath, ['-e', script], { env: { ...process.env, TAB_RECAP_LOCALE: 'en', HERDR_PLUGIN_CONFIG_DIR: home, TAB_RECAP_STATE: home } });
     try {
         let out = '';
         child.stdout.setEncoding('utf8').on('data', (chunk: string) => { out += chunk; });
@@ -69,7 +69,7 @@ test('a pane shows the refusal and stays until SIGTERM, then leaves quietly', as
         for (let waited = 0; !out.includes('herdr server stop') && waited < 5000; waited += 50) {
             await new Promise((resolve) => { setTimeout(resolve, 50); });
         }
-        assert.match(out, /needs Node >= 24\.21\.0, but this is v20\.11\.0/);
+        assert.match(out, /needs Bun >= 1\.4\.4, but this is 1\.0\.0/);
         assert.match(out, /\r\n/, 'drawn for a terminal');
         assert.equal(child.exitCode, null, 'it stays');
         assert.doesNotMatch(out, /entry ran/);
@@ -93,15 +93,15 @@ test('the five launchers share one shape: plain JavaScript, no static import of 
     }
 });
 
-test('a real launcher on this Node loads its entry', () => {
-    const done = spawnSync(process.execPath, ['--no-warnings', join(ROOT, 'bin', 'tab-recap.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, TAB_RECAP_LOCALE: 'en' } });
+test('a real launcher on this Bun loads its entry', () => {
+    const done = spawnSync(process.execPath, [join(ROOT, 'bin', 'tab-recap.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, TAB_RECAP_LOCALE: 'en' } });
     assert.equal(done.status, 0, done.stderr);
     assert.match(done.stdout, /USAGE: tab-recap /);
 });
 
 test('every node command of the manifest is a launcher', () => {
     const manifest = readFileSync(join(ROOT, 'herdr-plugin.toml'), 'utf8');
-    const commands = [...manifest.matchAll(/^command = \["node", "([^"]+)"/gm)].map((found) => found[1]);
+    const commands = [...manifest.matchAll(/^command = \["bun", "([^"]+)"/gm)].map((found) => found[1]);
     assert.ok(commands.length >= 14, 'the actions, the startup, the event and the panes');
     for (const file of commands) {
         assert.ok(LAUNCHERS.includes(file ?? ''), `${file} is a launcher`);
