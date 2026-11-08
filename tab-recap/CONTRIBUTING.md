@@ -6,7 +6,7 @@ What is shared by every plugin (labels, commits, pull requests) is in the reposi
 ## Setup
 
 ```bash
-npm install          # the dev tools (tsgo, oxlint, ast-grep) and the one runtime dependency, @homelab/herdr
+npm install          # the dev tools (tsgo, oxlint, ast-grep) and the one runtime dependency, @stateforge-labs/herdr-sdk
 herdr plugin link .  # run your checkout inside herdr
 ```
 
@@ -48,7 +48,7 @@ agent acting as the test lane runs them, never a person by hand.
 
 ## House rules
 
-- **TypeScript on Node ≥ 24.21.0, run directly.** No build step. One runtime dependency, `@homelab/herdr` (the herdr-core client, itself dependency-free), which herdr installs
+- **TypeScript on Node ≥ 24.21.0, run directly.** No build step. One runtime dependency, `@stateforge-labs/herdr-sdk` (the herdr-core client, itself dependency-free), which herdr installs
   with `npm ci --omit=dev` (the `[[build]]` entry of `herdr-plugin.toml`); no other. The files herdr runs first (the
   `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Node can say it is too old; anything that
   depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.

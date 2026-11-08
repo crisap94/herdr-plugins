@@ -22,7 +22,7 @@ reviews:
         reason.
     - path: "tab-recap/**"
       instructions: >-
-        The plugin runs straight from source on Node with ONE runtime dependency, @homelab/herdr
+        The plugin runs straight from source on Node with ONE runtime dependency, @stateforge-labs/herdr-sdk
         (the herdr-core client): any other entry under "dependencies" is a blocker; prefer Node built-ins (node:*, Intl, util) and justify
         any hand-written piece a built-in could do. No comments in code
         (rules/recap-no-comments.yml): meaning lives in names, types, small functions and tests;

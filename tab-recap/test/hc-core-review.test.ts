@@ -11,7 +11,7 @@ import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/desktop-package.ts';
 import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import { FakeHcCore, agentTerminal, later, nextWithin } from '@homelab/herdr/core/test-kit';
+import { FakeHcCore, agentTerminal, later, nextWithin } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
 const EVENTS: CoreEventsTiming = { backoffBase: duration(30), backoffCap: duration(120), silence: duration(5000) };

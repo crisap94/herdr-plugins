@@ -240,7 +240,7 @@ const checkMembers = (scan: Scan, holder: Holder): void => {
     });
 };
 
-const PACKAGE_BRAND_FILE = 'node_modules/@homelab/herdr/dist/core/kernel/brand.d.ts';
+const PACKAGE_BRAND_FILE = 'node_modules/@stateforge-labs/herdr-sdk/dist/core/kernel.d.ts';
 
 const markersOf = (checker: ts.TypeChecker, brands: readonly ts.SourceFile[]): ReadonlySet<ts.Symbol> => {
     const declarations = brands.flatMap((brand) => brand.statements.filter(ts.isVariableStatement)).flatMap((statement) => statement.declarationList.declarations);

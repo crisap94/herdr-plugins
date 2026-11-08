@@ -10,7 +10,7 @@ import type { Fleet } from '#src/ports/fleet.ts';
 import type { Frame, SnapshotResult } from '#src/ports/fleet-source.ts';
 import type { Runner } from '#src/adapters/process.ts';
 import type { RunResult } from '#src/ports/process-control.ts';
-import { FakeHcCore, later } from '@homelab/herdr/core/test-kit';
+import { FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 type Row = Record<string, unknown>;
 

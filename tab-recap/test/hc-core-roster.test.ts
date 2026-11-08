@@ -8,7 +8,7 @@ import { HcCoreRoster, parseHcListed } from '#src/adapters/hc-core-roster.ts';
 import { parseHcPayload } from '#src/adapters/desktop-package.ts';
 import type { HcCoreFeed } from '#src/adapters/desktop-package.ts';
 import type { HcPayload } from '#src/adapters/desktop-package.ts';
-import { agentTerminal, shellTerminal } from '@homelab/herdr/core/test-kit';
+import { agentTerminal, shellTerminal } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const payload = (fields: object): HcPayload => must(parseHcPayload(fields));
 const row = (address: string, state: string, labels?: Record<string, unknown>): HcPayload => payload(labels === undefined ? agentTerminal(address, state) : agentTerminal(address, state, labels));
