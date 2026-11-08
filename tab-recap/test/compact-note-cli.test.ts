@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { stateStore } from '#src/adapters/db/database.ts';
+import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 const CONTEXT = JSON.stringify({ tab_id: 'w1:t1', pane_id: 'w1:p2' });
@@ -13,7 +14,7 @@ const CONTEXT = JSON.stringify({ tab_id: 'w1:t1', pane_id: 'w1:p2' });
 function run(args: readonly string[], setting?: string, newer = false): { status: number | null; stdout: string; stderr: string; queued: unknown[]; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-compact-'));
     const state = join(root, 'state');
-    const env: Record<string, string> = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', HERDR_PLUGIN_CONTEXT_JSON: CONTEXT };
+    const env: Record<string, string> = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', HERDR_PLUGIN_CONTEXT_JSON: CONTEXT, ...BUN_CACHE_OFF };
     if (setting !== undefined) {
         env['TAB_RECAP_COMPACT_NOTE'] = setting;
     }

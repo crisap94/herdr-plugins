@@ -17,6 +17,7 @@ import { requestNoteOf } from '#src/recap/application/compact-start.ts';
 import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';
+import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const compactPath = (query: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/compact-message?${query}`;
 
@@ -96,7 +97,7 @@ test('the handoff message is what handoff --print prints for the same lane', asy
         assert.equal(reply.status, 200);
         assert.deepEqual(apiProblems(reply.body, 'handoffMessage'), []);
         const ran = spawnSync(process.execPath, [join(import.meta.dirname, '..', 'bin', 'tab-recap.ts'), 'handoff', '--from', PANE, '--print'], {
-            encoding: 'utf8', env: { PATH: process.env['PATH'] ?? '', HOME: world.root, HERDR_PLUGIN_CONFIG_DIR: join(world.root, 'config'), TAB_RECAP_STATE: world.root, TAB_RECAP_LOCALE: 'en' },
+            encoding: 'utf8', env: { PATH: process.env['PATH'] ?? '', HOME: world.root, HERDR_PLUGIN_CONFIG_DIR: join(world.root, 'config'), TAB_RECAP_STATE: world.root, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
         });
         assert.equal(ran.status, 0, ran.stderr);
         assert.deepEqual(reply.body, { kind: 'handoff', text: ran.stdout.replace(/\n$/u, '') });
