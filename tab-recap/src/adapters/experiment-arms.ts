@@ -28,7 +28,7 @@ const harnessArms: Readonly<Record<Exclude<ArmName, 'jev'>, { readonly make: (di
 };
 
 export function deciderOf(arm: ArmName, work: string, lane: number): Decider {
-    if (arm === 'jev') return new JevDecider({ url: JEV_URL_DEFAULT, model: JEV_MODEL_DEFAULT, key: () => jevKey(configGetter(), readKeyFile, homedir()) });
+    if (arm === 'jev') return new JevDecider({ url: JEV_URL_DEFAULT, model: JEV_MODEL_DEFAULT, key: () => jevKey(configGetter(), readKeyFile, process.env['HOME'] ?? homedir()) });
     const { make, settings } = harnessArms[arm];
     return new HarnessDecider(make(join(work, `${arm}-${lane}`)), settings);
 }

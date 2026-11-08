@@ -144,7 +144,7 @@ test('status says which bun runs it and which keys are bound, or that none is', 
         }).stdout;
         writeFileSync(join(dir, 'config.toml'), CONFIG);
         const bound = run(join(dir, 'config.toml'));
-        assert.match(bound, new RegExp(`^bun      ${process.execPath.replaceAll('/', '\\/')} ${process.versions.bun.replaceAll('.', '\\.')}$`, 'm'));
+        assert.match(bound, new RegExp(`^bun      ${process.execPath.replaceAll('/', '\\/')} ${(process.versions.bun ?? '').replaceAll('.', '\\.')}$`, 'm'));
         assert.match(bound, /^keys     prefix\+r → tab-recap\.column, ctrl\+alt\+r → tab-recap\.columns$/m);
         assert.doesNotMatch(bound, /warning/, 'this bun is new enough');
         assert.match(run(join(dir, 'missing.toml')), /^keys     no key bound — see README/m);

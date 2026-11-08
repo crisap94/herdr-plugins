@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-test('every node command in the manifest is plain `node <script>`', () => {
+test('every node command in the manifest is plain `bun <script>`', () => {
     const manifest = readFileSync(new URL('../herdr-plugin.toml', import.meta.url), 'utf8');
     const commands = manifest.split('\n').filter((line) => line.startsWith('command = ["bun"'));
-    assert.ok(commands.length > 0, 'the manifest launches node');
+    assert.ok(commands.length > 0, 'the manifest launches bun');
     for (const command of commands) {
         assert.match(command, /^command = \["bun", "[^"-][^"]*"/, command);
     }

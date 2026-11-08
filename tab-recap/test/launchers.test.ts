@@ -50,7 +50,7 @@ test('an unsupported host stops the daemon with one dated line in its log and ex
     const done = launched('daemon', { ...OLD, platform: 'linux' });
     assert.equal(done.status, 1);
     assert.match(done.err, /^\d{4}-\d\d-\d\dT[\d:.]+Z tab-recap needs Bun >= 1\.4\.4, but this is 1\.0\.0/);
-    assert.match(done.err, /nvm install 24 · mise use -g node@24 · n 24/, 'the Linux steps');
+    assert.match(done.err, /curl -fsSL https:\/\/bun\.sh\/install \| bash · mise use -g bun@latest/, 'the Linux steps');
     assert.doesNotMatch(done.out, /entry ran/);
 });
 
@@ -99,9 +99,9 @@ test('a real launcher on this Bun loads its entry', () => {
     assert.match(done.stdout, /USAGE: tab-recap /);
 });
 
-test('every node command of the manifest is a launcher', () => {
+test('every bun command of the manifest is a launcher', () => {
     const manifest = readFileSync(join(ROOT, 'herdr-plugin.toml'), 'utf8');
-    const commands = [...manifest.matchAll(/^command = \["bun", "([^"]+)"/gm)].map((found) => found[1]);
+    const commands = [...manifest.matchAll(/^command = \["bun", "([^"]+\.mjs)"/gm)].map((found) => found[1]);
     assert.ok(commands.length >= 14, 'the actions, the startup, the event and the panes');
     for (const file of commands) {
         assert.ok(LAUNCHERS.includes(file ?? ''), `${file} is a launcher`);
@@ -112,5 +112,5 @@ test('every node command of the manifest is a launcher', () => {
 
 test('the daemon is started through its launcher', () => {
     assert.match(readFileSync(join(ROOT, 'bin', 'tab-recap.ts'), 'utf8'), /\[join\(root, 'src', 'daemon', 'launch\.mjs'\)\]/);
-    assert.match(readFileSync(join(ROOT, 'package.json'), 'utf8'), /node src\/daemon\/launch\.mjs/);
+    assert.match(readFileSync(join(ROOT, 'package.json'), 'utf8'), /bun src\/daemon\/launch\.mjs/);
 });

@@ -21,7 +21,7 @@ const readKeyFile = (path: string): string | null => {
 };
 
 function jevDecider(config: Config): Decider {
-    return new JevDecider({ url: config.jev.url, model: config.jev.model, key: () => jevKey(configGetter(), readKeyFile, homedir()) });
+    return new JevDecider({ url: config.jev.url, model: config.jev.model, key: () => jevKey(configGetter(), readKeyFile, process.env['HOME'] ?? homedir()) });
 }
 
 export function deciderFor(config: Config, available: readonly string[], work: string): Decider | null {
@@ -34,7 +34,7 @@ export function deciderFor(config: Config, available: readonly string[], work: s
 
 export function coverageDeciderFor(config: Config, available: readonly string[], work: string): Decider | null {
     const { by } = config.decider;
-    const jevKeyFound = config.coverage === 'auto' && jevKey(configGetter(), readKeyFile, homedir()) !== null;
+    const jevKeyFound = config.coverage === 'auto' && jevKey(configGetter(), readKeyFile, process.env['HOME'] ?? homedir()) !== null;
     if (config.coverage === 'jev' || jevKeyFound) {
         return jevDecider(config);
     }

@@ -1076,6 +1076,7 @@
       "test/protocol-vectors.test.ts",
       "test/release.test.ts",
       "test/support/bun-env.ts",
+      "test/support/bun-test.d.ts",
       "test/xmllint.ts"
     ]
   }
