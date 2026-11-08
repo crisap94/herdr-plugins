@@ -37,7 +37,7 @@ const compare = (dir: string, before: readonly string[]): Result<readonly string
 const main = (args: readonly string[]): number => {
     const [dir, base] = args;
     if (dir === undefined || base === undefined) {
-        console.error('domain baseline: 3 — NOT COVERED: usage: node bin/check-domain-baseline.ts <baseline dir> <merge base>');
+        console.error('domain baseline: 3 — NOT COVERED: usage: bun bin/check-domain-baseline.ts <baseline dir> <merge base>');
         return 3;
     }
     try {

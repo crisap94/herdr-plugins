@@ -9,7 +9,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { boundKeys, herdrConfigPath } from '#src/adapters/host-check.ts';
-import { nodeHost } from '#src/host/node-host.mjs';
+import { bunHost } from '#src/host/bun-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
 import { loadExtensions } from '#src/extensions/load.ts';
@@ -108,11 +108,11 @@ function status(): number {
     const config = loadConfig();
     const t = m().cli;
     const running = pidfile.alive();
-    const host = nodeHost();
+    const host = bunHost();
     const support = supportOf(host);
     console.log([
         t.statusVersion(codeVersion()),
-        t.statusNode(host.execPath, host.nodeVersion),
+        t.statusRuntime(host.execPath, host.bunVersion),
         ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),

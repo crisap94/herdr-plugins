@@ -953,10 +953,10 @@
       "test/experiment-stats.test.ts"
     ],
     "lead": [
+      "src/host/bun-host.d.mts",
+      "src/host/bun-host.mjs",
       "src/host/launch.d.mts",
       "src/host/launch.mjs",
-      "src/host/node-host.d.mts",
-      "src/host/node-host.mjs",
       "src/host/policy.d.mts",
       "src/host/policy.mjs",
       "test/autocompact-probe.test.ts",

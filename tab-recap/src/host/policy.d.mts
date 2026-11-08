@@ -1,9 +1,9 @@
-export const MIN_NODE: string;
-export function nodeAtLeast(version: string, minimum?: string): boolean;
+export const MIN_BUN: string;
+export function bunAtLeast(version: string, minimum?: string): boolean;
 
 export type Platform = 'macos' | 'linux' | 'windows';
 export type StepId =
-    | 'brew' | 'mise' | 'nvm' | 'n' | 'winget' | 'nvm-windows'
+    | 'brew' | 'mise' | 'curl' | 'powershell'
     | 'herdr-stop' | 'new-terminal' | 'launchctl-path' | 'restart-herdr';
 
 export interface Refusal {
@@ -15,7 +15,7 @@ export interface Refusal {
 }
 export type Support = { readonly ok: true } | Refusal;
 
-export function supportOf(host: { readonly nodeVersion: string; readonly platform: string }): Support;
+export function supportOf(host: { readonly bunVersion: string; readonly platform: string }): Support;
 
 export interface RefusalWords {
     readonly headline: (found: string, needed: string, path: string) => string;

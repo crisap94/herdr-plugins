@@ -1,4 +1,4 @@
-import { nodeHost } from '#src/host/node-host.mjs';
+import { bunHost } from '#src/host/bun-host.mjs';
 import type { Platform } from '#src/ports/host.ts';
 import type { ProcessControl, Runner } from '#src/ports/process-control.ts';
 import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
@@ -13,7 +13,7 @@ export { KILL_AFTER_MS } from './process-core.ts';
 
 export const processFor = (platform: Platform): ProcessControl => (platform === 'windows' ? windowsProcess() : posixProcess());
 
-export const hostProcess: ProcessControl = processFor(nodeHost().platform);
+export const hostProcess: ProcessControl = processFor(bunHost().platform);
 
 export const run: Runner = hostProcess.run;
 

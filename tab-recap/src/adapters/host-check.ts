@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-export { MIN_NODE, nodeAtLeast } from '#src/host/policy.mjs';
+export { MIN_BUN, bunAtLeast } from '#src/host/policy.mjs';
 
-export function nodeMajor(version: string): number | null {
+export function bunMajor(version: string): number | null {
     const found = /^v?(\d+)\.\d+\.\d+/.exec(version.trim());
     return found?.[1] === undefined ? null : Number(found[1]);
 }
