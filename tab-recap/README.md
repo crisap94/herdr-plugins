@@ -543,6 +543,23 @@ Needs herdr ≥ 0.9.0, Node ≥ 24.21.0 (runs the TypeScript directly, no build)
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
 Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_COLOR=0`) in a column's or modal's environment turns them off.
 
+## Desktop app
+
+The same engine also runs for the Herdr desktop app (`herdr-app`, on `herdr-core`). There is no column there: the recap opens as an
+overlay window, and an optional chip shows the agent count and the most urgent status. The engine reads the agents from `hc` (herdr-core
+0.1.x), starts with every column hidden, and writes one JSON file per tab under `<state>/gui/` for the mod to read. The terminal UI is
+unchanged and both share one version.
+
+```bash
+tab-recap-desktop ensure          # the mod runs this itself; start the daemon once
+tab-recap-desktop status          # daemon and state folder
+tab-recap-desktop doc <tab>       # the same document the overlay reads, on stdout
+```
+
+Install the mod by copying [`gui/`](gui/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
+optional chip. A recap is written only for a tab with an agent in it, after the agent finishes a turn. Compaction, handoff and
+autocompact need typing into an agent, which `hc keys` cannot do for most punctuation, so they stay off in the desktop app.
+
 ## Actions
 
 | action | does |

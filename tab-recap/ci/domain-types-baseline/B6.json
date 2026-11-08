@@ -110,6 +110,10 @@
     "container": 2,
     "property": 2
   },
+  "src/adapters/desktop-frontend.ts": {
+    "parameter": 1,
+    "container": 1
+  },
   "src/adapters/experiment-arms.ts": {
     "parameter": 8,
     "return": 2,
@@ -192,6 +196,9 @@
   "src/adapters/harness-judge.ts": {
     "parameter": 1,
     "container": 2
+  },
+  "src/adapters/hc-fleet.ts": {
+    "container": 1
   },
   "src/adapters/herdr-agents.ts": {
     "parameter": 14,
@@ -316,6 +323,13 @@
     "parameter": 2,
     "return": 3,
     "container": 2
+  },
+  "src/adapters/publishing-records.ts": {
+    "parameter": 5
+  },
+  "src/adapters/publishing-views.ts": {
+    "parameter": 2,
+    "return": 1
   },
   "src/adapters/recap-instructions.ts": {
     "parameter": 3,
