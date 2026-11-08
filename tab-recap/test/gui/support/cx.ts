@@ -13,6 +13,9 @@ export interface FakeCx {
     stops: number;
     focuses: number;
     readonly timers: Timer[];
+    readonly clipboard: string[];
+    clipboardBroken: boolean;
+    write_to_clipboard(text: string): void;
     notify(): void;
     stop_propagation(): void;
     spawn(body: (cx: FakeCx) => unknown): Promise<unknown>;
@@ -29,6 +32,14 @@ export function makeCx(): FakeCx {
         stops: 0,
         focuses: 0,
         timers: [],
+        clipboard: [],
+        clipboardBroken: false,
+        write_to_clipboard(text: string): void {
+            if (cx.clipboardBroken) {
+                throw new Error('clipboard refused');
+            }
+            cx.clipboard.push(text);
+        },
         notify(): void {
             cx.notifies += 1;
         },

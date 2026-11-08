@@ -543,22 +543,98 @@ Needs herdr ≥ 0.9.0, Node ≥ 24.21.0 (runs the TypeScript directly, no build)
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
 Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_COLOR=0`) in a column's or modal's environment turns them off.
 
-## Desktop app
+## Desktop app (herdr-app)
 
-The same engine also runs for the Herdr desktop app (`herdr-app`, on `herdr-core`). There is no column there: the recap opens as an
-overlay window, and an optional chip shows the agent count and the most urgent status. The engine reads the agents from `hc` (herdr-core
-0.1.x), starts with every column hidden, and writes one JSON file per tab under `<state>/gui/` for the mod to read. The terminal UI is
-unchanged and both share one version.
+The same engine also runs for the Herdr desktop app (`herdr-app`, on `herdr-core`). There is no column there. A small mod draws the
+recap in the app, and a separate daemon (the same engine, started with the desktop frontend) writes what the mod reads. The terminal
+UI is unchanged and both share one version. The daemon starts with every column hidden, so it never opens a pane.
+
+### Start and stop
 
 ```bash
-tab-recap-desktop ensure          # the mod runs this itself; start the daemon once
+tab-recap-desktop ensure          # the mod runs this itself; starts the daemon unless it runs or was stopped
+tab-recap-desktop start           # clears a stop and starts the daemon
+tab-recap-desktop stop            # stops it and keeps it off until start
 tab-recap-desktop status          # daemon and state folder
-tab-recap-desktop doc <tab>       # the same document the overlay reads, on stdout
+tab-recap-desktop refresh <tab>   # ask for a new recap of a tab
+tab-recap-desktop doc <tab>       # the same document the mod reads, on stdout
 ```
 
-Install the mod by copying [`gui/`](gui/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
-optional chip. A recap is written only for a tab with an agent in it, after the agent finishes a turn. Compaction, handoff and
-autocompact need typing into an agent, which `hc keys` cannot do for most punctuation, so they stay off in the desktop app.
+The state folder is `$TAB_RECAP_STATE`, else `desktop/` under the plugin's state folder
+(`~/.local/state/herdr/plugins/tab-recap/desktop` on Linux). The daemon keeps its database, pidfile and log there, and writes the
+files for the mod to `<state>/gui/`: `index.json` (one row per tab) and one `<tab>.json` per tab (the version 2 document, under 1 MiB).
+A recap is written only for a tab with an agent in it, after the agent finishes a turn.
+
+### How the daemon reads the agents
+
+| Setting | Values | Does |
+| --- | --- | --- |
+| `TAB_RECAP_HC_TRANSPORT` | `cli` (default), `socket` | `cli` spawns `hc` and re-lists the agents on each event. `socket` keeps one connection to the core's socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event into a roster in memory and spawns nothing. |
+| `TAB_RECAP_API` | `off` | Do not start the local API; the mod then reads the files only. |
+
+Both are read when the daemon starts, so restart it after changing them. The socket is `$HC_SOCKET`, else
+`$XDG_RUNTIME_DIR/herdr-core/<session>.sock` (`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
+If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
+when the core is back. `socket` stays opt-in until it has run for longer; see [the transport study](../docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/README.md)
+for the numbers and [the design note](../openspec/changes/gui-port/transport.md) for the layout.
+
+### The local API
+
+The daemon serves a small HTTP API for the mod, on `127.0.0.1` and a port the system picks. On start it writes
+`<state>/gui/api.json` with mode 0600, `{"version":1,"port":…,"token":…,"pid":…,"startedAt":…}`, and removes it when it stops. A client reads
+that file, then sends `Authorization: Bearer <token>`. Every route but `GET /v1/health` needs the token. The `Host` header must be
+`127.0.0.1:<port>` or `localhost:<port>`, so a web page cannot reach it through a rebinding trick. The server sends no CORS headers and
+reads at most 64 KiB of request. Every body is JSON; `schema/desktop-api.v1.schema.json` has one definition per response.
+`GET /v1/health` answers only `{ok, version, pid, startedAt, seq}`, so a client can match `pid` and `startedAt` against `api.json`
+before it sends the token anywhere.
+
+| Route | Does | Success | Errors (`{"error": "<name>"}`) |
+| --- | --- | --- | --- |
+| `GET /v1/health` | liveness; no token | 200 `{ok, version, pid, startedAt, seq}` | 403 `bad-host` |
+| `GET /v1/index` | one row per tab | 200 `{version, tabs}` | |
+| `GET /v1/tabs/:tab` | the tab's document | 200 | 404 `unknown-tab` |
+| `GET /v1/events?since=N&wait=S` | long poll; `wait` defaults to 25 s and is capped at 28 s | 200 `{seq, epoch, reset, events:[{seq, topic, tab, at}]}`; `reset: true` when `since` is older than the last 500 events or ahead of the daemon | 400 `bad-request` |
+| `POST /v1/tabs/:tab/refresh` | queue a new recap | 202 `{queued: true}` | 404 `unknown-tab` |
+| `PUT /v1/tabs/:tab/open` | say the tab is being looked at; a 60 s lease, renew before it ends | 204 | 404 `unknown-tab`; 429 `too-many-leases` (256 held) |
+| `DELETE /v1/tabs/:tab/open` | drop the lease | 204 | 404 `unknown-tab` |
+| `POST /v1/tabs/:tab/needs/:id/answer` | close a waiting item by hand | 200 `{answered: true, id}` | 404 `unknown-tab`, `unknown-need`; 409 `not-a-need`, `not-open`; 400 `bad-request` |
+| `GET /v1/tabs/:tab/compact-message?pane=&note=` | the guidance the engine would send with `/compact`; no model call, nothing written | 200 `{kind: "guidance", model: false, text, limit: 3000, noteLimit: 280}` | 404 `unknown-tab`, `unknown-pane`; 400 `bad-request`, `note-too-long` |
+| `GET /v1/tabs/:tab/handoff-message?from=&to=` | the text `handoff --print` shows for a lane (and a second lane) | 200 `{kind: "handoff", text}` | 404 `unknown-tab`, `unknown-pane`; 409 `handoff-refused` (`detail` says why); 400 `bad-request` |
+
+Any route can also answer 401 `unauthorized`, 403 `bad-host`, 404 `not-found`, 405 `method-not-allowed`, 413 `payload-too-large`,
+500 `internal` (with a `detail`) or 503 `unavailable`. `topic` is `index`, `tab` or `notice`; `notice` has no producer yet. `epoch` is
+the daemon's start time: when it changes between two answers the daemon restarted and the client should read everything again.
+
+### The files, as the fallback
+
+The files in `<state>/gui/` are written on every change, with or without the API, so the mod works if the API is off or the daemon
+restarts. With the API down the mod watches the folder, re-reads every 15 seconds, and keeps trying `api.json` to switch back. A tab being
+looked at is marked by an empty `open.<tab>` file there (renewed every 20 seconds, treated as closed after 60) instead of a lease.
+
+### What the mod shows
+
+Install it by copying [`gui/`](gui/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
+optional layout blocks. One mod, four roles:
+
+- **Chip:** how many tabs need you and how many are working, with the worst status. A click opens Fleet.
+- **Strip:** a pane header with the status, a headline, a context meter with the compaction hint, and a pill while a compaction runs.
+- **Fleet:** every tab by urgency, with filters, search and a meter per row.
+- **Brief:** one tab: Brief, Story, Timeline and Session views, the lane chips, a "since you last looked" banner, the waiting item
+  with **Mark done**, and the **Compact message** popup with **Copy** and **Copy handoff**.
+
+Mark done asks for a confirmation, then closes the waiting item in the engine (`why` is `answered`), so the terminal UI shows it closed too.
+The compact message is the engine's own guidance for the lane with an optional note of up to 280 characters; Copy puts exactly that
+text on the clipboard. Both buttons need the API.
+
+### Not available yet
+
+- **Compact and Reply** are drawn disabled. They type into an agent, and `hc keys` cannot type most punctuation (a later phase uses
+  `terminal.keys`, `terminal.send` and `terminal.wait`). Compaction, handoff and autocompact stay off in the desktop app.
+- **Undo for Mark done:** the ledger has no operation that reopens a closed fact (only `add`, `update` and `close`), so a hand close cannot
+  be undone from the app. A later recap run may raise the same question again as a new fact.
+- **Notices** from the daemon (refusals, a compaction starting) are not built; the bus topic exists and nothing publishes to it.
+- The mod's screens were checked in an isolated app; a click-through on the live app is still open. See
+  [the roadmap](../openspec/changes/gui-port/roadmap.md).
 
 ## Actions
 

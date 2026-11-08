@@ -142,6 +142,7 @@ test('the refresh button shows Refreshing until it settles', async () => {
     world.now += 8000;
     view.cx.advance(8000);
     assert.match(text(byId(view.render(), 'refresh')), /Refresh$/);
+    await settle();
 });
 
 test('a down daemon shows a line with Restart, which stops, starts and ensures through argv arrays', async () => {

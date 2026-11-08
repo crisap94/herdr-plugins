@@ -27,3 +27,5 @@ export async function announce(store, rows) {
       .forEach((l) => post(row.tab, l));
   }
 }
+
+export const toast = (title, body = "") => notify({ title, body, level: "success" });

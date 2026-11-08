@@ -143,7 +143,7 @@ test('the strip shows the Compacting pill while its lane compacts', async () => 
     const view = await mount(STRIP);
     assert.match(text(view.render()), /Compacting/);
     setStage('w1:t1', 0, stageRecord('compacted', 4000));
-    touch();
+    view.cx.advance(15_000);
     await settle();
     assert.doesNotMatch(text(view.render()), /Compacting/);
 });

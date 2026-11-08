@@ -1,19 +1,11 @@
-import { exec, home, run } from "herdr";
-import { COMMANDS, DEFAULT_BIN, DEFAULT_STATE, ENV, PATHS, SAFE_TAB, SYSTEM, WEB_URL } from "./constants.js";
+import { exec, run } from "herdr";
+import { api, tabRoute } from "./api.js";
+import { COMMANDS, PATHS, ROUTE, SAFE_TAB, SYSTEM, WEB_URL } from "./constants.js";
+import { resolve } from "./env.js";
 
-let environment = null;
+const filed = new Set();
 
-const envOf = (name) => exec(SYSTEM.printenv, [name]).then((r) => (r.code === 0 ? r.stdout.trim() : ""), () => "");
-
-export function resolve() {
-  if (!environment) {
-    environment = Promise.all([envOf(ENV.bin), envOf(ENV.state)]).then(([bin, state]) => ({
-      bin: bin || DEFAULT_BIN,
-      dir: `${state || `${home()}/${DEFAULT_STATE}`}/${PATHS.gui}`,
-    }));
-  }
-  return environment;
-}
+export { resolve };
 
 export const safe = (tab) => typeof tab === "string" && SAFE_TAB.test(tab);
 
@@ -23,7 +15,11 @@ const desk = async (args) => {
 };
 
 export const ensureDaemon = () => desk([COMMANDS.ensure]).then((r) => r.code === 0);
-export const refreshTab = (tab) => (safe(tab) ? desk([COMMANDS.refresh, tab]) : Promise.resolve(null));
+export async function refreshTab(tab) {
+  if (!safe(tab)) return null;
+  const sent = await api.post(`${tabRoute(tab)}${ROUTE.refresh}`);
+  return sent?.ok ? sent : desk([COMMANDS.refresh, tab]);
+}
 
 export async function refreshAll(tabs) {
   for (const tab of tabs) await refreshTab(tab);
@@ -39,14 +35,18 @@ const markerPath = async (tab) => `${(await resolve()).dir}/${PATHS.marker}${enc
 
 export async function touchMarker(tab) {
   if (!safe(tab)) return;
-  const path = await markerPath(tab);
-  await exec(SYSTEM.touch, [path]).then(() => null, () => null);
+  const leased = await api.put(`${tabRoute(tab)}${ROUTE.open}`);
+  if (leased?.ok) return;
+  filed.add(tab);
+  await exec(SYSTEM.touch, [await markerPath(tab)]).then(() => null, () => null);
 }
 
 export async function clearMarker(tab) {
   if (!safe(tab)) return;
-  const path = await markerPath(tab);
-  await exec(SYSTEM.rm, [SYSTEM.rmForce, path]).then(() => null, () => null);
+  const released = await api.del(`${tabRoute(tab)}${ROUTE.open}`);
+  if (released?.ok && !filed.delete(tab)) return;
+  filed.delete(tab);
+  await exec(SYSTEM.rm, [SYSTEM.rmForce, await markerPath(tab)]).then(() => null, () => null);
 }
 
 export function jumpToLane(tab, terminal) {

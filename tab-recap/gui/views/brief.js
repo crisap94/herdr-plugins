@@ -12,6 +12,7 @@ import { laneChip } from "../ui/lane-chip.js";
 import { bullets } from "../ui/list.js";
 import { pill } from "../ui/pill.js";
 import { briefBanner } from "./banner.js";
+import { needCard } from "./need.js";
 import { decisionsCard } from "./decisions.js";
 
 function titleRow(c) {
@@ -22,23 +23,6 @@ function titleRow(c) {
       .when(Boolean(c.model.goal), (e) => e.child(div().text_size(SIZE.text).text_color(t.muted).truncate().child(TEXT.goal(c.model.goal)))))
     .child(div().flex_none().text_size(SIZE.text).text_color(t.dim).child(age))
     .child(btn(t, c.refreshing ? TEXT.refreshing : TEXT.refresh, { id: "refresh", icon: c.refreshing ? ICON.working : ICON.refresh, spin: c.refreshing ? SPIN_MS : 0, onClick: c.onRefresh }));
-}
-
-function needCard(c, n, i) {
-  const { t } = c;
-  const lane = c.model.lanes.find((l) => l.status === STATUS.blocked) ?? c.model.lanes[0];
-  const wait = n.since ? minutes(c.now - n.since) : 0;
-  const actions = h_flex().gap(SIZE.gap).items_center().pt(SIZE.gapMd)
-    .child(btn(t, TEXT.jump, { id: "jump", primary: true, icon: "jump", onClick: () => c.onJump(lane?.terminal ?? null) }))
-    .child(h_flex().id("reply").flex_1().min_w(0).truncate().h(SIZE.ctl).px(SIZE.chipPad).items_center().rounded(SIZE.radiusSm).border(SIZE.border).border_color(t.border).bg(t.bg)
-      .text_size(SIZE.text).text_color(t.dim).opacity(LOOP.dim).tooltip(TEXT.disabled).child(TEXT.reply))
-    .child(btn(t, TEXT.send, { id: "send", icon: "send", disabled: !ACTIONS_ENABLED.reply }));
-  return v_flex().gap(SIZE.gap).px(SIZE.cardPad).py(SIZE.cardPadV).rounded(SIZE.cardRadius).border(SIZE.border)
-    .border_color(tint(t.blocked, TINT.needBorder)).bg(tint(t.blocked, TINT.need))
-    .when(wait > 0, (e) => e.child(cardHead(t, TEXT.waitingCard(wait), "clock", t.blocked)))
-    .child(div().text_size(SIZE.lead).font_semibold().child(n.text))
-    .when(Boolean(n.why), (e) => e.child(div().text_size(SIZE.text).text_color(t.muted).child(n.why)))
-    .when(i === 0, (e) => e.child(actions));
 }
 
 function linksRow(c) {

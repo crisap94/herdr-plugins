@@ -17,14 +17,14 @@ export function btn(t, label, o) {
     .border(SIZE.border).border_color(border).text_size(SIZE.text).whitespace_nowrap()
     .bg(o.primary ? t.accent : o.pressed ? t.selected : t.raised).text_color(o.primary ? t.onAccent : t.fg)
     .on_mouse_down("left", stop);
-  const sized = label ? el.px(SIZE.ctlPad) : el.w(SIZE.ctl);
+  const sized = label ? el.px(SIZE.ctlPad).when(Boolean(o.minW), (e) => e.min_w(o.minW)) : el.w(SIZE.ctl);
   const shown = (o.primary ? sized.font_semibold() : sized)
     .when(Boolean(o.icon), (e) => e.child(glyph(t, o)))
     .when(Boolean(o.swatch), (e) => e.child(div().flex_none().size(SIZE.swatch).rounded(SIZE.tiny).bg(o.swatch)))
     .when(Boolean(label), (e) => e.child(label))
     .when(o.count !== undefined, (e) => e.child(div().text_color(t.dim).child(`${o.count}`)));
-  if (o.disabled) {
-    return div().id(`${o.id}-tip`).flex_none().tooltip(o.tip ?? TEXT.disabled).child(shown.opacity(LOOP.dim));
+  if (o.disabled || o.busy) {
+    return div().id(`${o.id}-tip`).flex_none().tooltip(o.tip ?? TEXT.disabled).child(o.busy ? shown : shown.opacity(LOOP.dim));
   }
   const live = shown.cursor_pointer().hover((s) => s.bg(t.hover)).on_click(o.onClick ?? (() => null));
   return o.tip ? div().id(`${o.id}-tip`).flex_none().tooltip(o.tip).child(live) : live;

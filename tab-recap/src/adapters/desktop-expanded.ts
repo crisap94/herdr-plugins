@@ -22,6 +22,7 @@ import { codeVersion } from './plugin-version.ts';
 import { modalTranscriptRegistry } from './transcript-registry.ts';
 import { EXPANDED_EVERY_MS, OPEN_MARKER_FRESH_MS, OPEN_MARKER_PREFIX, SETTLE_MS, TRAILING_SLACK_MS } from './desktop-constants.ts';
 import type { Store } from './db/database.ts';
+import type { OpenLeases } from './desktop-lease.ts';
 
 export type DesktopMode = 'daemon' | 'read-only';
 
@@ -31,6 +32,7 @@ export interface DesktopReadsDeps {
     readonly republish: (tab: TabId) => void;
     readonly mode: DesktopMode;
     readonly now: () => Instant;
+    readonly leases?: OpenLeases;
 }
 
 interface Held {
@@ -97,8 +99,13 @@ export class DesktopReads {
         return this.settled;
     }
 
-    private watched(tab: TabId, now: Instant): Flag {
+    forget(tab: TabId): void {
+        this.held.delete(tab);
+    }
+
+    watched(tab: TabId, now: Instant): Flag {
         if (this.deps.mode !== 'daemon') { return NO; }
+        if (this.deps.leases?.held(tab, now) === YES) { return YES; }
         try {
             return now - statSync(join(this.deps.dir, `${OPEN_MARKER_PREFIX}${encodeURIComponent(tab)}`)).mtimeMs < OPEN_MARKER_FRESH_MS ? YES : NO;
         } catch {

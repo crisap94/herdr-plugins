@@ -26,6 +26,10 @@ export default class Chip {
     });
   }
 
+  close() {
+    this.store.stop();
+  }
+
   openBrief() {
     const tab = focused()?.tab;
     if (tab) this.windowId = openOverlay({ mod: MOD, ...WINDOW, keep: true, props: { role: ROLES.brief, tab } });

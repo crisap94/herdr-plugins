@@ -31,6 +31,7 @@ export class WindowActions {
 
   leave() {
     this.closePopup();
+    this.needDone.reset();
     if (this.scene !== SCENES.brief || !this.sel) return Promise.resolve();
     markSeen(this.sel, Date.now());
     this.store.tracked = null;
@@ -85,7 +86,8 @@ export class WindowActions {
     const at = bounds ? { x: bounds.x, y: bounds.y + bounds.height + SIZE.popGap } : "pointer";
     const pct = lane.contextPercent;
     this.popupId = openOverlay({ mod: MOD, kind: "popup", at, width: SIZE.popW, height: SIZE.popHeight,
-      props: { role: ROLES.compact, name: lane.name, pct, window: lane.window, hint: this.hint } });
+      props: { role: ROLES.compact, name: lane.name, pct, window: lane.window, hint: this.hint, tab: this.sel, terminal: lane.terminal,
+        lanes: this.model.lanes.map((l) => ({ terminal: l.terminal, name: l.name, status: l.status })) } });
     setShared(SHARED.popup, { lane: i });
   }
 

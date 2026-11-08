@@ -6,22 +6,29 @@ import { SIZE } from "../metrics.js";
 import { TEXT } from "../text.js";
 import { sizeOf } from "../time.js";
 import { tokens } from "../theme.js";
+import { guidanceSection } from "../views/guidance.js";
 import { btn } from "../ui/button.js";
 import { icon } from "../ui/icon.js";
+import { Guidance } from "./guidance.js";
 
 export default class Popover {
-  init() {
+  init(p, cx) {
     this.count = 0;
     this.note = TextareaState.new({ placeholder: TEXT.popPlaceholder, rows: SIZE.noteRows });
     this.note.on("change", (_e, cx) => {
-      const value = this.note.value();
-      if (value.length > NOTE_MAX) this.note.set_value(value.slice(0, NOTE_MAX));
-      this.count = Math.min(value.length, NOTE_MAX);
+      const chars = Array.from(this.note.value());
+      if (chars.length > NOTE_MAX) this.note.set_value(chars.slice(0, NOTE_MAX).join(""));
+      this.count = Math.min(chars.length, NOTE_MAX);
+      this.guide.edit();
       cx.notify();
     });
+    this.note.on("blur", () => this.guide.flush());
+    this.guide = new Guidance(this.note);
+    this.guide.open(p ?? props(), cx);
   }
 
   async close() {
+    this.guide.close();
     setShared(SHARED.popup, null);
   }
 
@@ -45,6 +52,7 @@ export default class Popover {
       .child(h_flex().justify_between().items_center().text_size(SIZE.hint)
         .child(div().text_color(t.dim).child(TEXT.counter(this.count, NOTE_MAX)))
         .child(h_flex().gap(SIZE.gap).child(btn(t, TEXT.cancel, { id: "cancel", onClick: shut }))
-          .child(btn(t, TEXT.compactBtn, { id: "go", primary: true, disabled: !ACTIONS_ENABLED.compact, tip: TEXT.disabled }))));
+          .child(btn(t, TEXT.compactBtn, { id: "go", primary: true, disabled: !ACTIONS_ENABLED.compact, tip: TEXT.disabled }))))
+      .child(guidanceSection(t, this.guide));
   }
 }

@@ -18,8 +18,8 @@ function listOf(doc, region, plain) {
 function needCards(doc) {
   return doc.tasks.flatMap((task) => {
     const facts = factsIn(task, DOC.needs).filter((f) => f.state === FACT_STATE.open).toSorted((a, b) => a.firstAt - b.firstAt);
-    if (facts.length) return facts.map((f) => ({ text: `${prefix(doc, task)}${f.text}`, why: f.why, since: f.firstAt }));
-    return (task.sections?.needs ?? []).map((text) => ({ text: `${prefix(doc, task)}${text}`, why: null, since: null }));
+    if (facts.length) return facts.map((f) => ({ id: f.id ?? null, text: `${prefix(doc, task)}${f.text}`, why: f.why, since: f.firstAt }));
+    return (task.sections?.needs ?? []).map((text) => ({ id: null, text: `${prefix(doc, task)}${text}`, why: null, since: null }));
   });
 }
 

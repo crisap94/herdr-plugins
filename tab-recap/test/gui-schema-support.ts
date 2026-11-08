@@ -89,3 +89,11 @@ function problemsAt(value: unknown, declared: Schema, at: string): string[] {
 export function v2Problems(value: unknown): readonly string[] {
     return problemsAt(value, V2, '$');
 }
+
+const API: Schema = JSON.parse(readFileSync(new URL('../schema/desktop-api.v1.schema.json', import.meta.url), 'utf8'));
+
+export function apiProblems(value: unknown, name: string): readonly string[] {
+    const declared = API.$defs?.[name];
+    if (declared === undefined) { throw new Error(`no definition ${name}`); }
+    return problemsAt(value, declared, '$');
+}

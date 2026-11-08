@@ -4,11 +4,16 @@ import { fleet, setStage, stageRecord } from './support/fixture.ts';
 import { DARK, launched, reset, world } from './support/herdr.ts';
 import { dataOf } from './support/kit.ts';
 import { mount } from './support/mount.ts';
-import { storage } from './support/register.ts';
+import { loadGui, storage } from './support/register.ts';
 import { BOUNDS, byId, callsOf, click, hasCall, hasHandler, hasId, iconsOf, inputState, mouseDown, press, text } from './support/tree.ts';
 
 const SHOP = 'w1:t1';
 const ICON = 'mods/tab-recap/icons/';
+
+const PROPS = {
+    role: 'compact', name: 'lane w1:p1', pct: 50, window: 200_000, hint: 40, tab: SHOP, terminal: 'w1:p1',
+    lanes: [{ terminal: 'w1:p1', name: 'lane w1:p1', status: 'blocked' }, { terminal: 'w1:p2', name: 'lane w1:p2', status: 'working' }],
+};
 
 const colors = (node: object, name: string): unknown[] => callsOf(node, name).map((args) => args[0]);
 
@@ -24,7 +29,7 @@ test('a click on a lane chip opens a compact popup anchored under the chip', asy
     assert.equal(spec['kind'], 'popup');
     assert.equal(spec['mod'], 'tab-recap');
     assert.deepEqual(spec['at'], { x: BOUNDS.x, y: BOUNDS.y + BOUNDS.height + 8 });
-    assert.deepEqual(spec['props'], { role: 'compact', name: 'lane w1:p1', pct: 50, window: 200_000, hint: 40 });
+    assert.deepEqual(spec['props'], PROPS);
     assert.deepEqual(world.shared.get('tab-recap.popup'), { lane: 0 });
 });
 
@@ -51,7 +56,7 @@ test('the c key opens the popup of the lane past the hint, at the pointer, and E
     const view = await open();
     press(view.render(), 'c', view.cx);
     assert.equal(launched(0)['at'], 'pointer');
-    assert.deepEqual(launched(0)['props'], { role: 'compact', name: 'lane w1:p1', pct: 50, window: 200_000, hint: 40 });
+    assert.deepEqual(launched(0)['props'], PROPS);
     press(view.render(), 'escape', view.cx);
     assert.deepEqual(world.closed, ['overlay-1']);
     assert.equal(world.shared.get('tab-recap.popup'), null);
@@ -162,4 +167,9 @@ test('the lane chips of both lanes keep their ids when only one is compacting', 
     assert.ok(hasId(view.render(), 'lane-0'));
     assert.match(text(byId(view.render(), 'lane-1')), /Restoring 3 s/);
     assert.equal(dataOf(byId(view.render(), 'lane-0')).handlers.has('on_mouse_down'), true);
+});
+
+test('the note placeholder fits the field on one line, so it is never cut mid-word', async () => {
+    const { TEXT } = await loadGui<{ TEXT: { popPlaceholder: string } }>('text.js');
+    assert.ok(TEXT.popPlaceholder.length <= 40, `${TEXT.popPlaceholder.length} characters`);
 });

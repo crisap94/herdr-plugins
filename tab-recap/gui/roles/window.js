@@ -1,6 +1,6 @@
 import { InputState, v_flex } from "gpui-base";
 import { props, shared } from "herdr";
-import { INTERVAL, ROLES, SCENES, SHARED, STATUS, VIEWS, WRITING } from "../constants.js";
+import { INTERVAL, MODE, ROLES, SCENES, SHARED, STATUS, VIEWS, WRITING } from "../constants.js";
 import { clearMarker, touchMarker } from "../commands.js";
 import { hintOf } from "../derive.js";
 import { briefOf } from "../brief-model.js";
@@ -16,6 +16,7 @@ import { timeline } from "../views/timeline.js";
 import { notice } from "./notice.js";
 import { briefBar, fleetBar, footer } from "./chrome.js";
 import { fleetView } from "./fleet.js";
+import { NeedDone } from "./need-done.js";
 import { WindowActions } from "./window-actions.js";
 
 const VIEW_FN = { brief, story, timeline, session };
@@ -23,6 +24,7 @@ const VIEW_FN = { brief, story, timeline, session };
 export default class Window extends WindowActions {
   init(p, cx) {
     this.store = new Store();
+    this.needDone = new NeedDone(this);
     this.scene = SCENES.fleet;
     this.sel = null;
     this.view = VIEWS[0];
@@ -65,6 +67,7 @@ export default class Window extends WindowActions {
   }
 
   async close() {
+    this.store.stop();
     this.closePopup();
     if (this.scene === SCENES.brief && this.sel) {
       markSeen(this.sel, Date.now());
@@ -79,6 +82,7 @@ export default class Window extends WindowActions {
     return {
       t, rows, tab: row, now, model: this.model, hint: this.hint, sel: this.sel, view: this.view, filter: this.filter, q: this.q, qState: this.qState, qFocus: this.qFocus,
       refreshing: this.refreshUntil > now || row.writing === WRITING, openLane: shared(SHARED.popup)?.lane ?? -1, openDecs: this.openDecs, tlSec: this.tlSec,
+      need: this.needDone.bind(this.store.mode === MODE.api),
       tq: this.tq, tqState: this.tqState, tqFocus: this.tqFocus, bin: this.bin, hoverBin: this.hoverBin, position: rows.findIndex((r) => r.id === row.id) + 1, total: rows.length,
       onOpen: (tab, cx) => this.open(tab, cx), onBack: (_e, cx) => this.back(cx), onRefresh: (_e, cx) => this.refresh(cx, false), onRefreshAll: (_e, cx) => this.refresh(cx, true),
       onView: (v, cx) => { this.view = v; this.bin = -1; cx.notify(); }, onFilter: (s, cx) => { this.toggle(this.filter, s); cx.notify(); },

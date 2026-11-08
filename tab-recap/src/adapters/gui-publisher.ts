@@ -14,6 +14,7 @@ import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { writeAtomically } from './atomic-file.ts';
+import type { DesktopBus } from './desktop-bus.ts';
 
 const INDEX = 'index.json';
 const limit = must(parseCount(GUI_TAB_LIMIT));
@@ -25,6 +26,7 @@ export interface GuiPublisherDeps {
     readonly now: () => Instant;
     readonly reads?: (tab: TabId, view: TabView | null) => GuiReads;
     readonly log: (line: NonEmptyText) => void;
+    readonly bus?: DesktopBus;
 }
 
 function rowsOn(dir: Directory): GuiIndex {
@@ -72,7 +74,9 @@ export class GuiPublisher {
             return;
         }
         writeAtomically(join(this.deps.dir, guiFileName(tab)), encoded.value);
+        this.deps.bus?.publish('tab', tab);
         const others = rowsOn(this.deps.dir).filter((row) => row.tab !== tab);
         writeAtomically(join(this.deps.dir, INDEX), JSON.stringify({ version: 1, tabs: [guiIndexRow(document), ...others] }));
+        this.deps.bus?.publish('index', null);
     }
 }

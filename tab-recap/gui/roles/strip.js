@@ -15,7 +15,11 @@ import { tabRows } from "../model.js";
 export default class Strip {
   init(_p, cx) {
     this.store = new Store();
-    this.store.start(cx, null, INTERVAL.poll, false);
+    this.store.passive(cx, INTERVAL.poll);
+  }
+
+  close() {
+    this.store.stop();
   }
 
   rows() {
