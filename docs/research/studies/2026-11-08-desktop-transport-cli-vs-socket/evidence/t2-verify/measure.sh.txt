@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# usage: t2-measure.sh label n
+L=$HOME/.cache/hcs/t2-render.log; OUT=$HOME/.cache/hcs/t2-lat-$1.txt; : > $OUT
+cur=$(cat $HOME/.cache/hcs/t2-agent.state)
+for i in $(seq 1 $2); do
+  if [ "$cur" = working ]; then new=idle; else new=working; fi
+  n0=$(wc -l < $L); t0=$(date +%s.%N)
+  echo $new > $HOME/.cache/hcs/t2-agent.state; cur=$new
+  want=done; [ "$new" = working ] && want=working
+  t1=""
+  for k in $(seq 1 2000); do
+    t1=$(tail -n +$((n0+1)) $L | awk -v w=$want '$2==w{print $1; exit}'); [ -n "$t1" ] && break; sleep 0.02
+  done
+  m=$(tail -n +$((n0+1)) $L | awk -v w=$want '$2==w{print $3; exit}')
+  if [ -z "$t1" ]; then echo "$new timeout" >> $OUT; else python3 -c "print('%s %.3f %s' % ('$new', $t1-$t0, '$m'))" >> $OUT; fi
+  sleep 4
+done
+cat $OUT

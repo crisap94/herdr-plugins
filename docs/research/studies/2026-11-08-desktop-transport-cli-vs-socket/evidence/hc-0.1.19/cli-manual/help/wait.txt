@@ -1,0 +1,27 @@
+Wait for your children (--children any) or one terminal; a message to you also ends it
+
+Usage: hc wait [OPTIONS] [TERMINAL]
+
+Arguments:
+  [TERMINAL]
+          The terminal; with `children`, whose children (default: the caller)
+
+Options:
+      --children <CHILDREN>
+          Wait on children instead: all = until none is working, any = next news or a message to you.
+          
+          `all`: until none of the children is working (one that hasn't reported yet counts as working). `any`: the parent's unseen news (a turn ended, it blocked, it hit an error, it exited), else the next child to stop working; for the parent itself, also a message typed into it while it worked (reason `message`). A child with a sent launch task counts as working until its turn advances past delivery, or it reports done, blocked, error, or exits. Startup idle does not complete that task in either mode. Without a launch task, idle still counts as stopped.
+          
+          [possible values: any, all]
+
+      --json
+          JSON output even in a terminal
+
+      --output <OUTPUT>
+          For programs, not agents: end when output printed after the wait started contains this text (plain text, escape sequences stripped). Blocked, error or exit end it too
+
+      --timeout <TIMEOUT>
+          Seconds before it checks in (default: config `wait_timeout`, else 180)
+
+  -h, --help
+          Print help (see a summary with '-h')

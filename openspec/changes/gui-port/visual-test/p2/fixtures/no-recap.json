@@ -1,0 +1,87 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "idle",
+ "at": 1794047400000,
+ "recapAt": null,
+ "writing": "resting",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p1",
+   "agent": "claude",
+   "status": "idle",
+   "title": "api orchestrator",
+   "cwd": "/work/shop/api",
+   "lastPrompt": null,
+   "branch": "feat/cart",
+   "contextPercent": 40,
+   "since": 1794047220000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 80000,
+    "window": 200000,
+    "share": 40,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": {
+    "branch": "feat/cart",
+    "ahead": 1,
+    "changed": 3
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/cart"
+   }
+  },
+  {
+   "pane": "w1:p2",
+   "agent": "claude",
+   "status": "working",
+   "title": "checkout worker",
+   "cwd": "/work/shop/api",
+   "lastPrompt": null,
+   "branch": "feat/retry",
+   "contextPercent": 12,
+   "since": 1794047280000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 24000,
+    "window": 200000,
+    "share": 12,
+    "source": "observed"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": null,
+   "web": null
+  }
+ ],
+ "tasks": [],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": null,
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [],
+ "claudeRecaps": [],
+ "groups": [],
+ "breaks": [],
+ "session": null,
+ "cuts": []
+}

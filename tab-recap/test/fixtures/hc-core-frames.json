@@ -1,0 +1,478 @@
+{
+ "hello": {
+  "id": 0,
+  "jsonrpc": "2.0",
+  "result": {
+   "core": {
+    "id": "9b649bdf70135b93a5f5a733bd918e4d",
+    "name": "host"
+   },
+   "features": [
+    "framed",
+    "attach",
+    "events",
+    "status",
+    "shell",
+    "resize_notifications",
+    "automatic_input"
+   ],
+   "framed": false,
+   "generation": 1,
+   "methods": [
+    "hello",
+    "server.status",
+    "server.stop",
+    "server.restart",
+    "terminal.run",
+    "templates.list",
+    "terminal.list",
+    "terminal.get",
+    "terminal.kill",
+    "terminal.rm",
+    "terminal.keep",
+    "terminal.label",
+    "terminal.read",
+    "terminal.attach",
+    "terminal.send",
+    "terminal.wait",
+    "terminal.keys",
+    "terminal.interrupt",
+    "terminal.put",
+    "machine.exec",
+    "file.read",
+    "file.write",
+    "file.edit",
+    "doc.get",
+    "doc.set",
+    "events.subscribe",
+    "machine.add",
+    "machine.list",
+    "machine.connect",
+    "machine.rename",
+    "machine.rm",
+    "rpc.discover"
+   ],
+   "version": "0.1.18"
+  }
+ },
+ "event:created": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "address": "t1y",
+    "argv": [
+     "sleep",
+     "600"
+    ],
+    "cols": 200,
+    "created_ms": 1794151288166,
+    "cwd": "~/Work",
+    "die_with_parent": true,
+    "exit_code": null,
+    "finished_ms": null,
+    "identity": "ghostty",
+    "keep": false,
+    "labels": {},
+    "name": "t03c",
+    "notify": true,
+    "parent": "t1w",
+    "pid": 1620685,
+    "reason": null,
+    "reported": false,
+    "rm": false,
+    "rows": 120,
+    "screen": "exact",
+    "signal": null,
+    "state": "live",
+    "status": null,
+    "status_ms": null,
+    "template": null,
+    "title": "",
+    "turn": 0
+   },
+   "seq": 111,
+   "terminal": "t1y",
+   "type": "created"
+  }
+ },
+ "event:foreground": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "argv": [
+     "sleep",
+     "600"
+    ],
+    "cwd": "~/Work",
+    "name": "sleep",
+    "pid": 1620669
+   },
+   "seq": 112,
+   "terminal": "t1w",
+   "type": "foreground"
+  }
+ },
+ "event:labels": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "labels": {
+     "k": "3"
+    }
+   },
+   "seq": 287,
+   "terminal": "t21",
+   "type": "labels"
+  }
+ },
+ "event:title": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "title": "t03 first title"
+   },
+   "seq": 88,
+   "terminal": "t1v",
+   "type": "title"
+  }
+ },
+ "event:status": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "records": {},
+    "reported": true,
+    "status": null
+   },
+   "seq": 101,
+   "terminal": "t1v",
+   "type": "status"
+  }
+ },
+ "heartbeat": {
+  "jsonrpc": "2.0",
+  "method": "heartbeat",
+  "params": {
+   "seq": 90
+  }
+ },
+ "event:turn": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "state": "idle",
+    "turn": 2
+   },
+   "seq": 98,
+   "terminal": "t1v",
+   "type": "turn"
+  }
+ },
+ "event:keep": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "keep": true
+   },
+   "seq": 99,
+   "terminal": "t1v",
+   "type": "keep"
+  }
+ },
+ "event:lost": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "exit_code": null,
+    "finished_ms": null,
+    "reason": "signaled",
+    "signal": 9
+   },
+   "seq": 102,
+   "terminal": "t1v",
+   "type": "lost"
+  }
+ },
+ "event:restarted": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "address": "t1v",
+    "argv": [
+     "/usr/bin/bash"
+    ],
+    "cols": 200,
+    "created_ms": 1794151037489,
+    "cwd": "~/work/probe",
+    "die_with_parent": false,
+    "exit_code": null,
+    "finished_ms": null,
+    "identity": "ghostty",
+    "keep": true,
+    "labels": {
+     "role": "probe",
+     "stage": "two"
+    },
+    "name": "t03probe",
+    "notify": true,
+    "parent": null,
+    "pid": 1600745,
+    "reason": null,
+    "reported": false,
+    "rm": false,
+    "rows": 120,
+    "screen": "exact",
+    "signal": null,
+    "state": "live",
+    "status": null,
+    "status_ms": 1794151076549,
+    "template": null,
+    "title": "",
+    "turn": 2
+   },
+   "seq": 103,
+   "terminal": "t1v",
+   "type": "restarted"
+  }
+ },
+ "event:finished": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "exit_code": 3,
+    "finished_ms": 1794151090774,
+    "reason": "exited",
+    "signal": null
+   },
+   "seq": 107,
+   "terminal": "t1v",
+   "type": "finished"
+  }
+ },
+ "event:removed": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {},
+   "seq": 108,
+   "terminal": "t1v",
+   "type": "removed"
+  }
+ },
+ "event:doc": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "name": "t03doc",
+    "version": 1
+   },
+   "seq": 116,
+   "type": "doc"
+  }
+ },
+ "event:size": {
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+   "data": {
+    "cols": 80,
+    "rows": 25
+   },
+   "seq": 121,
+   "terminal": "t1x",
+   "type": "size"
+  }
+ },
+ "error:-32000:not_found": {
+  "error": {
+   "code": -32000,
+   "data": {
+    "hint": "see `hc ls --all`",
+    "kind": "not_found"
+   },
+   "message": "no terminal \"t03a\""
+  },
+  "id": 1,
+  "jsonrpc": "2.0"
+ },
+ "missed": {
+  "jsonrpc": "2.0",
+  "method": "missed",
+  "params": {
+   "seq": 2797,
+   "terminals": [
+    {
+     "address": "t2",
+     "argv": [
+      "/usr/bin/bash"
+     ],
+     "cols": 200,
+     "created_ms": 1794098598697,
+     "cwd": "~",
+     "die_with_parent": false,
+     "exit_code": null,
+     "finished_ms": null,
+     "foreground": {
+      "argv": [
+       "/usr/bin/bash"
+      ],
+      "cwd": "~",
+      "name": "bash",
+      "pid": 1583198
+     },
+     "identity": "ghostty",
+     "keep": true,
+     "labels": {
+      "herdr.seen": "0",
+      "herdr.space": "spc64df6047ff35d2dfc438c51e0e14b95",
+      "herdr.tab": "tbc8b1082b3f5229bbf7fbd1b836a15421",
+      "where": "spike / 1"
+     },
+     "name": null,
+     "notify": true,
+     "parent": null,
+     "pid": 1583198,
+     "reason": null,
+     "reported": false,
+     "rm": false,
+     "rows": 120,
+     "screen": "exact",
+     "signal": null,
+     "state": "live",
+     "status": null,
+     "status_ms": null,
+     "template": null,
+     "title": "user@host:~",
+     "turn": 0
+    },
+    {
+     "address": "t3",
+     "argv": [
+      "/usr/bin/bash"
+     ],
+     "cols": 200,
+     "created_ms": 1794098619918,
+     "cwd": "~",
+     "die_with_parent": false,
+     "exit_code": null,
+     "finished_ms": 1794102986098,
+     "identity": "ghostty",
+     "keep": true,
+     "labels": {},
+     "name": "tab-recap-d",
+     "notify": true,
+     "parent": null,
+     "pid": 655970,
+     "reason": "killed",
+     "reported": false,
+     "rm": false,
+     "rows": 120,
+     "screen": "exact",
+     "signal": 1,
+     "state": "finished",
+     "status": null,
+     "status_ms": null,
+     "template": null,
+     "title": "user@host:~",
+     "turn": 0
+    }
+   ]
+  }
+ },
+ "subscribed": {
+  "id": 1,
+  "jsonrpc": "2.0",
+  "result": {
+   "channel": null,
+   "seq": 84,
+   "terminals": [
+    {
+     "address": "t2",
+     "argv": [
+      "/usr/bin/bash"
+     ],
+     "cols": 200,
+     "created_ms": 1794098598697,
+     "cwd": "~",
+     "die_with_parent": false,
+     "exit_code": null,
+     "finished_ms": null,
+     "foreground": {
+      "argv": [
+       "/usr/bin/bash"
+      ],
+      "cwd": "~",
+      "name": "bash",
+      "pid": 1583198
+     },
+     "identity": "ghostty",
+     "keep": true,
+     "labels": {
+      "herdr.seen": "0",
+      "herdr.space": "spc64df6047ff35d2dfc438c51e0e14b95",
+      "herdr.tab": "tbc8b1082b3f5229bbf7fbd1b836a15421",
+      "where": "spike / 1"
+     },
+     "name": null,
+     "notify": true,
+     "parent": null,
+     "pid": 1583198,
+     "reason": null,
+     "reported": false,
+     "rm": false,
+     "rows": 120,
+     "screen": "exact",
+     "signal": null,
+     "state": "live",
+     "status": null,
+     "status_ms": null,
+     "template": null,
+     "title": "user@host:~",
+     "turn": 0
+    },
+    {
+     "address": "t3",
+     "argv": [
+      "/usr/bin/bash"
+     ],
+     "cols": 200,
+     "created_ms": 1794098619918,
+     "cwd": "~",
+     "die_with_parent": false,
+     "exit_code": null,
+     "finished_ms": 1794102986098,
+     "identity": "ghostty",
+     "keep": true,
+     "labels": {},
+     "name": "tab-recap-d",
+     "notify": true,
+     "parent": null,
+     "pid": 655970,
+     "reason": "killed",
+     "reported": false,
+     "rm": false,
+     "rows": 120,
+     "screen": "exact",
+     "signal": 1,
+     "state": "finished",
+     "status": null,
+     "status_ms": null,
+     "template": null,
+     "title": "user@host:~",
+     "turn": 0
+    }
+   ]
+  }
+ }
+}

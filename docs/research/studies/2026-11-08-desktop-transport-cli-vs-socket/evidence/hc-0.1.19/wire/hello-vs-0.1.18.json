@@ -1,0 +1,18 @@
+{
+ "v": "0.1.19",
+ "generation": 1,
+ "features": [
+  "framed",
+  "attach",
+  "events",
+  "status",
+  "shell",
+  "resize_notifications",
+  "automatic_input"
+ ],
+ "nmethods": 32,
+ "core": [
+  "id",
+  "name"
+ ]
+}

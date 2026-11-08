@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tab Recap UX mockup</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/roles.css">
+<link rel="stylesheet" href="css/views.css">
+</head>
+<body>
+<div class="page">
+<div class="top nosolo">
+  <div><h1>Tab Recap, designed for a GUI</h1>
+  <p class="lead">A mockup of the plan in <code>ux-plan.md</code>. Invented data, clickable. Nothing here is built yet.</p></div>
+  <button class="btn" id="theme">Light / dark</button>
+</div>
+<section class="nosolo">
+<h2>1 · Ambient: always visible, zero clicks</h2>
+<p class="note">Every agent pane gets a one-line strip: status shape, the headline (red when it needs you), and a context meter with the compaction threshold as a tick. The status bar chip is a fleet summary. Click it to open Fleet below.</p>
+<div id="ambient"></div>
+<div class="cap"><span>Strip is an opt-in layout clone, never an edit of a shipped layout</span><span>Shape plus colour for every status</span><span>Tick = auto-compact hint</span></div>
+</section>
+<section>
+<h2 class="nosolo">2 · Fleet and Brief</h2>
+<p class="note nosolo">Fleet is a floating window ranking every tab of every space by urgency. Opening a row shows its Brief: lane chips (each one is the compact button), what changed since you last looked, then the answer to "what do you need from me".</p>
+<div class="top toolbar"><div id="scenes"></div><span class="hints nosolo">Keys: j k, Enter, /, 1-4, c, r, Esc</span></div>
+<div id="window"></div>
+</section>
+<section class="nosolo">
+<h2>3 · What changed from the terminal modal</h2>
+<ul class="changes">
+<li><b>Answer first.</b> The need or headline leads everywhere; reasons and history are one click down.</li>
+<li><b>Cross-tab by default.</b> Fleet shows every tab, ranked, with how long each has waited.</li>
+<li><b>Re-entry.</b> "Since you last looked" is per viewer and per tab, computed from fact times.</li>
+<li><b>Actions in context.</b> The lane chip is the compact button; a blocked need has Jump and Reply beside it.</li>
+<li><b>Nothing lost.</b> Every terminal element has a home (see the parity table in <code>ux-plan.md</code>).</li>
+</ul>
+</section>
+</div>
+<div class="hover" id="hover"></div>
+<div class="toast" id="toast"></div>
+<script src="js/constants.js"></script>
+<script src="js/data/fixtures.js"></script>
+<script src="js/data/derive.js"></script>
+<script src="js/ui/icons.js"></script>
+<script src="js/ui/status.js"></script>
+<script src="js/ui/pill.js"></script>
+<script src="js/ui/meter.js"></script>
+<script src="js/ui/button.js"></script>
+<script src="js/ui/chip.js"></script>
+<script src="js/ui/hover.js"></script>
+<script src="js/views/brief.js"></script>
+<script src="js/views/story.js"></script>
+<script src="js/views/timeline.js"></script>
+<script src="js/views/session.js"></script>
+<script src="js/roles/strip.js"></script>
+<script src="js/roles/chip.js"></script>
+<script src="js/roles/ambient.js"></script>
+<script src="js/roles/fleet.js"></script>
+<script src="js/roles/window.js"></script>
+<script src="js/roles/popover.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

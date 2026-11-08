@@ -1,0 +1,10 @@
+Copy this hc there and restart hc there (its terminals keep running)
+
+Usage: hc machine update [OPTIONS] <MACHINE>
+
+Arguments:
+  <MACHINE>  The machine's name
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

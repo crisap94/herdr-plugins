@@ -1,0 +1,2 @@
+TR.views.session=t=>`<div class="facts">${TR.fixtures.session.facts.map(f=>`<div class="fact"><b>${f[0]}</b><span>${f[1]}</span></div>`).join('')}</div>
+ <div class="card lanes-table"><div class="card-h">Lanes</div>${t.lanes.map(l=>`<div class="lane-row">${TR.status(l.st,14)}<span class="ag">${l.agent}</span><b>${l.name}</b><span class="grow"></span>${TR.meter(l.ctx,120)}<span>${l.ctx}% of ${TR.C.CTX_WINDOW}</span></div>`).join('')}</div>`;

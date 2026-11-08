@@ -4,7 +4,10 @@ import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { HerdrFleet, readPaneSession } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { frontendFor } from '#src/adapters/frontend.ts';
+import type { Frontend } from '#src/ports/frontend.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import { Pidfile } from '#src/adapters/pidfile.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
@@ -74,7 +77,7 @@ const log = (line: string): void => { console.error(`${new Date().toISOString()}
 
 interface Wired {
     readonly informer: Informer;
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly backends: Backends;
     readonly extensions: readonly Extension[];
     readonly store: Store;
@@ -102,7 +105,7 @@ const switchOn = (setting: string): boolean => (setting === handoff.optIn ? hand
 
 function wantsScreen(agent: string): boolean { const { screenAgents } = loadConfig(); return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent); }
 
-function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
+function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
     const config = loadConfig();
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
@@ -150,7 +153,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
-    const recent = new LaneRecent(transcripts, readPaneSession);
+    const recent = new LaneRecent(transcripts, session);
     const claims = new LaneClaims();
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const compaction = wireCompaction({
@@ -190,13 +193,13 @@ async function boot(root: string, pidfile: Pidfile): Promise<Wired | number> {
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const fleet = new HerdrFleet(root);
-    const opened = await openState(root, fleet, log);
+    const frontend = frontendFor(() => new HerdrFleet(root));
+    const opened = await openState(root, frontend.fleet, log);
     if (opened === null) {
         pidfile.release(process.pid);
         return 1;
     }
-    return wire(root, fleet, opened);
+    return wire(root, frontend, frontend.wrap(opened, log));
 }
 
 async function start(): Promise<number> {

@@ -1,0 +1,17 @@
+# Findings
+
+Reusable findings, each backed by its study's evidence. Add a row when a finding is worth citing beyond its study.
+
+| Finding | Evidence | Study | Tags |
+| --- | --- | --- | --- |
+| herdr-core (`hc`) exposes terminal list/get/send/keys/wait/events with `herdr.space`/`herdr.tab` labels and agent status, enough to fill tab-recap's fleet and agent ports | `evidence/hc-get-shape.json` | [R-2026-11-07-01](studies/2026-11-07-gui-tab-recap-port/README.md) | hc, gui |
+| The desktop app shows recaps best as an overlay window plus toast; a layout slot is needed for any permanent button | GUI guide | [R-2026-11-07-01](studies/2026-11-07-gui-tab-recap-port/README.md) | gui, ui |
+| The `hc` core socket path is `<runtime>/herdr-core/<session>.sock` (`$XDG_RUNTIME_DIR`, else `/run/user/<uid>`; session from `HC_SESSION`, default `default`; `HC_SOCKET` overrides) and the `hc` CLI connects to it | `evidence/t0-core/path-rule.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | hc, socket |
+| The core socket speaks `hello` (generation 1), then `events.subscribe` gives a snapshot, `event` notifications `{seq, terminal, type, data}` (types seen: created, foreground, labels, title, status, turn, keep, lost, restarted, finished, removed, size, doc) and a heartbeat every 15 s | `evidence/t0-core/notes.md`, `evidence/t0-core/frames.ndjson` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | hc, socket, events |
+| A slow event reader gets `missed` with a fresh snapshot, or the core closes its connection; a client has to handle both | `evidence/t0-core/notes.md` (round 3 and round 2) | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | hc, socket, events |
+| herdr-core 0.1.19 keeps the 0.1.18 wire (generation 1, 32 methods, same list/get shapes); it adds detach survival and environment keeping, and `seq` restarts with the core | `evidence/hc-0.1.19/consolidated.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | hc, versions |
+| A desktop mod's `fetch` reaches `127.0.0.1` with no declared capability, holds a 28 s response, and passes a 3 MiB body and an `Authorization` header | `evidence/t0-fetch/notes.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | gui, fetch |
+| A mod can write the clipboard with `write_to_clipboard(text)` on its context | `evidence/t0-lookups/notes.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | gui, clipboard |
+| tab-recap's ledger cannot reopen a closed fact (`add`, `update`, `close` only), so a hand close has no undo | `evidence/t0-lookups/notes.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | tab-recap, ledger |
+| A daemon on the core socket spawns 0 `hc` in 90 s idle against 21 on the CLI path, with the same index rows and 40 to 61 ms from status change to `index.json` | `evidence/t1-verify/README.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | hc, socket, perf |
+| Under the Xvnc test display the mod renders a status change after about 0.97 s with the API and with files alike; the API showed no render gain (store: 82 ms against 125 ms, working direction) | `evidence/t2-verify/verify-t2-t3.md` | [R-2026-11-08-01](studies/2026-11-08-desktop-transport-cli-vs-socket/README.md) | gui, latency |
