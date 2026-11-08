@@ -1059,6 +1059,7 @@
       "test/gui/support/fake-api.ts",
       "test/gui/support/kit.ts",
       "test/gui/support/mount.ts",
+      "test/gui/support/preload.ts",
       "test/gui/support/register.ts",
       "test/gui/support/serve.ts",
       "test/gui/support/tree.ts",
@@ -1074,6 +1075,7 @@
       "test/protocol-pure.test.ts",
       "test/protocol-vectors.test.ts",
       "test/release.test.ts",
+      "test/support/bun-env.ts",
       "test/xmllint.ts"
     ]
   }
