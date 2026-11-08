@@ -17,7 +17,6 @@ expect() { # expect <pass|fail> <what> <command...>
 plugin="$scratch/demo"; mkdir -p "$plugin"
 printf 'id = "demo"\nversion = "1.1.0"\n' > "$plugin/herdr-plugin.toml"
 printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
-printf '{"name":"demo","version":"1.1.0","packages":{"":{"name":"demo","version":"1.1.0"}}}\n' > "$plugin/package-lock.json"
 cat > "$scratch/CHANGELOG.md" <<'MD'
 # Changelog
 
@@ -65,11 +64,6 @@ expect fail "notes without a version" notes demo
 
 # --- check-version
 expect pass "consistent versions" version
-sed -i.bak 's/"version":"1.1.0","packages"/"version":"1.0.0","packages"/' "$plugin/package-lock.json"
-expect fail "a lockfile on another version" version
-printf '{"name":"demo","version":"1.1.0","packages":{"":{"name":"demo","version":"1.0.0"}}}\n' > "$plugin/package-lock.json"
-expect fail "a lockfile whose root package is on another version" version
-printf '{"name":"demo","version":"1.1.0","packages":{"":{"name":"demo","version":"1.1.0"}}}\n' > "$plugin/package-lock.json"
 printf '{"name":"demo","version":"1.2.0"}\n' > "$plugin/package.json"
 expect fail "a package.json on another version" version
 printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
@@ -95,7 +89,7 @@ expect fail "an empty description" mr "changelog::added" ""
 # --- check-release, in a throw-away repository whose `main` is the release branch
 repo="$scratch/repo"; mkdir -p "$repo" && cp -R "$plugin" "$repo/demo" && cp "$scratch/CHANGELOG.md" "$repo/CHANGELOG.md" && cd "$repo" || exit 3
 mkdir -p demo/bin && echo 'export {};' > demo/bin/run.ts
-printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["node", "bin/run.ts", "go"]\n' > demo/herdr-plugin.toml
+printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["bun", "bin/run.ts", "go"]\n' > demo/herdr-plugin.toml
 git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
 git add -A && git commit --quiet -m release
 export MAIN_REF=main PLUGIN_DIR="$repo/demo"
@@ -124,7 +118,7 @@ expect fail "no section for the version" without 's/^### \[1.1.0\].*/### [1.1.1]
 expect fail "an undated section" without 's/^### \[1.1.0\] — .*/### [1.1.0]/'
 expect fail "no link reference" without '/^\[1.1.0\]: /d'
 expect fail "an empty section" without '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}'
-printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["node", "bin/gone.ts", "go"]\n' > demo/herdr-plugin.toml
+printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["bun", "bin/gone.ts", "go"]\n' > demo/herdr-plugin.toml
 expect fail "a manifest command whose file does not exist" release demo-v1.1.0
 printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\n' > demo/herdr-plugin.toml
 expect fail "a manifest table without a command" release demo-v1.1.0
@@ -188,7 +182,7 @@ expect fail "no merge request opened while one is open" grep -q "POST .*merge_re
 FAKE_LIST='not json' expect fail "an open merge request list that is not JSON" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request list was not JSON" >&2; wrong=$((wrong + 1)); }
 expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_HOST bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
-full="$(node -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
+full="$(bun -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
 FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request on the second page of open merge requests" publish
 [ -z "$(remote_refs)" ] || { echo "bite: a release was pushed over a release merge request on the second page" >&2; wrong=$((wrong + 1)); }
 lookup_exit() { PUSH_URL="$scratch/no-such-remote.git" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1; echo $?; }
@@ -251,7 +245,7 @@ expect fail "a version whose changelog section is empty" emptysection
 printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
 expect fail "a package.json on another version" tagit
 git checkout --quiet -- demo/package.json
-for file in herdr-plugin.toml package.json package-lock.json; do
+for file in herdr-plugin.toml package.json; do
     sed -e 's/1\.1\.0/1.1.1/g' "demo/$file" > "$scratch/next.$file" && cp "$scratch/next.$file" "demo/$file"
 done
 git add -A && git commit --quiet -m "release 1.1.1"

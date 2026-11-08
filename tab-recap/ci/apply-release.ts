@@ -1,12 +1,12 @@
-// Turn a rendered release into file edits: the three versions, the CHANGELOG section, its link refs.
-//   node ci/apply-release.ts <plugin-dir> <version> <section-file> <previous-tag>
+// Turn a rendered release into file edits: the two versions, the CHANGELOG section, its link refs.
+//   bun ci/apply-release.ts <plugin-dir> <version> <section-file> <previous-tag>
 // The CHANGELOG is the repository's, one level above the plugin directory.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const sameVersion = (text: string, version: string): string => text.replace(/^version = "[^"]*"/m, `version = "${version}"`);
 
-/** package.json / package-lock.json: the version, and the lockfile's root package, keep npm's own layout. */
+/** package.json: the version, the rest of the file as it is. */
 export function withJsonVersion(text: string, version: string): string {
     const json = JSON.parse(text) as { version: string; packages?: Record<string, { version?: string }> };
     json.version = version;
@@ -63,7 +63,6 @@ function main(): void {
     const plugin = readFileSync(join(dir, 'herdr-plugin.toml'), 'utf8').match(/^id = "([^"]+)"/m)?.[1] ?? '';
     edit(join(dir, 'herdr-plugin.toml'), (text) => sameVersion(text, version));
     edit(join(dir, 'package.json'), (text) => withJsonVersion(text, version));
-    edit(join(dir, 'package-lock.json'), (text) => withJsonVersion(text, version));
     edit(join(dir, '..', 'CHANGELOG.md'), (text) => withRelease(text, plugin, version, readFileSync(sectionFile, 'utf8').trimEnd(), previous));
 }
 
