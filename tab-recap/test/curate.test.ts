@@ -124,7 +124,7 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
 const settings = { model: '', effort: 'medium' } as const;
 
 test('the curator is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const written = await new HarnessCurator(echo, settings).write('<curator_input version="1"/>');
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
     const refused = await new HarnessCurator(new HermesHarness(process.cwd(), 1), settings).write('x'.repeat(ARGV_BYTES));
