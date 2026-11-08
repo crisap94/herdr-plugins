@@ -14,13 +14,26 @@ import { AllHidden } from './all-hidden.ts';
 import { DesktopReads } from './desktop-expanded.ts';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { GuiPublisher, type GuiPublisherDeps } from './gui-publisher.ts';
+import { HC_SOCKET_TRANSPORT, HC_TRANSPORT_ENV } from './desktop-constants.ts';
+import { HcCoreFleet } from './hc-core-fleet.ts';
+import { parseHcTransport } from './hc-core-wire.ts';
 import { HcFleet } from './hc-fleet.ts';
 import { claudeSessions, defaultClaudeHome } from './hc-sessions.ts';
 import { PathHarnesses } from './path-harnesses.ts';
 import { PublishingRecords } from './publishing-records.ts';
 import { PublishingViews } from './publishing-views.ts';
 
-function sessionThrough(fleet: HcFleet): CurrentSession {
+type DesktopFleet = HcFleet | HcCoreFleet;
+
+const SOCKET = must(parseHcTransport(HC_SOCKET_TRANSPORT));
+
+function fleetFor(): DesktopFleet {
+    const parts = { harnesses: new PathHarnesses(AUTO_ORDER), sessions: claudeSessions(defaultClaudeHome()) };
+    const transport = parseHcTransport(process.env[HC_TRANSPORT_ENV]);
+    return transport.kind === 'ok' && transport.value === SOCKET ? new HcCoreFleet(parts) : new HcFleet(parts);
+}
+
+function sessionThrough(fleet: DesktopFleet): CurrentSession {
     return async (pane: string): Promise<string | null | Unknown> => {
         const parsed = parsePaneId(pane);
         return parsed.kind === 'ok' ? fleet.sessionOf(parsed.value) : null;
@@ -39,7 +52,7 @@ function publisherFor(store: Store, log: (line: NonEmptyText) => void): GuiPubli
 }
 
 export function desktopFrontend(): Frontend {
-    const fleet = new HcFleet({ harnesses: new PathHarnesses(AUTO_ORDER), sessions: claudeSessions(defaultClaudeHome()) });
+    const fleet = fleetFor();
     return {
         fleet,
         session: sessionThrough(fleet),

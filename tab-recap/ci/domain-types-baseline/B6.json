@@ -197,6 +197,9 @@
     "parameter": 1,
     "container": 2
   },
+  "src/adapters/hc-core-fleet.ts": {
+    "container": 1
+  },
   "src/adapters/hc-fleet.ts": {
     "container": 1
   },
