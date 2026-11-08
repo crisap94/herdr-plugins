@@ -5,6 +5,10 @@ min_herdr_version = "0.9.0"
 description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
 platforms = ["linux", "macos"]
 
+# The one runtime dependency (@homelab/herdr, the herdr-core client) is installed when herdr installs the plugin.
+[[build]]
+command = ["npm", "ci", "--omit=dev"]
+
 # The column is the default view: the daemon starts with the herdr session…
 [[startup]]
 command = ["node", "bin/tab-recap.mjs", "startup"]

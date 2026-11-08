@@ -10,12 +10,12 @@ import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
 import type { CoreEventsTiming } from '#src/adapters/desktop-package.ts';
 import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import { FakeHcCore, frame, later } from '../../desktop/test/fakes/hc-core.ts';
+import { FakeHcCore, frame, later } from '@homelab/herdr/core/test-kit';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
 const EVENTS: CoreEventsTiming = { backoffBase: duration(30), backoffCap: duration(120), silence: duration(5000) };
 const noSession = (): null => null;
-const CHILD = join(import.meta.dirname, '../../desktop/test/fakes/hc-core-keepalive-child.ts');
+const CHILD = join(import.meta.dirname, 'fakes/hc-core-keepalive-child.ts');
 const status = (state: string): Record<string, unknown> => ({ records: {}, reported: true, status: { app: 'claude-code', state } });
 
 async function until(ready: () => boolean, tries = 150): Promise<void> {

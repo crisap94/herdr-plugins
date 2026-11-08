@@ -986,6 +986,7 @@
       "test/fakes/handoff-flow-harness.ts",
       "test/fakes/handoff-mirror.ts",
       "test/fakes/handoff-pipeline-world.ts",
+      "test/fakes/hc-core-keepalive-child.ts",
       "test/fakes/herdr-panes.ts",
       "test/fakes/idle-claude-plans.ts",
       "test/fakes/lane-tokens.ts",

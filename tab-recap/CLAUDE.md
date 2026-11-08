@@ -75,7 +75,7 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 ## Gates
 
 ```bash
-npm install            # tsgo, oxlint (dev only — the plugin itself has zero dependencies)
+npm install            # tsgo, oxlint (dev) and @homelab/herdr, the one runtime dependency
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
 bash ci/test.sh        # node --test
 ```

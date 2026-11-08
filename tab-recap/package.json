@@ -17,6 +17,9 @@
     "test": "bash ci/test.sh",
     "daemon": "node src/daemon/launch.mjs"
   },
+  "dependencies": {
+    "@homelab/herdr": "^0.3.0"
+  },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
     "@types/node": "24.7.0",

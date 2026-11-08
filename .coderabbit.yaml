@@ -22,8 +22,8 @@ reviews:
         reason.
     - path: "tab-recap/**"
       instructions: >-
-        The plugin runs straight from source on Node with ZERO runtime dependencies: a new entry
-        under "dependencies" is a blocker; prefer Node built-ins (node:*, Intl, util) and justify
+        The plugin runs straight from source on Node with ONE runtime dependency, @homelab/herdr
+        (the herdr-core client): any other entry under "dependencies" is a blocker; prefer Node built-ins (node:*, Intl, util) and justify
         any hand-written piece a built-in could do. No comments in code
         (rules/recap-no-comments.yml): meaning lives in names, types, small functions and tests;
         rationale in CONTEXT.md, the README or the OpenSpec design; only directive pragmas with
