@@ -59,6 +59,12 @@ module.exports = {
       to: { path: brandFile },
     },
     {
+      name: 'drizzle-adapter-only',
+      severity: 'error',
+      from: { pathNot: ['^src/adapters/db/', '^test/'] },
+      to: { path: 'node_modules/drizzle-orm(/|$)' },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       from: {},
