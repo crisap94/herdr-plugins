@@ -52,7 +52,7 @@ body:
     id: status
     attributes:
       label: Status output
-      description: Output of `node bin/tab-recap.ts status` (run in `tab-recap/`)
+      description: Output of `bun bin/tab-recap.ts status` (run in `tab-recap/`)
       render: text
     validations:
       required: true

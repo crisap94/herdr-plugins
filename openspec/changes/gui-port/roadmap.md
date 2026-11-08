@@ -76,7 +76,7 @@ own daemon and database, per-tab JSON written on every view change and every rec
 
 ## 4. Phases
 
-Each phase ends with `bash ci/lint.sh` and `bash ci/test.sh` on Node 24.22, a visual run in the isolated session (screenshots kept
+Each phase ends with `bash ci/lint.sh` and `bash ci/test.sh` on Bun 1.4.4, a visual run in the isolated session (screenshots kept
 under `openspec/changes/gui-port/visual-test/`), and one merge request with one `changelog::` label. Nothing is pushed before the
 visual run of that phase passes.
 

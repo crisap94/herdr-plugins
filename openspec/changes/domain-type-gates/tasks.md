@@ -10,7 +10,7 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
       `tab-recap/CONTEXT.md` before any code; every noun a lane needs later goes through the lead. Verify: the vocabulary step of
       `ci/lint.sh` passes.
 - [x] 1.2 (!118) Add `typescript` (pinned to an exact 6.x release, not 7) and `dependency-cruiser` (exact version) to `devDependencies`;
-      `dependencies` stays absent. Verify: `package.json` has no `dependencies` field, `npm ci` passes, and `node -e
+      `dependencies` stays absent. Verify: `package.json` has no `dependencies` field, `bun install --frozen-lockfile` passes, and `bun -e
       "require('typescript').version"` prints a 6.x version.
 - [x] 1.3 (!118) The shared vocabulary every lane needs before it starts: the parser signature, the common text, count and duration value
       types and the ids, each with its `parse<Name>` returning the one `Result`, in `src/recap/domain/`. Verify: each has a parser test

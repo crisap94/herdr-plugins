@@ -1,7 +1,6 @@
 # Tasks: tab-recap on the herdr desktop app
 
-Every group ends with the plugin gates passing (`bash ci/lint.sh` and `bash ci/test.sh`, from `tab-recap/`, on Node 24.22: the
-machine default of 22 is below the plugin's floor). Baseline on 2026-11-07, before any change: 2478 tests, 2470 pass, 3 fail
+Every group ends with the plugin gates passing (`bash ci/lint.sh` and `bash ci/test.sh`, from `tab-recap/`, on Bun 1.4.4, the plugin floor). Baseline on 2026-11-07, before any change: 2478 tests, 2470 pass, 3 fail
 (`--help`, `a real launcher on this Node loads its entry`, `node:sqlite prints nothing on stderr`: stderr noise from this machine's
 Node) and 5 cancelled (the timing group around test 2221); a change must not add to either list.
 

@@ -165,7 +165,7 @@ selected brief. All additions are additive: `version` of `index.json` stays `1`,
 `GuiIndexRow`, `GuiIndex`, `parseGuiIndexRow`, `parseGuiIndex` are branch-created in `gui-tab.ts`; keep the exports and move the new
 types to a **new** file `src/recap/domain/gui-index.ts` (re-exported from `gui-tab.ts`) and the derivation to
 `src/recap/application/gui-index-build.ts`. `GuiPublisher.write` (`src/adapters/gui-publisher.ts:70-77`) keeps calling `guiIndexRow(document)`.
-Registries: `ci/lanes.json` via `node ci/lanes-generate.ts`, `ci/domain-types-baseline/B6.json`. Every exported signature uses branded
+Registries: `ci/lanes.json` via `bun ci/lanes-generate.ts`, `ci/domain-types-baseline/B6.json`. Every exported signature uses branded
 types (`Count`, `Instant`, `Text`, `NonEmptyText`, `PaneId`, `AgentKind`, `Flag`, `GuiStageId`); parsers take `unknown` and are named
 `parseGui...`; no primitives, no `boolean` (use `Flag`), complexity <= 10, <= 25 statements, explicit return types, `toSorted`.
 Banned identifier words: summary sidebar panel offset worker.
@@ -414,7 +414,7 @@ element by element (shape, colour role, order). The harness (F) cannot see pixel
 
 ### F.1 Where and how it runs
 
-`test/gui-mod/*.test.ts` (matched by `ci/test.sh` `node --test "test/**/*.test.ts"`; register new files with `node ci/lanes-generate.ts`).
+`test/gui-mod/*.test.ts` (matched by `ci/test.sh` `bun test "test/**/*.test.ts"`; register new files with `bun ci/lanes-generate.ts`).
 `ci/test.sh` passes no `--import`, so each test file registers the fakes itself and then `await import(...)`s the mod:
 
 ```

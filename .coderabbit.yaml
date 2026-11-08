@@ -8,7 +8,7 @@ reviews:
   profile: "assertive"
   high_level_summary: true
   path_filters:
-    - "!**/package-lock.json"
+    - "!**/bun.lock"
   path_instructions:
     - path: "**"
       instructions: >-
@@ -22,8 +22,8 @@ reviews:
         reason.
     - path: "tab-recap/**"
       instructions: >-
-        The plugin runs straight from source on Node with ONE runtime dependency, @stateforge-labs/herdr-sdk
-        (the herdr-core client): any other entry under "dependencies" is a blocker; prefer Node built-ins (node:*, Intl, util) and justify
+        The plugin runs straight from source on Bun with ONE runtime dependency, @stateforge-labs/herdr-sdk
+        (the herdr-core client): any other entry under "dependencies" is a blocker; prefer built-ins (node:*, Intl, util, which Bun runs) and justify
         any hand-written piece a built-in could do. No comments in code
         (rules/recap-no-comments.yml): meaning lives in names, types, small functions and tests;
         rationale in CONTEXT.md, the README or the OpenSpec design; only directive pragmas with
@@ -59,7 +59,7 @@ reviews:
         module. Until that gate lands, flag new code that adds primitive signatures.
     - path: "tab-recap/src/host/**"
       instructions: >-
-        Plain JavaScript on purpose (.mjs with .d.mts, no TypeScript syntax) so an old Node can
+        Plain JavaScript on purpose (.mjs with .d.mts, no TypeScript syntax) so an old Bun can
         report that it is too old; the host policy and its refusal text live here. Keep it
         dependency-free and syntax-conservative.
     - path: "tab-recap/src/adapters/db/**"
@@ -88,7 +88,7 @@ reviews:
     - path: "openspec/changes/**"
       instructions: >-
         OpenSpec rules (openspec/config.yaml): the proposal states what is out of scope and names
-        the changelog:: label; the design says why no Node built-in fits each hand-written piece;
+        the changelog:: label; the design says why no built-in fits each hand-written piece;
         every task group ends with the plugin's bash ci/lint.sh and bash ci/test.sh passing from its folder;
         new domain nouns go into CONTEXT.md first; the last group is Archive, run in the same
         merge request once every task is checked. A MODIFIED requirement restates the full base

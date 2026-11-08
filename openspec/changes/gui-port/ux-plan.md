@@ -146,7 +146,7 @@ the content of the Story and Timeline tabs, so nothing already verified is disca
 ## 7. The testing gap, and the plan for it
 
 Neither `herdr-app` nor the visual run can send real key or click events (the Phase 2 run called the mod's handlers through a
-test copy). Plan: (1) a **render-tree test harness** in `tab-recap/test/`: run `main.js` under Node against a small fake
+test copy). Plan: (1) a **render-tree test harness** in `tab-recap/test/`: run `main.js` under Bun against a small fake
 `gpui-kit` that records the element tree, then assert on structure and handlers (this tests layout decisions, handlers and
 state, but not pixels or real focus); (2) screenshots per state as now; (3) in U0, try a **window-targeted input route**
 (compositor tools that address one window without needing focus; the desktop runs as another user, so this may be impossible:
