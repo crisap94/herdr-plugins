@@ -40,7 +40,7 @@ jobs:
         run: git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.4
       - name: The tag is a release we can publish
         run: |
           plugin="${TAG%-v*}"

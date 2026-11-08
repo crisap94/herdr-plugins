@@ -39,7 +39,7 @@ jobs:
           fetch-tags: true
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.4
       # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'

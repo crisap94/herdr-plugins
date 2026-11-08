@@ -49,6 +49,6 @@ fi
 
 git config user.name "${GIT_AUTHOR_NAME:-release-bot}"
 git config user.email "${GIT_AUTHOR_EMAIL:-release-bot@users.noreply.invalid}"
-git add CHANGELOG.md tab-recap/herdr-plugin.toml tab-recap/package.json 
+git add CHANGELOG.md tab-recap/herdr-plugin.toml tab-recap/package.json
 git commit --quiet -m "tab-recap: release $version"
 exec bash "$HERE/release-publish.sh" tab-recap "$version" "$previous"

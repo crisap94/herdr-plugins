@@ -9,7 +9,6 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
-# the native tsgolint: the node_modules/.bin shim is a node script, and the bun image has no node
 tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
 [ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 dir="src/recap/domain"
