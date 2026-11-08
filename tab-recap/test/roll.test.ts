@@ -67,7 +67,7 @@ function pidOfNode(entry: string): string {
     const listing = execFileSync('ps', ['-axo', 'pid=,args='], { encoding: 'utf8' });
     const found = listing.split('\n').map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).find((match) => {
         const args = match?.[2] ?? '';
-        return args.includes(entry) && (args.startsWith(`${process.execPath} `) || args.startsWith('node '));
+        return args.includes(entry) && (args.startsWith(`${process.execPath} `) || args.startsWith('bun '));
     });
     return found?.[1] ?? '';
 }
@@ -104,7 +104,7 @@ test('a column process rolls to the new version in place: same pid, same termina
         assert.match(old, /^\d+\.\d+\.\d+$/);
         let output = '';
         const entry = join(code, 'src', 'column', 'main.ts');
-        script = spawn('script', scriptArgs(`stty cols 70 rows 20; exec node ${entry}`), {
+        script = spawn('script', scriptArgs(`stty cols 70 rows 20; exec ${process.execPath} ${entry}`), {
             cwd: code, stdio: ['pipe', 'pipe', 'ignore'],
             env: { ...process.env, TAB_RECAP_TAB: 'w1:t1', TAB_RECAP_STATE: state, TAB_RECAP_COLUMN_POLL_MS: '150', HERDR_ENV: '', HERDR_SOCKET_PATH: join(dir, 'none.sock') },
         });

@@ -47,8 +47,8 @@ test('the popup names the agent and shows the note with a cursor, in both langua
 
 test('the manifest offers the action and the popup pane; the CLI knows the command', () => {
     const manifest = readFileSync(new URL('../herdr-plugin.toml', import.meta.url), 'utf8');
-    assert.match(manifest, /\[\[actions\]\]\nid = "compact"[\s\S]*?command = \["node", "bin\/tab-recap.mjs", "compact"\]/);
-    assert.match(manifest, /\[\[panes\]\]\nid = "compact"\ntitle = "[^"]+"\nplacement = "popup"\ncommand = \["node", "src\/compact\/launch.mjs"\]/);
+    assert.match(manifest, /\[\[actions\]\]\nid = "compact"[\s\S]*?command = \["bun", "bin\/tab-recap.mjs", "compact"\]/);
+    assert.match(manifest, /\[\[panes\]\]\nid = "compact"\ntitle = "[^"]+"\nplacement = "popup"\ncommand = \["bun", "src\/compact\/launch.mjs"\]/);
     assert.match(readFileSync(new URL('../bin/tab-recap.ts', import.meta.url), 'utf8'), /^    compact,$/m);
 });
 
