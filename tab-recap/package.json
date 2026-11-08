@@ -21,6 +21,7 @@
     "daemon": "bun src/daemon/launch.mjs"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.4",
     "@stateforge-labs/herdr-sdk": "^0.3.0"
   },
   "devDependencies": {
