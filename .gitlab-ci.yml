@@ -1,4 +1,7 @@
 include:
+  # GitLab's free scanners (SAST, Secret Detection); their jobs run in the existing test stage.
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
   - project: 'homelab/ci-templates'
     ref: v0.10.0
     file: '/templates/gates.yml'
@@ -9,6 +12,8 @@ lint:gates:
 
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
+  # Run the GitLab scanners in merge request pipelines too, not only in branch pipelines.
+  AST_ENABLE_MR_PIPELINES: "true"
   NODE_IMAGE: node:24
   # The oldest Node the plugin supports (package.json engines): tested on every MR, not only after merge.
   NODE_FLOOR_IMAGE: node:24.21.0
