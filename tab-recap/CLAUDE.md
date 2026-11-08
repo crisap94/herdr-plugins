@@ -44,6 +44,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `layers-no-io-core` and `layers-no-io-adapters` (dependency-cruiser) | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
 | `transport-boundary` (dependency-cruiser) | only `adapters/herdr-fleet.ts` imports the transport |
+| `drizzle-adapter-only` (dependency-cruiser) | `drizzle-orm` is imported only under `src/adapters/db/` and `test/`; runtime dependencies are pinned exactly |
 | `brand-importers` (dependency-cruiser) | only the files that declare a brand of `brand.ts` import it (`ci/brand-importers.json`, held by `test/brand-importers.test.ts`) |
 | `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane; the only prompts are the three entry points of `recap-prompt-boundary` (compaction; handoff from the operator's command; handoff from the enabled handoff exchange), each started only because the operator asked |
 | `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`. Two operator paths reach it, and only because the operator asked: the compaction (`recap/application/compaction.ts`, from the compaction request queue: one prompt for codex and opencode, a typed line for claude) and the handoff (`recap/application/handoff-flow.ts`, from the handoff request queue: one prompt). This is a documented convention for who may reach the agent port: the rule matches the herdr method names in that one adapter and does not see the callers |
@@ -75,7 +76,7 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 ## Gates
 
 ```bash
-bun install            # tsgo, oxlint (dev) and @stateforge-labs/herdr-sdk, the one runtime dependency
+bun install            # tsgo, oxlint (dev) and the runtime dependencies @stateforge-labs/herdr-sdk and drizzle-orm (pinned exactly)
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
 bash ci/test.sh        # bun test
 ```

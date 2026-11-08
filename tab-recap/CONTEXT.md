@@ -42,6 +42,9 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 | **Restored lane** | A lane read from the `lane` table at daemon boot (`restored` observation), held until the first snapshot: a restored lane the snapshot lacks, or lists with another agent kind, is a **Closed lane** that closed while the daemon was down. | a live lane; a lane on the board |
 | **Closed-lane source** | The handoff source named by a **Closed lane identity** (`--from-closed`): resolved from its **Closure record** and the task's ledger as they were at the close, in the window only. | a live handoff source (`--from`) |
 | **Migration** | One numbered, forward-only step of the database's shape (`src/adapters/db/schema/NNN-name.ts`), applied inside one transaction by whichever process opens the file first; the number is `PRAGMA user_version`. A released one is never edited: a fix is a new number. | the one-time import of the old files (that is not numbered; the daemon does it once, tracked in `store_meta`) |
+| **Projection** | The Drizzle sqlite-core description of the tables and views the numbered migrations create (`src/adapters/db/drizzle/`). Typed mirror for queries; never used to create or change a table. | the migrations (the DDL) |
+| **Parity check** | The test that fails when the projection and a freshly migrated database disagree on tables, views, columns, declared types, nullability or primary keys (`test/db/drizzle-parity.test.ts`). | a schema check on CHECK semantics |
+| **Parity harness** | The test helper that runs one raw SQL statement and one Drizzle query on the same seeded database and requires equal rows, bytes and integers (`test/db/parity.ts`). | a production query path |
 | **Backup** | The copy `tab-recap.db.v<n>.bak` made just before a migration upgrades a database from version n; the newest three are kept. What to restore when going back. | a copy of the state directory |
 | **Id** | What names a row of the history (run, chapter, task, transcript, request): a UUIDv7 stored as 16 bytes, which carries only its creation time, shown at the edge as a TypeID — a short type prefix and 26 characters (`run_01h…`) that sort by time. A tab keeps herdr's own id (`w1:t3`). | a name or a counter |
 | **Excerpt** | What is new in one lane's transcript since its cursor (for a screen: the screen, when it changed) — user prompts (marked when queued), agent replies, and bursts of tool calls with a kind — each with its time when the store records one. One `<transcript>` of the **Recap input** per lane. | the raw JSONL |
@@ -201,6 +204,7 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 Facts about a term that a reader needs and that no name or test states.
 
 ### Store
+- **Drizzle** (adapters): `drizzle-orm` is pinned to exactly 0.45.4 in `package.json` (no range) and imported only under `src/adapters/db/` and `test/` (rule `drizzle-adapter-only`). The numbered migrations stay the source of DDL.
 - **Last seen** (Retention): a tab's last seen is the newer of its last run and the last time the daemon drew its column, so a tab whose column was drawn recently is never removed whatever its last run says.
 
 ### Boundary
