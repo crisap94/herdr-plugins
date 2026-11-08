@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration } from '#src/adapters/desktop-package.ts';
 import { HcCoreFleet } from '#src/adapters/hc-core-fleet.ts';
 import { HcFleet } from '#src/adapters/hc-fleet.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
@@ -10,7 +10,7 @@ import type { Fleet } from '#src/ports/fleet.ts';
 import type { Frame, SnapshotResult } from '#src/ports/fleet-source.ts';
 import type { Runner } from '#src/adapters/process.ts';
 import type { RunResult } from '#src/ports/process-control.ts';
-import { FakeHcCore, later } from './fakes/hc-core.ts';
+import { FakeHcCore, later } from '../../desktop/test/fakes/hc-core.ts';
 
 type Row = Record<string, unknown>;
 

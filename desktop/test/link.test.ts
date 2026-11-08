@@ -1,13 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
-import { parseHcParams } from '#src/adapters/hc-core-wire.ts';
-import { CoreLink } from '#src/adapters/hc-core-link.ts';
-import type { HcParams } from '#src/adapters/hc-core-wire.ts';
-import type { CoreLinkTiming, HcCallResult } from '#src/adapters/hc-core-link.ts';
+import { must } from '../src/kernel/result.ts';
+import { duration } from '../src/kernel/time.ts';
+import { parseNonEmptyText, type NonEmptyText } from '../src/kernel/text.ts';
+import { parseHcParams } from '../src/hc-core/wire.ts';
+import { CoreLink } from '../src/hc-core/link.ts';
+import type { HcParams } from '../src/hc-core/wire.ts';
+import type { CoreLinkTiming, HcCallResult } from '../src/hc-core/link.ts';
 import { FakeHcCore, later } from './fakes/hc-core.ts';
+import { openWorld } from './support/setup-test.ts';
 
 const name = (text: string): NonEmptyText => must(parseNonEmptyText(text));
 const FAST: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
@@ -15,13 +16,11 @@ const SECOND = duration(1000);
 const params = (fields: object): HcParams => must(parseHcParams(fields));
 
 async function withLink(run: (core: FakeHcCore, link: CoreLink) => Promise<void>, timing: CoreLinkTiming = FAST): Promise<void> {
-    const core = await FakeHcCore.start();
-    const link = new CoreLink({ path: core.path, timing });
+    const world = await openWorld();
     try {
-        await run(core, link);
+        await run(world.core, world.link(timing));
     } finally {
-        await link.close();
-        await core.stop();
+        await world.close();
     }
 }
 

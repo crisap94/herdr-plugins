@@ -1,0 +1,17 @@
+{
+  "name": "herdr-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A zero-dependency library for the Herdr desktop stack: a typed client of the herdr-core socket",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  },
+  "license": "MIT"
+}

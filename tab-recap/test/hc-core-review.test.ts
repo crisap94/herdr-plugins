@@ -1,17 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { parseCount } from '#src/adapters/desktop-package.ts';
+import { duration } from '#src/adapters/desktop-package.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { HcCoreFleet } from '#src/adapters/hc-core-fleet.ts';
-import { CoreEvents } from '#src/adapters/hc-core-events.ts';
-import { HcCoreLines, parseWireChunk } from '#src/adapters/hc-core-wire.ts';
+import { CoreEvents } from '#src/adapters/desktop-package.ts';
+import { HcCoreLines, parseWireChunk } from '#src/adapters/desktop-package.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/hc-core-events.ts';
-import type { CoreLinkTiming } from '#src/adapters/hc-core-link.ts';
+import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/desktop-package.ts';
+import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import { FakeHcCore, agentTerminal, later, nextWithin } from './fakes/hc-core.ts';
+import { FakeHcCore, agentTerminal, later, nextWithin } from '../../desktop/test/fakes/hc-core.ts';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
 const EVENTS: CoreEventsTiming = { backoffBase: duration(30), backoffCap: duration(120), silence: duration(5000) };

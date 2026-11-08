@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseNonEmptyText } from '#src/recap/domain/text.ts';
+import { parseCount } from '#src/adapters/desktop-package.ts';
+import { parseNonEmptyText } from '#src/adapters/desktop-package.ts';
 import { paneId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { HcCoreRoster, parseHcListed } from '#src/adapters/hc-core-roster.ts';
-import { parseHcPayload } from '#src/adapters/hc-core-wire.ts';
-import type { HcCoreFeed } from '#src/adapters/hc-core-events.ts';
-import type { HcPayload } from '#src/adapters/hc-core-wire.ts';
-import { agentTerminal, shellTerminal } from './fakes/hc-core.ts';
+import { parseHcPayload } from '#src/adapters/desktop-package.ts';
+import type { HcCoreFeed } from '#src/adapters/desktop-package.ts';
+import type { HcPayload } from '#src/adapters/desktop-package.ts';
+import { agentTerminal, shellTerminal } from '../../desktop/test/fakes/hc-core.ts';
 
 const payload = (fields: object): HcPayload => must(parseHcPayload(fields));
 const row = (address: string, state: string, labels?: Record<string, unknown>): HcPayload => payload(labels === undefined ? agentTerminal(address, state) : agentTerminal(address, state, labels));

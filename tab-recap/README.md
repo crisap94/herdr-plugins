@@ -613,7 +613,7 @@ looked at is marked by an empty `open.<tab>` file there (renewed every 20 second
 
 ### What the mod shows
 
-Install it by copying [`gui/`](gui/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
+Install it by copying [`desktop/mods/tab-recap/`](../desktop/mods/tab-recap/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
 optional layout blocks. One mod, four roles:
 
 - **Chip:** how many tabs need you and how many are working, with the worst status. A click opens Fleet.

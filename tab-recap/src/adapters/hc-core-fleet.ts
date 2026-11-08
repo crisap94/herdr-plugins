@@ -14,16 +14,12 @@ import type { ScreenResult } from '#src/ports/screens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
-import { HC_CALL_TIMEOUT, HC_LIST_METHOD, HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_LISTING, HC_ODD_SCREEN, HC_READ_METHOD } from './desktop-constants.ts';
+import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_LISTING, HC_ODD_SCREEN } from './desktop-constants.ts';
 import { HcCoreAgents } from './hc-core-agents.ts';
 import type { HcSeenResult } from './hc-core-agents.ts';
-import { CoreEvents } from './hc-core-events.ts';
-import type { CoreEventsTiming } from './hc-core-events.ts';
-import { CoreLink } from './hc-core-link.ts';
-import type { CoreLinkTiming } from './hc-core-link.ts';
 import { HcCoreRoster, parseHcListed } from './hc-core-roster.ts';
-import { hcCoreSocketPath, parseHcParams } from './hc-core-wire.ts';
-import type { HcParams, SocketPath } from './hc-core-wire.ts';
+import { CoreEvents, CoreLink, HC_CALL_TIMEOUT, HC_LIST_METHOD, HC_READ_METHOD, hcCoreSocketPath, parseHcParams, unknownOfCore } from './desktop-package.ts';
+import type { CoreEventsTiming, CoreLinkTiming, HcParams, SocketPath } from './desktop-package.ts';
 import type { SessionOfTerminal } from './hc-sessions.ts';
 
 type Phase = 'cold' | 'warm';
@@ -65,7 +61,7 @@ export class HcCoreFleet implements Fleet {
         const folded = this.roster.revision;
         const answer = await this.link.call(HC_LIST_METHOD, NO_PARAMS, HC_CALL_TIMEOUT);
         if (answer.kind === 'unknown') {
-            return answer;
+            return unknownOfCore(answer);
         }
         const listed = parseHcListed(answer.value);
         if (listed.kind === 'err') {
@@ -164,7 +160,7 @@ export class HcCoreFleet implements Fleet {
     async readScreen(pane: PaneId, lines: Count): Promise<ScreenResult> {
         const answer = await this.link.call(HC_READ_METHOD, must(parseHcParams({ terminal: pane, lines: ZERO })), HC_CALL_TIMEOUT);
         if (answer.kind === 'unknown') {
-            return answer;
+            return unknownOfCore(answer);
         }
         const text = parseText(Reflect.get(answer.value, 'text'));
         if (text.kind === 'err') {

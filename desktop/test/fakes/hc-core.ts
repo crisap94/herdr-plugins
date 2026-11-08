@@ -3,8 +3,8 @@ import type { Server, Socket } from 'node:net';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { brand } from '#src/recap/domain/brand.ts';
-import type { SocketPath } from '#src/adapters/hc-core-wire.ts';
+import { brand } from '../../src/kernel/brand.ts';
+import type { SocketPath } from '../../src/hc-core/wire.ts';
 
 type Fields = Record<string, unknown>;
 export type Handler = (params: Fields) => unknown;

@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { parseNonEmptyText } from '#src/recap/domain/text.ts';
-import type { WireChunk } from '#src/adapters/hc-core-wire.ts';
-import { HcCoreLines, encodeHcCoreRequest, hcCoreSocketPath, nextBackoff, parseHcCallId, parseHcCoreHello, parseHcCoreMessage, parseHcParams, parseHcSnapshot, parseWireChunk } from '#src/adapters/hc-core-wire.ts';
+import { must } from '../src/kernel/result.ts';
+import { parseCount } from '../src/kernel/count.ts';
+import { duration } from '../src/kernel/time.ts';
+import { parseNonEmptyText } from '../src/kernel/text.ts';
+import type { WireChunk } from '../src/hc-core/wire.ts';
+import { HcCoreLines, encodeHcCoreRequest, hcCoreSocketPath, nextBackoff, parseHcCallId, parseHcCoreHello, parseHcCoreMessage, parseHcParams, parseHcSnapshot, parseWireChunk } from '../src/hc-core/wire.ts';
 import { frame } from './fakes/hc-core.ts';
 
 const chunk = (input: string | Buffer): WireChunk => must(parseWireChunk(Buffer.from(input)));

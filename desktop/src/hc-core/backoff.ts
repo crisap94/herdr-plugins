@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
-import { nextBackoff } from './hc-core-wire.ts';
+import { must } from '../kernel/result.ts';
+import { parseCount, type Count } from '../kernel/count.ts';
+import type { Duration } from '../kernel/time.ts';
+import { nextBackoff } from './wire.ts';
 
 export interface BackoffTiming {
     readonly backoffBase: Duration;

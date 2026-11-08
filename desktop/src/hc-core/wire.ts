@@ -1,13 +1,13 @@
 import { StringDecoder } from 'node:string_decoder';
 import { join } from 'node:path';
-import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from '#src/recap/domain/brand.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { duration, type Duration } from '#src/recap/domain/time.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import { isFields } from '#src/recap/domain/hc-terminal.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { HC_LINE_CAP, HC_DEFAULT_SESSION, HC_RUNTIME_ENV, HC_RUN_ROOT, HC_SESSION_ENV, HC_SOCKET_ENV, HC_SOCKET_FOLDER, HC_SOCKET_SUFFIX } from './desktop-constants.ts';
+import { err, must, ok, type Result } from '../kernel/result.ts';
+import { brand, type Brand } from '../kernel/brand.ts';
+import { parseCount, type Count } from '../kernel/count.ts';
+import { duration, type Duration } from '../kernel/time.ts';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '../kernel/text.ts';
+import { isFields } from '../kernel/fields.ts';
+import type { ParseFailure } from '../kernel/parse-failure.ts';
+import { HC_LINE_CAP, HC_DEFAULT_SESSION, HC_RUNTIME_ENV, HC_RUN_ROOT, HC_SESSION_ENV, HC_SOCKET_ENV, HC_SOCKET_FOLDER, HC_SOCKET_SUFFIX } from './constants.ts';
 
 export type HcCallId = Brand<number, 'HcCallId'>;
 export type RpcCode = Brand<number, 'RpcCode'>;

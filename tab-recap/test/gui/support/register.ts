@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { world } from './herdr.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GUI_ROOT = join(HERE, '..', '..', '..', 'gui');
+const GUI_ROOT = join(HERE, '..', '..', '..', '..', 'desktop', 'mods', 'tab-recap');
 const KIT = pathToFileURL(join(HERE, 'kit.ts')).href;
 const HERDR = pathToFileURL(join(HERE, 'herdr.ts')).href;
 const FAKES = new Map([['gpui-kit', KIT], ['gpui-base', KIT], ['herdr', HERDR]]);

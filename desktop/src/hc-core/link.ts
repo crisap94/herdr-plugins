@@ -1,17 +1,17 @@
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
-import { parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { parseCount, type Count } from '../kernel/count.ts';
+import { must } from '../kernel/result.ts';
+import type { Duration } from '../kernel/time.ts';
+import { parseText, type NonEmptyText, type Text } from '../kernel/text.ts';
+import { unknown, type Unknown } from '../kernel/unknown.ts';
 import {
     HC_BACKOFF_BASE, HC_BACKOFF_CAP, HC_CLOSED, HC_CONNECTING, HC_DOWN, HC_DROPPED, HC_GENERATION, HC_HELLO_METHOD,
     HC_HELLO_TIMEOUT, HC_HELLO_UNREADABLE, HC_NO_CONNECTION, HC_ODD_RESULT,
-} from './desktop-constants.ts';
-import { Backoff } from './hc-core-backoff.ts';
-import { HcCoreLines, encodeHcCoreRequest, parseHcCallId, parseHcCoreHello, parseHcCoreMessage, parseHcParams, parseWireChunk } from './hc-core-wire.ts';
-import type { HcCallId, HcCoreHello, HcCoreMessage, HcParams, HcPayload, SocketPath } from './hc-core-wire.ts';
+} from './constants.ts';
+import { Backoff } from './backoff.ts';
+import { HcCoreLines, encodeHcCoreRequest, parseHcCallId, parseHcCoreHello, parseHcCoreMessage, parseHcParams, parseWireChunk } from './wire.ts';
+import type { HcCallId, HcCoreHello, HcCoreMessage, HcParams, HcPayload, SocketPath } from './wire.ts';
 
 export interface HcAnswered {
     readonly kind: 'answer';

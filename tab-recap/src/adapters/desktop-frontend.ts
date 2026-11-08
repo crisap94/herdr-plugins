@@ -21,7 +21,7 @@ import { desktopPrinter } from './desktop-handoff.ts';
 import { OpenLeases } from './desktop-lease.ts';
 import { startDesktopApi } from './desktop-api-start.ts';
 import { HcCoreFleet } from './hc-core-fleet.ts';
-import { parseHcTransport } from './hc-core-wire.ts';
+import { parseHcTransport } from './desktop-package.ts';
 import { HcFleet } from './hc-fleet.ts';
 import { claudeSessions, defaultClaudeHome } from './hc-sessions.ts';
 import { PathHarnesses } from './path-harnesses.ts';

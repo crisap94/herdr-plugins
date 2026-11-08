@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
-import { parseHcParams } from '#src/adapters/hc-core-wire.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { CoreEvents } from '#src/adapters/hc-core-events.ts';
-import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/hc-core-events.ts';
+import { must } from '../src/kernel/result.ts';
+import { parseHcParams } from '../src/hc-core/wire.ts';
+import { duration } from '../src/kernel/time.ts';
+import { CoreEvents } from '../src/hc-core/events.ts';
+import type { CoreEventsTiming, HcCoreFeed } from '../src/hc-core/events.ts';
 import { FakeFault, FakeHcCore, agentTerminal, later, nextWithin } from './fakes/hc-core.ts';
 
 const FAST: CoreEventsTiming = { backoffBase: duration(30), backoffCap: duration(120), silence: duration(150) };

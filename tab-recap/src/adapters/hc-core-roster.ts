@@ -6,11 +6,11 @@ import { parsePaneId } from '#src/recap/domain/ids.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import { parseHcPayload } from './hc-core-wire.ts';
-import type { HcEvent, HcPayload } from './hc-core-wire.ts';
-import type { HcCoreFeed } from './hc-core-events.ts';
+import { parseHcPayload } from './desktop-package.ts';
+import type { HcEvent, HcPayload } from './desktop-package.ts';
+import type { HcCoreFeed } from './desktop-package.ts';
 import { framesBetween } from './hc-frames.ts';
 import { agentOfApp } from './hc-kinds.ts';
 import type { SessionOfTerminal } from './hc-sessions.ts';
@@ -151,7 +151,7 @@ export class HcCoreRoster {
         if (event.type === 'removed') {
             this.rows.delete(key);
         } else if (row !== undefined) {
-            this.rows.set(key, must(parseHcPayload({ ...row, ...patchOf(event.type, event.data) })));
+            this.rows.set(key, must(parseHcPayload({ ...row, ...patchOf(must(parseNonEmptyText(event.type)), event.data) })));
         }
     }
 

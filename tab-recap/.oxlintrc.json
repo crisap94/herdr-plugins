@@ -21,8 +21,7 @@
     "node_modules/**",
     "rules/probes/**",
     "rules/pending/probes/**",
-    "ci/probes/**",
-    "gui/**"
+    "ci/probes/**"
   ],
   "rules": {
     "complexity": [

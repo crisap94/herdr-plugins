@@ -103,7 +103,7 @@ const isLiteralType = (type: ts.Type): boolean =>
 
 const enqueue = (scan: Scan, type: ts.Type): void => {
     (type.getSymbol()?.declarations ?? []).forEach((declaration) => {
-        if (isHolder(declaration) && !scan.declared.has(declaration) && !declaration.getSourceFile().isDeclarationFile) {
+        if (isHolder(declaration) && !scan.declared.has(declaration) && !declaration.getSourceFile().isDeclarationFile && !relative(scan.root, declaration.getSourceFile().fileName).startsWith('..')) {
             scan.declared.add(declaration);
             scan.queue.push(declaration);
         }
@@ -240,11 +240,10 @@ const checkMembers = (scan: Scan, holder: Holder): void => {
     });
 };
 
-const markersOf = (checker: ts.TypeChecker, brand: ts.SourceFile | undefined): ReadonlySet<ts.Symbol> => {
-    if (brand === undefined) {
-        return new Set();
-    }
-    const declarations = brand.statements.filter(ts.isVariableStatement).flatMap((statement) => statement.declarationList.declarations);
+const PACKAGE_BRAND_FILE = '../desktop/src/kernel/brand.ts';
+
+const markersOf = (checker: ts.TypeChecker, brands: readonly ts.SourceFile[]): ReadonlySet<ts.Symbol> => {
+    const declarations = brands.flatMap((brand) => brand.statements.filter(ts.isVariableStatement)).flatMap((statement) => statement.declarationList.declarations);
     return new Set(declarations.flatMap((declaration) =>
         ts.isIdentifier(declaration.name) && declaration.name.text === 'marker' ? checker.getSymbolAtLocation(declaration.name) ?? [] : []));
 };
@@ -262,8 +261,8 @@ const check = (configPath: string): Result<Report, string> => {
     if (sources.length === 0) {
         return err(`no file under src/ in ${configPath}`);
     }
-    const brand = program.getSourceFiles().find((file) => relative(root, file.fileName) === BRAND_FILE);
-    const scan: Scan = { checker, root, markers: markersOf(checker, brand), findings: [], declared: new Set(), queue: [] };
+    const brands = program.getSourceFiles().filter((file) => [BRAND_FILE, PACKAGE_BRAND_FILE].includes(relative(root, file.fileName)));
+    const scan: Scan = { checker, root, markers: markersOf(checker, brands), findings: [], declared: new Set(), queue: [] };
     sources.forEach((file) => scanFile(scan, file));
     for (let holder = scan.queue.pop(); holder !== undefined; holder = scan.queue.pop()) {
         checkMembers(scan, holder);

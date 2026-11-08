@@ -1,12 +1,12 @@
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
-import { must } from '#src/protocol/result.ts';
-import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { duration, type Duration } from '#src/recap/domain/time.ts';
-import { Backoff } from './hc-core-backoff.ts';
-import { HC_BACKOFF_BASE, HC_BACKOFF_CAP, HC_HEARTBEAT_EVERY, HC_HEARTBEAT_MISSES, HC_SUBSCRIBE_METHOD } from './desktop-constants.ts';
-import { HcCoreLines, encodeHcCoreRequest, parseHcCallId, parseHcCoreMessage, parseHcParams, parseHcSnapshot, parseWireChunk } from './hc-core-wire.ts';
-import type { HcCoreMessage, HcEvent, HcHeartbeat, HcMissed, HcParams, HcPayload, HcSnapshot, SocketPath } from './hc-core-wire.ts';
+import { must } from '../kernel/result.ts';
+import { AsyncQueue } from '../kernel/async-queue.ts';
+import { duration, type Duration } from '../kernel/time.ts';
+import { Backoff } from './backoff.ts';
+import { HC_BACKOFF_BASE, HC_BACKOFF_CAP, HC_HEARTBEAT_EVERY, HC_HEARTBEAT_MISSES, HC_SUBSCRIBE_METHOD } from './constants.ts';
+import { HcCoreLines, encodeHcCoreRequest, parseHcCallId, parseHcCoreMessage, parseHcParams, parseHcSnapshot, parseWireChunk } from './wire.ts';
+import type { HcCoreMessage, HcEvent, HcHeartbeat, HcMissed, HcParams, HcPayload, HcSnapshot, SocketPath } from './wire.ts';
 
 export interface HcSnapshotFeed {
     readonly kind: 'snapshot';
