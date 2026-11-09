@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import type { Done } from '#src/ports/columns.ts';
@@ -20,7 +21,7 @@ export class HerdrAgents implements Agents {
 
     private readonly pause: (ms: number) => Promise<void>;
 
-    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }, pause: (ms: number) => Promise<void> = (ms): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); })) {
+    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }, pause: (ms: number) => Promise<void> = sleep) {
         this.wire = wire;
         this.plugin = plugin;
         this.pause = pause;

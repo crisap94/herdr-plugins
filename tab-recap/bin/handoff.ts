@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
@@ -129,7 +130,7 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
 function deliverDeps(): DeliverDeps {
     const pidfile = new Pidfile(stateDir());
     return {
-        pacing: { now: Date.now, sleep: (ms) => new Promise((resolve) => { setTimeout(resolve, ms); }) },
+        pacing: { now: Date.now, sleep },
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),
         cliVersion: codeVersion(),
         openStore: () => {

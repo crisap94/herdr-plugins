@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
@@ -26,7 +27,7 @@ export async function compactCommand(tab: string, pane: string | null, note: str
     const m = messagesOf();
     const started = await startCompact(tab, pane, text, setting, {
         askNote: async (asked, shown) => {
-            await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0); });
+            await sleep(Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0);
             return new HerdrFleet(stateDir()).agents().askNote(asked, shown);
         },
         queue: queueCompaction,
