@@ -14,33 +14,26 @@ import { AllHidden } from './all-hidden.ts';
 import { DesktopReads } from './desktop-expanded.ts';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { GuiPublisher, type GuiPublisherDeps } from './gui-publisher.ts';
-import { HC_SOCKET_TRANSPORT, HC_TRANSPORT_ENV } from './desktop-constants.ts';
 import { DesktopBus } from './desktop-bus.ts';
 import { DesktopEngine } from './desktop-engine.ts';
 import { desktopPrinter } from './desktop-handoff.ts';
 import { OpenLeases } from './desktop-lease.ts';
 import { startDesktopApi } from './desktop-api-start.ts';
 import { HcCoreFleet } from './hc-core-fleet.ts';
-import { parseHcTransport } from './desktop-package.ts';
-import { HcFleet } from './hc-fleet.ts';
+import type { SocketPath } from './desktop-package.ts';
 import { claudeSessions, defaultClaudeHome } from './hc-sessions.ts';
 import { PathHarnesses } from './path-harnesses.ts';
 import { PublishingRecords } from './publishing-records.ts';
 import { PublishingViews } from './publishing-views.ts';
 
-type DesktopFleet = HcFleet | HcCoreFleet;
-
-const SOCKET = must(parseHcTransport(HC_SOCKET_TRANSPORT));
-
-function fleetFor(): DesktopFleet {
-    const parts = { harnesses: new PathHarnesses(AUTO_ORDER), sessions: claudeSessions(defaultClaudeHome()) };
-    const transport = parseHcTransport(process.env[HC_TRANSPORT_ENV]);
-    return transport.kind === 'ok' && transport.value === SOCKET ? new HcCoreFleet(parts) : new HcFleet(parts);
+function fleetFor(path?: SocketPath): HcCoreFleet {
+    const parts = { harnesses: new PathHarnesses(AUTO_ORDER), sessions: claudeSessions(defaultClaudeHome()), ...(path === undefined ? {} : { path }) };
+    return new HcCoreFleet(parts);
 }
 
 interface PaneInput {}
 
-function sessionThrough(fleet: DesktopFleet): CurrentSession {
+function sessionThrough(fleet: HcCoreFleet): CurrentSession {
     return async (pane: PaneInput): Promise<SessionId | null | Unknown> => {
         const parsed = parsePaneId(pane);
         return parsed.kind === 'ok' ? fleet.sessionOf(parsed.value) : null;
@@ -68,7 +61,7 @@ function publisherFor(store: Store, log: (line: NonEmptyText) => void, shared: S
     return { publisher: later.publisher, forget: (tab): void => { reads.forget(tab); } };
 }
 
-function engineFor(store: Store, fleet: DesktopFleet, publishing: Publishing): DesktopEngine {
+function engineFor(store: Store, fleet: HcCoreFleet, publishing: Publishing): DesktopEngine {
     const republish = (tab: TabId): void => {
         publishing.forget(tab);
         publishing.publisher.publish(tab);
@@ -76,8 +69,8 @@ function engineFor(store: Store, fleet: DesktopFleet, publishing: Publishing): D
     return new DesktopEngine({ ledger: store.ledger, stories: store.stories, records: store.records, views: store.views, printer: desktopPrinter(fleet), now, republish });
 }
 
-export function desktopFrontend(): Frontend {
-    const fleet = fleetFor();
+export function desktopFrontend(path?: SocketPath): Frontend {
+    const fleet = fleetFor(path);
     return {
         fleet,
         session: sessionThrough(fleet),
