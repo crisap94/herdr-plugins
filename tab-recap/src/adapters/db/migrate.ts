@@ -1,8 +1,9 @@
-import type { DatabaseSync } from 'node:sqlite';
 import type { Database } from 'bun:sqlite';
 import { writeTx } from './connection.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
+
+type MigrationHandle = Parameters<Extract<Migration['up'], (db: never) => void>>[0];
 
 export class MigrationFailed extends Error {}
 
@@ -14,7 +15,7 @@ export function versionOf(db: Database): number {
     return Number(row.user_version);
 }
 
-function isLegacyHandle(db: Database): db is Database & DatabaseSync {
+function isLegacyHandle(db: Database): db is Database & MigrationHandle {
     return typeof db.exec === 'function' && typeof db.prepare === 'function';
 }
 

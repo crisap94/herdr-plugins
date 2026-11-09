@@ -1,10 +1,12 @@
-import type { DatabaseSync } from 'node:sqlite';
 import type { Database } from 'bun:sqlite';
 import { isSection } from '#src/recap/domain/fact.ts';
 import { all, blob, text, whole } from '../rows.ts';
 import { ids } from '../uuid7.ts';
 import { itemsToFacts } from './items-to-facts.ts';
 import type { ImportedFact, ImportedItem, ImportedRun } from './items-to-facts.ts';
+import type { Migration } from '../schema/migration.ts';
+
+type MigrationHandle = Parameters<Extract<Migration['up'], (db: never) => void>>[0];
 
 const hex = (id: Uint8Array): string => Buffer.from(id).toString('hex');
 const bytes = (id: string): Uint8Array => Uint8Array.from(Buffer.from(id, 'hex'));
@@ -35,9 +37,9 @@ function write(db: Database, owner: { readonly tab: string; readonly task: Uint8
     }
 }
 
-const isBun = (handle: Database | DatabaseSync): handle is Database => 'inTransaction' in handle;
+const isBun = (handle: Database | MigrationHandle): handle is Database => 'inTransaction' in handle;
 
-export function importFacts(handle: Database | DatabaseSync): void {
+export function importFacts(handle: Database | MigrationHandle): void {
     if (!isBun(handle)) {
         throw new Error('importFacts needs a bun:sqlite handle');
     }
