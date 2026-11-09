@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { parseArgs } from 'node:util';
 
 export type Kind = 'added' | 'changed' | 'fixed' | 'internal';
 export type Bump = 'major' | 'minor' | 'patch';
@@ -134,20 +135,20 @@ function api(): Get {
     };
 }
 
-function option(name: string): string | undefined {
-    const at = process.argv.indexOf(name);
-    return at < 0 ? undefined : process.argv[at + 1];
-}
-
 async function main(): Promise<void> {
+    const { values } = parseArgs({
+        args: process.argv.slice(2),
+        options: { previous: { type: 'string' }, to: { type: 'string' } },
+        strict: true,
+    });
     const plugin = process.env.PLUGIN ?? 'tab-recap';
     const tags = execFileSync('git', ['tag', '-l', `${plugin}-v*`], { encoding: 'utf8' }).split('\n');
-    const previous = option('--previous') ?? latestTag(tags, plugin);
+    const previous = values.previous ?? latestTag(tags, plugin);
     if (previous === null) {
         throw new Error(`no ${plugin}-v* tag to start from`);
     }
     const date = process.env.RELEASE_DATE ?? new Date().toISOString().slice(0, 10);
-    const result = await release(api(), previous, option('--to') ?? 'main', date, plugin);
+    const result = await release(api(), previous, values.to ?? 'main', date, plugin);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
