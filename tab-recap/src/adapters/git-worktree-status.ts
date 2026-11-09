@@ -1,61 +1,61 @@
-import { parsePorcelainReading } from '#src/recap/domain/porcelain.ts';
-import { parseWorktreeWatch } from '#src/recap/domain/worktree.ts';
-import type { StatusTier } from '#src/recap/domain/worktree.ts';
+import { promises as fsp } from 'node:fs';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import type { AheadCount, PorcelainReading } from '#src/recap/domain/porcelain.ts';
+import type { StatusTier } from '#src/recap/domain/worktree.ts';
 import type { StatusRead, WorktreeLocator, WorktreeLookup, WorktreeProbe } from '#src/ports/worktree-status.ts';
-import { unknown } from '#src/ports/unknowable.ts';
-import { failure, GIT, gitEnv, TIMEOUT_MS } from './git-lane-repo.ts';
-import { run } from './process.ts';
-import type { Runner } from './process.ts';
+import { ok, type Result } from '#src/protocol/result.ts';
+import { FULL_TIMEOUT_MS, TIMEOUT_MS, TRACKED_TIMEOUT_MS } from './git-constants.ts';
+import { handleOf, notARepository, openRepo, unreadable, withinBudget } from './git-reach.ts';
+import type { Handle } from './git-reach.ts';
+import { aheadOf, headLabelOf, branchOf } from './git-reach-history.ts';
+import { changesOf } from './git-reach-status.ts';
 
-export const LOCATE_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel', '--absolute-git-dir', '--path-format=absolute', '--git-common-dir'];
-export const TRACKED_ARGS: readonly string[] = [...GIT, 'status', '--porcelain=v2', '--branch', '--untracked-files=no'];
-export const FULL_ARGS: readonly string[] = [...GIT, 'status', '--porcelain=v2', '--branch', '--untracked-files=normal'];
-
-export const TRACKED_TIMEOUT_MS = duration(3000);
-export const FULL_TIMEOUT_MS = duration(8000);
-
-const NOT_A_REPOSITORY = 128;
+async function readingOf(handle: Handle, tier: StatusTier): Promise<StatusRead> {
+    const changes = await changesOf(handle);
+    if (changes.kind === 'err') {
+        return unreadable(changes.error);
+    }
+    const label = await headLabelOf(handle);
+    if (label.kind === 'err') {
+        return unreadable(label.error);
+    }
+    const branch = await branchOf(handle);
+    if (branch.kind === 'err') {
+        return unreadable(branch.error);
+    }
+    const ahead: Result<AheadCount, ParseFailure> = branch.value === null ? ok(null) : await aheadOf(handle, branch.value);
+    if (ahead.kind === 'err') {
+        return unreadable(ahead.error);
+    }
+    const tracked: Result<Count, ParseFailure> = parseCount(changes.value.tracked.length);
+    const untracked: Result<Count, ParseFailure> = parseCount(tier === 'full' ? changes.value.untracked.length : 0);
+    if (tracked.kind === 'err') {
+        return unreadable(tracked.error);
+    }
+    if (untracked.kind === 'err') {
+        return unreadable(untracked.error);
+    }
+    const reading: PorcelainReading = { branch: label.value, ahead: ahead.value, tracked: tracked.value, untracked: untracked.value };
+    return { kind: 'read', reading };
+}
 
 export class GitWorktreeLocator implements WorktreeLocator {
-    private readonly runner: Runner;
-
-    constructor(runner: Runner = run) {
-        this.runner = runner;
-    }
-
     async locate(cwd: Directory): Promise<WorktreeLookup> {
-        const result = await this.runner('git', LOCATE_ARGS, { input: '', timeoutMs: TIMEOUT_MS, cwd, env: gitEnv() });
-        if (result.code === NOT_A_REPOSITORY) {
-            return { kind: 'no-repo' };
-        }
-        if (result.code !== 0 || result.timedOut) {
-            return failure(result);
-        }
-        const parsed = parseWorktreeWatch(result.stdout);
-        return parsed.kind === 'ok' ? { kind: 'worktree', worktree: parsed.value } : unknown({ why: 'unreadable', detail: 'rev-parse printed an unexpected answer' });
+        return withinBudget(TIMEOUT_MS, () => openRepo(cwd, fsp));
     }
 }
 
 export class GitWorktreeProbe implements WorktreeProbe {
-    private readonly runner: Runner;
-
-    constructor(runner: Runner = run) {
-        this.runner = runner;
-    }
-
     async read(root: Directory, tier: StatusTier): Promise<StatusRead> {
         const full = tier === 'full';
-        const after = full ? FULL_TIMEOUT_MS : TRACKED_TIMEOUT_MS;
-        const result = await this.runner('git', full ? FULL_ARGS : TRACKED_ARGS, { input: '', timeoutMs: after, cwd: root, env: gitEnv() });
-        if (result.timedOut) {
-            return unknown({ why: 'timeout', after });
-        }
-        if (result.code !== 0) {
-            return failure(result);
-        }
-        const parsed = parsePorcelainReading(result.stdout);
-        return parsed.kind === 'ok' ? { kind: 'read', reading: parsed.value } : unknown({ why: 'unreadable', detail: 'status printed an unexpected answer' });
+        return withinBudget(full ? FULL_TIMEOUT_MS : TRACKED_TIMEOUT_MS, async (deadline): Promise<StatusRead> => {
+            const lookup = await openRepo(root, fsp);
+            if (lookup.kind !== 'worktree') {
+                return lookup.kind === 'no-repo' ? notARepository() : lookup;
+            }
+            return readingOf(handleOf(lookup.worktree, deadline, fsp), tier);
+        });
     }
 }
