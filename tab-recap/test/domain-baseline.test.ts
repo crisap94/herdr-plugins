@@ -75,6 +75,13 @@ test('a new file at a path that was renamed away or deleted does not inherit the
     ]);
 });
 
+test('a listed move is ignored once its file is at the merge base, so a landed carve-out keeps its own entry', () => {
+    const moves = new Map([['src/carved.ts', 'src/gone.ts']]);
+    const origin = chainRenames([], moves, new Set(['src/carved.ts']));
+    assert.equal(origin.get('src/carved.ts'), undefined);
+    assert.deepEqual(guard({ 'src/carved.ts': { container: 2 } }, { 'src/carved.ts': { container: 2 } }, origin), []);
+});
+
 test('the moves file reads CRLF lines and trims its cells', () => {
     assert.deepEqual([...parseMoves('src/n.ts\tsrc/o.ts \r\n\r\n')], [['src/n.ts', 'src/o.ts']]);
 });

@@ -82,7 +82,7 @@ export const filesAbove = (found: Counts, baseline: Counts): ReadonlySet<string>
 
 export const VACATED = '';
 
-export const chainRenames = (statusLines: readonly string[], moves: ReadonlyMap<string, string> = new Map()): ReadonlyMap<string, string> => {
+export const chainRenames = (statusLines: readonly string[], moves: ReadonlyMap<string, string> = new Map(), atBase: ReadonlySet<string> = new Set()): ReadonlyMap<string, string> => {
     const origin = new Map<string, string>();
     statusLines.forEach((line) => {
         const [status, from, to] = line.split('\t');
@@ -94,7 +94,7 @@ export const chainRenames = (statusLines: readonly string[], moves: ReadonlyMap<
         }
     });
     moves.forEach((from, to) => {
-        if ((origin.get(to) ?? VACATED) === VACATED) {
+        if ((origin.get(to) ?? VACATED) === VACATED && !atBase.has(to)) {
             origin.set(to, from);
         }
     });

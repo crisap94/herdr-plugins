@@ -30,7 +30,8 @@ const MOVES = 'ci/domain-types-moves.tsv';
 const renamesOf = (base: string): ReadonlyMap<string, string> => {
     const committed = git(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
     const pending = git(['diff', '-M', '--name-status', '--relative', 'HEAD']).split('\n');
-    return chainRenames([...committed, ...pending], existsSync(MOVES) ? parseMoves(readFileSync(MOVES, 'utf8')) : new Map());
+    const atBase = new Set(git(['ls-tree', '-r', '--name-only', base, '--', '.']).split('\n'));
+    return chainRenames([...committed, ...pending], existsSync(MOVES) ? parseMoves(readFileSync(MOVES, 'utf8')) : new Map(), atBase);
 };
 
 const compare = (dir: string, before: readonly string[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
