@@ -27,8 +27,6 @@ export function isFields(input: unknown): input is Fields {
     return typeof input === 'object' && input !== null;
 }
 
-export type HcTerminals = readonly HcTerminal[];
-export type HcAddresses = readonly PaneId[];
 
 function orNull<T>(parsed: Result<T, ParseFailure>): T | null {
     return parsed.kind === 'ok' ? parsed.value : null;
@@ -84,31 +82,6 @@ export function parseHcTerminal(input: unknown): Result<HcTerminal, ParseFailure
     }
     const foreground = parseForeground(input);
     return ok({ address: address.value, ...placement.value, ...report.value, pid: foreground.kind === 'ok' ? foreground.value.pid : null, cwd: foreground.kind === 'ok' ? foreground.value.cwd : null, title: orNull(parseText(input['title'])) });
-}
-
-export interface HcRoster {
-    readonly live: HcAddresses;
-    readonly agents: HcAddresses;
-}
-
-export function parseHcRoster(input: unknown): Result<HcRoster, ParseFailure> {
-    const rows: unknown = isFields(input) ? input['terminals'] : undefined;
-    if (!Array.isArray(rows)) {
-        return err({ kind: 'not-a-row' });
-    }
-    const live: PaneId[] = [];
-    const agents: PaneId[] = [];
-    const items: readonly unknown[] = rows;
-    for (const row of items) {
-        const address = parsePaneId(isFields(row) ? row['address'] : undefined);
-        if (isFields(row) && row['state'] === 'live' && address.kind === 'ok') {
-            live.push(address.value);
-            if (row['status'] !== null && row['status'] !== undefined) {
-                agents.push(address.value);
-            }
-        }
-    }
-    return ok({ live, agents });
 }
 
 export function seenOfHcTerminal(terminal: HcTerminal, session: SessionId | null, agent: AgentKind): SeenLane {

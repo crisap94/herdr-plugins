@@ -515,15 +515,17 @@ A recap is written only for a tab with an agent in it, after the agent finishes 
 
 ### How the daemon reads the agents
 
+The daemon keeps one connection to the herdr-core socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event
+into a roster in memory and spawns nothing. The socket is `$HC_SOCKET`, else `$XDG_RUNTIME_DIR/herdr-core/<session>.sock`
+(`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
+If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
+when the core is back.
+
 | Setting | Values | Does |
 | --- | --- | --- |
-| `TAB_RECAP_HC_TRANSPORT` | `cli` (default), `socket` | `cli` spawns `hc` and re-lists the agents on each event. `socket` keeps one connection to the core's socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event into a roster in memory and spawns nothing. |
 | `TAB_RECAP_API` | `off` | Do not start the local API; the mod then reads the files only. |
 
-Both are read when the daemon starts, so restart it after changing them. The socket is `$HC_SOCKET`, else
-`$XDG_RUNTIME_DIR/herdr-core/<session>.sock` (`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
-If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
-when the core is back. `socket` is opt-in. The numbers are in [the transport study](../../docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/README.md).
+`TAB_RECAP_API` is read when the daemon starts, so restart the daemon after changing it.
 
 ### The local API
 
