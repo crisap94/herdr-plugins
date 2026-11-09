@@ -71,5 +71,15 @@ export function slowDisk(disk: Disk, delayMs: number): Disk {
 
 export function stuckDisk(disk: Disk): Disk {
     const never = new Promise<never>(() => undefined);
-    return { ...disk, readFile: (): Promise<never> => never };
+    const wrapped = {
+        ...disk,
+        readFile: (...args: Parameters<Disk['readFile']>): ReturnType<Disk['readFile']> => {
+            const [path] = args;
+            if (typeof path === 'string' && path.endsWith('/index')) {
+                return never;
+            }
+            return disk.readFile(...args);
+        },
+    };
+    return wrapped as Disk;
 }
