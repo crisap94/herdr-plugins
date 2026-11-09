@@ -2,16 +2,18 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const VERSION_LINE = /^version\s*=\s*"(\d+\.\d+\.\d+)"\s*(?:#.*)?$/;
+type Table = Readonly<Record<string, unknown>>;
+
+const isTable = (value: unknown): value is Table => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export function parseVersion(toml: string): string | null {
-    for (const line of toml.split('\n')) {
-        const found = VERSION_LINE.exec(line.trim());
-        if (found !== null) {
-            return found[1] ?? null;
-        }
+    try {
+        const parsed: unknown = Bun.TOML.parse(toml);
+        const version = isTable(parsed) ? parsed['version'] : undefined;
+        return typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version) ? version : null;
+    } catch {
+        return null;
     }
-    return null;
 }
 
 export function shouldRoll(started: string | null, current: string | null, seenBefore: string | null): boolean {

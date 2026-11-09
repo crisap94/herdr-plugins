@@ -14,32 +14,28 @@ export interface Binding {
     readonly action: string;
 }
 
-const ASSIGNMENT = /^(\w+)\s*=\s*"([^"]*)"\s*(?:#.*)?$/;
+type Table = Readonly<Record<string, unknown>>;
+
+const isTable = (value: unknown): value is Table => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export function bindingsOf(toml: string): readonly Binding[] {
-    const found: Binding[] = [];
-    let block: Record<string, string> | null = null;
-    const close = (): void => {
-        const key = block?.['key'];
-        const command = block?.['command'];
-        if (key !== undefined && command !== undefined && command.startsWith('tab-recap.')) {
-            found.push({ key, action: command });
+    try {
+        const parsed: unknown = Bun.TOML.parse(toml);
+        const keys = isTable(parsed) ? parsed['keys'] : undefined;
+        const commands: unknown = isTable(keys) ? keys['command'] : undefined;
+        if (!Array.isArray(commands)) {
+            return [];
         }
-    };
-    for (const raw of toml.split('\n')) {
-        const line = raw.trim();
-        if (line.startsWith('[')) {
-            close();
-            block = line === '[[keys.command]]' ? {} : null;
-            continue;
-        }
-        const assignment = block === null ? null : ASSIGNMENT.exec(line);
-        if (block !== null && assignment?.[1] !== undefined && assignment[2] !== undefined) {
-            block[assignment[1]] = assignment[2];
-        }
+        return commands.flatMap((entry) => {
+            const key = isTable(entry) ? entry['key'] : undefined;
+            const command = isTable(entry) ? entry['command'] : undefined;
+            return typeof key === 'string' && typeof command === 'string' && command.startsWith('tab-recap.')
+                ? [{ key, action: command }]
+                : [];
+        });
+    } catch {
+        return [];
     }
-    close();
-    return found;
 }
 
 export const herdrConfigPath = (env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string =>
