@@ -21,7 +21,7 @@ what is happening now and what needs you, kept as a ledger of facts so a long se
 ```
 
 - **A column per tab.** A tab with an agent of a kind in `TAB_RECAP_AGENTS` gets a column beside it.
-- **A bar on a narrow tab.** A tab narrower than `TAB_RECAP_MIN_TAB_COLS` columns gets a one-row bar along the top.
+- **A bar on a narrow tab.** A tab narrower than `TAB_RECAP_MIN_TAB_COLS` columns gets a one-row bar along the bottom.
 - **A ledger of facts.** The recap lists the facts of each task, with their time and, for a decision, its reason.
 - **Your agent writes it.** `claude`, `codex`, `opencode` or `hermes` writes the recap, or your own command does.
 - **Clickable references.** Merge requests, pull requests, issues, commits, branches and files open on Ctrl-click.
