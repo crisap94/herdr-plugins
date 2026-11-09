@@ -105,10 +105,10 @@ export const writeBaseline = (dir: string, counts: Counts, lanes: Lanes): Result
     return ok(`${Object.keys(lanes).length} baseline files in ${dir}`);
 };
 
-export const guard = (base: Counts, head: Counts): readonly string[] =>
+export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, string> = new Map()): readonly string[] =>
     Object.keys(head).toSorted().flatMap((file) =>
         CATEGORIES.flatMap((category) => {
-            const was = base[file]?.[category];
+            const was = (base[renamed.get(file) ?? file] ?? base[file])?.[category];
             const now = head[file]?.[category];
             if (now === undefined) {
                 return [];

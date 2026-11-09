@@ -25,13 +25,31 @@ const baseTexts = (dir: string, base: string): readonly string[] =>
         .filter((line) => line.endsWith('.json'))
         .map((path) => git(['show', `${base}:./${path.slice(path.indexOf(dir))}`]));
 
-const compare = (dir: string, before: readonly string[]): Result<readonly string[], string> => {
+const renamesOf = (base: string): ReadonlyMap<string, string> => {
+    const renamed = new Map<string, string>();
+    const sources = new Set<string>();
+    git(['diff', '-M', '--name-status', '--relative', base])
+        .split('\n')
+        .forEach((line) => {
+            const [status, from, to] = line.split('\t');
+            if (status?.startsWith('R') && from !== undefined && to !== undefined) {
+                if (sources.has(from)) {
+                    throw new Error(`${from} is renamed twice`);
+                }
+                sources.add(from);
+                renamed.set(to, from);
+            }
+        });
+    return renamed;
+};
+
+const compare = (dir: string, before: readonly string[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
     const was = countsOfTexts(before);
     const now = countsOfTexts(readdirSync(dir).filter((name) => name.endsWith('.json')).map((name) => readFileSync(join(dir, name), 'utf8')));
     if (was.kind === 'err') {
         return was;
     }
-    return now.kind === 'err' ? now : ok(guard(was.value, now.value));
+    return now.kind === 'err' ? now : ok(guard(was.value, now.value, renamed));
 };
 
 const main = (args: readonly string[]): number => {
@@ -46,7 +64,7 @@ const main = (args: readonly string[]): number => {
             console.log(`domain baseline: ${dir} is not at the merge base: this change introduces it`);
             return 0;
         }
-        const problems = compare(dir, before);
+        const problems = compare(dir, before, renamesOf(base));
         if (problems.kind === 'err') {
             console.error(`domain baseline: 3 — NOT COVERED: ${problems.error}`);
             return 3;
