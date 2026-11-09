@@ -87,7 +87,7 @@
     "property": 3
   },
   "src/ports/harness.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "return": 1,
     "property": 6
   },

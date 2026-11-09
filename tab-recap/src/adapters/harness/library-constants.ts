@@ -10,10 +10,3 @@ export const LIBRARY_HARNESS = {
     timeoutKind: 'timeout',
     exitKind: 'exit',
 } as const;
-
-export const CONFINEMENT_NOTICE = {
-    weakStates: ['emulated', 'unmeasured'],
-    unmeasuredCosts: ['unreported', 'unavailable'],
-    cellSeparator: ', ',
-    partSeparator: '; ',
-} as const;

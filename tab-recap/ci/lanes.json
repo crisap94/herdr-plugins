@@ -143,6 +143,7 @@
       "src/recap/domain/compact-request.ts",
       "src/recap/domain/compaction-plan.ts",
       "src/recap/domain/compaction.ts",
+      "src/recap/domain/confinement-notice.ts",
       "src/recap/domain/continuation-note.ts",
       "src/recap/domain/coordination.ts",
       "src/recap/domain/count.ts",

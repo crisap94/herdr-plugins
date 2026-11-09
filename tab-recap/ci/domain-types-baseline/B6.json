@@ -68,10 +68,6 @@
     "return": 2,
     "container": 1
   },
-  "src/adapters/harness/confinement-notice.ts": {
-    "parameter": 4,
-    "return": 4
-  },
   "src/adapters/harness/custom.ts": {
     "parameter": 4,
     "return": 1,

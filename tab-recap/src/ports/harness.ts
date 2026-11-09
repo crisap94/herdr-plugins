@@ -1,3 +1,4 @@
+import type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis } from '#src/recap/domain/confinement-notice.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { Unknown } from './unknowable.ts';
 
@@ -11,16 +12,9 @@ export interface HarnessSettings {
     readonly effort: Effort;
 }
 
-export type LogLine = (line: string) => void;
+export type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis };
 
-export type CostBasis = 'billed' | 'list' | 'unreported' | 'unavailable';
-
-export type ConfinementState = 'supported' | 'emulated' | 'unsupported' | 'unmeasured';
-
-export interface ConfinementCell {
-    readonly axis: 'builtins' | 'mcp' | 'settings';
-    readonly state: ConfinementState;
-}
+export type LogLine = (line: ConfinementNoticeLine) => void;
 
 export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis; readonly confinement?: readonly ConfinementCell[] } | Unknown;
 
