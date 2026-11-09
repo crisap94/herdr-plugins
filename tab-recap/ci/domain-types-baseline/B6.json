@@ -232,8 +232,7 @@
     "return": 1
   },
   "src/adapters/transcripts/claude/context.ts": {
-    "container": 1,
-    "assertion": 1
+    "container": 1
   },
   "src/adapters/transcripts/claude/in-flight.ts": {
     "parameter": 11,

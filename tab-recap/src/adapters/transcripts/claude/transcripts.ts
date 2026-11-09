@@ -1,6 +1,5 @@
-import { readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { statSync } from 'node:fs';
+import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
@@ -34,7 +33,7 @@ export class ClaudeTranscripts implements Transcripts {
     private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
     readonly inFlight: SupportedInFlight = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
 
-    constructor(root = join(homedir(), '.claude', 'projects')) {
+    constructor(root = claudeProjectsRoot()) {
         this.root = root;
     }
 
@@ -46,17 +45,8 @@ export class ClaudeTranscripts implements Transcripts {
         if (lane.session === null) {
             return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
         }
-        let best: { path: string; mtime: number } | null = null;
-        let dirs: string[] = [];
-        try { dirs = readdirSync(this.root); } catch { return unknown({ why: 'unreadable', detail: this.root }); }
-        for (const dir of dirs) {
-            const path = join(this.root, dir, `${lane.session}.jsonl`);
-            try {
-                const stat = statSync(path);
-                if (best === null || stat.mtimeMs > best.mtime) { best = { path, mtime: stat.mtimeMs }; }
-            } catch { }
-        }
-        return best === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: best.path };
+        const found = locateClaudeTranscript(lane.session, this.root);
+        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: found.path };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {
