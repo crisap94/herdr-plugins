@@ -14,7 +14,7 @@ src/ports/              interfaces only; every fallible read is a sum type (`Unk
 src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr/fleet.ts imports the transport (it hands its wire to `herdr/agents.ts`)
 src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests, compaction records), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
-src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is the only registry
+src/extensions/         notes shown under a lane (stored-notes)
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
 src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process

@@ -68,10 +68,9 @@
     "property": 4
   },
   "src/ports/extension.ts": {
-    "parameter": 1,
-    "return": 2,
+    "return": 1,
     "container": 2,
-    "property": 5
+    "property": 4
   },
   "src/ports/fleet-source.ts": {
     "container": 4,

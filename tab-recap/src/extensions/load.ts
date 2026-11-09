@@ -1,12 +1,7 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
-import type { Extension, ExtensionFactory, ExtensionStore, Note } from '#src/ports/extension.ts';
+import type { Extension, Note } from '#src/ports/extension.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { FACTORIES } from './index.ts';
-
-export function loadExtensions(get: (key: string) => string | undefined, factories: readonly ExtensionFactory[] = FACTORIES, store?: ExtensionStore): readonly Extension[] {
-    return factories.flatMap((factory) => factory(get, store) ?? []);
-}
 
 export function notesOf(extensions: readonly Extension[], lanes?: readonly TabLane[], locale?: Locale): ReadonlyMap<string, readonly Note[]> {
     const merged = new Map<string, readonly Note[]>();

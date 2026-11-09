@@ -36,12 +36,10 @@ import { emptyBoard, lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import type { Extension } from '#src/ports/extension.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
-import { loadExtensions } from '#src/extensions/load.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
@@ -51,7 +49,6 @@ import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { wireCurate } from './curate.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
-import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { bootObservations } from './restored-lanes.ts';
@@ -79,7 +76,6 @@ interface Wired {
     readonly informer: Informer;
     readonly fleet: Fleet;
     readonly backends: Backends;
-    readonly extensions: readonly Extension[];
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
@@ -161,7 +157,7 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter(), undefined, { alerts: store.paneAlerts }), store, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
+    return { informer, fleet, backends, store, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
@@ -209,7 +205,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep, events, handoffs, worktrees } = booted;
+    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -247,7 +243,6 @@ async function start(): Promise<number> {
         worktrees.registry.tick(informer.current);
         worktrees.perf.tick();
         void backends.refresh();
-        void upkeep(extensions, log);
     }, RESYNC_MS).unref();
     await backends.refresh();
     log(`daemon ${process.pid} up, state in ${root}`);

@@ -1,10 +1,10 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
+import { notesOf, warningsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
 import type { Extension, Note } from '#src/ports/extension.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { configGetter, loadConfig } from '#src/daemon/config.ts';
+import { loadConfig } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { must } from '#src/protocol/result.ts';
 import { EditCache, EditCounts } from '#src/recap/application/edit-counts.ts';
@@ -95,7 +95,7 @@ export class DesktopReads {
         const hint = config.compaction.hint === null ? null : must(parseCount(config.compaction.hint));
         const store = this.deps.store;
         const own = storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch });
-        this.settled = { at: now, locale: config.locale, hint, extensions: [...loadExtensions(configGetter()), own] };
+        this.settled = { at: now, locale: config.locale, hint, extensions: [own] };
         return this.settled;
     }
 

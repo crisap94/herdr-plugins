@@ -380,5 +380,5 @@ daemon log is `daemon.log` in that state folder (by default
 - **Turn it off**: `herdr plugin action invoke tab-recap.stop` closes every column and stays off
   until you run `tab-recap.start` again.
 
-The full reference (all actions, the extension point, the design) is in
+The full reference (all actions, the design) is in
 [`tab-recap/docs/REFERENCE.md`](docs/REFERENCE.md).
