@@ -1,16 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { ClaudeHarness } from '#src/adapters/harness/claude.ts';
-import { CodexHarness } from '#src/adapters/harness/codex.ts';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
-import type { RunOptions, RunResult, Runner } from '#src/ports/process-control.ts';
-
-const ran: RunResult = { code: 0, stdout: '{"result":"ok","total_cost_usd":0}', stderr: '', timedOut: false };
 
 test('the sole serializer encodes every closed tag', () => {
     for (const tag of JOB_TAGS) {
@@ -56,22 +50,17 @@ test('tagging on leaves the parent environment unchanged', () => {
     }
 });
 
-test('the tagged Claude and Codex adapters add the job resource attribute', async () => {
-    const dir = join(tmpdir(), `job-telemetry-${process.pid}`);
-    const envs: NodeJS.ProcessEnv[] = [];
-    const runner: Runner = async (_command: string, args: readonly string[], options: RunOptions) => {
-        envs.push(options.env);
-        const outputAt = args.indexOf('-o');
-        if (outputAt >= 0) {
-            const output = args[outputAt + 1];
-            if (output !== undefined) { writeFileSync(output, 'ok'); }
-        }
-        return ran;
-    };
-    await new ClaudeHarness(dir, 1000, runner, 'recap-writer').run({ input: 'in', instructions: 'do' }, { model: '', effort: 'low' });
-    await new CodexHarness(dir, 1000, runner, 'judge').run({ input: 'in', instructions: 'do' }, { model: '', effort: 'low' });
-    assert.equal(envs[0]?.['OTEL_RESOURCE_ATTRIBUTES']?.endsWith('tab_recap.job=recap-writer'), true);
-    assert.equal(envs[1]?.['OTEL_RESOURCE_ATTRIBUTES']?.endsWith('tab_recap.job=judge'), true);
+test('the tagged library harnesses add the job resource attribute to the environment they hand the runtime', async () => {
+    const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' })], codex: [fakeOutput({ text: 'ok' })], opencode: [fakeOutput({ text: 'ok' })] } });
+    const settings = { model: '', effort: 'low' } as const;
+    await new LibraryHarness(runtime, 'claude', 1000, 'recap-writer', true).run({ input: 'in', instructions: 'do' }, settings);
+    await new LibraryHarness(runtime, 'codex', 1000, 'judge').run({ input: 'in', instructions: 'do' }, settings);
+    await new LibraryHarness(runtime, 'opencode', 1000, 'curator').run({ input: 'in', instructions: 'do' }, settings);
+    const seen = runtime.calls.map((each) => {
+        const env = each.options.env;
+        return env?.kind === 'inherit' && env.transform !== undefined ? env.transform({ OTEL_RESOURCE_ATTRIBUTES: 'service.name=parent' })['OTEL_RESOURCE_ATTRIBUTES'] : undefined;
+    });
+    assert.deepEqual(seen, ['service.name=parent,tab_recap.job=recap-writer', 'service.name=parent,tab_recap.job=judge', 'service.name=parent,tab_recap.job=curator']);
 });
 
 test('a serializer TypeError is logged once and leaves the job environment untagged', () => {

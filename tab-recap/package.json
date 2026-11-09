@@ -21,8 +21,8 @@
     "daemon": "bun src/daemon/launch.mjs"
   },
   "dependencies": {
-    "@stateforge-labs/harness-adapters": "0.1.0",
-    "@stateforge-labs/harness-hooks": "0.2.0",
+    "@stateforge-labs/harness-adapters": "0.2.0",
+    "@stateforge-labs/harness-hooks": "0.3.0",
     "@stateforge-labs/herdr-sdk": "0.4.0",
     "drizzle-orm": "0.45.4",
     "isomorphic-git": "1.44.4"

@@ -3,6 +3,7 @@
   "src/recap/domain/backend.ts",
   "src/recap/domain/byte-budget.ts",
   "src/recap/domain/compaction-plan.ts",
+  "src/recap/domain/confinement-notice.ts",
   "src/recap/domain/continuation-note.ts",
   "src/recap/domain/count.ts",
   "src/recap/domain/directory.ts",

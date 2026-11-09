@@ -66,6 +66,7 @@ import { must } from '#src/protocol/result.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 
@@ -105,7 +106,7 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
     const config = loadConfig();
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
-    const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
+    const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log, createRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });

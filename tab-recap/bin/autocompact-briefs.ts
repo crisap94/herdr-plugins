@@ -1,7 +1,8 @@
 import { join } from 'node:path';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions.ts';
 import { CLAUDE_KIND } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { CodexHarness } from '#src/adapters/harness/codex.ts';
+import { LIBRARY_IDS, LibraryHarness } from '#src/adapters/harness/library.ts';
+import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
 import { Labeller, LABELLER } from '#src/adapters/experiment/labeller.ts';
@@ -28,12 +29,12 @@ const documentOf = (point: Point): string => compactionInput({
     recent: point.recent, clock: { now: point.at, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
 });
 
-export async function labelBriefs(dir: string): Promise<void> {
+export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise<void> {
     const [file, log] = [join(dir, 'briefs.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(file, 'id');
     const todo = briefPoints(readPoints(join(dir, 'corpus.jsonl'))).filter((point) => !done.has(point.id));
-    const writers = Array.from({ length: 6 }, (_, n) => new HarnessBrief(new CodexHarness(join(dir, 'work-brief', `slot-${n}`), 15 * 60_000), LABELLER));
-    const labeller = new Labeller(join(dir, 'work-labeller'), 6, log);
+    const writers = Array.from({ length: 6 }, () => new HarnessBrief(new LibraryHarness(runtime, LIBRARY_IDS.codex, 15 * 60_000), LABELLER));
+    const labeller = new Labeller(runtime, 6, log);
     await pooled(todo, 6, async (point, _index, lane) => {
         const began = Date.now();
         const written = await (writers[lane] as HarnessBrief).write(documentOf(point));

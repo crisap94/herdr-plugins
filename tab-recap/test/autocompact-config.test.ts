@@ -10,6 +10,9 @@ import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } fro
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
+
+const runtime = fakeRuntime({ scripts: {} });
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
@@ -104,16 +107,16 @@ async function withEnvAsync(values: Readonly<Record<string, string>>, body: () =
 
 test('deciderFor: jev builds the Jev decider, a harness job a harness decider, off or nothing installed none', () => {
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }, () => {
-        const jev = deciderFor(loadConfig(), [], '/work');
+        const jev = deciderFor(loadConfig(), [], '/work', runtime);
         assert.ok(jev instanceof JevDecider);
         assert.equal(jev.label, 'jev · jev-1.13.0');
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'recap' }, () => {
-        assert.ok(deciderFor(loadConfig(), ['claude'], '/work') instanceof HarnessDecider);
-        assert.equal(deciderFor(loadConfig(), [], '/work'), null);
+        assert.ok(deciderFor(loadConfig(), ['claude'], '/work', runtime) instanceof HarnessDecider);
+        assert.equal(deciderFor(loadConfig(), [], '/work', runtime), null);
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'off' }, () => {
-        assert.equal(deciderFor(loadConfig(), ['claude'], '/work'), null);
+        assert.equal(deciderFor(loadConfig(), ['claude'], '/work', runtime), null);
     });
 });
 
@@ -144,20 +147,20 @@ function withHome(body: () => void): void {
 
 test('coverageDeciderFor: auto picks Jev when a key is found, else the moment decider', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof JevDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime) instanceof JevDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof HarnessDecider);
-        assert.equal(coverageDeciderFor(loadConfig(), [], '/work'), null, 'no key and no harness: no decider, so the check does not run');
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime) instanceof HarnessDecider);
+        assert.equal(coverageDeciderFor(loadConfig(), [], '/work', runtime), null, 'no key and no harness: no decider, so the check does not run');
     }));
 });
 
 test('coverageDeciderFor: decider is the moment decider even with a key; jev is Jev always', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'decider' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof HarnessDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime) instanceof HarnessDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work') instanceof JevDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime) instanceof JevDecider);
     }));
 });
 
@@ -167,7 +170,7 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
     process.env['HOME'] = home;
     try {
         await withEnvAsync({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, async () => {
-            const decider = coverageDeciderFor(loadConfig(), ['claude'], '/work');
+            const decider = coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime);
             assert.ok(decider instanceof JevDecider);
             assert.ok(isUnknown(await decider.ask({}, {})), 'an unknown answer, never a probability');
         });

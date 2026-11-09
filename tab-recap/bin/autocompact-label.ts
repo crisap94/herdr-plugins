@@ -1,8 +1,10 @@
-import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
-import { CODEX_PROGRAM } from '#src/adapters/harness/codex.ts';
+import { spawnSync } from 'node:child_process';
+import { CODEX_BINARY } from '@stateforge-labs/harness-adapters/codex';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
+import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';
@@ -20,11 +22,11 @@ const value = (name: string): string | null => {
     return at < 0 ? null : (process.argv[at + 1] ?? null);
 };
 
-async function labelPoints(dir: string, limit: number | null): Promise<void> {
+async function labelPoints(dir: string, limit: number | null, runtime: HarnessRuntime): Promise<void> {
     const [file, log] = [join(dir, 'labels.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(file, 'id');
     const todo = readPoints(join(dir, 'corpus.jsonl')).filter((point) => !done.has(point.id)).slice(0, limit ?? Infinity);
-    const labeller = new Labeller(join(dir, 'work-labeller'), 6, log);
+    const labeller = new Labeller(runtime, 6, log);
     const instructions = labelInstructions(QUESTIONS);
     let finished = 0;
     await pooled(todo, 6, async (point) => {
@@ -43,7 +45,7 @@ function tally(dir: string): void {
     const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
         crossCheck: { n: rows.length, agreement: agreement(rows.map((r) => r.model), rows.map((r) => r.code)), kappa: kappa(rows.map((r) => r.model), rows.map((r) => r.code)), labellerPositives: rows.filter((r) => r.model === 1).length, codePositives: rows.filter((r) => r.code === 1).length },
-        codex: spawnSync(CODEX_PROGRAM, ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
+        codex: spawnSync(CODEX_BINARY, ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
     };
     console.log(JSON.stringify(result, null, 2));
 }
@@ -59,8 +61,9 @@ async function main(): Promise<void> {
     if (value('operator') !== null) return operatorLabels(dir, Number(value('operator')));
     if (flag('kappa')) return kappas(dir);
     if (flag('crosscheck')) return tally(dir);
-    if (flag('briefs')) return labelBriefs(dir);
-    await labelPoints(dir, value('limit') === null ? null : Number(value('limit')));
+    const runtime = createRuntime();
+    if (flag('briefs')) return labelBriefs(dir, runtime);
+    await labelPoints(dir, value('limit') === null ? null : Number(value('limit')), runtime);
     tally(dir);
 }
 

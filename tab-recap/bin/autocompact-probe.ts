@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
@@ -49,7 +50,8 @@ async function main(): Promise<void> {
     const [file, log] = [join(dir, `answers-${arm}-${rep}.jsonl`), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(file, 'key');
     const todo = jobsOf(dir).filter((job) => !done.has(job.key));
-    const deciders = Array.from({ length: CONCURRENCY }, (_, lane) => deciderOf(arm, join(dir, 'work-probe'), lane));
+    const runtime = createRuntime();
+    const deciders = Array.from({ length: CONCURRENCY }, () => deciderOf(arm, runtime));
     let finished = 0;
     await pooled(todo, CONCURRENCY, async (job, _index, lane) => {
         const { answer, attempts } = await ask(deciders[lane] as Decider, job, log);

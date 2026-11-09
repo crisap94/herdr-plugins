@@ -1,13 +1,10 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { claudeArgs } from '#src/adapters/harness/claude.ts';
-import { codexArgs } from '#src/adapters/harness/codex.ts';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { CustomHarness, splitArgv } from '#src/adapters/harness/custom.ts';
-import { opencodeArgs, opencodeOutput, sessionsTitled } from '#src/adapters/harness/opencode.ts';
 import { readFileSync } from 'node:fs';
-import { ClaudeHarness } from '#src/adapters/harness/claude.ts';
-import { CodexHarness } from '#src/adapters/harness/codex.ts';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
@@ -17,61 +14,33 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 
 const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
 
-test('golden: claude and codex are invoked exactly as before the harness work', () => {
-    assert.deepEqual(claudeArgs('', instructions(request)), [
-        '-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--setting-sources', '',
-        '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions(request),
-    ]);
-    assert.deepEqual(claudeArgs('sonnet', instructions(request)).slice(0, 3), ['-p', '--model', 'sonnet']);
-    assert.deepEqual(codexArgs('', '/w/o.md', 'default').slice(0, 8), [
-        'exec', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', '-s', 'read-only', '--color', 'never',
-    ]);
-    assert.deepEqual(codexArgs('gpt-6-luna', '/w/o.md').slice(7, 10), ['never', '-m', 'gpt-6-luna']);
+type Id = 'claude' | 'codex' | 'opencode';
+
+async function requestSent(id: Id, settings: { readonly model: string; readonly effort: 'low' | 'medium' | 'high' | 'default' }): Promise<{ readonly effort?: unknown; readonly model?: unknown }> {
+    const runtime = fakeRuntime({ scripts: { [id]: [fakeOutput({ text: 'ok' })] } });
+    await new LibraryHarness(runtime, id, 1000, undefined, true).run({ instructions: 'do', input: 'in' }, settings);
+    return runtime.calls[0]?.request ?? {};
+}
+
+const EFFORTS = ['low', 'medium', 'high', 'default'] as const;
+
+const effortsOf = async (id: Id): Promise<unknown[]> => Promise.all(EFFORTS.map(async (effort) => (await requestSent(id, { model: '', effort })).effort));
+
+test('effort: low, medium and high pass through for claude and codex, `default` passes the harness default, and opencode always does', async () => {
+    assert.deepEqual(await effortsOf('claude'), ['low', 'medium', 'high', 'harness-default']);
+    assert.deepEqual(await effortsOf('codex'), ['low', 'medium', 'high', 'harness-default']);
+    assert.deepEqual(await effortsOf('opencode'), ['harness-default', 'harness-default', 'harness-default', 'harness-default']);
 });
 
-const LEAN = ['multi_agent', 'plugins', 'browser_use', 'computer_use', 'skill_search', 'tool_suggest', 'hooks'].flatMap((feature) => ['--disable', feature]);
-
-test('effort: each harness gets its own word for it, and `default` passes nothing', () => {
-    assert.deepEqual(codexArgs('', '/w/o.md', 'low').slice(8), ['-c', 'model_reasoning_effort=low', ...LEAN, '-o', '/w/o.md', '-']);
-    assert.deepEqual(codexArgs('', '/w/o.md', 'high').slice(8, 10), ['-c', 'model_reasoning_effort=high']);
-    assert.deepEqual(codexArgs('', '/w/o.md', 'default').slice(8), [...LEAN, '-o', '/w/o.md', '-']);
-    assert.deepEqual(claudeArgs('', instructions(request), 'low').slice(-2), ['--effort', 'low']);
-    assert.deepEqual(claudeArgs('', instructions(request), 'medium').slice(-2), ['--effort', 'medium']);
-    assert.ok(!claudeArgs('', instructions(request), 'default').includes('--effort'));
-    assert.deepEqual(opencodeArgs('', 't1', 'low').slice(-2), ['--variant', 'minimal']);
-    assert.deepEqual(opencodeArgs('', 't1', 'high').slice(-2), ['--variant', 'high']);
-    assert.ok(!opencodeArgs('', 't1', 'default').includes('--variant'));
+test('model: claude defaults to haiku and takes its own; codex and opencode send none when empty', async () => {
+    const models = [await requestSent('claude', { model: '', effort: 'low' }), await requestSent('claude', { model: 'sonnet', effort: 'low' }), await requestSent('codex', { model: '', effort: 'low' }), await requestSent('opencode', { model: '', effort: 'low' })];
+    assert.deepEqual(models.map((sent) => sent.model), ['haiku', 'sonnet', undefined, undefined]);
 });
 
 test('golden: the English instructions are exactly the reviewed operations-contract text', () => {
     const before = readFileSync(new URL('fixtures/instructions-en.txt', import.meta.url), 'utf8');
     assert.equal(instructions(request), before);
     assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);
-});
-
-test('opencode: JSON events, tools denied by the config the adapter sets', () => {
-    assert.deepEqual(opencodeArgs('', 't1'), ['run', '--pure', '--format', 'json', '--title', 't1']);
-    assert.deepEqual(opencodeArgs('opencode/big-pickle', 't1'), ['run', '--pure', '--format', 'json', '--title', 't1', '-m', 'opencode/big-pickle']);
-});
-
-test('opencode output: the text parts are the answer, step costs add up, the session id is kept for deletion', () => {
-    const lines = [
-        { type: 'step_start', sessionID: 'ses_1', part: { type: 'step-start' } },
-        { type: 'text', sessionID: 'ses_1', part: { type: 'text', text: '## Goal\n- a' } },
-        { type: 'text', sessionID: 'ses_1', part: { type: 'text', text: '\n- b' } },
-        { type: 'step_finish', sessionID: 'ses_1', part: { type: 'step-finish', cost: 0.25 } },
-        { type: 'step_finish', sessionID: 'ses_1', part: { type: 'step-finish', cost: 0.5 } },
-    ].map((event) => JSON.stringify(event));
-    const out = opencodeOutput(`${lines.join('\n')}\nnot json\n`);
-    assert.deepEqual(out, { text: '## Goal\n- a\n- b', cost: 0.75, session: 'ses_1' });
-    assert.deepEqual(opencodeOutput(''), { text: '', cost: 0, session: null });
-});
-
-test('a run that died before printing a session id is found again by its title', () => {
-    const json = JSON.stringify([{ id: 'ses_a', title: 'tab-recap-1-2' }, { id: 'ses_b', title: 'mine' }, { id: 'ses_c', title: 'tab-recap-1-2' }]);
-    assert.deepEqual(sessionsTitled(json, 'tab-recap-1-2'), ['ses_a', 'ses_c']);
-    assert.deepEqual(sessionsTitled('not json', 'x'), []);
-    assert.deepEqual(sessionsTitled('{}', 'x'), []);
 });
 
 test('splitArgv: whitespace, quotes, no shell', () => {
@@ -97,8 +66,8 @@ test('custom: the data and the instructions go in on stdin, the data first, and 
 });
 
 test('a harness labels what it runs; the recap writer and the brief both go through run()', async () => {
-    assert.equal(new ClaudeHarness(process.cwd(), 1).label({ model: '', effort: 'low' }), 'claude/haiku');
-    assert.equal(new CodexHarness(process.cwd(), 1).label({ model: 'gpt-6-luna', effort: 'high' }), 'codex/gpt-6-luna');
+    assert.equal(new LibraryHarness(fakeRuntime({ scripts: {} }), 'claude', 1).label({ model: '', effort: 'low' }), 'claude/haiku');
+    assert.equal(new LibraryHarness(fakeRuntime({ scripts: {} }), 'codex', 1).label({ model: 'gpt-6-luna', effort: 'high' }), 'codex/gpt-6-luna');
     const writer = new RecapWriter(custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings);
     const written = await writer.write(request);
     assert.ok(written.kind === 'written' && written.text.startsWith('<recap_input'));

@@ -27,8 +27,10 @@ import type { Scratch } from '#src/adapters/db/scratch.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { gateLines } from '#src/recap/render/eval.ts';
 import { countedWriter } from '#src/recap/application/counted-writer.ts';
+import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 
 export function viewOf(options: Pick<EvalOptions, 'prune'>, config: Pick<Config, 'writerViewSettings'>): WriterView {
@@ -56,18 +58,18 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
     }
 }
 
-function counted(config: Config, available: readonly string[], dir: string): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
+function counted(config: Config, available: readonly string[], dir: string, runtime: HarnessRuntime): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
-    const made = summarizerFor(config, available, join(dir, 'summarizer'));
+    const made = summarizerFor(config, available, join(dir, 'summarizer'), runtime);
     const writer = countedWriter(made, calls);
-    const own = enumeratorFor(config, available, join(dir, 'enumerator'));
+    const own = enumeratorFor(config, available, join(dir, 'enumerator'), runtime);
     const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };
 }
 
-async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalOptions; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Config; readonly available: readonly string[] }): Promise<void> {
-    const { config, available } = parts;
-    const { writer, enumerator, calls } = counted(config, available, scratch.dir);
+async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalOptions; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Config; readonly available: readonly string[]; readonly runtime: HarnessRuntime }): Promise<void> {
+    const { config, available, runtime } = parts;
+    const { writer, enumerator, calls } = counted(config, available, scratch.dir, runtime);
     const pipeline = input.options.pipeline ?? config.pipeline;
     const view = viewOf(input.options, config);
     const done = await replay({
@@ -82,11 +84,12 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
     const config = loadConfig();
     const found = await new PathHarnesses(AUTO_ORDER).available();
     const available = isUnknown(found) ? [] : found.ids;
+    const runtime = createRuntime();
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), operatorAnchors(databasePath(stateDir())));
+    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), runtime, operatorAnchors(databasePath(stateDir())));
     try {
-        await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available });
+        await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available, runtime });
         if (judge === null) {
             console.log('\nmodel judging: off (no harness is available for the judge job); the checks above need no model');
             return 0;

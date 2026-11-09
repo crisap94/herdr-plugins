@@ -43,8 +43,8 @@ export function mergeResourceAttributes(inherited: string | undefined, attribute
     return [...kept, serializeJobAttributes(attributes)].join(',');
 }
 
-export function scrubbedEnv(jobTag?: JobTag): NodeJS.ProcessEnv {
-    const env = scrubEnvironment(process.env, SCRUBBED_ENV_NAMES);
+export function scrubbedFrom(source: NodeJS.ProcessEnv, jobTag?: JobTag): NodeJS.ProcessEnv {
+    const env = scrubEnvironment(source, SCRUBBED_ENV_NAMES);
     if (jobTag === undefined) {
         return env;
     }
@@ -58,4 +58,8 @@ export function scrubbedEnv(jobTag?: JobTag): NodeJS.ProcessEnv {
         process.stderr.write(`tab-recap: could not add telemetry job tag: ${error.message}\n`);
     }
     return env;
+}
+
+export function scrubbedEnv(jobTag?: JobTag): NodeJS.ProcessEnv {
+    return scrubbedFrom(process.env, jobTag);
 }
