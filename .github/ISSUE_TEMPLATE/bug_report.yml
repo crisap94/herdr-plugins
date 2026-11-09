@@ -60,5 +60,5 @@ body:
     id: log
     attributes:
       label: Log excerpt
-      description: Relevant lines from the daemon log (the path is in the status output)
+      description: Relevant lines from the daemon log (the path is in the status output). Do not paste transcripts, secrets or private paths: replace your home folder with `~`.
       render: text
