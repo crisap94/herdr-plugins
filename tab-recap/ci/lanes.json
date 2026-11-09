@@ -771,6 +771,7 @@
       "test/db/migrate-herdr-events.test.ts",
       "test/db/migrate.test.ts",
       "test/db/migration-016.test.ts",
+      "test/db/parity-heavy.test.ts",
       "test/db/parity.test.ts",
       "test/db/parity.ts",
       "test/db/print-store.test.ts",
