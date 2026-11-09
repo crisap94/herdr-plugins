@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneNoteReader, PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
@@ -26,12 +26,12 @@ export function parsePaneNoteRow(input: unknown): Result<PaneNoteRow, ParseFailu
 }
 
 export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
-    private readonly db: DatabaseSync;
-    private readonly read: StatementSync;
-    private readonly insert: StatementSync;
-    private readonly clear: StatementSync;
+    private readonly db: Database;
+    private readonly read: Statement;
+    private readonly insert: Statement;
+    private readonly clear: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.read = db.prepare('SELECT label, value FROM pane_note WHERE pane = ? ORDER BY label');
         this.insert = db.prepare('INSERT OR REPLACE INTO pane_note (pane, label, value) VALUES (?, ?, ?)');

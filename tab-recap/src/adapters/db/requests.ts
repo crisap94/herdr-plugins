@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
@@ -70,21 +70,21 @@ function wordOf(hidden: boolean | 'toggle'): string {
 
 export class RequestsRepository implements Requests, CompactionQueue {
     private readonly now: () => number;
-    private readonly refresh: StatementSync;
-    private readonly visibility: StatementSync;
-    private readonly compact: StatementSync;
-    private readonly takeCompact: StatementSync;
-    private readonly curate: StatementSync;
-    private readonly takeCurate: StatementSync;
-    private readonly takeRefresh: StatementSync;
-    private readonly takeHidden: StatementSync;
-    private readonly takeAnsweredRows: StatementSync;
-    private readonly queuedCompact: StatementSync;
-    private readonly insertHandoff: StatementSync;
-    private readonly withdrawHandoffRow: StatementSync;
-    private readonly takeHandoffRows: StatementSync;
+    private readonly refresh: Statement;
+    private readonly visibility: Statement;
+    private readonly compact: Statement;
+    private readonly takeCompact: Statement;
+    private readonly curate: Statement;
+    private readonly takeCurate: Statement;
+    private readonly takeRefresh: Statement;
+    private readonly takeHidden: Statement;
+    private readonly takeAnsweredRows: Statement;
+    private readonly queuedCompact: Statement;
+    private readonly insertHandoff: Statement;
+    private readonly withdrawHandoffRow: Statement;
+    private readonly takeHandoffRows: Statement;
 
-    constructor(db: DatabaseSync, now: () => number = Date.now) {
+    constructor(db: Database, now: () => number = Date.now) {
         this.now = now;
         this.refresh = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'refresh', ?)");
         this.visibility = db.prepare("INSERT INTO request (id, at, kind, target, hidden) VALUES (?, ?, 'visibility', ?, ?)");
@@ -102,7 +102,7 @@ export class RequestsRepository implements Requests, CompactionQueue {
     }
 
     compactQueued(tab: string, pane: string): boolean {
-        return guarded(() => this.queuedCompact.get(tab, pane) !== undefined, false);
+        return guarded(() => this.queuedCompact.get(tab, pane) !== null, false);
     }
 
     request(tab: string): void {
@@ -129,7 +129,7 @@ export class RequestsRepository implements Requests, CompactionQueue {
 
     withdrawHandoff(id: HandoffId): boolean {
         const key = handoffBytesOf(id);
-        return key !== null && Number(this.withdrawHandoffRow.run(key).changes) > 0;
+        return key !== null && this.withdrawHandoffRow.run(key).changes > 0;
     }
 
     takeHandoffs(): readonly HandoffRequestRow[] {

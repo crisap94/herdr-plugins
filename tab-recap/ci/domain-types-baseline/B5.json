@@ -118,8 +118,7 @@
     "container": 2
   },
   "src/adapters/db/migrate.ts": {
-    "return": 2,
-    "assertion": 1
+    "return": 2
   },
   "src/adapters/db/open.ts": {
     "parameter": 4,

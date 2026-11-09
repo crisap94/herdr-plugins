@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
@@ -23,16 +23,16 @@ const groupBy = <T>(rows: readonly Row[], make: (row: Row) => T): Map<string, T[
 };
 
 export class RecapReader {
-    private readonly current: StatementSync;
-    private readonly good: StatementSync;
-    private readonly newest: StatementSync;
-    private readonly cost: StatementSync;
-    private readonly lanes: StatementSync;
-    private readonly tasks: StatementSync;
-    private readonly taskLanes: StatementSync;
+    private readonly current: Statement;
+    private readonly good: Statement;
+    private readonly newest: Statement;
+    private readonly cost: Statement;
+    private readonly lanes: Statement;
+    private readonly tasks: Statement;
+    private readonly taskLanes: Statement;
     private readonly ledger: LedgerRows;
 
-    constructor(db: DatabaseSync, ledger: LedgerRows) {
+    constructor(db: Database, ledger: LedgerRows) {
         this.ledger = ledger;
         this.current = db.prepare(`SELECT t.running, t.backend, t.error FROM tab t WHERE t.id = ? AND (t.running = 1 OR t.error IS NOT NULL OR t.backend IS NOT NULL
           OR EXISTS (SELECT 1 FROM transcript WHERE tab_id = t.id) OR EXISTS (SELECT 1 FROM chapter WHERE tab_id = t.id))`);

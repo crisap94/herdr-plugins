@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 
 const KEEP = 3;
 const PATTERN = /\.v(\d+)\.bak$/;
@@ -14,7 +14,7 @@ export function backupsOf(path: string): readonly string[] {
     return found.toSorted((a, b) => versionOf(b) - versionOf(a)).map((name) => join(dirname(path), name));
 }
 
-export function backUp(db: DatabaseSync, path: string, version: number): string {
+export function backUp(db: Database, path: string, version: number): string {
     const target = backupPath(path, version);
     if (!existsSync(target)) {
         const aside = `${target}.${process.pid}.tmp`;

@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneAlertReader, PaneAlertWriter } from '#src/ports/pane-alerts.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
@@ -69,12 +69,12 @@ export function parsePaneAlertRow(input: unknown): Result<PaneAlertRow, ParseFai
 }
 
 export class PaneAlertsRepository implements PaneAlertWriter, PaneAlertReader {
-    private readonly read: StatementSync;
-    private readonly upsert: StatementSync;
-    private readonly clearSource: StatementSync;
-    private readonly clearPane: StatementSync;
+    private readonly read: Statement;
+    private readonly upsert: Statement;
+    private readonly clearSource: Statement;
+    private readonly clearPane: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.read = db.prepare('SELECT source, pane, label, at, details FROM pane_alert WHERE pane = ? ORDER BY source');
         this.upsert = db.prepare('INSERT OR REPLACE INTO pane_alert (source, pane, label, at, details) VALUES (?, ?, ?, ?, ?)');
         this.clearSource = db.prepare('DELETE FROM pane_alert WHERE source = ?');

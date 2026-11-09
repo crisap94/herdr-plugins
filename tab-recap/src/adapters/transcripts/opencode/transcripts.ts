@@ -1,11 +1,12 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
+import { BUSY_PRAGMA } from '../../db/connection.ts';
 import { opencodeObserved } from './context.ts';
 import { parse, str } from '../jsonl.ts';
 import { entriesOf, partsOf } from './parts.ts';
@@ -90,7 +91,7 @@ export class OpencodeTranscripts implements Transcripts {
         }
     }
 
-    private observedIn(db: DatabaseSync, session: string): ObservedResult {
+    private observedIn(db: Database, session: string): ObservedResult {
         const rows = db.prepare('SELECT data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?').all(session, PROMPT_LOOKBACK) as unknown as readonly { readonly data: string }[];
         for (const row of rows) {
             const found = opencodeObserved(parse(row.data) ?? {});
@@ -101,7 +102,7 @@ export class OpencodeTranscripts implements Transcripts {
         return { kind: 'observed', observed: null };
     }
 
-    private promptOf(db: DatabaseSync, session: string): PromptResult {
+    private promptOf(db: Database, session: string): PromptResult {
         const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?')
             .all(session, PROMPT_LOOKBACK) as unknown as readonly MessageRow[];
         for (const row of rows) {
@@ -117,8 +118,9 @@ export class OpencodeTranscripts implements Transcripts {
         return unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) });
     }
 
-    private withDatabase<T>(use: (db: DatabaseSync) => T): T {
-        const db = new DatabaseSync(this.database, { readOnly: true });
+    private withDatabase<T>(use: (db: Database) => T): T {
+        const db = new Database(this.database, { readonly: true });
+        db.exec(BUSY_PRAGMA);
         try {
             return use(db);
         } finally {
@@ -126,18 +128,18 @@ export class OpencodeTranscripts implements Transcripts {
         }
     }
 
-    private newestSession(db: DatabaseSync, cwd: string): Located {
-        const found = db.prepare('SELECT id FROM session WHERE directory = ? AND parent_id IS NULL AND time_archived IS NULL ORDER BY time_updated DESC LIMIT 1').get(cwd) as { readonly id: string } | undefined;
-        return found === undefined ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: `${this.database}${SEPARATOR}${found.id}` };
+    private newestSession(db: Database, cwd: string): Located {
+        const found = db.prepare('SELECT id FROM session WHERE directory = ? AND parent_id IS NULL AND time_archived IS NULL ORDER BY time_updated DESC LIMIT 1').get(cwd) as { readonly id: string } | null;
+        return found === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: `${this.database}${SEPARATOR}${found.id}` };
     }
 
-    private chunkOf(db: DatabaseSync, session: string, was: Position, budget: number): Chunk {
+    private chunkOf(db: Database, session: string, was: Position, budget: number): Chunk {
         const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? AND time_updated > ? ORDER BY time_created DESC LIMIT ?')
             .all(session, was.cursor, MESSAGES) as unknown as readonly MessageRow[];
         const messages = rows.toReversed();
         const read = messages.map((message) => partsOf(db, message));
         const entries = newest(read.flatMap((one) => one.entries), budget);
-        const title = db.prepare('SELECT title FROM session WHERE id = ?').get(session) as { readonly title: string } | undefined;
+        const title = db.prepare('SELECT title FROM session WHERE id = ?').get(session) as { readonly title: string } | null;
         const prompts = entries.filter((entry) => entry.role === 'user');
         return {
             kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),

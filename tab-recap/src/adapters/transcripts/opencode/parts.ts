@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
 import { opencodeObserved } from './context.ts';
 import { obj, parse, str } from '../jsonl.ts';
@@ -31,7 +31,7 @@ function markOf(data: Row): Mark {
 
 export interface Parts { readonly entries: readonly Entry[]; readonly notes: readonly AgentNote[]; readonly marks: readonly Mark[] }
 
-export function partsOf(db: DatabaseSync, message: MessageRow): Parts {
+export function partsOf(db: Database, message: MessageRow): Parts {
     const data = parse(message.data) ?? {};
     const role = str(data['role']) ?? 'assistant';
     const rows = db.prepare('SELECT data FROM part WHERE message_id = ? ORDER BY time_created ASC').all(message.id) as unknown as readonly { readonly data: string }[];
@@ -47,5 +47,5 @@ export function partsOf(db: DatabaseSync, message: MessageRow): Parts {
     return { entries: [], notes: text === '' ? [] : [{ kind: 'compaction', at: millis(obj(data['time'])['created']) ?? null, text }], marks: text === '' ? [] : [markOf(data)] };
 }
 
-export const entriesOf = (db: DatabaseSync, message: MessageRow): readonly Entry[] => partsOf(db, message).entries;
+export const entriesOf = (db: Database, message: MessageRow): readonly Entry[] => partsOf(db, message).entries;
 

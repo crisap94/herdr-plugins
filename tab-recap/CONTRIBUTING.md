@@ -102,7 +102,7 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   duplicate. After another migration lands, rebase and renumber.
 - **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
   drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
-  Use only SQL the SQLite behind `node:sqlite` supports (SQLite 3.53).
+  Use only SQL the SQLite that `bun:sqlite` links supports.
 - **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
   millionths, times as epoch milliseconds.
 - **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each

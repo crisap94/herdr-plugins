@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { NOTHING_HIDDEN } from '#src/ports/column-visibility.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
@@ -6,14 +6,14 @@ import { writeTx } from './connection.ts';
 import { all, flag, guarded, one, text } from './rows.ts';
 
 export class ColumnVisibilityRepository implements ColumnVisibility {
-    private readonly db: DatabaseSync;
-    private readonly blanket: StatementSync;
-    private readonly tabs: StatementSync;
-    private readonly setBlanket: StatementSync;
-    private readonly clear: StatementSync;
-    private readonly insert: StatementSync;
+    private readonly db: Database;
+    private readonly blanket: Statement;
+    private readonly tabs: Statement;
+    private readonly setBlanket: Statement;
+    private readonly clear: Statement;
+    private readonly insert: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.blanket = db.prepare('SELECT all_hidden FROM column_state WHERE id = 1');
         this.tabs = db.prepare('SELECT tab_id, state FROM tab_visibility ORDER BY rowid');

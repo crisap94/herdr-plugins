@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
 import type { LaneMark, Planned } from '#src/recap/domain/boundary.ts';
 import { all, maybeWhole, one, whole } from './rows.ts';
@@ -18,15 +18,15 @@ interface Row extends Planned {
 
 export class BoundaryRows {
     private readonly transcripts: TranscriptRows;
-    private readonly first: StatementSync;
-    private readonly latest: StatementSync;
-    private readonly chapter: StatementSync;
-    private readonly boundary: StatementSync;
-    private readonly lastCompacted: StatementSync;
-    private readonly askedAt: StatementSync;
-    private readonly link: StatementSync;
+    private readonly first: Statement;
+    private readonly latest: Statement;
+    private readonly chapter: Statement;
+    private readonly boundary: Statement;
+    private readonly lastCompacted: Statement;
+    private readonly askedAt: Statement;
+    private readonly link: Statement;
 
-    constructor(db: DatabaseSync, transcripts: TranscriptRows) {
+    constructor(db: Database, transcripts: TranscriptRows) {
         this.transcripts = transcripts;
         this.first = db.prepare('INSERT OR IGNORE INTO chapter (id, tab_id, n, started_at) VALUES (?, ?, 1, ?)');
         this.latest = db.prepare('SELECT n, started_at FROM chapter WHERE tab_id = ? ORDER BY n DESC LIMIT 1');

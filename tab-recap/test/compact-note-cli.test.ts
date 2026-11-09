@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { openFixture } from './db/support.ts';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
@@ -20,7 +20,7 @@ function run(args: readonly string[], setting?: string, newer = false): { status
     }
     if (newer) {
         mkdirSync(state, { recursive: true });
-        const db = new DatabaseSync(join(state, 'tab-recap.db'));
+        const db = openFixture(join(state, 'tab-recap.db'));
         db.exec('PRAGMA user_version = 9999');
         db.close();
     }

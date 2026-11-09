@@ -1,5 +1,5 @@
 import { originOf } from '#src/recap/domain/origin.ts';
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { ActiveStage, BeginCompaction, BriefOrigin, CompactionEnd, CompactionRecord, CompactionRecords, EndStage, Stage, StageFacts } from '#src/ports/compaction-records.ts';
 import { all, BadRow, blob, flag, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
@@ -42,16 +42,16 @@ const SHOWN = `SELECT * FROM compaction c WHERE tab_id = ? AND dismissed_at IS N
   SELECT id FROM compaction WHERE tab_id = c.tab_id AND pane = c.pane ORDER BY started_at DESC, id DESC LIMIT 1) ORDER BY started_at, id`;
 
 export class CompactionRecordsRepository implements CompactionRecords {
-    private readonly db: DatabaseSync;
-    private readonly insert: StatementSync;
-    private readonly advanceStage: StatementSync;
-    private readonly finishStage: StatementSync;
-    private readonly dismiss: StatementSync;
-    private readonly interrupt: StatementSync;
-    private readonly shown: StatementSync;
-    private readonly autoRunning: StatementSync;
+    private readonly db: Database;
+    private readonly insert: Statement;
+    private readonly advanceStage: Statement;
+    private readonly finishStage: Statement;
+    private readonly dismiss: Statement;
+    private readonly interrupt: Statement;
+    private readonly shown: Statement;
+    private readonly autoRunning: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.insert = db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.advanceStage = db.prepare('UPDATE compaction SET stage = ?, stage_at = ?, brief = COALESCE(?, brief), writer = COALESCE(?, writer), template_why = COALESCE(?, template_why), queued = COALESCE(?, queued) WHERE id = ? AND finished_at IS NULL');
@@ -88,7 +88,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     }
 
     interrupted(at: number, why: string): number {
-        return writeTx(this.db, () => Number(this.interrupt.run(at, at, why).changes));
+        return writeTx(this.db, () => this.interrupt.run(at, at, why).changes);
     }
 
     autoInProgress(): boolean {

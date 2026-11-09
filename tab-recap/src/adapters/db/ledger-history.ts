@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { all, maybeText, maybeWhole, text, whole } from './rows.ts';
 
@@ -10,9 +10,9 @@ const KEEP_RANK = `CASE
   WHEN f.section IN ('now','next') AND f.state = 'open' THEN 2 ELSE 3 END`;
 
 export class LedgerHistory {
-    private readonly facts: StatementSync;
+    private readonly facts: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.facts = db.prepare(`SELECT f.section, f.text, f.why, f.state, f.closed_why, f.closed_at, f.first_at, f.last_at FROM fact f
           WHERE f.tab_id = ?1 AND f.task_id IN
             (SELECT l.task_id FROM run_task_lane l JOIN transcript t ON t.id = l.transcript_id WHERE t.tab_id = ?1 AND t.pane = ?2)

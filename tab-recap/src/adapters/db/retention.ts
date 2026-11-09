@@ -1,24 +1,24 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Removed, Retention } from '#src/ports/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { writeTx } from './connection.ts';
 import { all, one, text, whole } from './rows.ts';
 
-const count = (db: DatabaseSync, sql: string): StatementSync => db.prepare(sql);
+const count = (db: Database, sql: string): Statement => db.prepare(sql);
 
 export class RetentionRepository implements Retention {
-    private readonly db: DatabaseSync;
-    private readonly old: StatementSync;
-    private readonly runs: StatementSync;
-    private readonly chapters: StatementSync;
-    private readonly boundaries: StatementSync;
-    private readonly compactions: StatementSync;
-    private readonly facts: StatementSync | null;
-    private readonly drop: StatementSync;
-    private readonly visibility: StatementSync;
+    private readonly db: Database;
+    private readonly old: Statement;
+    private readonly runs: Statement;
+    private readonly chapters: Statement;
+    private readonly boundaries: Statement;
+    private readonly compactions: Statement;
+    private readonly facts: Statement | null;
+    private readonly drop: Statement;
+    private readonly visibility: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.old = db.prepare('SELECT id FROM tab WHERE column_pane IS NULL AND MAX(last_seen, COALESCE(view_at, 0)) < ? ORDER BY id');
         this.runs = count(db, 'SELECT COUNT(*) AS n FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ?');
@@ -37,7 +37,7 @@ export class RetentionRepository implements Retention {
     }
 
     remove(tab: string): Removed {
-        const n = (statement: StatementSync): number => whole(one(statement, tab) ?? { n: 0 }, 'n');
+        const n = (statement: Statement): number => whole(one(statement, tab) ?? { n: 0 }, 'n');
         return writeTx(this.db, () => {
             const removed = { runs: n(this.runs), chapters: n(this.chapters), boundaries: n(this.boundaries), compactions: n(this.compactions), facts: this.facts === null ? 0 : n(this.facts) };
             this.visibility.run(tab);

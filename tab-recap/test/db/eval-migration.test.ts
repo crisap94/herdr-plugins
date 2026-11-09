@@ -2,30 +2,30 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { idOf, typeIdOf } from '#src/adapters/db/typeid.ts';
-import { newId, scratchDir } from './support.ts';
+import { newId, openFixture, scratchDir } from './support.ts';
 
 const OLDEST = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 const SQL = { run: "INSERT INTO run (id, chapter_id, at, cause, backend, language, cost_micro_usd) SELECT ?, id, 1000, 'requested', 'fake', 'en', 0 FROM chapter LIMIT 1" } as const;
 
-const names = (db: DatabaseSync): string[] => (db.prepare("SELECT name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map((row) => row.name);
+const names = (db: Database): string[] => (db.prepare("SELECT name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map((row) => row.name);
 
-function upgradedOldest(path: string, upTo = MIGRATIONS.length): DatabaseSync {
-    const db = new DatabaseSync(path);
+function upgradedOldest(path: string, upTo = MIGRATIONS.length): Database {
+    const db = openFixture(path);
     db.exec(readFileSync(OLDEST, 'utf8'));
     migrate(db, MIGRATIONS.slice(0, upTo));
     db.exec('PRAGMA foreign_keys = ON');
     return db;
 }
 
-function runIn(db: DatabaseSync): Uint8Array {
-    if (db.prepare('SELECT 1 FROM chapter').get() === undefined) {
+function runIn(db: Database): Uint8Array {
+    if (db.prepare('SELECT 1 FROM chapter').get() === null) {
         db.prepare("INSERT INTO tab (id, created_at) VALUES ('w1:t1', 1)").run();
         db.prepare("INSERT INTO chapter (id, tab_id, n, started_at) VALUES (?, 'w1:t1', 1, 1)").run(newId());
     }
@@ -63,7 +63,7 @@ test('opening a version 4 database backs it up as .v4.bak and brings it to the l
         }
         assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v4.bak']);
-        assert.equal(versionOf(new DatabaseSync(`${path}.v4.bak`)), 4);
+        assert.equal(versionOf(openFixture(`${path}.v4.bak`)), 4);
         assert.deepEqual(Object.assign({}, opened.db.prepare('SELECT gate_stats FROM run WHERE id = ?').get(run)), { gate_stats: null });
     } finally {
         rmSync(dir, { recursive: true, force: true });

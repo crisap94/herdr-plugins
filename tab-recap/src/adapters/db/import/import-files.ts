@@ -59,7 +59,7 @@ function moveAside(root: string, now: number): string {
     return target;
 }
 
-const importedAt = (store: Store): number | null => (store.db.prepare('SELECT files_imported_at AS at FROM store_meta WHERE id = 1').get() as { at: number | null } | undefined)?.at ?? null;
+const importedAt = (store: Store): number | null => (store.db.prepare('SELECT files_imported_at AS at FROM store_meta WHERE id = 1').get() as { at: number | null } | null)?.at ?? null;
 
 export function importFiles(store: Store, legacy: LegacyFiles, options: ImportOptions): ImportOutcome {
     if (importedAt(store) !== null) {

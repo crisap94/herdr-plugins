@@ -1,15 +1,15 @@
 import { originOf } from '#src/recap/domain/origin.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import { all, guarded, maybeWhole, one, text, whole } from './rows.ts';
 
 export class SessionSourceRepository implements SessionSource {
-    private readonly first: StatementSync;
-    private readonly runs: StatementSync;
-    private readonly compacted: StatementSync;
+    private readonly first: Statement;
+    private readonly runs: Statement;
+    private readonly compacted: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.first = db.prepare('SELECT first_seen FROM tab WHERE id = ?');
         this.runs = db.prepare('SELECT run.cause AS cause, count(*) AS n FROM run JOIN chapter ON chapter.id = run.chapter_id WHERE chapter.tab_id = ? GROUP BY run.cause');
         this.compacted = db.prepare("SELECT tokens_before, tokens_after, origin FROM compaction WHERE tab_id = ? AND stage = 'compacted' ORDER BY started_at, id");

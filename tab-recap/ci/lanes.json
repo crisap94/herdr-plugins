@@ -656,6 +656,7 @@
       "src/adapters/db/backup.ts",
       "src/adapters/db/boundaries.ts",
       "src/adapters/db/boundary-read.ts",
+      "src/adapters/db/bun-sqlite.d.ts",
       "src/adapters/db/checked-fact-codec.ts",
       "src/adapters/db/closed-lanes.ts",
       "src/adapters/db/column-visibility.ts",
@@ -694,6 +695,7 @@
       "src/adapters/db/migrate.ts",
       "src/adapters/db/open.ts",
       "src/adapters/db/operator-anchors.ts",
+      "src/adapters/db/orm.ts",
       "src/adapters/db/pane-alerts.ts",
       "src/adapters/db/pane-notes.ts",
       "src/adapters/db/print-store.ts",
@@ -747,6 +749,7 @@
       "test/cli-arguments.test.ts",
       "test/compact-note-cli.test.ts",
       "test/db/compaction-records.test.ts",
+      "test/db/connection.test.ts",
       "test/db/drizzle-parity.test.ts",
       "test/db/eval-migration.test.ts",
       "test/db/import/import-files.test.ts",
@@ -1098,7 +1101,6 @@
       "test/protocol-vectors.test.ts",
       "test/release.test.ts",
       "test/support/bun-env.ts",
-      "test/support/bun-sqlite.d.ts",
       "test/support/bun-test.d.ts",
       "test/xmllint.ts"
     ]

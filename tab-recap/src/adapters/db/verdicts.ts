@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Disagreement, Pair, Verdict, VerdictSource, Verdicts } from '#src/ports/verdicts.ts';
 import { writeTx } from './connection.ts';
 import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
@@ -23,14 +23,14 @@ const DISAGREE = `${LATEST}
   WHERE j.source = 'judge' AND j.item_key IS NOT NULL AND j.pass <> o.pass ORDER BY o.at DESC, o.id DESC`;
 
 export class VerdictsRepository implements Verdicts {
-    private readonly db: DatabaseSync;
-    private readonly insert: StatementSync;
-    private readonly byRun: StatementSync;
-    private readonly operator: StatementSync;
-    private readonly pairSelect: StatementSync;
-    private readonly disagreeSelect: StatementSync;
+    private readonly db: Database;
+    private readonly insert: Statement;
+    private readonly byRun: Statement;
+    private readonly operator: Statement;
+    private readonly pairSelect: Statement;
+    private readonly disagreeSelect: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.insert = db.prepare('INSERT INTO verdict (id, run_id, item_key, check_id, pass, critique, judge, at, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.byRun = db.prepare('SELECT * FROM verdict WHERE run_id = ? ORDER BY at, check_id');

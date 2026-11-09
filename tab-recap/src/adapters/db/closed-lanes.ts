@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -23,13 +23,13 @@ import { writeTx } from './connection.ts';
 import { BadRow, all, isRow, one } from './rows.ts';
 
 interface Statements {
-    readonly insert: StatementSync;
-    readonly byKey: StatementSync;
-    readonly listed: StatementSync;
-    readonly protectedTabs: StatementSync;
-    readonly expiredTabs: StatementSync;
-    readonly countOf: StatementSync;
-    readonly prune: StatementSync;
+    readonly insert: Statement;
+    readonly byKey: Statement;
+    readonly listed: Statement;
+    readonly protectedTabs: Statement;
+    readonly expiredTabs: Statement;
+    readonly countOf: Statement;
+    readonly prune: Statement;
 }
 
 type WindowOff = 0 | 1;
@@ -136,12 +136,12 @@ export function parseClosedLaneRow(input: unknown, tab: TabId): Result<ClosedLan
 }
 
 export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, ClosureRuns, ClosureSweep {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly days: ClosedLaneDays;
     private readonly statements: Statements | null;
-    private readonly lastRunAt: StatementSync;
+    private readonly lastRunAt: Statement;
 
-    constructor(db: DatabaseSync, days: ClosedLaneDays) {
+    constructor(db: Database, days: ClosedLaneDays) {
         this.db = db;
         this.days = days;
         this.lastRunAt = db.prepare(LAST_RUN_AT);
@@ -241,6 +241,6 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
             return NO_COUNT;
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return writeTx(this.db, () => countOrThrow(parseCount(Number(statements.prune.run(tab, off, cutoff).changes))));
+        return writeTx(this.db, () => countOrThrow(parseCount(statements.prune.run(tab, off, cutoff).changes)));
     }
 }

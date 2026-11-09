@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Advance, FailedRun, LastRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
@@ -17,19 +17,19 @@ import { ids } from './uuid7.ts';
 const causeOf = (raw: string): RecapCause | 'imported' | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
 
 export class RecapRecordsRepository implements RecapRecords {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly reader: RecapReader;
     private readonly tabs: TabRow;
     private readonly transcripts: TranscriptRows;
     private readonly runs: RunRows;
     private readonly ledger: LedgerRows;
     private readonly boundaries: BoundaryRows;
-    private readonly begin: StatementSync;
-    private readonly settleStatement: StatementSync;
-    private readonly errorOnly: StatementSync;
-    private readonly lastGood: StatementSync;
+    private readonly begin: Statement;
+    private readonly settleStatement: Statement;
+    private readonly errorOnly: Statement;
+    private readonly lastGood: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.ledger = new LedgerRows(db);
         this.reader = new RecapReader(db, this.ledger);

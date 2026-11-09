@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
@@ -74,19 +74,19 @@ function restoredOrThrow(result: Result<RestoredRow, ParseFailure>): RestoredRow
 const LANE_COLUMNS = 'tab_id, pane, position, agent, status, title, cwd, last_prompt, web_base, web_forge, web_branch, context_tokens, context_window, context_source';
 
 export class TabViewsRepository implements TabViews, LiveLanes {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly daemonVersion: string | null;
     private readonly tabs: TabRow;
-    private readonly view: StatementSync;
-    private readonly lanes: StatementSync;
-    private readonly update: StatementSync;
-    private readonly clear: StatementSync;
-    private readonly insert: StatementSync;
-    private readonly insertSince: StatementSync | null;
-    private readonly live: StatementSync | null;
-    private readonly paneTab: StatementSync;
+    private readonly view: Statement;
+    private readonly lanes: Statement;
+    private readonly update: Statement;
+    private readonly clear: Statement;
+    private readonly insert: Statement;
+    private readonly insertSince: Statement | null;
+    private readonly live: Statement | null;
+    private readonly paneTab: Statement;
 
-    constructor(db: DatabaseSync, daemonVersion: string | null = null) {
+    constructor(db: Database, daemonVersion: string | null = null) {
         this.db = db;
         this.daemonVersion = daemonVersion;
         this.tabs = new TabRow(db);

@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Applied } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
 import type { ClosedWhy, Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
@@ -20,17 +20,17 @@ function closedOf(value: string | null): ClosedWhy | null {
 }
 
 export class LedgerRows {
-    private readonly open: StatementSync;
-    private readonly closed: StatementSync;
-    private readonly every: StatementSync;
-    private readonly foldable: StatementSync;
-    private readonly keys: StatementSync;
-    private readonly taskInsert: StatementSync;
-    private readonly taskSelect: StatementSync;
-    private readonly insert: StatementSync;
-    private readonly update: StatementSync;
+    private readonly open: Statement;
+    private readonly closed: Statement;
+    private readonly every: Statement;
+    private readonly foldable: Statement;
+    private readonly keys: Statement;
+    private readonly taskInsert: Statement;
+    private readonly taskSelect: Statement;
+    private readonly insert: Statement;
+    private readonly update: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.open = db.prepare(`${SELECT} AND f.state = 'open' ORDER BY f.last_at DESC, f.id`);
         this.closed = db.prepare(`${SELECT} AND f.state = 'closed' AND f.closed_at >= ?3 ORDER BY f.closed_at, f.id`);
         this.every = db.prepare(`${SELECT} ORDER BY f.first_at, f.id`);

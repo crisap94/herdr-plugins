@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { RunFacts } from '#src/ports/recap-records.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
@@ -16,16 +16,16 @@ export interface StoredTask extends TaskShape {
 export class RunRows {
     private readonly transcripts: TranscriptRows;
     private readonly inputs: RunInputRows;
-    private readonly chapterInsert: StatementSync;
-    private readonly chapterSelect: StatementSync;
-    private readonly runInsert: StatementSync;
-    private readonly readInsert: StatementSync;
-    private readonly taskInsert: StatementSync;
-    private readonly taskSelect: StatementSync;
-    private readonly runTaskInsert: StatementSync;
-    private readonly laneInsert: StatementSync;
+    private readonly chapterInsert: Statement;
+    private readonly chapterSelect: Statement;
+    private readonly runInsert: Statement;
+    private readonly readInsert: Statement;
+    private readonly taskInsert: Statement;
+    private readonly taskSelect: Statement;
+    private readonly runTaskInsert: Statement;
+    private readonly laneInsert: Statement;
 
-    constructor(db: DatabaseSync, transcripts: TranscriptRows) {
+    constructor(db: Database, transcripts: TranscriptRows) {
         this.transcripts = transcripts;
         this.inputs = new RunInputRows(db);
         this.chapterInsert = db.prepare('INSERT OR IGNORE INTO chapter (id, tab_id, n, started_at) VALUES (?, ?, 1, ?)');

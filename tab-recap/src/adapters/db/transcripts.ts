@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Row } from './rows.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { blob, one, whole } from './rows.ts';
@@ -13,14 +13,14 @@ export interface Moved {
 }
 
 export class TranscriptRows {
-    private readonly detach: StatementSync;
-    private readonly was: StatementSync;
-    private readonly priorStatement: StatementSync;
-    private readonly upsert: StatementSync;
-    private readonly ofPaneStatement: StatementSync;
-    private readonly placeholder: StatementSync;
+    private readonly detach: Statement;
+    private readonly was: Statement;
+    private readonly priorStatement: Statement;
+    private readonly upsert: Statement;
+    private readonly ofPaneStatement: Statement;
+    private readonly placeholder: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.detach = db.prepare('UPDATE transcript SET attached = 0 WHERE tab_id = ?');
         this.was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?');
         this.priorStatement = db.prepare("SELECT id FROM transcript WHERE tab_id = ? AND pane = ? AND source <> '' ORDER BY first_seen DESC, id DESC LIMIT 1");

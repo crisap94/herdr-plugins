@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
@@ -10,7 +10,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
 
-const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
+const shape = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replace(/ALTER|"/g, '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
 test('migration 9 from a v8 database with facts in it: they keep every column, gain a nullable anchor, the readable view shows it; the backup is v8', () => {

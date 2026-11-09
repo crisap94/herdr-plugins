@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import { storedOutcomeOf, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
@@ -7,13 +7,13 @@ import { handoffBytesOf } from './handoff-ids.ts';
 import { guarded, maybeText, one, text, whole } from './rows.ts';
 
 export class HandoffAnswersRepository implements HandoffAnswers {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly now: () => number;
-    private readonly insert: StatementSync;
-    private readonly read: StatementSync;
-    private readonly drop: StatementSync;
+    private readonly insert: Statement;
+    private readonly read: Statement;
+    private readonly drop: Statement;
 
-    constructor(db: DatabaseSync, now: () => number = Date.now) {
+    constructor(db: Database, now: () => number = Date.now) {
         this.db = db;
         this.now = now;
         this.insert = db.prepare('INSERT INTO handoff_answer (id, at, outcome, reason) VALUES (?, ?, ?, ?)');

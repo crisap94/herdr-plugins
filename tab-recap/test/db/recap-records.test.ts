@@ -98,13 +98,13 @@ test('a run is all or nothing: a run whose fact the schema refuses (an empty tex
     for (const table of ['run', 'task', 'transcript', 'fact', 'run_task']) {
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
     }
-    assert.equal(db.isTransaction, false);
+    assert.equal(db.inTransaction, false);
 });
 
-test('a connection that cannot answer (closed, locked, damaged) reads as no recap, never a throw into the render loop', () => {
+test('a connection that cannot answer (a damaged schema) reads as no recap, never a throw into the render loop', () => {
     const { records, db } = memoryStore();
     records.recordRun(run());
-    db.close();
+    db.exec('DROP VIEW last_good_run');
     assert.equal(records.readRecap('w1:t1'), null);
 });
 

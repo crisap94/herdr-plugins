@@ -1,18 +1,32 @@
 import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { writeTx } from './connection.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 
 export class MigrationFailed extends Error {}
 
-export const versionOf = (db: DatabaseSync): number => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+export function versionOf(db: Database): number {
+    const row = db.prepare('PRAGMA user_version').get();
+    if (row === null) {
+        throw new MigrationFailed('PRAGMA user_version returned no row');
+    }
+    return Number(row.user_version);
+}
+
+function isLegacyHandle(db: Database): db is Database & DatabaseSync {
+    return typeof db.exec === 'function' && typeof db.prepare === 'function';
+}
 
 export function latestVersion(migrations: readonly Migration[] = MIGRATIONS): number {
     return migrations.at(-1)?.version ?? 0;
 }
 
-function apply(db: DatabaseSync, step: Migration): void {
+function apply(db: Database, step: Migration): void {
     if (typeof step.up === 'function') {
+        if (!isLegacyHandle(db)) {
+            throw new MigrationFailed('the handle cannot run a migration');
+        }
         step.up(db);
         return;
     }
@@ -29,7 +43,7 @@ function numbered(migrations: readonly Migration[]): void {
     });
 }
 
-export function migrate(db: DatabaseSync, migrations: readonly Migration[] = MIGRATIONS): void {
+export function migrate(db: Database, migrations: readonly Migration[] = MIGRATIONS): void {
     numbered(migrations);
     if (versionOf(db) >= latestVersion(migrations)) {
         return;

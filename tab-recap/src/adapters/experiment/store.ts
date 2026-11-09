@@ -1,10 +1,11 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import type { StatementSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
+import type { Statement } from 'bun:sqlite';
 import { stateDir } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { databasePath } from '../db/database.ts';
+import { BUSY_PRAGMA } from '../db/connection.ts';
 
 export interface StoredPoint {
     readonly id: string;
@@ -44,13 +45,14 @@ const onDisk = (path: string): string => {
 };
 
 export class ExperimentStore {
-    private readonly db: DatabaseSync;
-    private readonly facts: StatementSync;
-    private readonly breaks: StatementSync;
+    private readonly db: Database;
+    private readonly facts: Statement;
+    private readonly breaks: Statement;
 
     constructor(path: string, live: string = databasePath(stateDir())) {
         if (onDisk(path) === onDisk(live)) throw new Error(`refusing to open the plugin's live store (${live}): give a copy of it with --db`);
-        this.db = new DatabaseSync(path, { readOnly: true });
+        this.db = new Database(path, { readonly: true });
+        this.db.exec(BUSY_PRAGMA);
         this.facts = this.db.prepare(FACTS);
         this.breaks = this.db.prepare(BREAK);
     }

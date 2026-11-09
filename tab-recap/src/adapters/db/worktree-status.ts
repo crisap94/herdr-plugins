@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -50,15 +50,15 @@ export function parseWorktreeStatusRow(input: unknown): Result<WorktreeStatusRow
 }
 
 export class WorktreeStatusRepository implements WorktreeStatusWriter, WorktreeStatusReader {
-    private readonly db: DatabaseSync;
-    private readonly read: StatementSync;
-    private readonly upsert: StatementSync;
-    private readonly bound: StatementSync;
-    private readonly unbound: StatementSync;
-    private readonly dropStatus: StatementSync;
-    private readonly dropBindings: StatementSync;
+    private readonly db: Database;
+    private readonly read: Statement;
+    private readonly upsert: Statement;
+    private readonly bound: Statement;
+    private readonly unbound: Statement;
+    private readonly dropStatus: Statement;
+    private readonly dropBindings: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.read = db.prepare(READ);
         this.upsert = db.prepare(WRITE);

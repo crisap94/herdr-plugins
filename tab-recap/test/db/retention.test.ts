@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { Removed } from '#src/ports/retention.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -22,7 +22,7 @@ function tab(store: Store, id: string, ago: number): void {
     store.db.prepare("INSERT INTO tab_visibility (tab_id, state) VALUES (?, 'hidden')").run(id);
 }
 
-const count = (db: DatabaseSync, table: string, owner: string): number => {
+const count = (db: Database, table: string, owner: string): number => {
     const sql: Record<string, string> = {
         tab: 'SELECT COUNT(*) AS n FROM tab WHERE id = ?', chapter: 'SELECT COUNT(*) AS n FROM chapter WHERE tab_id = ?',
         run: 'SELECT COUNT(*) AS n FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ?',
@@ -33,7 +33,7 @@ const count = (db: DatabaseSync, table: string, owner: string): number => {
     };
     return (db.prepare(sql[table] ?? '').get(owner) as { n: number }).n;
 };
-const everything = (db: DatabaseSync, id: string): number[] => ['tab', 'chapter', 'run', 'boundary', 'fact', 'transcript', 'compaction', 'tab_visibility'].map((table) => count(db, table, id));
+const everything = (db: Database, id: string): number[] => ['tab', 'chapter', 'run', 'boundary', 'fact', 'transcript', 'compaction', 'tab_visibility'].map((table) => count(db, table, id));
 
 function world(days: number): { store: Store; lines: string[]; run: () => number } {
     const store = memoryStore();

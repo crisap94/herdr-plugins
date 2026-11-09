@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { is } from 'drizzle-orm';
 import { getTableConfig, getViewConfig, SQLiteTable, SQLiteView } from 'drizzle-orm/sqlite-core';
 
@@ -15,7 +15,7 @@ type PragmaColumn = { name: string; type: string; notnull: number; pk: number };
 const SCHEMA_ENTRIES = "SELECT type, name FROM sqlite_schema WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name";
 const PRAGMA_COLUMNS = 'SELECT p.name, p.type, p."notnull", p.pk FROM pragma_table_info(?) p ORDER BY p.cid';
 
-export function shapeOfDatabase(db: DatabaseSync): Shape {
+export function shapeOfDatabase(db: Database): Shape {
     const columns = db.prepare(PRAGMA_COLUMNS);
     const shape: Shape = { tables: {}, views: {} };
     for (const entry of db.prepare(SCHEMA_ENTRIES).all() as SchemaEntry[]) {

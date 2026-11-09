@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
@@ -46,7 +46,7 @@ import { WorktreeStatusRepository } from './worktree-status.ts';
 
 export interface Store {
     readonly kind: 'ready';
-    readonly db: DatabaseSync;
+    readonly db: Database;
     readonly records: RecapRecords;
     readonly ledger: Ledger;
     readonly views: TabViews & LiveLanes;
@@ -79,7 +79,7 @@ export interface StoreOptions {
     readonly closedDays?: ClosedLaneDays;
 }
 
-export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
+export function storeOver(db: Database, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),

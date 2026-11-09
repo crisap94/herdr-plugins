@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
@@ -32,17 +32,17 @@ function askOf(row: Row, log: (line: string) => void): readonly Ask[] {
 }
 
 export class AskLedgerRepository implements AskLedger {
-    private readonly find: StatementSync;
-    private readonly insert: StatementSync;
-    private readonly attachRow: StatementSync;
-    private readonly withdrawRow: StatementSync;
-    private readonly settleRow: StatementSync;
-    private readonly open: StatementSync;
-    private readonly drop: StatementSync;
-    private readonly db: DatabaseSync;
+    private readonly find: Statement;
+    private readonly insert: Statement;
+    private readonly attachRow: Statement;
+    private readonly withdrawRow: Statement;
+    private readonly settleRow: Statement;
+    private readonly open: Statement;
+    private readonly drop: Statement;
+    private readonly db: Database;
     private readonly log: (line: string) => void;
 
-    constructor(db: DatabaseSync, log: (line: string) => void = (): void => undefined) {
+    constructor(db: Database, log: (line: string) => void = (): void => undefined) {
         this.db = db;
         this.log = log;
         this.find = db.prepare('SELECT 1 AS found FROM ask WHERE exchange = ? AND requester = ? AND id = ?');

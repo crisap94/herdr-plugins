@@ -73,7 +73,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true },
+      from: { orphan: true, pathNot: '\\.d\\.ts$' },
       to: {},
     },
     {

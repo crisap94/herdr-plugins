@@ -2,14 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
 
-const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
+const shape = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
 test('migration 11 from a v10 database: one skip per lane (replaced, not appended), readable without blobs, and a forgotten tab takes its skips; upgraded == fresh', () => {

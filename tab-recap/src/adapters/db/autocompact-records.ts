@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
@@ -66,25 +66,25 @@ function decisionOf(row: Row): StoredDecision {
 }
 
 export class AutocompactRecordsRepository implements AutocompactRecords {
-    private readonly db: DatabaseSync;
-    private readonly insert: StatementSync;
-    private readonly attach: StatementSync;
-    private readonly latest: StatementSync;
-    private readonly cover: StatementSync;
-    private readonly last: StatementSync;
-    private readonly asked: StatementSync;
-    private readonly newestAll: StatementSync;
-    private readonly newestOf: StatementSync;
-    private readonly counts: StatementSync;
-    private readonly spent: StatementSync;
-    private readonly lastOne: StatementSync;
-    private readonly requested: StatementSync;
-    private readonly anyAsked: StatementSync;
-    private readonly putSkip: StatementSync;
-    private readonly dropSkip: StatementSync;
-    private readonly allSkips: StatementSync;
+    private readonly db: Database;
+    private readonly insert: Statement;
+    private readonly attach: Statement;
+    private readonly latest: Statement;
+    private readonly cover: Statement;
+    private readonly last: Statement;
+    private readonly asked: Statement;
+    private readonly newestAll: Statement;
+    private readonly newestOf: Statement;
+    private readonly counts: Statement;
+    private readonly spent: Statement;
+    private readonly lastOne: Statement;
+    private readonly requested: Statement;
+    private readonly anyAsked: Statement;
+    private readonly putSkip: Statement;
+    private readonly dropSkip: Statement;
+    private readonly allSkips: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.insert = db.prepare('INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, asked_verdict, lane_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         this.attach = db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?');

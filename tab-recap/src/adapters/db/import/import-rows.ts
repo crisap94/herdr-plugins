@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
@@ -16,7 +16,7 @@ import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
 
-export function attempt(db: DatabaseSync, name: string, work: () => void): string | null {
+export function attempt(db: Database, name: string, work: () => void): string | null {
     db.exec('SAVEPOINT piece');
     try {
         work();
@@ -33,15 +33,15 @@ export function attempt(db: DatabaseSync, name: string, work: () => void): strin
 const mint = (): FactId => typeIdOf('fact', ids.next()) as FactId;
 
 export class RowsWriter {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly tabs: TabRow;
     private readonly transcripts: TranscriptRows;
     private readonly runs: RunRows;
     private readonly ledger: LedgerRows;
     private readonly views: TabViewsRepository;
-    private readonly state: StatementSync;
+    private readonly state: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.tabs = new TabRow(db);
         this.transcripts = new TranscriptRows(db);

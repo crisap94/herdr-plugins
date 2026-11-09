@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
@@ -13,7 +13,7 @@ import { scratchDir, shapeOf } from './support.ts';
 
 const BEFORE = 18;
 
-const freshDb = (): DatabaseSync => {
+const freshDb = (): Database => {
     const opened = openDatabase(MEMORY);
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
@@ -25,26 +25,26 @@ const rejects = (action: () => void): void => {
     assert.throws(action, /CHECK constraint failed|FOREIGN KEY constraint failed|UNIQUE constraint failed/);
 };
 
-const seedTab = (db: DatabaseSync, id: string): void => {
+const seedTab = (db: Database, id: string): void => {
     db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(id);
 };
 
-const seedTask = (db: DatabaseSync, key: string): Uint8Array => {
+const seedTask = (db: Database, key: string): Uint8Array => {
     const id = ids.next();
     db.prepare("INSERT INTO task (id, tab_id, key) VALUES (?, 'w1:t1', ?)").run(id, key);
     return id;
 };
 
-const insertClosed = (db: DatabaseSync, row: { readonly pane?: string; readonly closedAt?: number; readonly task?: Uint8Array | null; readonly name?: string | null }): void => {
+const insertClosed = (db: Database, row: { readonly pane?: string; readonly closedAt?: number; readonly task?: Uint8Array | null; readonly name?: string | null }): void => {
     db.prepare('INSERT INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run('w1:t1', row.pane ?? 'w1:p1', row.closedAt ?? 1, 'claude', null, row.task ?? null, row.name ?? null);
 };
 
-const insertHandoff = (db: DatabaseSync, closedAt: number | null): void => {
+const insertHandoff = (db: Database, closedAt: number | null): void => {
     db.prepare("INSERT INTO request (id, at, kind, target, pane, to_pane, closed_at) VALUES (?, 1, 'handoff', 'w1:t1', 'w1:p1', 'w1:p2', ?)").run(ids.next(), closedAt);
 };
 
-const countOf = (db: DatabaseSync, table: string): number => (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
+const countOf = (db: Database, table: string): number => (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
 
 test('migration 19 from the previous version keeps every lane and request row, leaves since and closed_at null, ends with the fresh shape, and backs up as version 17', () => {
     const dir = scratchDir('closed-lane-upgrade');
@@ -102,9 +102,9 @@ test('the readable views show the task as UUID text and the closed-source column
     insertClosed(db, { task, name: 'the name', closedAt: 7 });
     insertClosed(db, { pane: 'w1:p2', closedAt: 8 });
     insertHandoff(db, 9);
-    assert.deepEqual({ ...db.prepare('SELECT task_name, length(task_id) AS length FROM closed_lane_readable WHERE closed_at = 7').get() }, { task_name: 'the name', length: 36 });
-    assert.deepEqual({ ...db.prepare('SELECT task_id FROM closed_lane_readable WHERE closed_at = 8').get() }, { task_id: null });
-    assert.deepEqual({ ...db.prepare("SELECT closed_at FROM request_readable WHERE kind = 'handoff'").get() }, { closed_at: 9 });
+    assert.deepEqual(db.prepare('SELECT task_name, length(task_id) AS length FROM closed_lane_readable WHERE closed_at = 7').get(), { task_name: 'the name', length: 36 });
+    assert.deepEqual(db.prepare('SELECT task_id FROM closed_lane_readable WHERE closed_at = 8').get(), { task_id: null });
+    assert.deepEqual(db.prepare("SELECT closed_at FROM request_readable WHERE kind = 'handoff'").get(), { closed_at: 9 });
     db.close();
 });
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -135,27 +135,11 @@ test('opencode: the reader cannot write — the handle is read-only', () => {
         const fixture = opencodeFixture(dir);
         fixture.close();
         const probe = [
-            "import { DatabaseSync } from 'node:sqlite';",
-            `const db = new DatabaseSync(${JSON.stringify(fixture.db)}, { readOnly: true });`,
+            "import { Database } from 'bun:sqlite';",
+            `const db = new Database(${JSON.stringify(fixture.db)}, { readonly: true });`,
             "try { db.exec(\"INSERT INTO session VALUES ('x', '/', NULL, 't', 1, NULL)\"); console.log('wrote'); } catch (error) { console.log('refused'); }",
         ].join('\n');
         assert.equal(execFileSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).trim(), 'refused');
-    } finally {
-        rmSync(dir, { recursive: true });
-    }
-});
-
-test('node:sqlite prints nothing on stderr when run the way the plugin launches node (plain, no flag)', () => {
-    const dir = scratch();
-    try {
-        const fixture = opencodeFixture(dir);
-        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'one' }] });
-        fixture.close();
-        const adapter = new URL('../src/adapters/transcripts/opencode/transcripts.ts', import.meta.url).href;
-        const script = `import { OpencodeTranscripts } from ${JSON.stringify(adapter)};\nconst r = new OpencodeTranscripts(${JSON.stringify(fixture.db)});\nconst l = await r.locate({ cwd: '/repo', pane: 'p' });\nconsole.log(l.kind);`;
-        const ran = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
-        assert.equal(ran.stdout.trim(), 'located');
-        assert.equal(ran.stderr, '', 'no ExperimentalWarning (nor anything else) on stderr');
     } finally {
         rmSync(dir, { recursive: true });
     }

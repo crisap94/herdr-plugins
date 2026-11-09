@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Boundaries, Break } from '#src/ports/boundaries.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import { all, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
@@ -10,11 +10,11 @@ const breakOf = (row: Row): Break => ({
 });
 
 export class BoundaryRepository implements Boundaries {
-    private readonly breaks: StatementSync;
-    private readonly count: StatementSync;
-    private readonly last: StatementSync;
+    private readonly breaks: Statement;
+    private readonly count: Statement;
+    private readonly last: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.breaks = db.prepare(`SELECT b.kind, b.at, b.trigger,
             COALESCE(b.tokens_before, c.tokens_before) AS tokens_before, COALESCE(b.tokens_after, c.tokens_after) AS tokens_after, COALESCE(b.took_ms, c.took_ms) AS took_ms
           FROM boundary b JOIN chapter ch ON ch.id = b.chapter_id LEFT JOIN compaction c ON c.boundary_id = b.id

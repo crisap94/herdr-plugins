@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import { encode } from './checked-fact-codec.ts';
@@ -6,11 +6,11 @@ import { idOf } from './typeid.ts';
 import { writeTx } from './connection.ts';
 
 export class AutocompactBriefsRepository implements AutocompactBriefs {
-    private readonly db: DatabaseSync;
-    private readonly insert: StatementSync;
-    private readonly clear: StatementSync;
+    private readonly db: Database;
+    private readonly insert: Statement;
+    private readonly clear: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.insert = db.prepare('INSERT INTO autocompact_brief (decision_id, briefed_at, body) VALUES (?, ?, ?) ON CONFLICT (decision_id) DO UPDATE SET briefed_at = excluded.briefed_at, body = excluded.body');
         this.clear = db.prepare('DELETE FROM autocompact_brief WHERE briefed_at < ?');
@@ -22,6 +22,6 @@ export class AutocompactBriefsRepository implements AutocompactBriefs {
     }
 
     clearBefore(cutoff: number): number {
-        return writeTx(this.db, () => Number(this.clear.run(cutoff).changes));
+        return writeTx(this.db, () => this.clear.run(cutoff).changes);
     }
 }

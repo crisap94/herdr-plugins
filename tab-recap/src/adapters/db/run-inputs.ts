@@ -1,5 +1,5 @@
 import { gunzipSync, gzipSync } from 'node:zlib';
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
@@ -21,9 +21,9 @@ function statsOf(raw: string | null): GateStats | null {
 }
 
 export class RunInputRows {
-    private readonly insert: StatementSync;
+    private readonly insert: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.insert = db.prepare('INSERT INTO run_input (run_id, document, bytes) VALUES (?, ?, ?)');
     }
 
@@ -60,14 +60,14 @@ const itemOf = (row: Row, prefix: string): RunItem => ({
 });
 
 export class RunInputsRepository implements RunInputs {
-    private readonly runsSelect: StatementSync;
-    private readonly documentSelect: StatementSync;
-    private readonly addedSelect: StatementSync;
-    private readonly stateSelect: StatementSync;
-    private readonly gatesSelect: StatementSync;
-    private readonly remove: StatementSync;
+    private readonly runsSelect: Statement;
+    private readonly documentSelect: Statement;
+    private readonly addedSelect: Statement;
+    private readonly stateSelect: Statement;
+    private readonly gatesSelect: Statement;
+    private readonly remove: Statement;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.runsSelect = db.prepare(RUNS);
         this.documentSelect = db.prepare('SELECT document FROM run_input WHERE run_id = ?');
         this.addedSelect = db.prepare(ADDED);
@@ -82,8 +82,8 @@ export class RunInputsRepository implements RunInputs {
 
     document(run: string): string | null {
         const id = idOf('run', run);
-        const row = id === null ? undefined : this.documentSelect.get(id);
-        const packed = row === undefined ? null : row['document'];
+        const row = id === null ? null : this.documentSelect.get(id);
+        const packed = row === null ? null : row['document'];
         return guarded(() => (packed instanceof Uint8Array ? gunzipSync(packed).toString('utf8') : null), null);
     }
 
@@ -101,6 +101,6 @@ export class RunInputsRepository implements RunInputs {
     }
 
     prune(before: number): number {
-        return Number(this.remove.run(before).changes);
+        return this.remove.run(before).changes;
     }
 }

@@ -1,4 +1,4 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Applied, Ledger } from '#src/ports/ledger.ts';
 import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
@@ -8,13 +8,13 @@ import { guarded, maybeText, maybeWhole, one, blob } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 
 export class StoriesRepository implements Stories {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly ledger: Ledger;
-    private readonly select: StatementSync;
-    private readonly update: StatementSync;
-    private readonly newestRun: StatementSync;
+    private readonly select: Statement;
+    private readonly update: Statement;
+    private readonly newestRun: Statement;
 
-    constructor(db: DatabaseSync, ledger: Ledger) {
+    constructor(db: Database, ledger: Ledger) {
         this.db = db;
         this.ledger = ledger;
         this.select = db.prepare('SELECT story_text, story_at FROM task WHERE tab_id = ? AND key = ?');
