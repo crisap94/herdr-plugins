@@ -292,6 +292,7 @@
       "test/db/migration-018.test.ts",
       "test/db/parity-answers-ledger.test.ts",
       "test/db/parity-medium.test.ts",
+      "test/db/parity-reads.test.ts",
       "test/db/parity-simple.test.ts",
       "test/db/parity-worktree.test.ts",
       "test/db/recap-records.test.ts",

@@ -131,7 +131,7 @@
     "property": 3
   },
   "src/adapters/db/recap-read.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
     "container": 9,
     "property": 2

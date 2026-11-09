@@ -1,4 +1,5 @@
 import type { Database, Statement } from 'bun:sqlite';
+import { and, asc, count, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -20,17 +21,9 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { instant, parseInstant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
-import { BadRow, all, isRow, one } from './rows.ts';
-
-interface Statements {
-    readonly insert: Statement;
-    readonly byKey: Statement;
-    readonly listed: Statement;
-    readonly protectedTabs: Statement;
-    readonly expiredTabs: Statement;
-    readonly countOf: Statement;
-    readonly prune: Statement;
-}
+import { closedLane, run as runs, runTask as runTasks, task as tasks } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { BadRow, isRow, one } from './rows.ts';
 
 type WindowOff = 0 | 1;
 
@@ -45,11 +38,19 @@ type Association = ClosureAssociation | null;
 
 export type RunCause = LastRun['cause'];
 
-const ROW = 'SELECT c.pane, c.closed_at, c.agent, c.cwd, c.task_name, k.key FROM closed_lane c LEFT JOIN task k ON k.id = c.task_id';
-
-const LAST_RUN_AT = 'SELECT r.at AS at, r.cause AS cause FROM run r JOIN run_task rt ON rt.run_id = r.id JOIN task k ON k.id = rt.task_id WHERE k.tab_id = ? AND k.key = ? AND r.at <= ? ORDER BY r.at DESC, r.id DESC LIMIT 1';
-
 const NO_COUNT = countOrThrow(parseCount(0));
+
+const ASSOCIATE = `WITH hit AS (
+  SELECT l.task_id, rt.name AS name FROM run_task_lane l
+  JOIN transcript t ON t.id = l.transcript_id
+  JOIN run r ON r.id = l.run_id
+  JOIN run_task rt ON rt.run_id = l.run_id AND rt.task_id = l.task_id
+  WHERE t.tab_id = ? AND t.pane = ? AND t.first_seen >= ? AND t.first_seen <= ? AND r.at <= ?
+  ORDER BY r.at DESC, r.id DESC
+  LIMIT 1
+)
+INSERT OR IGNORE INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name)
+SELECT ?, ?, ?, ?, ?, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`;
 
 function countOrThrow(result: Result<Count, ParseFailure>): Count {
     if (result.kind === 'err') {
@@ -72,18 +73,6 @@ export function parseRunCause(input: unknown): Result<RunCause, ParseFailure> {
     const cause = RECAP_CAUSES.find((candidate) => candidate === input);
     return cause === undefined ? err({ kind: 'out-of-range' }) : ok(cause);
 }
-
-const ASSOCIATE = `WITH hit AS (
-  SELECT l.task_id, rt.name AS name FROM run_task_lane l
-  JOIN transcript t ON t.id = l.transcript_id
-  JOIN run r ON r.id = l.run_id
-  JOIN run_task rt ON rt.run_id = l.run_id AND rt.task_id = l.task_id
-  WHERE t.tab_id = ? AND t.pane = ? AND t.first_seen >= ? AND t.first_seen <= ? AND r.at <= ?
-  ORDER BY r.at DESC, r.id DESC
-  LIMIT 1
-)
-INSERT OR IGNORE INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name)
-SELECT ?, ?, ?, ?, ?, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`;
 
 const windowOf = (now: Instant, days: ClosedLaneDays): ClosedWindow => {
     const cutoff = closedCutoffOf(now, days);
@@ -135,54 +124,57 @@ export function parseClosedLaneRow(input: unknown, tab: TabId): Result<ClosedLan
     return ok({ tab, pane: pane.value, agent: agent.value, closedAt: closedAt.value, cwd: cwd.value, association: association.value });
 }
 
+const closedFields = {
+    pane: closedLane.pane, closed_at: closedLane.closedAt, agent: closedLane.agent, cwd: closedLane.cwd, task_name: closedLane.taskName, key: tasks.key,
+};
+
 export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, ClosureRuns, ClosureSweep {
     private readonly db: Database;
+    private readonly orm: Orm;
     private readonly days: ClosedLaneDays;
-    private readonly statements: Statements | null;
-    private readonly lastRunAt: Statement;
+    private readonly present: boolean;
+    private readonly associate: Statement | null;
 
     constructor(db: Database, days: ClosedLaneDays) {
         this.db = db;
+        this.orm = ormOf(db);
         this.days = days;
-        this.lastRunAt = db.prepare(LAST_RUN_AT);
-        const present = one(db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'closed_lane'")) !== null;
-        this.statements = present ? {
-            insert: db.prepare(ASSOCIATE),
-            byKey: db.prepare(`${ROW} WHERE c.tab_id = ? AND c.pane = ? AND c.closed_at = ?`),
-            listed: db.prepare(`${ROW} WHERE c.tab_id = ? AND ? = 0 AND c.closed_at >= ? ORDER BY c.closed_at DESC, c.pane`),
-            protectedTabs: db.prepare('SELECT DISTINCT tab_id AS id FROM closed_lane WHERE ? = 0 AND closed_at >= ? ORDER BY tab_id'),
-            expiredTabs: db.prepare('SELECT DISTINCT tab_id AS id FROM closed_lane WHERE ? = 1 OR closed_at < ? ORDER BY tab_id'),
-            countOf: db.prepare('SELECT COUNT(*) AS n FROM closed_lane WHERE tab_id = ?'),
-            prune: db.prepare('DELETE FROM closed_lane WHERE tab_id = ? AND (? = 1 OR closed_at < ?)'),
-        } : null;
+        this.present = one(db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'closed_lane'")) !== null;
+        this.associate = this.present ? db.prepare(ASSOCIATE) : null;
     }
 
     record(closed: ClosedLane): void {
-        if (this.statements === null) {
+        const insert = this.associate;
+        if (insert === null) {
             throw new Error('the closed-lane table is not migrated');
         }
-        const { insert } = this.statements;
         writeTx(this.db, () => {
             insert.run(closed.tab, closed.pane, closed.since, closed.closedAt, closed.closedAt, closed.tab, closed.pane, closed.closedAt, closed.agent, closed.cwd);
         });
     }
 
     resolve(identity: ClosedLaneIdentity): ClosedLaneRead {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return { kind: 'absent' };
         }
         try {
-            const row = one(statements.byKey, identity.tab, identity.pane, identity.closedAt);
-            return row === null ? { kind: 'absent' } : { kind: 'row', record: readOrThrow(parseClosedLaneRow(row, identity.tab)) };
+            const row = this.orm.select(closedFields).from(closedLane).leftJoin(tasks, eq(tasks.id, closedLane.taskId))
+                .where(and(eq(closedLane.tabId, identity.tab), eq(closedLane.pane, identity.pane), eq(closedLane.closedAt, identity.closedAt))).get();
+            return row === undefined ? { kind: 'absent' } : { kind: 'row', record: readOrThrow(parseClosedLaneRow(row, identity.tab)) };
         } catch (error) {
             return unreadableOf(failureCauseOf(error));
         }
     }
 
     runAt(task: TaskId, at: Instant): LastRun | null {
-        const row = one(this.lastRunAt, task.tab, task.key, at);
-        if (row === null) {
+        const tab = parseTabId(task.tab);
+        if (tab.kind === 'err') {
+            return null;
+        }
+        const row = this.orm.select({ at: runs.at, cause: runs.cause }).from(runs)
+            .innerJoin(runTasks, eq(runTasks.runId, runs.id)).innerJoin(tasks, eq(tasks.id, runTasks.taskId))
+            .where(and(eq(tasks.tabId, tab.value), eq(tasks.key, task.key), lte(runs.at, at))).orderBy(desc(runs.at), desc(runs.id)).limit(1).get();
+        if (row === undefined) {
             return null;
         }
         const cause = parseRunCause(row.cause);
@@ -191,56 +183,59 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
     }
 
     listOf(tab: TabId, now: Instant): ClosedLaneList {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return { kind: 'listed', records: [] };
         }
         try {
             const { off, cutoff } = windowOf(now, this.days);
-            return { kind: 'listed', records: all(statements.listed, tab, off, cutoff).map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
+            return { kind: 'listed', records: off === 1 ? [] : this.orm.select(closedFields).from(closedLane).leftJoin(tasks, eq(tasks.id, closedLane.taskId))
+                .where(and(eq(closedLane.tabId, tab), gte(closedLane.closedAt, cutoff))).orderBy(desc(closedLane.closedAt), asc(closedLane.pane)).all().map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
         } catch (error) {
             return unreadableOf(failureCauseOf(error));
         }
     }
 
     protectedTabs(now: Instant): readonly TabId[] {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return [];
         }
         const { off, cutoff } = windowOf(now, this.days);
-        return all(statements.protectedTabs, off, cutoff).flatMap((row) => {
+        return off === 1 ? [] : this.orm.selectDistinct({ id: closedLane.tabId }).from(closedLane)
+            .where(gte(closedLane.closedAt, cutoff)).orderBy(asc(closedLane.tabId)).all().flatMap((row) => {
             const tab = parseTabId(row.id);
             return tab.kind === 'ok' ? [tab.value] : [];
         });
     }
 
     expiredTabs(now: Instant): readonly TabId[] {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return [];
         }
-        const { off, cutoff } = windowOf(now, this.days);
-        return all(statements.expiredTabs, off, cutoff).flatMap((row) => {
+        const window = windowOf(now, this.days);
+        return this.orm.selectDistinct({ id: closedLane.tabId }).from(closedLane)
+            .where(window.off === 1 ? undefined : lt(closedLane.closedAt, window.cutoff)).orderBy(asc(closedLane.tabId)).all().flatMap((row) => {
             const tab = parseTabId(row.id);
             return tab.kind === 'ok' ? [tab.value] : [];
         });
     }
 
     countOf(tab: TabId): Count {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return NO_COUNT;
         }
-        return countOrThrow(parseCount(one(statements.countOf, tab)?.n ?? 0));
+        return countOrThrow(parseCount(this.orm.select({ n: count() }).from(closedLane).where(eq(closedLane.tabId, tab)).get()?.n ?? 0));
     }
 
     pruneTab(tab: TabId, now: Instant): Count {
-        const statements = this.statements;
-        if (statements === null) {
+        if (!this.present) {
             return NO_COUNT;
         }
-        const { off, cutoff } = windowOf(now, this.days);
-        return writeTx(this.db, () => countOrThrow(parseCount(statements.prune.run(tab, off, cutoff).changes)));
+        const window = windowOf(now, this.days);
+        return writeTx(this.db, () => {
+            const scope = and(eq(closedLane.tabId, tab), window.off === 1 ? undefined : lt(closedLane.closedAt, window.cutoff));
+            const removed = countOrThrow(parseCount(this.orm.select({ n: count() }).from(closedLane).where(scope).get()?.n ?? 0));
+            this.orm.delete(closedLane).where(scope).run();
+            return removed;
+        });
     }
 }

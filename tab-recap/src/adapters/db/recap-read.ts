@@ -1,11 +1,16 @@
-import type { Database, Statement } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, asc, desc, eq, exists, isNotNull, or, sql } from 'drizzle-orm';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
-import { all, blob, flag, maybeText, one, text, whole } from './rows.ts';
-import { typeIdOf } from './typeid.ts';
+import { chapter as chapters, lastGoodRun, run as runs, runTask as runTasks, runTaskLane as runTaskLanes, tab as tabs, task as tasks, transcript as transcripts } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
+import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
 
 const cursorOf = (row: Row): LaneCursor => ({
@@ -23,30 +28,22 @@ const groupBy = <T>(rows: readonly Row[], make: (row: Row) => T): Map<string, T[
 };
 
 export class RecapReader {
-    private readonly current: Statement;
-    private readonly good: Statement;
-    private readonly newest: Statement;
-    private readonly cost: Statement;
-    private readonly lanes: Statement;
-    private readonly tasks: Statement;
-    private readonly taskLanes: Statement;
+    private readonly orm: Orm;
     private readonly ledger: LedgerRows;
 
     constructor(db: Database, ledger: LedgerRows) {
+        this.orm = ormOf(db);
         this.ledger = ledger;
-        this.current = db.prepare(`SELECT t.running, t.backend, t.error FROM tab t WHERE t.id = ? AND (t.running = 1 OR t.error IS NOT NULL OR t.backend IS NOT NULL
-          OR EXISTS (SELECT 1 FROM transcript WHERE tab_id = t.id) OR EXISTS (SELECT 1 FROM chapter WHERE tab_id = t.id))`);
-        this.good = db.prepare('SELECT r.id, r.at, r.language FROM run r JOIN last_good_run g ON g.run_id = r.id WHERE g.tab_id = ?');
-        this.newest = db.prepare('SELECT r.language FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ? ORDER BY r.id DESC LIMIT 1');
-        this.cost = db.prepare('SELECT COALESCE(SUM(r.cost_micro_usd), 0) AS micro FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE c.tab_id = ?');
-        this.lanes = db.prepare('SELECT pane, agent, source, cursor, tail, title, last_prompt, claude_note FROM transcript WHERE tab_id = ? AND attached = 1 ORDER BY position, id');
-        this.tasks = db.prepare('SELECT r.task_id, k.key, r.name, r.legacy_markdown FROM run_task r JOIN task k ON k.id = r.task_id WHERE r.run_id = ? ORDER BY r.position');
-        this.taskLanes = db.prepare('SELECT l.task_id, t.pane FROM run_task_lane l JOIN transcript t ON t.id = l.transcript_id WHERE l.run_id = ? ORDER BY l.task_id, l.position');
     }
 
     private tasksOf(tab: string, run: Uint8Array, language: string): readonly RecapTask[] {
-        const lanes = groupBy(all(this.taskLanes, run), (row) => text(row, 'pane'));
-        return all(this.tasks, run).map((row) => {
+        const laneRows = this.orm.select({ task_id: runTaskLanes.taskId, pane: transcripts.pane })
+            .from(runTaskLanes).innerJoin(transcripts, eq(transcripts.id, runTaskLanes.transcriptId)).where(eq(runTaskLanes.runId, run))
+            .orderBy(asc(runTaskLanes.taskId), asc(runTaskLanes.position)).all();
+        const taskRows = this.orm.select({ task_id: runTasks.taskId, key: tasks.key, name: runTasks.name, legacy_markdown: runTasks.legacyMarkdown })
+            .from(runTasks).innerJoin(tasks, eq(tasks.id, runTasks.taskId)).where(eq(runTasks.runId, run)).orderBy(asc(runTasks.position)).all();
+        const lanes = groupBy(laneRows, (row) => text(row, 'pane'));
+        return taskRows.map((row) => {
             const legacy = maybeText(row, 'legacy_markdown');
             const key = text(row, 'key');
             const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ tab, key })) : null;
@@ -57,24 +54,42 @@ export class RecapReader {
         });
     }
 
-    private facts(tab: string): { readonly run: Uint8Array | null; readonly at: number | null; readonly language: string } {
-        const good = one(this.good, tab);
-        if (good !== null) {
+    private facts(tab: TabId): { readonly run: Uint8Array | null; readonly at: number | null; readonly language: string } {
+        const good = this.orm.select({ id: runs.id, at: runs.at, language: runs.language }).from(runs)
+            .innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id)).where(eq(lastGoodRun.tabId, tab)).get();
+        if (good !== undefined) {
             return { run: blob(good, 'id'), at: whole(good, 'at'), language: text(good, 'language') };
         }
-        const newest = one(this.newest, tab);
-        return { run: null, at: null, language: newest === null ? 'en' : text(newest, 'language') };
+        const newest = this.orm.select({ language: runs.language }).from(runs)
+            .innerJoin(chapters, eq(chapters.id, runs.chapterId)).where(eq(chapters.tabId, tab)).orderBy(desc(runs.id)).limit(1).get();
+        return { run: null, at: null, language: newest === undefined ? 'en' : text(newest, 'language') };
     }
 
     read(tab: string): TabRecap | null {
-        const row = one(this.current, tab);
-        if (row === null) {
+        const parsed = parseTabId(tab);
+        if (parsed.kind === 'err') {
             return null;
         }
-        const facts = this.facts(tab);
+        const id = parsed.value;
+        const orm = this.orm;
+        const row = orm.select({ running: tabs.running, backend: tabs.backend, error: tabs.error }).from(tabs)
+            .where(and(eq(tabs.id, id), or(eq(tabs.running, 1), isNotNull(tabs.error), isNotNull(tabs.backend),
+                exists(orm.select({ one: sql`1` }).from(transcripts).where(eq(transcripts.tabId, tabs.id))),
+                exists(orm.select({ one: sql`1` }).from(chapters).where(eq(chapters.tabId, tabs.id))))))
+            .get();
+        if (row === undefined) {
+            return null;
+        }
+        const facts = this.facts(id);
+        const lanes = orm.select({
+            pane: transcripts.pane, agent: transcripts.agent, source: transcripts.source, cursor: transcripts.cursor, tail: transcripts.tail,
+            title: transcripts.title, last_prompt: transcripts.lastPrompt, claude_note: transcripts.claudeNote,
+        }).from(transcripts).where(and(eq(transcripts.tabId, id), eq(transcripts.attached, 1))).orderBy(asc(transcripts.position), asc(transcripts.id)).all();
+        const cost = orm.select({ micro: sql<number>`coalesce(sum(${runs.costMicroUsd}), 0)` }).from(runs)
+            .innerJoin(chapters, eq(chapters.id, runs.chapterId)).where(eq(chapters.tabId, id)).get();
         return {
-            tab, lanes: all(this.lanes, tab).map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(tab, facts.run, facts.language), at: facts.at, running: flag(row, 'running'),
-            backend: maybeText(row, 'backend'), error: maybeText(row, 'error'), costUsd: whole(one(this.cost, tab) ?? {}, 'micro') / 1e6, language: facts.language,
+            tab, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(tab, facts.run, facts.language), at: facts.at, running: flag(row, 'running'),
+            backend: maybeText(row, 'backend'), error: maybeText(row, 'error'), costUsd: whole(cost ?? {}, 'micro') / 1e6, language: facts.language,
         };
     }
 }
