@@ -5,11 +5,11 @@ import type { Decider } from '#src/ports/decider.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { configGetter } from '#src/daemon/config.ts';
 import { JEV_MODEL_DEFAULT, JEV_URL_DEFAULT } from '#src/recap/domain/autocompact.ts';
-import { ClaudeHarness } from './harness/claude.ts';
-import { CodexHarness } from './harness/codex.ts';
-import { HarnessDecider } from './job/decider.ts';
-import { JevDecider } from './job/jev-decider.ts';
-import { jevKey } from './job/jev-key.ts';
+import { ClaudeHarness } from '../harness/claude.ts';
+import { CodexHarness } from '../harness/codex.ts';
+import { HarnessDecider } from '../job/decider.ts';
+import { JevDecider } from '../job/jev-decider.ts';
+import { jevKey } from '../job/jev-key.ts';
 
 export type ArmName = 'jev' | 'haiku-low' | 'haiku-medium' | 'luna-low';
 

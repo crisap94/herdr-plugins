@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { StatementSync } from 'node:sqlite';
 import { stateDir } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
-import { databasePath } from './db/database.ts';
+import { databasePath } from '../db/database.ts';
 
 export interface StoredPoint {
     readonly id: string;

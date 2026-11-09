@@ -16,39 +16,43 @@
   "src/adapters/capability/handoff-plans.ts": {
     "parameter": 3
   },
-  "src/adapters/experiment-arms.ts": {
+  "src/adapters/experiment/arms.ts": {
     "parameter": 8,
     "return": 2,
     "container": 1
   },
-  "src/adapters/experiment-data.ts": {
+  "src/adapters/experiment/data.ts": {
     "parameter": 2,
     "assertion": 2
   },
-  "src/adapters/experiment-files.ts": {
+  "src/adapters/experiment/events.ts": {
+    "parameter": 5,
+    "return": 1
+  },
+  "src/adapters/experiment/files.ts": {
     "parameter": 4,
     "return": 1,
     "container": 3
   },
-  "src/adapters/experiment-io.ts": {
+  "src/adapters/experiment/io.ts": {
     "parameter": 5,
     "return": 1,
     "container": 2,
     "assertion": 1
   },
-  "src/adapters/experiment-labeller.ts": {
+  "src/adapters/experiment/labeller.ts": {
     "parameter": 12,
     "return": 1,
     "container": 5,
     "property": 3
   },
-  "src/adapters/experiment-point.ts": {
+  "src/adapters/experiment/point.ts": {
     "parameter": 6,
     "return": 2,
     "container": 1,
     "property": 10
   },
-  "src/adapters/experiment-store.ts": {
+  "src/adapters/experiment/store.ts": {
     "parameter": 8,
     "return": 4,
     "container": 5,
@@ -244,10 +248,6 @@
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
-    "return": 1
-  },
-  "src/adapters/transcript-events.ts": {
-    "parameter": 5,
     "return": 1
   },
   "src/adapters/transcripts/claude/context.ts": {

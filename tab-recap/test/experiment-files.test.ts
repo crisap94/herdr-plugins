@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, truncateSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment-files.ts';
-import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT } from '#src/adapters/experiment-file-constants.ts';
+import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
+import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT } from '#src/adapters/experiment/file-constants.ts';
 
 const NOW = 1_800_000_000_000;
 const DAYS = 30;
