@@ -141,8 +141,8 @@
     "assertion": 1
   },
   "src/recap/render/wrap.ts": {
-    "parameter": 17,
-    "return": 8,
+    "parameter": 16,
+    "return": 7,
     "container": 4,
     "property": 1,
     "assertion": 2
