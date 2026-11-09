@@ -6,8 +6,8 @@ import type { GitPath } from '#src/recap/domain/git-path.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { HEAD_REF } from './git-constants.ts';
-import type { Handle } from './git-reach.ts';
+import { HEAD_REF } from './constants.ts';
+import type { Handle } from './reach.ts';
 
 export interface Changes {
     readonly tracked: readonly GitPath[];

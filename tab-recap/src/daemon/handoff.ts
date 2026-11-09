@@ -4,7 +4,7 @@ import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
 import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
 import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
+import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
 import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';

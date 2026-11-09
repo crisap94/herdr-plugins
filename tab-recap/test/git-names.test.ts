@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collapsedOf, renamedFrom } from '#src/adapters/git-reach-status.ts';
+import { collapsedOf, renamedFrom } from '#src/adapters/git/reach-status.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseGitPath } from '#src/recap/domain/git-path.ts';

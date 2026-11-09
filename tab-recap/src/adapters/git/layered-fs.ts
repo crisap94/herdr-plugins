@@ -6,7 +6,7 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
-import { BAD_PATH_MESSAGE, DEADLINE_MESSAGE, INDEX_FILE, READ_CALLS, READ_ONLY_MESSAGE, SHARED_ENTRIES, WRITE_CALLS } from './git-constants.ts';
+import { BAD_PATH_MESSAGE, DEADLINE_MESSAGE, INDEX_FILE, READ_CALLS, READ_ONLY_MESSAGE, SHARED_ENTRIES, WRITE_CALLS } from './constants.ts';
 
 export type Disk = typeof fsp;
 

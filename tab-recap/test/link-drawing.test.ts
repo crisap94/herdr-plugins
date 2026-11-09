@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { memoryStore } from '#test/db/support.ts';
 import { addRemote } from 'isomorphic-git';
 import { promises as fsp } from 'node:fs';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { en } from '#src/i18n/en.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';

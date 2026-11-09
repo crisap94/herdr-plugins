@@ -5,8 +5,8 @@ import { EditCounts } from '#src/recap/application/edit-counts.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { databasePath } from './db/database.ts';
 import { openPrintStore } from './db/print-store.ts';
-import { GitLaneRepo } from './git-lane-repo.ts';
-import { GitWorksiteReader } from './git-worksite.ts';
+import { GitLaneRepo } from './git/lane-repo.ts';
+import { GitWorksiteReader } from './git/worksite.ts';
 import { SystemClock } from './system-clock.ts';
 import { modalTranscriptRegistry } from './transcript-registry.ts';
 

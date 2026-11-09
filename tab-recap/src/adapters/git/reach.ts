@@ -11,9 +11,9 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
-import { COMMONDIR_FILE, DETAIL_MAX, GIT_DIR_NAME, GITDIR_PREFIX, NOT_A_REPOSITORY, NOT_A_REPOSITORY_DETAIL, NO_DETAIL } from './git-constants.ts';
-import { GitDeadline, layeredFs } from './git-layered-fs.ts';
-import type { Disk } from './git-layered-fs.ts';
+import { COMMONDIR_FILE, DETAIL_MAX, GIT_DIR_NAME, GITDIR_PREFIX, NOT_A_REPOSITORY, NOT_A_REPOSITORY_DETAIL, NO_DETAIL } from './constants.ts';
+import { GitDeadline, layeredFs } from './layered-fs.ts';
+import type { Disk } from './layered-fs.ts';
 
 export interface Handle {
     readonly fs: FsClient;

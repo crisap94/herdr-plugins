@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fsp, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { init, resolveRef, setConfig } from 'isomorphic-git';
-import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
+import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { makeRepo, scratch, stage, unstage } from './fixtures/git-repo.ts';
 
 const fs = { promises: fsp };

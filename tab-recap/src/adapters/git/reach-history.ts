@@ -19,8 +19,8 @@ import {
     ORIGIN_URL_PATH,
     REMOTE_PREFIX,
     SHORT_HASH,
-} from './git-constants.ts';
-import type { Handle } from './git-reach.ts';
+} from './constants.ts';
+import type { Handle } from './reach.ts';
 
 type BranchKey = 'remote' | 'merge';
 

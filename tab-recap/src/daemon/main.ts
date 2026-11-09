@@ -3,7 +3,7 @@ import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
 import { sessionOfForKind } from '#src/adapters/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
 import type { Frontend } from '#src/ports/frontend.ts';

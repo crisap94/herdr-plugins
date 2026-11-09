@@ -4,9 +4,9 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { REPO_TTL_MS, TIMEOUT_MS } from './git-constants.ts';
-import { handleOf, openRepo, unreadable, withinBudget } from './git-reach.ts';
-import { branchOf, originWebOf } from './git-reach-history.ts';
+import { REPO_TTL_MS, TIMEOUT_MS } from './constants.ts';
+import { handleOf, openRepo, unreadable, withinBudget } from './reach.ts';
+import { branchOf, originWebOf } from './reach-history.ts';
 
 export async function repoAt(directory: Directory): Promise<RepoResult> {
     return withinBudget(TIMEOUT_MS, async (deadline): Promise<RepoResult> => {

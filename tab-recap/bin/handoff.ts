@@ -1,8 +1,8 @@
 import { databasePath } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
+import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
 import { SystemClock } from '#src/adapters/system-clock.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';

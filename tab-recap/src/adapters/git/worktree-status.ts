@@ -6,11 +6,11 @@ import type { AheadCount, PorcelainReading } from '#src/recap/domain/porcelain.t
 import type { StatusTier } from '#src/recap/domain/worktree.ts';
 import type { StatusRead, WorktreeLocator, WorktreeLookup, WorktreeProbe } from '#src/ports/worktree-status.ts';
 import { ok, type Result } from '#src/protocol/result.ts';
-import { FULL_TIMEOUT_MS, TIMEOUT_MS, TRACKED_TIMEOUT_MS } from './git-constants.ts';
-import { handleOf, notARepository, openRepo, unreadable, withinBudget } from './git-reach.ts';
-import type { Handle } from './git-reach.ts';
-import { aheadOf, headLabelOf, branchOf } from './git-reach-history.ts';
-import { changesOf } from './git-reach-status.ts';
+import { FULL_TIMEOUT_MS, TIMEOUT_MS, TRACKED_TIMEOUT_MS } from './constants.ts';
+import { handleOf, notARepository, openRepo, unreadable, withinBudget } from './reach.ts';
+import type { Handle } from './reach.ts';
+import { aheadOf, headLabelOf, branchOf } from './reach-history.ts';
+import { changesOf } from './reach-status.ts';
 
 async function readingOf(handle: Handle, tier: StatusTier): Promise<StatusRead> {
     const changes = await changesOf(handle);

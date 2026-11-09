@@ -149,10 +149,13 @@
     "property": 9,
     "assertion": 1
   },
-  "src/adapters/git-lane-repo.ts": {
+  "src/adapters/git/lane-repo.ts": {
     "parameter": 4
   },
-  "src/adapters/git-worksite.ts": {
+  "src/adapters/git/remote-web.ts": {
+    "parameter": 6
+  },
+  "src/adapters/git/worksite.ts": {
     "parameter": 4,
     "return": 2,
     "container": 1
@@ -320,9 +323,6 @@
   "src/adapters/recap-prompt.ts": {
     "parameter": 4,
     "return": 5
-  },
-  "src/adapters/remote-web.ts": {
-    "parameter": 6
   },
   "src/adapters/rubric.ts": {
     "parameter": 3,

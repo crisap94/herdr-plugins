@@ -2,7 +2,7 @@ import { add, commit, init, remove } from 'isomorphic-git';
 import { mkdirSync, mkdtempSync, promises as fsp, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { Disk } from '#src/adapters/git-layered-fs.ts';
+import type { Disk } from '#src/adapters/git/layered-fs.ts';
 
 export const AUTHOR = { name: 't', email: 't@t' };
 

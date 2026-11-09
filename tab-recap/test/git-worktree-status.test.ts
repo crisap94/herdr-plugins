@@ -4,8 +4,8 @@ import { promises as fsp, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFil
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { branch, checkout, commit } from 'isomorphic-git';
-import { FsGitDirWatcher } from '#src/adapters/git-dir-watch.ts';
-import { GitWorktreeLocator, GitWorktreeProbe } from '#src/adapters/git-worktree-status.ts';
+import { FsGitDirWatcher } from '#src/adapters/git/dir-watch.ts';
+import { GitWorktreeLocator, GitWorktreeProbe } from '#src/adapters/git/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';

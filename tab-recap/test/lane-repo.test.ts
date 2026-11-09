@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fsp, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { addRemote, init, resolveRef } from 'isomorphic-git';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { makeRepo, scratch } from './fixtures/git-repo.ts';

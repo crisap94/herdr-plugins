@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fsp } from 'node:fs';
 import { join } from 'node:path';
-import { GitDeadline, layeredFs } from '#src/adapters/git-layered-fs.ts';
+import { GitDeadline, layeredFs } from '#src/adapters/git/layered-fs.ts';
 import { must } from '#src/protocol/result.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
