@@ -1,8 +1,12 @@
-import type { Database, Statement } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { RunFacts } from '#src/ports/recap-records.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import { blob, one } from './rows.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks, runTaskLane as laneRows, task as tasks } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { blob } from './rows.ts';
 import { ids } from './uuid7.ts';
 import { RunInputRows, statsText } from './run-inputs.ts';
 import type { Moved, TranscriptRows } from './transcripts.ts';
@@ -16,37 +20,27 @@ export interface StoredTask extends TaskShape {
 export class RunRows {
     private readonly transcripts: TranscriptRows;
     private readonly inputs: RunInputRows;
-    private readonly chapterInsert: Statement;
-    private readonly chapterSelect: Statement;
-    private readonly runInsert: Statement;
-    private readonly readInsert: Statement;
-    private readonly taskInsert: Statement;
-    private readonly taskSelect: Statement;
-    private readonly runTaskInsert: Statement;
-    private readonly laneInsert: Statement;
+    private readonly orm: Orm;
 
     constructor(db: Database, transcripts: TranscriptRows) {
         this.transcripts = transcripts;
         this.inputs = new RunInputRows(db);
-        this.chapterInsert = db.prepare('INSERT OR IGNORE INTO chapter (id, tab_id, n, started_at) VALUES (?, ?, 1, ?)');
-        this.chapterSelect = db.prepare('SELECT id FROM chapter WHERE tab_id = ? ORDER BY n DESC LIMIT 1');
-        this.runInsert = db.prepare('INSERT INTO run (id, chapter_id, at, cause, backend, language, cost_micro_usd, error, gate_stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        this.readInsert = db.prepare('INSERT OR REPLACE INTO run_read (run_id, transcript_id, from_cursor, to_cursor) VALUES (?, ?, ?, ?)');
-        this.taskInsert = db.prepare('INSERT OR IGNORE INTO task (id, tab_id, key) VALUES (?, ?, ?)');
-        this.taskSelect = db.prepare('SELECT id FROM task WHERE tab_id = ? AND key = ?');
-        this.runTaskInsert = db.prepare('INSERT INTO run_task (run_id, task_id, position, name, legacy_markdown) VALUES (?, ?, ?, ?, ?)');
-        this.laneInsert = db.prepare('INSERT INTO run_task_lane (run_id, task_id, transcript_id, position) VALUES (?, ?, ?, ?)');
+        this.orm = ormOf(db);
     }
 
     private currentChapter(tab: string, at: number): Uint8Array {
-        this.chapterInsert.run(ids.next(), tab, at);
-        return blob(one(this.chapterSelect, tab) ?? {}, 'id');
+        this.orm.insert(chapters).values({ id: ids.next(), tabId: tabId(tab), n: 1, startedAt: at }).onConflictDoNothing().run();
+        const latest = this.orm.select({ id: chapters.id }).from(chapters).where(eq(chapters.tabId, tabId(tab))).orderBy(desc(chapters.n)).limit(1).get() ?? {};
+        return blob(latest, 'id');
     }
 
     insertRun(facts: RunFacts, error: string | null, gateStats: GateStats | null = null): Uint8Array {
         const chapter = this.currentChapter(facts.tab, facts.at);
         const id = ids.next();
-        this.runInsert.run(id, chapter, facts.at, facts.cause, facts.backend, facts.language, microsOf(facts.costUsd), error, statsText(gateStats));
+        this.orm.insert(runs).values({
+            id, chapterId: chapter, at: facts.at, cause: facts.cause, backend: facts.backend, language: facts.language,
+            costMicroUsd: microsOf(facts.costUsd), error, gateStats: statsText(gateStats),
+        }).run();
         return id;
     }
 
@@ -56,20 +50,25 @@ export class RunRows {
 
     insertReads(run: Uint8Array, moved: readonly Moved[]): void {
         for (const read of moved) {
-            this.readInsert.run(run, read.id, read.from, read.to);
+            this.orm.insert(reads).values({ runId: run, transcriptId: read.id, fromCursor: read.from, toCursor: read.to })
+                .onConflictDoUpdate({ target: [reads.runId, reads.transcriptId], set: { fromCursor: sql`excluded.from_cursor`, toCursor: sql`excluded.to_cursor` } })
+                .run();
         }
     }
 
     private writeTask(run: Uint8Array, facts: RunFacts, task: { readonly task: StoredTask; readonly position: number }): void {
-        this.taskInsert.run(ids.next(), facts.tab, task.task.id);
-        const id = blob(one(this.taskSelect, facts.tab, task.task.id) ?? {}, 'id');
-        this.runTaskInsert.run(run, id, task.position, task.task.name === '' ? null : task.task.name, task.task.legacy ?? null);
+        this.orm.insert(tasks).values({ id: ids.next(), tabId: tabId(facts.tab), key: task.task.id }).onConflictDoNothing().run();
+        const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, tabId(facts.tab)), eq(tasks.key, task.task.id))).get() ?? {};
+        const id = blob(known, 'id');
+        this.orm.insert(runTasks).values({
+            runId: run, taskId: id, position: task.position, name: task.task.name === '' ? null : task.task.name, legacyMarkdown: task.task.legacy ?? null,
+        }).run();
         [...new Set(task.task.lanes)].forEach((pane, position) => {
-            this.laneInsert.run(run, id, this.transcripts.ofPane(facts.tab, pane, facts.at), position);
+            this.orm.insert(laneRows).values({ runId: run, taskId: id, transcriptId: this.transcripts.ofPane(facts.tab, pane, facts.at), position }).run();
         });
     }
 
-    writeTasks(run: Uint8Array, facts: RunFacts, tasks: readonly StoredTask[]): void {
-        tasks.forEach((task, position) => { this.writeTask(run, facts, { task, position }); });
+    writeTasks(run: Uint8Array, facts: RunFacts, items: readonly StoredTask[]): void {
+        items.forEach((task, position) => { this.writeTask(run, facts, { task, position }); });
     }
 }
