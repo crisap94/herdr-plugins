@@ -38,7 +38,7 @@ test('the lanes\' newest turns are read from the start of what each reader keeps
 });
 
 test('the enumeration is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const enumerator = new HarnessEnumerator(echo, { model: '', effort: 'low' });
     assert.equal(enumerator.job, 'custom · low');
     const written = await enumerator.write('<enumerate_input version="1"/>');

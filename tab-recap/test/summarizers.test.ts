@@ -97,23 +97,23 @@ const call = { instructions: instructions(request), input: message(request) };
 const settings = { model: '', effort: 'default' as const };
 
 test('custom: the data and the instructions go in on stdin, the data first, and the answer comes out on stdout', async () => {
-    const harness = custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
-    assert.equal(harness.label(settings), 'custom/node');
+    const harness = custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    assert.equal(harness.label(settings), 'custom/bun');
     const ran = await harness.run(call, settings);
     assert.ok(ran.kind === 'ran' && ran.text.includes('>hi</turn>') && ran.text.includes('JSON object') && ran.text.indexOf('<recap_input') < ran.text.indexOf('JSON object'), 'the data comes first, the instructions after');
     const empty = await custom('', process.cwd(), 1000).run(call, settings);
     assert.ok(isUnknown(empty));
-    const broken = await custom('node -e "process.exit(3)"', process.cwd(), 20_000).run(call, settings);
+    const broken = await custom('bun -e "process.exit(3)"', process.cwd(), 20_000).run(call, settings);
     assert.ok(isUnknown(broken) && broken.why.why === 'failed');
 });
 
 test('a harness labels what it runs; the recap writer and the brief both go through run()', async () => {
     assert.equal(new ClaudeHarness(process.cwd(), 1).label({ model: '', effort: 'low' }), 'claude/haiku');
     assert.equal(new CodexHarness(process.cwd(), 1).label({ model: 'gpt-6-luna', effort: 'high' }), 'codex/gpt-6-luna');
-    const writer = new RecapWriter(custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings);
+    const writer = new RecapWriter(custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings);
     const written = await writer.write(request);
     assert.ok(written.kind === 'written' && written.text.startsWith('<recap_input'));
-    const brief = await new HarnessBrief(custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings).write('<compaction_input version="1"/>');
+    const brief = await new HarnessBrief(custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings).write('<compaction_input version="1"/>');
     assert.ok(brief.kind === 'briefed' && brief.text.startsWith('<compaction_input') && brief.text.includes('first person'));
 });
 
