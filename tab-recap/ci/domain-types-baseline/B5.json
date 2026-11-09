@@ -11,10 +11,10 @@
   },
   "src/adapters/db/autocompact-records.ts": {
     "parameter": 20,
-    "return": 16,
-    "container": 17,
+    "return": 15,
+    "container": 15,
     "property": 2,
-    "assertion": 9
+    "assertion": 5
   },
   "src/adapters/db/backup.ts": {
     "parameter": 8,
