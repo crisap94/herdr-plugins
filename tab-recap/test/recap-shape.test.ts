@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
     const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(' ');
@@ -49,18 +50,21 @@ test('headline: what needs the operator first, else what is happening now, else 
 
 const opsOf = (text: string): number => (objectIn(text) as { ops: unknown[] }).ops.length;
 
-test('the operations contract survives every summarizer\'s way of handing the answer back', async () => {
-    const { resultOf } = await import('#src/adapters/harness/claude.ts');
-    const { opencodeOutput } = await import('#src/adapters/harness/opencode.ts');
+test('the operations contract survives every harness\'s way of handing the answer back', async () => {
     const { unfenced } = await import('#src/adapters/job/prompts/recap-prompt.ts');
+    const { LibraryHarness } = await import('#src/adapters/harness/library.ts');
+    const { RecapWriter } = await import('#src/adapters/job/writer.ts');
+    const { requestOf } = await import('#test/support.ts');
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'now', text: 'running CI' }, { op: 'close', id: 'f2', why: 'done' }] });
     const fenced = `\`\`\`json\n${answer}\n\`\`\``;
-    const claude = resultOf(JSON.stringify({ type: 'result', result: fenced, total_cost_usd: 0.01 }));
-    assert.ok(claude !== null);
-    assert.equal(opsOf(unfenced(claude.text)), 2);
-    const half = Math.floor(answer.length / 2);
-    const events = [answer.slice(0, half), answer.slice(half)].map((text) => JSON.stringify({ type: 'text', sessionID: 's', part: { text } })).join('\n');
-    assert.equal(opsOf(unfenced(opencodeOutput(events).text)), 2);
+    for (const id of ['claude', 'codex', 'opencode'] as const) {
+        for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
+            const runtime = fakeRuntime({ scripts: { [id]: [fakeOutput({ text: raw })] } });
+            const written = await new RecapWriter(new LibraryHarness(runtime, id, 1000, undefined, true), { model: '', effort: 'default' }).write(requestOf());
+            assert.ok(written.kind === 'written', id);
+            assert.equal(opsOf(written.text), 2, id);
+        }
+    }
     for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
         assert.equal(opsOf(unfenced(raw)), 2);
     }

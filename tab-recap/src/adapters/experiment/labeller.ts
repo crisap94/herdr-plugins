@@ -1,5 +1,5 @@
-import { join } from 'node:path';
-import { CodexHarness } from '../harness/codex.ts';
+import { LIBRARY_IDS, LibraryHarness } from '../harness/library.ts';
+import type { HarnessRuntime } from '../harness/library.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { retried } from '#src/experiment/pool.ts';
@@ -20,8 +20,8 @@ export class Labeller {
     private readonly log: (line: string) => void;
     readonly settings: HarnessSettings;
 
-    constructor(workDir: string, slots: number, log: (line: string) => void, settings: HarnessSettings = LABELLER, make: (dir: string) => Harness = (dir): Harness => new CodexHarness(dir, TIMEOUT_MS)) {
-        this.free = Array.from({ length: slots }, (_, n) => make(join(workDir, `slot-${n}`)));
+    constructor(runtime: HarnessRuntime, slots: number, log: (line: string) => void, settings: HarnessSettings = LABELLER, make: () => Harness = (): Harness => new LibraryHarness(runtime, LIBRARY_IDS.codex, TIMEOUT_MS)) {
+        this.free = Array.from({ length: slots }, () => make());
         this.log = log;
         this.settings = settings;
     }

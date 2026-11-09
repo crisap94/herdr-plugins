@@ -139,7 +139,8 @@ example take effect after the daemon restarts.
 | `TAB_RECAP_CUSTOM_CMD` | empty | your own writer command, used with `TAB_RECAP_BACKEND=custom` |
 | `TAB_RECAP_LOCALE` | `auto` | the language of the column and the messages |
 | `TAB_RECAP_RECAP_LANG` | `ui` | the language the recap is written in; `ui` follows the interface |
-| `TAB_RECAP_EFFORT` | `medium` | the effort of the recap writer |
+| `TAB_RECAP_EFFORT` | `medium` | the effort of the recap writer; opencode always runs at its own default effort, because its effort setting is not measured |
+| `TAB_RECAP_CLAUDE_POLICY_ACK` | `off` | `on` lets a Claude job run on the Claude login the machine already holds; off, a Claude job fails and names this key |
 | `TAB_RECAP_COMPACT_TARGET` | `focused` | which agents `compact` reaches: `focused`, `all`, or kinds such as `claude,codex` |
 | `TAB_RECAP_MIN_TAB_COLS` | `110` | tabs narrower than this get the bar instead of a column (restart) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab's history is kept; `0` keeps everything |

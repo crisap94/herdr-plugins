@@ -58,6 +58,9 @@ import type { LeaseSpy, World } from '#test/fakes/handoff-delivery.ts';
 import { harness as handoffHarness, NOW, recapOf, request, SOURCE_LISTED, T1, TAB, TARGET, TEXT, task } from '#test/fakes/handoff-flow-harness.ts';
 import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
+import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+
+const runtime = fakeRuntime({ scripts: {} });
 
 const BUDGET = 1 << 20;
 const dir = mkdtempSync(join(tmpdir(), 'recap-conformance-'));
@@ -305,12 +308,12 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model or
     const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
     assert.deepEqual(Object.keys(MAKERS).toSorted(), [...BACKEND_IDS].toSorted());
     for (const id of BACKEND_IDS) {
-        assert.equal(MAKERS[id](config, dir).id, id);
+        assert.equal(MAKERS[id](config, dir, runtime).id, id);
     }
     assert.equal(MODEL_DEFAULTS.custom, '');
-    assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], dir), null);
+    assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], dir, runtime), null);
     for (const id of BACKEND_IDS.filter((each) => each !== 'custom')) {
-        assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], dir), null, `${id} enumerates`);
+        assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], dir, runtime), null, `${id} enumerates`);
     }
     const harness: Harness = new CustomHarness('my-llm --model x', dir, 1000);
     assert.equal(harness.label({ model: 'gpt-x', effort: 'high' }), 'custom/my-llm');

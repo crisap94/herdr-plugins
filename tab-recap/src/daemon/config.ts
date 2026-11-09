@@ -29,6 +29,8 @@ import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
 import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
+import { CLAUDE_POLICY_ACK_DEFAULT, CLAUDE_POLICY_ACKS } from '#src/recap/domain/claude-policy-ack.ts';
+import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -76,6 +78,7 @@ export interface Config {
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;
     readonly telemetryTags: TelemetryTags;
+    readonly claudePolicyAck: ClaudePolicyAck;
 }
 
 const defaults = xdgPaths(homedir());
@@ -216,5 +219,6 @@ export function loadConfig(): Config {
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,
         telemetryTags: telemetryTagsOf(get('TAB_RECAP_TELEMETRY_TAGS')),
+        claudePolicyAck: CLAUDE_POLICY_ACKS.find((ack) => ack === get('TAB_RECAP_CLAUDE_POLICY_ACK')?.trim().toLowerCase()) ?? CLAUDE_POLICY_ACK_DEFAULT,
     };
 }

@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { enumeratorFor } from '#src/daemon/backends.ts';
 import { loadConfig } from '#src/daemon/config.ts';
+import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+
+const runtime = fakeRuntime({ scripts: {} });
 
 function withConfig(lines: string, body: () => void): void {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_PIPELINE', 'TAB_RECAP_RECONCILE_EVERY', 'TAB_RECAP_BACKEND'] as const;
@@ -41,13 +44,13 @@ test('TAB_RECAP_PIPELINE names the steps of a run (one unless set; nonsense is t
 test('the enumeration is the writer\'s harness at low effort; none when no harness is installed or the writer is a custom command', () => {
     withConfig('TAB_RECAP_BACKEND=claude\nTAB_RECAP_MODEL_CLAUDE=sonnet\nTAB_RECAP_EFFORT=high\n', () => {
         const config = loadConfig();
-        const made = enumeratorFor(config, ['claude', 'codex'], '/tmp/none');
+        const made = enumeratorFor(config, ['claude', 'codex'], '/tmp/none', runtime);
         assert.ok(made !== null && made.job === 'claude · sonnet · low', made?.job);
     });
     withConfig('TAB_RECAP_BACKEND=auto\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), [], '/tmp/none'), null);
+        assert.equal(enumeratorFor(loadConfig(), [], '/tmp/none', runtime), null);
     });
     withConfig('TAB_RECAP_BACKEND=custom\nTAB_RECAP_CUSTOM_CMD=cat\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), ['custom'], '/tmp/none'), null);
+        assert.equal(enumeratorFor(loadConfig(), ['custom'], '/tmp/none', runtime), null);
     });
 });

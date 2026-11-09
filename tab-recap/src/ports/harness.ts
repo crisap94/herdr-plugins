@@ -11,7 +11,9 @@ export interface HarnessSettings {
     readonly effort: Effort;
 }
 
-export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number } | Unknown;
+export type CostBasis = 'billed' | 'list' | 'unreported' | 'unavailable';
+
+export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis } | Unknown;
 
 export interface Harness<Id extends string = string> {
     readonly id: Id;

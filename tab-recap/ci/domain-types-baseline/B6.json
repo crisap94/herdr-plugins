@@ -15,7 +15,7 @@
     "parameter": 3
   },
   "src/adapters/experiment/arms.ts": {
-    "parameter": 8,
+    "parameter": 2,
     "return": 2,
     "container": 1
   },
@@ -39,7 +39,7 @@
     "assertion": 1
   },
   "src/adapters/experiment/labeller.ts": {
-    "parameter": 12,
+    "parameter": 9,
     "return": 1,
     "container": 5,
     "property": 3
@@ -68,34 +68,21 @@
     "return": 2,
     "container": 1
   },
-  "src/adapters/harness/claude.ts": {
-    "parameter": 5,
-    "return": 2,
-    "container": 1,
-    "property": 4
-  },
-  "src/adapters/harness/codex.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 1,
-    "property": 2
-  },
   "src/adapters/harness/custom.ts": {
     "parameter": 4,
     "return": 1,
     "container": 2,
     "property": 2
   },
+  "src/adapters/harness/library.ts": {
+    "parameter": 2,
+    "return": 1,
+    "property": 3
+  },
   "src/adapters/harness/on-path.ts": {
     "parameter": 2,
     "return": 1,
     "container": 1
-  },
-  "src/adapters/harness/opencode.ts": {
-    "parameter": 10,
-    "return": 1,
-    "container": 4,
-    "property": 4
   },
   "src/adapters/herdr/agents.ts": {
     "parameter": 13,

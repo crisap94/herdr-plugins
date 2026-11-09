@@ -36,7 +36,7 @@
     "return": 4
   },
   "src/daemon/deciders.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
     "container": 3
   },

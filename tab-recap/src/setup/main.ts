@@ -15,6 +15,7 @@ import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { stripVTControlCharacters } from 'node:util';
 
 const style = styleFor(process.stdout);
@@ -76,7 +77,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'));
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'), createRuntime());
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);
