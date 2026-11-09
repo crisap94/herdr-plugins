@@ -10,7 +10,6 @@ export const OPEN_MARKER_FRESH_MS: Count = must(parseCount(60_000));
 export const HC_NO_COLUMN: Text = must(parseText('the desktop app has no column to open'));
 export const HC_NO_NOTICE: Text = must(parseText('the desktop app posts its own notifications'));
 export const HC_NO_TYPING: Text = must(parseText('the desktop app cannot type into an agent yet'));
-export const HC_ODD_LISTING: Text = must(parseText('terminal.list answered with an unexpected shape'));
 export const HC_ODD_SCREEN: Text = must(parseText('terminal.read answered with no text'));
 export const HC_SHUT: Text = must(parseText('the desktop fleet is shut down'));
 export const API_ENV: NonEmptyText = must(parseNonEmptyText('TAB_RECAP_API'));

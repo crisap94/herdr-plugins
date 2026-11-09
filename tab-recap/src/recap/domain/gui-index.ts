@@ -1,6 +1,6 @@
 import { err, ok, must, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from './count.ts';
-import { isFields } from './hc-terminal.ts';
+import { isFields } from './fields.ts';
 import { parseAgentKind, parsePaneId, parseTabId, type AgentKind, type PaneId, type TabId } from './ids.ts';
 import type { ParseFailure } from './parse-failure.ts';
 import { parseFlag, parseGuiStageId, type Flag, type GuiStageId } from './gui-tab-parts.ts';

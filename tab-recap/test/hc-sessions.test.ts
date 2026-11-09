@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeSessions } from '#src/adapters/herdr-core/sessions.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { parseHcTerminal } from '#src/recap/domain/hc-terminal.ts';
+import { parseHcTerminal } from '#src/adapters/herdr-core/sdk-core.ts';
 
 const agent = (address: string, state: string, extra: Record<string, unknown> = {}): Record<string, unknown> => ({
     address, state: 'live', cwd: '/work', title: 'a title', labels: { 'herdr.tab': 'tb1', 'herdr.space': 'sp1', where: 'S / 1' },

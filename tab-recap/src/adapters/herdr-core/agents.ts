@@ -4,7 +4,7 @@ import type { Done } from '#src/ports/columns.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import type { HcTerminal } from '#src/recap/domain/hc-terminal.ts';
+import type { HcTerminal } from './sdk-core.ts';
 import { HC_NO_TYPING } from '../desktop/constants.ts';
 
 export interface HcSeen {

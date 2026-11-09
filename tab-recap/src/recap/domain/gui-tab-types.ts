@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { Count } from './count.ts';
 import type { Directory } from './directory.ts';
-import { isFields } from './hc-terminal.ts';
+import { isFields } from './fields.ts';
 import type { AgentKind, PaneId, TabId } from './ids.ts';
 import type { ParseFailure } from './parse-failure.ts';
 import type { GuiBreak, GuiCompaction, GuiContext, GuiCut, GuiFact, GuiGit, GuiGroup, GuiNote, GuiRegions, GuiSession, GuiStory, GuiTimelineRow, GuiVersions, GuiWeb, Flag, GuiLocale } from './gui-tab-parts.ts';

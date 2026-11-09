@@ -2,7 +2,6 @@ import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import type { ClosedAll, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
@@ -14,19 +13,18 @@ import type { ScreenResult } from '#src/ports/screens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
-import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_LISTING, HC_ODD_SCREEN } from '../desktop/constants.ts';
+import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_SCREEN } from '../desktop/constants.ts';
 import { HcCoreAgents } from './agents.ts';
 import type { HcSeenResult } from './agents.ts';
-import { HcCoreRoster, parseHcListed } from './roster.ts';
-import { CoreEvents, CoreLink, HC_CALL_TIMEOUT, HC_LIST_METHOD, HC_READ_METHOD, hcCoreSocketPath, parseHcParams, unknownOfCore } from './sdk-core.ts';
-import type { CoreEventsTiming, CoreLinkTiming, HcParams, SocketPath } from './sdk-core.ts';
+import { HcCoreRoster } from './roster.ts';
+import { CoreEvents, CoreLink, CoreTerminals, HC_CALL_TIMEOUT, HC_READ_METHOD, hcCoreSocketPath, lastLines, parseCount as parseCoreCount, parseHcParams, parseHcScreen, unknownOfCore } from './sdk-core.ts';
+import type { CoreEventsTiming, CoreLinkTiming, SocketPath } from './sdk-core.ts';
 import type { SessionOfTerminal } from './sessions.ts';
 
 type Phase = 'cold' | 'warm';
 type Life = 'up' | 'shut';
 
 const ZERO = must(parseCount(0));
-const NO_PARAMS: HcParams = must(parseHcParams({}));
 
 export interface HcCoreFleetParts {
     readonly harnesses: Harnesses;
@@ -58,18 +56,12 @@ export class HcCoreFleet implements Fleet {
     }
 
     private async load(): Promise<Unknown | null> {
-        const folded = this.roster.revision;
-        const answer = await this.link.call(HC_LIST_METHOD, NO_PARAMS, HC_CALL_TIMEOUT);
-        if (answer.kind === 'unknown') {
-            return unknownOfCore(answer);
+        const since = this.roster.revision;
+        const listing = await new CoreTerminals(this.link).list();
+        if (listing.kind === 'unknown') {
+            return unknownOfCore(listing);
         }
-        const listed = parseHcListed(answer.value);
-        if (listed.kind === 'err') {
-            return unknown({ why: 'unreadable', detail: HC_ODD_LISTING });
-        }
-        if (this.roster.revision === folded) {
-            this.roster.load(listed.value.terminals);
-        }
+        this.roster.loadIfCurrent(since, listing.terminals);
         this.phase = 'warm';
         return null;
     }
@@ -162,13 +154,13 @@ export class HcCoreFleet implements Fleet {
         if (answer.kind === 'unknown') {
             return unknownOfCore(answer);
         }
-        const text = parseText(Reflect.get(answer.value, 'text'));
-        if (text.kind === 'err') {
+        const screen = parseHcScreen(answer.value);
+        if (screen.kind === 'err') {
             return unknown({ why: 'unreadable', detail: HC_ODD_SCREEN });
         }
-        const all = text.value.split('\n');
+        const trimmed = lastLines(screen.value.text, must(parseCoreCount(lines)));
         this.screens = must(parseCount(this.screens + 1));
-        return { kind: 'screen', text: all.slice(Math.max(0, all.length - lines)).join('\n'), revision: this.screens, truncated: all.length > lines };
+        return { kind: 'screen', text: trimmed.text, revision: this.screens, truncated: trimmed.truncated };
     }
 
     report(): Promise<Done> {

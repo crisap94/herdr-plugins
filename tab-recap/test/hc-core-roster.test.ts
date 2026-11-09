@@ -4,8 +4,8 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/adapters/herdr-core/sdk-core.ts';
 import { parseNonEmptyText } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId, parseSessionId } from '#src/recap/domain/ids.ts';
-import { HcCoreRoster, parseHcListed } from '#src/adapters/herdr-core/roster.ts';
-import { parseHcPayload } from '#src/adapters/herdr-core/sdk-core.ts';
+import { HcCoreRoster } from '#src/adapters/herdr-core/roster.ts';
+import { parseHcListing, parseHcPayload } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { HcCoreFeed } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { HcPayload } from '#src/adapters/herdr-core/sdk-core.ts';
 import { agentTerminal, shellTerminal } from '@stateforge-labs/herdr-sdk/core/test-kit';
@@ -99,10 +99,10 @@ test('a lane with a session is derived once while its row is unchanged', () => {
     assert.equal(reads - before, 1);
 });
 
-test('parseHcListed reads the terminals of a terminal.list result and refuses anything else', () => {
-    const listed = parseHcListed({ hidden_finished: 0, terminals: [agentTerminal('t1', 'idle'), 5] });
+test('parseHcListing reads the terminals of a terminal.list result and refuses anything else', () => {
+    const listed = parseHcListing({ hidden_finished: 0, terminals: [agentTerminal('t1', 'idle'), 5] });
     assert.ok(listed.kind === 'ok');
     assert.equal(listed.value.terminals.length, 1);
-    assert.equal(parseHcListed({ terminals: 'no' }).kind, 'err');
-    assert.equal(parseHcListed(null).kind, 'err');
+    assert.equal(parseHcListing({ terminals: 'no' }).kind, 'err');
+    assert.equal(parseHcListing(null).kind, 'err');
 });
