@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { writeAtomically } from './atomic-file.ts';
+import { writeAtomically } from '../atomic-file.ts';
 
 export function setValues(path: string, values: ReadonlyMap<string, string>, parse: (text: string) => ReadonlyMap<string, string>): void {
     let text = '';

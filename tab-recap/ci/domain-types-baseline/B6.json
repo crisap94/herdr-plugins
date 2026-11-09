@@ -1,7 +1,4 @@
 {
-  "src/adapters/atomic-file.ts": {
-    "parameter": 2
-  },
   "src/adapters/claude-context.ts": {
     "container": 1,
     "assertion": 1
@@ -79,21 +76,6 @@
     "parameter": 4,
     "return": 2
   },
-  "src/adapters/config-file.ts": {
-    "parameter": 2,
-    "container": 2
-  },
-  "src/adapters/config-paths-windows.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/config-paths-xdg.ts": {
-    "parameter": 1
-  },
-  "src/adapters/config-paths.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/adapters/context-values.ts": {
     "parameter": 1,
     "return": 1,
@@ -159,11 +141,6 @@
     "parameter": 4,
     "return": 2,
     "container": 1
-  },
-  "src/adapters/glow.ts": {
-    "parameter": 6,
-    "return": 1,
-    "container": 2
   },
   "src/adapters/handoff-plan-registry.ts": {
     "parameter": 3
@@ -282,37 +259,64 @@
     "property": 2,
     "assertion": 8
   },
-  "src/adapters/path-harnesses.ts": {
+  "src/adapters/os/atomic-file.ts": {
+    "parameter": 2
+  },
+  "src/adapters/os/config/file.ts": {
     "parameter": 2,
-    "return": 1,
+    "container": 2
+  },
+  "src/adapters/os/config/paths-windows.ts": {
+    "parameter": 1,
     "container": 1
   },
-  "src/adapters/pidfile.ts": {
+  "src/adapters/os/config/paths-xdg.ts": {
+    "parameter": 1
+  },
+  "src/adapters/os/config/paths.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/os/glow.ts": {
+    "parameter": 6,
+    "return": 1,
+    "container": 2
+  },
+  "src/adapters/os/pidfile.ts": {
     "parameter": 6,
     "return": 9,
     "property": 1
   },
-  "src/adapters/plugin-version.ts": {
+  "src/adapters/os/plugin-version.ts": {
     "parameter": 5,
     "return": 3
   },
-  "src/adapters/process-core.ts": {
+  "src/adapters/os/process/control-posix.ts": {
+    "parameter": 3,
+    "container": 1
+  },
+  "src/adapters/os/process/control-windows.ts": {
+    "parameter": 2,
+    "container": 1
+  },
+  "src/adapters/os/process/control.ts": {
+    "parameter": 2,
+    "return": 3,
+    "container": 2
+  },
+  "src/adapters/os/process/core.ts": {
     "parameter": 6,
     "container": 1,
     "property": 2
   },
-  "src/adapters/process-posix.ts": {
-    "parameter": 3,
-    "container": 1
+  "src/adapters/os/terminal-style.ts": {
+    "parameter": 1,
+    "return": 1
   },
-  "src/adapters/process-windows.ts": {
+  "src/adapters/path-harnesses.ts": {
     "parameter": 2,
+    "return": 1,
     "container": 1
-  },
-  "src/adapters/process.ts": {
-    "parameter": 2,
-    "return": 3,
-    "container": 2
   },
   "src/adapters/recap-instructions.ts": {
     "parameter": 3,
@@ -335,10 +339,6 @@
   },
   "src/adapters/session-registry.ts": {
     "parameter": 2
-  },
-  "src/adapters/terminal-style.ts": {
-    "parameter": 1,
-    "return": 1
   },
   "src/adapters/token-refusal.ts": {
     "container": 2

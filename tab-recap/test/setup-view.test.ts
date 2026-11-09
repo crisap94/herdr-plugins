@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { setValues } from '#src/adapters/config-file.ts';
+import { setValues } from '#src/adapters/os/config/file.ts';
 import { parseEnv } from '#src/daemon/config.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';

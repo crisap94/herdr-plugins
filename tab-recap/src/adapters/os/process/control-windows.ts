@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import type { ProcessControl } from '#src/ports/process-control.ts';
-import { runIn } from './process-core.ts';
-import type { Flavour, Spawner } from './process-core.ts';
+import { runIn } from './core.ts';
+import type { Flavour, Spawner } from './core.ts';
 
 export function windowsProcess(spawner: Spawner = spawn): ProcessControl {
     const killTree = (pid: number): void => {

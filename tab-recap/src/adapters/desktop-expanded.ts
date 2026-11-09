@@ -18,7 +18,7 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
-import { codeVersion } from './plugin-version.ts';
+import { codeVersion } from './os/plugin-version.ts';
 import { modalTranscriptRegistry } from './transcript-registry.ts';
 import { EXPANDED_EVERY_MS, OPEN_MARKER_FRESH_MS, OPEN_MARKER_PREFIX, SETTLE_MS, TRAILING_SLACK_MS } from './desktop-constants.ts';
 import type { Store } from './db/database.ts';

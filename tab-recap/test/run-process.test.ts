@@ -4,7 +4,7 @@ import { createServer } from 'node:net';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { posixProcess } from '#src/adapters/process-posix.ts';
+import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
 import { subscribe } from '#src/transport/herdr.ts';
 
 const { run } = posixProcess();

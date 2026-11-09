@@ -10,7 +10,7 @@ import { factsOfTab } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay, windowsOf } from '#src/recap/application/replay.ts';

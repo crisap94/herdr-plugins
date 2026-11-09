@@ -1,8 +1,8 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import { FsGitDirWatcher } from '#src/adapters/git/dir-watch.ts';
 import { GitWorktreeLocator, GitWorktreeProbe } from '#src/adapters/git/worktree-status.ts';
-import { NodeProcessUsage } from '#src/adapters/process-usage.ts';
-import { SystemClock } from '#src/adapters/system-clock.ts';
+import { NodeProcessUsage } from '#src/adapters/os/process/usage.ts';
+import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { PaneNoteFeed } from '#src/recap/application/pane-note-feed.ts';
 import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
 import { WorktreeRegistry } from '#src/recap/application/worktree-registry.ts';

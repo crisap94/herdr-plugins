@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import type { Spawner } from '#src/adapters/process-core.ts';
-import { posixProcess } from '#src/adapters/process-posix.ts';
-import { processFor } from '#src/adapters/process.ts';
-import { windowsProcess } from '#src/adapters/process-windows.ts';
+import type { Spawner } from '#src/adapters/os/process/core.ts';
+import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
+import { processFor } from '#src/adapters/os/process/control.ts';
+import { windowsProcess } from '#src/adapters/os/process/control-windows.ts';
 
 interface Call { readonly command: string; readonly args: readonly string[]; readonly options: Record<string, unknown> }
 type Fake = EventEmitter & { stdout: PassThrough; stderr: PassThrough };

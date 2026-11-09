@@ -18,7 +18,7 @@ export function shouldRoll(started: string | null, current: string | null, seenB
     return started !== null && current !== null && current !== started && seenBefore === current;
 }
 
-const PLUGIN_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+const PLUGIN_ROOT = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 
 export function codeVersion(root: string = PLUGIN_ROOT): string | null {
     try {

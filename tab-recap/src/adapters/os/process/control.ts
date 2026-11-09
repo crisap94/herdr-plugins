@@ -5,11 +5,11 @@ import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
 import { isJobTag, JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
 import type { JobAttributes, JobTag } from '#src/recap/domain/job-tag.ts';
-import { posixProcess } from './process-posix.ts';
-import { windowsProcess } from './process-windows.ts';
+import { posixProcess } from './control-posix.ts';
+import { windowsProcess } from './control-windows.ts';
 
 export type { Runner, RunOptions, RunResult } from '#src/ports/process-control.ts';
-export { KILL_AFTER_MS } from './process-core.ts';
+export { KILL_AFTER_MS } from './core.ts';
 
 export const processFor = (platform: Platform): ProcessControl => (platform === 'windows' ? windowsProcess() : posixProcess());
 

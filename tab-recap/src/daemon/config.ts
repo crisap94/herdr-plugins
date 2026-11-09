@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { configPathsFor } from '#src/adapters/config-paths.ts';
+import { configPathsFor } from '#src/adapters/os/config/paths.ts';
 import { bunHost } from '#src/host/bun-host.mjs';
 import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import type { Locale, Messages } from '#src/i18n/index.ts';

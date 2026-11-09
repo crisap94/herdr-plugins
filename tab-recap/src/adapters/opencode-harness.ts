@@ -6,8 +6,8 @@ import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
-import { run, scrubbedEnv } from './process.ts';
-import type { Runner } from './process.ts';
+import { run, scrubbedEnv } from './os/process/control.ts';
+import type { Runner } from './os/process/control.ts';
 
 const RELIST_MS = 3000;
 

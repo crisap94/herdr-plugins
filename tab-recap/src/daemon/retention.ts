@@ -1,4 +1,4 @@
-import { SystemClock } from '#src/adapters/system-clock.ts';
+import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { forgetClosedTabs as forget } from '#src/recap/application/retention.ts';
 import { loadConfig } from './config.ts';

@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { run, scrubbedEnv } from './process.ts';
+import { run, scrubbedEnv } from './os/process/control.ts';
 
 export function splitArgv(line: string): string[] {
     const argv: string[] = [];

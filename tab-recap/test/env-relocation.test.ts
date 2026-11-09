@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { environmentName, JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
-import { scrubEnvironment, scrubbedEnv } from '#src/adapters/process.ts';
+import { scrubEnvironment, scrubbedEnv } from '#src/adapters/os/process/control.ts';
 
 const fixtureEnvironment: NodeJS.ProcessEnv = {
     HERDR_ENV: 'scrub',

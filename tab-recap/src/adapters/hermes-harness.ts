@@ -7,8 +7,8 @@ import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from './jsonl.ts';
 import { ARGV_BYTES } from './recap-prompt.ts';
-import { run, scrubbedEnv } from './process.ts';
-import type { Runner } from './process.ts';
+import { run, scrubbedEnv } from './os/process/control.ts';
+import type { Runner } from './os/process/control.ts';
 
 export function hermesArgs(model: string, prompt: string, usage: string, effort: Effort = 'default'): string[] {
     const level = levelOf(effort, 'low');

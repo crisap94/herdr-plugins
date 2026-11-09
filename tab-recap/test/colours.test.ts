@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WriteStream } from 'node:tty';
 import { stripVTControlCharacters } from 'node:util';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { en } from '#src/i18n/en.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';

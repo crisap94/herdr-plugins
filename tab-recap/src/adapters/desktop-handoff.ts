@@ -7,7 +7,7 @@ import { databasePath } from './db/database.ts';
 import { openPrintStore } from './db/print-store.ts';
 import { GitLaneRepo } from './git/lane-repo.ts';
 import { GitWorksiteReader } from './git/worksite.ts';
-import { SystemClock } from './system-clock.ts';
+import { SystemClock } from './os/system-clock.ts';
 import { modalTranscriptRegistry } from './transcript-registry.ts';
 
 export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPrinter {

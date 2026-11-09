@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, judgeFor } from '#src/daemon/backends.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { configPathsFor } from '#src/adapters/config-paths.ts';
+import { configPathsFor } from '#src/adapters/os/config/paths.ts';
 import { configDir, stateDir } from '#src/daemon/config.ts';
 
 test('Linux and macOS keep the paths herdr uses (~/.config), as before', () => {

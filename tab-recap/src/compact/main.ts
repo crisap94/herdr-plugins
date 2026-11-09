@@ -1,6 +1,6 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { EMPTY_NOTE, step } from '#src/recap/application/compact-keys.ts';

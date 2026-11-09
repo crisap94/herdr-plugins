@@ -99,7 +99,7 @@ All from `ExpandedData.session: SessionFacts` (`session-facts.ts:20-29`), built 
 | Recap freshness | `recapAt` (v1) | `recap.at` | none |
 | Backend | `backend: Text \| null` | `recap.backend` `recap-records.ts:25`, drawn `present.ts:116` | none |
 | Updating | `writing` (v1) | `recap.running` `present.ts:117` | none |
-| Plugin version | `versions.plugin: Text \| null` | `codeVersion()` `src/adapters/plugin-version.ts:23` (reads `herdr-plugin.toml` from disk, so it reflects an upgrade after the daemon started); TUI `settled.version` `column/main.ts:41,66` | re-read per publish; the TUI re-reads every 3 s (`LOCALE_MS` `column/main.ts:25`) |
+| Plugin version | `versions.plugin: Text \| null` | `codeVersion()` `src/adapters/os/plugin-version.ts:23` (reads `herdr-plugin.toml` from disk, so it reflects an upgrade after the daemon started); TUI `settled.version` `column/main.ts:41,66` | re-read per publish; the TUI re-reads every 3 s (`LOCALE_MS` `column/main.ts:25`) |
 | Daemon version | `versions.daemon: Text \| null` | `TabView.daemonVersion` `tab-views.ts:30`, set by `TabViewsRepository` from `StoreOptions.daemonVersion` `database.ts:76,85` | none |
 | Stale daemon notice | `versions.stale: Flag` | `staleLines` `present.ts:102-107`: `plugin !== null && daemon !== plugin`; text `messages.daemonStale(daemon)`; the restart button is phase 2 | none |
 | Warnings | `warnings: Text[]` | `warningsOf(extensions, locale)` `load.ts:25` (red lines, `present.ts:153`) | none |
@@ -165,7 +165,7 @@ read after construction returns `[]` files.
 | `notesOf`, `warningsOf`, `loadExtensions` | `load.ts:11,25,7` | used as-is |
 | `storedNotes`, `gitNoteOf`, `STORED_NOTES_ID` | `stored-notes.ts:65,22,12` | used as-is |
 | `worktreeSwitch` | `src/daemon/worktree-switch.ts` | used as-is |
-| `codeVersion` | `plugin-version.ts:23` | used as-is |
+| `codeVersion` | `os/plugin-version.ts:23` | used as-is |
 | `renderRecap` | `recap-shape.ts` (imported at `present.ts:13`) | for the markdown the TUI draws |
 | `regionsOf`, `session`, `Draw`, `TaskData`, `expanded` | `expanded-regions.ts:121,116,15,25`, `expanded.ts:55` | only for the parity test (they return styled lines, not data) |
 

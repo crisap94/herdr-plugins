@@ -1,5 +1,5 @@
 import { DESKTOP_STATE } from './desktop-env.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf } from '#src/daemon/config.ts';
 import { tabId } from '#src/recap/domain/ids.ts';

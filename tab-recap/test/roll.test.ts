@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stateStore } from '#src/adapters/db/database.ts';
-import { shouldRoll } from '#src/adapters/plugin-version.ts';
+import { shouldRoll } from '#src/adapters/os/plugin-version.ts';
 import { shutDown } from '#src/daemon/shutdown.ts';
 import type { ClosedAll } from '#src/ports/columns.ts';
 import { unknown } from '#src/ports/unknowable.ts';

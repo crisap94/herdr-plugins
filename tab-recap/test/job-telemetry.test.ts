@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
 import { CodexHarness } from '#src/adapters/codex-harness.ts';
-import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/process.ts';
+import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import type { RunOptions, RunResult, Runner } from '#src/ports/process-control.ts';
