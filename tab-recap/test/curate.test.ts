@@ -3,11 +3,9 @@ import assert from 'node:assert/strict';
 import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
-import { ARGV_BYTES } from '#src/adapters/job/prompts/recap-prompt.ts';
-import { HermesHarness } from '#src/adapters/harness/hermes.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '#src/ports/unknowable.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { inputOf } from '#src/recap/application/recap-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
@@ -123,10 +121,8 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
 
 const settings = { model: '', effort: 'medium' } as const;
 
-test('the curator is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
+test('the curator is a job on a harness: its instructions follow the document', async () => {
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const written = await new HarnessCurator(echo, settings).write('<curator_input version="1"/>');
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
-    const refused = await new HarnessCurator(new HermesHarness(process.cwd(), 1), settings).write('x'.repeat(ARGV_BYTES));
-    assert.ok(isUnknown(refused) && refused.why.why === 'unreadable');
 });

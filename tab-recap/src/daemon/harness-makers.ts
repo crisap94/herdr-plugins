@@ -1,7 +1,6 @@
 import { ClaudeHarness } from '#src/adapters/harness/claude.ts';
 import { CodexHarness } from '#src/adapters/harness/codex.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
-import { HermesHarness } from '#src/adapters/harness/hermes.ts';
 import { OpencodeHarness } from '#src/adapters/harness/opencode.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
@@ -17,6 +16,5 @@ export const MAKERS: Readonly<Record<BackendId, Make>> = {
     claude: (config, work, jobTag) => new ClaudeHarness(work, config.timeoutMs, undefined, jobTag),
     codex: (config, work, jobTag) => new CodexHarness(work, config.timeoutMs, undefined, jobTag),
     opencode: (config, work) => new OpencodeHarness(work, config.timeoutMs),
-    hermes: (config, work) => new HermesHarness(work, config.timeoutMs),
     custom: (config, work) => new CustomHarness(config.customCommand, work, config.timeoutMs),
 };

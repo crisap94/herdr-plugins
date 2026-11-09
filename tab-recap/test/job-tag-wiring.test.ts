@@ -51,7 +51,7 @@ async function envSeenBy(backend: string, tagging: 'on' | 'off', site: Site, inh
     SETTING_KEYS.forEach((key) => { delete process.env[key]; });
     try {
         mkdirSync(bin);
-        for (const name of new Set([backend, CUSTOM_COMMAND, 'claude', 'codex', 'opencode', 'hermes'])) {
+        for (const name of new Set([backend, CUSTOM_COMMAND, 'claude', 'codex', 'opencode'])) {
             writeFileSync(join(bin, name), FAKE_BINARY);
             chmodSync(join(bin, name), 0o755);
         }
@@ -85,7 +85,7 @@ for (const backend of ['claude', 'codex'] as const) {
     }
 }
 
-for (const backend of ['opencode', 'hermes', 'custom'] as const) {
+for (const backend of ['opencode', 'custom'] as const) {
     test(`${backend}: the child gets no job tag with tagging on, and an inherited OTEL_RESOURCE_ATTRIBUTES passes through unchanged`, async () => {
         assert.equal(await envSeenBy(backend, 'on', WRITE, 'service.name=parent,team=ops'), 'service.name=parent,team=ops');
     });

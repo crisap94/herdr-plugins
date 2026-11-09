@@ -44,7 +44,7 @@ test('colours: with the plain table the column has no escape sequence and the sa
     assert.ok(presentBar(view(plain), 30).every((line) => !line.includes(ESC)));
 });
 
-const models = { claude: '', codex: '', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: '', opencode: '', custom: '' };
 const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 test('colours: the setup screen takes the plain table too', () => {

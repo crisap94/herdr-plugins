@@ -58,7 +58,7 @@ test('the decider job: the recap writer\'s harness at low effort; it also takes 
     assert.deepEqual(DECIDER_DEFAULT, { by: 'recap', model: '', effort: 'low' });
     assert.deepEqual(deciderJobOf(config({})), DECIDER_DEFAULT);
     assert.deepEqual(deciderJobOf(config({ TAB_RECAP_AUTOCOMPACT_BY: ' JEV ', TAB_RECAP_AUTOCOMPACT_MODEL: 'x', TAB_RECAP_AUTOCOMPACT_EFFORT: 'medium' })), { by: 'jev', model: 'x', effort: 'medium' });
-    assert.deepEqual(['recap', 'auto', 'claude', 'codex', 'opencode', 'hermes', 'custom', 'off'].map((by) => deciderJobOf(config({ TAB_RECAP_AUTOCOMPACT_BY: by })).by), ['recap', 'auto', 'claude', 'codex', 'opencode', 'hermes', 'custom', 'off']);
+    assert.deepEqual(['recap', 'auto', 'claude', 'codex', 'opencode', 'custom', 'off'].map((by) => deciderJobOf(config({ TAB_RECAP_AUTOCOMPACT_BY: by })).by), ['recap', 'auto', 'claude', 'codex', 'opencode', 'custom', 'off']);
     assert.equal(deciderJobOf(config({ TAB_RECAP_AUTOCOMPACT_BY: 'nonsense' })).by, 'recap');
     assert.equal(JOB_BY_CHOICES.includes('jev' as never), false, 'the other jobs keep their choices');
     assert.deepEqual(DECIDER_BY_CHOICES, [...JOB_BY_CHOICES.slice(0, -1), 'jev', 'off']);

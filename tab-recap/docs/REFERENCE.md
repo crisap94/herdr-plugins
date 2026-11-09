@@ -369,7 +369,7 @@ a harness. Each decision stores its cost, and `tab-recap autocompact` sums the l
 
 ## Models
 
-Every model call is a **job** run on one harness (`claude`, `codex`, `opencode`, `hermes` or your own
+Every model call is a **job** run on one harness (`claude`, `codex`, `opencode` or your own
 command) with a model and an effort. The settings modal lists them under **Models**, one row per job showing
 `harness · model · effort`; ←/→ pick a part, Enter edits it.
 
@@ -387,7 +387,7 @@ settings or MCP and no session left behind. The judge runs only when you run `ta
 
 ### Job telemetry tags
 
-`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `tab_recap.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, Hermes, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
+`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `tab_recap.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
 
 Claude's telemetry and `OTEL_*` variables must be present in the daemon environment. The Claude CLI is launched with an empty setting source list, so telemetry variables in Claude settings files are not a supported source. For Codex, configure exporters in its configuration under the inherited `CODEX_HOME`. Any Codex OTel environment variables used, such as exporter headers, must also be present in the daemon environment.
 

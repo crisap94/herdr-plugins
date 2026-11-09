@@ -3,12 +3,10 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
-import { HermesHarness } from '#src/adapters/harness/hermes.ts';
-import { ARGV_BYTES } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '#src/ports/unknowable.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
@@ -37,12 +35,10 @@ test('the lanes\' newest turns are read from the start of what each reader keeps
     assert.deepEqual((await tailOf(registryWith({ claude: reader('claude', { '/a.jsonl': [entry('x'), entry('y')] }) }), [lane('p1', 'claude', '/a.jsonl')])).map((each) => each.text), ['x', 'y'], 'one lane keeps its own order');
 });
 
-test('the enumeration is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
+test('the enumeration is a job on a harness: its instructions follow the document', async () => {
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const enumerator = new HarnessEnumerator(echo, { model: '', effort: 'low' });
     assert.equal(enumerator.job, 'custom · low');
     const written = await enumerator.write('<enumerate_input version="1"/>');
     assert.ok(written.kind === 'enumerated' && written.text.startsWith('<enumerate_input') && written.text.includes('Copy, never paraphrase.'));
-    const refused = await new HarnessEnumerator(new HermesHarness(process.cwd(), 1), { model: '', effort: 'low' }).write('x'.repeat(ARGV_BYTES));
-    assert.ok(isUnknown(refused) && refused.why.why === 'unreadable');
 });

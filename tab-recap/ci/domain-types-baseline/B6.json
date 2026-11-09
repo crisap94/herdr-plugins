@@ -89,13 +89,6 @@
     "container": 2,
     "property": 2
   },
-  "src/adapters/harness/hermes.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1,
-    "property": 4,
-    "assertion": 1
-  },
   "src/adapters/harness/on-path.ts": {
     "parameter": 2,
     "return": 1,

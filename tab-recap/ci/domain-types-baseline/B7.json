@@ -46,7 +46,7 @@
     "container": 2
   },
   "src/daemon/harness-makers.ts": {
-    "parameter": 6
+    "parameter": 5
   },
   "src/daemon/lane-turns.ts": {
     "parameter": 5,

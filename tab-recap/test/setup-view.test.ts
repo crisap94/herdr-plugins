@@ -12,7 +12,7 @@ import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
@@ -52,13 +52,10 @@ test('the settings modal fits 40, 60 and 100 columns in both languages, in every
 
 test('the harness list marks the current one ✓, the available ones ● and the missing ones ○', () => {
     const text = setupView(withAvailable(base, ['claude', 'opencode']), en, 80).join('\n');
-    assert.match(text, /○ hermes/);
     assert.match(text, /✓ codex/);
     assert.match(text, /● claude/);
     assert.match(text, /● opencode/);
-    assert.match(text, /○ hermes — recap only/);
-    assert.match(setupView(withAvailable(base, ['hermes']), es, 80).join('\n'), /hermes — solo resúmenes/);
-    assert.match(text, /auto — the first one found: claude → codex → opencode → hermes/);
+    assert.match(text, /auto — the first one found: claude → codex → opencode/);
 });
 
 test('a locked row names its variable; the recap writer row shows harness · model · effort; both languages say so', () => {

@@ -23,7 +23,7 @@ what is happening now and what needs you, kept as a ledger of facts so a long se
 - **A column per tab.** A tab with an agent of a kind in `TAB_RECAP_AGENTS` gets a column beside it.
 - **A bar on a narrow tab.** A tab narrower than `TAB_RECAP_MIN_TAB_COLS` columns gets a one-row bar along the bottom.
 - **A ledger of facts.** The recap lists the facts of each task, with their time and, for a decision, its reason.
-- **Your agent writes it.** `claude`, `codex`, `opencode` or `hermes` writes the recap, or your own command does.
+- **Your agent writes it.** `claude`, `codex` or `opencode` writes the recap, or your own command does.
 - **Clickable references.** Merge requests, pull requests, issues, commits, branches and files open on Ctrl-click.
 
 ## Contents
@@ -46,7 +46,7 @@ what is happening now and what needs you, kept as a ledger of facts so a long se
 - Bun on the PATH of herdr's server, not only of your shell: the plugin's commands start with `bun`.
   Bun 1.4.4 or newer. The [platform notes](docs/REFERENCE.md#platform-notes) show how to fix a missing PATH.
 - Linux or macOS.
-- At least one agent on the PATH: `claude`, `codex`, `opencode` or `hermes`, or your own command
+- At least one agent on the PATH: `claude`, `codex` or `opencode`, or your own command
   (`TAB_RECAP_CUSTOM_CMD`).
 
 ## Install
@@ -135,7 +135,7 @@ example take effect after the daemon restarts.
 | setting | default | what it does |
 | --- | --- | --- |
 | `TAB_RECAP_AGENTS` | `claude,codex,opencode` | agent kinds that get a column (restart) |
-| `TAB_RECAP_BACKEND` | `auto` | the agent that writes the recap: `auto`, `claude`, `codex`, `opencode`, `hermes`, or `custom` |
+| `TAB_RECAP_BACKEND` | `auto` | the agent that writes the recap: `auto`, `claude`, `codex`, `opencode`, or `custom` |
 | `TAB_RECAP_CUSTOM_CMD` | empty | your own writer command, used with `TAB_RECAP_BACKEND=custom` |
 | `TAB_RECAP_LOCALE` | `auto` | the language of the column and the messages |
 | `TAB_RECAP_RECAP_LANG` | `ui` | the language the recap is written in; `ui` follows the interface |
@@ -161,7 +161,7 @@ The models, compaction, handoff, autocompact and telemetry settings are in
 Start with `herdr plugin action invoke tab-recap.status`. The [guide's troubleshooting section](GUIDE.md#troubleshooting)
 has more.
 
-- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex`, `opencode` or `hermes`,
+- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex` or `opencode`,
   or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
 - **No column appears**: the tab needs an agent of a kind in `TAB_RECAP_AGENTS`, and the daemon must be on
   (`tab-recap.start`).

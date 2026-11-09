@@ -7,7 +7,7 @@ import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const raw = { locale: undefined, recapLanguage: undefined };
 const draft = draftFrom({ backend: 'codex', models }, raw);
 const given = (key: string): string | undefined => ({ TAB_RECAP_CURATE_BY: ' Codex ', TAB_RECAP_CURATE_MODEL: ' gpt-6-luna ', TAB_RECAP_CURATE_EFFORT: 'HIGH' })[key];

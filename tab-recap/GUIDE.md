@@ -31,7 +31,7 @@ and one headline. Tap it to open the [expanded view](#the-expanded-view).
 
 - herdr ≥ 0.9.0 (Linux or macOS)
 - Bun ≥ 1.4.4 (runs the TypeScript directly, nothing to build; no Node fallback)
-- at least one coding agent on your `PATH`: `claude`, `codex`, `opencode` or `hermes` (or your own
+- at least one coding agent on your `PATH`: `claude`, `codex` or `opencode` (or your own
   command, see [Who writes the recap](#who-writes-the-recap))
 - optional: [`glow`](https://github.com/charmbracelet/glow), for nicer Markdown
 
@@ -249,7 +249,7 @@ within that period is never touched.
 ## Who writes the recap
 
 By default (`auto`) the first agent found on your `PATH` writes it, in this order: `claude`,
-`codex`, `opencode`, `hermes`. To choose, use the settings modal (`tab-recap.configure`), or from a checkout:
+`codex`, `opencode`. To choose, use the settings modal (`tab-recap.configure`), or from a checkout:
 
 ```bash
 bun bin/tab-recap.ts backend codex gpt-6-luna   # an agent and, optionally, a model
@@ -364,8 +364,8 @@ It prints whether the daemon runs, which agent writes recaps, and the state and 
 daemon log is `daemon.log` in that state folder (by default
 `~/.local/state/herdr/plugins/tab-recap/`).
 
-- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex`,
-  `opencode` or `hermes`, or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
+- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex` or
+  `opencode`, or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
 - **No column appears**: the tab needs an agent of a kind in `TAB_RECAP_AGENTS` (default `claude`,
   `codex` and `opencode`), and the daemon must be on (`tab-recap.start`).
 - **A link does not open**: hold **Ctrl** while clicking (herdr's modifier on every platform); your

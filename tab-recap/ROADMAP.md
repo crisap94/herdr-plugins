@@ -16,7 +16,7 @@ Status: **shipped** = released · *planned* = intended, not started.
 ## Desktop app *(in progress)*
 
 - A recap overlay and an optional chip for the Herdr desktop app, next to the terminal UI, from the same engine and version.
-- Session lookup for Codex, opencode and Hermes by folder and newest transcript (Claude Code is found by its process).
+- Session lookup for Codex and opencode by folder and newest transcript (Claude Code is found by its process).
 - Typing into agents (compaction, handoff, autocompact) once the desktop key command can type punctuation.
 
 ## 2.1 *(planned)*

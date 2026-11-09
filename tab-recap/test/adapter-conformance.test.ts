@@ -26,6 +26,8 @@ import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
+
+type Kind = BackendId | 'gemini' | 'hermes';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
@@ -68,7 +70,7 @@ const lane = (agent: string, extra: { cwd?: string; session?: string; pane?: str
 const today = (): string => { const day = new Date(); return join(String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0')); };
 
 interface Row {
-    readonly kind: BackendId | 'gemini';
+    readonly kind: Kind;
     readonly reader: Transcripts;
     readonly empty: Lane;
     readonly recorded: Lane;
@@ -142,7 +144,7 @@ function rows(): Row[] {
 
 const ROWS = rows();
 
-function observedPinFor(kind: BackendId | 'gemini'): string {
+function observedPinFor(kind: Kind): string {
     switch (kind) {
         case 'claude': return '; pins today: peak uses boundary preTokens, with no window or model stated';
         case 'codex': return '; pins today: peak is the post-compaction token_count and preTokens appears only in the mark';
@@ -164,7 +166,7 @@ const sourceOf = (found: Located): string => {
     return found.source;
 };
 
-async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: BackendId | 'gemini'): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
+async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const decider: Decider = { label: 'fake', ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
@@ -307,7 +309,7 @@ test('a registered transcript reader without in-flight support shows its declare
 });
 
 test('every BACKEND_IDS id has a maker that names itself; custom has no model or enumerator; pins today: custom label ignores model setting', () => {
-    const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', hermes: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
+    const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
     assert.deepEqual(Object.keys(MAKERS).toSorted(), [...BACKEND_IDS].toSorted());
     for (const id of BACKEND_IDS) {
         assert.equal(MAKERS[id](config, dir).id, id);

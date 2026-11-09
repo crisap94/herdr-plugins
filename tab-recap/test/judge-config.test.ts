@@ -4,7 +4,7 @@ import { JUDGE_DEFAULT, judgeJobOf, KEEP_INPUT_DAYS, keepDaysOf, placementOf } f
 import { loadConfig } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
-const models = { claude: 'sonnet', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: 'sonnet', codex: 'gpt-6-luna', opencode: '', custom: '' };
 
 test('the judge job defaults to the recap writer\'s harness and model at medium effort; unknown values are the defaults', () => {
     assert.deepEqual(JUDGE_DEFAULT, { by: 'recap', model: '', effort: 'medium' });
@@ -35,10 +35,10 @@ test('the retention is 14 days unless set to a whole number of days; 0 keeps non
 
 test('the loaded configuration carries both', () => {
     const was = [process.env['TAB_RECAP_JUDGE_BY'], process.env['TAB_RECAP_KEEP_INPUT_DAYS']];
-    process.env['TAB_RECAP_JUDGE_BY'] = 'hermes';
+    process.env['TAB_RECAP_JUDGE_BY'] = 'opencode';
     process.env['TAB_RECAP_KEEP_INPUT_DAYS'] = '3';
     try {
-        assert.deepEqual([loadConfig().judge.by, loadConfig().keepInputDays], ['hermes', 3]);
+        assert.deepEqual([loadConfig().judge.by, loadConfig().keepInputDays], ['opencode', 3]);
     } finally {
         for (const [key, value] of [['TAB_RECAP_JUDGE_BY', was[0]], ['TAB_RECAP_KEEP_INPUT_DAYS', was[1]]] as const) {
             if (value === undefined) {

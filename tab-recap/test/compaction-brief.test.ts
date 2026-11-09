@@ -17,7 +17,7 @@ const t = (raw: string): Text => {
     return parsed.value;
 };
 
-const models = { claude: 'haiku', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: 'haiku', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const config = (values: Record<string, string>): ((key: string) => string | undefined) => (key) => values[key];
 
 test('the brief is trimmed, folded to one line and kept whole under the limit', () => {
