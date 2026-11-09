@@ -92,7 +92,7 @@ and opens the next in the same transaction; the run that follows belongs to it. 
 not drive is only known at the next read, but its boundary carries the record's own time, so the timeline is
 right even when it was recorded late. opencode's marks are tested on recorded fixtures only.
 
-**Retention.** `TAB_RECAP_KEEP_DAYS` (default 30; `0` keeps everything): the daily upkeep removes a tab last
+**Retention.** `TAB_RECAP_KEEP_DAYS` (default 30; `0` keeps everything): the daemon's daily retention pass removes a tab last
 seen longer ago than that and with no column open, with its facts, runs, saved inputs, verdicts, chapters,
 boundaries and compaction records — one transaction per tab, logged with the counts. A tab seen within the
 period is never touched, whatever its size.
@@ -112,7 +112,7 @@ not a closure while herdr still reports the pane as a lane.
 Since 2.0 a recap is not rewritten on every turn: it is a **ledger of facts** per task. A fact has an id, a
 section (goal, now, needs, done, decisions, next, links, rules), a text of at most 16 words, a why (always for a
 decision), an optional reference and agent, when it was first and last seen, and a state: *open*, or *closed* with
-the reason — `done`, `wrong`, `superseded`, `answered` (the writer), `merged` or `rewritten` (the upkeep and the import).
+the reason — `done`, `wrong`, `superseded`, `answered` (the writer), `merged` or `rewritten` (the curator and the import).
 Facts are never deleted.
 
 **Writer's view.** `TAB_RECAP_WRITER_PRUNE=off` by default. When set to `on`, the writer sees every open `goal`, `now`,

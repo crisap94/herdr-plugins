@@ -243,7 +243,7 @@ through the plugin is marked *manual* and linked to its record, the others *auto
 current **chapter** and starts the next one.
 
 A tab you have not seen for `TAB_RECAP_KEEP_DAYS` days (default 30; `0` keeps everything) and that has no
-column open is removed by the daily upkeep, with its facts, runs, chapters and compaction records. A tab seen
+column open is removed by the daemon's daily retention pass, with its facts, runs, chapters and compaction records. A tab seen
 within that period is never touched.
 
 ## Who writes the recap
@@ -350,7 +350,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_PIPELINE` | `one` | how a run reads its new turns: `one` (a single call), `enumerate`, `enumerate+gates`, or `full` (list the facts of every chunk with a quote, take one second look when the turn was long or the list short, then reconcile with the ledger) |
 | `TAB_RECAP_RECONCILE_EVERY` | `8` | turns between two reconciliations of the open facts by the curator |
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
-| `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daily upkeep removes it (`0` = keep everything) |
+| `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daemon's daily retention pass removes it (`0` = keep everything) |
 
 ## Troubleshooting
 
