@@ -13,7 +13,14 @@ export interface HarnessSettings {
 
 export type CostBasis = 'billed' | 'list' | 'unreported' | 'unavailable';
 
-export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis } | Unknown;
+export type ConfinementState = 'supported' | 'emulated' | 'unsupported' | 'unmeasured';
+
+export interface ConfinementCell {
+    readonly axis: 'builtins' | 'mcp' | 'settings';
+    readonly state: ConfinementState;
+}
+
+export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis; readonly confinement?: readonly ConfinementCell[] } | Unknown;
 
 export interface Harness<Id extends string = string> {
     readonly id: Id;

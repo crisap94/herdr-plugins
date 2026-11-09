@@ -1,13 +1,13 @@
 import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
-import type { Effort as LibraryEffort, HarnessId, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
-import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
+import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
+import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { scrubbedFrom } from '../os/process/control.ts';
-import { LIBRARY_HARNESS } from './library-constants.ts';
+import { LIBRARY_HARNESS, POLICY_ACK_REQUIRED } from './library-constants.ts';
 
 export { LIBRARY_IDS } from './library-constants.ts';
 
@@ -15,7 +15,10 @@ export type HarnessRuntime = Pick<Runtime, 'headless' | 'promptLimit' | 'capabil
 
 export type LibraryId = Extract<HarnessId, 'claude' | 'codex' | 'opencode'>;
 
-const effortOf = (id: LibraryId, effort: Effort): LibraryEffort => id === 'opencode' || effort === 'default' ? LIBRARY_HARNESS.harnessDefaultEffort : effort;
+const effortOf = (capabilities: Capabilities | null, effort: Effort): LibraryEffort =>
+    capabilities === null || !isUsable(capabilities[CapabilityName.Effort][Engine.Cli]) || effort === 'default' ? LIBRARY_HARNESS.harnessDefaultEffort : effort;
+
+const cellOf = (cell: LibraryConfinementCell): ConfinementCell => ({ axis: cell.axis, state: cell.support.state });
 
 function failedOf(failure: RunFailure): Ran {
     if (failure.kind === LIBRARY_HARNESS.timeoutKind) {
@@ -26,7 +29,7 @@ function failedOf(failure: RunFailure): Ran {
 }
 
 function ranOf(output: RunOutput): Ran {
-    return { kind: 'ran', text: output.text, costUsd: output.cost.usd ?? 0, costBasis: output.cost.basis };
+    return { kind: 'ran', text: output.text, costUsd: output.cost.usd ?? 0, costBasis: output.cost.basis, confinement: output.confinement.map(cellOf) };
 }
 
 export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
@@ -53,8 +56,9 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         const login = { mode: LIBRARY_HARNESS.loginStore } as const;
-        const credential = this.id === 'claude' ? { ...login, acknowledgePolicy: true as const } : login;
-        if (this.id === 'claude' && !this.claudeAck) {
+        const ackRequired = POLICY_ACK_REQUIRED[this.id];
+        const credential = ackRequired ? { ...login, acknowledgePolicy: true as const } : login;
+        if (ackRequired && !this.claudeAck) {
             return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: LIBRARY_HARNESS.ackMessage });
         }
         const model = settings.model === '' ? MODEL_DEFAULTS[this.id] : settings.model;
@@ -68,7 +72,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
             persist: capabilities === null || !isUsable(capabilities[CapabilityName.Ephemeral][Engine.Cli]),
             timeoutMs: this.timeoutMs,
         });
-        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(this.id, settings.effort), ...(model === '' ? {} : { model }) });
+        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(capabilities, settings.effort), ...(model === '' ? {} : { model }) });
         return result.ok ? ranOf(result.value) : failedOf(result.failure);
     }
 }

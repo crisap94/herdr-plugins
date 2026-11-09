@@ -10,3 +10,5 @@ export const LIBRARY_HARNESS = {
     timeoutKind: 'timeout',
     exitKind: 'exit',
 } as const;
+
+export const POLICY_ACK_REQUIRED = { claude: true, codex: false, opencode: false } as const;

@@ -43,7 +43,7 @@ const failing = (failure: RunFailure, id: 'claude' | 'codex' | 'opencode' = 'cod
 test('claude: login-store with the acknowledgement, tools off, a private deleted cwd, no persistence', async () => {
     const runtime = scripted('claude', { text: 'answer', cost: { usd: 0.02, basis: 'list' } });
     const ran = await new LibraryHarness(runtime, 'claude', 1234, undefined, true).run(call, settings);
-    assert.deepEqual(ran, { kind: 'ran', text: 'answer', costUsd: 0.02, costBasis: 'list' });
+    assert.deepEqual(ran, { kind: 'ran', text: 'answer', costUsd: 0.02, costBasis: 'list', confinement: [] });
     assert.equal(runtime.calls.length, 1);
     const { id, options } = firstCall(runtime);
     assert.equal(id, 'claude');
@@ -72,7 +72,7 @@ test('claude without the acknowledgement: Unknown failed naming the key, and no 
 test('codex: no persistence, no cost basis, a cost of zero, the harness default model, no acknowledgement needed', async () => {
     const runtime = scripted('codex', { text: 'answer', cost: { usd: null, basis: 'unavailable' } });
     const ran = await new LibraryHarness(runtime, 'codex', 1000).run(call, { model: '', effort: 'default' });
-    assert.deepEqual(ran, { kind: 'ran', text: 'answer', costUsd: 0, costBasis: 'unavailable' });
+    assert.deepEqual(ran, { kind: 'ran', text: 'answer', costUsd: 0, costBasis: 'unavailable', confinement: [] });
     const { options, request } = firstCall(runtime);
     assert.deepEqual(options.credential, { mode: 'login-store' });
     assert.equal(options.persist, false);
@@ -88,6 +88,28 @@ test('opencode: does not persist because its ephemeral cell is emulated, always 
     assert.equal(first.request.effort, 'harness-default');
     assert.equal(first.request.model, 'opencode/big-pickle');
     assert.equal(transformOf(first)({})['OTEL_RESOURCE_ATTRIBUTES'], 'tab_recap.job=judge');
+});
+
+test('the result surfaces the confinement cells: an emulated, an unmeasured and a supported one with their axis and state', async () => {
+    const cells = [
+        { axis: 'builtins', requested: 'off', capability: 'builtin-tools-off', support: { state: 'emulated', how: 'prompt-level refusal' } },
+        { axis: 'mcp', requested: 'none', capability: 'mcp-none', support: { state: 'unmeasured', question: 'does it load mcp?' } },
+        { axis: 'settings', requested: 'none', capability: 'settings-sources', support: { state: 'supported' } },
+    ] as const;
+    const runtime = scripted('opencode', { text: 'answer', confinement: cells });
+    const ran = await new LibraryHarness(runtime, 'opencode', 1000).run(call, settings);
+    assert.ok(!isUnknown(ran));
+    assert.deepEqual(ran.confinement, [
+        { axis: 'builtins', state: 'emulated' },
+        { axis: 'mcp', state: 'unmeasured' },
+        { axis: 'settings', state: 'supported' },
+    ]);
+});
+
+test('effort follows the effort capability: a harness whose effort cell is usable gets the level, an unmeasured one the harness default', async () => {
+    const usable = scripted('codex', { text: 'a' });
+    await new LibraryHarness(usable, 'codex', 1000).run(call, { model: '', effort: 'high' });
+    assert.equal(firstCall(usable).request.effort, 'high');
 });
 
 test('opencode persists only while the ephemeral cell is unusable: an emulated cell turns persistence off', async () => {
