@@ -1,16 +1,26 @@
-import type { Database, Statement } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, asc, desc, eq, gte, or } from 'drizzle-orm';
 import type { Applied } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
 import type { ClosedWhy, Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
-import { all, BadRow, blob, maybeText, maybeWhole, one, text, whole } from './rows.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { blob, BadRow, maybeText, maybeWhole, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
+import { fact as factTable, task as taskTable } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
 import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-const SELECT = 'SELECT f.id, f.section, f.text, f.why, f.ref, f.agent, f.anchor, f.first_at, f.last_at, f.state, f.closed_why, f.closed_at, f.language FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ?1 AND k.key = ?2';
+const OPEN = 'open';
+const CLOSED = 'closed';
 const FOLD_WINDOW_MS = 24 * 3_600_000;
+
+const FACT_COLUMNS = {
+    id: factTable.id, section: factTable.section, text: factTable.text, why: factTable.why, ref: factTable.ref, agent: factTable.agent, anchor: factTable.anchor,
+    first_at: factTable.firstAt, last_at: factTable.lastAt, state: factTable.state, closed_why: factTable.closedWhy, closed_at: factTable.closedAt, language: factTable.language,
+};
 
 function closedOf(value: string | null): ClosedWhy | null {
     if (value !== null && !isClosedWhy(value)) {
@@ -20,32 +30,15 @@ function closedOf(value: string | null): ClosedWhy | null {
 }
 
 export class LedgerRows {
-    private readonly open: Statement;
-    private readonly closed: Statement;
-    private readonly every: Statement;
-    private readonly foldable: Statement;
-    private readonly keys: Statement;
-    private readonly taskInsert: Statement;
-    private readonly taskSelect: Statement;
-    private readonly insert: Statement;
-    private readonly update: Statement;
+    private readonly orm: Orm;
 
     constructor(db: Database) {
-        this.open = db.prepare(`${SELECT} AND f.state = 'open' ORDER BY f.last_at DESC, f.id`);
-        this.closed = db.prepare(`${SELECT} AND f.state = 'closed' AND f.closed_at >= ?3 ORDER BY f.closed_at, f.id`);
-        this.every = db.prepare(`${SELECT} ORDER BY f.first_at, f.id`);
-        this.foldable = db.prepare(`${SELECT} AND (f.state = 'open' OR f.closed_at >= ?3) ORDER BY f.first_at, f.id`);
-        this.keys = db.prepare('SELECT DISTINCT k.key FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ? ORDER BY k.key');
-        this.taskInsert = db.prepare('INSERT OR IGNORE INTO task (id, tab_id, key) VALUES (?, ?, ?)');
-        this.taskSelect = db.prepare('SELECT id FROM task WHERE tab_id = ? AND key = ?');
-        this.insert = db.prepare(`INSERT INTO fact (id, tab_id, task_id, section, text, why, ref, agent, anchor, first_at, last_at, state, closed_why, closed_at, born_run, last_run, language)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-        this.update = db.prepare('UPDATE fact SET text = ?, why = ?, ref = ?, agent = ?, anchor = ?, last_at = ?, state = ?, closed_why = ?, closed_at = ?, last_run = ?, language = ? WHERE id = ?');
+        this.orm = ormOf(db);
     }
 
     private factOf(row: Row, task: TaskId): Fact {
         const [section, closedWhy, state] = [text(row, 'section'), maybeText(row, 'closed_why'), text(row, 'state')];
-        if (!isSection(section) || (state !== 'open' && state !== 'closed')) {
+        if (!isSection(section) || (state !== OPEN && state !== CLOSED)) {
             throw new BadRow('a fact is not what the schema promises');
         }
         return {
@@ -55,40 +48,56 @@ export class LedgerRows {
     }
 
     openOf(task: TaskId): readonly Fact[] {
-        return all(this.open, task.tab, task.key).map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, OPEN))).orderBy(desc(factTable.lastAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
     }
 
     recentlyClosed(task: TaskId, since: number): readonly Fact[] {
-        return all(this.closed, task.tab, task.key, since).map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, CLOSED), gte(factTable.closedAt, since))).orderBy(asc(factTable.closedAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
     }
 
     allOf(task: TaskId): readonly Fact[] {
-        return all(this.every, task.tab, task.key).map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
     }
 
     keysOf(tab: string): readonly string[] {
-        return all(this.keys, tab).map((row) => text(row, 'key'));
+        return this.orm.selectDistinct({ key: taskTable.key }).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId))
+            .where(eq(taskTable.tabId, tabId(tab))).orderBy(asc(taskTable.key)).all().map((row) => text(row, 'key'));
     }
 
     private taskRow(task: TaskId): Uint8Array {
-        this.taskInsert.run(ids.next(), task.tab, task.key);
-        return blob(one(this.taskSelect, task.tab, task.key) ?? {}, 'id');
+        this.orm.insert(taskTable).values({ id: ids.next(), tabId: tabId(task.tab), key: task.key }).onConflictDoNothing().run();
+        return blob(this.orm.select({ id: taskTable.id }).from(taskTable).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key))).get() ?? {}, 'id');
+    }
+
+    private insertFact(run: Uint8Array, owner: Uint8Array, task: TaskId, f: Fact): void {
+        const id = idOf('fact', f.id) ?? ids.next();
+        this.orm.insert(factTable).values({
+            id, tabId: tabId(task.tab), taskId: owner, section: f.section, text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor,
+            firstAt: f.firstAt, lastAt: f.lastAt, state: f.state, closedWhy: f.closedWhy, closedAt: f.closedAt, bornRun: run, lastRun: run, language: f.language,
+        }).run();
+    }
+
+    private updateFact(run: Uint8Array, f: Fact): void {
+        const id = idOf('fact', f.id) ?? ids.next();
+        this.orm.update(factTable).set({
+            text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor, lastAt: f.lastAt, state: f.state, closedWhy: f.closedWhy, closedAt: f.closedAt,
+            lastRun: run, language: f.language,
+        }).where(eq(factTable.id, id)).run();
     }
 
     private persist(run: Uint8Array, task: TaskId, before: readonly Fact[], changed: readonly Fact[]): void {
         const owner = this.taskRow(task);
-        for (const fact of changed) {
-            const id = idOf('fact', fact.id) ?? ids.next();
-            if (before.some((was) => was.id === fact.id)) {
-                this.update.run(fact.text, fact.why, fact.ref, fact.agent, fact.anchor, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, fact.language, id);
+        for (const f of changed) {
+            if (before.some((was) => was.id === f.id)) {
+                this.updateFact(run, f);
             } else {
-                this.insert.run(id, task.tab, owner, fact.section, fact.text, fact.why, fact.ref, fact.agent, fact.anchor, fact.firstAt, fact.lastAt, fact.state, fact.closedWhy, fact.closedAt, run, run, fact.language);
+                this.insertFact(run, owner, task, f);
             }
         }
     }
 
     applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow = false): Applied {
-        const before = all(this.foldable, at.task.tab, at.task.key, at.at - FOLD_WINDOW_MS).map((row) => this.factOf(row, at.task));
+        const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(at.task.tab)), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => this.factOf(row, at.task));
         const folded = apply(before, ops, at, sweepNow);
         this.persist(run, at.task, before, folded.changed);
         return { changed: folded.changed, refused: folded.refused };

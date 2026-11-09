@@ -773,6 +773,7 @@
       "test/db/migration-016.test.ts",
       "test/db/parity-autocompact.test.ts",
       "test/db/parity-heavy.test.ts",
+      "test/db/parity-ledger.test.ts",
       "test/db/parity.test.ts",
       "test/db/parity.ts",
       "test/db/print-store.test.ts",
