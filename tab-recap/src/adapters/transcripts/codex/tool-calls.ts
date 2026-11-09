@@ -1,7 +1,7 @@
 import type { CallKind } from '#src/ports/transcripts.ts';
-import type { Row } from './jsonl.ts';
-import { callBuilders, shell, squash } from './tool-calls.ts';
-import type { ToolCall } from './tool-calls.ts';
+import type { Row } from '../jsonl.ts';
+import { callBuilders, shell, squash } from '../tool-calls.ts';
+import type { ToolCall } from '../tool-calls.ts';
 
 const CODEX_TOOL_KINDS: Readonly<Record<string, CallKind>> = { apply_patch: 'edit' };
 

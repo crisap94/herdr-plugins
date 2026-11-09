@@ -2,8 +2,8 @@ import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts'
 import { unknown } from '#src/ports/unknowable.ts';
 import { backgroundItem, backgroundLabel, backgroundTool } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem, BackgroundLabel } from '#src/recap/domain/in-flight.ts';
-import { arr, obj, parse, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
+import { arr, obj, parse, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
 
 export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 

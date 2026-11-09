@@ -1,7 +1,7 @@
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { obj } from './jsonl.ts';
+import { obj } from './transcripts/jsonl.ts';
 
 export const JEV_TIMEOUT_MS = 10_000;
 const USD_PER_INPUT_TOKEN = 0.042 / 1e6;

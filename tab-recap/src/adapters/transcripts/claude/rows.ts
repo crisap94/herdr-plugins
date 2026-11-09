@@ -1,9 +1,9 @@
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
-import { arr, obj, parse, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
-import { claudeNamedCall } from './claude-tool-calls.ts';
-import { promptBodyOf } from './claude-prompt.ts';
-import { toolEntry } from './tool-calls.ts';
+import { arr, obj, parse, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
+import { claudeNamedCall } from './tool-calls.ts';
+import { promptBodyOf } from './prompt.ts';
+import { toolEntry } from '../tool-calls.ts';
 
 const NOISE = ['<command-', '<local-command', '<system-reminder', '<task-notification', 'Caveat: The messages below', '[Request interrupted by user'];
 

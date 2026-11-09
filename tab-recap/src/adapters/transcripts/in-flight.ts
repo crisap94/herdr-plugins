@@ -7,7 +7,7 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { IN_FLIGHT_CAPABILITIES } from './transcript-registry.ts';
+import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
 
 const TAIL_BYTES = 512 * 1024;
 

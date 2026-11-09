@@ -1,6 +1,6 @@
 import type { Mark } from '#src/ports/transcripts.ts';
-import { obj, parse, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
+import { obj, parse, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
 
 const count = (row: Row): number | undefined => {
     const payload = obj(row['payload']);

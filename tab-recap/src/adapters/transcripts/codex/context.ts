@@ -1,7 +1,7 @@
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import { obj, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
-import { count, rowsOf } from './context-values.ts';
+import { obj, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
+import { count, rowsOf } from '../context-values.ts';
 
 export function codexObserved(lines: readonly string[]): Observed | null {
     let counted: { tokens: number; window: number | null } | null = null;

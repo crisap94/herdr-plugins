@@ -1,5 +1,5 @@
 import type { Store } from '#src/adapters/db/database.ts';
-import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { EditCache, EditCounts } from '#src/recap/application/edit-counts.ts';
 import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';

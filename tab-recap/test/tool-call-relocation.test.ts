@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { claudeNamedCall } from '#src/adapters/claude-tool-calls.ts';
-import { codexCalls } from '#src/adapters/codex-tool-calls.ts';
-import { opencodeNamedCall } from '#src/adapters/opencode-tool-calls.ts';
+import { claudeNamedCall } from '#src/adapters/transcripts/claude/tool-calls.ts';
+import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
+import { opencodeNamedCall } from '#src/adapters/transcripts/opencode/tool-calls.ts';
 import type { CallKind } from '#src/ports/transcripts.ts';
 
 const claudeNative: readonly (readonly [string, CallKind])[] = [

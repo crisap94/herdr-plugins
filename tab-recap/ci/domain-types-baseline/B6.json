@@ -16,10 +16,6 @@
   "src/adapters/capability/handoff-plans.ts": {
     "parameter": 3
   },
-  "src/adapters/claude-context.ts": {
-    "container": 1,
-    "assertion": 1
-  },
   "src/adapters/claude-harness.ts": {
     "parameter": 5,
     "return": 2,
@@ -27,67 +23,11 @@
     "property": 4,
     "assertion": 1
   },
-  "src/adapters/claude-in-flight.ts": {
-    "parameter": 11,
-    "return": 9,
-    "container": 21,
-    "property": 6
-  },
-  "src/adapters/claude-prompt.ts": {
-    "parameter": 1,
-    "assertion": 1
-  },
-  "src/adapters/claude-rows.ts": {
-    "parameter": 2,
-    "return": 3,
-    "container": 9,
-    "property": 3
-  },
-  "src/adapters/claude-tool-calls.ts": {
-    "parameter": 1,
-    "container": 1,
-    "assertion": 1
-  },
-  "src/adapters/claude-transcripts.ts": {
-    "parameter": 15,
-    "container": 2,
-    "property": 4
-  },
-  "src/adapters/codex-context.ts": {
-    "container": 1
-  },
   "src/adapters/codex-harness.ts": {
     "parameter": 4,
     "return": 1,
     "container": 1,
     "property": 2
-  },
-  "src/adapters/codex-in-flight.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 12,
-    "property": 2
-  },
-  "src/adapters/codex-marks.ts": {
-    "return": 2,
-    "container": 3
-  },
-  "src/adapters/codex-tool-calls.ts": {
-    "parameter": 6,
-    "return": 1,
-    "container": 3,
-    "assertion": 1
-  },
-  "src/adapters/codex-transcripts.ts": {
-    "parameter": 17,
-    "return": 3,
-    "container": 6,
-    "property": 8
-  },
-  "src/adapters/context-values.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 2
   },
   "src/adapters/custom-harness.ts": {
     "parameter": 4,
@@ -221,49 +161,16 @@
     "parameter": 4,
     "return": 4
   },
-  "src/adapters/jsonl.ts": {
-    "parameter": 16,
-    "return": 6,
-    "container": 8,
-    "property": 3,
-    "assertion": 2
-  },
   "src/adapters/judge-instructions.ts": {
     "parameter": 1,
     "return": 2,
     "container": 4
-  },
-  "src/adapters/opencode-context.ts": {
-    "container": 1
   },
   "src/adapters/opencode-harness.ts": {
     "parameter": 12,
     "return": 1,
     "container": 4,
     "property": 7
-  },
-  "src/adapters/opencode-in-flight.ts": {
-    "parameter": 2,
-    "assertion": 2
-  },
-  "src/adapters/opencode-parts.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 5,
-    "property": 3,
-    "assertion": 2
-  },
-  "src/adapters/opencode-tool-calls.ts": {
-    "parameter": 1,
-    "container": 1,
-    "assertion": 1
-  },
-  "src/adapters/opencode-transcripts.ts": {
-    "parameter": 14,
-    "return": 1,
-    "container": 1,
-    "property": 2,
-    "assertion": 8
   },
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
@@ -339,30 +246,123 @@
     "return": 1,
     "property": 3
   },
-  "src/adapters/screen-transcripts.ts": {
-    "parameter": 5,
-    "return": 3
-  },
-  "src/adapters/tool-calls.ts": {
-    "parameter": 13,
-    "return": 8,
-    "container": 8,
-    "property": 2
-  },
   "src/adapters/transcript-events.ts": {
     "parameter": 5,
     "return": 1
   },
-  "src/adapters/transcript-in-flight.ts": {
+  "src/adapters/transcripts/claude/context.ts": {
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/transcripts/claude/in-flight.ts": {
+    "parameter": 11,
+    "return": 9,
+    "container": 21,
+    "property": 6
+  },
+  "src/adapters/transcripts/claude/prompt.ts": {
+    "parameter": 1,
+    "assertion": 1
+  },
+  "src/adapters/transcripts/claude/rows.ts": {
+    "parameter": 2,
+    "return": 3,
+    "container": 9,
+    "property": 3
+  },
+  "src/adapters/transcripts/claude/tool-calls.ts": {
+    "parameter": 1,
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/transcripts/claude/transcripts.ts": {
+    "parameter": 15,
+    "container": 2,
+    "property": 4
+  },
+  "src/adapters/transcripts/codex/context.ts": {
+    "container": 1
+  },
+  "src/adapters/transcripts/codex/in-flight.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 12,
+    "property": 2
+  },
+  "src/adapters/transcripts/codex/marks.ts": {
+    "return": 2,
+    "container": 3
+  },
+  "src/adapters/transcripts/codex/tool-calls.ts": {
+    "parameter": 6,
+    "return": 1,
+    "container": 3,
+    "assertion": 1
+  },
+  "src/adapters/transcripts/codex/transcripts.ts": {
+    "parameter": 17,
+    "return": 3,
+    "container": 6,
+    "property": 8
+  },
+  "src/adapters/transcripts/context-values.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 2
+  },
+  "src/adapters/transcripts/in-flight.ts": {
     "return": 5
   },
-  "src/adapters/transcript-registry.ts": {
+  "src/adapters/transcripts/jsonl.ts": {
+    "parameter": 16,
+    "return": 6,
+    "container": 8,
+    "property": 3,
+    "assertion": 2
+  },
+  "src/adapters/transcripts/opencode/context.ts": {
+    "container": 1
+  },
+  "src/adapters/transcripts/opencode/in-flight.ts": {
+    "parameter": 2,
+    "assertion": 2
+  },
+  "src/adapters/transcripts/opencode/parts.ts": {
+    "parameter": 3,
+    "return": 3,
+    "container": 5,
+    "property": 3,
+    "assertion": 2
+  },
+  "src/adapters/transcripts/opencode/tool-calls.ts": {
+    "parameter": 1,
+    "container": 1,
+    "assertion": 1
+  },
+  "src/adapters/transcripts/opencode/transcripts.ts": {
+    "parameter": 14,
+    "return": 1,
+    "container": 1,
+    "property": 2,
+    "assertion": 8
+  },
+  "src/adapters/transcripts/registry.ts": {
     "parameter": 6,
     "return": 2,
     "container": 1
   },
-  "src/adapters/transcript-slice.ts": {
+  "src/adapters/transcripts/screen.ts": {
+    "parameter": 5,
+    "return": 3
+  },
+  "src/adapters/transcripts/slice.ts": {
     "parameter": 6,
     "container": 2
+  },
+  "src/adapters/transcripts/tool-calls.ts": {
+    "parameter": 13,
+    "return": 8,
+    "container": 8,
+    "property": 2
   }
 }

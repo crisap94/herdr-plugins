@@ -6,11 +6,11 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { opencodeObserved } from './opencode-context.ts';
-import { parse, str } from './jsonl.ts';
-import { entriesOf, partsOf } from './opencode-parts.ts';
-import type { MessageRow } from './opencode-parts.ts';
-import { opencodeInFlight } from './opencode-in-flight.ts';
+import { opencodeObserved } from './context.ts';
+import { parse, str } from '../jsonl.ts';
+import { entriesOf, partsOf } from './parts.ts';
+import type { MessageRow } from './parts.ts';
+import { opencodeInFlight } from './in-flight.ts';
 
 const MESSAGES = 400;
 const PROMPT_LOOKBACK = 30;

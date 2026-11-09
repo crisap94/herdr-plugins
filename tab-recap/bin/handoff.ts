@@ -5,7 +5,7 @@ import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
-import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';

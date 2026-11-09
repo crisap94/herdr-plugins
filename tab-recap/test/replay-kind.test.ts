@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { replayKindOf } from '#src/adapters/transcript-registry.ts';
+import { replayKindOf } from '#src/adapters/transcripts/registry.ts';
 
 test('a codex transcript path infers the codex reader when no flag is given', () => {
     assert.equal(replayKindOf(null, '/home/u/.codex/sessions/a.jsonl'), 'codex');

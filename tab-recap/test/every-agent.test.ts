@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
-import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';

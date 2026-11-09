@@ -8,7 +8,7 @@ import { openPrintStore } from './db/print-store.ts';
 import { GitLaneRepo } from './git/lane-repo.ts';
 import { GitWorksiteReader } from './git/worksite.ts';
 import { SystemClock } from './os/system-clock.ts';
-import { modalTranscriptRegistry } from './transcript-registry.ts';
+import { modalTranscriptRegistry } from './transcripts/registry.ts';
 
 export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();

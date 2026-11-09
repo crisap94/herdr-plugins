@@ -1,5 +1,5 @@
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
-import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
+import { daemonTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';

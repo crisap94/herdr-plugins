@@ -10,10 +10,10 @@ import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unrea
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
 import { claudeWindowOf } from './capability/context-window.ts';
-import { extractClaude } from './claude-rows.ts';
-import { claudeInFlight } from './claude-in-flight.ts';
-import { claudeObserved } from './claude-context.ts';
-import { linesAfter, linesBefore } from './transcript-slice.ts';
+import { extractClaude } from './transcripts/claude/rows.ts';
+import { claudeInFlight } from './transcripts/claude/in-flight.ts';
+import { claudeObserved } from './transcripts/claude/context.ts';
+import { linesAfter, linesBefore } from './transcripts/slice.ts';
 import type { ExperimentStore, StoredPoint } from './experiment-store.ts';
 
 const TAIL_BYTES = 256 * 1024;

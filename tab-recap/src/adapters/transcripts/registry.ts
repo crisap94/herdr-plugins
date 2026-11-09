@@ -1,7 +1,7 @@
-import { ClaudeTranscripts } from './claude-transcripts.ts';
-import { CodexTranscripts } from './codex-transcripts.ts';
-import { OpencodeTranscripts } from './opencode-transcripts.ts';
-import { ScreenTranscripts } from './screen-transcripts.ts';
+import { ClaudeTranscripts } from './claude/transcripts.ts';
+import { CodexTranscripts } from './codex/transcripts.ts';
+import { OpencodeTranscripts } from './opencode/transcripts.ts';
+import { ScreenTranscripts } from './screen.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { Screens } from '#src/ports/screens.ts';

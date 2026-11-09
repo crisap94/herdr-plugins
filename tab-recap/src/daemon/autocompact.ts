@@ -15,7 +15,7 @@ import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr/fleet.ts';
 import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
+import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 

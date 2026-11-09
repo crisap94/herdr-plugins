@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promptBodyOf } from '#src/adapters/claude-prompt.ts';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { promptBodyOf } from '#src/adapters/transcripts/claude/prompt.ts';
+import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import type { Located } from '#src/ports/transcripts.ts';
 import { laneWith } from './fakes/handoff-delivery.ts';
 

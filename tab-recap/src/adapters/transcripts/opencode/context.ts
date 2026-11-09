@@ -1,7 +1,7 @@
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import { obj, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
-import { count } from './context-values.ts';
+import { obj, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
+import { count } from '../context-values.ts';
 
 export function opencodeObserved(data: Row): Observed | null {
     const tokens = obj(data['tokens']);

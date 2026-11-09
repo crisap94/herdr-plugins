@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/brief-instructions.ts';
-import { CLAUDE_KIND } from '#src/adapters/claude-transcripts.ts';
+import { CLAUDE_KIND } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CodexHarness } from '#src/adapters/codex-harness.ts';
 import { readPoints } from '#src/adapters/experiment-data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment-io.ts';

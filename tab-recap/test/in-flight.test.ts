@@ -1,7 +1,7 @@
 import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
+import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';

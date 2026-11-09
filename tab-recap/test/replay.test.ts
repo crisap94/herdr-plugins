@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';

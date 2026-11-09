@@ -1,10 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
-import { opencodeObserved } from './opencode-context.ts';
-import { obj, parse, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
-import { opencodeNamedCall } from './opencode-tool-calls.ts';
-import { toolEntry } from './tool-calls.ts';
+import { opencodeObserved } from './context.ts';
+import { obj, parse, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
+import { opencodeNamedCall } from './tool-calls.ts';
+import { toolEntry } from '../tool-calls.ts';
 
 export interface MessageRow { readonly id: string; readonly time_updated: number; readonly data: string }
 

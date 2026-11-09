@@ -1,7 +1,7 @@
 import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, str } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
+import { arr, obj, parse, str } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
 
 export const CODEX_IN_FLIGHT_INITIAL_BYTES = 2 * 1024 * 1024;
 export const CODEX_IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;

@@ -2,8 +2,8 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { readsOf } from '#src/experiment/read-paths.ts';
 import type { Event } from '#src/experiment/outcomes.ts';
-import { extractClaude } from './claude-rows.ts';
-import { arr, obj, parse, str } from './jsonl.ts';
+import { extractClaude } from './transcripts/claude/rows.ts';
+import { arr, obj, parse, str } from './transcripts/jsonl.ts';
 
 const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
 

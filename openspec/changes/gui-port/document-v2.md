@@ -124,7 +124,7 @@ read after construction returns `[]` files.
   `autocompact`, `boundaries`, `requests`). Construction is the literal of `expanded-modal.ts:12`:
   `new ExpandedModel({records, ledger, stories, session, autocompact, boundaries, requests, edits})` with
   `edits = (lanes, now) => cache.of(lanes, now)` and `cache = new EditCache(new EditCounts(modalTranscriptRegistry()))`.
-  `modalTranscriptRegistry()` (`transcript-registry.ts:54`) has no screen reader, exactly like the TUI modal, so the files row matches
+  `modalTranscriptRegistry()` (`transcripts/registry.ts:54`) has no screen reader, exactly like the TUI modal, so the files row matches
   the TUI. (`daemonTranscriptRegistry(screens, wants)` `:49` would also count screen-read lanes; it is not used, to keep parity.)
 - `GuiPublisher` gets one new dep, `expanded: (tab, view, now) => ExpandedData`, and `document()` passes the result to the v2
   builder. `GuiPublisherDeps` is branch-created, so it is editable.
@@ -154,7 +154,7 @@ read after construction returns `[]` files.
 | --- | --- | --- |
 | `ExpandedModel`, `ExpandedDeps`, `ExpandedData`, `newestChange`, `CURATING_MS` | `expanded-view.ts:35,17,28,30,14` | used as-is |
 | `EditCache`, `EditCounts`, `FileCount`, `countEdits` | `edit-counts.ts:43,21,8,13` | used as-is |
-| `modalTranscriptRegistry` | `transcript-registry.ts:54` | used as-is |
+| `modalTranscriptRegistry` | `transcripts/registry.ts:54` | used as-is |
 | `timelineOf`, `dateLines`, `clockOf`, `dayOf`, `Entry` | `timeline.ts:28,35,16,18,20` | used as-is |
 | `breakText`, `chaptersFact` | `timeline-breaks.ts:13,35` | `breakText` used for `GuiBreak.text` |
 | `sessionLines`, `spanOf` | `session-lines.ts:42,8` | not needed for data; used by the parity test |
