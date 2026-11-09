@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
+import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
+import { HermesHarness } from '#src/adapters/harness/hermes.ts';
 import { ARGV_BYTES } from '#src/adapters/recap-prompt.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';

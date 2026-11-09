@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { CodexHarness } from './codex-harness.ts';
+import { CodexHarness } from './harness/codex.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { retried } from '#src/experiment/pool.ts';

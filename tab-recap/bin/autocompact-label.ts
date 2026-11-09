@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment-data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment-io.ts';
-import { CODEX_PROGRAM } from '#src/adapters/codex-harness.ts';
+import { CODEX_PROGRAM } from '#src/adapters/harness/codex.ts';
 import { Labeller } from '#src/adapters/experiment-labeller.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';

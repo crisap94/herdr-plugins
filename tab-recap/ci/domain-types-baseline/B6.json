@@ -16,25 +16,6 @@
   "src/adapters/capability/handoff-plans.ts": {
     "parameter": 3
   },
-  "src/adapters/claude-harness.ts": {
-    "parameter": 5,
-    "return": 2,
-    "container": 1,
-    "property": 4,
-    "assertion": 1
-  },
-  "src/adapters/codex-harness.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 1,
-    "property": 2
-  },
-  "src/adapters/custom-harness.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 2,
-    "property": 2
-  },
   "src/adapters/experiment-arms.ts": {
     "parameter": 8,
     "return": 2,
@@ -107,6 +88,43 @@
     "parameter": 1,
     "container": 2
   },
+  "src/adapters/harness/claude.ts": {
+    "parameter": 5,
+    "return": 2,
+    "container": 1,
+    "property": 4,
+    "assertion": 1
+  },
+  "src/adapters/harness/codex.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 1,
+    "property": 2
+  },
+  "src/adapters/harness/custom.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 2,
+    "property": 2
+  },
+  "src/adapters/harness/hermes.ts": {
+    "parameter": 6,
+    "return": 2,
+    "container": 1,
+    "property": 4,
+    "assertion": 1
+  },
+  "src/adapters/harness/on-path.ts": {
+    "parameter": 2,
+    "return": 1,
+    "container": 1
+  },
+  "src/adapters/harness/opencode.ts": {
+    "parameter": 12,
+    "return": 1,
+    "container": 4,
+    "property": 7
+  },
   "src/adapters/herdr/agents.ts": {
     "parameter": 14,
     "return": 2,
@@ -143,13 +161,6 @@
   "src/adapters/herdr/token-refusal.ts": {
     "container": 2
   },
-  "src/adapters/hermes-harness.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1,
-    "property": 4,
-    "assertion": 1
-  },
   "src/adapters/jev-decider.ts": {
     "parameter": 6,
     "return": 3,
@@ -165,12 +176,6 @@
     "parameter": 1,
     "return": 2,
     "container": 4
-  },
-  "src/adapters/opencode-harness.ts": {
-    "parameter": 12,
-    "return": 1,
-    "container": 4,
-    "property": 7
   },
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
@@ -225,11 +230,6 @@
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
     "return": 1
-  },
-  "src/adapters/path-harnesses.ts": {
-    "parameter": 2,
-    "return": 1,
-    "container": 1
   },
   "src/adapters/recap-instructions.ts": {
     "parameter": 3,

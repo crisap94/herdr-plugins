@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
 import { CoreLink } from '#src/adapters/herdr-core/sdk-core.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';

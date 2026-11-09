@@ -1,7 +1,7 @@
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';

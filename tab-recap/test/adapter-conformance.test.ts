@@ -11,7 +11,7 @@ import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcri
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { daemonTranscriptRegistry, IN_FLIGHT_CAPABILITIES, modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
+import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
 import { enumeratorFor } from '#src/daemon/backends.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';

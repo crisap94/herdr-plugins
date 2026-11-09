@@ -22,7 +22,7 @@ import { startDesktopApi } from './desktop-api-start.ts';
 import { HcCoreFleet } from './herdr-core/fleet.ts';
 import type { SocketPath } from './herdr-core/sdk-core.ts';
 import { claudeSessions, defaultClaudeHome } from './herdr-core/sessions.ts';
-import { PathHarnesses } from './path-harnesses.ts';
+import { PathHarnesses } from './harness/on-path.ts';
 import { PublishingRecords } from './publishing-records.ts';
 import { PublishingViews } from './publishing-views.ts';
 

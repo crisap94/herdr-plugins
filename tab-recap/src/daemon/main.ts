@@ -8,7 +8,7 @@ import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
 import type { Frontend } from '#src/ports/frontend.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';

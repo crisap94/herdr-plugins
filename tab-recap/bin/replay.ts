@@ -8,7 +8,7 @@ import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
 import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, enumeratorFor, judgeFor, summarizerFor } from '#src/daemon/backends.ts';

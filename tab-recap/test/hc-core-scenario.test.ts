@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import type { Frame, SnapshotResult } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 

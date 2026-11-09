@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { onPath, PathHarnesses } from '#src/adapters/path-harnesses.ts';
+import { onPath, PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendOf, modelsOf } from '#src/daemon/config.ts';
 import type { HarnessesResult } from '#src/ports/harnesses.ts';

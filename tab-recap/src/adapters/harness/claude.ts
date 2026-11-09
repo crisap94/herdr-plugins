@@ -4,8 +4,8 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { run, scrubbedEnv } from './os/process/control.ts';
-import type { Runner } from './os/process/control.ts';
+import { run, scrubbedEnv } from '../os/process/control.ts';
+import type { Runner } from '../os/process/control.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
 export function resultOf(stdout: string): { text: string; cost: number } | null {
