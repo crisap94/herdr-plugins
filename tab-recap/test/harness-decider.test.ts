@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HarnessDecider } from '#src/adapters/harness-decider.ts';
+import { HarnessDecider } from '#src/adapters/job/decider.ts';
 import type { Noul } from '#src/ports/decider.ts';
 import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';

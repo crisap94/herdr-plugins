@@ -1,8 +1,8 @@
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import type { CheckAnchors, Judge, JudgeTask, Said } from '#src/ports/judge.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
-import { judgeInstructions } from './judge-instructions.ts';
-import { unfenced } from './recap-prompt.ts';
+import { judgeInstructions } from './prompts/judge-instructions.ts';
+import { unfenced } from './prompts/recap-prompt.ts';
 
 export class HarnessJudge implements Judge {
     readonly label: string;

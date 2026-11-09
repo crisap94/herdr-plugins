@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
-import { RecapWriter } from '#src/adapters/recap-writer.ts';
+import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';

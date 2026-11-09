@@ -6,7 +6,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { obj, parse, str } from '../transcripts/jsonl.ts';
-import { ARGV_BYTES } from '../recap-prompt.ts';
+import { ARGV_BYTES } from '../job/prompts/recap-prompt.ts';
 import { run, scrubbedEnv } from '../os/process/control.ts';
 import type { Runner } from '../os/process/control.ts';
 

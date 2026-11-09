@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC } from '#src/adapters/rubric.ts';
-import { HarnessCurator } from '#src/adapters/harness-curator.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
-import { ARGV_BYTES } from '#src/adapters/recap-prompt.ts';
+import { ARGV_BYTES } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { HermesHarness } from '#src/adapters/harness/hermes.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';

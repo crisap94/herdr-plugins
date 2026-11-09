@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC } from '#src/adapters/rubric.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
-import { HarnessCurator } from '#src/adapters/harness-curator.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';

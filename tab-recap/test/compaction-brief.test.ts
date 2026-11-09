@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BRIEF_INSTRUCTIONS } from '#src/adapters/brief-instructions.ts';
+import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { BriefDesk, clean, FORBIDDEN, vetted } from '#src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-message.ts';

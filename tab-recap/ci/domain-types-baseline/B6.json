@@ -66,28 +66,6 @@
     "return": 2,
     "container": 1
   },
-  "src/adapters/harness-brief.ts": {
-    "parameter": 2,
-    "container": 1
-  },
-  "src/adapters/harness-curator.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/harness-decider.ts": {
-    "parameter": 4,
-    "return": 4,
-    "container": 6,
-    "assertion": 1
-  },
-  "src/adapters/harness-enumerator.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/harness-judge.ts": {
-    "parameter": 1,
-    "container": 2
-  },
   "src/adapters/harness/claude.ts": {
     "parameter": 5,
     "return": 2,
@@ -161,21 +139,58 @@
   "src/adapters/herdr/token-refusal.ts": {
     "container": 2
   },
-  "src/adapters/jev-decider.ts": {
+  "src/adapters/job/brief.ts": {
+    "parameter": 2,
+    "container": 1
+  },
+  "src/adapters/job/curator.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/job/decider.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 6,
+    "assertion": 1
+  },
+  "src/adapters/job/enumerator.ts": {
+    "parameter": 1,
+    "container": 1
+  },
+  "src/adapters/job/jev-decider.ts": {
     "parameter": 6,
     "return": 3,
     "container": 3,
     "property": 5,
     "assertion": 1
   },
-  "src/adapters/jev-key.ts": {
+  "src/adapters/job/jev-key.ts": {
     "parameter": 4,
     "return": 4
   },
-  "src/adapters/judge-instructions.ts": {
+  "src/adapters/job/judge.ts": {
+    "parameter": 1,
+    "container": 2
+  },
+  "src/adapters/job/prompts/judge-instructions.ts": {
     "parameter": 1,
     "return": 2,
     "container": 4
+  },
+  "src/adapters/job/prompts/recap-instructions.ts": {
+    "parameter": 3,
+    "return": 4,
+    "container": 1,
+    "property": 1
+  },
+  "src/adapters/job/prompts/recap-prompt.ts": {
+    "parameter": 4,
+    "return": 5
+  },
+  "src/adapters/job/prompts/rubric.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 3
   },
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
@@ -230,21 +245,6 @@
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
     "return": 1
-  },
-  "src/adapters/recap-instructions.ts": {
-    "parameter": 3,
-    "return": 4,
-    "container": 1,
-    "property": 1
-  },
-  "src/adapters/recap-prompt.ts": {
-    "parameter": 4,
-    "return": 5
-  },
-  "src/adapters/rubric.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 3
   },
   "src/adapters/transcript-events.ts": {
     "parameter": 5,

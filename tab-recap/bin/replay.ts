@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
+import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { replayKindOf, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';

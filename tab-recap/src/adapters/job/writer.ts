@@ -3,8 +3,8 @@ import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
-import { instructions } from './recap-instructions.ts';
-import { fittedCall, unfenced } from './recap-prompt.ts';
+import { instructions } from './prompts/recap-instructions.ts';
+import { fittedCall, unfenced } from './prompts/recap-prompt.ts';
 import { jobContractOf } from '#src/recap/domain/backend.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
 

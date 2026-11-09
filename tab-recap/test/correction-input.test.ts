@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Correction } from '#src/ports/summarizer.ts';
-import { instructions } from '#src/adapters/recap-instructions.ts';
+import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { agentOf, requestOf } from './support.ts';
 import { dtdTest, validate } from './xmllint.ts';

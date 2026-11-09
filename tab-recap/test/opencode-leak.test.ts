@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { OpencodeHarness } from '#src/adapters/harness/opencode.ts';
-import { RecapWriter } from '#src/adapters/recap-writer.ts';
+import { RecapWriter } from '#src/adapters/job/writer.ts';
 import type { Runner } from '#src/adapters/os/process/control.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 

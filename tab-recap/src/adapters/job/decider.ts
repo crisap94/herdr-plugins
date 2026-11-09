@@ -1,7 +1,7 @@
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
-import { unfenced } from './recap-prompt.ts';
+import { unfenced } from './prompts/recap-prompt.ts';
 
 const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
 

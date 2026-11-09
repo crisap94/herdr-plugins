@@ -1,10 +1,11 @@
-import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
+import type { CompactionBriefs, Briefed } from '#src/ports/compaction-briefs.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
-import { ENUMERATE_INSTRUCTIONS } from './enumerate-instructions.ts';
-import { unfenced } from './recap-prompt.ts';
+import { BRIEF_INSTRUCTIONS } from './prompts/brief-instructions.ts';
+import { leaf } from '#src/recap/application/xml.ts';
+import { unfenced } from './prompts/recap-prompt.ts';
 
-export class HarnessEnumerator implements Enumerators {
+export class HarnessBrief implements CompactionBriefs {
     readonly backend: string;
     readonly job: string;
     private readonly harness: Harness;
@@ -17,12 +18,13 @@ export class HarnessEnumerator implements Enumerators {
         this.job = [harness.id, settings.model, settings.effort === 'default' ? '' : settings.effort].filter((part) => part !== '').join(' · ');
     }
 
-    async write(document: string): Promise<Enumerated> {
-        const call = { instructions: ENUMERATE_INSTRUCTIONS, input: document };
-        if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(ENUMERATE_INSTRUCTIONS) > this.harness.limit) {
+    async write(source: string, correction?: string): Promise<Briefed> {
+        const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, correction)}`;
+        const call = { instructions: BRIEF_INSTRUCTIONS, input: document };
+        if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(BRIEF_INSTRUCTIONS) > this.harness.limit) {
             return unknown({ why: 'unreadable', detail: `the document is too long for ${this.harness.id}` });
         }
         const ran = await this.harness.run(call, this.settings);
-        return isUnknown(ran) ? ran : { kind: 'enumerated', text: unfenced(ran.text), costUsd: ran.costUsd };
+        return isUnknown(ran) ? ran : { kind: 'briefed', text: unfenced(ran.text) };
     }
 }

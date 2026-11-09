@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
-import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
+import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';

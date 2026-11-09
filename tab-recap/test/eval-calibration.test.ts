@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HarnessJudge } from '#src/adapters/harness-judge.ts';
-import { judgeInstructions, JUDGE_INSTRUCTIONS } from '#src/adapters/judge-instructions.ts';
+import { HarnessJudge } from '#src/adapters/job/judge.ts';
+import { judgeInstructions, JUDGE_INSTRUCTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
 import { agreementOf, kappaOf, trusted } from '#src/recap/application/eval-stats.ts';
 import { ANCHORS_PER_CHECK, anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';

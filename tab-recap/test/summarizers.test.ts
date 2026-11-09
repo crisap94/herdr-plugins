@@ -9,10 +9,10 @@ import { opencodeArgs, opencodeOutput, sessionsTitled } from '#src/adapters/harn
 import { readFileSync } from 'node:fs';
 import { ClaudeHarness } from '#src/adapters/harness/claude.ts';
 import { CodexHarness } from '#src/adapters/harness/codex.ts';
-import { HarnessBrief } from '#src/adapters/harness-brief.ts';
+import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { HermesHarness } from '#src/adapters/harness/hermes.ts';
-import { RecapWriter } from '#src/adapters/recap-writer.ts';
-import { ARGV_BYTES, instructions, message } from '#src/adapters/recap-prompt.ts';
+import { RecapWriter } from '#src/adapters/job/writer.ts';
+import { ARGV_BYTES, instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';

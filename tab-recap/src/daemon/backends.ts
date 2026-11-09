@@ -1,9 +1,9 @@
 import { join } from 'node:path';
-import { HarnessBrief } from '#src/adapters/harness-brief.ts';
-import { HarnessJudge } from '#src/adapters/harness-judge.ts';
-import { HarnessCurator } from '#src/adapters/harness-curator.ts';
-import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
-import { RecapWriter } from '#src/adapters/recap-writer.ts';
+import { HarnessBrief } from '#src/adapters/job/brief.ts';
+import { HarnessJudge } from '#src/adapters/job/judge.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
+import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
+import { RecapWriter } from '#src/adapters/job/writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';

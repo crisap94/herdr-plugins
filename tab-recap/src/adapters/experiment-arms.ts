@@ -7,9 +7,9 @@ import { configGetter } from '#src/daemon/config.ts';
 import { JEV_MODEL_DEFAULT, JEV_URL_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { ClaudeHarness } from './harness/claude.ts';
 import { CodexHarness } from './harness/codex.ts';
-import { HarnessDecider } from './harness-decider.ts';
-import { JevDecider } from './jev-decider.ts';
-import { jevKey } from './jev-key.ts';
+import { HarnessDecider } from './job/decider.ts';
+import { JevDecider } from './job/jev-decider.ts';
+import { jevKey } from './job/jev-key.ts';
 
 export type ArmName = 'jev' | 'haiku-low' | 'haiku-medium' | 'luna-low';
 

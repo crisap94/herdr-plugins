@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
+import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { coverDocument, gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 

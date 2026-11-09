@@ -6,7 +6,7 @@ export interface Rubric {
     readonly whole: string;
 }
 
-const RUBRIC_FILE = new URL('../../schema/recap-rubric.md', import.meta.url);
+const RUBRIC_FILE = new URL('../../../../schema/recap-rubric.md', import.meta.url);
 
 export function partOf(markdown: string, title: string): string {
     const parts = markdown.split(/^## /m).slice(1);
