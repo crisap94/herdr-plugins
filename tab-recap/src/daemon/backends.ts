@@ -14,6 +14,7 @@ import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
+import type { LogLine } from '#src/ports/harness.ts';
 import { coverageDeciderFor, deciderFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
@@ -41,19 +42,19 @@ class Nothing implements Summarizer {
     }
 }
 
-export function summarizerFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime): Summarizer {
+export function summarizerFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Summarizer {
     const id = pick(config.backend, available);
-    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter')), { model: config.models[id], effort: config.effort });
+    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort });
 }
 
-export function enumeratorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime): Enumerators | null {
+export function enumeratorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
     const id = pick(config.backend, available);
-    return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator')), { model: config.models[id], effort: 'low' });
+    return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator'), log), { model: config.models[id], effort: 'low' });
 }
 
-export function briefFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime): CompactionBriefs | null {
+export function briefFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): CompactionBriefs | null {
     const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief')), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
 export function judgeFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
@@ -61,9 +62,9 @@ export function judgeFor(config: Config, available: readonly string[], work: str
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
 
-export function curatorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime): Curators | null {
+export function curatorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator')), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort });
 }
 
 export class Backends {
@@ -103,26 +104,26 @@ export class Backends {
     }
 
     brief(): CompactionBriefs | null {
-        return briefFor(loadConfig(), this.available, this.work, this.runtime);
+        return briefFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     decider(): Decider | null {
-        return deciderFor(loadConfig(), this.available, this.work, this.runtime);
+        return deciderFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     coverageDecider(): Decider | null {
-        return coverageDeciderFor(loadConfig(), this.available, this.work, this.runtime);
+        return coverageDeciderFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     curator(): Curators | null {
-        return curatorFor(loadConfig(), this.available, this.work, this.runtime);
+        return curatorFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     summarizer(): Summarizer {
-        return summarizerFor(loadConfig(), this.available, this.work, this.runtime);
+        return summarizerFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     enumerator(): Enumerators | null {
-        return enumeratorFor(loadConfig(), this.available, this.work, this.runtime);
+        return enumeratorFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 }

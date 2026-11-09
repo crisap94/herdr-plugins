@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';

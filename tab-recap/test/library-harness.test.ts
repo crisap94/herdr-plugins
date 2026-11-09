@@ -5,14 +5,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CapabilityName, Engine, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
 import type { RunFailure } from '@stateforge-labs/harness-adapters/runtime';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
-import type { FakeCall, FakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import type { FakeCall } from '@stateforge-labs/harness-adapters/testing';
+import type { PolicedRuntime } from '#test/fakes/harness-runtime.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT } from '#src/recap/domain/claude-policy-ack.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
+import { summarizerFor } from '#src/daemon/backends.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
@@ -20,11 +22,11 @@ import { requestOf } from '#test/support.ts';
 const call = { instructions: 'do', input: 'in' };
 const settings = { model: '', effort: 'low' } as const;
 
-function scripted(id: 'claude' | 'codex' | 'opencode', ...items: Parameters<typeof fakeOutput>[0][]): FakeRuntime {
+function scripted(id: 'claude' | 'codex' | 'opencode', ...items: Parameters<typeof fakeOutput>[0][]): PolicedRuntime {
     return fakeRuntime({ scripts: { [id]: items.map((item) => fakeOutput(item)) } });
 }
 
-function firstCall(runtime: FakeRuntime): FakeCall {
+function firstCall(runtime: PolicedRuntime): FakeCall {
     const [first] = runtime.calls;
     assert.ok(first !== undefined);
     return first;
@@ -38,7 +40,7 @@ function transformOf(made: FakeCall): (source: Record<string, string>) => Readon
 
 const ENTRIES: readonly Entry[] = Array.from({ length: 400 }, (_, n) => ({ role: n % 2 === 0 ? 'user' : 'agent', text: `turn ${n} ${'word '.repeat(60)}` }));
 
-const failing = (failure: RunFailure, id: 'claude' | 'codex' | 'opencode' = 'codex'): FakeRuntime => fakeRuntime({ scripts: { [id]: [failure] } });
+const failing = (failure: RunFailure, id: 'claude' | 'codex' | 'opencode' = 'codex'): PolicedRuntime => fakeRuntime({ scripts: { [id]: [failure] } });
 
 test('claude: login-store with the acknowledgement, tools off, a private deleted cwd, no persistence', async () => {
     const runtime = scripted('claude', { text: 'answer', cost: { usd: 0.02, basis: 'list' } });
@@ -211,4 +213,40 @@ test('the claude maker passes the configured acknowledgement: off makes no run c
     const on = await MAKERS.claude({ ...config, claudePolicyAck: 'on' }, '/work', allowed).run(call, settings);
     assert.equal(on.kind, 'ran');
     assert.equal(allowed.calls.length, 1);
+});
+
+test('the acknowledgement comes from the library policy notice, not from a table: a notice on codex makes codex refuse too', async () => {
+    const base = scripted('codex', { text: 'never' });
+    const runtime: PolicedRuntime = { ...base, policyNotice: (id, mode) => (id === 'codex' && mode === 'login-store' ? { harness: 'claude', mode: 'login-store', quotes: [], retrievedAt: 'x' } : null) };
+    const ran = await new LibraryHarness(runtime, 'codex', 1000).run(call, settings);
+    assert.ok(isUnknown(ran));
+    assert.equal(base.calls.length, 0);
+});
+
+const emulatedBuiltins = [
+    { axis: 'builtins', requested: 'off', capability: 'builtin-tools-off', support: { state: 'emulated', how: 'prompt-level refusal' } },
+    { axis: 'mcp', requested: 'none', capability: 'mcp-none', support: { state: 'unmeasured', question: 'does it load mcp?' } },
+    { axis: 'settings', requested: 'none', capability: 'settings-sources', support: { state: 'supported' } },
+] as const;
+
+test('a run on a harness with an emulated cell is logged with the weak cells and nothing else', async () => {
+    const lines: string[] = [];
+    const runtime = scripted('opencode', { text: '## Goal\n- x', confinement: emulatedBuiltins, cost: { usd: 0.01, basis: 'billed' } });
+    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], '/work', runtime, (line) => { lines.push(line); });
+    const written = await writer.write(requestOf({ entries: ENTRIES }));
+    assert.ok(!isUnknown(written));
+    assert.deepEqual(lines, ['harness opencode: builtins emulated, mcp unmeasured']);
+});
+
+test('a run whose cost is unavailable says so in the same line, and a fully supported billed run logs nothing', async () => {
+    const lines: string[] = [];
+    const log = (line: string): void => { lines.push(line); };
+    const config = { timeoutMs: 1000 } as Config;
+    const codex = scripted('codex', { text: 'a', cost: { usd: null, basis: 'unavailable' } });
+    await MAKERS.codex(config, '/work', codex, undefined, log).run(call, settings);
+    const opencode = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });
+    await MAKERS.opencode(config, '/work', opencode, undefined, log).run(call, settings);
+    const quiet = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });
+    await MAKERS.opencode(config, '/work', quiet).run(call, settings);
+    assert.deepEqual(lines, ['harness codex: cost unavailable']);
 });

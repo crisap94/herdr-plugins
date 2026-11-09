@@ -11,6 +11,8 @@ export interface HarnessSettings {
     readonly effort: Effort;
 }
 
+export type LogLine = (line: string) => void;
+
 export type CostBasis = 'billed' | 'list' | 'unreported' | 'unavailable';
 
 export type ConfinementState = 'supported' | 'emulated' | 'unsupported' | 'unmeasured';

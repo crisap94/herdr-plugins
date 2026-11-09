@@ -58,7 +58,7 @@ import type { LeaseSpy, World } from '#test/fakes/handoff-delivery.ts';
 import { harness as handoffHarness, NOW, recapOf, request, SOURCE_LISTED, T1, TAB, TARGET, TEXT, task } from '#test/fakes/handoff-flow-harness.ts';
 import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
-import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 

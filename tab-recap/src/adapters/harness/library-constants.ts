@@ -11,4 +11,9 @@ export const LIBRARY_HARNESS = {
     exitKind: 'exit',
 } as const;
 
-export const POLICY_ACK_REQUIRED = { claude: true, codex: false, opencode: false } as const;
+export const CONFINEMENT_NOTICE = {
+    weakStates: ['emulated', 'unmeasured'],
+    unmeasuredCosts: ['unreported', 'unavailable'],
+    cellSeparator: ', ',
+    partSeparator: '; ',
+} as const;

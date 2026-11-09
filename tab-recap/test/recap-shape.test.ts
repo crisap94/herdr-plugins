@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
     const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(' ');

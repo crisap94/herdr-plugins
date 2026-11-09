@@ -10,7 +10,7 @@ import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } fro
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 

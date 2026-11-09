@@ -9,7 +9,7 @@ import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendOf, modelsOf } from '#src/daemon/config.ts';
 import type { HarnessesResult } from '#src/ports/harnesses.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const found = (...ids: string[]): HarnessesResult => ({ kind: 'available', ids });
 const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { enumeratorFor } from '#src/daemon/backends.ts';
 import { loadConfig } from '#src/daemon/config.ts';
-import { fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 

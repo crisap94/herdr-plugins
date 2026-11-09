@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { CustomHarness, splitArgv } from '#src/adapters/harness/custom.ts';
 import { readFileSync } from 'node:fs';

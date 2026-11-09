@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';

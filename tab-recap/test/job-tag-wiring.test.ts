@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
-import { fakeOutput, fakeRuntime } from '@stateforge-labs/harness-adapters/testing';
-import type { FakeRuntime } from '@stateforge-labs/harness-adapters/testing';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import type { PolicedRuntime } from '#test/fakes/harness-runtime.ts';
 import { briefFor, curatorFor, enumeratorFor, judgeFor, summarizerFor } from '#src/daemon/backends.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -15,7 +15,7 @@ import type { JobTag } from '#src/recap/domain/job-tag.ts';
 interface Site {
     readonly name: string;
     readonly tag: JobTag;
-    readonly call: (config: Config, available: readonly string[], work: string, runtime: FakeRuntime) => Promise<unknown>;
+    readonly call: (config: Config, available: readonly string[], work: string, runtime: PolicedRuntime) => Promise<unknown>;
 }
 
 const EMPTY_INPUT: RecapInput = { tab: { id: 'tab', now: 0, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };

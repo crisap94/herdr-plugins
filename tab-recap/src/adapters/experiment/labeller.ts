@@ -1,3 +1,4 @@
+import { noticing } from '../harness/confinement-notice.ts';
 import { LIBRARY_IDS, LibraryHarness } from '../harness/library.ts';
 import type { HarnessRuntime } from '../harness/library.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
@@ -20,7 +21,7 @@ export class Labeller {
     private readonly log: (line: string) => void;
     readonly settings: HarnessSettings;
 
-    constructor(runtime: HarnessRuntime, slots: number, log: (line: string) => void, settings: HarnessSettings = LABELLER, make: () => Harness = (): Harness => new LibraryHarness(runtime, LIBRARY_IDS.codex, TIMEOUT_MS)) {
+    constructor(runtime: HarnessRuntime, slots: number, log: (line: string) => void, settings: HarnessSettings = LABELLER, make: () => Harness = (): Harness => noticing(new LibraryHarness(runtime, LIBRARY_IDS.codex, TIMEOUT_MS), log)) {
         this.free = Array.from({ length: slots }, () => make());
         this.log = log;
         this.settings = settings;

@@ -7,11 +7,11 @@ import type { Effort } from '#src/recap/domain/effort.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { scrubbedFrom } from '../os/process/control.ts';
-import { LIBRARY_HARNESS, POLICY_ACK_REQUIRED } from './library-constants.ts';
+import { LIBRARY_HARNESS } from './library-constants.ts';
 
 export { LIBRARY_IDS } from './library-constants.ts';
 
-export type HarnessRuntime = Pick<Runtime, 'headless' | 'promptLimit' | 'capabilities'>;
+export type HarnessRuntime = Pick<Runtime, 'headless' | 'promptLimit' | 'capabilities' | 'policyNotice'>;
 
 export type LibraryId = Extract<HarnessId, 'claude' | 'codex' | 'opencode'>;
 
@@ -56,7 +56,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         const login = { mode: LIBRARY_HARNESS.loginStore } as const;
-        const ackRequired = POLICY_ACK_REQUIRED[this.id];
+        const ackRequired = this.runtime.policyNotice(this.id, LIBRARY_HARNESS.loginStore) !== null;
         const credential = ackRequired ? { ...login, acknowledgePolicy: true as const } : login;
         if (ackRequired && !this.claudeAck) {
             return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: LIBRARY_HARNESS.ackMessage });
