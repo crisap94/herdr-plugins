@@ -5,90 +5,94 @@ min_herdr_version = "0.9.0"
 description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
 platforms = ["linux", "macos"]
 
+# The one runtime dependency (@stateforge-labs/herdr-sdk, the herdr-core client) is installed when herdr installs the plugin.
+[[build]]
+command = ["bun", "install", "--frozen-lockfile", "--production"]
+
 # The column is the default view: the daemon starts with the herdr session…
 [[startup]]
-command = ["node", "bin/tab-recap.mjs", "startup"]
+command = ["bun", "bin/tab-recap.mjs", "startup"]
 
 # …and is revived whenever an agent appears, so a new agent's column pops up at once.
 [[events]]
 on = "pane.agent_detected"
-command = ["node", "bin/tab-recap.mjs", "ensure"]
+command = ["bun", "bin/tab-recap.mjs", "ensure"]
 
 [[actions]]
 id = "start"
 title = "Tab Recap: on"
 description = "Start the daemon: every tab with an agent gets its recap column."
-command = ["node", "bin/tab-recap.mjs", "start"]
+command = ["bun", "bin/tab-recap.mjs", "start"]
 
 [[actions]]
 id = "stop"
 title = "Tab Recap: off"
 description = "Close every recap column and stop the daemon (stays off across restarts)."
-command = ["node", "bin/tab-recap.mjs", "stop"]
+command = ["bun", "bin/tab-recap.mjs", "stop"]
 
 [[actions]]
 id = "toggle"
 title = "Tab Recap: toggle"
-command = ["node", "bin/tab-recap.mjs", "toggle"]
+command = ["bun", "bin/tab-recap.mjs", "toggle"]
 
 [[actions]]
 id = "status"
 title = "Tab Recap: status"
-command = ["node", "bin/tab-recap.mjs", "status"]
+command = ["bun", "bin/tab-recap.mjs", "status"]
 
 [[actions]]
 id = "show"
 title = "Tab Recap: show this tab's recap"
 description = "The tab's recap as a modal over everything — the phone's view. q or Esc closes it."
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.mjs", "show"]
+command = ["bun", "bin/tab-recap.mjs", "show"]
 
 [[actions]]
 id = "column"
 title = "Tab Recap: hide / show this tab's column"
 description = "Hides this tab's recap column, or shows it again. Recaps keep being written."
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.mjs", "column"]
+command = ["bun", "bin/tab-recap.mjs", "column"]
 
 [[actions]]
 id = "columns"
 title = "Tab Recap: hide / show all columns"
 description = "Hides every recap column, or shows them all again. Recaps keep being written."
-command = ["node", "bin/tab-recap.mjs", "columns"]
+command = ["bun", "bin/tab-recap.mjs", "columns"]
 
 [[actions]]
 id = "refresh"
 title = "Tab Recap: recap this tab now"
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.mjs", "refresh"]
+command = ["bun", "bin/tab-recap.mjs", "refresh"]
 
 [[actions]]
 id = "compact"
 title = "Tab Recap: compact the focused agent"
 description = "Asks for an optional note, then tells an idle agent what to keep while it compacts its conversation."
 contexts = ["tab", "pane"]
-command = ["node", "bin/tab-recap.mjs", "compact"]
+command = ["bun", "bin/tab-recap.mjs", "compact"]
 
 [[actions]]
 id = "configure"
 title = "Tab Recap: configure"
 description = "A settings modal: which agent writes the recap, its model and the languages."
-command = ["node", "bin/tab-recap.mjs", "configure"]
+command = ["bun", "bin/tab-recap.mjs", "configure"]
 
 [[panes]]
 id = "column"
 title = "Recap"
 placement = "split"
-command = ["node", "src/column/launch.mjs"]
+command = ["bun", "src/column/launch.mjs"]
 
 [[panes]]
 id = "setup"
 title = "Tab Recap settings"
 placement = "popup"
-command = ["node", "src/setup/launch.mjs"]
+command = ["bun", "src/setup/launch.mjs"]
 
 [[panes]]
 id = "compact"
 title = "Tab Recap compact"
 placement = "popup"
-command = ["node", "src/compact/launch.mjs"]
+command = ["bun", "src/compact/launch.mjs"]

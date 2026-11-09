@@ -9,16 +9,16 @@ plugin.
 ### Requirement: The host is checked before anything else runs
 
 Every process the plugin starts (commands, columns, settings, the compaction popup, the daemon) SHALL check the host
-before loading any of the plugin's TypeScript, so that an unsupported Node is reported instead of failing elsewhere.
+before loading any of the plugin's TypeScript, so that an unsupported Bun is reported instead of failing elsewhere.
 
-#### Scenario: A Node too old to load TypeScript
+#### Scenario: A Bun too old to load TypeScript
 
-- **WHEN** a column is started with Node 20
-- **THEN** the column SHALL show that Node 24.21.0 or later is needed, the version found and the path of the `node` used, and stay open
+- **WHEN** a column is started with Bun 1.0.0
+- **THEN** the column SHALL show that Bun 1.4.4 or later is needed, the version found and the path of the `bun` used, and stay open
 
-#### Scenario: A recent but too old Node
+#### Scenario: A recent but too old Bun
 
-- **WHEN** the daemon is started with Node 24.13
+- **WHEN** the daemon is started with Bun 1.4.3
 - **THEN** it SHALL write that message to its log and exit without opening the database
 
 ### Requirement: The fix steps fit the operating system
@@ -29,7 +29,7 @@ operator's interface language when the plugin's catalogs can load and in English
 #### Scenario: macOS
 
 - **WHEN** the refusal is shown on macOS
-- **THEN** its steps SHALL name Homebrew (or mise/nvm), stopping herdr's server, a new terminal, and setting the PATH for launchd when herdr starts from a launcher
+- **THEN** its steps SHALL name Homebrew (or mise or the curl installer), stopping herdr's server, a new terminal, and setting the PATH for launchd when herdr starts from a launcher
 
 ### Requirement: Host differences stay at the edge
 

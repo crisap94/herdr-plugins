@@ -9,7 +9,7 @@ const PIPELINE = '.gitlab-ci.yml';
 const adapts = process.env['LANE_ADAPTS'] === '1';
 const lane = process.argv[2];
 if (lane === undefined) {
-    process.stderr.write('check-lane: 3 — NOT COVERED: usage: node ci/check-lane.ts <lane>\n');
+    process.stderr.write('check-lane: 3 — NOT COVERED: usage: bun ci/check-lane.ts <lane>\n');
     process.exit(3);
 }
 

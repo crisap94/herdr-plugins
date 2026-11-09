@@ -20,7 +20,7 @@ src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
 src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
 src/compact/             composition root of the compaction popup (a note, then a request); the reducer is `recap/application/compact-keys.ts`, the flow `compaction.ts`, the words `compaction-message.ts` (pure; never names the plugin)
-src/host/               PLAIN JAVASCRIPT (`.mjs` + `.d.mts`, no TypeScript syntax): the host policy (`policy.mjs`: `MIN_NODE`, `supportOf`, the refusal's steps and English text), the Host adapter (`node-host.mjs`) and `launch.mjs`, which every launcher calls
+src/host/               PLAIN JAVASCRIPT (`.mjs` + `.d.mts`, no TypeScript syntax): the host policy (`policy.mjs`: `MIN_BUN`, `bunAtLeast`, `supportOf`, the refusal's steps and English text), the Host adapter (`bun-host.mjs`) and `launch.mjs`, which every launcher calls
 src/*/launch.mjs        the launchers of the column, settings, compaction and daemon (what the manifest and the daemon spawn run, never `main.ts`); `bin/tab-recap.mjs` is the commands'
 bin/                    one-shot commands behind the plugin's actions: 0 · 1 · 2 usage · 3 not covered
 ```
@@ -75,9 +75,9 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 ## Gates
 
 ```bash
-npm install            # tsgo, oxlint (dev only — the plugin itself has zero dependencies)
+bun install            # tsgo, oxlint (dev) and @stateforge-labs/herdr-sdk, the one runtime dependency
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
-bash ci/test.sh        # node --test
+bash ci/test.sh        # bun test
 ```
 
 On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test queue across every checkout (`TEST_HOST_SLOTS=<n>` lets n run at

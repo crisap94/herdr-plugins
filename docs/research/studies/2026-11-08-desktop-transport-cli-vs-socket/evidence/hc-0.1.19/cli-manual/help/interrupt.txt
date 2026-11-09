@@ -1,0 +1,11 @@
+Press the stop key and report what happened
+
+Usage: hc interrupt [OPTIONS] [TERMINAL]
+
+Arguments:
+  [TERMINAL]  The terminal: `t7`, a name, or `machine/t7`
+
+Options:
+      --json               JSON output even in a terminal
+      --timeout <TIMEOUT>  Seconds to watch for an effect (default 10)
+  -h, --help               Print help

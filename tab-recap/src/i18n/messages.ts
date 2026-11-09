@@ -166,7 +166,7 @@ export interface Messages {
         readonly usageBackend: (choices: string) => string;
         readonly usage: (commands: string) => string;
         readonly statusVersion: (code: string | null) => string;
-        readonly statusNode: (path: string, version: string) => string;
+        readonly statusRuntime: (path: string, version: string) => string;
         readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;

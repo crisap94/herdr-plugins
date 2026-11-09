@@ -1,0 +1,37 @@
+### hello
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"features":["framed","attach","events","status","shell","resi ...[trimmed: live terminal data removed]
+
+
+### hello+status pipelined
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"features":["framed","attach","events","status","shell","resi ...[trimmed: live terminal data removed]
+{"id":2,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"finished":9,"holder":null,"holders":[{"current":false,"insta ...[trimmed: live terminal data removed]
+
+
+### no newline (1.5s)
+(no reply)
+
+### no jsonrpc field
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"finished":9,"holder":null,"holders":[{"current":false,"insta ...[trimmed: live terminal data removed]
+
+
+### framed hello then NDJSON status (utf8)
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"features":["framed","attach","events","status","shell","resi ...[trimmed: live terminal data removed]
+
+
+### framed hello hex head
+7b226964223a312c226a736f6e727063223a22322e30222c22726573756c74223a7b22636f726522
+
+### framed then u32be frame (latin1)
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"features":["framed","attach","events","status","shell","resi ...[trimmed: live terminal data removed]
+
+
+### hex tail 120
+72696265222c226d616368696e652e616464222c226d616368696e652e6c697374222c226d616368696e652e636f6e6e656374222c226d616368696e652e72656e616d65222c226d616368696e652e72 ...[trimmed: live terminal data removed]
+
+### framed then "<len>\n"+body
+{"id":1,"jsonrpc":"2.0","result":{"core":{"id":"4dc238fa327197c4fc0a9b66ef9931bb","name":"<host>"},"features":["framed","attach","events","status","shell","resi ...[trimmed: live terminal data removed]
+
+
+### subscribe reply
+{"id":9,"jsonrpc":"2.0","result":{"channel":null,"seq":15,"terminals":[{"address":"t1","argv":["/usr/bin/bash"],"cols":200,"created_ms":1794078348018,"cwd":"~", ...[trimmed: live terminal data removed]
+

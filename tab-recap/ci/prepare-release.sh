@@ -12,7 +12,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE/../.."
 dry="${DRY_RUN:-}"
 [ -n "${RELEASE_TOKEN:-}" ] || { echo "prepare-release: 3 — NOT COVERED: RELEASE_TOKEN is not set" >&2; exit 3; }
-field() { node -e 'const j = JSON.parse(require("fs").readFileSync(0, "utf8")); const v = j[process.argv[1]]; process.stdout.write(v === null ? "" : String(v));' "$1"; }
+field() { bun -e 'const j = JSON.parse(require("fs").readFileSync(0, "utf8")); const v = j[process.argv[1]]; process.stdout.write(v === null ? "" : String(v));' "$1"; }
 
 if [ -z "$dry" ]; then
     git fetch --quiet --tags origin main
@@ -20,7 +20,7 @@ if [ -z "$dry" ]; then
         || { echo "prepare-release: 1 — main has moved since this pipeline started; run it again on the new tip" >&2; exit 1; }
 fi
 
-json="$(GITLAB_TOKEN="$RELEASE_TOKEN" node tab-recap/ci/next-release.ts --to "$(git rev-parse HEAD)")"
+json="$(GITLAB_TOKEN="$RELEASE_TOKEN" bun tab-recap/ci/next-release.ts --to "$(git rev-parse HEAD)")"
 version="$(printf '%s' "$json" | field version)"
 previous="$(printf '%s' "$json" | field previous)"
 if [ -z "$version" ]; then
@@ -38,7 +38,7 @@ fi
 section="$(mktemp)"
 trap 'rm -f "$section"' EXIT
 printf '%s' "$json" | field section > "$section"
-node tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous"
+bun tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous"
 bash tab-recap/ci/check-version.sh
 bash tab-recap/ci/release-notes.sh tab-recap "$version"
 if [ -n "$dry" ]; then
@@ -49,6 +49,6 @@ fi
 
 git config user.name "${GIT_AUTHOR_NAME:-release-bot}"
 git config user.email "${GIT_AUTHOR_EMAIL:-release-bot@users.noreply.invalid}"
-git add CHANGELOG.md tab-recap/herdr-plugin.toml tab-recap/package.json tab-recap/package-lock.json
+git add CHANGELOG.md tab-recap/herdr-plugin.toml tab-recap/package.json
 git commit --quiet -m "tab-recap: release $version"
 exec bash "$HERE/release-publish.sh" tab-recap "$version" "$previous"

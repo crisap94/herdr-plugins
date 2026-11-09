@@ -1,0 +1,13 @@
+2026-11-08T16:15:01.099Z daemon 2066369 up, state in ~/.cache/hcs/t1-state/socket
+2026-11-08T16:15:01.119Z autocompact t7: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:15:01.121Z autocompact t8: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:15:01.121Z blind at subscribe: the subscription ended
+2026-11-08T16:16:01.110Z perf window=60s status-tracked=0 status-full=0 locate=2 git-dir-event=0 status-coalesced=0 failed=0 cpu=74ms cpu-share=0% rss=122MiB
+2026-11-08T16:16:31.419Z blind at subscribe: the subscription ended
+2026-11-08T16:16:33.720Z recap tb1: written in 0.0 s (turn-ended)
+Warning: Detected unsettled top-level await at file://~/Projects/homelab/herdr-plugins-gui-port/tab-recap/src/daemon/launch-desktop.mjs:5
+await launch('daemon', new URL('./main.ts', import.meta.url).href);
+^
+
+
+

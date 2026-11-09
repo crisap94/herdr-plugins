@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { codeVersion } from '#src/adapters/plugin-version.ts';
+import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -25,7 +26,7 @@ function run(args: readonly string[], seed: (state: string) => void = () => {}):
     seed(state);
     const ran = spawnSync(process.execPath, [entry, ...args], {
         encoding: 'utf8',
-        env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' },
+        env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
     });
     return {
         status: ran.status,

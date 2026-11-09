@@ -7,6 +7,7 @@ module.exports = {
   options: {
     tsPreCompilationDeps: true,
     doNotFollow: { path: 'node_modules' },
+    enhancedResolveOptions: { exportsFields: ['exports'], conditionNames: ['import', 'types', 'default'] },
   },
   forbidden: [
     {

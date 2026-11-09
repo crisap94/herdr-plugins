@@ -42,7 +42,7 @@ if [ -n "$version" ]; then
     else fail "$version is not greater than the previous release $newest"; fi
 
     [ "$toml" = "$version" ] && ok "manifest version $toml" || fail "the manifest says $toml, the tag says $version"
-    PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" >/dev/null 2>&1 && ok "package.json and package-lock.json agree" || fail "package.json / package-lock.json do not agree with the manifest (check-version.sh)"
+    PLUGIN_DIR="$dir" bash "$HERE/check-version.sh" >/dev/null 2>&1 && ok "herdr-plugin.toml and package.json agree" || fail "herdr-plugin.toml and package.json do not agree (check-version.sh)"
     grep -qE "^### \\[$version\\] — [0-9]{4}-[0-9]{2}-[0-9]{2}\$" "$changelog" && ok "dated changelog section" || fail "CHANGELOG has no '### [$version] — YYYY-MM-DD' heading"
     CHANGELOG="$changelog" bash "$HERE/release-notes.sh" "$plugin" "$version" >/dev/null 2>&1 && ok "the section is not empty" || fail "the CHANGELOG section for $version is missing or empty"
     grep -q "^\\[$version\\]: " "$changelog" && ok "link reference [$version]" || fail "CHANGELOG has no '[$version]: …' link reference"

@@ -1,0 +1,20 @@
+{
+ "hidden_finished": "int",
+ "machines": [
+  {
+   "name": "str",
+   "state": "str"
+  }
+ ],
+ "terminals": [
+  {
+   "address": "str",
+   "agent": "str",
+   "cwd": "str",
+   "state": "str",
+   "status": "str",
+   "turn": "int",
+   "where": "str"
+  }
+ ]
+}

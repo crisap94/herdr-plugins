@@ -1,6 +1,6 @@
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
@@ -33,7 +33,7 @@ export function coverageOf(decider: Decider | null, tuning: () => AutocompactTun
 }
 
 export function wireCompaction(parts: {
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly records: RecapRecords;
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;

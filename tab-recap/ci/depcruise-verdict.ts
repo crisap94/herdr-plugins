@@ -38,7 +38,7 @@ if (mode === 'fires') {
 } else if (mode === 'tree') {
   const errors = cruise.summary.violations.filter((violation) => violation.rule.severity === 'error');
   for (const error of errors) say(`    ${describe(error)}`);
-  const seen = cruise.modules.filter((module) => module.source.endsWith('.ts')).length;
+  const seen = cruise.modules.filter((module) => module.source.endsWith('.ts') && !module.source.startsWith('..') && !module.source.startsWith('node_modules/')).length;
   if (seen < Number(expected)) say(`    the cruise sees ${seen} .ts modules, the tree has ${expected}`);
   if (errors.length > 0 || seen < Number(expected)) process.exitCode = 1;
 } else {

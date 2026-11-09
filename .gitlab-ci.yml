@@ -2,41 +2,44 @@ include:
   # GitLab's free scanners (SAST, Secret Detection); their jobs run in the existing test stage.
   - template: Jobs/SAST.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
-  - project: 'homelab/ci-templates'
-    ref: v0.10.0
-    file: '/templates/gates.yml'
-
-lint:gates:
-  image: harbor.devel.crisaac.dev/homelab/atalaya-gates:0.1.5665@sha256:d8fcad6b99bd38bf33aaa7ed73aa6a831f44179bfb2d1d01ac0f96106f0f7640
-  needs: []
 
 # The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
   # Run the GitLab scanners in merge request pipelines too, not only in branch pipelines.
   AST_ENABLE_MR_PIPELINES: "true"
-  NODE_IMAGE: node:24
-  # The oldest Node the plugin supports (package.json engines): tested on every MR, not only after merge.
-  NODE_FLOOR_IMAGE: node:24.21.0
+  BUN_IMAGE: oven/bun:1.4-debian
+  # The oldest Bun the plugin supports (package.json engines): tested on every MR, not only after merge.
+  BUN_FLOOR_IMAGE: oven/bun:1.4.4-debian
   GLAB_IMAGE: registry.gitlab.com/gitlab-org/cli:latest
 
 default:
-  image: $NODE_IMAGE
+  image: $BUN_IMAGE
 
 workflow:
   rules:
     - if: $CI_COMMIT_TAG
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "atalaya"
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     - if: $CI_COMMIT_BRANCH
 
-stages: [lint, test, check, guard, release]
+stages: [check, release]
+
+sast:
+  stage: check
+
+secret_detection:
+  stage: check
+
+.tools:
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git curl ca-certificates
 
 .tab-recap:
   before_script:
+    - !reference [.tools, before_script]
     - cd tab-recap
-    - npm ci
+    - bun install --frozen-lockfile
 
 lint:
   extends: .tab-recap
@@ -47,7 +50,7 @@ lint:
     - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
     - bash ci/lint.sh
 
-# The writer's document is validated against its DTD with xmllint (the node images do not ship it).
+# The writer's document is validated against its DTD with xmllint (the bun images do not ship it).
 test:
   extends: .tab-recap
   stage: check
@@ -59,9 +62,9 @@ test:
 test:floor:
   extends: .tab-recap
   stage: check
-  image: $NODE_FLOOR_IMAGE
+  image: $BUN_FLOOR_IMAGE
   script:
-    - node --version
+    - bun --version
     - apt-get update -qq && apt-get install -y -qq libxml2-utils
     - xmllint --version
     - bash ci/test.sh
@@ -80,7 +83,7 @@ lane-scope:
     - |
       adapts=0
       case ",$CI_MERGE_REQUEST_LABELS," in *,lane-scope::adapts,*) adapts=1 ;; esac
-      LANE_ADAPTS=$adapts LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" node ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
+      LANE_ADAPTS=$adapts LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bun ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
 
 # The domain-type ratchet only goes down: against the target branch no baseline entry rises and none is new.
 domain-baseline:
@@ -93,16 +96,6 @@ domain-baseline:
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - BASELINE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bash ci/check-domain-baseline.sh
-
-# Only the atalaya branch is held to the allowlist; main never needs it.
-atalaya-branch-guard:
-  stage: guard
-  variables:
-    GIT_DEPTH: "0"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "atalaya"
-  script:
-    - bash tab-recap/ci/branch-guard.sh
 
 # Every MR into main says what it changes for the release notes: one changelog:: label and the
 # template's two sections. The MR title becomes the changelog line; the labels decide the version.
@@ -118,6 +111,7 @@ merge-request-notes:
 # labelled `land` from release/<plugin>-v<version>; main is never pushed. RELEASE_TOKEN is a protected,
 # masked CI variable.
 release:prepare:
+  extends: .tools
   stage: release
   resource_group: release-prepare
   needs: [lint, test, "test:floor"]
@@ -133,6 +127,7 @@ release:prepare:
 # On main's pipeline once the release merge request has landed: the manifest carries a version with a
 # dated changelog section and no tag, so create the annotated tag at this commit; the tag pipeline follows.
 release:tag:
+  extends: .tools
   stage: release
   allow_failure:
     exit_codes: 1
@@ -148,6 +143,7 @@ release:tag:
 # A tag `tab-recap-v<x.y.z>`: check that it is a release we can publish, take the notes from the
 # CHANGELOG, then create the GitLab release.
 release-notes:
+  extends: .tools
   stage: release
   needs: [lint, test, "test:floor"]
   variables:
@@ -177,112 +173,3 @@ release:
     tag_name: $CI_COMMIT_TAG
     name: $CI_COMMIT_TAG
     description: ./notes.md
-
-.tab-recap-gate:
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GIT_DEPTH: "0"
-    GIT_CONFIG_COUNT: "1"
-    GIT_CONFIG_KEY_0: safe.directory
-    GIT_CONFIG_VALUE_0: "$CI_PROJECT_DIR"
-  before_script:
-    - cd tab-recap
-    - npm ci
-    - cd "$CI_PROJECT_DIR"
-    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
-  script:
-    - sh .atalaya/run/dispatch.sh "$GATE"
-
-.tab-recap-test-gate:
-  extends: .tab-recap-gate
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq libxml2-utils
-    - cd tab-recap
-    - npm ci
-    - cd "$CI_PROJECT_DIR"
-    - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
-
-# Gate-file parity jobs.
-lint:atalaya-gate-tab-recap:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap"
-
-lint:atalaya-gate-tab-recap-check-domain-baseline:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-check-domain-baseline"
-
-lint:atalaya-gate-tab-recap-check-migrations:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-check-migrations"
-
-lint:atalaya-gate-tab-recap-check-version:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-check-version"
-
-lint:atalaya-gate-tab-recap-gate-domain-types:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-gate-domain-types"
-
-lint:atalaya-gate-tab-recap-gate-graph:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-gate-graph"
-
-lint:atalaya-gate-tab-recap-gate-rules:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-gate-rules"
-
-lint:atalaya-gate-tab-recap-guard-bite:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-guard-bite"
-
-lint:atalaya-gate-tab-recap-migration-number-bite:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-migration-number-bite"
-
-lint:atalaya-gate-tab-recap-release-bite:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-release-bite"
-
-lint:atalaya-gate-tab-recap-verify-bite:
-  extends: [.atalaya-gate, .tab-recap-gate]
-  stage: lint
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "lint:tab-recap-verify-bite"
-
-test:atalaya-gate-tab-recap:
-  extends: [.atalaya-gate, .tab-recap-test-gate]
-  stage: test
-  image: harbor.devel.crisaac.dev/dockerhub/library/node:24@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
-  variables:
-    GATE: "test:tab-recap"

@@ -14,7 +14,7 @@ after(() => {
 
 function generate(file: string | null, skip: string | null = null): ReturnType<typeof spawnSync> {
     const env = { ...process.env, ...(file === null ? {} : { LANES_FILE: file }), ...(skip === null ? {} : { LANES_SKIP_LIST: skip }) };
-    return spawnSync('node', ['ci/lanes-generate.ts', '--check'], { cwd: ROOT, encoding: 'utf8', env });
+    return spawnSync(process.execPath, ['ci/lanes-generate.ts', '--check'], { cwd: ROOT, encoding: 'utf8', env });
 }
 
 function written(name: string, text: string): string {
@@ -32,7 +32,7 @@ function tampered(change: (lanes: Record<string, string[]>) => void): string {
 }
 
 function lane(name: string, changed: readonly string[], extra: Record<string, string> = {}): ReturnType<typeof spawnSync> {
-    return spawnSync('node', ['ci/check-lane.ts', name], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CHANGED_FILES: changed.join('\n'), ...extra } });
+    return spawnSync(process.execPath, ['ci/check-lane.ts', name], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CHANGED_FILES: changed.join('\n'), ...extra } });
 }
 
 test('the lane map lists every file of src and test exactly once', () => {
@@ -133,7 +133,7 @@ function treeWith(files: readonly string[]): string {
 
 function inTree(root: string, args: readonly string[], skip: string | null = null): ReturnType<typeof spawnSync> {
     const env = { ...process.env, ...(skip === null ? {} : { LANES_SKIP_LIST: skip }) };
-    return spawnSync('node', ['ci/lanes-generate.ts', ...args], { cwd: root, encoding: 'utf8', env });
+    return spawnSync(process.execPath, ['ci/lanes-generate.ts', ...args], { cwd: root, encoding: 'utf8', env });
 }
 
 function mapped(files: readonly string[]): string {

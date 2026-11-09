@@ -63,13 +63,26 @@ function hasScript(): boolean {
     }
 }
 
-function pidOfNode(entry: string): string {
-    const listing = execFileSync('ps', ['-axo', 'pid=,args='], { encoding: 'utf8' });
-    const found = listing.split('\n').map((line) => /^\s*(\d+)\s+(.*)$/.exec(line)).find((match) => {
-        const args = match?.[2] ?? '';
-        return args.includes(entry) && (args.startsWith(`${process.execPath} `) || args.startsWith('node '));
-    });
-    return found?.[1] ?? '';
+const PID_LINE = /^pid=(\d+)\r?$/m;
+
+function pidIn(output: string): number | null {
+    const found = PID_LINE.exec(output)?.[1];
+    return found === undefined ? null : Number(found);
+}
+
+function stop(pid: number | null): void {
+    if (pid !== null && alive(pid)) {
+        process.kill(pid, 'SIGKILL');
+    }
+}
+
+function alive(pid: number): boolean {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 test('the in-place roll is possible on this platform: process.execve exists', () => {
@@ -87,6 +100,7 @@ test('a column process rolls to the new version in place: same pid, same termina
     const state = join(dir, 'state');
     const code = join(dir, 'code');
     let script: ReturnType<typeof spawn> | null = null;
+    let column: number | null = null;
     try {
         mkdirSync(code, { recursive: true });
         cpSync(join(plugin, 'src'), join(code, 'src'), { recursive: true });
@@ -104,7 +118,7 @@ test('a column process rolls to the new version in place: same pid, same termina
         assert.match(old, /^\d+\.\d+\.\d+$/);
         let output = '';
         const entry = join(code, 'src', 'column', 'main.ts');
-        script = spawn('script', scriptArgs(`stty cols 70 rows 20; exec node ${entry}`), {
+        script = spawn('script', scriptArgs(`stty cols 70 rows 20; echo pid=$$; exec ${process.execPath} ${entry}`), {
             cwd: code, stdio: ['pipe', 'pipe', 'ignore'],
             env: { ...process.env, TAB_RECAP_TAB: 'w1:t1', TAB_RECAP_STATE: state, TAB_RECAP_COLUMN_POLL_MS: '150', HERDR_ENV: '', HERDR_SOCKET_PATH: join(dir, 'none.sock') },
         });
@@ -116,17 +130,16 @@ test('a column process rolls to the new version in place: same pid, same termina
             }
             return output.includes(needle);
         };
-        const nodePid = (): string => pidOfNode(entry);
         assert.ok(await until(`v${old}`), `the column draws its version (${old})`);
-        const before = nodePid();
-        assert.match(before, /^\d+$/);
+        column = pidIn(output);
+        assert.ok(column !== null && alive(column), 'the shell told its pid, which exec gives the column');
         writeFileSync(join(code, 'herdr-plugin.toml'), toml.replace(`version = "${old}"`, 'version = "9.8.7"'));
         assert.ok(await until('v9.8.7'), 'the new code draws the new version');
-        assert.equal(nodePid(), before, 'the same process, replaced in place: herdr sees no pane close');
+        assert.ok(alive(column), 'the same process, replaced in place: herdr sees no pane close');
         assert.ok(script.exitCode === null, 'and the terminal session is still there');
     } finally {
         script?.kill('SIGKILL');
-        try { execFileSync('pkill', ['-f', join(dir, 'code')]); } catch { }
+        stop(column);
         rmSync(dir, { recursive: true });
     }
 });

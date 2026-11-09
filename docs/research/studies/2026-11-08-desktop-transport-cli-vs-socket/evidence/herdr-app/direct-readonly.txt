@@ -1,0 +1,6 @@
+single ls "{\"ls\":true}\n" bytes 3656 closedByServer true lines 1 head "{\"spaces\":[{\"id\":\"sp6c5c4f1c2dfc ...[trimmed: workspace names and folders removed]
+two ls one conn "{\"ls\":true}\n{\"status\":true}\n" bytes 3656 closedByServer true lines 1 head "{\"spaces\": ...[trimmed: workspace names and folders removed]
+status+no newline "{\"status\":true}" bytes 0 closedByServer false lines 0 head ""
+unknown key "{\"nonsense\":true}\n" bytes 64 closedByServer true lines 1 head "{\"error\":\"expected { do }, { ...[trimmed: workspace names and folders removed]
+subscribe-ish "{\"subscribe\":true}\n" bytes 64 closedByServer true lines 1 head "{\"error\":\"expected { do } ...[trimmed: workspace names and folders removed]
+watch-ish "{\"watch\":true}\n" bytes 64 closedByServer true lines 1 head "{\"error\":\"expected { do }, { ls } ...[trimmed: workspace names and folders removed]

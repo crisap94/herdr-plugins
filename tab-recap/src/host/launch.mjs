@@ -1,4 +1,4 @@
-import { nodeHost } from './node-host.mjs';
+import { bunHost } from './bun-host.mjs';
 import { renderRefusal, supportOf } from './policy.mjs';
 
 async function refusalText(refusal, path) {
@@ -27,7 +27,7 @@ async function refuse(kind, refusal, execPath) {
 }
 
 export async function launch(kind, entry, seams = {}) {
-    const host = seams.host ?? nodeHost();
+    const host = seams.host ?? bunHost();
     const refusal = supportOf(host);
     if (refusal.ok) {
         await import(entry);

@@ -1,0 +1,35 @@
+== v0.1.19
+06793ede1bedb1fed8d22d3cae476d3eb239edf0
+commit
+06793ede1b 2026-11-08T13:52:20Z test: keep the upgrade test valid when the last release already saves its environment
+de0c6c1a0f 2026-11-08T13:38:47Z ci: retry stapling when apple's ticket service drops the connection
+2e8ebb3cdc 2026-11-07T21:43:12Z chore: release 0.1.19
+9b0d7da209 2026-11-07T21:38:14Z docs: release notes for 0.1.19
+cd12ddd88b 2026-11-07T19:57:54Z fix: make restart environment handoffs best effort and single-use
+1fe7bc6596 2026-11-07T19:57:50Z fix(linux): support service startup and planned restarts on systemd 239 (#135)
+== v0.1.18
+3965a46caae095a3ead01de237fa13955e52b8c6
+commit
+3965a46caa 2026-11-04T12:19:43Z chore: release 0.1.18
+4d133ea74d 2026-11-04T12:16:24Z revert: drop the unsent-draft hold on agent messages
+0725334f22 2026-11-04T11:57:42Z fix: a note with nothing left to type keeps a person's draft
+ec8adcdf0d 2026-11-04T01:41:12Z fix: release a held draft after delivery or an approval
+e237b6e3aa 2026-11-04T01:41:12Z fix: terminal replies no longer count as a person typing
+1473638e19 2026-11-04T01:22:17Z test: keep installer tests independent of HC_VERSION
+== compare
+ahead
+14
+c6b316f87c fix: preserve core environment across planned restarts (#21)
+de6cc39a08 fix: preserve detached processes on normal terminal end
+aef2dac358 test: wait for the final wheel repaint
+ad23942bc9 fix: give a starting core or holder 15 s before reporting it failed
+f4ca1c0714 fix: hc attach keeps a character the first paint cut in half (#144)
+c0a205eea0 fix(windows): expand system path references before spawning terminals
+72f77c4a3f fix: fall back to the serving core when hc is missing from path
+9ce385d9c8 revert: drop the core's own-hc fallback for terminal programs
+1fe7bc6596 fix(linux): support service startup and planned restarts on systemd 239 (#135)
+cd12ddd88b fix: make restart environment handoffs best effort and single-use
+9b0d7da209 docs: release notes for 0.1.19
+2e8ebb3cdc chore: release 0.1.19
+de0c6c1a0f ci: retry stapling when apple's ticket service drops the connection
+06793ede1b test: keep the upgrade test valid when the last release already saves its environment

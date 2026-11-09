@@ -168,7 +168,7 @@ dtdTest('the reconcile document is valid against the DTD, holds only the open fa
 });
 
 test('the curator harness reconciles with its own instructions, and tells the story with the old ones', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const curator = new HarnessCurator(echo, { model: '', effort: 'medium' });
     const reconciled = await curator.write('<curator_input version="1" mode="reconcile"/>', 'reconcile');
     assert.ok(reconciled.kind === 'curated' && reconciled.text.includes('Never add a fact.') && reconciled.text.includes('is NOT wrong') && !reconciled.text.includes('at most 120 words'));

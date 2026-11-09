@@ -1,8 +1,8 @@
-export const MIN_NODE = '24.21.0';
+export const MIN_BUN = '1.4.4';
 
 const versionParts = (text) => (/^v?(\d+)\.(\d+)\.(\d+)/.exec(text.trim()) ?? []).slice(1).map(Number);
 
-export function nodeAtLeast(version, minimum = MIN_NODE) {
+export function bunAtLeast(version, minimum = MIN_BUN) {
     const [have, need] = [versionParts(version), versionParts(minimum)];
     if (have.length !== 3) {
         return false;
@@ -12,36 +12,34 @@ export function nodeAtLeast(version, minimum = MIN_NODE) {
 }
 
 const STEPS = {
-    macos: ['brew', 'mise', 'nvm', 'herdr-stop', 'new-terminal', 'launchctl-path'],
-    linux: ['nvm', 'mise', 'n', 'herdr-stop', 'new-terminal'],
-    windows: ['winget', 'nvm-windows', 'restart-herdr'],
+    macos: ['brew', 'mise', 'curl', 'herdr-stop', 'new-terminal', 'launchctl-path'],
+    linux: ['curl', 'mise', 'herdr-stop', 'new-terminal'],
+    windows: ['powershell', 'restart-herdr'],
 };
 
-const INSTALLERS = new Set(['brew', 'mise', 'nvm', 'n', 'winget', 'nvm-windows']);
+const INSTALLERS = new Set(['brew', 'mise', 'curl', 'powershell']);
 
 export function supportOf(host) {
-    if (nodeAtLeast(host.nodeVersion)) {
+    if (bunAtLeast(host.bunVersion)) {
         return { ok: true };
     }
     const platform = host.platform in STEPS ? host.platform : 'linux';
-    return { ok: false, found: host.nodeVersion, needed: MIN_NODE, platform, steps: STEPS[platform] };
+    return { ok: false, found: host.bunVersion, needed: MIN_BUN, platform, steps: STEPS[platform] };
 }
 
 export const ENGLISH = {
-    headline: (found, needed, path) => `tab-recap needs Node >= ${needed}, but this is ${found} (${path}).`,
+    headline: (found, needed, path) => `tab-recap needs Bun >= ${needed}, but this is ${found} (${path}).`,
     fix: 'To fix it:',
-    install: (needed, options) => `Install Node >= ${needed} (${options.join(' · ')}).`,
+    install: (needed, options) => `Install Bun >= ${needed} (${options.join(' · ')}).`,
     steps: {
-        brew: () => 'brew install node',
-        mise: () => 'mise use -g node@24',
-        nvm: () => 'nvm install 24',
-        n: () => 'n 24',
-        winget: () => 'winget install OpenJS.NodeJS',
-        'nvm-windows': () => 'nvm install 24 (nvm-windows)',
+        brew: () => 'brew install oven-sh/bun/bun',
+        mise: () => 'mise use -g bun@latest',
+        curl: () => 'curl -fsSL https://bun.sh/install | bash',
+        powershell: () => 'powershell -c "irm bun.sh/install.ps1 | iex"',
         'herdr-stop': () => 'Run: herdr server stop',
-        'new-terminal': (needed) => `Open a new terminal, check that \`node --version\` prints ${needed} or newer, and start herdr from it.`,
+        'new-terminal': (needed) => `Open a new terminal, check that \`bun --version\` prints ${needed} or newer, and start herdr from it.`,
         'launchctl-path': () => 'If herdr is started from a launcher, run: launchctl setenv PATH "/opt/homebrew/bin:$PATH" and restart it.',
-        'restart-herdr': () => 'Close herdr, open a new terminal where `node --version` is new enough, and start herdr again.',
+        'restart-herdr': () => 'Close herdr, open a new terminal where `bun --version` is new enough, and start herdr again.',
     },
 };
 

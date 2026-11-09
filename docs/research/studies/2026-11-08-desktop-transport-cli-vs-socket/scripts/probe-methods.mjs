@@ -1,0 +1,17 @@
+import net from 'node:net';
+const SOCK = process.env.XDG_RUNTIME_DIR + '/herdr-core/default.sock';
+const s = net.connect(SOCK); let buf = ''; const waiters = new Map(); const events = [];
+s.on('data', (d) => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, i); buf = buf.slice(i + 1); const m = JSON.parse(l); if (m.id != null && waiters.has(m.id)) { waiters.get(m.id)(m); waiters.delete(m.id); } else events.push({ t: Date.now(), m }); } });
+let n = 0; const call = (method, params = {}) => new Promise((r) => { const id = ++n; waiters.set(id, r); s.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n'); });
+await new Promise((r) => s.once('connect', r));
+const w = (k, v) => console.log('### ' + k + '\n' + JSON.stringify(v));
+w('terminal.list', await call('terminal.list'));
+w('terminal.list all', await call('terminal.list', { all: true }));
+const tid = process.argv[2];
+w('terminal.get ' + tid, await call('terminal.get', { terminal: tid }));
+w('terminal.read ' + tid + ' lines=0', await call('terminal.read', { terminal: tid, lines: 0 }));
+const d = await call('rpc.discover'); w('rpc.discover (size/keys)', { bytes: JSON.stringify(d).length, keys: Object.keys(d.result), methods: d.result.methods?.length });
+const sub = await call('events.subscribe'); w('events.subscribe reply', sub);
+await new Promise((r) => setTimeout(r, 9000));
+w('events within 9s after reply (count=' + events.length + ')', events.map((e) => e.m));
+s.destroy();

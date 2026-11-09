@@ -1,0 +1,50 @@
+{
+ "bad_method": {
+  "error": {
+   "code": -32601,
+   "data": {
+    "hint": "see `hc schema`",
+    "kind": "unknown_method"
+   },
+   "message": "unknown method \"no.such.method\""
+  },
+  "id": 5,
+  "jsonrpc": "2.0"
+ },
+ "bad_params_missing": {
+  "error": {
+   "code": -32602,
+   "data": {
+    "hint": "see `hc schema`",
+    "kind": "invalid_params"
+   },
+   "message": "missing field `terminal`"
+  },
+  "id": 6,
+  "jsonrpc": "2.0"
+ },
+ "unknown_terminal": {
+  "error": {
+   "code": -32000,
+   "data": {
+    "hint": "see `hc ls --all`",
+    "kind": "not_found"
+   },
+   "message": "no terminal \"tzzz\""
+  },
+  "id": 7,
+  "jsonrpc": "2.0"
+ },
+ "wrong_type": {
+  "error": {
+   "code": -32602,
+   "data": {
+    "hint": "see `hc schema`",
+    "kind": "invalid_params"
+   },
+   "message": "invalid type: integer `123`, expected a string"
+  },
+  "id": 8,
+  "jsonrpc": "2.0"
+ }
+}

@@ -1,0 +1,14 @@
+Print a text file, or lines of it (--offset, --limit)
+
+Usage: hc file read [OPTIONS] <PATH>
+
+Arguments:
+  <PATH>  The file: absolute, or from `cwd`
+
+Options:
+      --json             JSON output even in a terminal
+      --on <MACHINE>     On another machine (see `hc machine ls`)
+      --cwd <CWD>        Where a relative path starts (default: where hc runs; through the API, the core's; with --on, that machine's home)
+      --offset <OFFSET>  The first line to give, from 1
+      --limit <LIMIT>    At most this many lines (default: all, up to 8 MB)
+  -h, --help             Print help

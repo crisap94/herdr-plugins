@@ -1,0 +1,10 @@
+{"jsonrpc":"2.0","id":0,"method":"hello","params":{"generation":1}}
+{"id":0,"jsonrpc":"2.0","result":{"core":{"id":"9b649bdf70135b93a5f5a733bd918e4d","name":"host"},"features":["framed","attach","events","status","shell","resize_notifications","automatic_input"],"framed":false,"generation":1,"methods":["hello","server.status","server.stop","server.restart","terminal.run","templates.list","terminal.list","terminal.get","terminal.kill","terminal.rm","terminal.keep","terminal.label","terminal.read","terminal.attach","terminal.send","terminal.wait","terminal.keys","terminal.interrupt","terminal.put","machine.exec","file.read","file.write","file.edit","doc.get","doc.set","events.subscribe","machine.add","machine.list","machine.connect","machine.rename","machine.rm","rpc.discover"],"version":"0.1.18"}}
+{"jsonrpc":"2.0","id":1,"method":"events.subscribe","params":{"terminal":"t03b"}}
+{"id":1,"jsonrpc":"2.0","result":{"channel":null,"seq":284,"terminals":[{"address":"t20","argv":["sleep","600"],"cols":200,"created_ms":1794151445058,"cwd":"~/Work","die_with_parent":false,"exit_code":null,"finished_ms":null,"foreground":{"argv":["sleep","600"],"cwd":"~/Work","name":"sleep","pid":1636241},"identity":"ghostty","keep":false,"labels":{"grp":"b"},"name":"t03b","notify":true,"parent":null,"pid":1636241,"reason":null,"reported":false,"rm":false,"rows":120,"screen":"exact","signal":null,"state":"live","status":null,"status_ms":null,"template":null,"title":"","turn":0}]}}
+{"jsonrpc":"2.0","method":"event","params":{"data":{"labels":{"grp":"b","k":"2"}},"seq":286,"terminal":"t20","type":"labels"}}
+{"jsonrpc":"2.0","method":"event","params":{"data":{"exit_code":null,"finished_ms":1794151456626,"reason":"killed","signal":1},"seq":2792,"terminal":"t20","type":"finished"}}
+{"jsonrpc":"2.0","method":"event","params":{"data":{},"seq":2796,"terminal":"t20","type":"removed"}}
+{"jsonrpc":"2.0","method":"heartbeat","params":{"seq":2797}}
+{"jsonrpc":"2.0","method":"heartbeat","params":{"seq":2797}}
+#closed

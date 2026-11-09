@@ -1,0 +1,13 @@
+Read, write or edit a file here or on a machine: an agent's hands there
+
+Usage: hc file [OPTIONS] <COMMAND>
+
+Commands:
+  read   Print a text file, or lines of it (--offset, --limit)
+  write  Write what is piped in as the file, making missing folders
+  edit   Replace exact text found once (--old X --new Y, repeatable); all or none
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

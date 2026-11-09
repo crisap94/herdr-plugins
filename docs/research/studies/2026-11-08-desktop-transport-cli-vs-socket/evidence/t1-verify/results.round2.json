@@ -1,0 +1,56 @@
+[
+ {
+  "kind": "restart",
+  "i": 1,
+  "alive": true,
+  "fromAgent": 504,
+  "fromUp": 509,
+  "total": 550,
+  "st": 20
+ },
+ {
+  "kind": "restart",
+  "i": 2,
+  "alive": true,
+  "fromAgent": 503,
+  "fromUp": 507,
+  "total": 546,
+  "st": 20
+ },
+ {
+  "kind": "restart",
+  "i": 3,
+  "alive": true,
+  "fromAgent": 505,
+  "fromUp": 509,
+  "total": 551,
+  "st": 20
+ },
+ {
+  "kind": "hardkill",
+  "i": 1,
+  "alive": true,
+  "fromAgent": 262,
+  "fromUp": 268,
+  "total": 1004,
+  "st": 61
+ },
+ {
+  "kind": "hardkill",
+  "i": 2,
+  "alive": true,
+  "fromAgent": 1290,
+  "fromUp": 1294,
+  "total": 2029,
+  "st": 60
+ },
+ {
+  "kind": "hardkill",
+  "i": 3,
+  "alive": true,
+  "fromAgent": 786,
+  "fromUp": 790,
+  "total": 1525,
+  "st": 40
+ }
+]

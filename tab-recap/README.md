@@ -195,7 +195,7 @@ column shows exactly what it showed before. The old `item` rows are kept, no lon
 prints the old recap JSON makes the run fail with `custom writer must answer operations (see README)` in the log, and
 nothing is stored: the old shape has no ids to operate on.
 
-**Measure it:** `node bin/tab-recap.ts eval --replay <transcript.jsonl> [--kind claude|codex] [--tab <label>]
+**Measure it:** `bun bin/tab-recap.ts eval --replay <transcript.jsonl> [--kind claude|codex] [--tab <label>]
 [--compare-imported <tab>] [--pipeline one|enumerate|enumerate+gates|full]` reads a stored transcript from the start, runs the writer once per turn against a
 scratch database in a temporary directory (the real one is never written), judges the facts it leaves with the judge job (the same
 report as `eval --sample`, below), and prints the ledger it ends with. `--compare-imported` reads the tab's 1.x recaps from the
@@ -531,7 +531,7 @@ Built-in harnesses are not affected.
 
 ## Install
 
-See the [quick start in the root README](../README.md#tab-recap): install, first run, everyday use
+See the [user guide](GUIDE.md): install, first run, everyday use
 and troubleshooting. In short:
 
 ```bash
@@ -539,9 +539,104 @@ herdr plugin install crisap94/herdr-plugins/tab-recap     # or, from a checkout:
 herdr plugin action invoke tab-recap.start                # on; stays on across herdr restarts
 ```
 
-Needs herdr ≥ 0.9.0, Node ≥ 24.21.0 (runs the TypeScript directly, no build) and at least one of
+Needs herdr ≥ 0.9.0, Bun ≥ 1.4.4 (runs the TypeScript directly, no build) and at least one of
 `claude`, `codex`, `opencode`, `hermes` on PATH (or `TAB_RECAP_CUSTOM_CMD`). `glow` is used for
 Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_COLOR=0`) in a column's or modal's environment turns them off.
+
+**Runtime:** Bun only, no Node fallback. `bun.lock` is the lockfile; herdr installs the plugin with `bun install --frozen-lockfile --production` (the `[[build]]` entry of `herdr-plugin.toml`).
+
+## Desktop app (herdr-app)
+
+The same engine also runs for the Herdr desktop app (`herdr-app`, on `herdr-core`). There is no column there. A small mod draws the
+recap in the app, and a separate daemon (the same engine, started with the desktop frontend) writes what the mod reads. The terminal
+UI is unchanged and both share one version. The daemon starts with every column hidden, so it never opens a pane.
+
+### Start and stop
+
+```bash
+tab-recap-desktop ensure          # the mod runs this itself; starts the daemon unless it runs or was stopped
+tab-recap-desktop start           # clears a stop and starts the daemon
+tab-recap-desktop stop            # stops it and keeps it off until start
+tab-recap-desktop status          # daemon and state folder
+tab-recap-desktop refresh <tab>   # ask for a new recap of a tab
+tab-recap-desktop doc <tab>       # the same document the mod reads, on stdout
+```
+
+The state folder is `$TAB_RECAP_STATE`, else `desktop/` under the plugin's state folder
+(`~/.local/state/herdr/plugins/tab-recap/desktop` on Linux). The daemon keeps its database, pidfile and log there, and writes the
+files for the mod to `<state>/gui/`: `index.json` (one row per tab) and one `<tab>.json` per tab (the version 2 document, under 1 MiB).
+A recap is written only for a tab with an agent in it, after the agent finishes a turn.
+
+### How the daemon reads the agents
+
+| Setting | Values | Does |
+| --- | --- | --- |
+| `TAB_RECAP_HC_TRANSPORT` | `cli` (default), `socket` | `cli` spawns `hc` and re-lists the agents on each event. `socket` keeps one connection to the core's socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event into a roster in memory and spawns nothing. |
+| `TAB_RECAP_API` | `off` | Do not start the local API; the mod then reads the files only. |
+
+Both are read when the daemon starts, so restart it after changing them. The socket is `$HC_SOCKET`, else
+`$XDG_RUNTIME_DIR/herdr-core/<session>.sock` (`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
+If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
+when the core is back. `socket` stays opt-in until it has run for longer; see [the transport study](../docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/README.md)
+for the numbers and [the design note](../openspec/changes/gui-port/transport.md) for the layout.
+
+### The local API
+
+The daemon serves a small HTTP API for the mod, on `127.0.0.1` and a port the system picks. On start it writes
+`<state>/gui/api.json` with mode 0600, `{"version":1,"port":…,"token":…,"pid":…,"startedAt":…}`, and removes it when it stops. A client reads
+that file, then sends `Authorization: Bearer <token>`. Every route but `GET /v1/health` needs the token. The `Host` header must be
+`127.0.0.1:<port>` or `localhost:<port>`, so a web page cannot reach it through a rebinding trick. The server sends no CORS headers and
+reads at most 64 KiB of request. Every body is JSON; `schema/desktop-api.v1.schema.json` has one definition per response.
+`GET /v1/health` answers only `{ok, version, pid, startedAt, seq}`, so a client can match `pid` and `startedAt` against `api.json`
+before it sends the token anywhere.
+
+| Route | Does | Success | Errors (`{"error": "<name>"}`) |
+| --- | --- | --- | --- |
+| `GET /v1/health` | liveness; no token | 200 `{ok, version, pid, startedAt, seq}` | 403 `bad-host` |
+| `GET /v1/index` | one row per tab | 200 `{version, tabs}` | |
+| `GET /v1/tabs/:tab` | the tab's document | 200 | 404 `unknown-tab` |
+| `GET /v1/events?since=N&wait=S` | long poll; `wait` defaults to 25 s and is capped at 28 s | 200 `{seq, epoch, reset, events:[{seq, topic, tab, at}]}`; `reset: true` when `since` is older than the last 500 events or ahead of the daemon | 400 `bad-request` |
+| `POST /v1/tabs/:tab/refresh` | queue a new recap | 202 `{queued: true}` | 404 `unknown-tab` |
+| `PUT /v1/tabs/:tab/open` | say the tab is being looked at; a 60 s lease, renew before it ends | 204 | 404 `unknown-tab`; 429 `too-many-leases` (256 held) |
+| `DELETE /v1/tabs/:tab/open` | drop the lease | 204 | 404 `unknown-tab` |
+| `POST /v1/tabs/:tab/needs/:id/answer` | close a waiting item by hand | 200 `{answered: true, id}` | 404 `unknown-tab`, `unknown-need`; 409 `not-a-need`, `not-open`; 400 `bad-request` |
+| `GET /v1/tabs/:tab/compact-message?pane=&note=` | the guidance the engine would send with `/compact`; no model call, nothing written | 200 `{kind: "guidance", model: false, text, limit: 3000, noteLimit: 280}` | 404 `unknown-tab`, `unknown-pane`; 400 `bad-request`, `note-too-long` |
+| `GET /v1/tabs/:tab/handoff-message?from=&to=` | the text `handoff --print` shows for a lane (and a second lane) | 200 `{kind: "handoff", text}` | 404 `unknown-tab`, `unknown-pane`; 409 `handoff-refused` (`detail` says why); 400 `bad-request` |
+
+Any route can also answer 401 `unauthorized`, 403 `bad-host`, 404 `not-found`, 405 `method-not-allowed`, 413 `payload-too-large`,
+500 `internal` (with a `detail`) or 503 `unavailable`. `topic` is `index`, `tab` or `notice`; `notice` has no producer yet. `epoch` is
+the daemon's start time: when it changes between two answers the daemon restarted and the client should read everything again.
+
+### The files, as the fallback
+
+The files in `<state>/gui/` are written on every change, with or without the API, so the mod works if the API is off or the daemon
+restarts. With the API down the mod watches the folder, re-reads every 15 seconds, and keeps trying `api.json` to switch back. A tab being
+looked at is marked by an empty `open.<tab>` file there (renewed every 20 seconds, treated as closed after 60) instead of a lease.
+
+### What the mod shows
+
+Install it by copying [`desktop/mods/tab-recap/`](../desktop/mods/tab-recap/RECIPE.md) to `~/.config/herdr-app/mods/tab-recap/`; the recipe has the key binding and the
+optional layout blocks. One mod, four roles:
+
+- **Chip:** how many tabs need you and how many are working, with the worst status. A click opens Fleet.
+- **Strip:** a pane header with the status, a headline, a context meter with the compaction hint, and a pill while a compaction runs.
+- **Fleet:** every tab by urgency, with filters, search and a meter per row.
+- **Brief:** one tab: Brief, Story, Timeline and Session views, the lane chips, a "since you last looked" banner, the waiting item
+  with **Mark done**, and the **Compact message** popup with **Copy** and **Copy handoff**.
+
+Mark done asks for a confirmation, then closes the waiting item in the engine (`why` is `answered`), so the terminal UI shows it closed too.
+The compact message is the engine's own guidance for the lane with an optional note of up to 280 characters; Copy puts exactly that
+text on the clipboard. Both buttons need the API.
+
+### Not available yet
+
+- **Compact and Reply** are drawn disabled. They type into an agent, and `hc keys` cannot type most punctuation (a later phase uses
+  `terminal.keys`, `terminal.send` and `terminal.wait`). Compaction, handoff and autocompact stay off in the desktop app.
+- **Undo for Mark done:** the ledger has no operation that reopens a closed fact (only `add`, `update` and `close`), so a hand close cannot
+  be undone from the app. A later recap run may raise the same question again as a new fact.
+- **Notices** from the daemon (refusals, a compaction starting) are not built; the bus topic exists and nothing publishes to it.
+- The mod's screens were checked in an isolated app; a click-through on the live app is still open. See
+  [the roadmap](../openspec/changes/gui-port/roadmap.md).
 
 ## Actions
 
@@ -554,9 +649,9 @@ Markdown when installed. Colours follow the terminal: `NO_COLOR=1` (or `FORCE_CO
 | `tab-recap.columns` | hide every column, or show them all again |
 | `tab-recap.compact` | compact the focused agent (`TAB_RECAP_COMPACT_TARGET`: `focused`, `all` or kinds like `claude,codex`): a popup asks for an optional note (Enter sends, Esc cancels); claude gets `/compact <what to keep>`, codex and opencode their own `/compact` and then one short message restoring where things stand |
 | `tab-recap.configure` | the settings modal: agent, model, interface and recap language; `t` tests, `s` saves |
-| `tab-recap.status` | the code's version, the Node running it, the keys bound to tab-recap actions, the daemon (pid and the version it started with), backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
+| `tab-recap.status` | the code's version, the Bun running it, the keys bound to tab-recap actions, the daemon (pid and the version it started with), backend, extensions, state and config paths (the log is `daemon.log` in the state path) |
 
-Any backend, from a checkout: `node bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `node bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
+Any backend, from a checkout: `bun bin/tab-recap.ts backend <auto|claude|codex|opencode|hermes|custom> [model]` (a model only for a named harness; `auto` picks the first of claude → codex → opencode → hermes found on PATH). `bun bin/tab-recap.ts --help` (or `-h`) prints the commands; an option it does not know is refused with exit code 2.
 
 In the column and the modal: `j`/`k` or arrows scroll, Space/`b` page, `g`/`G` top/bottom, `r` recaps now, `c` compacts the focused agent, `s` opens the settings, `h` hides this tab's column, Enter or a tap opens the modal, `q`/Esc closes the modal.
 
@@ -590,12 +685,12 @@ A hidden column is closed and not reopened, and recaps are still written — sho
 
 ### macOS
 
-If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Node that runs the plugin and which keys herdr has bound to a `tab-recap.*` action (or `no key bound — see README`).
+If `prefix+r` does nothing, run `tab-recap.status` first: it prints the Bun that runs the plugin and which keys herdr has bound to a `tab-recap.*` action (or `no key bound — see README`).
 
 - **No key is bound out of the box.** Add the bindings above to your config; on macOS it is `~/.config/herdr/config.toml` too (not `~/Library/Application Support`), or `$HERDR_CONFIG_PATH`. Then `herdr server reload-config`; `prefix+?` lists the active keys.
 - **The default prefix is `ctrl+b`**: press it, release, then `r`. A custom `[keys] prefix` changes that.
-- **Node ≥ 24.21.0 must be on the PATH of herdr's *server*,** not just of your shell. Homebrew (`/opt/homebrew/bin`) and nvm/fnm/mise shims are often only on an interactive shell's PATH, so an action fails with `node: not found` or runs an older system node (it cannot run `.ts`). Fix: install Node 24.21+ (`brew install node`, or `mise use -g node@24` / `nvm install 24`), `herdr server stop`, open a new terminal where `node --version` is ≥ 24.21, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
-  With an older Node the plugin says so instead of failing silently: the column, the settings and the compaction popup show the version found, the one required, the path of the `node` used and the steps **for your OS** (macOS: Homebrew and `launchctl`; Linux: nvm, mise or n); a command prints them and exits 1; the daemon writes one dated line to `daemon.log`. `tab-recap.status` reports it and goes on. A Node too old to run `.ts` prints the same message in English.
+- **Bun ≥ 1.4.4 must be on the PATH of herdr's *server,** not just of your shell. Homebrew (`/opt/homebrew/bin`), `~/.bun/bin` and mise shims are often only on an interactive shell's PATH, so an action fails with `bun: not found` or runs an older Bun (it cannot run `.ts`). Fix: install Bun (`brew install oven-sh/bun/bun`, `mise use -g bun`, or `curl -fsSL https://bun.sh/install | bash`), `herdr server stop`, open a new terminal where `bun --version` is ≥ 1.4.4, and start `herdr` from it. If herdr is started from a launcher: `launchctl setenv PATH "/opt/homebrew/bin:$PATH"` and restart it.
+  With a Bun too old, the plugin says so instead of failing silently: the column, the settings and the compaction popup show the version found, the one required, the path of the `bun` used and the steps **for your OS** (macOS: Homebrew and `launchctl`; Linux: the curl installer or mise); a command prints them and exits 1; the daemon writes one dated line to `daemon.log`. `tab-recap.status` reports it and goes on. A Bun too old to run `.ts` prints the same message in English.
 - **Prefer `ctrl+alt` over plain `alt`:** macOS composes `alt+key` into special characters; `key = "ctrl+alt+r"` is safe and needs no prefix.
 
 Read-only diagnosis (run the last two inside a herdr pane):
@@ -604,7 +699,7 @@ Read-only diagnosis (run the last two inside a herdr pane):
 herdr --version; herdr plugin list | grep -i tab-recap
 herdr plugin action list | grep tab-recap.column || echo "missing: update the plugin (>= 1.1.0)"
 CFG="${HERDR_CONFIG_PATH:-$HOME/.config/herdr/config.toml}"; grep -n -B2 -A3 'tab-recap' "$CFG" || echo "no tab-recap binding in $CFG"
-command -v node; node --version
+command -v bun; bun --version
 SP=$(pgrep -f 'herdr.*server' | head -1); ps eww -p "$SP" | tr ' ' '\n' | grep '^PATH='     # the server's PATH
 herdr plugin action invoke tab-recap.status
 herdr plugin log list --plugin tab-recap | tail -30
@@ -749,7 +844,7 @@ it must be on a local disk — WAL does not work on network filesystems). Proces
 **From 1.6.0 on** the first daemon that starts moves the old JSON files (`recaps/`, `tabs/`, `requests/`, `visibility/`,
 `hidden.json`) into the database in one transaction, checks every tab reads back identically, and only then moves the files to
 `legacy-files-<timestamp>/` in the state directory. They are never deleted. Before you upgrade you can see what would happen,
-touching nothing: `cp -r <state dir> /tmp/state-copy && node src/adapters/db/import/dry-run.ts /tmp/state-copy`.
+touching nothing: `cp -r <state dir> /tmp/state-copy && bun src/adapters/db/import/dry-run.ts /tmp/state-copy`.
 
 **Back to 1.5.1:** `tab-recap.stop` (stop the daemon), move the contents of `legacy-files-<timestamp>/` back into the state
 directory, check out 1.5.1, start it. The 1.5.1 daemon ignores `tab-recap.db`; recaps written since the upgrade are not carried

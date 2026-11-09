@@ -1,0 +1,16 @@
+{"address":"t1z","agent":"sleep","cwd":"~/Work","name":"t03a","state":"live","turn":0}
+{"address":"t20","agent":"sleep","cwd":"~/Work","name":"t03b","state":"live","turn":0}
+{"address":"t21","agent":"sleep","cwd":"~/Work","name":"t03c","parent":"t1z","state":"live","turn":0}
+[10:24:07.082] actions
+{"address":"t22","agent":"sleep","cwd":"~/Work","name":"t03d","parent":"t1z","state":"live","turn":0}
+[10:24:07.144] flood
+[10:24:14.583] flood-done
+{"address":"t22","argv":["sleep","600"],"cols":200,"created_ms":1794151447124,"cwd":"~/Work","die_with_parent":true,"exit_code":null,"finished_ms":1794151456598,"identity":"ghostty","keep":false,"labels":{},"name":"t03d","notify":true,"parent":"t1z","pid":1636579,"reason":"killed","reported":false,"rm":false,"rows":120,"screen":"exact","signal":1,"state":"finished","status":null,"status_ms":null,"template":null,"title":"","turn":0}
+{"address":"t21","argv":["sleep","600"],"cols":200,"created_ms":1794151445070,"cwd":"~/Work","die_with_parent":true,"exit_code":null,"finished_ms":1794151456612,"identity":"ghostty","keep":false,"labels":{"k":"3"},"name":"t03c","notify":true,"parent":"t1z","pid":1636246,"reason":"killed","reported":false,"rm":false,"rows":120,"screen":"exact","signal":1,"state":"finished","status":null,"status_ms":null,"template":null,"title":"","turn":0}
+{"address":"t20","argv":["sleep","600"],"cols":200,"created_ms":1794151445058,"cwd":"~/Work","die_with_parent":false,"exit_code":null,"finished_ms":1794151456626,"identity":"ghostty","keep":false,"labels":{"grp":"b","k":"2"},"name":"t03b","notify":true,"parent":null,"pid":1636241,"reason":"killed","reported":false,"rm":false,"rows":120,"screen":"exact","signal":1,"state":"finished","status":null,"status_ms":null,"template":null,"title":"","turn":0}
+{"address":"t1z","argv":["sleep","600"],"cols":200,"created_ms":1794151445052,"cwd":"~/Work","die_with_parent":false,"exit_code":null,"finished_ms":1794151456640,"identity":"ghostty","keep":false,"labels":{"f":"2500","grp":"a","k":"1"},"name":"t03a","notify":true,"parent":null,"pid":1636236,"reason":"killed","reported":false,"rm":false,"rows":120,"screen":"exact","signal":1,"state":"finished","status":null,"status_ms":null,"template":null,"title":"","turn":0}
+{"removed":"t22"}
+{"removed":"t21"}
+{"removed":"t20"}
+{"removed":"t1z"}
+[10:24:45.512] done

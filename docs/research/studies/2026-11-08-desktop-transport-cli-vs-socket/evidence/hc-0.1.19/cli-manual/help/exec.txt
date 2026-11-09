@@ -1,0 +1,15 @@
+Run one program without a terminal, here or on a machine: exactly what it wrote, and its exit code
+
+Usage: hc exec [OPTIONS] <ARGV>...
+
+Arguments:
+  <ARGV>...  Program and arguments, run as given (no shell)
+
+Options:
+      --json               JSON output even in a terminal
+      --on <MACHINE>       Run it on another machine (see `hc machine ls`)
+      --cwd <CWD>          Working directory (default: where hc runs; through the API, the core's; with --on, that machine's home)
+      --env <K=V>          Set on top of the core's environment, key=value (repeatable)
+      --timeout <TIMEOUT>  Seconds before it and everything it started are ended (default 60, at most 600)
+  -i, --stdin              Feed what is piped into hc to its stdin
+  -h, --help               Print help

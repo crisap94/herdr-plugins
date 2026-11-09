@@ -1,0 +1,7 @@
+List the machines added here
+
+Usage: hc machine ls [OPTIONS]
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

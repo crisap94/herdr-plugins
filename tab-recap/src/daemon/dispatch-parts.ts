@@ -1,5 +1,5 @@
 import type { Store } from '#src/adapters/db/database.ts';
-import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
@@ -23,7 +23,7 @@ export interface Box {
 }
 
 export interface DispatchParts {
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly store: Store;
     readonly recaps: RecapJob;
     readonly transcripts: TranscriptRegistry;

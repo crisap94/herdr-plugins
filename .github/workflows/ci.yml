@@ -37,13 +37,9 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           fetch-tags: true
-      - uses: actions/setup-node@v5
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24
-          # the newest 24.x: the plugin needs >= 24.21.0 and runner images may cache an older 24
-          check-latest: true
-          cache: npm
-          cache-dependency-path: tab-recap/package-lock.json
+          bun-version: 1.4.4
       # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'
@@ -53,16 +49,16 @@ jobs:
         run: |
           # the gates run on /bin/bash: macOS ships 3.2, and a contributor there has nothing newer
           /bin/bash --version | head -n 1
-          node --version
+          bun --version
           xmllint --version
-          node -e "const [a,b]=process.versions.node.split('.').map(Number); process.exit(a>24||(a===24&&b>=21)?0:1)"
-      - run: npm ci
+          bun -e "const [a,b,c]=Bun.version.split('.').map(Number); process.exit(a>1||(a===1&&(b>4||(b===4&&c>=4)))?0:1)"
+      - run: bun install --frozen-lockfile
       - run: /bin/bash ci/lint.sh
       - run: /bin/bash ci/test.sh
 
-  # The oldest Node the plugin supports (node:sqlite without the experimental warning): what `engines` promises is tested.
+  # The oldest Bun the plugin supports (package.json engines): what `engines` promises is tested.
   floor:
-    name: lint + test (Node 24.21.0)
+    name: lint + test (Bun 1.4.4)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -74,18 +70,16 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           fetch-tags: true
-      - uses: actions/setup-node@v5
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24.21.0
-          cache: npm
-          cache-dependency-path: tab-recap/package-lock.json
+          bun-version: 1.4.4
       # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'
         # apt hung once for six hours on a hosted runner and held the concurrency group: bound it, and let the job's timeout end the rest
         run: timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 -o Acquire::Retries=3 install -y -qq --no-install-recommends libxml2-utils || (sudo apt-get update -qq && timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libxml2-utils)
-      - run: node --version
+      - run: bun --version
       - run: xmllint --version
-      - run: npm ci
+      - run: bun install --frozen-lockfile
       - run: bash ci/lint.sh
       - run: bash ci/test.sh

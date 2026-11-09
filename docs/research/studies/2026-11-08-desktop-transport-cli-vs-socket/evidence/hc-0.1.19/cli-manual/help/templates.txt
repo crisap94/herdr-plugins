@@ -1,0 +1,7 @@
+Templates you can run by name (~/.config/herdr-core/templates)
+
+Usage: hc templates [OPTIONS]
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

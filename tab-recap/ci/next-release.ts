@@ -1,7 +1,7 @@
 // The next release, from the labels of the MRs merged since the previous tag (changelog::added | changed |
 // fixed | internal, plus an optional changelog::breaking). Prints JSON: previous, version (null when only
 // `internal` changed), bump, section (the CHANGELOG section, rendered deterministically) and merged.
-//   node ci/next-release.ts [--previous <tag>] [--to <ref>]
+//   bun ci/next-release.ts [--previous <tag>] [--to <ref>]
 // env: CI_API_V4_URL, CI_PROJECT_ID | CI_PROJECT_PATH, GITLAB_TOKEN | RELEASE_TOKEN | CI_JOB_TOKEN, RELEASE_DATE
 import { execFileSync } from 'node:child_process';
 

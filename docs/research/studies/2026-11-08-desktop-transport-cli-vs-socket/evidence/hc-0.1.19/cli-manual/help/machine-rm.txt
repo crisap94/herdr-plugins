@@ -1,0 +1,10 @@
+Forget a machine (its terminals keep running there)
+
+Usage: hc machine rm [OPTIONS] <MACHINE>
+
+Arguments:
+  <MACHINE>  The machine's name
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help
