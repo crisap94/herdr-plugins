@@ -8,6 +8,6 @@ const killGroup = (pid: number, force: boolean): void => {
 };
 
 export function posixProcess(spawner: Spawner = spawn): ProcessControl {
-    const flavour: Flavour = { spawner, detached: true, windowsHide: false, killTree: killGroup };
+    const flavour: Flavour = { spawner, detached: true, killTree: killGroup };
     return { run: (command, args, options) => runIn(flavour, command, args, options), killTree: killGroup };
 }

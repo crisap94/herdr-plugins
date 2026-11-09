@@ -14,10 +14,9 @@ export function bunAtLeast(version, minimum = MIN_BUN) {
 const STEPS = {
     macos: ['brew', 'mise', 'curl', 'herdr-stop', 'new-terminal', 'launchctl-path'],
     linux: ['curl', 'mise', 'herdr-stop', 'new-terminal'],
-    windows: ['powershell', 'restart-herdr'],
 };
 
-const INSTALLERS = new Set(['brew', 'mise', 'curl', 'powershell']);
+const INSTALLERS = new Set(['brew', 'mise', 'curl']);
 
 export function supportOf(host) {
     if (bunAtLeast(host.bunVersion)) {
@@ -35,11 +34,9 @@ export const ENGLISH = {
         brew: () => 'brew install oven-sh/bun/bun',
         mise: () => 'mise use -g bun@latest',
         curl: () => 'curl -fsSL https://bun.sh/install | bash',
-        powershell: () => 'powershell -c "irm bun.sh/install.ps1 | iex"',
         'herdr-stop': () => 'Run: herdr server stop',
         'new-terminal': (needed) => `Open a new terminal, check that \`bun --version\` prints ${needed} or newer, and start herdr from it.`,
         'launchctl-path': () => 'If herdr is started from a launcher, run: launchctl setenv PATH "/opt/homebrew/bin:$PATH" and restart it.',
-        'restart-herdr': () => 'Close herdr, open a new terminal where `bun --version` is new enough, and start herdr again.',
     },
 };
 

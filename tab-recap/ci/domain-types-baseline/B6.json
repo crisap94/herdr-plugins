@@ -203,16 +203,8 @@
     "parameter": 2,
     "container": 2
   },
-  "src/adapters/os/config/paths-windows.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/adapters/os/config/paths-xdg.ts": {
     "parameter": 1
-  },
-  "src/adapters/os/config/paths.ts": {
-    "parameter": 1,
-    "container": 1
   },
   "src/adapters/os/glow.ts": {
     "parameter": 6,
@@ -232,10 +224,6 @@
     "parameter": 3,
     "container": 1
   },
-  "src/adapters/os/process/control-windows.ts": {
-    "parameter": 2,
-    "container": 1
-  },
   "src/adapters/os/process/control.ts": {
     "parameter": 2,
     "return": 3,
@@ -244,7 +232,7 @@
   "src/adapters/os/process/core.ts": {
     "parameter": 6,
     "container": 1,
-    "property": 2
+    "property": 1
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,

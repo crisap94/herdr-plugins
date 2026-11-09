@@ -6,7 +6,7 @@ import { bunHost, platformOf } from '#src/host/bun-host.mjs';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 
-const PLATFORMS: readonly Platform[] = ['macos', 'linux', 'windows'];
+const PLATFORMS: readonly Platform[] = ['macos', 'linux'];
 
 function refusal(platform: Platform, bunVersion = '1.0.0'): Refusal {
     const found = supportOf({ bunVersion, platform });
@@ -33,7 +33,6 @@ test('the minimum Bun is 1.4.4 and the edges fall on either side of it', () => {
 test('a refusal names what was found, what is needed and the steps of that OS', () => {
     assert.deepEqual(refusal('macos', '1.0.0'), { ok: false, found: '1.0.0', needed: '1.4.4', platform: 'macos', steps: ['brew', 'mise', 'curl', 'herdr-stop', 'new-terminal', 'launchctl-path'] });
     assert.deepEqual(refusal('linux').steps, ['curl', 'mise', 'herdr-stop', 'new-terminal']);
-    assert.deepEqual(refusal('windows').steps, ['powershell', 'restart-herdr']);
     assert.equal(refusal('freebsd' as Platform).platform, 'linux', 'an unknown OS gets the Linux steps');
 });
 
@@ -47,8 +46,6 @@ test('the English text (also the fallback of a Bun that cannot load the catalogs
     assert.match(text('macos'), /launchctl setenv PATH/);
     assert.match(text('linux'), /curl -fsSL https:\/\/bun\.sh\/install \| bash · mise use -g bun@latest/);
     assert.doesNotMatch(text('linux'), /brew|launchctl/);
-    assert.match(text('windows'), /powershell -c "irm bun\.sh\/install\.ps1 \| iex"/);
-    assert.doesNotMatch(text('windows'), /herdr server stop/);
     assert.match(text('linux'), /\n  2\. Run: herdr server stop\n  3\. Open a new terminal, check that `bun --version` prints 1\.4\.4 or newer/);
 });
 
@@ -61,12 +58,10 @@ test('the catalogs render the same refusal in English and Spanish, for every pla
         assert.equal(spanish.split('\n').length, en.cli.hostRefusal(found, '/usr/bin/bun').split('\n').length, 'the same steps');
     }
     assert.match(es.cli.hostRefusal(refusal('macos'), '/n'), /launchctl setenv PATH/);
-    assert.match(es.cli.hostRefusal(refusal('windows'), '/n'), /powershell -c/);
 });
 
 test('the Host adapter reads the running Bun and names the OS family', () => {
     assert.equal(platformOf('darwin'), 'macos');
-    assert.equal(platformOf('win32'), 'windows');
     assert.equal(platformOf('linux'), 'linux');
     assert.equal(platformOf('freebsd'), 'linux');
     assert.deepEqual(bunHost({ versions: { bun: '1.4.4' }, version: 'v26.3.0', execPath: '/b/bun', platform: 'darwin', env: { PATH: '/a:/b' } }),
