@@ -258,26 +258,21 @@
     "container": 1
   },
   "src/adapters/transcripts/codex/in-flight.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 12,
-    "property": 2
+    "parameter": 1,
+    "container": 1
   },
   "src/adapters/transcripts/codex/marks.ts": {
-    "return": 2,
-    "container": 3
+    "return": 1,
+    "container": 1
   },
   "src/adapters/transcripts/codex/tool-calls.ts": {
-    "parameter": 6,
-    "return": 1,
-    "container": 3,
-    "assertion": 1
+    "parameter": 3,
+    "container": 2
   },
   "src/adapters/transcripts/codex/transcripts.ts": {
-    "parameter": 17,
-    "return": 3,
-    "container": 6,
-    "property": 8
+    "parameter": 13,
+    "container": 3,
+    "property": 2
   },
   "src/adapters/transcripts/context-values.ts": {
     "parameter": 1,

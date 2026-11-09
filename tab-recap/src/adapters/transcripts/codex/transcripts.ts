@@ -1,71 +1,50 @@
-import { readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { CodexItemType, codexRolloutRoot, findRolloutByCwd, isInjectedContext, readRollout } from '@stateforge-labs/harness-adapters/codex';
+import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { arr, obj, parse, readJsonl, readLines, str, tailLines, tailOf } from '../jsonl.ts';
+import { arr, obj, parse, readJsonl, str, tailLines, tailOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
 import { CODEX_IN_FLIGHT_INITIAL_BYTES, CODEX_IN_FLIGHT_MAX_BYTES, codexInFlight } from './in-flight.ts';
-import { codexMarks } from './marks.ts';
+import { marksOf } from './marks.ts';
 import { codexObserved } from './context.ts';
 import { codexCalls } from './tool-calls.ts';
 import { toolEntry } from '../tool-calls.ts';
 
-const NOISE = ['<environment_context', '<user_instructions', '# AGENTS.md', '<user_shell_command>', '<recommended_plugins>'];
-const DAYS_BACK = 14;
-const CANDIDATES = 200;
-
-function messageEntry(item: Row, at: number | undefined): Entry | null {
-    const role = item['role'];
+function messageEntry(payload: Row, at: number | undefined): Entry | null {
+    const role = str(payload['role']);
     if (role !== 'user' && role !== 'assistant') {
         return null;
     }
-    const text = arr(item['content']).map((part) => str(part['text']) ?? '').join('\n');
-    const head = text.trimStart();
-    if (text === '' || NOISE.some((noise) => head.startsWith(noise))) {
+    const text = arr(payload['content']).map((part) => str(part['text']) ?? '').join('\n');
+    if (text === '' || isInjectedContext(text)) {
         return null;
     }
     return { role: role === 'user' ? 'user' : 'agent', text, ...(at === undefined ? {} : { at }) };
 }
 
-function toolEntries(item: Row, at: number | undefined): readonly Entry[] {
-    const raw = item['arguments'] ?? item['input'];
-    let input: Row = obj(raw);
-    if (typeof raw === 'string') {
-        input = parse(raw) ?? { command: raw };
-    }
-    return codexCalls(str(item['name']) ?? 'tool', raw, input).map((call) => toolEntry(call, at));
+function toolEntries(payload: Row, at: number | undefined): readonly Entry[] {
+    const raw = payload['arguments'] ?? payload['input'];
+    const input = typeof raw === 'string' ? (parse(raw) ?? {}) : obj(raw);
+    return codexCalls(str(payload['name']) ?? 'tool', raw, input).map((call) => toolEntry(call, at));
 }
 
-const timeOf = (row: Row): number | undefined => {
-    const at = Date.parse(str(row['timestamp']) ?? '');
-    return Number.isNaN(at) ? undefined : at;
-};
-
-function entriesOf(row: Row): readonly Entry[] {
-    const item = obj(row['payload']);
-    if (row['type'] !== 'response_item') {
+function entriesOf(row: CodexRow): readonly Entry[] {
+    if (row.kind !== 'response_item') {
         return [];
     }
-    if (item['type'] === 'message') {
-        const entry = messageEntry(item, timeOf(row));
+    const at = row.at ?? undefined;
+    if (row.item === CodexItemType.enum.message) {
+        const entry = messageEntry(row.payload, at);
         return entry === null ? [] : [entry];
     }
-    return item['type'] === 'function_call' || item['type'] === 'custom_tool_call' ? toolEntries(item, timeOf(row)) : [];
+    return row.item === CodexItemType.enum.function_call || row.item === CodexItemType.enum.custom_tool_call ? toolEntries(row.payload, at) : [];
 }
 
 export function extractCodex(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
-    const entries = lines.flatMap((line) => {
-        const row = parse(line);
-        return row === null ? [] : entriesOf(row);
-    });
-    return { entries, notes: [], marks: codexMarks(lines), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
-}
-
-function dayDir(root: string, back: number): string {
-    const day = new Date(Date.now() - back * 86_400_000);
-    return join(root, String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0'));
+    const rows = readRollout(lines).rows;
+    const entries = rows.flatMap((row) => entriesOf(row));
+    return { entries, notes: [], marks: marksOf(rows), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
 }
 
 export class CodexTranscripts implements Transcripts {
@@ -74,25 +53,9 @@ export class CodexTranscripts implements Transcripts {
     private readonly root: string;
     private readonly readTail: typeof tailOf;
 
-    constructor(root = join(homedir(), '.codex', 'sessions'), readTail: typeof tailOf = tailOf) {
+    constructor(root = codexRolloutRoot(), readTail: typeof tailOf = tailOf) {
         this.root = root;
         this.readTail = readTail;
-    }
-
-    private recent(): readonly { path: string; mtime: number; size: number }[] {
-        const found: { path: string; mtime: number; size: number }[] = [];
-        for (let back = 0; back < DAYS_BACK; back++) {
-            const dir = dayDir(this.root, back);
-            let names: string[] = [];
-            try { names = readdirSync(dir); } catch { continue; }
-            for (const name of names.filter((n) => n.endsWith('.jsonl'))) {
-                try {
-                    const stat = statSync(join(dir, name));
-                    found.push({ path: join(dir, name), mtime: stat.mtimeMs, size: stat.size });
-                } catch { }
-            }
-        }
-        return found.toSorted((a, b) => b.mtime - a.mtime).slice(0, CANDIDATES);
     }
 
     locate(lane: Lane): Promise<Located> {
@@ -119,13 +82,8 @@ export class CodexTranscripts implements Transcripts {
         if (lane.cwd === null) {
             return unknown({ why: 'not-found', what: `a cwd for ${lane.pane}` });
         }
-        for (const candidate of this.recent()) {
-            const first = parse(readLines(candidate.path, 0, 64 * 1024).lines[0] ?? '');
-            if (first?.['type'] === 'session_meta' && obj(first['payload'])['cwd'] === lane.cwd) {
-                return { kind: 'located', source: candidate.path };
-            }
-        }
-        return unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` });
+        const file = findRolloutByCwd(lane.cwd, { root: this.root });
+        return file === null ? unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` }) : { kind: 'located', source: file.path };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {

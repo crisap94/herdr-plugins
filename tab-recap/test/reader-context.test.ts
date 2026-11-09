@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { extractClaude } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { execCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
+import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
 import { claudeNamedCall as namedCall } from '#src/adapters/transcripts/claude/tool-calls.ts';
 import { isPlainRead } from '#src/adapters/transcripts/tool-calls.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
@@ -100,7 +100,7 @@ test('codex: `exec` JavaScript is decoded — commands as shell calls, patches a
     ]);
     assert.ok(got.entries.every((entry) => !entry.text.includes('tools.exec_command') && entry.at === at('2026-09-21T04:32:19.079Z')));
     assert.deepEqual(touchedFiles(got.entries), ['src/cart.py', 'src/totals.py'], 'Codex edits reach the hints');
-    assert.deepEqual(execCalls('text(await tools.something_else({}));'), [{ kind: 'other', text: 'exec' }]);
+    assert.deepEqual(codexCalls('exec', 'text(await tools.something_else({}));', {}), [{ kind: 'other', text: 'exec' }]);
 });
 
 const message = (text: string): string => JSON.stringify({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } });
