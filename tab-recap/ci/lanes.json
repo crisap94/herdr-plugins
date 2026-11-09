@@ -887,7 +887,6 @@
       "src/adapters/os/tui.ts",
       "src/adapters/transcripts/claude/context.ts",
       "src/adapters/transcripts/claude/in-flight.ts",
-      "src/adapters/transcripts/claude/prompt.ts",
       "src/adapters/transcripts/claude/rows.ts",
       "src/adapters/transcripts/claude/tool-calls.ts",
       "src/adapters/transcripts/claude/transcripts.ts",

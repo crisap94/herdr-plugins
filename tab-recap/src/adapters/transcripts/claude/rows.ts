@@ -1,23 +1,10 @@
+import type { ClaudeCompact, ClaudeRecord } from '@stateforge-labs/harness-adapters/claude';
+import * as claude from '@stateforge-labs/harness-adapters/claude';
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
-import { arr, obj, parse, str } from '../jsonl.ts';
-import type { Row } from '../jsonl.ts';
 import { claudeNamedCall } from './tool-calls.ts';
-import { promptBodyOf } from './prompt.ts';
 import { toolEntry } from '../tool-calls.ts';
 
-const NOISE = ['<command-', '<local-command', '<system-reminder', '<task-notification', 'Caveat: The messages below', '[Request interrupted by user'];
-
-const timeOf = (row: Row): number | undefined => {
-    const at = Date.parse(str(row['timestamp']) ?? '');
-    return Number.isNaN(at) ? undefined : at;
-};
-
-function textOf(content: unknown): string {
-    if (typeof content === 'string') {
-        return content;
-    }
-    return arr(content).filter((block) => block['type'] === 'text').map((block) => str(block['text']) ?? '').join('\n');
-}
+const AWAY_SUBTYPE = claude.ClaudeSystemSubtype.enum['away_summary'];
 
 interface Meta {
     title: string | null;
@@ -25,83 +12,81 @@ interface Meta {
     claudeRecap: string | null;
 }
 
-function noteMeta(row: Row, meta: Meta): void {
-    if (row['type'] === 'ai-title') {
-        meta.title = str(row['aiTitle']) ?? meta.title;
-    } else if (row['type'] === 'last-prompt') {
-        const last = str(row['lastPrompt']);
-        meta.lastPrompt = last === null ? meta.lastPrompt : promptBodyOf(last);
-    } else if (row['type'] === 'system' && row['subtype'] === 'away_summary') {
-        meta.claudeRecap = str(row['content']) ?? meta.claudeRecap;
-    }
+function awayOf(record: ClaudeRecord): string | null {
+    return record.kind === 'system' && record.subtype === AWAY_SUBTYPE ? record.content : null;
 }
 
-function userEntry(row: Row): Entry | null {
-    if (row['isSidechain'] === true || row['isMeta'] === true || row['isCompactSummary'] === true) {
+function compactRecapOf(record: ClaudeRecord): string | null {
+    if (record.kind !== 'user' || !record['isCompactSummary']) {
         return null;
     }
-    const text = promptBodyOf(textOf(obj(row['message'])['content']));
-    const head = text.trimStart();
-    const at = timeOf(row);
-    return text === '' || NOISE.some((noise) => head.startsWith(noise)) ? null : { role: 'user', text, ...(at === undefined ? {} : { at }) };
+    const text = record.text.trim();
+    return text === '' ? null : text;
 }
 
-function queuedEntry(row: Row): Entry | null {
-    const attachment = obj(row['attachment']);
-    const raw = str(attachment['prompt']);
-    const text = raw === null ? null : promptBodyOf(raw);
-    const at = timeOf(attachment) ?? timeOf(row);
-    if (attachment['type'] !== 'queued_command' || obj(attachment['origin'])['kind'] !== 'human' || text === null || row['isSidechain'] === true) {
-        return null;
-    }
-    return NOISE.some((noise) => text.trimStart().startsWith(noise)) ? null : { role: 'user', text, queued: true, ...(at === undefined ? {} : { at }) };
-}
-
-function noteOf(row: Row): AgentNote | null {
-    const at = timeOf(row) ?? null;
-    if (row['type'] === 'system' && row['subtype'] === 'away_summary') {
-        const text = str(row['content']);
-        return text === null ? null : { kind: 'away_summary', at, text };
-    }
-    const text = row['isCompactSummary'] === true ? textOf(obj(row['message'])['content']).trim() : '';
-    return text === '' ? null : { kind: 'compaction', at, text };
-}
-
-const figure = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined);
-
-function compactFigures(metadata: Row): Pick<Mark, 'tokensBefore' | 'tokensAfter' | 'tookMs' | 'trigger'> {
-    const [before, after, took] = [figure(metadata['preTokens']), figure(metadata['postTokens']), figure(metadata['durationMs'])];
-    const trigger = metadata['trigger'];
+function compactedMark(record: ClaudeRecord, compact: ClaudeCompact): Mark {
     return {
-        ...(before === undefined ? {} : { tokensBefore: before }), ...(after === undefined ? {} : { tokensAfter: after }), ...(took === undefined ? {} : { tookMs: took }),
-        ...(trigger === 'auto' || trigger === 'manual' ? { trigger } : {}),
+        kind: 'compacted',
+        at: record.at,
+        ...(compact.preTokens === null ? {} : { tokensBefore: compact.preTokens }),
+        ...(compact.postTokens === null ? {} : { tokensAfter: compact.postTokens }),
+        ...(compact.durationMs === null ? {} : { tookMs: compact.durationMs }),
+        ...(compact.trigger === null ? {} : { trigger: compact.trigger }),
     };
 }
 
-function markOf(row: Row): Mark | null {
-    const at = timeOf(row) ?? null;
-    if (row['type'] === 'system' && row['subtype'] === 'compact_boundary') {
-        return { kind: 'compacted', at, ...compactFigures(obj(row['compactMetadata'])) };
+function noteMeta(record: ClaudeRecord, meta: Meta): void {
+    if (record.kind === 'ai-title' && record.title !== '') {
+        meta.title = record.title;
     }
-    const said = typeof row['content'] === 'string' ? row['content'] : textOf(obj(row['message'])['content']);
-    return said.includes('Error during compaction') && (row['subtype'] === 'local_command' || said.includes('<local-command-stderr>')) ? { kind: 'compaction-failed', at } : null;
+    if (record.kind === 'last-prompt' && record.prompt !== '') {
+        meta.lastPrompt = claude.unwrapPastedContent(record.prompt);
+    }
+    meta.claudeRecap = awayOf(record) ?? meta.claudeRecap;
 }
 
-function agentEntries(row: Row): readonly Entry[] {
-    if (row['isSidechain'] === true) {
+function agentEntries(record: ClaudeRecord): Entry[] {
+    if (record.kind !== 'assistant' || record.sidechain) {
         return [];
     }
     const entries: Entry[] = [];
-    const at = timeOf(row);
-    for (const block of arr(obj(row['message'])['content'])) {
-        const text = str(block['text']);
-        if (block['type'] === 'text' && text !== null && text.trim() !== '') {
-            entries.push({ role: 'agent', text, ...(at === undefined ? {} : { at }) });
-        } else if (block['type'] === 'tool_use') {
-            entries.push(toolEntry(claudeNamedCall(str(block['name']) ?? 'tool', obj(block['input'])), at));
+    const at = record.at === null ? {} : { at: record.at };
+    for (const block of record.blocks) {
+        if (block.kind === 'text' && block.text.trim() !== '') {
+            entries.push({ role: 'agent', text: block.text, ...at });
+        } else if (block.kind === 'tool_use') {
+            entries.push(toolEntry(claudeNamedCall(block.name, block.input), record.at ?? undefined));
         }
     }
     return entries;
+}
+
+function entriesOf(record: ClaudeRecord): Entry[] {
+    const prompt = claude.humanPrompt(record);
+    const at = record.at === null ? {} : { at: record.at };
+    const user: Entry[] = prompt === null ? [] : [{ role: 'user', text: prompt, ...at, ...(record.kind === 'attachment' ? { queued: true } : {}) }];
+    return [...user, ...agentEntries(record)];
+}
+
+function notesOf(record: ClaudeRecord): AgentNote[] {
+    const notes: AgentNote[] = [];
+    const away = awayOf(record);
+    const compacted = compactRecapOf(record);
+    if (away !== null) {
+        notes.push({ kind: 'away_summary', at: record.at, text: away });
+    }
+    if (compacted !== null) {
+        notes.push({ kind: 'compaction', at: record.at, text: compacted });
+    }
+    return notes;
+}
+
+function marksOf(record: ClaudeRecord): Mark[] {
+    const compact = claude.compactBoundary(record);
+    if (compact !== null) {
+        return [compactedMark(record, compact)];
+    }
+    return claude.compactionFailed(record) ? [{ kind: 'compaction-failed', at: record.at }] : [];
 }
 
 export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
@@ -109,27 +94,11 @@ export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'p
     const entries: Entry[] = [];
     const notes: AgentNote[] = [];
     const marks: Mark[] = [];
-    for (const row of lines.map(parse)) {
-        if (row === null) {
-            continue;
-        }
-        noteMeta(row, meta);
-        const mark = markOf(row);
-        if (mark !== null) {
-            marks.push(mark);
-        }
-        const note = noteOf(row);
-        const user = row['type'] === 'user' ? userEntry(row) : queuedEntry(row);
-        if (note !== null) {
-            notes.push(note);
-        }
-        if (user !== null) {
-            entries.push(user);
-        }
-        if (row['type'] === 'assistant') {
-            entries.push(...agentEntries(row));
-        }
+    for (const record of claude.readClaudeRecords(lines).records) {
+        noteMeta(record, meta);
+        entries.push(...entriesOf(record));
+        notes.push(...notesOf(record));
+        marks.push(...marksOf(record));
     }
     return { entries, notes, marks, ...meta };
 }
-

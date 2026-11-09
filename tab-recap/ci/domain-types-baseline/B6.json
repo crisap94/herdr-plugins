@@ -241,14 +241,9 @@
     "container": 21,
     "property": 6
   },
-  "src/adapters/transcripts/claude/prompt.ts": {
-    "parameter": 1,
-    "assertion": 1
-  },
   "src/adapters/transcripts/claude/rows.ts": {
-    "parameter": 2,
-    "return": 3,
-    "container": 9,
+    "return": 2,
+    "container": 1,
     "property": 3
   },
   "src/adapters/transcripts/claude/tool-calls.ts": {
