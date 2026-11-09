@@ -1,0 +1,100 @@
+import { statSync } from 'node:fs';
+import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
+import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { readJsonl, tailLines, tailOf } from '../jsonl.ts';
+import { claudeObserved } from './context.ts';
+import { extractClaude } from './rows.ts';
+import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './in-flight.ts';
+
+export { extractClaude };
+
+export const CLAUDE_KIND = 'claude' satisfies RegisteredKind;
+
+function answerAt(source: string, budget: number): InFlightResult {
+    let bytes = budget;
+    let tail = tailOf(source, bytes);
+    let scan = scanFlight(tail.lines);
+    while (tail.truncated && scan?.unseen === true && bytes < IN_FLIGHT_MAX_BYTES) {
+        bytes = Math.min(bytes * 2, IN_FLIGHT_MAX_BYTES);
+        tail = tailOf(source, bytes);
+        scan = scanFlight(tail.lines);
+    }
+    return answerOf(scan, tail.truncated, CLAUDE_SPLIT);
+}
+
+export const KEPT_UNKNOWN_MAX = 256;
+
+export class ClaudeTranscripts implements Transcripts {
+    readonly agent = CLAUDE_KIND;
+    private readonly root: string;
+    private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
+    readonly inFlight: SupportedInFlight = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
+
+    constructor(root = claudeProjectsRoot()) {
+        this.root = root;
+    }
+
+    locate(lane: Lane): Promise<Located> {
+        return Promise.resolve(this.find(lane));
+    }
+
+    private find(lane: Lane): Located {
+        if (lane.session === null) {
+            return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
+        }
+        const found = locateClaudeTranscript(lane.session, this.root);
+        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: found.path };
+    }
+
+    latestPrompt(source: string, budget: number): Promise<PromptResult> {
+        try {
+            const found = extractClaude(tailLines(source, budget));
+            return Promise.resolve({ kind: 'prompt', text: found.entries.findLast((entry) => entry.role === 'user')?.text ?? found.lastPrompt });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+
+    observed(source: string, budget: number): Promise<ObservedResult> {
+        try {
+            return Promise.resolve({ kind: 'observed', observed: claudeObserved(tailLines(source, budget)) });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+
+    private keep(source: string, kept: { readonly size: number; readonly answer: InFlightResult }): void {
+        this.unknownAt.delete(source);
+        this.unknownAt.set(source, kept);
+        for (const oldest of this.unknownAt.keys()) {
+            if (this.unknownAt.size <= KEPT_UNKNOWN_MAX) break;
+            this.unknownAt.delete(oldest);
+        }
+    }
+
+    private readInFlight(source: string, budget: number): Promise<InFlightResult> {
+        try {
+            const size = statSync(source).size;
+            const kept = this.unknownAt.get(source);
+            if (kept !== undefined && kept.size === size) return Promise.resolve(kept.answer);
+            const answer = answerAt(source, budget);
+            if (isUnknown(answer)) this.keep(source, { size, answer });
+            else this.unknownAt.delete(source);
+            return Promise.resolve(answer);
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+
+    read(source: string, was: Position, budget: number): Promise<ChunkResult> {
+        try {
+            const { lines, position, grew } = readJsonl(source, was, budget);
+            return Promise.resolve({ kind: 'chunk', ...extractClaude(lines), position, grew });
+        } catch (error) {
+            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+        }
+    }
+}

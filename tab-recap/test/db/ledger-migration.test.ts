@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
@@ -16,7 +16,7 @@ type Stored = readonly { readonly key: string; readonly runs: readonly { readonl
 const FIXTURE = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', 'live-items.json'), 'utf8')) as Stored;
 const SECTIONS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules'] as const;
 
-function oldDatabase(path: string): DatabaseSync {
+function oldDatabase(path: string): Database {
     const db = connect(path);
     migrate(db, MIGRATIONS.slice(0, 5));
     FIXTURE.forEach((task, index) => {
@@ -38,7 +38,7 @@ function oldDatabase(path: string): DatabaseSync {
     return db;
 }
 
-function columnBefore(db: DatabaseSync, tab: string): Record<string, string[]> {
+function columnBefore(db: Database, tab: string): Record<string, string[]> {
     const rows = db.prepare(`SELECT i.section, i.text FROM item i JOIN last_good_run g ON g.run_id = i.run_id JOIN task k ON k.id = i.task_id
       WHERE g.tab_id = ? AND i.view = 'recap' ORDER BY i.section, i.position`).all(tab) as { section: string; text: string }[];
     return Object.fromEntries(SECTIONS.map((section) => [section, rows.filter((row) => row.section === section).map((row) => row.text)]));

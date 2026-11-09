@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { instructions } from '#src/adapters/recap-instructions.ts';
+import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import { requestOf } from '#test/support.ts';
 

@@ -11,10 +11,10 @@ src/recap/domain/       PURE. imports only ./ — no I/O, no text, no adapter (f
 src/recap/application/  informer · dispatch · decode · watch-set · recap-job · extract-job (operations, gates, one retry) · ops-answer · ledger-input · replay · excerpt
 src/recap/render/       pure text for the column; `badge()` ends in `const exhaustive: never`
 src/ports/              interfaces only; every fallible read is a sum type (`Unknown`); the state has one port per aggregate: `RecapRecords`, `Ledger` (the facts), `TabViews`, `ColumnVisibility`, `Requests`, `CompactionRecords` (the daemon writes, the column and the bar read), `Boundaries` (the breaks of a session: the read side; the writes ride the run's transaction), `ClosedLanes` (closure records of closed lanes: `ClosureRecorder`, `ClosureReader`, `ClosureSweep`), `Retention` (forgetting closed tabs, except those a closure record protects); `LaneSettling` is the wait for herdr's status push
-src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr-fleet.ts imports the transport (it hands its wire to `herdr-agents.ts`)
+src/adapters/           one implementation per port (one summarizer per harness); ONLY herdr/fleet.ts imports the transport (it hands its wire to `herdr/agents.ts`)
 src/adapters/db/        the plugin's own SQLite database: one repository per aggregate (recap records, tab views, column visibility, requests, compaction records), the numbered migrations in schema/, the one-time import of the old JSON files in import/
 src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections, `recapLanguageOf`; `es` is typed as `Messages`
-src/extensions/         optional add-ons (notes, warning, upkeep); index.ts is the only registry
+src/extensions/         notes shown under a lane (stored-notes)
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
 src/daemon/             composition root + loop (never exits)
 src/column/             composition root of the column pane process
@@ -43,18 +43,21 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `domain-gates-pure` (dependency-cruiser) | `domain/gates/` imports `./` and `../name.ts` (one file up), nothing else |
 | `layers-no-io-core` and `layers-no-io-adapters` (dependency-cruiser) | application and render import no `node:` module (but `node:util`, pure text helpers), adapter, transport or composition root |
 | `recap-no-foreign-write` | only adapters write files, only under the plugin's state dir; transcripts and any file an extension reads are read-only |
-| `transport-boundary` (dependency-cruiser) | only `adapters/herdr-fleet.ts` imports the transport |
+| `transport-boundary` (dependency-cruiser) | only `adapters/herdr/fleet.ts` imports the transport |
+| `drizzle-adapter-only` (dependency-cruiser) | `drizzle-orm` is imported only under `src/adapters/db/` and `test/`; runtime dependencies are pinned exactly |
 | `brand-importers` (dependency-cruiser) | only the files that declare a brand of `brand.ts` import it (`ci/brand-importers.json`, held by `test/brand-importers.test.ts`) |
 | `recap-never-types` | no `pane.send_input`/`agent.send_keys`/`pane.input.set`: a recap never types into a lane; the only prompts are the three entry points of `recap-prompt-boundary` (compaction; handoff from the operator's command; handoff from the enabled handoff exchange), each started only because the operator asked |
-| `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr-agents.ts`. Two operator paths reach it, and only because the operator asked: the compaction (`recap/application/compaction.ts`, from the compaction request queue: one prompt for codex and opencode, a typed line for claude) and the handoff (`recap/application/handoff-flow.ts`, from the handoff request queue: one prompt). This is a documented convention for who may reach the agent port: the rule matches the herdr method names in that one adapter and does not see the callers |
-| `recap-sqlite-readonly` | a SQLite database (`DatabaseSync`) is opened `{ readOnly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
+| `recap-prompt-boundary` | `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, `adapters/herdr/agents.ts`. Two operator paths reach it, and only because the operator asked: the compaction (`recap/application/compaction.ts`, from the compaction request queue: one prompt for codex and opencode, a typed line for claude) and the handoff (`recap/application/handoff-flow.ts`, from the handoff request queue: one prompt). This is a documented convention for who may reach the agent port: the rule matches the herdr method names in that one adapter and does not see the callers |
+| `recap-sqlite-readonly` | a SQLite database (`bun:sqlite` `Database`) is opened `{ readonly: true }`: opencode's store is the agent's, never ours — only `src/adapters/db/` opens one writable (its own) |
 | `recap-write-transactions` | no bare `BEGIN`: a transaction is `writeTx` (`BEGIN IMMEDIATE`, rollback on a throw), in `adapters/db/connection.ts` only |
-| `recap-host-probes-at-the-edge` | `process.platform`, `os.platform()`/`os.type()`, `process.env.PATH` only in `src/host/` and the `*-posix`/`*-windows`/`*-xdg` adapters: the rest asks the Host, ProcessControl or ConfigPaths port |
+| `recap-no-raw-prepare` | no raw `prepare` in `adapters/db/` outside the allowlist (sqlite_schema and PRAGMA probes, `VACUUM INTO`, migrations, foreign read-only DBs, the import path); queries are Drizzle builders or typed `sql` templates over `adapters/db/drizzle/` |
+| `recap-no-drizzle-transaction` | no Drizzle `.transaction(...)`: `writeTx` is the only transaction primitive |
+| `recap-host-probes-at-the-edge` | `process.platform`, `os.platform()`/`os.type()`, `process.env.PATH` only in `src/host/` and the `*-posix`/`*-xdg` adapters: the rest asks the Host, ProcessControl or ConfigPaths port |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
-| `recap-no-comments` | the code carries no comments: meaning lives in names, types, small functions and tests, rationale in CONTEXT.md, the README or the OpenSpec design. Directive pragmas (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) stay; released migrations are frozen by `ci/check-migrations.sh` and listed under the rule's `ignores` |
+| `recap-no-comments` | the code carries no comments: meaning lives in names, types, small functions and tests, rationale in CONTEXT.md, the README or the OpenSpec design. Directive pragmas (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) stay; released migrations keep the code they run (only their types may change), held by `ci/check-migrations.sh`, and listed under the rule's `ignores` |
 
 **A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts
-an agent.** It is checked three times — `adapters/column-panes.ts` (a column is only a pane titled EXACTLY
+an agent.** It is checked three times — `adapters/herdr/column-panes.ts` (a column is only a pane titled EXACTLY
 `tab-recap`/`tab-recap:bar` that hosts no agent and, when herdr reports a label, is labelled `Recap`), the domain
 (`fold.ts` never adopts an agent pane as a column and never lets a `close-column` name a lane), and the `HerdrFleet`
 edge (`close`/`resize` look the pane up in a fresh snapshot first and refuse with an `Unknown`). There is no
@@ -75,7 +78,7 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 ## Gates
 
 ```bash
-bun install            # tsgo, oxlint (dev) and @stateforge-labs/herdr-sdk, the one runtime dependency
+bun install            # tsgo, oxlint (dev) and the runtime dependencies @stateforge-labs/herdr-sdk, @stateforge-labs/harness-adapters, @stateforge-labs/harness-hooks and drizzle-orm (pinned exactly)
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
 bash ci/test.sh        # bun test
 ```

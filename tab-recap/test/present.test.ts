@@ -52,7 +52,7 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
 });
 
 test("glow's padding is dropped, its colours kept", async () => {
-    const { trimPadding } = await import('#src/adapters/glow.ts');
+    const { trimPadding } = await import('#src/adapters/os/glow.ts');
     const esc = String.fromCodePoint(0x1b);
     assert.equal(trimPadding(`${esc}[1mGoal${esc}[0m     ${esc}[0m`), `${esc}[1mGoal${esc}[0m${esc}[0m`);
     assert.equal(trimPadding('plain   '), 'plain');

@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-# release:tag — on main's pipeline: when the manifest carries a version that has a dated changelog section
-# and no tag, create the annotated tag <plugin>-v<version> through the API at the release commit (the
-# newest commit that touched the manifest or the changelog, an ancestor of CI_COMMIT_SHA: the release
-# commit, or the merge request that completed its changelog afterwards), so the tag pipeline starts
-# as the project's own (check-release.sh, notes, releases). Every merge request that next-release lists up
-# to the release commit must be in the section (the project merges semi-linearly: the release merge request
-# is rebased on the tip, so what landed meanwhile is below the release commit), or no tag is made. The
-# version must be above every existing tag, the three versions must agree and the changelog needs its
-# link reference, or no tag is made. Nothing to do is not an error. Needs the full history and the tags
-# (the job fetches them).
-# env: RELEASE_TOKEN (api) · CI_API_V4_URL · CI_PROJECT_ID · CI_COMMIT_SHA · PLUGIN_DIR · CHANGELOG · CURL
-# Exit: 0 tagged, or nothing to tag · 1 a guard refused the tag (the job only warns) · 3 could not look, or the forge
-#       refused the tag (the job fails).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${PLUGIN_DIR:-$HERE/..}"

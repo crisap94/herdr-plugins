@@ -12,7 +12,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 
 const TAB = 'w1:t1';
 const PANE = 'w1:p2';
-const models = { claude: '', codex: '', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: '', opencode: '', custom: '' };
 
 function recorder(done: Done = { kind: 'done' }): { asked: [string, string | null][]; queued: CompactRequest[]; start: CompactStart } {
     const asked: [string, string | null][] = [];

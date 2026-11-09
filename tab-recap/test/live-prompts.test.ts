@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import assert from 'node:assert/strict';
-import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
+import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { LivePromptSource } from '#src/recap/application/dispatch.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';

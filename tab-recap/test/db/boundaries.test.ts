@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
@@ -16,8 +16,8 @@ const run = (over: Partial<RecordedRun> = {}): RecordedRun => ({
 });
 const claude = (at: number, over: Partial<LaneMark> = {}): LaneMark => ({ pane: 'w1:p1', at, cursor: 200, tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588, ...over });
 
-const rows = (db: DatabaseSync, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));
-const compaction = (db: DatabaseSync, startedAt: number, stage = 'compacted', pane = 'w1:p1'): void => {
+const rows = (db: Database, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));
+const compaction = (db: Database, startedAt: number, stage = 'compacted', pane = 'w1:p1'): void => {
     db.prepare(`INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, finished_at) VALUES (randomblob(16), 'w1:t1', ?, 'claude', ?, ?, ?, ?)`)
         .run(pane, stage, startedAt, startedAt, stage === 'compacting' ? null : startedAt + 20_000);
 };

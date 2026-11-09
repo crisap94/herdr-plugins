@@ -1,10 +1,10 @@
 export const MIN_BUN: string;
 export function bunAtLeast(version: string, minimum?: string): boolean;
 
-export type Platform = 'macos' | 'linux' | 'windows';
+export type Platform = 'macos' | 'linux';
 export type StepId =
-    | 'brew' | 'mise' | 'curl' | 'powershell'
-    | 'herdr-stop' | 'new-terminal' | 'launchctl-path' | 'restart-herdr';
+    | 'brew' | 'mise' | 'curl'
+    | 'herdr-stop' | 'new-terminal' | 'launchctl-path';
 
 export interface Refusal {
     readonly ok: false;

@@ -4,7 +4,7 @@ import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 
-const models = { claude: '', codex: '', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: '', opencode: '', custom: '' };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 test('off unless set to on: a fresh install shares nothing on herdr', () => {

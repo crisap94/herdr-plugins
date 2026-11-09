@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { openStore } from '#src/adapters/db/database.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -10,7 +10,7 @@ import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { memoryStore, must, scratchDir } from './support.ts';
+import { memoryStore, must, openFixture, scratchDir } from './support.ts';
 
 const lane = (pane: string, over: Partial<TabLane> = {}): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null, ...over });
 const view = (over: Partial<TabView> = {}): TabView => ({ tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1')], ...over });
@@ -66,7 +66,7 @@ test('a read-only open of a database below the since column lists no lanes and s
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen, view_at) VALUES ('w1:t1', 1, 1, 1)");
         old.db.exec("INSERT INTO lane (tab_id, pane, position, agent, status) VALUES ('w1:t1', 'w1:p1', 0, 'claude', 'idle')");
         old.db.close();
-        const reader = new DatabaseSync(path, { readOnly: true });
+        const reader = new Database(path, { readonly: true });
         const views = new TabViewsRepository(reader);
         assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [] });
         assert.equal(must(views.readTab('w1:t1')).lanes.length, 1);
@@ -85,7 +85,7 @@ test('a write to a database below the since column keeps the old lane shape', ()
             throw new Error('a fresh file is never newer');
         }
         old.db.close();
-        const writer = new DatabaseSync(path);
+        const writer = openFixture(path);
         const views = new TabViewsRepository(writer);
         views.writeTab(view({ lanes: [lane('w1:p1', { since: instant(5) })] }));
         assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [] });

@@ -2,16 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { duration } from '#src/adapters/desktop-package.ts';
+import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId, parseSessionId, tabId } from '#src/recap/domain/ids.ts';
-import { HcCoreFleet } from '#src/adapters/hc-core-fleet.ts';
-import { HcFleet } from '#src/adapters/hc-fleet.ts';
-import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
-import { parseHcTransport } from '#src/adapters/desktop-package.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import type { CoreEventsTiming } from '#src/adapters/desktop-package.ts';
-import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
-import type { SessionOfTerminal } from '#src/adapters/hc-sessions.ts';
+import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
+import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { SessionOfTerminal } from '#src/adapters/herdr-core/sessions.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import { FakeFault, FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
@@ -83,7 +81,7 @@ test('after the first snapshot, events cost no terminal.list and no terminal.get
     });
 });
 
-test('readScreen asks terminal.read for the screen, keeps the last lines and counts revisions like the cli path', async () => {
+test('readScreen asks terminal.read for the screen, keeps the last lines and counts revisions', async () => {
     await withFleet(async (core, fleet) => {
         core.on('terminal.read', () => ({ text: 'a\nb\nc\nd', complete: true, how: 'screen', why: null }));
         const first = await fleet.readScreen(paneId('t1'), count(2));
@@ -165,23 +163,13 @@ test('shutdown closes the link and every event stream', async () => {
     }
 });
 
-test('the transport key chooses the socket fleet only for socket; anything else keeps the cli fleet', () => {
-    assert.ok(parseHcTransport('  Socket ').kind === 'ok');
-    assert.equal(parseHcTransport('').kind, 'err');
-    assert.equal(parseHcTransport(undefined).kind, 'err');
-    const saved = process.env['TAB_RECAP_HC_TRANSPORT'];
+test('the desktop frontend always builds the socket fleet', async () => {
+    const core = await FakeHcCore.start();
     try {
-        for (const [value, socket] of [['socket', true], ['SOCKET', true], ['cli', false], ['', false], ['nonsense', false]] as const) {
-            process.env['TAB_RECAP_HC_TRANSPORT'] = value;
-            assert.equal(desktopFrontend().fleet instanceof HcCoreFleet, socket, value);
-        }
-        delete process.env['TAB_RECAP_HC_TRANSPORT'];
-        assert.ok(desktopFrontend().fleet instanceof HcFleet);
+        const frontend = desktopFrontend(core.path);
+        assert.ok(frontend.fleet instanceof HcCoreFleet);
+        await frontend.fleet.shutdown();
     } finally {
-        if (saved === undefined) {
-            delete process.env['TAB_RECAP_HC_TRANSPORT'];
-        } else {
-            process.env['TAB_RECAP_HC_TRANSPORT'] = saved;
-        }
+        await core.stop();
     }
 });

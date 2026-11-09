@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { openFixture } from './db/support.ts';
 
 export interface Fixture {
     readonly db: string;
@@ -15,7 +15,7 @@ export function toolPart(status: ToolStatus, state: Readonly<Record<string, unkn
 
 export function opencodeFixture(dir: string): Fixture {
     const db = join(dir, 'opencode.db');
-    const writer = new DatabaseSync(db);
+    const writer = openFixture(db);
     writer.exec('PRAGMA journal_mode = WAL');
     writer.exec('CREATE TABLE session (id text PRIMARY KEY, directory text NOT NULL, parent_id text, title text NOT NULL, time_updated integer NOT NULL, time_archived integer)');
     writer.exec('CREATE TABLE message (id text PRIMARY KEY, session_id text NOT NULL, time_created integer NOT NULL, time_updated integer NOT NULL, data text NOT NULL)');
@@ -26,17 +26,24 @@ export function opencodeFixture(dir: string): Fixture {
     session.run('ses_child', '/repo', 'ses_new', 'Subagent', 99, null);
     session.run('ses_gone', '/repo', null, 'Archived', 98, 1);
     session.run('ses_other', '/elsewhere', null, 'Other', 97, null);
+    const message = writer.prepare('INSERT INTO message VALUES (?, ?, ?, ?, ?)');
+    const part = writer.prepare('INSERT INTO part VALUES (?, ?, ?, ?, ?, ?)');
     let parts = 0;
     return {
         db,
         add: ({ id, session: sessionId, role, updated, parts: list, data = {} }): void => {
-            writer.prepare('INSERT INTO message VALUES (?, ?, ?, ?, ?)').run(id, sessionId, updated, updated, JSON.stringify({ role, ...data }));
-            for (const part of list) {
+            message.run(id, sessionId, updated, updated, JSON.stringify({ role, ...data }));
+            for (const item of list) {
                 parts += 1;
-                writer.prepare('INSERT INTO part VALUES (?, ?, ?, ?, ?, ?)').run(`prt_${parts}`, id, sessionId, updated, updated, JSON.stringify(part));
+                part.run(`prt_${parts}`, id, sessionId, updated, updated, JSON.stringify(item));
             }
         },
-        close: (): void => { writer.close(); },
+        close: (): void => {
+            message.finalize();
+            part.finalize();
+            session.finalize();
+            writer.close();
+        },
     };
 }
 

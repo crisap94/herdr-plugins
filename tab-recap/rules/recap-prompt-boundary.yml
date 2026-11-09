@@ -2,7 +2,7 @@ id: recap-prompt-boundary
 language: typescript
 severity: error
 message: >-
-  `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, src/adapters/herdr-agents.ts.
+  `agent.prompt`, `pane.send_text` and `pane.send_keys` are named in ONE module, src/adapters/herdr/agents.ts.
   Three entry points reach it, and nothing else does: the compaction flow, from the compaction request queue
   (the one prompt or typed line of a compaction the operator asked for); the handoff flow, from a handoff row the
   operator's command wrote (the one prompt of a handoff the operator asked for); and the same handoff flow, from a
@@ -18,7 +18,7 @@ files:
   - "**/bin/**"
   - "**/probes/recap-prompt-boundary/**"
 ignores:
-  - "**/src/adapters/herdr-agents.ts"
+  - "**/src/adapters/herdr/agents.ts"
 rule:
   kind: string_fragment
   regex: "^(agent\\.prompt|pane\\.send_(text|keys))$"

@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stateStore } from '#src/adapters/db/database.ts';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');

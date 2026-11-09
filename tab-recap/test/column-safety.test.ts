@@ -5,9 +5,11 @@ import type { Server } from 'node:net';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { agentPanesIn, columnsIn } from '#src/adapters/column-panes.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { reconciliationOf } from '#src/adapters/herdr-json.ts';
+import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
+import { resetHerdrClients } from '#src/adapters/herdr/client.ts';
+import { agentPanesIn, columnsIn } from '#src/adapters/herdr/column-panes.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { reconciliationOf } from '#src/adapters/herdr/json.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
@@ -99,6 +101,15 @@ test('a real column is still closed on stop (the guard is not a blanket no)', ()
     assert.deepEqual(intents.filter((intent) => intent.kind === 'close-column').map((intent) => String(intent.column)), ['w1:p2']);
 });
 
+function replyFor(method: string, snapshot: unknown): unknown {
+    if (method === 'session.snapshot') {
+        return { snapshot };
+    }
+    return {};
+}
+
+const PONG = { protocol: PROTOCOL, version: 'test' };
+
 async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: string; calls: string[]; done: () => void }> {
     const dir = mkdtempSync(join(tmpdir(), 'recap-herdr-'));
     const path = join(dir, 'herdr.sock');
@@ -108,8 +119,10 @@ async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: str
         socket.on('data', (chunk: string) => {
             for (const line of chunk.split('\n').filter((entry) => entry !== '')) {
                 const request = JSON.parse(line) as { id: string; method: string };
-                calls.push(request.method);
-                const result = request.method === 'session.snapshot' ? { snapshot } : {};
+                if (request.method !== 'ping') {
+                    calls.push(request.method);
+                }
+                const result = request.method === 'ping' ? PONG : replyFor(request.method, snapshot);
                 socket.write(`${JSON.stringify({ id: request.id, result })}\n`);
             }
         });
@@ -126,6 +139,7 @@ test('HerdrFleet refuses to close or resize a pane that hosts an agent — and s
     const herdr = await fakeHerdr(snapshot);
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = herdr.path;
+    resetHerdrClients();
     try {
         const fleet = new HerdrFleet('/state');
         for (const target of ['w1:p1', 'w1:p3']) {
@@ -138,7 +152,9 @@ test('HerdrFleet refuses to close or resize a pane that hosts an agent — and s
         assert.ok(!('swap' in fleet) && !('focus' in fleet), 'the fleet cannot swap or focus a pane at all');
         assert.ok(herdr.calls.includes('pane.close'), 'a real column is closed');
     } finally {
+        resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        resetHerdrClients();
         herdr.done();
     }
 });
@@ -150,7 +166,9 @@ test('HerdrFleet refuses when it cannot check: herdr unreachable means no close'
         const closed = await new HerdrFleet('/state').close(paneId('w1:p1'));
         assert.ok(isUnknown(closed));
     } finally {
+        resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        resetHerdrClients();
     }
 });
 
@@ -165,12 +183,15 @@ test('HerdrFleet.closeEvery: ONE look at herdr, then a close for each of OUR col
     const herdr = await fakeHerdr(snapshot);
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = herdr.path;
+    resetHerdrClients();
     try {
         const result = await new HerdrFleet('/state').closeEvery();
         assert.deepEqual(result, { kind: 'closed', closed: 4, failed: 0 });
         assert.deepEqual(herdr.calls, ['session.snapshot', 'pane.close', 'pane.close', 'pane.close', 'pane.close'], 'one snapshot for the whole batch');
     } finally {
+        resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        resetHerdrClients();
         herdr.done();
     }
 });
@@ -181,6 +202,8 @@ test('HerdrFleet.closeEvery: herdr unreachable is an Unknown, not a throw', asyn
     try {
         assert.ok(isUnknown(await new HerdrFleet('/state').closeEvery()));
     } finally {
+        resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        resetHerdrClients();
     }
 });

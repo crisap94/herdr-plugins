@@ -1,13 +1,19 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
+import { sql } from 'drizzle-orm';
+import { tab as tabs } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 export class TabRow {
-    private readonly upsert: StatementSync;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync) {
-        this.upsert = db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET last_seen = MAX(last_seen, excluded.last_seen)');
+    constructor(db: Database) {
+        this.orm = ormOf(db);
     }
 
     ensure(tab: string, at: number): void {
-        this.upsert.run(tab, at, at);
+        this.orm.insert(tabs).values({ id: tabId(tab), firstSeen: at, lastSeen: at, running: 0 })
+            .onConflictDoUpdate({ target: tabs.id, set: { lastSeen: sql`MAX(${tabs.lastSeen}, excluded.last_seen)` } })
+            .run();
     }
 }

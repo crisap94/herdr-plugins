@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { decode, paneSessionOf } from '#src/recap/application/decode.ts';
 import { specsFor, GLOBAL_TOPICS, PER_PANE_TOPIC } from '#src/recap/application/watch-set.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 
 test('emitted frames use underscores; both spellings decode', () => {
     const data = { pane_id: 'w1:p1', workspace_id: 'w1', agent_status: 'done' };

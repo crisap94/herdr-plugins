@@ -2,10 +2,10 @@ id = "tab-recap"
 name = "Tab Recap"
 version = "2.6.2"
 min_herdr_version = "0.9.0"
-description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode, hermes or a custom command) at the end of each turn."
+description = "A recap column on the right of every tab with a coding agent: a rolling, structured recap of the conversation (Goal · Now · Needs you · Done · Decisions · Next · Links), written by the coding agent of your choice (claude, codex, opencode or a custom command) at the end of each turn."
 platforms = ["linux", "macos"]
 
-# The one runtime dependency (@stateforge-labs/herdr-sdk, the herdr-core client) is installed when herdr installs the plugin.
+# Runtime dependencies are allowed, each pinned to an exact version. The herdr-core client (@stateforge-labs/herdr-sdk) and drizzle-orm are installed when herdr installs the plugin.
 [[build]]
 command = ["bun", "install", "--frozen-lockfile", "--production"]
 

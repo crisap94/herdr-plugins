@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
+import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { reportOf } from '#src/recap/application/eval-report.ts';
 import { judgeRun } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';

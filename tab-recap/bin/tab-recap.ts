@@ -1,23 +1,23 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import type { Requests } from '#src/ports/requests.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
-import { boundKeys, herdrConfigPath } from '#src/adapters/host-check.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
+import { boundKeys, herdrConfigPath } from '#src/adapters/herdr/host-check.ts';
 import { bunHost } from '#src/host/bun-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
-import { loadExtensions } from '#src/extensions/load.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { BACKEND_IDS, configDir, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { hasModel } from '#src/recap/domain/backend.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
@@ -117,7 +117,7 @@ function status(): number {
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
-        t.statusExtensions([...loadExtensions(configGetter()).map((extension) => extension.id), STORED_NOTES_ID].join(', ')),
+        t.statusExtensions(STORED_NOTES_ID),
         `${t.statusState} ${stateDir()}`,
         `${t.statusConfig} ${join(configDir(), 'config.env')}`,
     ].join('\n'));
@@ -126,7 +126,7 @@ function status(): number {
 
 async function configure(): Promise<number> {
     const tab = currentTab();
-    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0); });
+    await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
     const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);

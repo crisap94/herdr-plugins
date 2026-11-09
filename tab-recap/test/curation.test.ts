@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC } from '#src/adapters/rubric.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
 import { curatorInput } from '#src/recap/application/curator-input.ts';
 import { curationOf, STORY_WORDS } from '#src/recap/domain/curation.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';

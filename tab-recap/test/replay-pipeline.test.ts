@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { parseEval } from '#src/recap/application/eval-options.ts';
 import { replay } from '#src/recap/application/replay.ts';

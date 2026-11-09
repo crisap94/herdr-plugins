@@ -6,7 +6,7 @@ What is shared by every plugin (labels, commits, pull requests) is in the reposi
 ## Setup
 
 ```bash
-bun install          # the dev tools (tsgo, oxlint, ast-grep) and the one runtime dependency, @stateforge-labs/herdr-sdk
+bun install          # the dev tools (tsgo, oxlint, ast-grep) and the runtime dependencies, @stateforge-labs/herdr-sdk, @stateforge-labs/harness-adapters, @stateforge-labs/harness-hooks and drizzle-orm (all pinned exactly)
 herdr plugin link .  # run your checkout inside herdr
 ```
 
@@ -49,10 +49,10 @@ agent acting as the test lane runs them, never a person by hand.
 
 ## House rules
 
-- **TypeScript on Bun ≥ 1.4.4, run directly.** No build step. No Node fallback. One runtime dependency, `@stateforge-labs/herdr-sdk` (the herdr-core client, itself dependency-free), which herdr installs
-  with `bun install --frozen-lockfile --production` (the `[[build]]` entry of `herdr-plugin.toml`); no other. The files herdr runs first (the
+- **TypeScript on Bun ≥ 1.4.4, run directly.** No build step. No Node fallback. Runtime dependencies are allowed, each pinned to an exact version (no range, never `^` or `~`): `@stateforge-labs/herdr-sdk` (the herdr-core client, itself dependency-free), `@stateforge-labs/harness-adapters` (the harness CLIs' transcript readers, catalogues and call builders), `@stateforge-labs/harness-hooks` (the harness tool and hook names, used directly by `src/experiment/read-paths.ts`) and `drizzle-orm`. herdr installs them
+  with `bun install --frozen-lockfile --production` (the `[[build]]` entry of `herdr-plugin.toml`). `drizzle-orm` is imported only under `src/adapters/db/` and `test/` (rule `drizzle-adapter-only`). The files herdr runs first (the
   `launch.mjs` launchers and `src/host/`) are plain JavaScript on purpose, so an old Bun can say it is too old; anything that
-  depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family.
+  depends on the operating system goes behind a port in `src/ports/` with one adapter per OS family (`macos` and `linux`).
 - **Layered, with red lines.** A pure domain fold, sum-typed ports, one adapter per port; ast-grep
   rules enforce the syntax boundaries and dependency-cruiser (`.dependency-cruiser.cjs`) enforces
   the import boundaries. Each rule ships a bad/good probe it must bite. A new rule needs both
@@ -82,7 +82,7 @@ bun bin/check-domain-types.ts --json                                # every find
   hits fails.
 - **The ratchet.** While the tree is converted, `ci/domain-types-baseline/<lane>.json` holds one count per category per file. A count
   above its entry fails, a count below it fails as stale (lower the entry, and delete it at zero), a category never pays for another,
-  and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one.
+  and a file without an entry must be clean. `ci/check-domain-baseline.sh` fails a merge request that raises an entry or adds one. A renamed file keeps its entry when no count rose: renames are followed commit by commit back to the merge base, and a file carved out of another one, which git cannot see as a rename, is listed as `new path<TAB>old path` in `ci/domain-types-moves.tsv`.
 - **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
   its files, its baseline, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
   `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`bun ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
@@ -94,30 +94,32 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
 
 - **Add a file** `NNN-name.ts` exporting `{ version: NNN, name, up }` and list it in `schema/index.ts` (the only registry).
   `up` is a list of SQL statements, or a function taking the database.
-- **Never edit a released migration** (one that is in a `tab-recap-v*` tag): a fix is a new number. `ci/check-migrations.sh`
-  (part of `ci/lint.sh`) fails when a released file changed or was deleted.
+- **Never change what a released migration runs** (one that is in a `tab-recap-v*` tag): a fix is a new number. Its types may
+  move with the code (a released migration now types its handle as `bun:sqlite`'s `Database`). `ci/check-migrations.sh` (part of
+  `ci/lint.sh`) strips the types of the released and the current file with Bun's transpiler and fails when the code left differs,
+  or when a released file was deleted; `ci/migration-runtime-bite.sh` proves both ways.
 - **Number it exactly one above `main`'s highest** (and consecutively when a branch adds several): a gap makes a database skip the
   numbers between, and a number already taken collides with a migration that landed first. `ci/check-migrations.sh` reads
   `origin/main` (`MIGRATIONS_BASE`) and fails any other number; `ci/migration-number-bite.sh` proves it fails a gap, a repeat and a
   duplicate. After another migration lands, rebase and renumber.
 - **Changing a column** SQLite cannot `ALTER`: use `rebuildTable` (`src/adapters/db/rebuild.ts`) — create the new table, copy,
   drop, rename, recreate indexes. The runner has switched foreign keys off and refuses to commit while one is broken.
-  Use only SQL the SQLite behind `node:sqlite` supports (SQLite 3.53).
+  Use only SQL the SQLite that `bun:sqlite` links supports.
 - **Index every foreign-key column** (a test walks them), keep ids as UUIDv7 `BLOB(16)` for entity tables, money as integer
   millionths, times as epoch milliseconds.
 - **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
   one and compares it with a fresh install.
-- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`).
+- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`). Queries are Drizzle builders or typed `sql` templates over the projection in `src/adapters/db/drizzle/`, reached through `ormOf(db)` in `orm.ts`; the raw `prepare` is kept only where the allowlist in the `recap-no-raw-prepare` rule says so (sqlite_schema and PRAGMA probes, `VACUUM INTO`, migrations, the foreign read-only DBs and the import path), and every new raw statement there needs its reason written in the rule's `note` or the file's header. Each moved query gets a parity case in `test/db/parity*.test.ts` that runs the old SQL and the new query on the same seeded database, including BLOB bytes and bigint values.
 
 An upgrade first copies the database to `tab-recap.db.v<old>.bak` (the newest three are kept). A database written by a
 **newer** plugin than the one running is opened read-only and left alone: the daemon says so and exits, the columns show the
 message. **Rolling back** a schema change: stop the daemon (`tab-recap.stop`), put the plugin's older version back, restore the
 backup (`cp tab-recap.db.v<n>.bak tab-recap.db`, and delete `tab-recap.db-wal` / `-shm`), start it. To go back to 1.5.1, see the
-plugin's README ("State and rolling back").
+plugin's reference (`docs/REFERENCE.md`, "State and rolling back").
 
 ## Screenshots
 
-The README's pictures are drawn from the plugin's own views with invented data. After a change to
+The reference's pictures are drawn from the plugin's own views with invented data. After a change to
 what the column, bar or settings modal show, regenerate and commit them:
 
 ```bash

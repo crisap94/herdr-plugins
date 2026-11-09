@@ -1,4 +1,4 @@
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { startCompact } from '#src/recap/application/compact-start.ts';
 import type { Requests } from '#src/ports/requests.ts';

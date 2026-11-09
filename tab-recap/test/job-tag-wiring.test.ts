@@ -44,8 +44,6 @@ done
 
 const CUSTOM_COMMAND = 'tab-recap-fake-custom';
 
-const POSIX_ONLY = process.platform === 'win32' ? 'posix shell stand-ins' : false;
-
 async function envSeenBy(backend: string, tagging: 'on' | 'off', site: Site, inherited?: string): Promise<string> {
     const root = mkdtempSync(join(tmpdir(), 'job-tag-wiring-'));
     const bin = join(root, 'bin');
@@ -53,7 +51,7 @@ async function envSeenBy(backend: string, tagging: 'on' | 'off', site: Site, inh
     SETTING_KEYS.forEach((key) => { delete process.env[key]; });
     try {
         mkdirSync(bin);
-        for (const name of new Set([backend, CUSTOM_COMMAND, 'claude', 'codex', 'opencode', 'hermes'])) {
+        for (const name of new Set([backend, CUSTOM_COMMAND, 'claude', 'codex', 'opencode'])) {
             writeFileSync(join(bin, name), FAKE_BINARY);
             chmodSync(join(bin, name), 0o755);
         }
@@ -77,22 +75,22 @@ async function envSeenBy(backend: string, tagging: 'on' | 'off', site: Site, inh
 
 for (const backend of ['claude', 'codex'] as const) {
     for (const site of SITES) {
-        test(`${site.name} on ${backend}: the child carries '${site.tag}' in OTEL_RESOURCE_ATTRIBUTES when tagging is on`, { skip: POSIX_ONLY }, async () => {
+        test(`${site.name} on ${backend}: the child carries '${site.tag}' in OTEL_RESOURCE_ATTRIBUTES when tagging is on`, async () => {
             assert.equal(await envSeenBy(backend, 'on', site), `tab_recap.job=${site.tag}`);
         });
 
-        test(`${site.name} on ${backend}: the child carries no job tag when tagging is off`, { skip: POSIX_ONLY }, async () => {
+        test(`${site.name} on ${backend}: the child carries no job tag when tagging is off`, async () => {
             assert.equal(await envSeenBy(backend, 'off', site), '');
         });
     }
 }
 
-for (const backend of ['opencode', 'hermes', 'custom'] as const) {
-    test(`${backend}: the child gets no job tag with tagging on, and an inherited OTEL_RESOURCE_ATTRIBUTES passes through unchanged`, { skip: POSIX_ONLY }, async () => {
+for (const backend of ['opencode', 'custom'] as const) {
+    test(`${backend}: the child gets no job tag with tagging on, and an inherited OTEL_RESOURCE_ATTRIBUTES passes through unchanged`, async () => {
         assert.equal(await envSeenBy(backend, 'on', WRITE, 'service.name=parent,team=ops'), 'service.name=parent,team=ops');
     });
 }
 
-test('claude: an inherited OTEL_RESOURCE_ATTRIBUTES is kept with the job tag appended', { skip: POSIX_ONLY }, async () => {
+test('claude: an inherited OTEL_RESOURCE_ATTRIBUTES is kept with the job tag appended', async () => {
     assert.equal(await envSeenBy('claude', 'on', WRITE, 'service.name=parent,tab_recap.job=old'), 'service.name=parent,tab_recap.job=recap-writer');
 });

@@ -6,7 +6,7 @@ import type { Blindness } from '#src/recap/application/informer.ts';
 import { watchSet } from '#src/recap/domain/board.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 

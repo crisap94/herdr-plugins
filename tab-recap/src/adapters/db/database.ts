@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
@@ -15,6 +15,7 @@ import type { Retention } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
+import { closeDatabase } from './connection.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
@@ -46,7 +47,7 @@ import { WorktreeStatusRepository } from './worktree-status.ts';
 
 export interface Store {
     readonly kind: 'ready';
-    readonly db: DatabaseSync;
+    readonly db: Database;
     readonly records: RecapRecords;
     readonly ledger: Ledger;
     readonly views: TabViews & LiveLanes;
@@ -79,7 +80,7 @@ export interface StoreOptions {
     readonly closedDays?: ClosedLaneDays;
 }
 
-export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
+export function storeOver(db: Database, options: StoreOptions = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
@@ -91,7 +92,7 @@ export function storeOver(db: DatabaseSync, options: StoreOptions = {}): Store {
         closedDays: options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS,
         worktrees: new WorktreeStatusRepository(db), paneNotes: new PaneNotesRepository(db), paneAlerts: new PaneAlertsRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
-        close: (): void => { db.close(); },
+        close: (): void => { closeDatabase(db); },
     };
 }
 

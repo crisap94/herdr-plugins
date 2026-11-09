@@ -1,7 +1,7 @@
 import { join } from 'node:path';
-import { deciderOf, isArm } from '#src/adapters/experiment-arms.ts';
-import { readPoints } from '#src/adapters/experiment-data.ts';
-import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment-io.ts';
+import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
+import { readPoints } from '#src/adapters/experiment/data.ts';
+import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';

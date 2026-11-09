@@ -1,5 +1,5 @@
 import { en } from '#src/i18n/en.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';

@@ -1,16 +1,14 @@
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
-import { HarnessEnumerator } from '#src/adapters/harness-enumerator.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
-import { ARGV_BYTES } from '#src/adapters/recap-prompt.ts';
+import { CustomHarness } from '#src/adapters/harness/custom.ts';
+import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '#src/ports/unknowable.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';
-import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): Transcripts => ({
@@ -30,19 +28,17 @@ const entry = (text: string, at?: number): Entry => ({ role: 'agent', text, ...(
 test('the lanes\' newest turns are read from the start of what each reader keeps (its own budget), merged by time; a lane with no source or an unreadable one adds nothing', async () => {
     const asked: { source: string; was: Position }[] = [];
     const readers = registryWith({ claude: reader('claude', { '/a.jsonl': [entry('a1', 1), entry('a2', 5)] }, asked) }, reader(SCREEN_READER_ID, { 'screen:p3': [entry('s1', 3)] }, asked));
-    const tail = await tailOf(readers, [lane('p1', 'claude', '/a.jsonl'), lane('p2', 'claude', ''), lane('p3', 'hermes', 'screen:p3'), lane('p4', 'claude', '/gone.jsonl')]);
+    const tail = await tailOf(readers, [lane('p1', 'claude', '/a.jsonl'), lane('p2', 'claude', ''), lane('p3', 'gemini', 'screen:p3'), lane('p4', 'claude', '/gone.jsonl')]);
     assert.deepEqual(tail.map((each) => each.text), ['a1', 's1', 'a2']);
     assert.ok(asked.every((each) => each.was === UNREAD), 'no position is moved');
     assert.deepEqual(await tailOf(registryWith({}), [lane('p1', 'claude', '/a.jsonl')]), []);
     assert.deepEqual((await tailOf(registryWith({ claude: reader('claude', { '/a.jsonl': [entry('x'), entry('y')] }) }), [lane('p1', 'claude', '/a.jsonl')])).map((each) => each.text), ['x', 'y'], 'one lane keeps its own order');
 });
 
-test('the enumeration is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+test('the enumeration is a job on a harness: its instructions follow the document', async () => {
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const enumerator = new HarnessEnumerator(echo, { model: '', effort: 'low' });
     assert.equal(enumerator.job, 'custom · low');
     const written = await enumerator.write('<enumerate_input version="1"/>');
     assert.ok(written.kind === 'enumerated' && written.text.startsWith('<enumerate_input') && written.text.includes('Copy, never paraphrase.'));
-    const refused = await new HarnessEnumerator(new HermesHarness(process.cwd(), 1), { model: '', effort: 'low' }).write('x'.repeat(ARGV_BYTES));
-    assert.ok(isUnknown(refused) && refused.why.why === 'unreadable');
 });

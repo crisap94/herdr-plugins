@@ -1,23 +1,23 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { backUp, backupsOf } from './backup.ts';
-import { connect, connectReadOnly, MEMORY } from './connection.ts';
+import { closeDatabase, connect, connectReadOnly, MEMORY } from './connection.ts';
 import { latestVersion, migrate, versionOf } from './migrate.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 
 export interface NewerDatabase {
     readonly kind: 'newer-db';
-    readonly db: DatabaseSync;
+    readonly db: Database;
     readonly found: number;
     readonly known: number;
     readonly backup: string | null;
 }
 
-export type Opened = { readonly kind: 'ready'; readonly db: DatabaseSync } | NewerDatabase;
+export type Opened = { readonly kind: 'ready'; readonly db: Database } | NewerDatabase;
 
-function createFresh(db: DatabaseSync, path: string): void {
+function createFresh(db: Database, path: string): void {
     db.exec('PRAGMA auto_vacuum = INCREMENTAL');
     if (path !== MEMORY) {
         db.exec('PRAGMA journal_mode = WAL');
@@ -42,7 +42,7 @@ export function openDatabase(path: string, migrations: readonly Migration[] = MI
     const db = connect(path);
     const current = versionOf(db);
     if (current > known) {
-        db.close();
+        closeDatabase(db);
         return newerThan(path, known) ?? { kind: 'ready', db: connect(path) };
     }
     if (current === 0) {

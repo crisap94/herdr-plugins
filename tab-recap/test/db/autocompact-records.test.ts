@@ -24,7 +24,7 @@ test('a decision round-trips: the answers, the coverage, the cost in micro-dolla
     const id = store.autocompact.record(decision({ coverage: { keeps_0: 0.9 }, why: 'x' }));
     assert.match(id, /^dcn_[0-9a-hjkmnp-tv-z]{26}$/);
     assert.deepEqual(store.autocompact.newest(5), [{ ...decision({ coverage: { keeps_0: 0.9 }, why: 'x' }), id, askedVerdict: 'compact', coverageOutcome: null, coverageMs: null, coverageCostUsd: null, compactionId: null }]);
-    assert.equal(must(store.db.prepare('SELECT cost_micro_usd AS c FROM autocompact_decision').get()).c, 31);
+    assert.equal(store.db.prepare('SELECT cost_micro_usd AS c FROM autocompact_decision').get()?.c, 31);
 });
 
 test('newest: newest first, limited, of one tab when asked', () => {
@@ -147,7 +147,7 @@ test('a checked brief is stored with its exact checked fact wording and pruned b
     const id = store.autocompact.record(decision());
     const checked = [{ section: 'needs' as const, text: 'keep the title', why: null }];
     store.autocompactBriefs.put(id, 'brief body', [0], checked, 100);
-    const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | undefined);
+    const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | null);
     assert.equal(row.briefed_at, 100);
     assert.deepEqual(decode(row.body), { brief: 'brief body', appended: [0], checked });
     assert.equal(store.autocompactBriefs.clearBefore(101), 1);

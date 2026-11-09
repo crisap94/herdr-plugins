@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveTarget } from '#src/recap/application/handoff-target.ts';
 import type { TargetDeps } from '#src/recap/application/handoff-target.ts';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -118,7 +118,7 @@ test('the same pane as source and target is refused before any lane is resolved'
 });
 
 test('a lane whose kind has no handoff plan is unsupported no-plan and sends nothing', async () => {
-    for (const agent of ['hermes', 'gemini']) {
+    for (const agent of ['gemini', 'zed']) {
         const deps = depsOf([seen('w1:p1', agent, { session: 'sess-1' })], notStarted);
         assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'unsupported', reason: 'no-plan' }, agent);
         assert.equal(deps.reads(), 0);

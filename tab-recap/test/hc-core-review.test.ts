@@ -1,15 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/adapters/desktop-package.ts';
-import { duration } from '#src/adapters/desktop-package.ts';
+import { parseCount } from '#src/adapters/herdr-core/sdk-core.ts';
+import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { HcCoreFleet } from '#src/adapters/hc-core-fleet.ts';
-import { CoreEvents } from '#src/adapters/desktop-package.ts';
-import { HcCoreLines, parseWireChunk } from '#src/adapters/desktop-package.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/desktop-package.ts';
-import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
+import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
+import { CoreEvents } from '#src/adapters/herdr-core/sdk-core.ts';
+import { HcCoreLines, parseWireChunk } from '#src/adapters/herdr-core/sdk-core.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, agentTerminal, later, nextWithin } from '@stateforge-labs/herdr-sdk/core/test-kit';
 

@@ -1,7 +1,7 @@
 import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
+import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
@@ -60,12 +60,6 @@ test('a located transcript reports its count of unfinished work', async () => {
 test('a read that fails is unknown', async () => {
     const reader = fakeReader('claude', { kind: 'located', source: '/t/sess-1.jsonl' }, unknown({ why: 'unreadable', detail: 'tail' }));
     assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'unknown', why: 'unreadable: tail' });
-});
-
-test('hermes declares in-flight unsupported and is unknown without a read', async () => {
-    const hermes = laneFrom({ paneId: 'w1:p4', tabId: 'w1:t1', workspaceId: 'w1', agent: 'hermes', session: 's', cwd: '/repo' });
-    const reading = await adapterFor(fakeReader('hermes', { kind: 'located', source: 'x' }, { kind: 'in-flight', count: 1, background: [] })).read(hermes);
-    assert.equal(reading.kind, 'unknown');
 });
 
 test('an agent with no reader of its own is unknown', async () => {

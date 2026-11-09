@@ -1,5 +1,5 @@
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 
-export function open(path: string): DatabaseSync {
-    return new DatabaseSync(path, { timeout: 2000 });
+export function open(path: string): Database {
+    return new Database(path, { readwrite: true, create: true });
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { instructions, message } from '#src/adapters/recap-prompt.ts';
+import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { languageName, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { localeOf } from '#src/daemon/config.ts';

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { ClosedLanesRepository } from '#src/adapters/db/closed-lanes.ts';
 import { connectReadOnly, MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -22,7 +22,7 @@ const PANE = paneId('w1:p1');
 const FOURTEEN = closedLaneDaysOf('14');
 const NOW = instant(Date.parse('2026-10-11T12:00:00Z'));
 
-const freshDb = (): DatabaseSync => {
+const freshDb = (): Database => {
     const opened = openDatabase(MEMORY);
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
@@ -30,17 +30,17 @@ const freshDb = (): DatabaseSync => {
     return opened.db;
 };
 
-function seedTab(db: DatabaseSync): void {
+function seedTab(db: Database): void {
     db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
 }
 
-function seedTranscript(db: DatabaseSync, source: string, firstSeen: number): Uint8Array {
+function seedTranscript(db: Database, source: string, firstSeen: number): Uint8Array {
     const id = ids.next();
     db.prepare("INSERT INTO transcript (id, tab_id, pane, agent, source, attached, cursor, first_seen) VALUES (?, 'w1:t1', 'w1:p1', 'claude', ?, 1, 0, ?)").run(id, source, firstSeen);
     return id;
 }
 
-function seedRun(db: DatabaseSync, at: number, transcript: Uint8Array, key: string, name: string): void {
+function seedRun(db: Database, at: number, transcript: Uint8Array, key: string, name: string): void {
     const chapter = ids.next();
     db.prepare("INSERT INTO chapter (id, tab_id, n, started_at) VALUES (?, 'w1:t1', ?, 1)").run(chapter, at);
     const run = ids.next();

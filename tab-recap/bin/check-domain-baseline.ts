@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ok, type Result } from '#src/protocol/result.ts';
-import { guard, parseBaseline } from './domain-baseline.ts';
+import { chainRenames, guard, parseBaseline, parseMoves } from './domain-baseline.ts';
 import type { Counts } from './domain-findings.ts';
 
 const git = (args: readonly string[]): string => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -25,13 +25,21 @@ const baseTexts = (dir: string, base: string): readonly string[] =>
         .filter((line) => line.endsWith('.json'))
         .map((path) => git(['show', `${base}:./${path.slice(path.indexOf(dir))}`]));
 
-const compare = (dir: string, before: readonly string[]): Result<readonly string[], string> => {
+const MOVES = 'ci/domain-types-moves.tsv';
+
+const renamesOf = (base: string): ReadonlyMap<string, string> => {
+    const committed = git(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
+    const pending = git(['diff', '-M', '--name-status', '--relative', 'HEAD']).split('\n');
+    return chainRenames([...committed, ...pending], existsSync(MOVES) ? parseMoves(readFileSync(MOVES, 'utf8')) : new Map());
+};
+
+const compare = (dir: string, before: readonly string[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
     const was = countsOfTexts(before);
     const now = countsOfTexts(readdirSync(dir).filter((name) => name.endsWith('.json')).map((name) => readFileSync(join(dir, name), 'utf8')));
     if (was.kind === 'err') {
         return was;
     }
-    return now.kind === 'err' ? now : ok(guard(was.value, now.value));
+    return now.kind === 'err' ? now : ok(guard(was.value, now.value, renamed));
 };
 
 const main = (args: readonly string[]): number => {
@@ -46,7 +54,7 @@ const main = (args: readonly string[]): number => {
             console.log(`domain baseline: ${dir} is not at the merge base: this change introduces it`);
             return 0;
         }
-        const problems = compare(dir, before);
+        const problems = compare(dir, before, renamesOf(base));
         if (problems.kind === 'err') {
             console.error(`domain baseline: 3 — NOT COVERED: ${problems.error}`);
             return 3;

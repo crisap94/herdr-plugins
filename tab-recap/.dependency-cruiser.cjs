@@ -49,7 +49,7 @@ module.exports = {
     {
       name: 'transport-boundary',
       severity: 'error',
-      from: { pathNot: ['^src/adapters/herdr-fleet\\.ts$', '^src/transport/'] },
+      from: { pathNot: ['^src/adapters/herdr/fleet\\.ts$', '^src/transport/'] },
       to: { path: '^src/transport/' },
     },
     {
@@ -57,6 +57,12 @@ module.exports = {
       severity: 'error',
       from: { pathNot: [...brandImporters.map(exact), brandFile] },
       to: { path: brandFile },
+    },
+    {
+      name: 'drizzle-adapter-only',
+      severity: 'error',
+      from: { pathNot: ['^src/adapters/db/', '^test/'] },
+      to: { path: 'node_modules/drizzle-orm(/|$)' },
     },
     {
       name: 'no-circular',
@@ -67,7 +73,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true },
+      from: { orphan: true, pathNot: '\\.d\\.ts$' },
       to: {},
     },
     {

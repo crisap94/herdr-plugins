@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ExperimentStore } from '#src/adapters/experiment-store.ts';
+import { ExperimentStore } from '#src/adapters/experiment/store.ts';
 
 function inTempDir(body: (dir: string) => void): void {
     const dir = mkdtempSync(join(tmpdir(), 'recap-experiment-store-'));

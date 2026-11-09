@@ -2,7 +2,6 @@ import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
-import type { SetupNote } from '#src/recap/domain/setup-note.ts';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 
@@ -40,7 +39,6 @@ export interface Messages {
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
-        readonly harnessNotes: Readonly<Record<SetupNote, string>>;
         readonly legend: { readonly current: string; readonly available: string; readonly missing: string };
         readonly locked: (name: string) => string;
         readonly modelDefault: (model: string) => string;

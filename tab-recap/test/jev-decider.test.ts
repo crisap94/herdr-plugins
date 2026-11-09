@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { jevKey } from '#src/adapters/jev-key.ts';
+import { JevDecider } from '#src/adapters/job/jev-decider.ts';
+import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 

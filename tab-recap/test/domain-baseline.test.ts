@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { filesAbove, guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import { chainRenames, filesAbove, guard, loadBaseline, parseMoves, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCRATCH = mkdtempSync(join(tmpdir(), 'domain-baseline-'));
@@ -54,6 +54,29 @@ test('the merge-base guard refuses a raised entry and a new entry, and allows a 
     assert.deepEqual(guard(base, { [FILE]: { parameter: 1 } }), []);
     assert.deepEqual(guard(base, {}), []);
     assert.deepEqual(guard(base, { [FILE]: { parameter: 2, assertion: 1, return: 1 } }), [`new entry: ${FILE}: return 1`]);
+});
+
+test('renames chain across commits back to the merge-base path, and a listed move fills only what git did not see', () => {
+    const lines = ['R100\tsrc/a.ts\tsrc/x/a.ts', 'M\tsrc/x/a.ts', 'R061\tsrc/x/a.ts\tsrc/y/a.ts', ''];
+    const moves = new Map([['src/y/a.ts', 'src/wrong.ts'], ['src/carved.ts', 'src/old.ts']]);
+    const origin = chainRenames(lines, moves);
+    assert.equal(origin.get('src/y/a.ts'), 'src/a.ts');
+    assert.equal(origin.get('src/carved.ts'), 'src/old.ts');
+    const base = { 'src/a.ts': { container: 3 }, 'src/old.ts': { container: 20 } };
+    assert.deepEqual(guard(base, { 'src/y/a.ts': { container: 3 }, 'src/carved.ts': { container: 2 } }, origin), []);
+});
+
+test('a new file at a path that was renamed away or deleted does not inherit the old entry', () => {
+    const base = { 'src/a.ts': { container: 5 }, 'src/c.ts': { container: 3 } };
+    const origin = chainRenames(['R100\tsrc/a.ts\tsrc/b.ts', 'A\tsrc/a.ts', 'D\tsrc/c.ts', 'A\tsrc/c.ts']);
+    assert.deepEqual(guard(base, { 'src/b.ts': { container: 5 }, 'src/a.ts': { container: 5 }, 'src/c.ts': { container: 3 } }, origin), [
+        'new entry: src/a.ts: container 5',
+        'new entry: src/c.ts: container 3',
+    ]);
+});
+
+test('the moves file reads CRLF lines and trims its cells', () => {
+    assert.deepEqual([...parseMoves('src/n.ts\tsrc/o.ts \r\n\r\n')], [['src/n.ts', 'src/o.ts']]);
 });
 
 test('a lane file holds only the files its lane owns', () => {
@@ -153,10 +176,12 @@ const repo = (name: string): string => {
     return dir;
 };
 
-const guarded = (dir: string): ReturnType<typeof spawnSync> => {
-    const base = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
-    return spawnSync(process.execPath, [join(ROOT, 'bin/check-domain-baseline.ts'), 'ci/domain-types-baseline', base], { cwd: dir, encoding: 'utf8' });
-};
+const headOf = (dir: string): string => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+
+const guardedAgainst = (dir: string, base: string): ReturnType<typeof spawnSync> =>
+    spawnSync(process.execPath, [join(ROOT, 'bin/check-domain-baseline.ts'), 'ci/domain-types-baseline', base], { cwd: dir, encoding: 'utf8' });
+
+const guarded = (dir: string): ReturnType<typeof spawnSync> => guardedAgainst(dir, headOf(dir));
 
 test('the merge-base guard passes an unchanged baseline and a lowered one', () => {
     const dir = repo('guard-ok');
@@ -200,4 +225,78 @@ test('the files above their entry are named from the counts, not from the printe
     const found = { [FILE]: { parameter: 3 }, [OTHER]: { return: 1 }, 'src/domain/equal.ts': { parameter: 1 }, 'src/domain/lower.ts': { parameter: 1 } };
     const baseline = { [FILE]: { parameter: 2 }, 'src/domain/equal.ts': { parameter: 1 }, 'src/domain/lower.ts': { parameter: 2 }, 'src/domain/gone.ts': { return: 1 } };
     assert.deepEqual([...filesAbove(found, baseline)].toSorted(), [FILE, OTHER].toSorted());
+});
+
+const MOVED = 'src/domain/moved.ts';
+
+const SOURCE = [
+    "export type Door = 'a' | 'b';",
+    '',
+    'export function echo(text: string): Door {',
+    '    return text as Door;',
+    '}',
+    '',
+    'export function open(door: Door): boolean {',
+    "    return door === 'a';",
+    '}',
+    '',
+    'export function shut(door: Door): boolean {',
+    "    return door === 'b';",
+    '}',
+    '',
+].join('\n');
+
+const commit = (dir: string, message: string): void => {
+    execFileSync('git', ['add', '-A'], { cwd: dir });
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.test', 'commit', '-q', '-m', message], { cwd: dir });
+};
+
+const moveRepo = (name: string): { readonly dir: string; readonly base: string } => {
+    const dir = repo(name);
+    mkdirSync(join(dir, 'src/domain'), { recursive: true });
+    writeFileSync(join(dir, FILE), SOURCE);
+    commit(dir, 'source');
+    return { dir, base: headOf(dir) };
+};
+
+const moveFile = (dir: string, counts: Readonly<Record<string, number>>, text: string = SOURCE): void => {
+    execFileSync('git', ['mv', FILE, MOVED], { cwd: dir });
+    writeFileSync(join(dir, MOVED), text);
+    writeFileSync(join(dir, 'ci/domain-types-baseline/B1.json'), JSON.stringify({ [MOVED]: counts }));
+    commit(dir, 'move');
+};
+
+test('the merge-base guard passes a moved file whose counts did not rise', () => {
+    const { dir, base } = moveRepo('move-same');
+    moveFile(dir, { parameter: 2 });
+    const result = guardedAgainst(dir, base);
+    assert.equal(result.status, 0, String(result.stderr));
+    assert.match(String(result.stdout), /no entry rose and none is new/u);
+});
+
+test('the merge-base guard fails a moved file whose count rose, and names the new path', () => {
+    const { dir, base } = moveRepo('move-raised');
+    moveFile(dir, { parameter: 3 });
+    const result = guardedAgainst(dir, base);
+    assert.equal(result.status, 1);
+    assert.match(String(result.stderr), /raised: src\/domain\/moved\.ts: parameter 2 -> 3/u);
+    assert.doesNotMatch(String(result.stderr), /new entry/u);
+});
+
+test('the merge-base guard passes a moved file with edits whose count was lowered', () => {
+    const { dir, base } = moveRepo('move-edited');
+    const edited = SOURCE.replace('    return text as Door;', '    return text;').replace("    return door === 'b';", "    return door !== 'a';");
+    moveFile(dir, { parameter: 1 }, edited);
+    const result = guardedAgainst(dir, base);
+    assert.equal(result.status, 0, String(result.stderr));
+    assert.doesNotMatch(String(result.stderr), /new entry/u);
+});
+
+test('the guard compares a renamed key with its old entry, and a rename still reports a new category', () => {
+    const base = { [FILE]: { parameter: 2 } };
+    const renamed = new Map([[OTHER, FILE]]);
+    assert.deepEqual(guard(base, { [OTHER]: { parameter: 2 } }, renamed), []);
+    assert.deepEqual(guard(base, { [OTHER]: { parameter: 3 } }, renamed), [`raised: ${OTHER}: parameter 2 -> 3`]);
+    assert.deepEqual(guard(base, { [OTHER]: { parameter: 2, return: 1 } }, renamed), [`new entry: ${OTHER}: return 1`]);
+    assert.deepEqual(guard(base, { [OTHER]: { parameter: 2 } }), [`new entry: ${OTHER}: parameter 2`]);
 });

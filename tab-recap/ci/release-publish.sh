@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-# release:prepare, second half — the release commit is checked out here: push it as the branch
-# release/<plugin>-v<version> and open a merge request labelled `land` for the merge train. main is
-# never pushed. The release branch is the bot's own: it is overwritten when no release merge request is
-# open (a retry after a refused merge request, or the stale branch of a closed one). The tag is created
-# by release:tag once the merge request has landed (tag-release.sh).
-# usage: release-publish.sh <plugin> <version> <previous>
-# env: RELEASE_TOKEN (api + write_repository) · CI_API_V4_URL · CI_PROJECT_ID · CI_PROJECT_PATH
-#      CI_SERVER_HOST · CI_DEFAULT_BRANCH (main) · PUSH_URL · CURL
-# Exit: 0 the merge request is open, or one is already · 1 refused or failed · 2 usage · 3 could not look.
 set -uo pipefail
 plugin="${1:-}"
 version="${2:-}"

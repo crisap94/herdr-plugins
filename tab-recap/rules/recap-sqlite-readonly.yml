@@ -2,11 +2,11 @@ id: recap-sqlite-readonly
 language: typescript
 severity: error
 message: >-
-  A SQLite database is opened `readOnly: true`, except the plugin's own, which lives in `src/adapters/db/`.
+  A SQLite database is opened `readonly: true`, except the plugin's own, which lives in `src/adapters/db/`.
   opencode's database (and any other store an agent keeps) is the agent's, never ours: a read-only handle
   cannot write, and takes no write lock.
 note: >-
-  `new DatabaseSync(path, { readOnly: true })`. No options, `readOnly: false` or a computed options
+  `new Database(path, { readonly: true })`. No options, `readonly: false` or a computed options
   object all fail: pass the literal. Only `src/adapters/db/` (the plugin's own database, in its own state
   directory) may open one writable. Tests may create their own fixture databases.
 files:
@@ -17,10 +17,10 @@ ignores:
   - "**/src/adapters/db/**"
 rule:
   any:
-    - pattern: new DatabaseSync($$$)
-    - pattern: new $NS.DatabaseSync($$$)
+    - pattern: new Database($$$)
+    - pattern: new $NS.Database($$$)
   not:
     has:
       kind: pair
-      regex: '^readOnly:\s*true$'
+      regex: '^readonly:\s*true$'
       stopBy: end

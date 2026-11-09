@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
-# The release scripts must be able to say no: against throw-away fixtures, each must accept what is
-# right and reject what is wrong. A script that cannot fail is not a gate.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 export LC_ALL=C
 wrong=0
-expect() { # expect <pass|fail> <what> <command...>
+expect() {
     local want="$1" what="$2"; shift 2
     "$@" >/dev/null 2>&1 && got=pass || got=fail
     [ "$got" = "$want" ] || { echo "bite: $what — wanted $want, got $got" >&2; wrong=$((wrong + 1)); }
 }
 
-# --- fixtures: a plugin directory, and a changelog with two plugins, two versions and an empty one
 plugin="$scratch/demo"; mkdir -p "$plugin"
 printf 'id = "demo"\nversion = "1.1.0"\n' > "$plugin/herdr-plugin.toml"
 printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
@@ -52,7 +49,6 @@ MD
 notes() { CHANGELOG="$scratch/CHANGELOG.md" bash "$HERE/release-notes.sh" "$@"; }
 version() { PLUGIN_DIR="$plugin" CHANGELOG="$scratch/CHANGELOG.md" bash "$HERE/check-version.sh" "$@"; }
 
-# --- release-notes: the right section, only that section
 expect pass "notes of 1.1.0" notes demo 1.1.0
 out="$(notes demo 1.1.0 2>/dev/null)"
 [ "$out" = "$(printf '#### Added\n\n- the new thing')" ] || { echo "bite: the 1.1.0 notes are not exactly its section: $out" >&2; wrong=$((wrong + 1)); }
@@ -62,7 +58,6 @@ expect fail "notes of Unreleased" notes demo Unreleased
 expect fail "notes of another plugin's version" notes nothing 1.1.0
 expect fail "notes without a version" notes demo
 
-# --- check-version
 expect pass "consistent versions" version
 printf '{"name":"demo","version":"1.2.0"}\n' > "$plugin/package.json"
 expect fail "a package.json on another version" version
@@ -70,8 +65,6 @@ printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
 printf 'id = "demo"\nversion = "1.2.0"\n' > "$plugin/herdr-plugin.toml"
 expect fail "a manifest that disagrees with the rest" version
 
-
-# --- check-mr: one kind label, the template's two sections filled
 mr() { CI_MERGE_REQUEST_LABELS="$1" CI_MERGE_REQUEST_DESCRIPTION="$2" bash "$HERE/check-mr.sh"; }
 good=$'## What changes for the user\n\nA key hides the column.\n\n## Why\n\n<!-- why -->\nPhones are small.\n\n## Checklist\n\n- [ ] gates'
 expect pass "one kind label and both sections" mr "bug,changelog::added" "$good"
@@ -86,7 +79,6 @@ expect fail "a section left as the template's comment" mr "changelog::added" $'#
 expect fail "a missing Why section" mr "changelog::added" $'## What changes for the user\nA key.'
 expect fail "an empty description" mr "changelog::added" ""
 
-# --- check-release, in a throw-away repository whose `main` is the release branch
 repo="$scratch/repo"; mkdir -p "$repo" && cp -R "$plugin" "$repo/demo" && cp "$scratch/CHANGELOG.md" "$repo/CHANGELOG.md" && cd "$repo" || exit 3
 mkdir -p demo/bin && echo 'export {};' > demo/bin/run.ts
 printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["bun", "bin/run.ts", "go"]\n' > demo/herdr-plugin.toml
@@ -130,7 +122,6 @@ expect fail "a release that already exists" asked 200
 expect pass "no release yet" asked 404
 expect fail "an API that does not answer properly" asked 500
 
-# --- release-publish and tag-release: a bare remote, and a curl that records what it was asked and answers from FAKE_*
 cat > "$scratch/curl-fake" <<'SH'
 #!/usr/bin/env bash
 out=""; method=GET; url=""; data=""

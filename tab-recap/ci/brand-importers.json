@@ -1,5 +1,4 @@
 [
-  "src/adapters/claude-prompt.ts",
   "src/recap/domain/autocompact.ts",
   "src/recap/domain/backend.ts",
   "src/recap/domain/byte-budget.ts",
@@ -9,6 +8,8 @@
   "src/recap/domain/directory.ts",
   "src/recap/domain/fact.ts",
   "src/recap/domain/failure-cause.ts",
+  "src/recap/domain/fs-path.ts",
+  "src/recap/domain/git-path.ts",
   "src/recap/domain/handoff-sanitize.ts",
   "src/recap/domain/ids.ts",
   "src/recap/domain/in-flight.ts",

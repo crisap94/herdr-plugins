@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { rebuildTable } from '../rebuild.ts';
 import type { Migration } from './migration.ts';
 
@@ -53,7 +53,7 @@ const REQUEST = `CREATE TABLE request_new (
  * Migration 12, herdr events: a compaction or a request may come from another tool (`origin` = `request`), so both CHECKs learn the word;
  * a request keeps the requester's `answer` id, which tab-recap writes back on its pane. A CHECK cannot be altered: both tables are rebuilt.
  */
-function up(db: DatabaseSync): void {
+function up(db: Database): void {
     db.exec('DROP VIEW compaction_readable');
     db.exec('DROP VIEW request_readable');
     rebuildTable(db, {

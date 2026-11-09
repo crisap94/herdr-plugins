@@ -1,24 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { configPathsFor } from '#src/adapters/config-paths.ts';
+import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
 import { configDir, stateDir } from '#src/daemon/config.ts';
 
-test('Linux and macOS keep the paths herdr uses (~/.config), as before', () => {
-    for (const platform of ['linux', 'macos'] as const) {
-        assert.deepEqual(configPathsFor(platform, '/home/me', {}), {
-            configDir: '/home/me/.config/herdr/plugins/config/tab-recap',
-            stateDir: '/home/me/.local/state/herdr/plugins/tab-recap',
-        });
-    }
-});
-
-test('Windows keeps settings under %APPDATA% and state under %LOCALAPPDATA%, and falls back to the profile', () => {
-    const given = configPathsFor('windows', '/u/me', { APPDATA: '/u/me/Roam', LOCALAPPDATA: '/u/me/Loc' });
-    assert.match(given.configDir, /^\/u\/me\/Roam\/herdr\/plugins\/config\/tab-recap$/);
-    assert.match(given.stateDir, /^\/u\/me\/Loc\/herdr\/plugins\/state\/tab-recap$/);
-    const bare = configPathsFor('windows', '/u/me', {});
-    assert.match(bare.configDir, /AppData\/Roaming\/herdr/);
-    assert.match(bare.stateDir, /AppData\/Local\/herdr/);
+test('the paths herdr uses (~/.config and ~/.local/state) are the defaults', () => {
+    assert.deepEqual(xdgPaths('/home/me'), {
+        configDir: '/home/me/.config/herdr/plugins/config/tab-recap',
+        stateDir: '/home/me/.local/state/herdr/plugins/tab-recap',
+    });
 });
 
 test('herdr\'s own variables still win over the platform defaults', () => {

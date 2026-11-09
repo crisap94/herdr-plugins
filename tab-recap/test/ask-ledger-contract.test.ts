@@ -137,7 +137,7 @@ test('SQLite: a read that fails answers seen, so nothing is acted on that cannot
     const opened = openDatabase(MEMORY);
     assert.equal(opened.kind, 'ready');
     const ledger = new AskLedgerRepository(opened.db);
-    opened.db.close();
+    opened.db.exec('DROP TABLE ask');
     assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), true);
     assert.deepEqual(ledger.unfinished(), []);
 });

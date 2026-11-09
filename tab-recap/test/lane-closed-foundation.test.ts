@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HerdrAgents } from '#src/adapters/herdr-agents.ts';
-import type { Wire } from '#src/adapters/herdr-agents.ts';
+import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
+import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { emptyBoard, listsPane } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';

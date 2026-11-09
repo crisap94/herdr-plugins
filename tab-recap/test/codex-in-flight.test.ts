@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CodexTranscripts } from '#src/adapters/codex-transcripts.ts';
-import { codexInFlight } from '#src/adapters/codex-in-flight.ts';
+import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
+import { codexInFlight } from '#src/adapters/transcripts/codex/in-flight.ts';
 import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { splitReason } from '#src/ports/capability-reasons.ts';
-import { tailOf } from '#src/adapters/jsonl.ts';
+import { tailOf } from '#src/adapters/transcripts/jsonl.ts';
 
 const fixture = (name: string): readonly string[] => readFileSync(join(import.meta.dirname, 'fixtures', 'codex-inflight', name), 'utf8').trim().split('\n');
 const result = (name: string): InFlightResult => codexInFlight(fixture(name), false);

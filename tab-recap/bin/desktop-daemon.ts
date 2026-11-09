@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Pidfile } from '#src/adapters/pidfile.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { messagesOf, stateDir } from '#src/daemon/config.ts';
 
 const OK = 0;

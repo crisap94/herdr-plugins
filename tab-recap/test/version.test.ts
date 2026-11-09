@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { codeVersion, parseVersion } from '#src/adapters/plugin-version.ts';
-import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/host-check.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
+import { codeVersion, parseVersion } from '#src/adapters/os/plugin-version.ts';
+import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/herdr/host-check.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -31,6 +31,8 @@ test('the version is the manifest\'s version line; missing or garbage is null', 
     assert.equal(parseVersion('version = "1.4"\n'), null);
     assert.equal(parseVersion('version = "1.4.1-rc1"\n'), null);
     assert.equal(parseVersion(''), null);
+    assert.equal(parseVersion('# head\nversion = "2.0.1" # bumped\n[meta]\nx = 1\n'), '2.0.1', 'a trailing comment and a later table still parse');
+    assert.equal(parseVersion('version = [\n'), null, 'invalid TOML is null');
 });
 
 test('codeVersion reads the manifest next to the code; no manifest is null', () => {
@@ -128,6 +130,8 @@ test('bindings: only tab-recap.* actions of [[keys.command]] blocks count, in ei
     assert.deepEqual(bindingsOf(CONFIG), [{ key: 'prefix+r', action: 'tab-recap.column' }, { key: 'ctrl+alt+r', action: 'tab-recap.columns' }]);
     assert.deepEqual(bindingsOf('[keys]\nprefix = "ctrl+b"\n'), []);
     assert.deepEqual(bindingsOf('command = "tab-recap.column"\nkey = "x"\n'), [], 'outside a key block it binds nothing');
+    assert.deepEqual(bindingsOf('not = [toml'), [], 'invalid TOML binds nothing');
+    assert.deepEqual(bindingsOf('[[keys.command]]\ncommand = "tab-recap.column" # hide\nkey = "prefix+r"\n'), [{ key: 'prefix+r', action: 'tab-recap.column' }], 'field order and comments do not matter');
 });
 
 test('the config is HERDR_CONFIG_PATH, else ~/.config/herdr/config.toml; a missing file binds nothing', () => {

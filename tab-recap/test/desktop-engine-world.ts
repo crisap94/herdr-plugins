@@ -2,7 +2,9 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore, type Store } from '#src/adapters/db/database.ts';
-import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
+import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { cursor } from '#test/db/support.ts';
 
@@ -12,6 +14,8 @@ export const OTHER_PANE = 'w2:p9';
 export const TAB = 'w1:t1';
 export const TASK = { tab: TAB, key: 't1' };
 export const PANE = 'w1:p1';
+
+const DEAD_SOCKET = must(parseSocketPath(join(mkdtempSync(join(tmpdir(), 'tr-core-')), 'none.sock')));
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -37,7 +41,7 @@ export async function startWorld(): Promise<World> {
     delete process.env['TAB_RECAP_API'];
     const opened = openStore(join(root, 'tab-recap.db'));
     if (opened.kind !== 'ready') { throw new Error('store'); }
-    const wrapped = desktopFrontend().wrap(opened, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(opened, () => undefined);
     const path = join(root, 'gui', 'api.json');
     for (let n = 0; n < 100 && !existsSync(path); n += 1) { await sleep(20); }
     const found = JSON.parse(readFileSync(path, 'utf8'));

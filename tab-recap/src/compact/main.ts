@@ -1,18 +1,17 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { EMPTY_NOTE, step } from '#src/recap/application/compact-keys.ts';
 import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.ts';
 import { compactFooter, compactView } from '#src/recap/render/compact.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
+import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 const style = styleFor(process.stdout);
-const ESC = String.fromCodePoint(0x1b);
-const RESET = style === coloured ? `${ESC}[0m` : '';
-const BEL = String.fromCodePoint(0x07);
+const RESET = style === coloured ? RESET_SGR : '';
 const GUTTER = 2;
 const TITLE = 'tab-recap:compact';
 
@@ -25,7 +24,7 @@ let agent = 'agent';
 function draw(): void {
     const width = Math.max(10, (process.stdout.columns || 40) - GUTTER);
     const lines = [...compactView(state, messages, agent, width, style), '', compactFooter(messages, width, style)];
-    process.stdout.write(`${ESC}[H${lines.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n')}${ESC}[J`);
+    process.stdout.write(`${FRAME_HOME}${lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')}${FRAME_END}`);
 }
 
 function perform(effect: NoteEffect): never {
@@ -39,8 +38,8 @@ function perform(effect: NoteEffect): never {
     return process.exit(0);
 }
 
-process.stdout.write(`${ESC}[?1049h${ESC}[?25l${ESC}]2;${TITLE}${BEL}`);
-process.on('exit', () => { process.stdout.write(`${ESC}[?25h${ESC}[?1049l`); });
+process.stdout.write(`${SCREEN_ON}${TITLE_OSC}${TITLE}${BEL}`);
+process.on('exit', () => { process.stdout.write(SCREEN_OFF); });
 process.on('SIGTERM', () => { process.exit(0); });
 process.on('SIGINT', () => { process.exit(0); });
 if (process.stdin.isTTY) {

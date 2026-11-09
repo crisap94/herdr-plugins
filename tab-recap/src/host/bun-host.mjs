@@ -1,4 +1,4 @@
-const FAMILIES = { darwin: 'macos', win32: 'windows' };
+const FAMILIES = { darwin: 'macos' };
 export const platformOf = (raw) => FAMILIES[raw] ?? 'linux';
 
 export function bunHost(running = process) {

@@ -19,7 +19,7 @@
     "parameter": 2
   },
   "src/daemon/compaction.ts": {
-    "parameter": 20,
+    "parameter": 19,
     "return": 5,
     "container": 1,
     "property": 3
@@ -46,14 +46,14 @@
     "container": 2
   },
   "src/daemon/harness-makers.ts": {
-    "parameter": 6
+    "parameter": 5
   },
   "src/daemon/lane-turns.ts": {
     "parameter": 5,
     "return": 1
   },
   "src/daemon/main.ts": {
-    "parameter": 12,
+    "parameter": 10,
     "return": 16,
     "container": 3
   },
@@ -70,23 +70,11 @@
   "src/daemon/state.ts": {
     "parameter": 4
   },
-  "src/daemon/upkeep.ts": {
-    "parameter": 1
-  },
   "src/extensions/load.ts": {
-    "parameter": 1,
-    "return": 1,
     "container": 2
   },
   "src/setup/main.ts": {
     "parameter": 2,
     "container": 3
-  },
-  "src/transport/herdr.ts": {
-    "parameter": 10,
-    "return": 3,
-    "container": 20,
-    "property": 2,
-    "assertion": 4
   }
 }

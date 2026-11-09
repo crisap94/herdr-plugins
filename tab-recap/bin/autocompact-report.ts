@@ -1,8 +1,8 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ARMS } from '#src/adapters/experiment-arms.ts';
-import { readLabelled, readPoints } from '#src/adapters/experiment-data.ts';
-import { readJsonl } from '#src/adapters/experiment-io.ts';
+import { ARMS } from '#src/adapters/experiment/arms.ts';
+import { readLabelled, readPoints } from '#src/adapters/experiment/data.ts';
+import { readJsonl } from '#src/adapters/experiment/io.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { kappaRows } from '#src/experiment/kappa-report.ts';
 import { coverageAuc, drift, expandBriefs, policyMetrics, questionMetrics } from '#src/experiment/report-metrics.ts';

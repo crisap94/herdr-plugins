@@ -6,7 +6,7 @@ Evidence: `docs/research/studies/2026-11-07-gui-tab-recap-port/README.md` (findi
 ## Context
 
 The engine (`src/recap`, `src/ports`, transcript readers, harness jobs, store) names no frontend. The TUI frontend is
-`src/adapters/herdr-{fleet,agents,json}.ts`, `src/adapters/column-panes.ts`, `src/column/*` and
+`src/adapters/herdr/{fleet,agents,json}.ts`, `src/adapters/herdr/column-panes.ts`, `src/column/*` and
 `herdr-plugin.toml` (F5). The desktop app runs mods: gpui-kit programs with `exec`, `hc`, `fetch`, small file reads and folder watches,
 no Node, no raw sockets (F1; `fetch` to a localhost daemon was measured later, see `transport.md`).
 
@@ -15,7 +15,7 @@ no Node, no raw sockets (F1; `fetch` to a localhost daemon was measured later, s
 **D1. One plugin, two frontends, no file moves (F5, F6).** A plugin installed from a sub-folder cannot reach a sibling, and a second
 repository duplicates the engine. `HerdrFleet` is one class implementing nine ports and the daemon names the concrete class, so the
 daemon is typed on `Fleet = FleetSource & Columns & Harnesses & Notifier & Screens & LaneTokens & PaneTokens & WorkspaceTokens`
-plus `agents()` (`src/ports/fleet.ts`), and `HcFleet` (`src/adapters/hc-fleet.ts`) and, for the socket transport, `HcCoreFleet` (`src/adapters/hc-core-fleet.ts`) implement it. Moving the TUI files was rejected: it
+plus `agents()` (`src/ports/fleet.ts`), and `HcFleet` (`src/adapters/hc-fleet.ts`) and, for the socket transport, `HcCoreFleet` (`src/adapters/herdr-core/fleet.ts`) implement it. Moving the TUI files was rejected: it
 touches the lane, baseline and graph gates and gains nothing. `TAB_RECAP_FRONTEND` (`tui` default, `gui`) is read once in `boot()`;
 existing manifests keep working. "Host" is already a noun in `CONTEXT.md` (the machine and runtime), so the word here is
 **frontend**.

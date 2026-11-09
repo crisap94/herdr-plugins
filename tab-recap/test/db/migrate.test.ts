@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { connect, MEMORY } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
@@ -12,7 +12,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { rebuildTable } from '#src/adapters/db/rebuild.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Migration } from '#src/adapters/db/schema/migration.ts';
-import { must, scratchDir } from './support.ts';
+import { must, openFixture, scratchDir } from './support.ts';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 const FIXTURE_V2 = join(import.meta.dirname, 'fixtures', 'schema-v2.sql');
@@ -34,11 +34,11 @@ if (m1 === undefined) {
 }
 const TOYS = [m1, toy2, toy3];
 
-const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
+const shape = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replace(/ALTER|"/g, '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
-function fromFixture(path: string, fixture = FIXTURE): DatabaseSync {
-    const db = new DatabaseSync(path);
+function fromFixture(path: string, fixture = FIXTURE): Database {
+    const db = openFixture(path);
     db.exec(readFileSync(fixture, 'utf8'));
     return db;
 }
@@ -140,7 +140,7 @@ test('two processes open a brand new database at the same moment: the schema is 
             spawn(process.execPath, ['-e', code], { cwd: join(import.meta.dirname, '..', '..'), stdio: 'ignore' }).on('exit', resolve);
         });
         assert.deepEqual(await Promise.all([run(), run(), run()]), [0, 0, 0]);
-        const db = new DatabaseSync(path);
+        const db = openFixture(path);
         assert.equal(versionOf(db), MIGRATIONS.length);
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
@@ -160,7 +160,7 @@ test('an upgrade backs the database up first (never a fresh create), reuses a co
             opened.db.close();
         }
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v5.bak', '.v4.bak', '.v3.bak']);
-        const copy = new DatabaseSync(`${path}.v5.bak`);
+        const copy = openFixture(`${path}.v5.bak`);
         assert.equal(versionOf(copy), 5, 'the copy is the database as it was before the upgrade');
         assert.ok(readdirSync(dir).every((name) => !name.endsWith('.tmp')), 'no half copy is left');
     } finally {
@@ -204,7 +204,7 @@ test('rebuildTable: a table changed by create-new, copy, drop, rename — rows k
 });
 
 test('migrations are numbered 1, 2, 3 …: a gap is refused', () => {
-    assert.throws(() => { migrate(new DatabaseSync(MEMORY), [m1, { version: 3, name: 'gap', up: [] }]); }, MigrationFailed);
+    assert.throws(() => { migrate(openFixture(MEMORY), [m1, { version: 3, name: 'gap', up: [] }]); }, MigrationFailed);
 });
 
 test('migration 8 from a v7 database with a compaction in it: the record is kept without a boundary, can point at one, and the views show it; the backup is v7', () => {

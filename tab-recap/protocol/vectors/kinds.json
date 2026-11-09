@@ -1,4 +1,4 @@
 {
-    "version": 1,
-    "kinds": ["claude", "codex", "opencode", "hermes"]
+    "version": 2,
+    "kinds": ["claude", "codex", "opencode"]
 }

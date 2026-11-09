@@ -1,6 +1,6 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Curators } from '#src/ports/curators.ts';
-import { RUBRIC } from '#src/adapters/rubric.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { Curate } from '#src/recap/application/curate.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';

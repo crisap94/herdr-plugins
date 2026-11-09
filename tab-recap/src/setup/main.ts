@@ -1,8 +1,9 @@
-import { setValues } from '#src/adapters/config-file.ts';
+import { setValues } from '#src/adapters/os/config/file.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
+import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
@@ -17,9 +18,7 @@ import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
 const style = styleFor(process.stdout);
-const ESC = String.fromCodePoint(0x1b);
-const RESET = style === coloured ? `${ESC}[0m` : '';
-const BEL = String.fromCodePoint(0x07);
+const RESET = style === coloured ? RESET_SGR : '';
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
 const TINY: RecapRequest = {
@@ -67,7 +66,7 @@ function draw(): void {
         shown.push('');
     }
     shown.push(setupFooter(state, m, width, style));
-    process.stdout.write(`${ESC}[H${shown.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n')}${ESC}[J`);
+    process.stdout.write(`${FRAME_HOME}${shown.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')}${FRAME_END}`);
 }
 
 async function available(): Promise<void> {
@@ -119,10 +118,10 @@ function perform(effect: Effect): void {
 }
 
 function restore(): void {
-    process.stdout.write(`${ESC}[?25h${ESC}[?1049l`);
+    process.stdout.write(SCREEN_OFF);
 }
 
-process.stdout.write(`${ESC}[?1049h${ESC}[?25l${ESC}]2;${TITLE}${BEL}`);
+process.stdout.write(`${SCREEN_ON}${TITLE_OSC}${TITLE}${BEL}`);
 process.on('exit', restore);
 process.on('SIGTERM', () => { process.exit(0); });
 process.on('SIGINT', () => { process.exit(0); });

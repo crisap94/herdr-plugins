@@ -3,12 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { extractClaude } from '#src/adapters/claude-transcripts.ts';
-import { extractCodex } from '#src/adapters/codex-transcripts.ts';
-import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
-import { execCalls } from '#src/adapters/codex-tool-calls.ts';
-import { claudeNamedCall as namedCall } from '#src/adapters/claude-tool-calls.ts';
-import { isPlainRead } from '#src/adapters/tool-calls.ts';
+import { extractClaude } from '#src/adapters/transcripts/claude/transcripts.ts';
+import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
+import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
+import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
+import { isPlainRead, namedCall as callOf } from '#src/adapters/transcripts/tool-calls.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -79,8 +78,8 @@ test('shell reads: only commands that look and never write', () => {
     for (const write of ['cat a > b', 'rg x | tee out', 'sed -i s/a/b/ f', 'git status', 'npm test', 'ls && rm -rf x > /dev/null']) {
         assert.equal(isPlainRead(write), false, write);
     }
-    assert.equal(namedCall('Bash', { command: `echo ${'x'.repeat(400)}` }).text.length, 64, 'a command is clipped to 64');
-    assert.deepEqual(namedCall('Bash', { command: 'echo hi', description: 'Say hi' }), { kind: 'shell', text: '', what: 'Say hi' }, 'a described command is sent as its description alone');
+    assert.equal(callOf('claude', 'Bash', { command: `echo ${'x'.repeat(400)}` }).text.length, 64, 'a command is clipped to 64');
+    assert.deepEqual(callOf('claude', 'Bash', { command: 'echo hi', description: 'Say hi' }), { kind: 'shell', text: '', what: 'Say hi' }, 'a described command is sent as its description alone');
 });
 
 const exec = (input: string): string => JSON.stringify({ timestamp: '2026-09-21T04:32:19.079Z', type: 'response_item', payload: { type: 'custom_tool_call', status: 'completed', name: 'exec', input } });
@@ -100,7 +99,7 @@ test('codex: `exec` JavaScript is decoded — commands as shell calls, patches a
     ]);
     assert.ok(got.entries.every((entry) => !entry.text.includes('tools.exec_command') && entry.at === at('2026-09-21T04:32:19.079Z')));
     assert.deepEqual(touchedFiles(got.entries), ['src/cart.py', 'src/totals.py'], 'Codex edits reach the hints');
-    assert.deepEqual(execCalls('text(await tools.something_else({}));'), [{ kind: 'other', text: 'exec' }]);
+    assert.deepEqual(codexCalls('exec', 'text(await tools.something_else({}));', {}), [{ kind: 'other', text: 'exec' }]);
 });
 
 const message = (text: string): string => JSON.stringify({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } });

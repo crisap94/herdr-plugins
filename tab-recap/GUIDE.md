@@ -13,7 +13,7 @@ the exceptions are the [compaction](#compact-an-agent) you ask for, the `tab-rec
 
 Every item is held to one [rubric](schema/recap-rubric.md) (atomic, specific, about the work, with the reason for a
 decision, …). Plain-code gates refuse what fails it before the recap is stored, and `tab-recap eval` scores stored recaps against it —
-see [how recaps are checked](README.md#how-recaps-are-checked).
+see [how recaps are checked](docs/REFERENCE.md#how-recaps-are-checked).
 
 <p align="center">
   <img src="docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
@@ -31,7 +31,7 @@ and one headline. Tap it to open the [expanded view](#the-expanded-view).
 
 - herdr ≥ 0.9.0 (Linux or macOS)
 - Bun ≥ 1.4.4 (runs the TypeScript directly, nothing to build; no Node fallback)
-- at least one coding agent on your `PATH`: `claude`, `codex`, `opencode` or `hermes` (or your own
+- at least one coding agent on your `PATH`: `claude`, `codex` or `opencode` (or your own
   command, see [Who writes the recap](#who-writes-the-recap))
 - optional: [`glow`](https://github.com/charmbracelet/glow), for nicer Markdown
 
@@ -232,7 +232,7 @@ The decider is the recap writer's harness at low effort, or the TypeSafe `jev` A
 that service, and the brief and its facts too when the brief is checked. The brief check has its own decider,
 `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when a key is found, else the moment decider), `jev` or `decider`. `auto` (the default) sends the brief and its facts to the remote Jev service as soon as a TypeSafe key is found, whatever `TAB_RECAP_AUTOCOMPACT_BY` says; set `decider` to keep the check on your own harness. The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
 `~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
-key: [tab-recap/README.md](README.md#autocompact).
+key: [tab-recap/docs/REFERENCE.md](docs/REFERENCE.md#autocompact).
 
 ## Chapters and how long things are kept
 
@@ -243,13 +243,13 @@ through the plugin is marked *manual* and linked to its record, the others *auto
 current **chapter** and starts the next one.
 
 A tab you have not seen for `TAB_RECAP_KEEP_DAYS` days (default 30; `0` keeps everything) and that has no
-column open is removed by the daily upkeep, with its facts, runs, chapters and compaction records. A tab seen
+column open is removed by the daemon's daily retention pass, with its facts, runs, chapters and compaction records. A tab seen
 within that period is never touched.
 
 ## Who writes the recap
 
 By default (`auto`) the first agent found on your `PATH` writes it, in this order: `claude`,
-`codex`, `opencode`, `hermes`. To choose, use the settings modal (`tab-recap.configure`), or from a checkout:
+`codex`, `opencode`. To choose, use the settings modal (`tab-recap.configure`), or from a checkout:
 
 ```bash
 bun bin/tab-recap.ts backend codex gpt-6-luna   # an agent and, optionally, a model
@@ -266,7 +266,7 @@ The writer receives one XML document (version 2) per run — the tab's agents wi
 branch, the **ledger** (the open facts of each task and the ones closed in the last two hours, each with an
 id), the agents' own summaries, and each new prompt, reply and tool call with its time — defined by
 [`tab-recap/schema/recap-input.dtd`](schema/recap-input.dtd). It answers **operations** on the ledger (`add`, `update`, `close`), not a whole new recap; see
-[How the recap is kept](README.md#how-the-recap-is-kept).
+[How the recap is kept](docs/REFERENCE.md#how-the-recap-is-kept).
 
 **Your own command:** set `TAB_RECAP_BACKEND=custom` and `TAB_RECAP_CUSTOM_CMD` to a command line
 (no shell) that reads the prompt (the document, then the instructions) on stdin and prints on stdout the
@@ -350,7 +350,7 @@ variables win over the file. The ones people change:
 | `TAB_RECAP_PIPELINE` | `one` | how a run reads its new turns: `one` (a single call), `enumerate`, `enumerate+gates`, or `full` (list the facts of every chunk with a quote, take one second look when the turn was long or the list short, then reconcile with the ledger) |
 | `TAB_RECAP_RECONCILE_EVERY` | `8` | turns between two reconciliations of the open facts by the curator |
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
-| `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daily upkeep removes it (`0` = keep everything) |
+| `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daemon's daily retention pass removes it (`0` = keep everything) |
 
 ## Troubleshooting
 
@@ -364,8 +364,8 @@ It prints whether the daemon runs, which agent writes recaps, and the state and 
 daemon log is `daemon.log` in that state folder (by default
 `~/.local/state/herdr/plugins/tab-recap/`).
 
-- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex`,
-  `opencode` or `hermes`, or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
+- **"No recap writer found"**: no agent was found on your `PATH`. Install `claude`, `codex` or
+  `opencode`, or set `TAB_RECAP_BACKEND` and `TAB_RECAP_CUSTOM_CMD`.
 - **No column appears**: the tab needs an agent of a kind in `TAB_RECAP_AGENTS` (default `claude`,
   `codex` and `opencode`), and the daemon must be on (`tab-recap.start`).
 - **A link does not open**: hold **Ctrl** while clicking (herdr's modifier on every platform); your
@@ -380,5 +380,5 @@ daemon log is `daemon.log` in that state folder (by default
 - **Turn it off**: `herdr plugin action invoke tab-recap.stop` closes every column and stays off
   until you run `tab-recap.start` again.
 
-The full reference (all actions, the extension point, the design) is in
-[`tab-recap/README.md`](README.md).
+The full reference (all actions, the design) is in
+[`tab-recap/docs/REFERENCE.md`](docs/REFERENCE.md).

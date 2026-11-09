@@ -28,7 +28,7 @@ test('a target that is not on the board is refused not-a-lane', async () => {
 });
 
 test('a target whose kind has no handoff plan is unsupported no-plan', async () => {
-    const h = harness({ targetAgent: 'hermes' });
+    const h = harness({ targetAgent: 'gemini' });
     assert.deepEqual(await h.flow.run(request()), { kind: 'unsupported', reason: 'no-plan' });
 });
 

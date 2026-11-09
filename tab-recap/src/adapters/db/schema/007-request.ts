@@ -1,5 +1,5 @@
 import { rebuildTable } from '../rebuild.ts';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 
 /** An id column as lowercase hex UUID text, as the other `_readable` views show it. */
 const text = (column: string): string =>
@@ -18,7 +18,7 @@ const REQUEST = `CREATE TABLE request_new (
 ) STRICT, WITHOUT ROWID`;
 
 /** The request queue learns `curate` (target = the tab whose tasks the curator should look at again). */
-export function rebuildRequestsForCurate(db: DatabaseSync): void {
+export function rebuildRequestsForCurate(db: Database): void {
     db.exec('DROP VIEW request_readable');
     rebuildTable(db, {
         table: 'request',

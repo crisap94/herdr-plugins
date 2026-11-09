@@ -50,9 +50,9 @@ test('headline: what needs the operator first, else what is happening now, else 
 const opsOf = (text: string): number => (objectIn(text) as { ops: unknown[] }).ops.length;
 
 test('the operations contract survives every summarizer\'s way of handing the answer back', async () => {
-    const { resultOf } = await import('#src/adapters/claude-harness.ts');
-    const { opencodeOutput } = await import('#src/adapters/opencode-harness.ts');
-    const { unfenced } = await import('#src/adapters/recap-prompt.ts');
+    const { resultOf } = await import('#src/adapters/harness/claude.ts');
+    const { opencodeOutput } = await import('#src/adapters/harness/opencode.ts');
+    const { unfenced } = await import('#src/adapters/job/prompts/recap-prompt.ts');
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'now', text: 'running CI' }, { op: 'close', id: 'f2', why: 'done' }] });
     const fenced = `\`\`\`json\n${answer}\n\`\`\``;
     const claude = resultOf(JSON.stringify({ type: 'result', result: fenced, total_cost_usd: 0.01 }));

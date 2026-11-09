@@ -1,3 +1,5 @@
+import { ClaudeTool } from '@stateforge-labs/harness-hooks';
+
 const LOOKERS = /^(cat|sed\s+-n|head|tail)\b/;
 
 const unquote = (token: string): string => token.replace(/^['"]|['"]$/g, '');
@@ -14,10 +16,10 @@ export function shellReads(command: string): readonly string[] {
 }
 
 export function readsOf(name: string, input: Readonly<Record<string, unknown>>): readonly string[] {
-    if (name === 'Read') {
+    if (name === ClaudeTool.Read) {
         const path = input['file_path'];
         return typeof path === 'string' && path !== '' ? [path] : [];
     }
     const command = input['command'];
-    return name === 'Bash' && typeof command === 'string' ? shellReads(command) : [];
+    return name === ClaudeTool.Bash && typeof command === 'string' ? shellReads(command) : [];
 }

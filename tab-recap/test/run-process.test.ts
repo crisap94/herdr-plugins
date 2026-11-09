@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:net';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { posixProcess } from '#src/adapters/process-posix.ts';
-import { subscribe } from '#src/transport/herdr.ts';
+import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
+import { HerdrTransportError, Method } from '@stateforge-labs/herdr-sdk';
+import { createFakeHerdr } from '@stateforge-labs/herdr-sdk/test-kit';
+import { usePlugin, resetHerdrClients } from '#src/adapters/herdr/client.ts';
 
 const { run } = posixProcess();
 
@@ -52,22 +53,19 @@ test('run: always resolves — a grandchild holding the pipes open cannot hold t
 });
 
 test('subscribe: no ack within the timeout rejects, and says so', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'recap-ack-'));
-    const path = join(dir, 'herdr.sock');
-    const sockets: { destroy(): void }[] = [];
-    const server = createServer((socket) => { sockets.push(socket); });
-    await new Promise<void>((resolve) => { server.listen(path, resolve); });
+    const herdr = await createFakeHerdr();
+    herdr.silent(Method.EventsSubscribe);
     const before = process.env['HERDR_SOCKET_PATH'];
-    process.env['HERDR_SOCKET_PATH'] = path;
+    process.env['HERDR_SOCKET_PATH'] = herdr.path;
+    resetHerdrClients();
     try {
         const began = Date.now();
-        await assert.rejects(subscribe([{ type: 'tab.focused' }], () => undefined, () => undefined, 80), /no ack in 80 ms/);
+        await assert.rejects(usePlugin((client) => client.events.subscribe([{ type: 'tab.focused' }], { ackTimeoutMs: 80 })), HerdrTransportError);
         assert.ok(Date.now() - began < 2000);
     } finally {
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
-        sockets.forEach((socket) => { socket.destroy(); });
-        server.close();
-        rmSync(dir, { recursive: true });
+        resetHerdrClients();
+        await herdr.stop();
     }
 });
 

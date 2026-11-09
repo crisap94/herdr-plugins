@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
-import { windowOfKind } from '#src/adapters/context-window.ts';
+import { windowOfKind } from '#src/adapters/capability/context-window.ts';
 
 test('target: focused by default, all, or kinds', () => {
     assert.deepEqual(targetOf(undefined), { kind: 'focused' });

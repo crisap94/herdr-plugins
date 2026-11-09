@@ -4,7 +4,7 @@ import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, 
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 
 const ESC = String.fromCodePoint(0x1b);
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: Effect[] } {
@@ -47,7 +47,7 @@ test('model: edits the model of the harness in force; with auto that is the firs
     const edited = typed(start(), ['l', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
     assert.equal(edited.draft.models.codex, 'gpt-6');
     assert.deepEqual([...changes(edited)], [['TAB_RECAP_MODEL_CODEX', 'gpt-6']]);
-    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['hermes', 'codex']);
+    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['opencode', 'codex']);
     assert.equal(modelTarget(auto.draft, auto.available), 'codex');
     const none = withAvailable(initial({ ...draft, backend: 'auto' }, {}), []);
     assert.equal(typed(none, ['l', '\r']).state.note, 'no-agent');
@@ -249,7 +249,7 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
     assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
-    const by = typed(start(), [...down(16),'\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
+    const by = typed(start(), [...down(16),'\r', ...Array.from({ length: 6 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
     const model = typed(start(), [...down(16),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);

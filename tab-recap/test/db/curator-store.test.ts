@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import { backupPath } from '#src/adapters/db/backup.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -15,18 +15,18 @@ import { newestChange, ExpandedModel } from '#src/recap/application/expanded-vie
 import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { cursor, memoryStore, must, scratchDir } from './support.ts';
+import { cursor, memoryStore, must, openFixture, scratchDir } from './support.ts';
 
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 
-const shape = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; sql: string }[])
+const shape = (db: Database): string[] => (db.prepare("SELECT type, name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.sql.replaceAll(/\s+/g, ' ').replace(/ALTER|"/g, '').replaceAll(/\s*[(),]\s*/g, (match) => match.trim()).trim()}`);
 
 test('migration 7 from the oldest fixture: every registered migration runs, a fresh install is the same schema, requests and tasks survive', () => {
     const dir = scratchDir('m7');
     try {
-        const old = new DatabaseSync(join(dir, 'old.db'));
+        const old = openFixture(join(dir, 'old.db'));
         old.exec(readFileSync(FIXTURE, 'utf8'));
         assert.equal(versionOf(old), 1);
         migrate(old, MIGRATIONS.slice(0, 7));

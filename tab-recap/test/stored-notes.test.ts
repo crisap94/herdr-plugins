@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gitNoteOf, storedNotes, STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
-import { FACTORIES } from '#src/extensions/index.ts';
-import { loadExtensions } from '#src/extensions/load.ts';
-import type { ExtensionFactory, ExtensionStore, NotesResult } from '#src/ports/extension.ts';
+import type { NotesResult } from '#src/ports/extension.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
@@ -69,16 +67,6 @@ test('TAB_RECAP_GIT_NOTE=off hides the git note at call time and keeps the pane\
     assert.match(labels(extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() })[0]?.[1] ?? '', /^⎇ main/);
 });
 
-test('the extension has a name, and the registry no longer carries a column-side git or token extension', () => {
+test('the extension has a name', () => {
     assert.equal(storedNotes({ statuses: { statusOf: () => null }, notes: { notesOf: () => [] }, alerts: { alertsOf: () => [] }, gitNote: (): WorktreeSwitch => 'on' }).id, STORED_NOTES_ID);
-    assert.deepEqual(loadExtensions(() => undefined, FACTORIES).map((extension) => extension.id).filter((id) => id === 'git-note' || id === 'herdr-notes'), []);
-});
-
-test('a factory receives the store the loader was given, and none when the loader has none', () => {
-    const seen: (ExtensionStore | undefined)[] = [];
-    const factory: ExtensionFactory = (_get, store) => { seen.push(store); return null; };
-    const store: ExtensionStore = { alerts: { put: (): void => undefined, clear: (): void => undefined, forgetPane: (): void => undefined } };
-    loadExtensions(() => undefined, [factory], store);
-    loadExtensions(() => undefined, [factory]);
-    assert.deepEqual(seen, [store, undefined]);
 });

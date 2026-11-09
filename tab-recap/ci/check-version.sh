@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# The plugin's version must be one number: herdr-plugin.toml = package.json (bun.lock carries no root version).
-# The tag side of a release is check-release.sh.
-# usage: check-version.sh      env: PLUGIN_DIR=<dir> (default: this plugin)
-# Exit: 0 consistent · 1 they disagree · 3 could not look.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${PLUGIN_DIR:-$HERE/..}"

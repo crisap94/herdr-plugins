@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -12,7 +12,7 @@ import { scratchDir, shapeOf } from './support.ts';
 
 const BEFORE = 18;
 
-const freshDb = (): DatabaseSync => {
+const freshDb = (): Database => {
     const opened = openDatabase(MEMORY);
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
@@ -20,7 +20,7 @@ const freshDb = (): DatabaseSync => {
     return opened.db;
 };
 
-const insertRequest = (db: DatabaseSync, row: { kind: string; target?: string; hidden?: string | null; pane?: string | null; to_pane?: string | null; refresh_first?: number; note?: string | null; answer?: string | null }): void => {
+const insertRequest = (db: Database, row: { kind: string; target?: string; hidden?: string | null; pane?: string | null; to_pane?: string | null; refresh_first?: number; note?: string | null; answer?: string | null }): void => {
     db.prepare('INSERT INTO request (id, at, kind, target, hidden, pane, note, origin, answer, to_pane, refresh_first) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         .run(ids.next(), 1, row.kind, row.target ?? 'w1:t1', row.hidden ?? null, row.pane ?? null, row.note ?? null, 'operator', row.answer ?? null, row.to_pane ?? null, row.refresh_first ?? 0);
 };

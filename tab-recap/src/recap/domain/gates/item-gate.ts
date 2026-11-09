@@ -35,5 +35,3 @@ export interface Gate {
 export const said = (language: string, en: string, es: string): string => (language === 'es' ? es : en);
 
 export const LISTED: readonly GatedSection[] = ['now', 'needs', 'done', 'decisions', 'next', 'rules'];
-
-export const itemKey = (item: Pick<Item, 'task' | 'section' | 'position'>): string => `${item.task}/${item.section}/${item.position}`;

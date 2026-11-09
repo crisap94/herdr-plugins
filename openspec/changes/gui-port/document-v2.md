@@ -99,7 +99,7 @@ All from `ExpandedData.session: SessionFacts` (`session-facts.ts:20-29`), built 
 | Recap freshness | `recapAt` (v1) | `recap.at` | none |
 | Backend | `backend: Text \| null` | `recap.backend` `recap-records.ts:25`, drawn `present.ts:116` | none |
 | Updating | `writing` (v1) | `recap.running` `present.ts:117` | none |
-| Plugin version | `versions.plugin: Text \| null` | `codeVersion()` `src/adapters/plugin-version.ts:23` (reads `herdr-plugin.toml` from disk, so it reflects an upgrade after the daemon started); TUI `settled.version` `column/main.ts:41,66` | re-read per publish; the TUI re-reads every 3 s (`LOCALE_MS` `column/main.ts:25`) |
+| Plugin version | `versions.plugin: Text \| null` | `codeVersion()` `src/adapters/os/plugin-version.ts:23` (reads `herdr-plugin.toml` from disk, so it reflects an upgrade after the daemon started); TUI `settled.version` `column/main.ts:41,66` | re-read per publish; the TUI re-reads every 3 s (`LOCALE_MS` `column/main.ts:25`) |
 | Daemon version | `versions.daemon: Text \| null` | `TabView.daemonVersion` `tab-views.ts:30`, set by `TabViewsRepository` from `StoreOptions.daemonVersion` `database.ts:76,85` | none |
 | Stale daemon notice | `versions.stale: Flag` | `staleLines` `present.ts:102-107`: `plugin !== null && daemon !== plugin`; text `messages.daemonStale(daemon)`; the restart button is phase 2 | none |
 | Warnings | `warnings: Text[]` | `warningsOf(extensions, locale)` `load.ts:25` (red lines, `present.ts:153`) | none |
@@ -120,15 +120,15 @@ read after construction returns `[]` files.
 **Decision: one daemon-owned instance, created once in the desktop frontend, never per publish and never in `show --json`.**
 
 - New file `src/adapters/gui-model.ts` builds it from the **wrapped store** that `desktopFrontend().wrap(store, log)` already receives
-  (`desktop-frontend.ts:38`; `Store` fields `database.ts:47-73` contain every dep: `records`, `ledger`, `stories`, `session`,
+  (`desktop/frontend.ts:38`; `Store` fields `database.ts:47-73` contain every dep: `records`, `ledger`, `stories`, `session`,
   `autocompact`, `boundaries`, `requests`). Construction is the literal of `expanded-modal.ts:12`:
   `new ExpandedModel({records, ledger, stories, session, autocompact, boundaries, requests, edits})` with
   `edits = (lanes, now) => cache.of(lanes, now)` and `cache = new EditCache(new EditCounts(modalTranscriptRegistry()))`.
-  `modalTranscriptRegistry()` (`transcript-registry.ts:54`) has no screen reader, exactly like the TUI modal, so the files row matches
+  `modalTranscriptRegistry()` (`transcripts/registry.ts:54`) has no screen reader, exactly like the TUI modal, so the files row matches
   the TUI. (`daemonTranscriptRegistry(screens, wants)` `:49` would also count screen-read lanes; it is not used, to keep parity.)
 - `GuiPublisher` gets one new dep, `expanded: (tab, view, now) => ExpandedData`, and `document()` passes the result to the v2
   builder. `GuiPublisherDeps` is branch-created, so it is editable.
-- **Bounded rate.** `publish()` is called on every `writeTab` and recap run (`publishing-views.ts:25`, `publishing-records.ts:23-33`),
+- **Bounded rate.** `publish()` is called on every `writeTab` and recap run (`desktop/publishing-views.ts:25`, `desktop/publishing-records.ts:23-33`),
   which is event-driven and can be frequent. The model read touches the ledger, stories, session and boundaries repositories (SQLite)
   and may call `requestCurate`. Policy: the gui-model wrapper keeps `{data: ExpandedData, at: Instant}` per tab and calls
   `model.read` at most once per `EXPANDED_EVERY_MS` (proposed 5 000 ms) per tab; in between it reuses the last data with the
@@ -154,7 +154,7 @@ read after construction returns `[]` files.
 | --- | --- | --- |
 | `ExpandedModel`, `ExpandedDeps`, `ExpandedData`, `newestChange`, `CURATING_MS` | `expanded-view.ts:35,17,28,30,14` | used as-is |
 | `EditCache`, `EditCounts`, `FileCount`, `countEdits` | `edit-counts.ts:43,21,8,13` | used as-is |
-| `modalTranscriptRegistry` | `transcript-registry.ts:54` | used as-is |
+| `modalTranscriptRegistry` | `transcripts/registry.ts:54` | used as-is |
 | `timelineOf`, `dateLines`, `clockOf`, `dayOf`, `Entry` | `timeline.ts:28,35,16,18,20` | used as-is |
 | `breakText`, `chaptersFact` | `timeline-breaks.ts:13,35` | `breakText` used for `GuiBreak.text` |
 | `sessionLines`, `spanOf` | `session-lines.ts:42,8` | not needed for data; used by the parity test |
@@ -165,7 +165,7 @@ read after construction returns `[]` files.
 | `notesOf`, `warningsOf`, `loadExtensions` | `load.ts:11,25,7` | used as-is |
 | `storedNotes`, `gitNoteOf`, `STORED_NOTES_ID` | `stored-notes.ts:65,22,12` | used as-is |
 | `worktreeSwitch` | `src/daemon/worktree-switch.ts` | used as-is |
-| `codeVersion` | `plugin-version.ts:23` | used as-is |
+| `codeVersion` | `os/plugin-version.ts:23` | used as-is |
 | `renderRecap` | `recap-shape.ts` (imported at `present.ts:13`) | for the markdown the TUI draws |
 | `regionsOf`, `session`, `Draw`, `TaskData`, `expanded` | `expanded-regions.ts:121,116,15,25`, `expanded.ts:55` | only for the parity test (they return styled lines, not data) |
 
@@ -248,7 +248,7 @@ never emptied except in step 7, which also says so in `error` and `cuts`.
 - `src/recap/domain/gui-tab-v2.ts` exports `parseGuiTab(input: unknown): Result<GuiTabAny, ParseFailure>` (named `parse<Domain>`, with
   `GuiTabAny` declared in the same file) that accepts version 1 and 2, uses `orElse` defaults for every v2 field when reading a v1
   file, and rejects any other version with a named `ParseFailure`. `parseGuiIndex` / index rows are unchanged (the index stays at
-  `version: 1`, `gui-publisher.ts:56`).
+  `version: 1`, `desktop/publisher.ts:56`).
 - **The mod must read both.** `gui/main.js` currently has no version check (it reads `task.sections.*` and `lane.*` directly,
   `gui/main.js:113-114`). Phase 2 adds: `version === 1` draws the v1 layout (seven sections from `sections`, no timeline, session or
   stage); `version === 2` draws the Recap and Full views; any other value shows "this mod is older than the daemon" and nothing else.

@@ -28,7 +28,7 @@ test('migration 15 from a v14 database: every compact_ask row is a settled compa
             ['compact', 'coordinator', 'r7', 'w1:p1', 5, null, 'settled'],
             ['compact', 'reviewer', 'r8', 'w1:p2', 6, null, 'settled'],
         ]);
-        assert.equal(db.prepare("SELECT name FROM sqlite_schema WHERE name = 'compact_ask'").get(), undefined, 'compact_ask is gone');
+        assert.equal(db.prepare("SELECT name FROM sqlite_schema WHERE name = 'compact_ask'").get(), null, 'compact_ask is gone');
         const store = storeOver(db);
         assert.deepEqual(store.asks.unfinished(), [], 'no copied row is interrupted');
         assert.equal(store.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), 'r7'), true, 'a seen id stays seen');

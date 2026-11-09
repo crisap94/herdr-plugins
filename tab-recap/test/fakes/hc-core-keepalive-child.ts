@@ -1,4 +1,4 @@
-import { CoreEvents, duration, must, parseSocketPath } from '#src/adapters/desktop-package.ts';
+import { CoreEvents, duration, must, parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 
 const path = must(parseSocketPath(process.argv[2]));
 const events = new CoreEvents({ path, timing: { backoffBase: duration(300), backoffCap: duration(300), silence: duration(5000) } });

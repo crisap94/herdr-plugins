@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';
 import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '#src/recap/application/ask-back.ts';
-import { JUDGE_INSTRUCTIONS, READBACK_QUESTIONS } from '#src/adapters/judge-instructions.ts';
+import { JUDGE_INSTRUCTIONS, READBACK_QUESTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
 import { READBACK } from '#src/recap/domain/questions.ts';
 
 const candidate = (section: InputCandidate['section'], text: string, ref: string | null = null): InputCandidate => ({ section, text, why: null, ref, at: null, anchor: 'a', agent: 'a1', flagged: false });

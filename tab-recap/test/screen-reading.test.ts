@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CLAUDE_SCREEN_CHROME, ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { CLAUDE_SCREEN_CHROME, ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';

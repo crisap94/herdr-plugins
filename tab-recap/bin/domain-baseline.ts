@@ -80,6 +80,35 @@ export const ratchet = (found: Counts, baseline: Counts): readonly string[] =>
 export const filesAbove = (found: Counts, baseline: Counts): ReadonlySet<string> =>
     new Set(Object.keys(found).filter((file) => CATEGORIES.some((category) => (found[file]?.[category] ?? 0) > (baseline[file]?.[category] ?? 0))));
 
+export const VACATED = '';
+
+export const chainRenames = (statusLines: readonly string[], moves: ReadonlyMap<string, string> = new Map()): ReadonlyMap<string, string> => {
+    const origin = new Map<string, string>();
+    statusLines.forEach((line) => {
+        const [status, from, to] = line.split('\t');
+        if (status?.startsWith('R') === true && from !== undefined && to !== undefined) {
+            origin.set(to, origin.get(from) ?? from);
+            origin.set(from, VACATED);
+        } else if (status === 'D' && from !== undefined) {
+            origin.set(from, VACATED);
+        }
+    });
+    moves.forEach((from, to) => {
+        if ((origin.get(to) ?? VACATED) === VACATED) {
+            origin.set(to, from);
+        }
+    });
+    return origin;
+};
+
+export const parseMoves = (text: string): ReadonlyMap<string, string> =>
+    new Map(
+        text
+            .split(/\r?\n/)
+            .map((line) => line.split('\t').map((cell) => cell.trim()))
+            .flatMap(([to, from]): [string, string][] => (to !== undefined && to !== '' && from !== undefined && from !== '' ? [[to, from]] : [])),
+    );
+
 export const countsOf = (findings: readonly Finding[]): Counts => {
     const counts: Record<string, Partial<Record<Finding['category'], number>>> = {};
     findings.forEach((finding) => {
@@ -105,10 +134,11 @@ export const writeBaseline = (dir: string, counts: Counts, lanes: Lanes): Result
     return ok(`${Object.keys(lanes).length} baseline files in ${dir}`);
 };
 
-export const guard = (base: Counts, head: Counts): readonly string[] =>
+export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, string> = new Map()): readonly string[] =>
     Object.keys(head).toSorted().flatMap((file) =>
         CATEGORIES.flatMap((category) => {
-            const was = base[file]?.[category];
+            const origin = renamed.get(file) ?? file;
+            const was = origin === VACATED ? undefined : base[origin]?.[category];
             const now = head[file]?.[category];
             if (now === undefined) {
                 return [];

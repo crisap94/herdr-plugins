@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# A guard that cannot fail is not a guard: in a throw-away repository an allowlisted change
-# must pass, a stray file must fail, and a history that does not contain main must fail.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 guard="$HERE/ci/branch-guard.sh"
@@ -19,7 +17,6 @@ bash "$guard" >/dev/null 2>&1 && { echo "bite: a non-allowlisted file passed" >&
 git switch --quiet --orphan foreign; echo x > foreign.txt; printf 'foreign.txt\nallow.txt\n' > allow.txt; commit foreign
 bash "$guard" >/dev/null 2>&1 && { echo "bite: a history without main passed" >&2; exit 1; }
 
-# the migration guard: a released migration may not change; a new one, and the registry, may
 migrations="$HERE/ci/check-migrations.sh"
 export MIGRATIONS_DIR=schema MIGRATIONS_BASE=main
 git switch --quiet main

@@ -8,10 +8,8 @@ export const SPANISH_REFUSAL: RefusalWords = {
         brew: () => 'brew install oven-sh/bun/bun',
         mise: () => 'mise use -g bun@latest',
         curl: () => 'curl -fsSL https://bun.sh/install | bash',
-        powershell: () => 'powershell -c "irm bun.sh/install.ps1 | iex"',
         'herdr-stop': () => 'Ejecuta: herdr server stop',
         'new-terminal': (needed) => `Abre una terminal nueva, comprueba que \`bun --version\` muestra ${needed} o superior y lanza herdr desde ella.`,
         'launchctl-path': () => 'Si herdr se lanza desde un lanzador, ejecuta: launchctl setenv PATH "/opt/homebrew/bin:$PATH" y reinícialo.',
-        'restart-herdr': () => 'Cierra herdr, abre una terminal nueva donde `bun --version` sea suficiente y lanza herdr otra vez.',
     },
 };

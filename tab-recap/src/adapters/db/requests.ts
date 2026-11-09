@@ -1,4 +1,5 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
@@ -11,9 +12,11 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { handoffBytesOf, handoffIdOf } from './handoff-ids.ts';
-import { all, blob, flag, guarded, isRow, maybeText, text, whole } from './rows.ts';
+import { blob, flag, guarded, isRow, maybeText, text, whole } from './rows.ts';
 import { compareIds, ids } from './uuid7.ts';
 import type { Row } from './rows.ts';
+import { request as requestTable } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
 
 function visibilityOf(row: Row): VisibilityRequest | null {
     const word = text(row, 'hidden');
@@ -61,6 +64,12 @@ function handoffRowOf(row: Row): HandoffRequestRow | null {
     return tab === '' || pane === null || toPane === null || source.kind === 'err' ? null : { id: handoffIdOf(blob(row, 'id')), at: whole(row, 'at'), tab: tabId(tab), pane: paneId(pane), toPane: paneId(toPane), refreshFirst: flag(row, 'refresh_first'), note: maybeText(row, 'note'), source: source.value, answer: parseRequester(maybeText(row, 'answer')) };
 }
 
+const ORIGIN_DEFAULT = 'operator';
+
+function idOrdered(rows: readonly Row[]): readonly Row[] {
+    return rows.toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id')));
+}
+
 function wordOf(hidden: boolean | 'toggle'): string {
     if (hidden === 'toggle') {
         return 'toggle';
@@ -68,91 +77,78 @@ function wordOf(hidden: boolean | 'toggle'): string {
     return hidden ? 'hide' : 'show';
 }
 
+const TARGET_VIEW = { id: requestTable.id, target: requestTable.target };
+const VISIBILITY_VIEW = { id: requestTable.id, target: requestTable.target, hidden: requestTable.hidden };
+const COMPACT_VIEW = { id: requestTable.id, target: requestTable.target, pane: requestTable.pane, note: requestTable.note, origin: requestTable.origin, answer: requestTable.answer };
+const HANDOFF_VIEW = {
+    id: requestTable.id, at: requestTable.at, target: requestTable.target, pane: requestTable.pane, to_pane: requestTable.toPane, note: requestTable.note,
+    refresh_first: requestTable.refreshFirst, closed_at: requestTable.closedAt, answer: requestTable.answer,
+};
+
 export class RequestsRepository implements Requests, CompactionQueue {
     private readonly now: () => number;
-    private readonly refresh: StatementSync;
-    private readonly visibility: StatementSync;
-    private readonly compact: StatementSync;
-    private readonly takeCompact: StatementSync;
-    private readonly curate: StatementSync;
-    private readonly takeCurate: StatementSync;
-    private readonly takeRefresh: StatementSync;
-    private readonly takeHidden: StatementSync;
-    private readonly takeAnsweredRows: StatementSync;
-    private readonly queuedCompact: StatementSync;
-    private readonly insertHandoff: StatementSync;
-    private readonly withdrawHandoffRow: StatementSync;
-    private readonly takeHandoffRows: StatementSync;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync, now: () => number = Date.now) {
+    constructor(db: Database, now: () => number = Date.now) {
         this.now = now;
-        this.refresh = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'refresh', ?)");
-        this.visibility = db.prepare("INSERT INTO request (id, at, kind, target, hidden) VALUES (?, ?, 'visibility', ?, ?)");
-        this.compact = db.prepare("INSERT INTO request (id, at, kind, target, pane, note, origin, answer) VALUES (?, ?, 'compact', ?, ?, ?, ?, ?)");
-        this.curate = db.prepare("INSERT INTO request (id, at, kind, target) VALUES (?, ?, 'curate', ?)");
-        this.takeCurate = db.prepare("DELETE FROM request WHERE kind = 'curate' RETURNING id, target");
-        this.takeCompact = db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note, origin, answer");
-        this.takeRefresh = db.prepare("DELETE FROM request WHERE kind = 'refresh' RETURNING id, target");
-        this.takeHidden = db.prepare("DELETE FROM request WHERE kind = 'visibility' RETURNING id, target, hidden");
-        this.takeAnsweredRows = db.prepare("DELETE FROM request WHERE kind = 'compact' AND answer IS NOT NULL RETURNING id, pane, answer");
-        this.queuedCompact = db.prepare("SELECT 1 FROM request WHERE kind = 'compact' AND target = ? AND (pane = ? OR pane IS NULL) LIMIT 1");
-        this.insertHandoff = db.prepare("INSERT INTO request (id, at, kind, target, pane, to_pane, note, refresh_first, closed_at, answer) VALUES (?, ?, 'handoff', ?, ?, ?, ?, ?, ?, ?)");
-        this.withdrawHandoffRow = db.prepare("DELETE FROM request WHERE kind = 'handoff' AND id = ?");
-        this.takeHandoffRows = db.prepare("DELETE FROM request WHERE kind = 'handoff' RETURNING id, at, target, pane, to_pane, note, refresh_first, closed_at, answer");
+        this.orm = ormOf(db);
     }
 
     compactQueued(tab: string, pane: string): boolean {
-        return guarded(() => this.queuedCompact.get(tab, pane) !== undefined, false);
+        return guarded(() => this.orm.select({ present: requestTable.id }).from(requestTable).where(and(eq(requestTable.kind, 'compact'), eq(requestTable.target, tab), or(eq(requestTable.pane, paneId(pane)), isNull(requestTable.pane)))).limit(1).get() !== undefined, false);
     }
 
     request(tab: string): void {
-        this.refresh.run(ids.next(), this.now(), tab);
+        this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'refresh', target: tab, origin: ORIGIN_DEFAULT, refreshFirst: 0 }).run();
     }
 
     requestVisibility(request: VisibilityRequest): void {
-        this.visibility.run(ids.next(), this.now(), request.target, wordOf(request.hidden));
+        this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'visibility', target: request.target, hidden: wordOf(request.hidden), origin: ORIGIN_DEFAULT, refreshFirst: 0 }).run();
     }
 
     requestCompact(request: CompactRequest): void {
-        this.compact.run(ids.next(), this.now(), request.tab, request.pane, request.note, request.origin ?? 'operator', request.answer ?? null);
+        this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'compact', target: request.tab, pane: request.pane === null ? null : paneId(request.pane), note: request.note, origin: request.origin ?? ORIGIN_DEFAULT, answer: request.answer ?? null, refreshFirst: 0 }).run();
     }
 
     requestCurate(tab: string): void {
-        this.curate.run(ids.next(), this.now(), tab);
+        this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'curate', target: tab, origin: ORIGIN_DEFAULT, refreshFirst: 0 }).run();
     }
 
     requestHandoff(request: NewHandoffRequest): HandoffId {
         const id = ids.next();
-        this.insertHandoff.run(id, this.now(), request.tab, request.pane, request.toPane, request.note, request.refreshFirst ? 1 : 0, closedAtOf(request.source), request.answer ?? null);
+        this.orm.insert(requestTable).values({
+            id, at: this.now(), kind: 'handoff', target: request.tab, pane: request.pane, toPane: request.toPane, note: request.note, origin: ORIGIN_DEFAULT,
+            refreshFirst: request.refreshFirst ? 1 : 0, closedAt: closedAtOf(request.source), answer: request.answer ?? null,
+        }).run();
         return handoffIdOf(id);
     }
 
     withdrawHandoff(id: HandoffId): boolean {
         const key = handoffBytesOf(id);
-        return key !== null && Number(this.withdrawHandoffRow.run(key).changes) > 0;
+        return key !== null && this.orm.delete(requestTable).where(and(eq(requestTable.kind, 'handoff'), eq(requestTable.id, key))).returning({ id: requestTable.id }).all().length > 0;
     }
 
     takeHandoffs(): readonly HandoffRequestRow[] {
-        return guarded(() => all(this.takeHandoffRows).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => handoffRowOf(row) ?? []), []);
+        return guarded(() => idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'handoff')).returning(HANDOFF_VIEW).all()).flatMap((row) => handoffRowOf(row) ?? []), []);
     }
 
     takeAnswered(): readonly { readonly pane: string; readonly answer: string }[] {
-        return guarded(() => all(this.takeAnsweredRows).flatMap((row) => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
+        return guarded(() => this.orm.delete(requestTable).where(and(eq(requestTable.kind, 'compact'), isNotNull(requestTable.answer))).returning({ id: requestTable.id, pane: requestTable.pane, answer: requestTable.answer }).all().flatMap((row) => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
     }
 
     takeCurations(): readonly TabId[] {
-        return guarded(() => [...new Set(all(this.takeCurate).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
+        return guarded(() => [...new Set(idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'curate')).returning(TARGET_VIEW).all()).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
     }
 
     takeCompactions(): readonly CompactRequest[] {
-        return guarded(() => all(this.takeCompact).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => compactionOf(row) ?? []), []);
+        return guarded(() => idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'compact')).returning(COMPACT_VIEW).all()).flatMap((row) => compactionOf(row) ?? []), []);
     }
 
     takeRequests(): readonly TabId[] {
-        return guarded(() => [...new Set(all(this.takeRefresh).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
+        return guarded(() => [...new Set(idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'refresh')).returning(TARGET_VIEW).all()).map((row) => text(row, 'target')).filter((tab) => tab !== ''))].map(tabId), []);
     }
 
     takeVisibility(): readonly VisibilityRequest[] {
-        return guarded(() => all(this.takeHidden).toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id'))).flatMap((row) => visibilityOf(row) ?? []), []);
+        return guarded(() => idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'visibility')).returning(VISIBILITY_VIEW).all()).flatMap((row) => visibilityOf(row) ?? []), []);
     }
 }

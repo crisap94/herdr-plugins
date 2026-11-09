@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DesktopReads } from '#src/adapters/desktop-expanded.ts';
-import { GuiPublisher } from '#src/adapters/gui-publisher.ts';
+import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
+import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf, stateDir } from '#src/daemon/config.ts';
 import { must } from '#src/protocol/result.ts';

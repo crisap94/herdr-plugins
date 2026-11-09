@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { withJsonVersion, withRelease } from '../ci/apply-release.ts';
 import { bumpOf, bumped, entryOf, latestTag, release, renderSection } from '../ci/next-release.ts';
 import type { Get, MergeRequest } from '../ci/next-release.ts';
@@ -104,4 +106,11 @@ test('apply keeps npm\'s own layout: a lockfile changes only its two versions', 
     assert.equal(next.version, '2.0.0');
     assert.equal(next.packages[''].version, '2.0.0');
     assert.equal(next.packages['node_modules/a'].version, '1.0.0');
+});
+
+test('next-release rejects an unknown flag with a non-zero exit and the flag named', () => {
+    const script = join(import.meta.dirname, '..', 'ci', 'next-release.ts');
+    const ran = spawnSync(process.execPath, [script, '--previuos', 'tab-recap-v1.0.0'], { encoding: 'utf8' });
+    assert.notEqual(ran.status, 0);
+    assert.match(ran.stderr, /next-release: 1 .*--previuos/);
 });

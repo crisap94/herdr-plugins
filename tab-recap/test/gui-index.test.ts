@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { GuiPublisher } from '#src/adapters/gui-publisher.ts';
+import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
 import { must } from '#src/protocol/result.ts';
 import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';

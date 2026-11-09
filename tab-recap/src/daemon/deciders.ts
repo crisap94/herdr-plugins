@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { HarnessDecider } from '#src/adapters/harness-decider.ts';
-import { JevDecider } from '#src/adapters/jev-decider.ts';
-import { jevKey } from '#src/adapters/jev-key.ts';
+import { HarnessDecider } from '#src/adapters/job/decider.ts';
+import { JevDecider } from '#src/adapters/job/jev-decider.ts';
+import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import type { Job } from '#src/recap/domain/job.ts';

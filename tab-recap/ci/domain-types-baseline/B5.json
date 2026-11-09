@@ -11,10 +11,10 @@
   },
   "src/adapters/db/autocompact-records.ts": {
     "parameter": 20,
-    "return": 16,
-    "container": 17,
+    "return": 15,
+    "container": 15,
     "property": 2,
-    "assertion": 9
+    "assertion": 5
   },
   "src/adapters/db/backup.ts": {
     "parameter": 8,
@@ -29,17 +29,12 @@
   "src/adapters/db/boundary-read.ts": {
     "parameter": 4,
     "return": 4,
-    "container": 2,
     "assertion": 2
   },
   "src/adapters/db/checked-fact-codec.ts": {
     "container": 1,
     "property": 1,
     "assertion": 2
-  },
-  "src/adapters/db/column-visibility.ts": {
-    "parameter": 1,
-    "container": 1
   },
   "src/adapters/db/compaction-records.ts": {
     "parameter": 8,
@@ -118,8 +113,7 @@
     "container": 2
   },
   "src/adapters/db/migrate.ts": {
-    "return": 2,
-    "assertion": 1
+    "return": 2
   },
   "src/adapters/db/open.ts": {
     "parameter": 4,
@@ -137,7 +131,7 @@
     "property": 3
   },
   "src/adapters/db/recap-read.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
     "container": 9,
     "property": 2
@@ -149,13 +143,13 @@
   },
   "src/adapters/db/requests.ts": {
     "parameter": 5,
-    "return": 11,
-    "container": 28,
+    "return": 7,
+    "container": 16,
     "property": 2
   },
   "src/adapters/db/retention.ts": {
-    "parameter": 3,
-    "return": 2
+    "parameter": 2,
+    "return": 1
   },
   "src/adapters/db/rows.ts": {
     "parameter": 6,
@@ -209,8 +203,7 @@
   },
   "src/adapters/db/transcripts.ts": {
     "parameter": 5,
-    "property": 3,
-    "assertion": 2
+    "property": 3
   },
   "src/adapters/db/typeid.ts": {
     "parameter": 2,
@@ -221,6 +214,6 @@
   },
   "src/adapters/db/verdicts.ts": {
     "parameter": 2,
-    "container": 5
+    "container": 3
   }
 }

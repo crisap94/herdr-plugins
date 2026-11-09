@@ -107,7 +107,7 @@ test('every bun command of the manifest is a launcher', () => {
         assert.ok(LAUNCHERS.includes(file ?? ''), `${file} is a launcher`);
     }
     assert.deepEqual(new Set(commands.filter((file) => file !== 'bin/tab-recap.mjs')), new Set(['src/column/launch.mjs', 'src/setup/launch.mjs', 'src/compact/launch.mjs']));
-    assert.doesNotMatch(manifest, /platforms = .*windows/, 'Windows is not declared yet');
+    assert.doesNotMatch(manifest, /platforms = .*windows/, 'Windows is not declared');
 });
 
 test('the daemon is started through its launcher', () => {

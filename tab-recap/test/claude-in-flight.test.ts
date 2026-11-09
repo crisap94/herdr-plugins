@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/claude-in-flight.ts';
+import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/transcripts/claude/in-flight.ts';
 import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts';
 
 const FOREGROUND_ONLY: BackgroundSplit = { kind: 'foreground-only', why: 'codex-cells' };

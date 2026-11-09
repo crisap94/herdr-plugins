@@ -17,8 +17,8 @@ const laneOf = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', 
 const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
 test('a lane carries the protocol version, its share, the last recap and the open needs; a fact unknown is left out', () => {
-    assert.deepEqual(valuesOf(facts()), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds1' });
-    assert.deepEqual(valuesOf(facts({ share: null, recapAt: null, needs: 2 })), { 'tab-recap-api': '1', 'tab-recap-needs': '2', 'tab-recap-x': 'compact1,kinds1' });
+    assert.deepEqual(valuesOf(facts()), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds2' });
+    assert.deepEqual(valuesOf(facts({ share: null, recapAt: null, needs: 2 })), { 'tab-recap-api': '1', 'tab-recap-needs': '2', 'tab-recap-x': 'compact1,kinds2' });
 });
 
 test('the capability token is a state token: a lane advertises it with its other tokens, and it is rewritten only as they are', async () => {
@@ -27,13 +27,13 @@ test('the capability token is a state token: a lane advertises it with its other
     run.at(0);
     await run.flush();
     assert.ok(STATE_TOKENS.includes(CAPABILITY_TOKEN));
-    assert.equal(reportAt(run.tokens.reports, 0).tokens[CAPABILITY_TOKEN], 'compact1,kinds1');
+    assert.equal(reportAt(run.tokens.reports, 0).tokens[CAPABILITY_TOKEN], 'compact1,kinds2');
     run.at(TICK_MS);
     await run.flush();
     assert.equal(run.tokens.reports.length, 1, 'unchanged: not written before half the time to live');
     run.at(TTL_MS / 2);
     await run.flush();
-    assert.equal(reportAt(run.tokens.reports, 1).tokens[CAPABILITY_TOKEN], 'compact1,kinds1', 'at half the time to live it is written again, with the lane tokens');
+    assert.equal(reportAt(run.tokens.reports, 1).tokens[CAPABILITY_TOKEN], 'compact1,kinds2', 'at half the time to live it is written again, with the lane tokens');
 });
 
 test('switching sharing off clears the capability token with the other names', async () => {

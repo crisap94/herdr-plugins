@@ -1,8 +1,8 @@
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
-import { readPoints } from '#src/adapters/experiment-data.ts';
-import { appendJsonl, doneKeys } from '#src/adapters/experiment-io.ts';
-import type { Point } from '#src/adapters/experiment-point.ts';
+import { readPoints } from '#src/adapters/experiment/data.ts';
+import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
+import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { seeded, shuffled } from '#src/experiment/seeded.ts';
 

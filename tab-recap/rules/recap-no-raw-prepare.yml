@@ -1,0 +1,23 @@
+id: recap-no-raw-prepare
+language: typescript
+severity: error
+message: >-
+  A query in src/adapters/db is a Drizzle builder or a typed `sql` template over the projection (src/adapters/db/drizzle),
+  not a raw `prepare`. The allowlisted files keep raw SQL on purpose: sqlite_schema and PRAGMA probes, VACUUM INTO,
+  migrations, the foreign read-only DBs and the import path.
+note: >-
+  Use `ormOf(db)` from src/adapters/db/orm.ts and `this.orm.all<Row>(sql\`...\`)`, `this.orm.run(...)`, or the builder.
+files:
+  - "**/src/adapters/db/**"
+  - "**/probes/recap-no-raw-prepare/**"
+ignores:
+  - "**/src/adapters/db/backup.ts"
+  - "**/src/adapters/db/migrate.ts"
+  - "**/src/adapters/db/retention.ts"
+  - "**/src/adapters/db/tab-views.ts"
+  - "**/src/adapters/db/closed-lanes.ts"
+  - "**/src/adapters/db/imported.ts"
+  - "**/src/adapters/db/imported-chapters.ts"
+  - "**/src/adapters/db/import/**"
+rule:
+  pattern: $DB.prepare($$$ARGS)

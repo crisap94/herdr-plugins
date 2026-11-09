@@ -1,18 +1,16 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { claudeArgs } from '#src/adapters/claude-harness.ts';
-import { codexArgs } from '#src/adapters/codex-harness.ts';
-import { CustomHarness, splitArgv } from '#src/adapters/custom-harness.ts';
-import { hermesArgs, hermesUsage } from '#src/adapters/hermes-harness.ts';
-import { opencodeArgs, opencodeOutput, sessionsTitled } from '#src/adapters/opencode-harness.ts';
+import { claudeArgs } from '#src/adapters/harness/claude.ts';
+import { codexArgs } from '#src/adapters/harness/codex.ts';
+import { CustomHarness, splitArgv } from '#src/adapters/harness/custom.ts';
+import { opencodeArgs, opencodeOutput, sessionsTitled } from '#src/adapters/harness/opencode.ts';
 import { readFileSync } from 'node:fs';
-import { ClaudeHarness } from '#src/adapters/claude-harness.ts';
-import { CodexHarness } from '#src/adapters/codex-harness.ts';
-import { HarnessBrief } from '#src/adapters/harness-brief.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
-import { RecapWriter } from '#src/adapters/recap-writer.ts';
-import { ARGV_BYTES, instructions, message } from '#src/adapters/recap-prompt.ts';
+import { ClaudeHarness } from '#src/adapters/harness/claude.ts';
+import { CodexHarness } from '#src/adapters/harness/codex.ts';
+import { HarnessBrief } from '#src/adapters/job/brief.ts';
+import { RecapWriter } from '#src/adapters/job/writer.ts';
+import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -43,8 +41,6 @@ test('effort: each harness gets its own word for it, and `default` passes nothin
     assert.deepEqual(opencodeArgs('', 't1', 'low').slice(-2), ['--variant', 'minimal']);
     assert.deepEqual(opencodeArgs('', 't1', 'high').slice(-2), ['--variant', 'high']);
     assert.ok(!opencodeArgs('', 't1', 'default').includes('--variant'));
-    assert.deepEqual(hermesArgs('', 'P', 'u', 'low').slice(-4), ['--reasoning', 'low', '--usage-file', 'u']);
-    assert.ok(!hermesArgs('', 'P', 'u', 'default').includes('--reasoning'));
 });
 
 test('golden: the English instructions are exactly the reviewed operations-contract text', () => {
@@ -53,11 +49,9 @@ test('golden: the English instructions are exactly the reviewed operations-contr
     assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);
 });
 
-test('opencode: JSON events, tools denied by the config the adapter sets; hermes: argv, safe mode, one inert toolset', () => {
+test('opencode: JSON events, tools denied by the config the adapter sets', () => {
     assert.deepEqual(opencodeArgs('', 't1'), ['run', '--pure', '--format', 'json', '--title', 't1']);
     assert.deepEqual(opencodeArgs('opencode/big-pickle', 't1'), ['run', '--pure', '--format', 'json', '--title', 't1', '-m', 'opencode/big-pickle']);
-    assert.deepEqual(hermesArgs('', 'PROMPT', '/w/u.json'), ['-z', 'PROMPT', '--safe-mode', '-t', 'clarify', '--usage-file', '/w/u.json']);
-    assert.deepEqual(hermesArgs('m1', 'P', 'u').slice(5, 7), ['-m', 'm1']);
 });
 
 test('opencode output: the text parts are the answer, step costs add up, the session id is kept for deletion', () => {
@@ -80,11 +74,6 @@ test('a run that died before printing a session id is found again by its title',
     assert.deepEqual(sessionsTitled('{}', 'x'), []);
 });
 
-test('hermes usage report: the cost including auxiliary calls, and the session to delete', () => {
-    assert.deepEqual(hermesUsage('{"session_id":"s1","total_including_auxiliary":{"estimated_cost_usd":0.02}}'), { cost: 0.02, session: 's1' });
-    assert.deepEqual(hermesUsage('garbage'), { cost: 0, session: null });
-});
-
 test('splitArgv: whitespace, quotes, no shell', () => {
     assert.deepEqual(splitArgv('  my-llm  --model "big one" \'a b\' x\'y\'z  '), ['my-llm', '--model', 'big one', 'a b', 'xyz']);
     assert.deepEqual(splitArgv('say ""'), ['say', '']);
@@ -97,29 +86,22 @@ const call = { instructions: instructions(request), input: message(request) };
 const settings = { model: '', effort: 'default' as const };
 
 test('custom: the data and the instructions go in on stdin, the data first, and the answer comes out on stdout', async () => {
-    const harness = custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
-    assert.equal(harness.label(settings), 'custom/node');
+    const harness = custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    assert.equal(harness.label(settings), 'custom/bun');
     const ran = await harness.run(call, settings);
     assert.ok(ran.kind === 'ran' && ran.text.includes('>hi</turn>') && ran.text.includes('JSON object') && ran.text.indexOf('<recap_input') < ran.text.indexOf('JSON object'), 'the data comes first, the instructions after');
     const empty = await custom('', process.cwd(), 1000).run(call, settings);
     assert.ok(isUnknown(empty));
-    const broken = await custom('node -e "process.exit(3)"', process.cwd(), 20_000).run(call, settings);
+    const broken = await custom('bun -e "process.exit(3)"', process.cwd(), 20_000).run(call, settings);
     assert.ok(isUnknown(broken) && broken.why.why === 'failed');
 });
 
 test('a harness labels what it runs; the recap writer and the brief both go through run()', async () => {
     assert.equal(new ClaudeHarness(process.cwd(), 1).label({ model: '', effort: 'low' }), 'claude/haiku');
     assert.equal(new CodexHarness(process.cwd(), 1).label({ model: 'gpt-6-luna', effort: 'high' }), 'codex/gpt-6-luna');
-    const writer = new RecapWriter(custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings);
+    const writer = new RecapWriter(custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings);
     const written = await writer.write(request);
     assert.ok(written.kind === 'written' && written.text.startsWith('<recap_input'));
-    const brief = await new HarnessBrief(custom('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings).write('<compaction_input version="1"/>');
+    const brief = await new HarnessBrief(custom('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000), settings).write('<compaction_input version="1"/>');
     assert.ok(brief.kind === 'briefed' && brief.text.startsWith('<compaction_input') && brief.text.includes('first person'));
-});
-
-test('a harness that takes its prompt as an argument is given nothing longer than its limit; a brief too long for it is refused', async () => {
-    const hermes = new HermesHarness(process.cwd(), 1);
-    assert.equal(hermes.limit, ARGV_BYTES);
-    const refused = await new HarnessBrief(hermes, settings).write('x'.repeat(ARGV_BYTES));
-    assert.ok(isUnknown(refused) && refused.why.why === 'unreadable');
 });

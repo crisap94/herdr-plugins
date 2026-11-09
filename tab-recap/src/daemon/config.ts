@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { configPathsFor } from '#src/adapters/config-paths.ts';
-import { bunHost } from '#src/host/bun-host.mjs';
+import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
 import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import type { Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -79,7 +78,7 @@ export interface Config {
     readonly telemetryTags: TelemetryTags;
 }
 
-const defaults = configPathsFor(bunHost().platform, homedir(), process.env);
+const defaults = xdgPaths(homedir());
 
 function given(key: string): string | undefined {
     const value = process.env[key];

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WriteStream } from 'node:tty';
 import { stripVTControlCharacters } from 'node:util';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { en } from '#src/i18n/en.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
@@ -44,7 +44,7 @@ test('colours: with the plain table the column has no escape sequence and the sa
     assert.ok(presentBar(view(plain), 30).every((line) => !line.includes(ESC)));
 });
 
-const models = { claude: '', codex: '', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: '', opencode: '', custom: '' };
 const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 test('colours: the setup screen takes the plain table too', () => {
