@@ -1,5 +1,5 @@
-import type { Database, Statement } from 'bun:sqlite';
-import { and, asc, count, desc, eq, gte, lt, lte } from 'drizzle-orm';
+import type { Database } from 'bun:sqlite';
+import { and, asc, count, desc, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -40,17 +40,6 @@ export type RunCause = LastRun['cause'];
 
 const NO_COUNT = countOrThrow(parseCount(0));
 
-const ASSOCIATE = `WITH hit AS (
-  SELECT l.task_id, rt.name AS name FROM run_task_lane l
-  JOIN transcript t ON t.id = l.transcript_id
-  JOIN run r ON r.id = l.run_id
-  JOIN run_task rt ON rt.run_id = l.run_id AND rt.task_id = l.task_id
-  WHERE t.tab_id = ? AND t.pane = ? AND t.first_seen >= ? AND t.first_seen <= ? AND r.at <= ?
-  ORDER BY r.at DESC, r.id DESC
-  LIMIT 1
-)
-INSERT OR IGNORE INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name)
-SELECT ?, ?, ?, ?, ?, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`;
 
 function countOrThrow(result: Result<Count, ParseFailure>): Count {
     if (result.kind === 'err') {
@@ -133,23 +122,30 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
     private readonly orm: Orm;
     private readonly days: ClosedLaneDays;
     private readonly present: boolean;
-    private readonly associate: Statement | null;
 
     constructor(db: Database, days: ClosedLaneDays) {
         this.db = db;
         this.orm = ormOf(db);
         this.days = days;
         this.present = one(db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'closed_lane'")) !== null;
-        this.associate = this.present ? db.prepare(ASSOCIATE) : null;
     }
 
     record(closed: ClosedLane): void {
-        const insert = this.associate;
-        if (insert === null) {
+        if (!this.present) {
             throw new Error('the closed-lane table is not migrated');
         }
         writeTx(this.db, () => {
-            insert.run(closed.tab, closed.pane, closed.since, closed.closedAt, closed.closedAt, closed.tab, closed.pane, closed.closedAt, closed.agent, closed.cwd);
+            this.orm.run(sql`WITH hit AS (
+  SELECT l.task_id, rt.name AS name FROM run_task_lane l
+  JOIN transcript t ON t.id = l.transcript_id
+  JOIN run r ON r.id = l.run_id
+  JOIN run_task rt ON rt.run_id = l.run_id AND rt.task_id = l.task_id
+  WHERE t.tab_id = ${closed.tab} AND t.pane = ${closed.pane} AND t.first_seen >= ${closed.since} AND t.first_seen <= ${closed.closedAt} AND r.at <= ${closed.closedAt}
+  ORDER BY r.at DESC, r.id DESC
+  LIMIT 1
+)
+INSERT OR IGNORE INTO closed_lane (tab_id, pane, closed_at, agent, cwd, task_id, task_name)
+SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${closed.cwd}, hit.task_id, hit.name FROM (SELECT 1) LEFT JOIN hit ON 1`);
         });
     }
 

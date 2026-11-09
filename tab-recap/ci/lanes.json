@@ -291,6 +291,7 @@
       "test/db/migration-014.test.ts",
       "test/db/migration-018.test.ts",
       "test/db/parity-answers-ledger.test.ts",
+      "test/db/parity-leftovers.test.ts",
       "test/db/parity-medium.test.ts",
       "test/db/parity-reads.test.ts",
       "test/db/parity-simple.test.ts",
