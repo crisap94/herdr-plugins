@@ -107,7 +107,7 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   millionths, times as epoch milliseconds.
 - **Freeze a fixture** of the schema you release (`test/db/fixtures/schema-vN.sql`, SQL text): the migration test upgrades each
   one and compares it with a fresh install.
-- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`).
+- **Open the database only through the repositories** in `src/adapters/db/`; a transaction is `writeTx` (`BEGIN IMMEDIATE`). Queries are Drizzle builders or typed `sql` templates over the projection in `src/adapters/db/drizzle/`, reached through `ormOf(db)` in `orm.ts`; the raw `prepare` is kept only where the allowlist in the `recap-no-raw-prepare` rule says so (sqlite_schema and PRAGMA probes, `VACUUM INTO`, migrations, the foreign read-only DBs and the import path), and every new raw statement there needs its reason written in the rule's `note` or the file's header. Each moved query gets a parity case in `test/db/parity*.test.ts` that runs the old SQL and the new query on the same seeded database, including BLOB bytes and bigint values.
 
 An upgrade first copies the database to `tab-recap.db.v<old>.bak` (the newest three are kept). A database written by a
 **newer** plugin than the one running is opened read-only and left alone: the daemon says so and exits, the columns show the
