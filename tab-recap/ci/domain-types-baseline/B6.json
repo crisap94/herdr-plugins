@@ -235,10 +235,9 @@
     "container": 1
   },
   "src/adapters/transcripts/claude/in-flight.ts": {
-    "parameter": 11,
-    "return": 9,
-    "container": 21,
-    "property": 6
+    "parameter": 2,
+    "container": 2,
+    "property": 2
   },
   "src/adapters/transcripts/claude/rows.ts": {
     "return": 2,
