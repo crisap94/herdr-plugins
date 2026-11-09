@@ -12,6 +12,9 @@ export interface ToolCall {
 type HarnessKind = Parameters<typeof toolClass>[0];
 
 const COMMAND_CHARS = 64;
+const LOCAL_CLASSES: Readonly<Partial<Record<HarnessKind, Readonly<Record<string, ToolClass>>>>> = {
+    opencode: { task: ToolClass.Agent },
+};
 export const squash = (value: string, max = COMMAND_CHARS): string => {
     const line = value.split(/\s+/).join(' ').trim();
     return line.length > max ? `${line.slice(0, max - 1)}…` : line;
@@ -34,7 +37,7 @@ const agentOf = (name: string, input: Row): string => squash(str(input['descript
 
 export function namedCall(harness: HarnessKind, name: string, input: Row): ToolCall {
     const target = toolTarget(harness, name, input) ?? '';
-    switch (toolClass(harness, name)) {
+    switch (LOCAL_CLASSES[harness]?.[name] ?? toolClass(harness, name)) {
         case ToolClass.Shell:
             return commandOf(input);
         case ToolClass.Read:

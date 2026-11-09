@@ -15,6 +15,8 @@ import { capabilityWording } from '#src/ports/capability-reasons.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
+const CODEX_HOME_MARKER = '/.codex/';
+
 const READERS = {
     claude: supported(() => new ClaudeTranscripts()),
     codex: supported(() => new CodexTranscripts()),
@@ -43,7 +45,7 @@ export function readerKindOf(raw: string): RegisteredKind | null {
 }
 
 export function replayKindOf(flag: string | null, file: string): RegisteredKind | null {
-    return readerKindOf(flag ?? harnessOfTranscriptPath(file) ?? 'claude');
+    return readerKindOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude'));
 }
 
 export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {

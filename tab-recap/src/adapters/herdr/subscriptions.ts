@@ -1,5 +1,5 @@
 import type { EventSubscription, Subscription } from '@stateforge-labs/herdr-sdk';
-import { usePlugin } from './client.ts';
+import { subscribeOnOwnClient } from './client.ts';
 import type { Topic } from '#src/ports/fleet-source.ts';
 
 const GLOBAL_SPECS = new Map<string, Subscription>([
@@ -27,5 +27,5 @@ export function subscribeTopics(topics: readonly Topic[]): Promise<EventSubscrip
             specs.push(spec);
         }
     }
-    return usePlugin((client) => client.events.subscribe(specs));
+    return subscribeOnOwnClient(specs);
 }

@@ -25,7 +25,7 @@ test('each transcript adapter classifies every native tool name and treats a for
         assert.equal(namedCall('opencode', name, {}).kind, kind, name);
     }
     assert.equal(namedCall('opencode', 'Read', {}).kind, 'other');
-    assert.equal(namedCall('opencode', 'task', {}).kind, 'other', 'task is not a native OpenCode subagent name');
+    assert.equal(namedCall('opencode', 'task', {}).kind, 'agent');
     assert.equal(codexCalls('apply_patch', {}, {}).at(0)?.kind, 'edit');
     assert.equal(codexCalls('exec', 'exec_command({cmd:"cat a.ts"})', {}).at(0)?.kind, 'read');
     assert.equal(codexCalls('Read', {}, {}).at(0)?.kind, 'other');

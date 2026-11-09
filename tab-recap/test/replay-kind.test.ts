@@ -4,6 +4,7 @@ import { replayKindOf } from '#src/adapters/transcripts/registry.ts';
 
 test('a codex transcript path infers the codex reader when no flag is given', () => {
     assert.equal(replayKindOf(null, '/home/u/.codex/sessions/rollout-a.jsonl'), 'codex');
+    assert.equal(replayKindOf(null, '/home/u/.codex/sessions/a.jsonl'), 'codex');
 });
 
 test('any other transcript path infers the claude reader when no flag is given', () => {

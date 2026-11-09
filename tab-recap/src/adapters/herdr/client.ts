@@ -1,4 +1,5 @@
 import { HerdrTransportError, ProtocolPolicy, connectPlugin } from '@stateforge-labs/herdr-sdk';
+import type { EventSubscription, Subscription } from '@stateforge-labs/herdr-sdk';
 import { connectAdmin } from '@stateforge-labs/herdr-sdk/admin';
 import type { PluginClient } from '@stateforge-labs/herdr-sdk';
 import type { AdminClient } from '@stateforge-labs/herdr-sdk/admin';
@@ -35,10 +36,13 @@ async function use<C extends Connection, T>(slot: Slot<C>, open: () => Promise<C
     } catch (error) {
         if (error instanceof HerdrTransportError && slot.current === pending) {
             slot.current = null;
-            client.close();
         }
         throw error;
     }
+}
+
+export function subscribeOnOwnClient(specs: readonly Subscription[]): Promise<EventSubscription> {
+    return openPlugin().then((client) => client.events.subscribe(specs));
 }
 
 export function usePlugin<T>(run: (client: PluginClient) => Promise<T>): Promise<T> {

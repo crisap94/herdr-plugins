@@ -915,6 +915,7 @@
       "test/experiment-files.test.ts",
       "test/experiment-store.test.ts",
       "test/gui/brief.test.ts",
+      "test/herdr-subscription-isolation.test.ts",
       "test/jev-decider.test.ts",
       "test/recap-instructions.test.ts",
       "test/recap-prompt.test.ts",
