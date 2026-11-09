@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { scratchDir } from './support.ts';
 
@@ -64,4 +65,33 @@ export function expectParity(parity: ParityDatabase, check: ParityCheck): void {
         throw new Error(`parity: the raw query returned ${rawRows.length} rows, the Drizzle query ${ormRows.length}`);
     }
     assert.deepStrictEqual(normalise(ormRows), normalise(rawRows));
+}
+
+export function expectSameRows(parity: ParityDatabase, raw: RawQuery, produced: unknown, map: (row: Record<string, unknown>) => unknown = (row) => row): void {
+    const rawRows = (parity.reader.prepare(raw.sql).all(...((raw.params ?? []) as SQLQueryBindings[])) as Record<string, unknown>[]).map(map);
+    assert.deepStrictEqual(normalise(produced), normalise(rawRows));
+}
+
+export type SameEffect = { seed: (db: Database) => void; raw: (db: Database) => void; builder: (db: Database) => void; dump: (db: Database) => unknown };
+
+function memoryDatabase(seed: (db: Database) => void): Database {
+    const opened = openDatabase(MEMORY);
+    if (opened.kind !== 'ready') {
+        throw new Error('a fresh in-memory database is never newer');
+    }
+    seed(opened.db);
+    return opened.db;
+}
+
+export function expectSameEffect({ seed, raw, builder, dump }: SameEffect): void {
+    const before = memoryDatabase(seed);
+    const after = memoryDatabase(seed);
+    try {
+        raw(before);
+        builder(after);
+        assert.deepStrictEqual(normalise(dump(after)), normalise(dump(before)));
+    } finally {
+        before.close();
+        after.close();
+    }
 }

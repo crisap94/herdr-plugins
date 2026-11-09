@@ -37,10 +37,6 @@
     "property": 1,
     "assertion": 2
   },
-  "src/adapters/db/column-visibility.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/adapters/db/compaction-records.ts": {
     "parameter": 8,
     "return": 6,

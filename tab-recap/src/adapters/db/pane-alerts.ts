@@ -1,4 +1,5 @@
-import type { Database, Statement } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
+import { eq, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneAlertReader, PaneAlertWriter } from '#src/ports/pane-alerts.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
@@ -9,7 +10,9 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
-import { all, guarded, isRow } from './rows.ts';
+import { paneAlert } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { guarded, isRow } from './rows.ts';
 
 type PaneAlertRow = PaneAlert;
 
@@ -69,32 +72,31 @@ export function parsePaneAlertRow(input: unknown): Result<PaneAlertRow, ParseFai
 }
 
 export class PaneAlertsRepository implements PaneAlertWriter, PaneAlertReader {
-    private readonly read: Statement;
-    private readonly upsert: Statement;
-    private readonly clearSource: Statement;
-    private readonly clearPane: Statement;
+    private readonly orm: Orm;
 
     constructor(db: Database) {
-        this.read = db.prepare('SELECT source, pane, label, at, details FROM pane_alert WHERE pane = ? ORDER BY source');
-        this.upsert = db.prepare('INSERT OR REPLACE INTO pane_alert (source, pane, label, at, details) VALUES (?, ?, ?, ?, ?)');
-        this.clearSource = db.prepare('DELETE FROM pane_alert WHERE source = ?');
-        this.clearPane = db.prepare('DELETE FROM pane_alert WHERE pane = ?');
+        this.orm = ormOf(db);
     }
 
     put(alert: PaneAlert): void {
-        this.upsert.run(alert.source, alert.pane, alert.label, alert.at, JSON.stringify(alert.details));
+        this.orm.insert(paneAlert).values({ source: alert.source, pane: alert.pane, label: alert.label, at: alert.at, details: JSON.stringify(alert.details) })
+            .onConflictDoUpdate({
+                target: [paneAlert.source, paneAlert.pane],
+                set: { label: sql`excluded.label`, at: sql`excluded.at`, details: sql`excluded.details` },
+            })
+            .run();
     }
 
     clear(source: AlertSource): void {
-        this.clearSource.run(source);
+        this.orm.delete(paneAlert).where(eq(paneAlert.source, source)).run();
     }
 
     forgetPane(pane: PaneId): void {
-        this.clearPane.run(pane);
+        this.orm.delete(paneAlert).where(eq(paneAlert.pane, pane)).run();
     }
 
     alertsOf(pane: PaneId): readonly PaneAlert[] {
-        return guarded(() => all(this.read, pane).flatMap((row) => {
+        return guarded(() => this.orm.select({ source: paneAlert.source, pane: paneAlert.pane, label: paneAlert.label, at: paneAlert.at, details: paneAlert.details }).from(paneAlert).where(eq(paneAlert.pane, pane)).orderBy(paneAlert.source).all().flatMap((row) => {
             const parsed = parsePaneAlertRow(row);
             return parsed.kind === 'ok' ? [parsed.value] : [];
         }), []);

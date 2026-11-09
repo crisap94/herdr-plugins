@@ -288,6 +288,7 @@
       "test/db/migrate-herdr-asks.test.ts",
       "test/db/migration-014.test.ts",
       "test/db/migration-018.test.ts",
+      "test/db/parity-simple.test.ts",
       "test/db/recap-records.test.ts",
       "test/db/retention.test.ts",
       "test/db/run-inputs.test.ts",
