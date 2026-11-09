@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { filesAbove, guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import { chainRenames, filesAbove, guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCRATCH = mkdtempSync(join(tmpdir(), 'domain-baseline-'));
@@ -54,6 +54,14 @@ test('the merge-base guard refuses a raised entry and a new entry, and allows a 
     assert.deepEqual(guard(base, { [FILE]: { parameter: 1 } }), []);
     assert.deepEqual(guard(base, {}), []);
     assert.deepEqual(guard(base, { [FILE]: { parameter: 2, assertion: 1, return: 1 } }), [`new entry: ${FILE}: return 1`]);
+});
+
+test('renames chain across commits back to the merge-base path, a deleted file drops out, and a listed move fills only what git did not see', () => {
+    const lines = ['R100\tsrc/a.ts\tsrc/x/a.ts', 'M\tsrc/x/a.ts', 'R061\tsrc/x/a.ts\tsrc/y/a.ts', 'R100\tsrc/gone.ts\tsrc/z/gone.ts', 'D\tsrc/z/gone.ts', ''];
+    const moves = new Map([['src/y/a.ts', 'src/wrong.ts'], ['src/carved.ts', 'src/old.ts']]);
+    assert.deepEqual([...chainRenames(lines, moves)].toSorted(([a], [b]) => a.localeCompare(b)), [['src/carved.ts', 'src/old.ts'], ['src/y/a.ts', 'src/a.ts']]);
+    const base = { 'src/a.ts': { container: 3 }, 'src/old.ts': { container: 20 } };
+    assert.deepEqual(guard(base, { 'src/y/a.ts': { container: 3 }, 'src/carved.ts': { container: 2 } }, chainRenames(lines, moves)), []);
 });
 
 test('a lane file holds only the files its lane owns', () => {

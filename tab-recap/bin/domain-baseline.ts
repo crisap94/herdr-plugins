@@ -80,6 +80,33 @@ export const ratchet = (found: Counts, baseline: Counts): readonly string[] =>
 export const filesAbove = (found: Counts, baseline: Counts): ReadonlySet<string> =>
     new Set(Object.keys(found).filter((file) => CATEGORIES.some((category) => (found[file]?.[category] ?? 0) > (baseline[file]?.[category] ?? 0))));
 
+export const chainRenames = (statusLines: readonly string[], moves: ReadonlyMap<string, string> = new Map()): ReadonlyMap<string, string> => {
+    const origin = new Map<string, string>();
+    statusLines.forEach((line) => {
+        const [status, from, to] = line.split('\t');
+        if (status?.startsWith('R') === true && from !== undefined && to !== undefined) {
+            origin.set(to, origin.get(from) ?? from);
+            origin.delete(from);
+        } else if (status === 'D' && from !== undefined) {
+            origin.delete(from);
+        }
+    });
+    moves.forEach((from, to) => {
+        if (!origin.has(to)) {
+            origin.set(to, from);
+        }
+    });
+    return origin;
+};
+
+export const parseMoves = (text: string): ReadonlyMap<string, string> =>
+    new Map(
+        text
+            .split('\n')
+            .map((line) => line.split('\t'))
+            .flatMap(([to, from]): [string, string][] => (to !== undefined && to !== '' && from !== undefined && from !== '' ? [[to, from]] : [])),
+    );
+
 export const countsOf = (findings: readonly Finding[]): Counts => {
     const counts: Record<string, Partial<Record<Finding['category'], number>>> = {};
     findings.forEach((finding) => {

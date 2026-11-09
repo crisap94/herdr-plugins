@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ok, type Result } from '#src/protocol/result.ts';
-import { guard, parseBaseline } from './domain-baseline.ts';
+import { chainRenames, guard, parseBaseline, parseMoves } from './domain-baseline.ts';
 import type { Counts } from './domain-findings.ts';
 
 const git = (args: readonly string[]): string => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -25,22 +25,12 @@ const baseTexts = (dir: string, base: string): readonly string[] =>
         .filter((line) => line.endsWith('.json'))
         .map((path) => git(['show', `${base}:./${path.slice(path.indexOf(dir))}`]));
 
+const MOVES = 'ci/domain-types-moves.tsv';
+
 const renamesOf = (base: string): ReadonlyMap<string, string> => {
-    const renamed = new Map<string, string>();
-    const sources = new Set<string>();
-    git(['diff', '-M', '--name-status', '--relative', base])
-        .split('\n')
-        .forEach((line) => {
-            const [status, from, to] = line.split('\t');
-            if (status?.startsWith('R') && from !== undefined && to !== undefined) {
-                if (sources.has(from)) {
-                    throw new Error(`${from} is renamed twice`);
-                }
-                sources.add(from);
-                renamed.set(to, from);
-            }
-        });
-    return renamed;
+    const committed = git(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
+    const pending = git(['diff', '-M', '--name-status', '--relative', 'HEAD']).split('\n');
+    return chainRenames([...committed, ...pending], existsSync(MOVES) ? parseMoves(readFileSync(MOVES, 'utf8')) : new Map());
 };
 
 const compare = (dir: string, before: readonly string[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
