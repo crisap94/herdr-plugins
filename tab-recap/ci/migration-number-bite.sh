@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# A numbering rule that cannot fail is not a rule: in a throw-away repository a migration numbered exactly the
-# base's highest plus one passes (and so do several in a row), and a gap, a repeat, a number at or below the
-# base and a duplicate each fail, and a base branch that cannot be read is not covered when CI is set.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 migrations="$HERE/ci/check-migrations.sh"

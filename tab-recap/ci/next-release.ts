@@ -1,8 +1,3 @@
-// The next release, from the labels of the MRs merged since the previous tag (changelog::added | changed |
-// fixed | internal, plus an optional changelog::breaking). Prints JSON: previous, version (null when only
-// `internal` changed), bump, section (the CHANGELOG section, rendered deterministically) and merged.
-//   bun ci/next-release.ts [--previous <tag>] [--to <ref>]
-// env: CI_API_V4_URL, CI_PROJECT_ID | CI_PROJECT_PATH, GITLAB_TOKEN | RELEASE_TOKEN | CI_JOB_TOKEN, RELEASE_DATE
 import { execFileSync } from 'node:child_process';
 
 export type Kind = 'added' | 'changed' | 'fixed' | 'internal';
@@ -74,7 +69,6 @@ const HEADINGS: readonly (readonly [Kind, string])[] = [['added', 'Added'], ['ch
 
 const bullet = (entry: Entry): string => `- ${entry.title} (!${entry.iid})`;
 
-/** `### [x.y.z] — date`, then Breaking, Added, Changed, Fixed; `internal` is omitted. */
 export function renderSection(version: string, date: string, entries: readonly Entry[]): string {
     const groups: (readonly [string, readonly Entry[]])[] = [
         ['Breaking', entries.filter((entry) => entry.breaking)],
@@ -84,7 +78,6 @@ export function renderSection(version: string, date: string, entries: readonly E
     return [`### [${version}] — ${date}`, ...body].join('\n\n');
 }
 
-/** The newest `<plugin>-v<x.y.z>` among the tag names, by version. */
 export function latestTag(tags: readonly string[], plugin: string): string | null {
     const prefix = `${plugin}-v`;
     const versions = tags.filter((tag) => tag.startsWith(prefix) && SEMVER.test(tag.slice(prefix.length)));
@@ -98,7 +91,6 @@ export function latestTag(tags: readonly string[], plugin: string): string | nul
 
 const asList = (value: unknown): readonly Record<string, unknown>[] => (Array.isArray(value) ? value as Record<string, unknown>[] : []);
 
-/** The MRs merged into `target` that brought in the commits of previous..to, once each, oldest first. */
 export async function mergedSince(get: Get, previous: string, to: string, target: string): Promise<readonly MergeRequest[]> {
     const compared = await get(`/repository/compare?from=${encodeURIComponent(previous)}&to=${encodeURIComponent(to)}`);
     const commits = asList((compared as { commits?: unknown }).commits);

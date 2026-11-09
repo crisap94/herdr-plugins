@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# tab-recap's lint gate. Exit: 0 clean · 1 a finding · 3 could not look (a tool is missing).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
@@ -7,7 +6,6 @@ tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null |
 [ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 . ci/host-limits.sh
 
-# the pinned devDependency first, so CI and a checkout run the same ast-grep
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
 [ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'bun install'" >&2; exit 3; }
 [ -x node_modules/.bin/oxlint ] \
@@ -17,7 +15,6 @@ failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
 
 echo "rules (ast-grep) — each must pass on the tree AND bite its bad probe:"
-# bash 3.2 (macOS' /bin/bash) has no mapfile: read the list line by line
 RULES=()
 while IFS= read -r rule; do RULES+=("$rule"); done < <(find rules -maxdepth 1 -name '*.yml' | sort)
 [ "${#RULES[@]}" -gt 0 ] || { echo "lint: 3 — NOT COVERED: zero rules" >&2; exit 3; }

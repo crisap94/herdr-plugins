@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Proves the gates that lint.sh does not scan by its rules/ loop: the pending ast-grep rule and the oxlint
-# unsafe-any rules. Exit: 0 every probe agrees · 1 a probe disagrees · 3 a tool is missing.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"

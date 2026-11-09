@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-# release:prepare — if the MRs merged since the previous tag call for a release: write it (the three
-# versions and the CHANGELOG section), commit it on the branch release/<plugin>-v<version> and open a
-# merge request labelled `land` (release-publish.sh). main is never pushed. When that merge request has
-# landed, release:tag (tag-release.sh) creates the annotated tag and the tag pipeline does the rest
-# (check-release.sh, notes, releases).
-# env: RELEASE_TOKEN (api + write_repository) · CI_API_V4_URL · CI_PROJECT_ID · CI_PROJECT_PATH
-#      CI_SERVER_HOST · DRY_RUN=1 (edit the working tree only: no commit, no push, no merge request)
-# Exit: 0 the release merge request is open, or none due · 1 refused or failed · 3 could not look.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE/../.."

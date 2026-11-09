@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Two rules for the files under src/adapters/db/schema/:
-# 1. A released migration is never edited: any file that exists in the latest `tab-recap-v*` tag must be
-#    byte-identical in the working tree (a fix is a NEW numbered file). No tag that holds the directory yet
-#    (the first release) passes. `index.ts` is the registry and may grow.
-# 2. A migration this branch adds is numbered exactly the highest number on the base branch plus one, and
-#    consecutively when it adds several: a gap would make a database skip the numbers in between, and a number
-#    that is not above the base collides with a migration that already landed. No base branch to read passes
-#    locally and is NOT COVERED (exit 3) when CI is set.
-# Exit: 0 clean · 1 a finding · 3 could not look.
-# Env: MIGRATIONS_TAG (default: the latest tab-recap-v* tag) · MIGRATIONS_DIR (default tab-recap/src/adapters/db/schema, from the repository root)
-#      · MIGRATIONS_BASE (default origin/main)
 set -uo pipefail
 dir="${MIGRATIONS_DIR:-tab-recap/src/adapters/db/schema}"
 base="${MIGRATIONS_BASE:-origin/main}"

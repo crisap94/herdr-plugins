@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Is this tag a release we can publish? Every rule below must hold or the pipeline stops.
-# usage: check-release.sh <tag>
-# env: PLUGIN_DIR (default: this plugin) · MAIN_REF (default origin/main) · CHANGELOG
-#      CI_API_V4_URL + CI_PROJECT_ID (+ RELEASE_TOKEN | CI_JOB_TOKEN): also ask whether a release exists · CURL
-# Exit: 0 all hold · 1 a rule is broken · 2 usage · 3 could not look.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${PLUGIN_DIR:-$HERE/..}"

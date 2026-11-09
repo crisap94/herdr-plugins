@@ -1,12 +1,8 @@
-// Turn a rendered release into file edits: the two versions, the CHANGELOG section, its link refs.
-//   bun ci/apply-release.ts <plugin-dir> <version> <section-file> <previous-tag>
-// The CHANGELOG is the repository's, one level above the plugin directory.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const sameVersion = (text: string, version: string): string => text.replace(/^version = "[^"]*"/m, `version = "${version}"`);
 
-/** package.json: the version, the rest of the file as it is. */
 export function withJsonVersion(text: string, version: string): string {
     const json = JSON.parse(text) as { version: string; packages?: Record<string, { version?: string }> };
     json.version = version;
@@ -17,7 +13,6 @@ export function withJsonVersion(text: string, version: string): string {
     return `${JSON.stringify(json, null, 2)}\n`;
 }
 
-/** The plugin's part of the CHANGELOG, as [start, end) line numbers. */
 function partOf(lines: readonly string[], plugin: string): readonly [number, number] {
     const start = lines.indexOf(`## ${plugin}`);
     if (start < 0) {

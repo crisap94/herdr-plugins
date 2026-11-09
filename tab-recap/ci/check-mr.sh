@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# A merge request into main must say what it changes for the release notes: exactly one label of
-# changelog::added | changed | fixed | internal (optionally also changelog::breaking), and the two
-# sections of the template filled in. The MR title becomes the changelog line, so make it read well.
-# env: CI_MERGE_REQUEST_LABELS (comma separated), CI_MERGE_REQUEST_DESCRIPTION
-# Exit: 0 fine · 1 a rule is broken.
 set -uo pipefail
 labels=",${CI_MERGE_REQUEST_LABELS:-},"
 description="${CI_MERGE_REQUEST_DESCRIPTION:-}"
@@ -18,7 +13,6 @@ done
 stray="$(printf '%s' "${CI_MERGE_REQUEST_LABELS:-}" | tr ',' '\n' | grep '^changelog::' | grep -vxE 'changelog::(added|changed|fixed|internal|breaking)' || true)"
 [ -z "$stray" ] || fail "unknown label(s): $(printf '%s' "$stray" | tr '\n' ' ')(changelog:: takes added, changed, fixed, internal and breaking)"
 
-# the text under a `## heading`, with HTML comments and blanks removed
 filled() {
     printf '%s\n' "$description" | awk -v want="$1" '
         /^## / { inside = ($0 == want); next }

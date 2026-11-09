@@ -1,14 +1,10 @@
 include:
-  # GitLab's free scanners (SAST, Secret Detection); their jobs run in the existing test stage.
   - template: Jobs/SAST.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
 
-# The images are variables so a project or group can point them at a mirror or registry proxy.
 variables:
-  # Run the GitLab scanners in merge request pipelines too, not only in branch pipelines.
   AST_ENABLE_MR_PIPELINES: "true"
   BUN_IMAGE: oven/bun:1.4-debian
-  # The oldest Bun the plugin supports (package.json engines): tested on every MR, not only after merge.
   BUN_FLOOR_IMAGE: oven/bun:1.4.4-debian
   GLAB_IMAGE: registry.gitlab.com/gitlab-org/cli:latest
 
@@ -50,7 +46,6 @@ lint:
     - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
     - bash ci/lint.sh
 
-# The writer's document is validated against its DTD with xmllint (the bun images do not ship it).
 test:
   extends: .tab-recap
   stage: check
@@ -69,8 +64,6 @@ test:floor:
     - xmllint --version
     - bash ci/test.sh
 
-# A Phase B lane of the domain-type-gates change edits only the files ci/lanes.json gives it; the lane is
-# named by the branch (lane/B3-something). test/** and the label lane-scope::adapts are the two openings.
 lane-scope:
   extends: .tab-recap
   stage: check
@@ -85,7 +78,6 @@ lane-scope:
       case ",$CI_MERGE_REQUEST_LABELS," in *,lane-scope::adapts,*) adapts=1 ;; esac
       LANE_ADAPTS=$adapts LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bun ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
 
-# The domain-type ratchet only goes down: against the target branch no baseline entry rises and none is new.
 domain-baseline:
   extends: .tab-recap
   stage: check
@@ -97,8 +89,6 @@ domain-baseline:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - BASELINE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bash ci/check-domain-baseline.sh
 
-# Every MR into main says what it changes for the release notes: one changelog:: label and the
-# template's two sections. The MR title becomes the changelog line; the labels decide the version.
 merge-request-notes:
   stage: check
   rules:
@@ -106,10 +96,6 @@ merge-request-notes:
   script:
     - bash tab-recap/ci/check-mr.sh
 
-# Manual, on main only: the MRs merged since the previous tag decide whether a release is due and
-# which version it is. If so: bump the versions, write the CHANGELOG section and open a merge request
-# labelled `land` from release/<plugin>-v<version>; main is never pushed. RELEASE_TOKEN is a protected,
-# masked CI variable.
 release:prepare:
   extends: .tools
   stage: release
@@ -124,8 +110,6 @@ release:prepare:
   script:
     - bash tab-recap/ci/prepare-release.sh
 
-# On main's pipeline once the release merge request has landed: the manifest carries a version with a
-# dated changelog section and no tag, so create the annotated tag at this commit; the tag pipeline follows.
 release:tag:
   extends: .tools
   stage: release
@@ -140,8 +124,6 @@ release:tag:
     - git fetch --quiet --tags origin
     - bash tab-recap/ci/tag-release.sh
 
-# A tag `tab-recap-v<x.y.z>`: check that it is a release we can publish, take the notes from the
-# CHANGELOG, then create the GitLab release.
 release-notes:
   extends: .tools
   stage: release
@@ -158,7 +140,6 @@ release-notes:
   artifacts:
     paths: [notes.md]
 
-# `release:` with the glab image: release-cli is deprecated since GitLab 18.0 (removal in 20.0).
 release:
   stage: release
   image: $GLAB_IMAGE

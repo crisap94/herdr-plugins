@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# The signature check bites: every bad probe exits 1 with a `not supported:` line matching its expect file,
-# every good probe exits 0. Exit: 0 clean · 1 a probe does not behave as its name says · 3 could not look.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
