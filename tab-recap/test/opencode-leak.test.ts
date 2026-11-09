@@ -19,12 +19,12 @@ test('a timed-out opencode run is Unknown timeout and the plugin leaves the sess
     assert.equal(runtime.plans.length, 0);
 });
 
-test('every opencode run asks to persist while the ephemeral cell is unmeasured, so the library keeps the session record it deletes', async () => {
+test('no opencode run asks to persist while the ephemeral cell is emulated, because the library deletes the session record itself', async () => {
     const runtime = fakeRuntime({ scripts: { opencode: [fakeOutput({ text: '## Goal\n- x' }), fakeOutput({ text: '## Goal\n- y' })] } });
     const first = await opencode(runtime).write(request);
     const second = await opencode(runtime).write(request);
     assert.ok(first.kind === 'written' && second.kind === 'written');
-    assert.deepEqual(runtime.calls.map((each) => each.options.persist), [true, true]);
+    assert.deepEqual(runtime.calls.map((each) => each.options.persist), [false, false]);
 });
 
 test('an opencode run is never given a title, a variant or a flag: the harness builds no argument list', async () => {

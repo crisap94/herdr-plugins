@@ -79,25 +79,25 @@ test('codex: no persistence, no cost basis, a cost of zero, the harness default 
     assert.deepEqual(request, { instructions: 'do', input: 'in', effort: 'harness-default' });
 });
 
-test('opencode: persists because its ephemeral cell is unmeasured, always the harness default effort, the job tag in the environment', async () => {
+test('opencode: does not persist because its ephemeral cell is emulated, always the harness default effort, the job tag in the environment', async () => {
     const runtime = scripted('opencode', { text: 'answer' });
     const harness = new LibraryHarness(runtime, 'opencode', 1000, 'judge');
     await harness.run(call, { model: 'opencode/big-pickle', effort: 'high' });
     const first = firstCall(runtime);
-    assert.equal(first.options.persist, true);
+    assert.equal(first.options.persist, false);
     assert.equal(first.request.effort, 'harness-default');
     assert.equal(first.request.model, 'opencode/big-pickle');
     assert.equal(transformOf(first)({})['OTEL_RESOURCE_ATTRIBUTES'], 'tab_recap.job=judge');
 });
 
-test('opencode persists only while the ephemeral cell is unusable: a supported cell turns persistence off', async () => {
+test('opencode persists only while the ephemeral cell is unusable: an emulated cell turns persistence off', async () => {
     const base = fakeRuntime({ scripts: {} }).capabilities('opencode');
     assert.ok(base !== null);
-    assert.equal(base[CapabilityName.Ephemeral][Engine.Cli].state, 'unmeasured');
-    const flipped = { ...base, [CapabilityName.Ephemeral]: { ...base[CapabilityName.Ephemeral], [Engine.Cli]: { state: 'supported' } } } as typeof base;
+    assert.equal(base[CapabilityName.Ephemeral][Engine.Cli].state, 'emulated');
+    const flipped = { ...base, [CapabilityName.Ephemeral]: { ...base[CapabilityName.Ephemeral], [Engine.Cli]: { state: 'unmeasured', question: 'q' } } } as typeof base;
     const runtime = fakeRuntime({ scripts: { opencode: [fakeOutput({ text: 'answer' })] }, capabilities: { opencode: flipped } });
     await new LibraryHarness(runtime, 'opencode', 1000).run(call, settings);
-    assert.equal(firstCall(runtime).options.persist, false);
+    assert.equal(firstCall(runtime).options.persist, true);
 });
 
 test('the environment transform: no HERDR_ or TAB_RECAP_ names, no nested-agent names, everything else kept', async () => {
