@@ -289,19 +289,11 @@
     "property": 3,
     "assertion": 2
   },
-  "src/adapters/transcripts/opencode/context.ts": {
-    "container": 1
-  },
   "src/adapters/transcripts/opencode/in-flight.ts": {
-    "parameter": 2,
-    "assertion": 2
+    "parameter": 2
   },
   "src/adapters/transcripts/opencode/parts.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 5,
-    "property": 3,
-    "assertion": 2
+    "parameter": 2
   },
   "src/adapters/transcripts/opencode/tool-calls.ts": {
     "parameter": 1,
@@ -311,9 +303,7 @@
   "src/adapters/transcripts/opencode/transcripts.ts": {
     "parameter": 14,
     "return": 1,
-    "container": 1,
-    "property": 2,
-    "assertion": 8
+    "property": 2
   },
   "src/adapters/transcripts/registry.ts": {
     "parameter": 6,

@@ -1,26 +1,18 @@
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { Database } from 'bun:sqlite';
+import { parseMessage } from '@stateforge-labs/harness-adapters/opencode';
+import { openOpencodeStore, opencodeDatabasePath } from '@stateforge-labs/harness-adapters/opencode/store';
+import type { OpenCodeStore } from '@stateforge-labs/harness-adapters/opencode/store';
+import { TranscriptPath, sessionIdOfTranscriptPath } from '@stateforge-labs/harness-adapters';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import { BUSY_PRAGMA } from '../../db/connection.ts';
 import { opencodeObserved } from './context.ts';
-import { parse, str } from '../jsonl.ts';
-import { entriesOf, partsOf } from './parts.ts';
-import type { MessageRow } from './parts.ts';
+import { partsOf } from './parts.ts';
 import { opencodeInFlight } from './in-flight.ts';
 
 const MESSAGES = 400;
 const PROMPT_LOOKBACK = 30;
-const SEPARATOR = '#';
-
-export function opencodeDatabase(env: Readonly<Record<string, string | undefined>> = process.env): string {
-    const data = env['XDG_DATA_HOME'];
-    return join(data !== undefined && data !== '' ? data : join(homedir(), '.local', 'share'), 'opencode', 'opencode.db');
-}
 
 function newest(entries: readonly Entry[], budget: number): readonly Entry[] {
     let used = 0;
@@ -32,12 +24,14 @@ function newest(entries: readonly Entry[], budget: number): readonly Entry[] {
     return entries.slice(from);
 }
 
+const sessionOf = (source: string): string => sessionIdOfTranscriptPath('opencode', source) ?? '';
+
 export class OpencodeTranscripts implements Transcripts {
     readonly agent = 'opencode';
     readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(source) };
     private readonly database: string;
 
-    constructor(database = opencodeDatabase()) {
+    constructor(database = opencodeDatabasePath()) {
         this.database = database;
     }
 
@@ -48,53 +42,29 @@ export class OpencodeTranscripts implements Transcripts {
         if (!existsSync(this.database)) {
             return Promise.resolve(unknown({ why: 'not-found', what: `opencode's database ${this.database}` }));
         }
-        try {
-            return Promise.resolve(this.withDatabase((db) => this.newestSession(db, lane.cwd ?? '')));
-        } catch (error) {
-            return Promise.resolve(this.unreadable(error));
-        }
+        return Promise.resolve(this.withStore((store) => this.newestSession(store, lane.cwd ?? '')));
     }
 
     read(source: string, was: Position, budget: number): Promise<ChunkResult> {
-        const at = source.lastIndexOf(SEPARATOR);
-        try {
-            return Promise.resolve(this.withDatabase((db) => this.chunkOf(db, source.slice(at + 1), was, budget)));
-        } catch (error) {
-            return Promise.resolve(this.unreadable(error));
-        }
+        return Promise.resolve(this.withStore((store) => this.chunkOf(store, sessionOf(source), was, budget)));
     }
 
     latestPrompt(source: string): Promise<PromptResult> {
-        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
-        try {
-            return Promise.resolve(this.withDatabase((db) => this.promptOf(db, session)));
-        } catch (error) {
-            return Promise.resolve(this.unreadable(error));
-        }
+        return Promise.resolve(this.withStore((store) => this.promptOf(store, sessionOf(source))));
     }
 
     observed(source: string): Promise<ObservedResult> {
-        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
-        try {
-            return Promise.resolve(this.withDatabase((db) => this.observedIn(db, session)));
-        } catch (error) {
-            return Promise.resolve(this.unreadable(error));
-        }
+        return Promise.resolve(this.withStore((store) => this.observedIn(store, sessionOf(source))));
     }
 
     private readInFlight(source: string): Promise<InFlightResult> {
-        const session = source.slice(source.lastIndexOf(SEPARATOR) + 1);
-        try {
-            return Promise.resolve(this.withDatabase((db) => opencodeInFlight(db, session, MESSAGES)));
-        } catch (error) {
-            return Promise.resolve(this.unreadable(error));
-        }
+        return Promise.resolve(this.withStore((store) => opencodeInFlight(store, sessionOf(source), MESSAGES)));
     }
 
-    private observedIn(db: Database, session: string): ObservedResult {
-        const rows = db.prepare('SELECT data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?').all(session, PROMPT_LOOKBACK) as unknown as readonly { readonly data: string }[];
-        for (const row of rows) {
-            const found = opencodeObserved(parse(row.data) ?? {});
+    private observedIn(store: OpenCodeStore, session: string): ObservedResult {
+        for (const message of store.recentMessages(session, PROMPT_LOOKBACK)) {
+            const parsed = parseMessage(message.data);
+            const found = parsed.ok ? opencodeObserved(parsed.record) : null;
             if (found !== null) {
                 return { kind: 'observed', observed: found };
             }
@@ -102,11 +72,9 @@ export class OpencodeTranscripts implements Transcripts {
         return { kind: 'observed', observed: null };
     }
 
-    private promptOf(db: Database, session: string): PromptResult {
-        const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? ORDER BY time_created DESC LIMIT ?')
-            .all(session, PROMPT_LOOKBACK) as unknown as readonly MessageRow[];
-        for (const row of rows) {
-            const prompt = entriesOf(db, row).findLast((entry) => entry.role === 'user');
+    private promptOf(store: OpenCodeStore, session: string): PromptResult {
+        for (const message of store.recentMessages(session, PROMPT_LOOKBACK)) {
+            const prompt = partsOf(store, message).entries.findLast((entry) => entry.role === 'user');
             if (prompt !== undefined) {
                 return { kind: 'prompt', text: prompt.text };
             }
@@ -114,36 +82,31 @@ export class OpencodeTranscripts implements Transcripts {
         return { kind: 'prompt', text: null };
     }
 
-    private unreadable(error: unknown): Unknown {
-        return unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) });
-    }
-
-    private withDatabase<T>(use: (db: Database) => T): T {
-        const db = new Database(this.database, { readonly: true });
-        db.exec(BUSY_PRAGMA);
+    private withStore<T>(use: (store: OpenCodeStore) => T): T | Unknown {
+        const store = openOpencodeStore(this.database);
+        if (store === null) {
+            return unknown({ why: 'unreadable', detail: this.database });
+        }
         try {
-            return use(db);
+            return use(store);
         } finally {
-            db.close();
+            store.close();
         }
     }
 
-    private newestSession(db: Database, cwd: string): Located {
-        const found = db.prepare('SELECT id FROM session WHERE directory = ? AND parent_id IS NULL AND time_archived IS NULL ORDER BY time_updated DESC LIMIT 1').get(cwd) as { readonly id: string } | null;
-        return found === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: `${this.database}${SEPARATOR}${found.id}` };
+    private newestSession(store: OpenCodeStore, cwd: string): Located {
+        const session = store.rootSessionForDirectory(cwd);
+        return session === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: `${this.database}${TranscriptPath.OpenCodeSeparator}${session}` };
     }
 
-    private chunkOf(db: Database, session: string, was: Position, budget: number): Chunk {
-        const rows = db.prepare('SELECT id, time_updated, data FROM message WHERE session_id = ? AND time_updated > ? ORDER BY time_created DESC LIMIT ?')
-            .all(session, was.cursor, MESSAGES) as unknown as readonly MessageRow[];
-        const messages = rows.toReversed();
-        const read = messages.map((message) => partsOf(db, message));
+    private chunkOf(store: OpenCodeStore, session: string, was: Position, budget: number): Chunk {
+        const messages = store.messagesSince(session, was.cursor, MESSAGES).toReversed();
+        const read = messages.map((message) => partsOf(store, message));
         const entries = newest(read.flatMap((one) => one.entries), budget);
-        const title = db.prepare('SELECT title FROM session WHERE id = ?').get(session) as { readonly title: string } | null;
         const prompts = entries.filter((entry) => entry.role === 'user');
         return {
-            kind: 'chunk', entries, title: str(title?.title) ?? null, lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
-            position: { cursor: Math.max(was.cursor, ...rows.map((row) => row.time_updated)), tail: null }, grew: rows.length > 0,
+            kind: 'chunk', entries, title: store.sessionTitle(session), lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
+            position: { cursor: Math.max(was.cursor, ...messages.map((message) => message.timeUpdated)), tail: null }, grew: messages.length > 0,
         };
     }
 }

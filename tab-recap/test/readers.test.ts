@@ -6,7 +6,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
-import { OpencodeTranscripts, opencodeDatabase } from '#src/adapters/transcripts/opencode/transcripts.ts';
+import { adapterEnv } from '@stateforge-labs/harness-adapters';
+import { opencodeDatabasePath } from '@stateforge-labs/harness-adapters/opencode/store';
+import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -146,8 +148,8 @@ test('opencode: the reader cannot write — the handle is read-only', () => {
 });
 
 test('opencodeDatabase honours XDG_DATA_HOME', () => {
-    assert.equal(opencodeDatabase({ XDG_DATA_HOME: '/data' }), '/data/opencode/opencode.db');
-    assert.match(opencodeDatabase({}), /\.local\/share\/opencode\/opencode\.db$/);
+    assert.equal(opencodeDatabasePath(adapterEnv({ XDG_DATA_HOME: '/data' })), '/data/opencode/opencode.db');
+    assert.match(opencodeDatabasePath(adapterEnv({})), /\.local\/share\/opencode\/opencode\.db$/);
 });
 
 const assistantRow = (text: string): string => `${JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } })}\n`;
