@@ -234,13 +234,6 @@
     "container": 1,
     "property": 3
   },
-  "src/recap/application/gatekeeper.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 8,
-    "property": 2,
-    "assertion": 1
-  },
   "src/recap/application/handoff-confirmation.ts": {
     "parameter": 5,
     "return": 1,

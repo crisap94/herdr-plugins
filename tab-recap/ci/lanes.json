@@ -466,7 +466,6 @@
       "src/recap/application/extract-job.ts",
       "src/recap/application/extract-pipeline.ts",
       "src/recap/application/freshness-block.ts",
-      "src/recap/application/gatekeeper.ts",
       "src/recap/application/gui-index-build.ts",
       "src/recap/application/gui-index-needs.ts",
       "src/recap/application/gui-tab-build.ts",
