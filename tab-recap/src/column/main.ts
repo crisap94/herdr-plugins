@@ -1,6 +1,7 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { glowRenderer } from '#src/adapters/os/glow.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
+import { BEL, ESC, FRAME_END, FRAME_HOME, LINE_END, MOUSE_OFF, MOUSE_ON, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/os/plugin-version.ts';
 import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -19,8 +20,6 @@ import { compactFromColumn } from './compact.ts';
 import { spawn } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
 
-const ESC = String.fromCodePoint(0x1b);
-const BEL = String.fromCodePoint(0x07);
 const TICK_MS = 1000;
 const LOCALE_MS = Number(process.env['TAB_RECAP_COLUMN_POLL_MS'] ?? '') || 3000;
 const GUTTER = 2;
@@ -44,7 +43,7 @@ let rollFailed = false;
 const extensions = [...loadExtensions(configGetter()), ...(store === null ? [] : [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })])];
 const glow = glowRenderer(config.glow);
 const style = styleFor(process.stdout);
-const RESET = style === coloured ? `${ESC}[0m` : '';
+const RESET = style === coloured ? RESET_SGR : '';
 
 const expandedLines = mode === 'modal' ? expandedScreen(store) : null;
 
@@ -101,13 +100,13 @@ function size(): [number, number] {
 }
 
 function frameOf(lines: readonly string[]): string {
-    return lines.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n');
+    return lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n');
 }
 
 function paint(frame: string, force: boolean): void {
     if (force || frame !== lastFrame) {
         lastFrame = frame;
-        process.stdout.write(`${ESC}]2;${title}${BEL}${ESC}[H${frame}${ESC}[J`);
+        process.stdout.write(`${TITLE_OSC}${title}${BEL}${FRAME_HOME}${frame}${FRAME_END}`);
     }
 }
 
@@ -183,15 +182,12 @@ const KEYS: Readonly<Record<string, () => void>> = {
     '\r': openModal,
 };
 
-const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
-const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
-
 function restore(): void {
-    process.stdout.write(`${MOUSE_OFF}${ESC}[?25h${ESC}[?1049l`);
+    process.stdout.write(`${MOUSE_OFF}${SCREEN_OFF}`);
 }
 
 function enter(): void {
-    process.stdout.write(`${ESC}[?1049h${ESC}[?25l${mode === 'modal' ? '' : MOUSE_ON}${ESC}]2;${title}${BEL}`);
+    process.stdout.write(`${SCREEN_ON}${mode === 'modal' ? '' : MOUSE_ON}${TITLE_OSC}${title}${BEL}`);
 }
 
 enter();

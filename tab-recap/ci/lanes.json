@@ -873,6 +873,7 @@
       "src/adapters/os/process/usage.ts",
       "src/adapters/os/system-clock.ts",
       "src/adapters/os/terminal-style.ts",
+      "src/adapters/os/tui.ts",
       "src/adapters/transcripts/claude/context.ts",
       "src/adapters/transcripts/claude/in-flight.ts",
       "src/adapters/transcripts/claude/prompt.ts",
