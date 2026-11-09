@@ -4,7 +4,7 @@ import { createServer } from 'node:net';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
+import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: string; calls: string[]; done: () => void }> {

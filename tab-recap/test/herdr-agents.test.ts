@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HerdrAgents } from '#src/adapters/herdr-agents.ts';
-import type { Wire } from '#src/adapters/herdr-agents.ts';
+import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
+import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { compactionLine, compactionPiece } from '#src/recap/domain/compaction-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 

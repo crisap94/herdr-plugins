@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { decode, paneSessionOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 
 const kinds = ['claude', 'codex', 'opencode', 'unknown'] as const;

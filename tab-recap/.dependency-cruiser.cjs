@@ -49,7 +49,7 @@ module.exports = {
     {
       name: 'transport-boundary',
       severity: 'error',
-      from: { pathNot: ['^src/adapters/herdr-fleet\\.ts$', '^src/transport/'] },
+      from: { pathNot: ['^src/adapters/herdr/fleet\\.ts$', '^src/transport/'] },
       to: { path: '^src/transport/' },
     },
     {

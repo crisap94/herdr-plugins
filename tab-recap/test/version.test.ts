@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { codeVersion, parseVersion } from '#src/adapters/os/plugin-version.ts';
-import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/host-check.ts';
+import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/herdr/host-check.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';

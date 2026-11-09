@@ -1,5 +1,5 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { opensPopup, requestNoteOf, startCompact } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';

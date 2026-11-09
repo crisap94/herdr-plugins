@@ -1,5 +1,5 @@
 import { agentPanesIn, columnsIn } from './column-panes.ts';
-import { HerdrAgents } from './herdr-agents.ts';
+import { HerdrAgents } from './agents.ts';
 import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
 import type { Json, Pushed } from '#src/transport/herdr.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
@@ -19,7 +19,7 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { refusalOf } from './token-refusal.ts';
-import { layoutOf, list, paneTokensOf, reconciliationOf, str } from './herdr-json.ts';
+import { layoutOf, list, paneTokensOf, reconciliationOf, str } from './json.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 

@@ -2,7 +2,7 @@ import { openCliStore } from '#src/daemon/cli-store.ts';
 import { glowRenderer } from '#src/adapters/os/glow.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { codeVersion, shouldRoll } from '#src/adapters/os/plugin-version.ts';
-import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown, Mode } from '#src/recap/render/present.ts';

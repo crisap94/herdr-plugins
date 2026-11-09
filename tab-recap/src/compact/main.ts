@@ -1,5 +1,5 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';

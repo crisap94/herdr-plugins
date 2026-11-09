@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { paneTokensOf } from '#src/adapters/herdr-json.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { paneTokensOf } from '#src/adapters/herdr/json.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { Informer } from '#src/recap/application/informer.ts';

@@ -67,11 +67,6 @@
     "container": 6,
     "property": 8
   },
-  "src/adapters/column-panes.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 8
-  },
   "src/adapters/compaction-plan-registry.ts": {
     "parameter": 4,
     "return": 2
@@ -167,25 +162,41 @@
     "parameter": 1,
     "container": 2
   },
-  "src/adapters/herdr-agents.ts": {
+  "src/adapters/herdr/agents.ts": {
     "parameter": 14,
     "return": 2,
     "container": 4,
     "property": 5,
     "assertion": 2
   },
-  "src/adapters/herdr-fleet.ts": {
+  "src/adapters/herdr/column-panes.ts": {
+    "parameter": 1,
+    "return": 1,
+    "container": 8
+  },
+  "src/adapters/herdr/fleet.ts": {
     "parameter": 22,
     "return": 1,
     "container": 11,
     "property": 1,
     "assertion": 6
   },
-  "src/adapters/herdr-json.ts": {
+  "src/adapters/herdr/host-check.ts": {
+    "parameter": 4,
+    "return": 2,
+    "property": 2
+  },
+  "src/adapters/herdr/json.ts": {
     "parameter": 4,
     "return": 2,
     "container": 9,
     "assertion": 1
+  },
+  "src/adapters/herdr/session-registry.ts": {
+    "parameter": 2
+  },
+  "src/adapters/herdr/token-refusal.ts": {
+    "container": 2
   },
   "src/adapters/hermes-harness.ts": {
     "parameter": 6,
@@ -193,11 +204,6 @@
     "container": 1,
     "property": 4,
     "assertion": 1
-  },
-  "src/adapters/host-check.ts": {
-    "parameter": 4,
-    "return": 2,
-    "property": 2
   },
   "src/adapters/jev-decider.ts": {
     "parameter": 6,
@@ -336,12 +342,6 @@
   "src/adapters/screen-transcripts.ts": {
     "parameter": 5,
     "return": 3
-  },
-  "src/adapters/session-registry.ts": {
-    "parameter": 2
-  },
-  "src/adapters/token-refusal.ts": {
-    "container": 2
   },
   "src/adapters/tool-calls.ts": {
     "parameter": 13,

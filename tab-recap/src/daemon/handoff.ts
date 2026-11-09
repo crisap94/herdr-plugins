@@ -2,7 +2,7 @@ import { writeTx } from '#src/adapters/db/connection.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
 import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
-import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
+import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';

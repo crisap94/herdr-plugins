@@ -115,7 +115,7 @@ counts, as it does for the ast-grep rules it replaces), is the one source for im
 - `src/recap/application/`, `src/recap/render/` and `src/i18n/` import no `node:` module except `node:util`, and nothing from
   `src/adapters/`, `src/transport/`, `src/daemon/`, `src/column/` or `src/setup/`;
 - `src/protocol/` imports only its own files; `src/protocol/exchanges/` imports its own folder and one level up;
-- only `src/adapters/herdr-fleet.ts` and `src/transport/` import `src/transport/`;
+- only `src/adapters/herdr/fleet.ts` and `src/transport/` import `src/transport/`;
 - only the files of D3's list import `brand.ts`;
 - no cycle; no orphan (dependency-cruiser's orphan rule, with no list of entry points: the daemon, column, compact and setup
   `main.ts` files are loaded by URL from `src/host/launch.mjs`, which the graph cannot see, so an entry-point reachability rule would
