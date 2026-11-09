@@ -39,14 +39,14 @@ Plain reading, left to right:
    - `herdr-core/fleet.ts` and `herdr-core/agents.ts`: `HcCoreFleet` and the agent status behind the same ports the CLI fleet fills.
      Typing into agents is still reported as not available.
    - `herdr-core/wire.ts`: the codec and the JSON-RPC types; `herdr-core/backoff.ts`: the retry timing.
-2. **DesktopBus** (`desktop-bus.ts`): a ring of the last 500 `{seq, topic, tab, at}`. The publisher feeds it after each atomic file
+2. **DesktopBus** (`desktop/bus.ts`): a ring of the last 500 `{seq, topic, tab, at}`. The publisher feeds it after each atomic file
    write, so the files and the bus cannot disagree. `since(seq)` returns the newer events, or `reset` when the client is too far behind.
-3. **DesktopApi** (`desktop-api*.ts`): `node:http` on `127.0.0.1`, an ephemeral port, a token in `<state>/gui/api.json` (mode 0600), the
+3. **DesktopApi** (`desktop/api/*.ts`): `node:http` on `127.0.0.1`, an ephemeral port, a token in `<state>/gui/api.json` (mode 0600), the
    `Host` header checked, a 64 KiB request cap. Routes are in `tab-recap/README.md`; responses are in `schema/desktop-api.v1.schema.json`.
-   `desktop-lease.ts` holds the open leases (60 s, at most 256).
+   `desktop/lease.ts` holds the open leases (60 s, at most 256).
 4. **The mod** (`gui/api.js`, `gui/feed.js`, `gui/store.js`) long-polls `/v1/events`, re-reads the index and the open tab on an event,
    and falls back to the files (folder watch plus a 15 s re-read) when the API is down. `TAB_RECAP_API=off` keeps it on files.
-   - The wiring of all this is in `src/adapters/desktop-frontend.ts`; names and limits are in `desktop-constants.ts`.
+   - The wiring of all this is in `src/adapters/desktop/frontend.ts`; names and limits are in `desktop/constants.ts`.
 
 ## Decisions
 

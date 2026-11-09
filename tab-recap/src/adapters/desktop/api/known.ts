@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import { INDEX_FILE } from './desktop-constants.ts';
+import { INDEX_FILE } from '../constants.ts';
 
 interface Listing {
     readonly tabs: readonly unknown[];

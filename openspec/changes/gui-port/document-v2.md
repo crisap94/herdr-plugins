@@ -120,7 +120,7 @@ read after construction returns `[]` files.
 **Decision: one daemon-owned instance, created once in the desktop frontend, never per publish and never in `show --json`.**
 
 - New file `src/adapters/gui-model.ts` builds it from the **wrapped store** that `desktopFrontend().wrap(store, log)` already receives
-  (`desktop-frontend.ts:38`; `Store` fields `database.ts:47-73` contain every dep: `records`, `ledger`, `stories`, `session`,
+  (`desktop/frontend.ts:38`; `Store` fields `database.ts:47-73` contain every dep: `records`, `ledger`, `stories`, `session`,
   `autocompact`, `boundaries`, `requests`). Construction is the literal of `expanded-modal.ts:12`:
   `new ExpandedModel({records, ledger, stories, session, autocompact, boundaries, requests, edits})` with
   `edits = (lanes, now) => cache.of(lanes, now)` and `cache = new EditCache(new EditCounts(modalTranscriptRegistry()))`.
@@ -128,7 +128,7 @@ read after construction returns `[]` files.
   the TUI. (`daemonTranscriptRegistry(screens, wants)` `:49` would also count screen-read lanes; it is not used, to keep parity.)
 - `GuiPublisher` gets one new dep, `expanded: (tab, view, now) => ExpandedData`, and `document()` passes the result to the v2
   builder. `GuiPublisherDeps` is branch-created, so it is editable.
-- **Bounded rate.** `publish()` is called on every `writeTab` and recap run (`publishing-views.ts:25`, `publishing-records.ts:23-33`),
+- **Bounded rate.** `publish()` is called on every `writeTab` and recap run (`desktop/publishing-views.ts:25`, `desktop/publishing-records.ts:23-33`),
   which is event-driven and can be frequent. The model read touches the ledger, stories, session and boundaries repositories (SQLite)
   and may call `requestCurate`. Policy: the gui-model wrapper keeps `{data: ExpandedData, at: Instant}` per tab and calls
   `model.read` at most once per `EXPANDED_EVERY_MS` (proposed 5 000 ms) per tab; in between it reuses the last data with the
@@ -248,7 +248,7 @@ never emptied except in step 7, which also says so in `error` and `cuts`.
 - `src/recap/domain/gui-tab-v2.ts` exports `parseGuiTab(input: unknown): Result<GuiTabAny, ParseFailure>` (named `parse<Domain>`, with
   `GuiTabAny` declared in the same file) that accepts version 1 and 2, uses `orElse` defaults for every v2 field when reading a v1
   file, and rejects any other version with a named `ParseFailure`. `parseGuiIndex` / index rows are unchanged (the index stays at
-  `version: 1`, `gui-publisher.ts:56`).
+  `version: 1`, `desktop/publisher.ts:56`).
 - **The mod must read both.** `gui/main.js` currently has no version check (it reads `task.sections.*` and `lane.*` directly,
   `gui/main.js:113-114`). Phase 2 adds: `version === 1` draws the v1 layout (seven sections from `sections`, no timeline, session or
   stage); `version === 2` draws the Recap and Full views; any other value shows "this mod is older than the daemon" and nothing else.

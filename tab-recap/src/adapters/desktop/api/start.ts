@@ -1,8 +1,8 @@
 import { must } from '#src/protocol/result.ts';
 import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
-import { API_ENV, API_OFF } from './desktop-constants.ts';
-import { DesktopApi } from './desktop-api.ts';
-import type { ApiContext } from './desktop-api-call.ts';
+import { API_ENV, API_OFF } from '../constants.ts';
+import { DesktopApi } from './server.ts';
+import type { ApiContext } from './call.ts';
 
 async function report(api: DesktopApi, log: (line: NonEmptyText) => void): Promise<void> {
     const started = await api.listen();

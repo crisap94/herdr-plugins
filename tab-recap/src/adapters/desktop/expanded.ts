@@ -18,11 +18,11 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
-import { codeVersion } from './os/plugin-version.ts';
-import { modalTranscriptRegistry } from './transcripts/registry.ts';
-import { EXPANDED_EVERY_MS, OPEN_MARKER_FRESH_MS, OPEN_MARKER_PREFIX, SETTLE_MS, TRAILING_SLACK_MS } from './desktop-constants.ts';
-import type { Store } from './db/database.ts';
-import type { OpenLeases } from './desktop-lease.ts';
+import { codeVersion } from '../os/plugin-version.ts';
+import { modalTranscriptRegistry } from '../transcripts/registry.ts';
+import { EXPANDED_EVERY_MS, OPEN_MARKER_FRESH_MS, OPEN_MARKER_PREFIX, SETTLE_MS, TRAILING_SLACK_MS } from './constants.ts';
+import type { Store } from '../db/database.ts';
+import type { OpenLeases } from './lease.ts';
 
 export type DesktopMode = 'daemon' | 'read-only';
 

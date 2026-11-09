@@ -5,7 +5,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { NonEmptyText } from '#src/recap/domain/text.ts';
-import { API_FILE, API_VERSION } from './desktop-constants.ts';
+import { API_FILE, API_VERSION } from '../constants.ts';
 
 export interface Discovery {
     readonly port: Count;

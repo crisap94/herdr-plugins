@@ -3,9 +3,9 @@ import type { Requests } from '#src/ports/requests.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { DesktopBus } from './desktop-bus.ts';
-import type { DesktopEngine } from './desktop-engine.ts';
-import type { OpenLeases } from './desktop-lease.ts';
+import type { DesktopBus } from '../bus.ts';
+import type { DesktopEngine } from '../engine.ts';
+import type { OpenLeases } from '../lease.ts';
 
 export interface ApiContext {
     readonly dir: Directory;

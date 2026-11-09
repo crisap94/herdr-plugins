@@ -6,12 +6,12 @@ import { guiFileName } from '#src/recap/domain/gui-tab.ts';
 import { NO } from '#src/recap/domain/gui-tab-parts.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import { API_FILE, API_NO_INDEX, API_VERSION, INDEX_FILE } from './desktop-constants.ts';
-import type { ApiContext, ApiCall, Handler } from './desktop-api-call.ts';
-import { sendEmpty, sendFailure, sendJson } from './desktop-api-reply.ts';
-import { eventsHandler } from './desktop-api-events.ts';
-import { answerHandler, compactHandler, handoffHandler } from './desktop-api-actions.ts';
-import { tabOf, withTab } from './desktop-api-tab.ts';
+import { API_FILE, API_NO_INDEX, API_VERSION, INDEX_FILE } from '../constants.ts';
+import type { ApiContext, ApiCall, Handler } from './call.ts';
+import { sendEmpty, sendFailure, sendJson } from './reply.ts';
+import { eventsHandler } from './events.ts';
+import { answerHandler, compactHandler, handoffHandler } from './actions.ts';
+import { tabOf, withTab } from './tab.ts';
 
 interface Route {
     readonly pattern: RegExp;

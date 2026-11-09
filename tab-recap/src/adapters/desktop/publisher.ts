@@ -13,8 +13,8 @@ import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, parseGuiIndex, type GuiIndex,
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { writeAtomically } from './os/atomic-file.ts';
-import type { DesktopBus } from './desktop-bus.ts';
+import { writeAtomically } from '../os/atomic-file.ts';
+import type { DesktopBus } from './bus.ts';
 
 const INDEX = 'index.json';
 const limit = must(parseCount(GUI_TAB_LIMIT));

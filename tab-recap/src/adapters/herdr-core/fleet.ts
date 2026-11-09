@@ -14,7 +14,7 @@ import type { ScreenResult } from '#src/ports/screens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
-import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_LISTING, HC_ODD_SCREEN } from '../desktop-constants.ts';
+import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_LISTING, HC_ODD_SCREEN } from '../desktop/constants.ts';
 import { HcCoreAgents } from './agents.ts';
 import type { HcSeenResult } from './agents.ts';
 import { HcCoreRoster, parseHcListed } from './roster.ts';

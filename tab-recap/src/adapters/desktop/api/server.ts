@@ -5,11 +5,11 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { API_BODY_CAP, API_HEALTH_PATH, API_HOST, API_LOCALHOST, API_TOKEN_BYTES } from './desktop-constants.ts';
-import type { ApiContext } from './desktop-api-call.ts';
-import { removeDiscovery, writeDiscovery } from './desktop-api-discovery.ts';
-import { sendFailure } from './desktop-api-reply.ts';
-import { dispatch } from './desktop-api-routes.ts';
+import { API_BODY_CAP, API_HEALTH_PATH, API_HOST, API_LOCALHOST, API_TOKEN_BYTES } from '../constants.ts';
+import type { ApiContext } from './call.ts';
+import { removeDiscovery, writeDiscovery } from './discovery.ts';
+import { sendFailure } from './reply.ts';
+import { dispatch } from './routes.ts';
 
 const hash = (text: Text): Text => must(parseText(createHash('sha256').update(text).digest('hex')));
 

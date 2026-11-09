@@ -3,11 +3,11 @@ import { saying, type Unknown } from '#src/ports/unknowable.ts';
 import { MESSAGE_LIMIT, NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import type { ApiCall, ApiContext, Handler } from './desktop-api-call.ts';
-import { API_FROM_PARAM, API_NOTE_PARAM, API_PANE_PARAM, API_TO_PARAM } from './desktop-constants.ts';
-import type { DesktopEngine } from './desktop-engine.ts';
-import { sendFailure, sendJson } from './desktop-api-reply.ts';
-import { withTab } from './desktop-api-tab.ts';
+import type { ApiCall, ApiContext, Handler } from './call.ts';
+import { API_FROM_PARAM, API_NOTE_PARAM, API_PANE_PARAM, API_TO_PARAM } from '../constants.ts';
+import type { DesktopEngine } from '../engine.ts';
+import { sendFailure, sendJson } from './reply.ts';
+import { withTab } from './tab.ts';
 
 const failed = (call: ApiCall, lost: Unknown): void => {
     sendFailure(call.response, 500, 'internal', must(parseText(saying(lost.why))));

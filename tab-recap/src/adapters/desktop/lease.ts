@@ -3,7 +3,7 @@ import { must } from '#src/protocol/result.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { LEASE_CAP, LEASE_MS } from './desktop-constants.ts';
+import { LEASE_CAP, LEASE_MS } from './constants.ts';
 
 export class OpenLeases {
     private readonly now: () => Instant;

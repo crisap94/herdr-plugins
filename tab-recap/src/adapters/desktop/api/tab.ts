@@ -1,9 +1,9 @@
 import { NO } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { ApiCall, ApiContext, Handler } from './desktop-api-call.ts';
-import { listed } from './desktop-api-known.ts';
-import { sendFailure } from './desktop-api-reply.ts';
+import type { ApiCall, ApiContext, Handler } from './call.ts';
+import { listed } from './known.ts';
+import { sendFailure } from './reply.ts';
 
 export function tabOf(raw: Text | undefined): TabId | null {
     try {

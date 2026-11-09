@@ -3,12 +3,12 @@ import type { Fleet } from '#src/ports/fleet.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { EditCounts } from '#src/recap/application/edit-counts.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
-import { databasePath } from './db/database.ts';
-import { openPrintStore } from './db/print-store.ts';
-import { GitLaneRepo } from './git/lane-repo.ts';
-import { GitWorksiteReader } from './git/worksite.ts';
-import { SystemClock } from './os/system-clock.ts';
-import { modalTranscriptRegistry } from './transcripts/registry.ts';
+import { databasePath } from '../db/database.ts';
+import { openPrintStore } from '../db/print-store.ts';
+import { GitLaneRepo } from '../git/lane-repo.ts';
+import { GitWorksiteReader } from '../git/worksite.ts';
+import { SystemClock } from '../os/system-clock.ts';
+import { modalTranscriptRegistry } from '../transcripts/registry.ts';
 
 export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();

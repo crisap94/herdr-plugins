@@ -5,7 +5,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId, parseSessionId, tabId } from '#src/recap/domain/ids.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
-import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
+import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';

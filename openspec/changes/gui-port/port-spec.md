@@ -164,7 +164,7 @@ selected brief. All additions are additive: `version` of `index.json` stays `1`,
 
 `GuiIndexRow`, `GuiIndex`, `parseGuiIndexRow`, `parseGuiIndex` are branch-created in `gui-tab.ts`; keep the exports and move the new
 types to a **new** file `src/recap/domain/gui-index.ts` (re-exported from `gui-tab.ts`) and the derivation to
-`src/recap/application/gui-index-build.ts`. `GuiPublisher.write` (`src/adapters/gui-publisher.ts:70-77`) keeps calling `guiIndexRow(document)`.
+`src/recap/application/gui-index-build.ts`. `GuiPublisher.write` (`src/adapters/desktop/publisher.ts:70-77`) keeps calling `guiIndexRow(document)`.
 Registries: `ci/lanes.json` via `bun ci/lanes-generate.ts`, `ci/domain-types-baseline/B6.json`. Every exported signature uses branded
 types (`Count`, `Instant`, `Text`, `NonEmptyText`, `PaneId`, `AgentKind`, `Flag`, `GuiStageId`); parsers take `unknown` and are named
 `parseGui...`; no primitives, no `boolean` (use `Flag`), complexity <= 10, <= 25 statements, explicit return types, `toSorted`.
@@ -213,7 +213,7 @@ the limit. The mod colours it red when `needs > 0`.
 ### B.3 Document: `compactHint`
 
 `GuiTab` gains `compactHint: Count | null` = `reads.compactHint` (already read, `gui-tab-reads.ts:16`; set from
-`config.compaction.hint`, desktop-expanded.ts:93). Add the optional property to `schema/gui-tab.v2.schema.json` (not in `required`) and
+`config.compaction.hint`, desktop/expanded.ts:93). Add the optional property to `schema/gui-tab.v2.schema.json` (not in `required`) and
 default it to `null` in the v2 parser, so documents already on disk still parse. The index row carries the same value as `hintPercent`.
 Mod rule: `hint = idx.hintPercent ?? HINT_DEFAULT (40)`.
 
@@ -354,7 +354,7 @@ lanes[] (doc lanes with stage), story, session, events[], breaks[], cuts[], task
 
 - Jump: `run("tab.select", { id: tab })` then `run("pane.focus", { terminal })` (`herdr.d.ts:53-58`, `:58` `pane.focus {pane | terminal}`). Whether `tab.select {id}` of a tab in another space also switches the space is unverified (spike item 6; else `space.select {id: space.id}` first, from `spaces()`).
 - Refresh: `exec(bin, ["refresh", tab])` (`SAFE_TAB` checked, argv array). "Refresh all": the command takes one tab: loop sequentially over rows whose status is not `idle`, max `REFRESH_ALL_MAX`. (An optional `refresh --all` in `tab-recap-desktop` is a later engine step.)
-- The daemon reads `open.<tab>` marker files (`src/adapters/desktop-expanded.ts:100-107`, `OPEN_MARKER_PREFIX 'open.'`, fresh for 60 s, `desktop-constants.ts`): it only decides whether the story is curated while someone looks. The Brief role must keep touching `<stateDir>/gui/open.<encoded tab>` while a brief is open (every `MARKER_MS`=20 s, `exec("touch", [path])`) and remove it on leave and in `close()`, as the old mod does (main.js:`mark/unmark`). Fleet and strip never touch it.
+- The daemon reads `open.<tab>` marker files (`src/adapters/desktop/expanded.ts:100-107`, `OPEN_MARKER_PREFIX 'open.'`, fresh for 60 s, `desktop/constants.ts`): it only decides whether the story is curated while someone looks. The Brief role must keep touching `<stateDir>/gui/open.<encoded tab>` while a brief is open (every `MARKER_MS`=20 s, `exec("touch", [path])`) and remove it on leave and in `close()`, as the old mod does (main.js:`mark/unmark`). Fleet and strip never touch it.
 
 ### D.12 Toasts and notifications
 

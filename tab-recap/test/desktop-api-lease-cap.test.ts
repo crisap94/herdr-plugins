@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OpenLeases } from '#src/adapters/desktop-lease.ts';
-import { LEASE_CAP, LEASE_MS } from '#src/adapters/desktop-constants.ts';
+import { OpenLeases } from '#src/adapters/desktop/lease.ts';
+import { LEASE_CAP, LEASE_MS } from '#src/adapters/desktop/constants.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';

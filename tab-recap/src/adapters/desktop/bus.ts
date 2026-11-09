@@ -3,7 +3,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
-import { BUS_RING } from './desktop-constants.ts';
+import { BUS_RING } from './constants.ts';
 
 export type BusTopic = 'index' | 'tab' | 'notice';
 

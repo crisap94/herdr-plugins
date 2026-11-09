@@ -3,10 +3,10 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { YES } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import { duration, type Instant } from '#src/recap/domain/time.ts';
-import { API_POLL_CAP_S, API_POLL_DEFAULT_S } from './desktop-constants.ts';
-import type { BusRead } from './desktop-bus.ts';
-import type { ApiCall, ApiContext } from './desktop-api-call.ts';
-import { sendFailure, sendJson } from './desktop-api-reply.ts';
+import { API_POLL_CAP_S, API_POLL_DEFAULT_S } from '../constants.ts';
+import type { BusRead } from '../bus.ts';
+import type { ApiCall, ApiContext } from './call.ts';
+import { sendFailure, sendJson } from './reply.ts';
 
 const SINCE: NonEmptyText = must(parseNonEmptyText('since'));
 const WAIT: NonEmptyText = must(parseNonEmptyText('wait'));
