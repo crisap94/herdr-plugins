@@ -5,8 +5,8 @@
     "": {
       "name": "herdr-tab-recap",
       "dependencies": {
-        "@stateforge-labs/harness-adapters": "0.1.0",
-        "@stateforge-labs/harness-hooks": "0.2.0",
+        "@stateforge-labs/harness-adapters": "0.2.0",
+        "@stateforge-labs/harness-hooks": "0.3.0",
         "@stateforge-labs/herdr-sdk": "0.4.0",
         "drizzle-orm": "0.45.4",
         "isomorphic-git": "1.44.4",
@@ -92,9 +92,9 @@
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.85.0", "", { "os": "win32", "cpu": "x64" }, "sha512-pBebIPUpKKhWrhSMWhy8TdAZBewiXnfxmaAGxhzxM1068GagqFaTwgKlU6e+UyJ2sPR+VoHouhXuGJkQjsrDvA=="],
 
-    "@stateforge-labs/harness-adapters": ["@stateforge-labs/harness-adapters@0.1.0", "", { "dependencies": { "@stateforge-labs/harness-hooks": "^0.2.0", "zod": "4.6.7" } }, "sha512-8rpkTGxbibJUrYSGS8d68majxXwi3wO8hTAbyUu8mRxq7rQey6ve7nuiNvSaB2Fy4/kto1zOtCCRGtFWKqzShA=="],
+    "@stateforge-labs/harness-adapters": ["@stateforge-labs/harness-adapters@0.2.0", "", { "dependencies": { "@stateforge-labs/harness-hooks": "^0.3.0", "zod": "4.6.7" } }, "sha512-l7ohmLMJziotG9o2ixQzUDnsVUPjwps+9R2reoda21emXlpjz2oR+fY4ql2d28+OIr8inQrSTFIq4El7L1H4Tw=="],
 
-    "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.2.0", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-u1HnnSPBq99VRqeq8ksprxabwI1tddBqi1d2tk3jJMX/mEEy23TnUpEjWmiFDgzrvEM7pfOWeLdKKz+re/Jl0Q=="],
+    "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.3.0", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-2zYnUFQO9F1PWyGBwbPaJXgpefN6PeNJPJf4YUs9IxIomSPEQbu8+P8j1cTEmQgUsXusxIMRhj2uvmiMexkVpg=="],
 
     "@stateforge-labs/herdr-sdk": ["@stateforge-labs/herdr-sdk@0.4.0", "", { "bin": { "herdr-drift": "bin/herdr-drift.js", "herdr-skill": "bin/herdr-skill.js" } }, "sha512-s2GRmzKYbjWO5IVCzBE+ShlE8scqeeBmQiVh09aWAre8vWLqyUMJdTA9cvt7OYzgGoNtZmLVa8EvcZc7VGFEkA=="],
 
