@@ -92,6 +92,7 @@
       "test/db/autocompact-skip-records.test.ts",
       "test/db/column-visibility.test.ts",
       "test/db/daemon-state.test.ts",
+      "test/db/parity-finish.test.ts",
       "test/db/parity-transcripts.test.ts",
       "test/db/support.ts",
       "test/eval-calibration.test.ts",

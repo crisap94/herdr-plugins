@@ -1,8 +1,10 @@
 import type { Database, Statement } from 'bun:sqlite';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import type { Disagreement, Pair, Verdict, VerdictSource, Verdicts } from '#src/ports/verdicts.ts';
 import { writeTx } from './connection.ts';
+import { verdict as verdicts } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
 import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
@@ -24,44 +26,48 @@ const DISAGREE = `${LATEST}
 
 export class VerdictsRepository implements Verdicts {
     private readonly db: Database;
-    private readonly insert: Statement;
-    private readonly byRun: Statement;
-    private readonly operator: Statement;
+    private readonly orm: Orm;
     private readonly pairSelect: Statement;
     private readonly disagreeSelect: Statement;
 
     constructor(db: Database) {
         this.db = db;
-        this.insert = db.prepare('INSERT INTO verdict (id, run_id, item_key, check_id, pass, critique, judge, at, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        this.byRun = db.prepare('SELECT * FROM verdict WHERE run_id = ? ORDER BY at, check_id');
-        this.operator = db.prepare("SELECT DISTINCT run_id, item_key FROM verdict WHERE source = 'operator' AND item_key IS NOT NULL AND (?1 IS NULL OR check_id = ?1)");
+        this.orm = ormOf(db);
         this.disagreeSelect = db.prepare(DISAGREE);
         this.pairSelect = db.prepare(PAIRS);
     }
 
-    add(verdicts: readonly Verdict[]): void {
+    add(rows: readonly Verdict[]): void {
         writeTx(this.db, () => {
-            for (const verdict of verdicts) {
+            for (const verdict of rows) {
                 const run = idOf('run', verdict.run);
                 if (run === null) {
                     throw new Error(`not a run id: ${verdict.run}`);
                 }
-                this.insert.run(ids.next(), run, verdict.item, verdict.check, verdict.pass ? 1 : 0, verdict.critique, verdict.judge, verdict.at, verdict.source);
+                this.orm.insert(verdicts).values({
+                    id: ids.next(), runId: run, itemKey: verdict.item, checkId: verdict.check, pass: verdict.pass ? 1 : 0,
+                    critique: verdict.critique, judge: verdict.judge, at: verdict.at, source: verdict.source,
+                }).run();
             }
         });
     }
 
     ofRun(run: string): readonly Verdict[] {
         const id = idOf('run', run);
-        const verdict = (row: Row): Verdict => ({
-            run, item: maybeText(row, 'item_key'), check: text(row, 'check_id'), pass: flag(row, 'pass'), critique: maybeText(row, 'critique'),
-            judge: text(row, 'judge'), at: whole(row, 'at'), source: text(row, 'source') === 'operator' ? 'operator' : ('judge' satisfies VerdictSource),
-        });
-        return id === null ? [] : guarded(() => all(this.byRun, id).map(verdict), []);
+        return id === null ? [] : guarded(() => this.orm.select({
+            item: verdicts.itemKey, check: verdicts.checkId, pass: verdicts.pass, critique: verdicts.critique,
+            judge: verdicts.judge, at: verdicts.at, source: verdicts.source,
+        }).from(verdicts).where(eq(verdicts.runId, id)).orderBy(asc(verdicts.at), asc(verdicts.checkId)).all()
+            .map((row): Verdict => ({
+                run, item: row.item, check: row.check, pass: row.pass === 1, critique: row.critique,
+                judge: row.judge, at: row.at, source: row.source === 'operator' ? 'operator' : ('judge' satisfies VerdictSource),
+            })), []);
     }
 
     labelled(check: string | null = null): ReadonlySet<string> {
-        return guarded(() => new Set(all(this.operator, check).map((row) => `${typeIdOf('run', blob(row, 'run_id'))}|${text(row, 'item_key')}`)), new Set());
+        return guarded(() => new Set(this.orm.selectDistinct({ runId: verdicts.runId, itemKey: verdicts.itemKey }).from(verdicts)
+            .where(and(eq(verdicts.source, 'operator'), isNotNull(verdicts.itemKey), check === null ? undefined : eq(verdicts.checkId, check))).all()
+            .map((row) => `${typeIdOf('run', row.runId)}|${row.itemKey}`)), new Set());
     }
 
     pairs(): readonly Pair[] {

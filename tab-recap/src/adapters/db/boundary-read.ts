@@ -1,37 +1,46 @@
-import type { Database, Statement } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, asc, count, eq, max, sql } from 'drizzle-orm';
 import type { Boundaries, Break } from '#src/ports/boundaries.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
-import { all, guarded, maybeText, maybeWhole, one, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
-
-const breakOf = (row: Row): Break => ({
-    kind: text(row, 'kind') as BoundaryKind, at: whole(row, 'at'), trigger: maybeText(row, 'trigger') as Trigger | null,
-    tokensBefore: maybeWhole(row, 'tokens_before'), tokensAfter: maybeWhole(row, 'tokens_after'), tookMs: maybeWhole(row, 'took_ms'),
-});
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { guarded } from './rows.ts';
 
 export class BoundaryRepository implements Boundaries {
-    private readonly breaks: Statement;
-    private readonly count: Statement;
-    private readonly last: Statement;
+    private readonly orm: Orm;
 
     constructor(db: Database) {
-        this.breaks = db.prepare(`SELECT b.kind, b.at, b.trigger,
-            COALESCE(b.tokens_before, c.tokens_before) AS tokens_before, COALESCE(b.tokens_after, c.tokens_after) AS tokens_after, COALESCE(b.took_ms, c.took_ms) AS took_ms
-          FROM boundary b JOIN chapter ch ON ch.id = b.chapter_id LEFT JOIN compaction c ON c.boundary_id = b.id
-          WHERE ch.tab_id = ? ORDER BY b.at, ch.n`);
-        this.count = db.prepare('SELECT COUNT(*) AS n FROM chapter WHERE tab_id = ?');
-        this.last = db.prepare('SELECT MAX(b.at) AS at FROM boundary b JOIN transcript t ON t.id = b.transcript_id WHERE t.tab_id = ? AND t.pane = ?');
+        this.orm = ormOf(db);
     }
 
     breaksOf(tab: string): readonly Break[] {
-        return guarded(() => all(this.breaks, tab).map(breakOf), []);
+        return guarded(() => this.orm.select({
+            kind: boundary.kind,
+            at: boundary.at,
+            trigger: boundary.trigger,
+            tokensBefore: sql<number | null>`COALESCE(${boundary.tokensBefore}, ${compaction.tokensBefore})`,
+            tokensAfter: sql<number | null>`COALESCE(${boundary.tokensAfter}, ${compaction.tokensAfter})`,
+            tookMs: sql<number | null>`COALESCE(${boundary.tookMs}, ${compaction.tookMs})`,
+        }).from(boundary)
+            .innerJoin(chapter, eq(chapter.id, boundary.chapterId))
+            .leftJoin(compaction, eq(compaction.boundaryId, boundary.id))
+            .where(eq(chapter.tabId, tabId(tab)))
+            .orderBy(asc(boundary.at), asc(chapter.n))
+            .all()
+            .map((row): Break => ({
+                kind: row.kind as BoundaryKind, at: row.at, trigger: row.trigger as Trigger | null,
+                tokensBefore: row.tokensBefore, tokensAfter: row.tokensAfter, tookMs: row.tookMs,
+            })), []);
     }
 
     chapterCount(tab: string): number {
-        return guarded(() => whole(one(this.count, tab) ?? { n: 0 }, 'n'), 0);
+        return guarded(() => this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, tabId(tab))).get()?.n ?? 0, 0);
     }
 
     lastBreakAt(tab: string, pane: string): number | null {
-        return guarded(() => maybeWhole(one(this.last, tab, pane) ?? { at: null }, 'at'), null);
+        return guarded(() => this.orm.select({ at: max(boundary.at) }).from(boundary)
+            .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
+            .where(and(eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null, null);
     }
 }
