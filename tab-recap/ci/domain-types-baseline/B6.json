@@ -110,22 +110,23 @@
     "container": 8
   },
   "src/adapters/herdr/fleet.ts": {
-    "parameter": 22,
+    "parameter": 21,
     "return": 1,
     "container": 11,
-    "property": 1,
-    "assertion": 6
+    "property": 1
   },
   "src/adapters/herdr/host-check.ts": {
     "parameter": 4,
     "return": 2,
     "property": 2
   },
+  "src/adapters/herdr/json-object.ts": {
+    "container": 2
+  },
   "src/adapters/herdr/json.ts": {
     "parameter": 4,
     "return": 2,
-    "container": 9,
-    "assertion": 1
+    "container": 9
   },
   "src/adapters/herdr/session-registry.ts": {
     "parameter": 2

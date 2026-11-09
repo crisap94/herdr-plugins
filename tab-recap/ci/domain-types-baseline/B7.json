@@ -76,12 +76,5 @@
   "src/setup/main.ts": {
     "parameter": 2,
     "container": 3
-  },
-  "src/transport/herdr.ts": {
-    "parameter": 10,
-    "return": 3,
-    "container": 20,
-    "property": 2,
-    "assertion": 4
   }
 }

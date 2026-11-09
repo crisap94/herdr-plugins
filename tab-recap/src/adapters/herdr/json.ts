@@ -1,3 +1,5 @@
+import { parseJson } from './json-object.ts';
+import type { Json } from './json-object.ts';
 import { agentPanesIn, columnsIn } from './column-panes.ts';
 import { seenFrom, tokensOf } from '#src/recap/application/decode.ts';
 import { sessionOfForKind } from './session-registry.ts';
@@ -7,7 +9,7 @@ import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { LayoutResult } from '#src/ports/columns.ts';
 
-type Json = Readonly<Record<string, unknown>>;
+export type { Json } from './json-object.ts';
 
 export function list(value: unknown): readonly Json[] {
     return Array.isArray(value) ? value.filter((item): item is Json => typeof item === 'object' && item !== null) : [];
@@ -18,7 +20,7 @@ export function str(value: unknown): string {
 }
 
 export function rectOf(value: unknown): Rect {
-    const r = typeof value === 'object' && value !== null ? (value as Json) : {};
+    const r = parseJson(value);
     const n = (key: string): number => (typeof r[key] === 'number' ? r[key] : 0);
     return { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
 }

@@ -1,7 +1,10 @@
 import { agentPanesIn, columnsIn } from './column-panes.ts';
-import { HerdrAgents } from './agents.ts';
-import { HerdrError, rpc, subscribe } from '#src/transport/herdr.ts';
-import type { Json, Pushed } from '#src/transport/herdr.ts';
+import { HerdrAgents, herdrWire } from './agents.ts';
+
+import { usePlugin, useAdmin } from './client.ts';
+import { subscribeTopics } from './subscriptions.ts';
+import { HerdrError } from '@stateforge-labs/herdr-sdk';
+import type { DecodedFrame, EventSubscription } from '@stateforge-labs/herdr-sdk';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { sessionOf } from '#src/recap/application/decode.ts';
 import { sessionOfForKind } from './session-registry.ts';
@@ -13,13 +16,15 @@ import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
-import type { FleetSource, Frame, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
+import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { refusalOf } from './token-refusal.ts';
 import { layoutOf, list, paneTokensOf, reconciliationOf, str } from './json.ts';
+import { parseJson } from './json-object.ts';
+import type { Json } from './json.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
@@ -32,11 +37,12 @@ const detail = (error: unknown): string => (error instanceof Error ? error.messa
 
 const MODAL_SIZE = '96%';
 
+const paneInfoOf = async (pane: string): Promise<Json> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
+
 export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
     try {
-        const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
-        const tokens = typeof info === 'object' && info !== null ? (info as Json)['tokens'] : undefined;
-        return { kind: 'tokens', tokens: typeof tokens === 'object' && tokens !== null ? Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : {} };
+        const tokens = parseJson((await paneInfoOf(pane))['tokens']);
+        return { kind: 'tokens', tokens: Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
     } catch (error) {
         return unknown({ why: 'unreachable', detail: detail(error) });
     }
@@ -44,11 +50,21 @@ export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
 
 export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
     try {
-        const info = (await rpc('pane.get', { pane_id: pane }))['pane'];
-        return typeof info === 'object' && info !== null ? sessionOf(info as Record<string, unknown>, sessionOfForKind) : null;
+        const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
+        return typeof info === 'object' && info !== null ? sessionOf(parseJson(info), sessionOfForKind) : null;
     } catch (error) {
         return unknown({ why: 'unreachable', detail: detail(error) });
     }
+}
+
+const frameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
+
+function pump(live: EventSubscription, queue: AsyncQueue<Frame>): void {
+    (async (): Promise<void> => {
+        for await (const frame of live) {
+            queue.push(frameOf(frame));
+        }
+    })().catch(() => undefined).finally(() => { queue.end(); });
 }
 
 export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens, PaneTokens, WorkspaceTokens {
@@ -59,13 +75,11 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     }
 
     agents(): HerdrAgents {
-        return new HerdrAgents(rpc, { id: PLUGIN_ID, stateDir: this.stateDir });
+        return new HerdrAgents(herdrWire, { id: PLUGIN_ID, stateDir: this.stateDir });
     }
 
     private async rawSnapshot(): Promise<Json> {
-        const result = await rpc('session.snapshot', {});
-        const snap = result['snapshot'];
-        return typeof snap === 'object' && snap !== null ? (snap as Json) : {};
+        return parseJson(parseJson(await usePlugin((client) => client.call('session.snapshot', {})))['snapshot']);
     }
 
     async snapshot(): Promise<SnapshotResult> {
@@ -81,7 +95,8 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     async subscribe(topics: readonly Topic[]): Promise<StreamResult> {
         const queue = new AsyncQueue<Frame>();
         try {
-            const live = await subscribe(topics.map((topic) => ({ ...topic })), (pushed: Pushed) => { queue.push(pushed); }, () => { queue.end(); });
+            const live = await subscribeTopics(topics);
+            pump(live, queue);
             return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
@@ -99,7 +114,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async open(tab: TabId, target: string, shape: Shape): Promise<OpenResult> {
         try {
-            const result = await rpc('plugin.pane.open', {
+            const result = parseJson(await usePlugin((client) => client.call('plugin.pane.open', {
                 plugin_id: PLUGIN_ID,
                 entrypoint: COLUMN_ENTRYPOINT,
                 placement: 'split',
@@ -107,9 +122,8 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 target_pane_id: target,
                 focus: false,
                 env: { TAB_RECAP_TAB: String(tab), TAB_RECAP_STATE: this.stateDir, TAB_RECAP_SHAPE: shape },
-            });
-            const info = typeof result['plugin_pane'] === 'object' && result['plugin_pane'] !== null ? (result['plugin_pane'] as Json) : {};
-            const pane = typeof info['pane'] === 'object' && info['pane'] !== null ? str((info['pane'] as Json)['pane_id']) : '';
+            })));
+            const pane = str(parseJson(parseJson(result['plugin_pane'])['pane'])['pane_id']);
             return pane === '' ? unknown({ why: 'unreadable', detail: 'plugin.pane.open returned no pane' }) : { kind: 'opened', pane: paneId(pane) };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
@@ -117,7 +131,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     }
 
     async show(tab: TabId): Promise<Done> {
-        return this.call('plugin.pane.open', {
+        return this.call(() => usePlugin((client) => client.call('plugin.pane.open', {
             plugin_id: PLUGIN_ID,
             entrypoint: COLUMN_ENTRYPOINT,
             placement: 'popup',
@@ -125,12 +139,12 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             height: MODAL_SIZE,
             focus: true,
             env: { TAB_RECAP_TAB: String(tab), TAB_RECAP_STATE: this.stateDir, TAB_RECAP_MODE: 'modal' },
-        });
+        })));
     }
 
     async setup(tab: TabId | null): Promise<SetupOpened> {
         try {
-            await rpc('plugin.pane.open', {
+            await usePlugin((client) => client.call('plugin.pane.open', {
                 plugin_id: PLUGIN_ID,
                 entrypoint: SETUP_ENTRYPOINT,
                 placement: 'popup',
@@ -138,7 +152,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 height: MODAL_SIZE,
                 focus: true,
                 env: { TAB_RECAP_TAB: tab === null ? '' : String(tab), TAB_RECAP_STATE: this.stateDir },
-            });
+            }));
             return { kind: 'opened' };
         } catch (error) {
             return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: detail(error) });
@@ -147,7 +161,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async available(): Promise<HarnessesResult> {
         try {
-            const ids = list((await rpc('integration.list', {}))['integrations'])
+            const ids = list(parseJson(await usePlugin((client) => client.call('integration.list', {})))['integrations'])
                 .filter((entry) => entry['available'] === true)
                 .map((entry) => str(entry['target']));
             return { kind: 'available', ids };
@@ -158,8 +172,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async readScreen(pane: string, lines: number): Promise<ScreenResult> {
         try {
-            const read = (await rpc('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' }))['read'];
-            const fields = typeof read === 'object' && read !== null ? (read as Json) : {};
+            const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
             return typeof fields['text'] === 'string'
                 ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
                 : unknown({ why: 'unreadable', detail: `pane.read of ${pane} returned no text` });
@@ -170,7 +183,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
         const refused = refusalOf(tokens, PANE_WRITABLE);
-        return refused ?? this.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+        return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
     }
 
     async read(pane: string): Promise<PaneTokensResult> {
@@ -179,12 +192,12 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
 
     async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
         const refused = refusalOf(tokens, WORKSPACE_WRITABLE);
-        return refused ?? this.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs });
+        return refused ?? this.call(() => usePlugin((client) => client.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
     }
 
     async workspaces(): Promise<WorkspacesResult> {
         try {
-            const found = list((await rpc('workspace.list', {}))['workspaces']);
+            const found = list(parseJson(await usePlugin((client) => client.call('workspace.list', {})))['workspaces']);
             return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
@@ -192,7 +205,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     }
 
     async notify(title: string, body: string): Promise<Notified> {
-        const done = await this.call('notification.show', { title, body });
+        const done = await this.call(() => usePlugin((client) => client.call('notification.show', { title, body })));
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
@@ -211,16 +224,16 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    private async guarded(verb: string, pane: string, method: string, params: Json): Promise<Done> {
-        return (await this.refuseAgent(verb, pane)) ?? this.call(method, params);
+    private async guarded(verb: string, pane: string, run: () => Promise<unknown>): Promise<Done> {
+        return (await this.refuseAgent(verb, pane)) ?? this.call(run);
     }
 
     async resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done> {
-        return this.guarded('resize', String(pane), 'pane.resize', { pane_id: String(pane), direction, amount });
+        return this.guarded('resize', String(pane), () => usePlugin((client) => client.call('pane.resize', { pane_id: String(pane), direction, amount })));
     }
 
     async close(pane: PaneId): Promise<Done> {
-        return this.guarded('close', String(pane), 'pane.close', { pane_id: String(pane) });
+        return this.guarded('close', String(pane), () => useAdmin((client) => client.call('pane.close', { pane_id: String(pane) })));
     }
 
     async closeEvery(): Promise<ClosedAll> {
@@ -230,7 +243,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             let closed = 0;
             let failed = 0;
             for (const column of columnsIn(panes, agentPanesIn(panes, list(snapshot['agents'])))) {
-                const done = await this.call('pane.close', { pane_id: column.paneId });
+                const done = await this.call(() => useAdmin((client) => client.call('pane.close', { pane_id: column.paneId })));
                 closed += done.kind === 'done' ? 1 : 0;
                 failed += done.kind === 'done' ? 0 : 1;
             }
@@ -240,9 +253,9 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    private async call(method: string, params: Json): Promise<Done> {
+    private async call(run: () => Promise<unknown>): Promise<Done> {
         try {
-            await rpc(method, params);
+            await run();
             return { kind: 'done' };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: detail(error) });
