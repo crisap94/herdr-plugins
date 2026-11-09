@@ -27,7 +27,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 
-type Kind = BackendId | 'gemini' | 'hermes';
+type Kind = BackendId | 'gemini';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
@@ -150,7 +150,6 @@ function observedPinFor(kind: Kind): string {
         case 'codex': return '; pins today: peak is the post-compaction token_count and preTokens appears only in the mark';
         case 'opencode': return '; pins today: output tokens are excluded and provider/model come from the message';
         case 'gemini': return '; pins today: a screen has no observed method and LaneContexts cannot read it';
-        case 'hermes':
         case 'custom': return '';
     }
     return '';
@@ -257,9 +256,9 @@ for (const row of ROWS) {
     });
 }
 
-test('pins today: COMPACTABLE is claude, codex and opencode; hermes and screen kinds are not offered', () => {
+test('pins today: COMPACTABLE is claude, codex and opencode; gemini and custom are not offered', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);
-    assert.deepEqual(compactable([lane('hermes'), lane('gemini'), lane('custom')]), []);
+    assert.deepEqual(compactable([lane('gemini'), lane('custom')]), []);
 });
 
 test('registered kind flags match transcript and compaction lookup outcomes', () => {
@@ -272,24 +271,18 @@ test('registered kind flags match transcript and compaction lookup outcomes', ()
     }
 });
 
-test('hermes history and compaction lookups refuse with their established wording', () => {
-    assert.equal(modalTranscriptRegistry().exact('hermes'), undefined);
-    assert.deepEqual(compactionPlans.forKind('hermes', ''), { kind: 'unsupported', why: 'no compaction plan is registered for hermes' });
+test('gemini history and compaction lookups refuse with their established wording', () => {
+    assert.equal(modalTranscriptRegistry().exact('gemini'), undefined);
+    assert.deepEqual(compactionPlans.forKind('gemini', ''), { kind: 'unsupported', why: 'no compaction plan is registered for gemini' });
 });
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
     const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: '', revision: 1, truncated: false }) };
     const daemon = daemonTranscriptRegistry(screens, () => true);
-    assert.equal(modalTranscriptRegistry().unavailableReason('hermes'), 'no reader for hermes');
+    assert.equal(modalTranscriptRegistry().unavailableReason('gemini'), 'no reader for gemini');
     assert.equal(modalTranscriptRegistry().unavailableReason('zed'), 'no reader for zed');
-    assert.equal(daemon.unavailableReason('hermes'), 'no reader for hermes');
+    assert.equal(daemon.unavailableReason('gemini'), 'no reader for gemini');
     assert.equal(daemon.unavailableReason('zed'), 'no reader for zed');
-});
-
-test('a registered Unsupported kind answers from the capability table before a screen reader is consulted', async () => {
-    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: 'working', revision: 1, truncated: false }) };
-    const hermes = lane('hermes', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
-    assert.deepEqual(await skipOf(registryWith({}, new ScreenTranscripts(screens, () => true)), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
 });
 
 test('a registered kind with no reader in the registry names the missing transcript reader', async () => {
@@ -323,12 +316,12 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model or
     assert.equal(harness.label({ model: 'gpt-x', effort: 'high' }), 'custom/my-llm');
 });
 
-test('hermes refuses: not compactable, `no reader for hermes` in the recap, and autocompact stops the lane in-flight (with the kind enabled)', async () => {
-    const hermes = lane('hermes', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
-    assert.deepEqual(targetsOf([hermes], { kind: 'all' }, { pane: null, focused: null }), []);
+test('gemini refuses: not compactable, `no reader for gemini` in the recap, and autocompact stops the lane in-flight (with the kind enabled)', async () => {
+    const gemini = lane('gemini', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
+    assert.deepEqual(targetsOf([gemini], { kind: 'all' }, { pane: null, focused: null }), []);
     const world = typingFleet({ 'w1:p5': 'idle' });
-    await compactionFlow(world, 'all', null, [[]], [hermes]).run({ tab: 'w1:t1', pane: null, note: null });
-    assert.deepEqual(world.typed, [], 'nothing is typed into hermes');
+    await compactionFlow(world, 'all', null, [[]], [gemini]).run({ tab: 'w1:t1', pane: null, note: null });
+    assert.deepEqual(world.typed, [], 'nothing is typed into gemini');
     assert.match(world.toasts.join('\n'), /No agent here can be compacted/);
 
     const store = memoryStore();
@@ -338,10 +331,10 @@ test('hermes refuses: not compactable, `no reader for hermes` in the recap, and 
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,
     });
-    await job.refreshNow(tabId('w1:t1'), [hermes]);
-    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for hermes/);
+    await job.refreshNow(tabId('w1:t1'), [gemini]);
+    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for gemini/);
 
-    assert.deepEqual(await skipOf(registryWith({}), hermes, 'hermes'), { gate: 'in-flight', detail: 'no transcript reader for hermes' });
+    assert.deepEqual(await skipOf(registryWith({}), gemini, 'gemini'), { gate: 'in-flight', detail: 'no transcript reader for gemini' });
 });
 
 interface HandoffPin {
@@ -351,17 +344,11 @@ interface HandoffPin {
     readonly locatedBy: LocatedBy;
 }
 
-interface HandoffNoPlan {
-    readonly kind: 'unsupported';
-    readonly reason: 'no-plan';
-}
-
 const HANDOFF_PINS = {
     claude: { kind: 'supported', settleMs: 10_000, trials: 130, locatedBy: 'session' },
     codex: { kind: 'supported', settleMs: 3_000, trials: 130, locatedBy: 'directory' },
     opencode: { kind: 'supported', settleMs: 60_000, trials: 77, locatedBy: 'directory' },
-    hermes: { kind: 'unsupported', reason: 'no-plan' },
-} satisfies Record<RegisteredKind, HandoffPin | HandoffNoPlan>;
+} satisfies Record<RegisteredKind, HandoffPin>;
 
 function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     const deliveryOf = (over: Partial<World> = {}): World => worldOf({ agent: kind, locatedBy: pin.locatedBy, ...over });
@@ -497,15 +484,5 @@ test('handoff confirmation is pinned to 20 looks, one second apart, for every ki
 });
 
 for (const kind of Object.keys(HANDOFF_PINS) as RegisteredKind[]) {
-    const pin = HANDOFF_PINS[kind];
-    if (pin.kind === 'supported') {
-        handoffRows(kind, pin);
-    } else {
-        test(`${kind} handoff: no plan is ${pin.kind} ${pin.reason} through the registry, and the flow types nothing`, async () => {
-            assert.deepEqual(handoffPlans.forKind(kind), { kind: 'unsupported', reason: pin.reason });
-            const h = handoffHarness({ targetAgent: kind });
-            assert.deepEqual(await h.flow.run(request()), { kind: 'unsupported', reason: 'no-plan' });
-            assert.deepEqual(h.sent, []);
-        });
-    }
+    handoffRows(kind, HANDOFF_PINS[kind]);
 }

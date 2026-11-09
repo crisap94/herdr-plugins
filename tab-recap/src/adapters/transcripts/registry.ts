@@ -7,7 +7,7 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
-import { supported, unsupportedCapability } from '#src/ports/capability.ts';
+import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
@@ -18,14 +18,12 @@ const READERS = {
     claude: supported(() => new ClaudeTranscripts()),
     codex: supported(() => new CodexTranscripts()),
     opencode: supported(() => new OpencodeTranscripts()),
-    hermes: unsupportedCapability('history-unavailable'),
 } satisfies Readonly<Record<RegisteredKind, Capability<() => Transcripts, HistoryWhy>>>;
 
 export const IN_FLIGHT_CAPABILITIES = {
     claude: supported('reader'),
     codex: supported('reader'),
     opencode: supported('reader'),
-    hermes: unsupportedCapability('in-flight-unavailable'),
 } satisfies Readonly<Record<RegisteredKind, Capability<'reader', InFlightWhy>>>;
 
 function readersOf(readers: typeof READERS): Readonly<Record<string, Transcripts>> {

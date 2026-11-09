@@ -3,7 +3,7 @@ import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
-import { supported, unsupportedCapability } from '#src/ports/capability.ts';
+import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
 
@@ -45,7 +45,6 @@ const WINDOW_SOURCES = {
     claude: supported(claudeWindow),
     codex: supported(exactWindow),
     opencode: supported(exactWindow),
-    hermes: unsupportedCapability('context-window-unavailable'),
 } satisfies Readonly<Record<RegisteredKind, Capability<(observed: Observed, catalogue: ModelCatalogue) => WindowBasis | null, ContextWindowWhy>>>;
 
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {

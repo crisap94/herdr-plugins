@@ -17,8 +17,8 @@ test('the registered kinds with a handoff plan are exactly the ones declared her
     assert.deepEqual(withPlan, ['claude', 'codex', 'opencode']);
 });
 
-test('Hermes declares no handoff plan', () => {
-    assert.deepEqual(handoffPlans.forKind('hermes'), { kind: 'unsupported', reason: 'no-plan' });
+test('Gemini declares no handoff plan', () => {
+    assert.deepEqual(handoffPlans.forKind('gemini'), { kind: 'unsupported', reason: 'no-plan' });
 });
 
 test('an unregistered lane kind has no handoff plan', () => {

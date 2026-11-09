@@ -263,8 +263,8 @@ A missing number is left out, never guessed. On the phone bar the headline says 
 lane replaces it, and a daemon that restarts mid-compaction leaves it as "not confirmed". Notifications are
 two: when it starts, and when it ends with the numbers (`claude compacted: 39.5k → 3.1k tokens in 16 s`).
 
-A working or blocked agent is skipped and a notification names it. Agents read from their screen and
-`hermes` are not offered compaction.
+A working or blocked agent is skipped and a notification names it. Agents read from their screen, such as `gemini`,
+are not offered compaction.
 
 **The hint.** A lane whose context use reaches `TAB_RECAP_COMPACT_HINT` percent (default 40; `off`, or
 10–95) of its window shows `compact? 45% of 1M`. It never compacts by itself. The window is found at
@@ -612,7 +612,7 @@ off unless `TAB_RECAP_HERDR_EVENTS=on`; with it off, nothing below is written an
 | token | value | when |
 | --- | --- | --- |
 | `tab-recap-api` | `1`, the protocol version | with the lane's other lane tokens |
-| `tab-recap-x` | `compact1,kinds1`, the exchanges and kinds offered (see below) | with the lane's other lane tokens |
+| `tab-recap-x` | `compact1,kinds2`, the exchanges and kinds offered (see below) | with the lane's other lane tokens |
 | `tab-recap-share` | the context share, in percent | when it changes |
 | `tab-recap-recap` | epoch ms of the tab's last recap | when a recap is written |
 | `tab-recap-needs` | the number of open needs of the tab | when it changes |
@@ -682,7 +682,7 @@ answer whose id is not its own as foreign and keeps waiting for its own id. A st
 a `failed-` stage a tool does not know should be read as a failure. The id grammar belongs to the exchange: `compact` keeps the legacy one
 (1 to 16 characters, anything but `:`), and an exchange added later takes `token-safe` (`[A-Za-z0-9_-]`, 1 to 16 characters).
 
-**The capability token.** `tab-recap-x` = `compact1,kinds1` on a lane's pane when sharing is on: `<exchange><version>` for every exchange
+**The capability token.** `tab-recap-x` = `compact1,kinds2` on a lane's pane when sharing is on: `<exchange><version>` for every exchange
 tab-recap answers and has enabled, then `kinds<version>`, the version of the agent kinds list in `protocol/vectors/kinds.json`. An exchange
 missing from the list is not offered, so do not wait for it. A pane without `tab-recap-x` offers nothing: sharing is off, or the tab-recap
 predates this token.

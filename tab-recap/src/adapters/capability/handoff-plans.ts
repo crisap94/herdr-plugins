@@ -3,7 +3,7 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { HandoffPlan, HandoffPlanResult, LocatedBy, SettleTime } from '#src/recap/domain/handoff-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import type { HandoffPlans } from '#src/ports/handoff-plans.ts';
-import { supported, unsupportedCapability } from '#src/ports/capability.ts';
+import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 
 export const SETTLE_SOURCE = 'experiments/EXP-003-handoff-live/runs/R01-settle-and-handoff-proof/m4-trials.jsonl';
@@ -16,7 +16,6 @@ const HANDOFF_PLANS = {
     claude: supported(promptPlan(settleOf(10_000, 130), 'session')),
     codex: supported(promptPlan(settleOf(3_000, 130), 'directory')),
     opencode: supported(promptPlan(settleOf(60_000, 77), 'directory')),
-    hermes: unsupportedCapability('no-plan'),
 } satisfies Readonly<Record<RegisteredKind, Capability<HandoffPlan, 'no-plan'>>>;
 
 export const handoffPlans: HandoffPlans = {

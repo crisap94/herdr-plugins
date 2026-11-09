@@ -28,7 +28,7 @@ const entry = (text: string, at?: number): Entry => ({ role: 'agent', text, ...(
 test('the lanes\' newest turns are read from the start of what each reader keeps (its own budget), merged by time; a lane with no source or an unreadable one adds nothing', async () => {
     const asked: { source: string; was: Position }[] = [];
     const readers = registryWith({ claude: reader('claude', { '/a.jsonl': [entry('a1', 1), entry('a2', 5)] }, asked) }, reader(SCREEN_READER_ID, { 'screen:p3': [entry('s1', 3)] }, asked));
-    const tail = await tailOf(readers, [lane('p1', 'claude', '/a.jsonl'), lane('p2', 'claude', ''), lane('p3', 'hermes', 'screen:p3'), lane('p4', 'claude', '/gone.jsonl')]);
+    const tail = await tailOf(readers, [lane('p1', 'claude', '/a.jsonl'), lane('p2', 'claude', ''), lane('p3', 'gemini', 'screen:p3'), lane('p4', 'claude', '/gone.jsonl')]);
     assert.deepEqual(tail.map((each) => each.text), ['a1', 's1', 'a2']);
     assert.ok(asked.every((each) => each.was === UNREAD), 'no position is moved');
     assert.deepEqual(await tailOf(registryWith({}), [lane('p1', 'claude', '/a.jsonl')]), []);

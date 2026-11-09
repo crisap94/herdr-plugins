@@ -7,10 +7,10 @@ import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
 
 const seen = (model: string | null, window: number | null = null, tokens = 90_000, peak = tokens): Observed => ({ model, window, tokens, peak });
 
-test('Hermes has no context window basis while an unregistered screen kind keeps its stated window', () => {
+test('an unregistered screen kind has no context window basis without a stated window, and keeps its stated window', () => {
     const catalogue: ModelCatalogue = { windowOf: () => null };
     const observed: Observed = { tokens: 1, peak: 1, window: 50, model: null };
-    assert.equal(windowOfKind('hermes', catalogue)(observed), null);
+    assert.equal(windowOfKind('gemini', catalogue)({ ...observed, window: null }), null);
     assert.deepEqual(windowOfKind('gemini', catalogue)(observed), { window: 50, source: 'agent', sizes: [] });
 });
 

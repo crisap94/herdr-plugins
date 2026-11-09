@@ -118,7 +118,7 @@ test('the same pane as source and target is refused before any lane is resolved'
 });
 
 test('a lane whose kind has no handoff plan is unsupported no-plan and sends nothing', async () => {
-    for (const agent of ['hermes', 'gemini']) {
+    for (const agent of ['gemini', 'zed']) {
         const deps = depsOf([seen('w1:p1', agent, { session: 'sess-1' })], notStarted);
         assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'unsupported', reason: 'no-plan' }, agent);
         assert.equal(deps.reads(), 0);

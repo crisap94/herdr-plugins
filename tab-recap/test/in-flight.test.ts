@@ -62,12 +62,6 @@ test('a read that fails is unknown', async () => {
     assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'unknown', why: 'unreadable: tail' });
 });
 
-test('hermes declares in-flight unsupported and is unknown without a read', async () => {
-    const hermes = laneFrom({ paneId: 'w1:p4', tabId: 'w1:t1', workspaceId: 'w1', agent: 'hermes', session: 's', cwd: '/repo' });
-    const reading = await adapterFor(fakeReader('hermes', { kind: 'located', source: 'x' }, { kind: 'in-flight', count: 1, background: [] })).read(hermes);
-    assert.equal(reading.kind, 'unknown');
-});
-
 test('an agent with no reader of its own is unknown', async () => {
     const gemini = laneFrom({ paneId: 'w1:p5', tabId: 'w1:t1', workspaceId: 'w1', agent: 'gemini', session: 's', cwd: '/repo' });
     const reading = await new TranscriptInFlight(registryWith({})).read(gemini);

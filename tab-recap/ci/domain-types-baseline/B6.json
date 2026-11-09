@@ -292,7 +292,7 @@
     "container": 2
   },
   "src/adapters/transcripts/in-flight.ts": {
-    "return": 5
+    "return": 4
   },
   "src/adapters/transcripts/jsonl.ts": {
     "parameter": 16,

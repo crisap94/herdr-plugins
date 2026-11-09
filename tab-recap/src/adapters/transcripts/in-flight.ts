@@ -15,7 +15,6 @@ const LOCATING_KEYS = {
     claude: (lane: Lane): string | null => lane.session,
     codex: (lane: Lane): string | null => lane.cwd,
     opencode: (lane: Lane): string | null => lane.cwd,
-    hermes: (): string | null => null,
 } satisfies Readonly<Record<RegisteredKind, (lane: Lane) => string | null>>;
 
 function unlocated(lane: Lane, registered: RegisteredKind | null, located: Unknown): InFlightReading {

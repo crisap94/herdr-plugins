@@ -9,8 +9,8 @@ test('exact lookup returns the reader for each registered kind', () => {
     assert.equal(registry.exact('claude')?.agent, 'claude');
     assert.equal(registry.exact('codex')?.agent, 'codex');
     assert.equal(registry.exact('opencode')?.agent, 'opencode');
-    assert.equal(registry.exact('hermes'), undefined);
-    assert.equal(readerKindOf('hermes'), 'hermes');
+    assert.equal(registry.exact('gemini'), undefined);
+    assert.equal(readerKindOf('gemini'), null);
 });
 
 test('exact lookup never falls back and readerFor prefers an exact reader', () => {
