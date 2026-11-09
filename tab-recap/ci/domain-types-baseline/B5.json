@@ -143,8 +143,8 @@
   },
   "src/adapters/db/requests.ts": {
     "parameter": 5,
-    "return": 11,
-    "container": 28,
+    "return": 7,
+    "container": 16,
     "property": 2
   },
   "src/adapters/db/retention.ts": {

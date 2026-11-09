@@ -774,6 +774,8 @@
       "test/db/parity-autocompact.test.ts",
       "test/db/parity-heavy.test.ts",
       "test/db/parity-ledger.test.ts",
+      "test/db/parity-requests.test.ts",
+      "test/db/parity-tab-views.test.ts",
       "test/db/parity.test.ts",
       "test/db/parity.ts",
       "test/db/print-store.test.ts",
