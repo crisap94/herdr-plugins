@@ -101,6 +101,7 @@
       "test/extensions.test.ts",
       "test/handoff-answers-contract.test.ts",
       "test/harness-decider.test.ts",
+      "test/harness-limit.test.ts",
       "test/hc-core-resilience.test.ts",
       "test/hc-core-scenario.test.ts",
       "test/opencode-in-flight.test.ts",
