@@ -4,9 +4,6 @@ import { all, blob, text, whole } from '../rows.ts';
 import { ids } from '../uuid7.ts';
 import { itemsToFacts } from './items-to-facts.ts';
 import type { ImportedFact, ImportedItem, ImportedRun } from './items-to-facts.ts';
-import type { Migration } from '../schema/migration.ts';
-
-type MigrationHandle = Parameters<Extract<Migration['up'], (db: never) => void>>[0];
 
 const hex = (id: Uint8Array): string => Buffer.from(id).toString('hex');
 const bytes = (id: string): Uint8Array => Uint8Array.from(Buffer.from(id, 'hex'));
@@ -37,12 +34,7 @@ function write(db: Database, owner: { readonly tab: string; readonly task: Uint8
     }
 }
 
-const isBun = (handle: Database | MigrationHandle): handle is Database => 'inTransaction' in handle;
-
-export function importFacts(handle: Database | MigrationHandle): void {
-    if (!isBun(handle)) {
-        throw new Error('importFacts needs a bun:sqlite handle');
-    }
+export function importFacts(handle: Database): void {
     for (const owner of runsOfTasks(handle).values()) {
         write(handle, owner, itemsToFacts(owner.runs));
     }

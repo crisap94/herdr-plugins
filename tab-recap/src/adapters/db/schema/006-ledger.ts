@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { importFacts } from '../import/import-facts.ts';
 import type { Migration } from './migration.ts';
 
@@ -49,7 +49,7 @@ const READABLE = `CREATE VIEW fact_readable AS SELECT ${uuid('id')} AS id, tab_i
 export const m006: Migration = {
     version: 6,
     name: 'ledger',
-    up: (db: DatabaseSync): void => {
+    up: (db: Database): void => {
         for (const statement of [FACT, ...INDEXES, FACT_TURN, 'CREATE INDEX fact_turn_by_transcript ON fact_turn(transcript_id)', READABLE, "CREATE VIEW open_facts AS SELECT * FROM fact WHERE state = 'open'"]) {
             db.exec(statement);
         }

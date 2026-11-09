@@ -94,8 +94,10 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
 
 - **Add a file** `NNN-name.ts` exporting `{ version: NNN, name, up }` and list it in `schema/index.ts` (the only registry).
   `up` is a list of SQL statements, or a function taking the database.
-- **Never edit a released migration** (one that is in a `tab-recap-v*` tag): a fix is a new number. `ci/check-migrations.sh`
-  (part of `ci/lint.sh`) fails when a released file changed or was deleted.
+- **Never change what a released migration runs** (one that is in a `tab-recap-v*` tag): a fix is a new number. Its types may
+  move with the code (a released migration now types its handle as `bun:sqlite`'s `Database`). `ci/check-migrations.sh` (part of
+  `ci/lint.sh`) strips the types of the released and the current file with Bun's transpiler and fails when the code left differs,
+  or when a released file was deleted; `ci/migration-runtime-bite.sh` proves both ways.
 - **Number it exactly one above `main`'s highest** (and consecutively when a branch adds several): a gap makes a database skip the
   numbers between, and a number already taken collides with a migration that landed first. `ci/check-migrations.sh` reads
   `origin/main` (`MIGRATIONS_BASE`) and fails any other number; `ci/migration-number-bite.sh` proves it fails a gap, a repeat and a

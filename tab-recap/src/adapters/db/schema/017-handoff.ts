@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { rebuildTable } from '../rebuild.ts';
 import type { Migration } from './migration.ts';
 
@@ -33,7 +33,7 @@ const HANDOFF_ANSWER = `CREATE TABLE handoff_answer (
   CHECK ((outcome = 'delivered') = (reason IS NULL))
 ) STRICT, WITHOUT ROWID`;
 
-function up(db: DatabaseSync): void {
+function up(db: Database): void {
     db.exec('DROP VIEW request_readable');
     rebuildTable(db, {
         table: 'request',

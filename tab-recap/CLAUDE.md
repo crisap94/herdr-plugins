@@ -54,7 +54,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 | `recap-no-drizzle-transaction` | no Drizzle `.transaction(...)`: `writeTx` is the only transaction primitive |
 | `recap-host-probes-at-the-edge` | `process.platform`, `os.platform()`/`os.type()`, `process.env.PATH` only in `src/host/` and the `*-posix`/`*-xdg` adapters: the rest asks the Host, ProcessControl or ConfigPaths port |
 | `recap-vocabulary` | no `summary`, `sidebar`, `panel`, `offset`, `worker` in identifiers |
-| `recap-no-comments` | the code carries no comments: meaning lives in names, types, small functions and tests, rationale in CONTEXT.md, the README or the OpenSpec design. Directive pragmas (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) stay; released migrations are frozen by `ci/check-migrations.sh` and listed under the rule's `ignores` |
+| `recap-no-comments` | the code carries no comments: meaning lives in names, types, small functions and tests, rationale in CONTEXT.md, the README or the OpenSpec design. Directive pragmas (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) stay; released migrations keep the code they run (only their types may change), held by `ci/check-migrations.sh`, and listed under the rule's `ignores` |
 
 **A fifth red line is enforced at run time, not by a rule: a recap never closes, resizes or moves a pane that hosts
 an agent.** It is checked three times — `adapters/herdr/column-panes.ts` (a column is only a pane titled EXACTLY

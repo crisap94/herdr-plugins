@@ -3,8 +3,6 @@ import { writeTx } from './connection.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 
-type MigrationHandle = Parameters<Extract<Migration['up'], (db: never) => void>>[0];
-
 export class MigrationFailed extends Error {}
 
 export function versionOf(db: Database): number {
@@ -15,19 +13,12 @@ export function versionOf(db: Database): number {
     return Number(row.user_version);
 }
 
-function isLegacyHandle(db: Database): db is Database & MigrationHandle {
-    return typeof db.exec === 'function' && typeof db.prepare === 'function';
-}
-
 export function latestVersion(migrations: readonly Migration[] = MIGRATIONS): number {
     return migrations.at(-1)?.version ?? 0;
 }
 
 function apply(db: Database, step: Migration): void {
     if (typeof step.up === 'function') {
-        if (!isLegacyHandle(db)) {
-            throw new MigrationFailed('the handle cannot run a migration');
-        }
         step.up(db);
         return;
     }

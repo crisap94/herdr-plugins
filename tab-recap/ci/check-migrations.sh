@@ -3,10 +3,12 @@ set -uo pipefail
 dir="${MIGRATIONS_DIR:-tab-recap/src/adapters/db/schema}"
 base="${MIGRATIONS_BASE:-origin/main}"
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "check-migrations: 3 — NOT COVERED: not a git repository" >&2; exit 3; }
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$(git rev-parse --show-toplevel)" || exit 3
 
 released_untouched() {
-    local tag released file status=0
+    local tag released file status=0 types=0 runtime
+    runtime="$HERE/migration-runtime.ts"
     tag="${MIGRATIONS_TAG:-$(git tag --list 'tab-recap-v*' --sort=-v:refname | head -n 1)}"
     [ -n "$tag" ] || { echo "check-migrations: no release tag yet: nothing is released"; return 0; }
     released="$(git ls-tree -r --name-only "$tag" -- "$dir" 2>/dev/null | grep -v '/index\.ts$' || true)"
@@ -16,10 +18,14 @@ released_untouched() {
         if [ ! -f "$file" ]; then
             echo "  deleted: $file (released in $tag)" >&2; status=1
         elif ! git diff --quiet "$tag" -- "$file"; then
-            echo "  modified: $file (released in $tag)" >&2; status=1
+            if bun "$runtime" "$tag" "$file"; then
+                types=$((types + 1))
+            else
+                echo "  modified: $file (released in $tag; the code it runs changed, not only its types)" >&2; status=1
+            fi
         fi
     done <<<"$released"
-    [ "$status" -eq 0 ] && echo "check-migrations: clean (released in $tag: $(wc -l <<<"$released" | tr -d ' ') file(s) untouched)" \
+    [ "$status" -eq 0 ] && echo "check-migrations: clean (released in $tag: $(wc -l <<<"$released" | tr -d ' ') file(s), $types with only type changes, the rest untouched)" \
         || echo "check-migrations: 1 — a released migration changed: add a new numbered migration instead" >&2
     return "$status"
 }
