@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { chainRenames, filesAbove, guard, loadBaseline, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import { chainRenames, filesAbove, guard, loadBaseline, parseMoves, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCRATCH = mkdtempSync(join(tmpdir(), 'domain-baseline-'));
@@ -56,12 +56,27 @@ test('the merge-base guard refuses a raised entry and a new entry, and allows a 
     assert.deepEqual(guard(base, { [FILE]: { parameter: 2, assertion: 1, return: 1 } }), [`new entry: ${FILE}: return 1`]);
 });
 
-test('renames chain across commits back to the merge-base path, a deleted file drops out, and a listed move fills only what git did not see', () => {
-    const lines = ['R100\tsrc/a.ts\tsrc/x/a.ts', 'M\tsrc/x/a.ts', 'R061\tsrc/x/a.ts\tsrc/y/a.ts', 'R100\tsrc/gone.ts\tsrc/z/gone.ts', 'D\tsrc/z/gone.ts', ''];
+test('renames chain across commits back to the merge-base path, and a listed move fills only what git did not see', () => {
+    const lines = ['R100\tsrc/a.ts\tsrc/x/a.ts', 'M\tsrc/x/a.ts', 'R061\tsrc/x/a.ts\tsrc/y/a.ts', ''];
     const moves = new Map([['src/y/a.ts', 'src/wrong.ts'], ['src/carved.ts', 'src/old.ts']]);
-    assert.deepEqual([...chainRenames(lines, moves)].toSorted(([a], [b]) => a.localeCompare(b)), [['src/carved.ts', 'src/old.ts'], ['src/y/a.ts', 'src/a.ts']]);
+    const origin = chainRenames(lines, moves);
+    assert.equal(origin.get('src/y/a.ts'), 'src/a.ts');
+    assert.equal(origin.get('src/carved.ts'), 'src/old.ts');
     const base = { 'src/a.ts': { container: 3 }, 'src/old.ts': { container: 20 } };
-    assert.deepEqual(guard(base, { 'src/y/a.ts': { container: 3 }, 'src/carved.ts': { container: 2 } }, chainRenames(lines, moves)), []);
+    assert.deepEqual(guard(base, { 'src/y/a.ts': { container: 3 }, 'src/carved.ts': { container: 2 } }, origin), []);
+});
+
+test('a new file at a path that was renamed away or deleted does not inherit the old entry', () => {
+    const base = { 'src/a.ts': { container: 5 }, 'src/c.ts': { container: 3 } };
+    const origin = chainRenames(['R100\tsrc/a.ts\tsrc/b.ts', 'A\tsrc/a.ts', 'D\tsrc/c.ts', 'A\tsrc/c.ts']);
+    assert.deepEqual(guard(base, { 'src/b.ts': { container: 5 }, 'src/a.ts': { container: 5 }, 'src/c.ts': { container: 3 } }, origin), [
+        'new entry: src/a.ts: container 5',
+        'new entry: src/c.ts: container 3',
+    ]);
+});
+
+test('the moves file reads CRLF lines and trims its cells', () => {
+    assert.deepEqual([...parseMoves('src/n.ts\tsrc/o.ts \r\n\r\n')], [['src/n.ts', 'src/o.ts']]);
 });
 
 test('a lane file holds only the files its lane owns', () => {
