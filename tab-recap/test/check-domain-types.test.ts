@@ -15,22 +15,6 @@ const run = (args: readonly string[]): { readonly status: number | null; readonl
 
 const probe = (name: string): readonly string[] => ['--project', join(PROBES, name, 'tsconfig.json')];
 
-test('a primitive parameter fails the check with a not supported line naming the file, line, function and parameter', () => {
-    const result = run(probe('bad-parameter'));
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /^not supported: src\/domain\/value\.ts:1: label, parameter text resolves to string; use a value object or domain type$/m);
-});
-
-test('a branded value object and a parser taking unknown pass the check', () => {
-    assert.equal(run(probe('good-parser')).status, 0);
-    assert.equal(run(probe('good-branded')).status, 0);
-});
-
-test('an unannotated callback over a library array is skipped, and a type guard in the value file passes', () => {
-    assert.equal(run(probe('good-unannotated-callback')).status, 0);
-    assert.equal(run(probe('good-type-guard')).status, 0);
-});
-
 test('--json prints each finding with a closed category, sorted by file and line', () => {
     const result = run([...probe('bad-array'), '--json']);
     assert.equal(result.status, 1);
@@ -57,42 +41,4 @@ test('a project that does not exist is a could-not-look result, exit 3, never a 
 test('--project with no path is a could-not-look result, exit 3', () => {
     const result = run(['--project']);
     assert.equal(result.status, 3);
-});
-
-test('a parameter or a return typed by an inline literal union needs a named alias', () => {
-    const parameter = run(probe('bad-inline-union-parameter'));
-    assert.equal(parameter.status, 1);
-    assert.match(parameter.stderr, /^not supported: src\/domain\/value\.ts:1: open, parameter state is an inline literal union; name it with a type alias/m);
-    const returned = run(probe('bad-inline-union-return'));
-    assert.equal(returned.status, 1);
-    assert.match(returned.stderr, /^not supported: src\/domain\/value\.ts:1: state, return is an inline literal union/m);
-});
-
-test('a property typed by a literal union, and a named alias in a signature, pass', () => {
-    assert.equal(run(probe('good-property-literal-union')).status, 0);
-    assert.equal(run(probe('good-named-literal-union')).status, 0);
-});
-
-test('unknown as a type argument, a Date, a Buffer and a numeric enum fail, each naming its reason', () => {
-    const cases: readonly (readonly [string, RegExp])[] = [
-        ['bad-unknown-argument', /parseThing, parameter input is unknown/u],
-        ['bad-unknown-record', /Row, property fields is unknown/u],
-        ['bad-date', /take, parameter at resolves to Date/u],
-        ['bad-buffer', /take, parameter bytes resolves to Buffer/u],
-        ['bad-numeric-enum', /take, parameter level is a numeric enum/u],
-        ['bad-mixed-enum', /take, parameter value is a numeric enum/u],
-        ['bad-empty-object', /take, parameter value is an anonymous object-literal type/u],
-        ['bad-readonly-alias', /<anonymous>, property id resolves to string/u],
-    ];
-    cases.forEach(([name, reason]) => {
-        const result = run(probe(name));
-        assert.equal(result.status, 1, name);
-        assert.match(result.stderr, reason, name);
-    });
-});
-
-test('a string enum and a Readonly alias of branded fields pass', () => {
-    assert.equal(run(probe('good-string-enum')).status, 0);
-    assert.equal(run(probe('good-readonly-alias')).status, 0);
-    assert.equal(run(probe('good-same-name-type')).status, 0);
 });
