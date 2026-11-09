@@ -8,12 +8,12 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
-import { parseHcPayload } from './desktop-package.ts';
-import type { HcEvent, HcPayload } from './desktop-package.ts';
-import type { HcCoreFeed } from './desktop-package.ts';
-import { framesBetween } from './hc-frames.ts';
-import { agentOfApp } from './hc-kinds.ts';
-import type { SessionOfTerminal } from './hc-sessions.ts';
+import { parseHcPayload } from './sdk-core.ts';
+import type { HcEvent, HcPayload } from './sdk-core.ts';
+import type { HcCoreFeed } from './sdk-core.ts';
+import { framesBetween } from './frames.ts';
+import { agentOfApp } from './kinds.ts';
+import type { SessionOfTerminal } from './sessions.ts';
 
 export interface HcListed {
     readonly terminals: readonly HcPayload[];

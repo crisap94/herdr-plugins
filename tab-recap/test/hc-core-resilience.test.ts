@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
-import { duration } from '#src/adapters/desktop-package.ts';
-import { HcCoreFleet } from '#src/adapters/hc-core-fleet.ts';
-import { CoreLink } from '#src/adapters/desktop-package.ts';
+import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
+import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
+import { CoreLink } from '#src/adapters/herdr-core/sdk-core.ts';
 import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import type { CoreEventsTiming } from '#src/adapters/desktop-package.ts';
-import type { CoreLinkTiming } from '#src/adapters/desktop-package.ts';
+import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, frame, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 

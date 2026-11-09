@@ -5,7 +5,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { HcTerminal } from '#src/recap/domain/hc-terminal.ts';
-import { HC_NO_TYPING } from './desktop-constants.ts';
+import { HC_NO_TYPING } from '../desktop-constants.ts';
 
 export interface HcSeen {
     readonly kind: 'seen';

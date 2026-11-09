@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore, type Store } from '#src/adapters/db/database.ts';
 import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
-import { parseSocketPath } from '#src/adapters/desktop-package.ts';
+import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import { DesktopBus } from '#src/adapters/desktop-bus.ts';
 import { GuiPublisher } from '#src/adapters/gui-publisher.ts';
 import { must } from '#src/protocol/result.ts';

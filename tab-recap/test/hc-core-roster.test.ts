@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/adapters/desktop-package.ts';
-import { parseNonEmptyText } from '#src/adapters/desktop-package.ts';
+import { parseCount } from '#src/adapters/herdr-core/sdk-core.ts';
+import { parseNonEmptyText } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId, parseSessionId } from '#src/recap/domain/ids.ts';
-import { HcCoreRoster, parseHcListed } from '#src/adapters/hc-core-roster.ts';
-import { parseHcPayload } from '#src/adapters/desktop-package.ts';
-import type { HcCoreFeed } from '#src/adapters/desktop-package.ts';
-import type { HcPayload } from '#src/adapters/desktop-package.ts';
+import { HcCoreRoster, parseHcListed } from '#src/adapters/herdr-core/roster.ts';
+import { parseHcPayload } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { HcCoreFeed } from '#src/adapters/herdr-core/sdk-core.ts';
+import type { HcPayload } from '#src/adapters/herdr-core/sdk-core.ts';
 import { agentTerminal, shellTerminal } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const payload = (fields: object): HcPayload => must(parseHcPayload(fields));

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { openStore, type Store } from '#src/adapters/db/database.ts';
 import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseSocketPath } from '#src/adapters/desktop-package.ts';
+import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { cursor } from '#test/db/support.ts';
 

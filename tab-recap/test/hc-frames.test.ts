@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { framesBetween } from '#src/adapters/hc-frames.ts';
+import { framesBetween } from '#src/adapters/herdr-core/frames.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 
 const lane = (pane: string, status: string): SeenLane => ({ paneId: pane, tabId: 'tb1', workspaceId: 'sp1', agent: 'claude', status });

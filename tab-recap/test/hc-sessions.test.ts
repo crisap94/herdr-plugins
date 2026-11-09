@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { claudeSessions } from '#src/adapters/hc-sessions.ts';
+import { claudeSessions } from '#src/adapters/herdr-core/sessions.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { parseHcTerminal } from '#src/recap/domain/hc-terminal.ts';
 
