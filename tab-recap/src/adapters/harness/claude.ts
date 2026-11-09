@@ -1,4 +1,6 @@
 import { mkdirSync } from 'node:fs';
+import { harnessBinary } from '@stateforge-labs/harness-adapters';
+import { claudeHeadlessArgs, parseClaudeResult } from '@stateforge-labs/harness-adapters/claude';
 import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -9,27 +11,12 @@ import type { Runner } from '../os/process/control.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
 export function resultOf(stdout: string): { text: string; cost: number } | null {
-    try {
-        const parsed: unknown = JSON.parse(stdout);
-        if (typeof parsed !== 'object' || parsed === null) {
-            return null;
-        }
-        const fields = parsed as Readonly<Record<string, unknown>>;
-        const text = fields['result'];
-        const cost = fields['total_cost_usd'];
-        return typeof text === 'string' ? { text, cost: typeof cost === 'number' ? cost : 0 } : null;
-    } catch {
-        return null;
-    }
+    const result = parseClaudeResult(stdout);
+    return result === null ? null : { text: result.text, cost: result.costUsd };
 }
 
 export function claudeArgs(model: string, instructions: string, effort: Effort = 'default'): string[] {
-    const level = levelOf(effort, 'low');
-    return [
-        '-p', '--model', model === '' ? 'haiku' : model, '--no-session-persistence', '--tools', '', '--setting-sources', '',
-        '--strict-mcp-config', '--output-format', 'json', '--system-prompt', instructions,
-        ...(level === null ? [] : ['--effort', level]),
-    ];
+    return claudeHeadlessArgs({ model: model === '' ? 'haiku' : model, systemPrompt: instructions, effort: levelOf(effort, 'low') });
 }
 
 export class ClaudeHarness implements Harness {
@@ -53,7 +40,7 @@ export class ClaudeHarness implements Harness {
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
-        const ran = await this.runner('claude', claudeArgs(settings.model, call.instructions, settings.effort), { input: call.input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv(this.jobTag) });
+        const ran = await this.runner(harnessBinary('claude'), claudeArgs(settings.model, call.instructions, settings.effort), { input: call.input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv(this.jobTag) });
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }

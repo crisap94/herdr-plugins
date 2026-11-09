@@ -1,61 +1,35 @@
 import { mkdirSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { harnessBinary } from '@stateforge-labs/harness-adapters';
+import {
+    opencodeArgs as opencodeRunArgs,
+    opencodeHermeticEnv,
+    opencodeSessionDeleteArgs,
+    opencodeSessionListArgs,
+    parseOpencodeStream,
+    parseSessionList,
+} from '@stateforge-labs/harness-adapters/opencode';
 import type { Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { levelOf } from '#src/recap/domain/effort.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { obj, parse, str } from '../transcripts/jsonl.ts';
 import { run, scrubbedEnv } from '../os/process/control.ts';
 import type { Runner } from '../os/process/control.ts';
 
 const RELIST_MS = 3000;
 
-const TOOLLESS = JSON.stringify({ tools: { '*': false }, permission: { '*': 'deny' } });
-
 export function opencodeArgs(model: string, title: string, effort: Effort = 'default'): string[] {
     const level = levelOf(effort, 'minimal');
-    return ['run', '--pure', '--format', 'json', '--title', title, ...(model === '' ? [] : ['-m', model]), ...(level === null ? [] : ['--variant', level])];
+    const args = opencodeRunArgs({ model, title });
+    return [...args.slice(0, 1), '--pure', ...args.slice(1), ...(level === null ? [] : ['--variant', level])];
 }
 
 export function sessionsTitled(json: string, title: string): string[] {
-    try {
-        const rows: unknown = JSON.parse(json);
-        return Array.isArray(rows) ? rows.flatMap((row: unknown) => (obj(row)['title'] === title ? (str(obj(row)['id']) ?? []) : [])) : [];
-    } catch {
-        return [];
-    }
+    return parseSessionList(json).filter((session) => session.title === title).map((session) => session.id);
 }
 
-export interface OpencodeOutput {
-    readonly text: string;
-    readonly cost: number;
-    readonly session: string | null;
-}
-
-export function opencodeOutput(stdout: string): OpencodeOutput {
-    let text = '';
-    let cost = 0;
-    let session: string | null = null;
-    for (const line of stdout.split('\n')) {
-        const event = parse(line);
-        if (event === null) {
-            continue;
-        }
-        const observedSession = str(event['sessionID']);
-        if (observedSession !== null) {
-            session = observedSession;
-        }
-        const part = obj(event['part']);
-        if (event['type'] === 'text' && typeof part['text'] === 'string') {
-            text += part['text'];
-        }
-        if (event['type'] === 'step_finish' && typeof part['cost'] === 'number') {
-            cost += part['cost'];
-        }
-    }
-    return { text, cost, session };
-}
+export const opencodeOutput = parseOpencodeStream;
 
 export class OpencodeHarness implements Harness {
     readonly id = 'opencode';
@@ -77,13 +51,13 @@ export class OpencodeHarness implements Harness {
     }
 
     private async titled(title: string, env: NodeJS.ProcessEnv): Promise<string[]> {
-        const listed = await this.runner('opencode', ['session', 'list', '--format', 'json'], { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
+        const listed = await this.runner(harnessBinary('opencode'), opencodeSessionListArgs(), { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
         return sessionsTitled(listed.stdout, title);
     }
 
     private async remove(ids: readonly string[], env: NodeJS.ProcessEnv): Promise<void> {
         for (const id of ids) {
-            await this.runner('opencode', ['session', 'delete', id], { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
+            await this.runner(harnessBinary('opencode'), opencodeSessionDeleteArgs(id), { input: '', timeoutMs: 30_000, cwd: this.workDir, env });
         }
     }
 
@@ -99,11 +73,11 @@ export class OpencodeHarness implements Harness {
 
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
         mkdirSync(this.workDir, { recursive: true });
-        const env = { ...scrubbedEnv(), OPENCODE_CONFIG_CONTENT: TOOLLESS };
+        const env = { ...scrubbedEnv(), ...opencodeHermeticEnv() };
         const input = `${call.input}\n\n${call.instructions}`;
         const title = `tab-recap-${process.pid}-${Date.now()}`;
-        const ran = await this.runner('opencode', opencodeArgs(settings.model, title, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
-        const output = opencodeOutput(ran.stdout);
+        const ran = await this.runner(harnessBinary('opencode'), opencodeArgs(settings.model, title, settings.effort), { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env });
+        const output = parseOpencodeStream(ran.stdout);
         await this.forget(output.session, title, env);
         if (ran.timedOut) {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });

@@ -72,8 +72,7 @@
     "parameter": 5,
     "return": 2,
     "container": 1,
-    "property": 4,
-    "assertion": 1
+    "property": 4
   },
   "src/adapters/harness/codex.ts": {
     "parameter": 4,
@@ -93,10 +92,10 @@
     "container": 1
   },
   "src/adapters/harness/opencode.ts": {
-    "parameter": 12,
+    "parameter": 10,
     "return": 1,
     "container": 4,
-    "property": 7
+    "property": 4
   },
   "src/adapters/herdr/agents.ts": {
     "parameter": 13,
