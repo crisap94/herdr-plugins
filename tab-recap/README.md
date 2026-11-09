@@ -569,16 +569,17 @@ A recap is written only for a tab with an agent in it, after the agent finishes 
 
 ### How the daemon reads the agents
 
+The daemon keeps one connection to the herdr-core socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event
+into a roster in memory and spawns nothing. The socket is `$HC_SOCKET`, else `$XDG_RUNTIME_DIR/herdr-core/<session>.sock`
+(`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
+If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
+when the core is back.
+
 | Setting | Values | Does |
 | --- | --- | --- |
-| `TAB_RECAP_HC_TRANSPORT` | `cli` (default), `socket` | `cli` spawns `hc` and re-lists the agents on each event. `socket` keeps one connection to the core's socket (newline-delimited JSON-RPC 2.0) and one events subscription, folds each event into a roster in memory and spawns nothing. |
 | `TAB_RECAP_API` | `off` | Do not start the local API; the mod then reads the files only. |
 
-Both are read when the daemon starts, so restart it after changing them. The socket is `$HC_SOCKET`, else
-`$XDG_RUNTIME_DIR/herdr-core/<session>.sock` (`$XDG_RUNTIME_DIR` falls back to `/run/user/<uid>`; the session is `$HC_SESSION`, else `default`).
-If the core goes away the daemon says so in its log, reconnects with a growing wait (500 ms up to 15 s), and takes a fresh snapshot
-when the core is back. `socket` stays opt-in until it has run for longer; see [the transport study](../docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/README.md)
-for the numbers and [the design note](../openspec/changes/gui-port/transport.md) for the layout.
+`TAB_RECAP_API` is read when the daemon starts, so restart the daemon after changing it.
 
 ### The local API
 
@@ -630,8 +631,8 @@ text on the clipboard. Both buttons need the API.
 
 ### Not available yet
 
-- **Compact and Reply** are drawn disabled. They type into an agent, and `hc keys` cannot type most punctuation (a later phase uses
-  `terminal.keys`, `terminal.send` and `terminal.wait`). Compaction, handoff and autocompact stay off in the desktop app.
+- **Compact and Reply** are drawn disabled. They type into an agent, and the desktop app cannot yet type into an agent.
+  Compaction, handoff and autocompact stay off in the desktop app.
 - **Undo for Mark done:** the ledger has no operation that reopens a closed fact (only `add`, `update` and `close`), so a hand close cannot
   be undone from the app. A later recap run may raise the same question again as a new fact.
 - **Notices** from the daemon (refusals, a compaction starting) are not built; the bus topic exists and nothing publishes to it.

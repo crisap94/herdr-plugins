@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore, type Store } from '#src/adapters/db/database.ts';
 import { desktopFrontend } from '#src/adapters/desktop-frontend.ts';
+import { parseSocketPath } from '#src/adapters/desktop-package.ts';
 import { DesktopBus } from '#src/adapters/desktop-bus.ts';
 import { GuiPublisher } from '#src/adapters/gui-publisher.ts';
 import { must } from '#src/protocol/result.ts';
@@ -15,6 +16,8 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+
+const DEAD_SOCKET = must(parseSocketPath(join(mkdtempSync(join(tmpdir(), 'tr-core-')), 'none.sock')));
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -42,7 +45,7 @@ test('the desktop frontend starts the API with the store and stops it before the
     const { root, store } = stateStore();
     process.env['TAB_RECAP_STATE'] = root;
     delete process.env['TAB_RECAP_API'];
-    const wrapped = desktopFrontend().wrap(store, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined);
     const path = join(root, 'gui', 'api.json');
     assert.ok(await appears(path));
     const found = JSON.parse(readFileSync(path, 'utf8'));
@@ -59,7 +62,7 @@ test('TAB_RECAP_API=off starts nothing', async () => {
     const { root, store } = stateStore();
     process.env['TAB_RECAP_STATE'] = root;
     process.env['TAB_RECAP_API'] = 'off';
-    const wrapped = desktopFrontend().wrap(store, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined);
     await sleep(300);
     assert.equal(existsSync(join(root, 'gui', 'api.json')), false);
     wrapped.close();
