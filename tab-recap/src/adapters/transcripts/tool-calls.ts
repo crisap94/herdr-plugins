@@ -1,3 +1,4 @@
+import { toolClass, toolTarget, ToolClass } from '@stateforge-labs/harness-adapters';
 import type { CallKind, Entry } from '#src/ports/transcripts.ts';
 import { str, toolBrief } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
@@ -7,6 +8,8 @@ export interface ToolCall {
     readonly text: string;
     readonly what?: string;
 }
+
+type HarnessKind = Parameters<typeof toolClass>[0];
 
 const COMMAND_CHARS = 64;
 export const squash = (value: string, max = COMMAND_CHARS): string => {
@@ -25,16 +28,27 @@ export function shell(command: string, what?: string | null): ToolCall {
     return { kind: isPlainRead(command) ? 'read' : 'shell', text: described ? '' : squash(command, COMMAND_CHARS), ...(described ? { what: squash(what, 120) } : {}) };
 }
 
-const targetOf = (input: Row): string => str(input['file_path']) ?? str(input['filePath']) ?? str(input['notebook_path']) ?? str(input['path']) ?? str(input['pattern']) ?? '';
+const commandOf = (input: Row): ToolCall => shell(str(input['command']) ?? '', str(input['description']));
+const webOf = (input: Row): string => squash(str(input['url']) ?? str(input['query']) ?? '');
+const agentOf = (name: string, input: Row): string => squash(str(input['description']) ?? str(input['prompt']) ?? name);
 
-export const callBuilders: Readonly<Record<CallKind, (name: string, input: Row) => ToolCall>> = {
-    shell: (_, input) => shell(str(input['command']) ?? '', str(input['description'])),
-    read: (_, input) => ({ kind: 'read', text: targetOf(input) }),
-    edit: (_, input) => ({ kind: 'edit', text: targetOf(input) }),
-    web: (_, input) => ({ kind: 'web', text: squash(str(input['url']) ?? str(input['query']) ?? '') }),
-    agent: (name, input) => ({ kind: 'agent', text: squash(str(input['description']) ?? str(input['prompt']) ?? name) }),
-    other: (name, input) => ({ kind: 'other', text: toolBrief(name, input) }),
-};
+export function namedCall(harness: HarnessKind, name: string, input: Row): ToolCall {
+    const target = toolTarget(harness, name, input) ?? '';
+    switch (toolClass(harness, name)) {
+        case ToolClass.Shell:
+            return commandOf(input);
+        case ToolClass.Read:
+            return { kind: 'read', text: target };
+        case ToolClass.Edit:
+            return { kind: 'edit', text: target };
+        case ToolClass.Web:
+            return { kind: 'web', text: webOf(input) };
+        case ToolClass.Agent:
+            return { kind: 'agent', text: agentOf(name, input) };
+        default:
+            return { kind: 'other', text: toolBrief(name, input) };
+    }
+}
 
 export const toolEntry = (call: ToolCall, at?: number): Entry => ({
     role: 'tool', text: call.text, kind: call.kind, ...(call.what === undefined ? {} : { what: call.what }), ...(at === undefined ? {} : { at }),

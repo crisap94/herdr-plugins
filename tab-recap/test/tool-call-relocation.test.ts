@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { claudeNamedCall } from '#src/adapters/transcripts/claude/tool-calls.ts';
 import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
-import { opencodeNamedCall } from '#src/adapters/transcripts/opencode/tool-calls.ts';
+import { namedCall } from '#src/adapters/transcripts/tool-calls.ts';
 import type { CallKind } from '#src/ports/transcripts.ts';
 
 const claudeNative: readonly (readonly [string, CallKind])[] = [
@@ -14,18 +13,19 @@ const claudeNative: readonly (readonly [string, CallKind])[] = [
 const opencodeNative: readonly (readonly [string, CallKind])[] = [
     ['bash', 'shell'], ['read', 'read'], ['grep', 'read'], ['glob', 'read'], ['list', 'read'], ['edit', 'edit'],
     ['write', 'edit'], ['patch', 'edit'], ['apply_patch', 'edit'], ['webfetch', 'web'], ['websearch', 'web'],
-    ['codesearch', 'web'], ['task', 'agent'],
+    ['codesearch', 'web'], ['subagent', 'agent'],
 ];
 
 test('each transcript adapter classifies every native tool name and treats a foreign name as other', () => {
     for (const [name, kind] of claudeNative) {
-        assert.equal(claudeNamedCall(name, {}).kind, kind, name);
+        assert.equal(namedCall('claude', name, {}).kind, kind, name);
     }
-    assert.equal(claudeNamedCall('read', {}).kind, 'other');
+    assert.equal(namedCall('claude', 'read', {}).kind, 'other');
     for (const [name, kind] of opencodeNative) {
-        assert.equal(opencodeNamedCall(name, {}).kind, kind, name);
+        assert.equal(namedCall('opencode', name, {}).kind, kind, name);
     }
-    assert.equal(opencodeNamedCall('Read', {}).kind, 'other');
+    assert.equal(namedCall('opencode', 'Read', {}).kind, 'other');
+    assert.equal(namedCall('opencode', 'task', {}).kind, 'other', 'task is not a native OpenCode subagent name');
     assert.equal(codexCalls('apply_patch', {}, {}).at(0)?.kind, 'edit');
     assert.equal(codexCalls('exec', 'exec_command({cmd:"cat a.ts"})', {}).at(0)?.kind, 'read');
     assert.equal(codexCalls('Read', {}, {}).at(0)?.kind, 'other');

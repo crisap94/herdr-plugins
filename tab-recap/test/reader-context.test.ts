@@ -7,8 +7,7 @@ import { extractClaude } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
-import { claudeNamedCall as namedCall } from '#src/adapters/transcripts/claude/tool-calls.ts';
-import { isPlainRead } from '#src/adapters/transcripts/tool-calls.ts';
+import { isPlainRead, namedCall as callOf } from '#src/adapters/transcripts/tool-calls.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -79,8 +78,8 @@ test('shell reads: only commands that look and never write', () => {
     for (const write of ['cat a > b', 'rg x | tee out', 'sed -i s/a/b/ f', 'git status', 'npm test', 'ls && rm -rf x > /dev/null']) {
         assert.equal(isPlainRead(write), false, write);
     }
-    assert.equal(namedCall('Bash', { command: `echo ${'x'.repeat(400)}` }).text.length, 64, 'a command is clipped to 64');
-    assert.deepEqual(namedCall('Bash', { command: 'echo hi', description: 'Say hi' }), { kind: 'shell', text: '', what: 'Say hi' }, 'a described command is sent as its description alone');
+    assert.equal(callOf('claude', 'Bash', { command: `echo ${'x'.repeat(400)}` }).text.length, 64, 'a command is clipped to 64');
+    assert.deepEqual(callOf('claude', 'Bash', { command: 'echo hi', description: 'Say hi' }), { kind: 'shell', text: '', what: 'Say hi' }, 'a described command is sent as its description alone');
 });
 
 const exec = (input: string): string => JSON.stringify({ timestamp: '2026-09-21T04:32:19.079Z', type: 'response_item', payload: { type: 'custom_tool_call', status: 'completed', name: 'exec', input } });

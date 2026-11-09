@@ -3,8 +3,7 @@ import type { OpenCodeMessage, OpenCodePart } from '@stateforge-labs/harness-ada
 import type { OpenCodeStore, StoredMessage } from '@stateforge-labs/harness-adapters/opencode/store';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
 import { opencodeObserved } from './context.ts';
-import { opencodeNamedCall } from './tool-calls.ts';
-import { toolEntry } from '../tool-calls.ts';
+import { namedCall, toolEntry } from '../tool-calls.ts';
 
 function partEntry(role: string, part: OpenCodePart, at: number | undefined): Entry | null {
     const when = at === undefined ? {} : { at };
@@ -12,7 +11,7 @@ function partEntry(role: string, part: OpenCodePart, at: number | undefined): En
     if (text !== null) {
         return { role: role === 'user' ? 'user' : 'agent', text, ...when };
     }
-    return part.partType === 'tool' ? toolEntry(opencodeNamedCall(part.tool ?? 'tool', part.input), at) : null;
+    return part.partType === 'tool' ? toolEntry(namedCall('opencode', part.tool ?? 'tool', part.input), at) : null;
 }
 
 function markOf(message: OpenCodeMessage): Mark {

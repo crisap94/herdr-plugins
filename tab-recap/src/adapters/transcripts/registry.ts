@@ -1,3 +1,4 @@
+import { harnessOfTranscriptPath } from '@stateforge-labs/harness-adapters';
 import { ClaudeTranscripts } from './claude/transcripts.ts';
 import { CodexTranscripts } from './codex/transcripts.ts';
 import { OpencodeTranscripts } from './opencode/transcripts.ts';
@@ -42,7 +43,7 @@ export function readerKindOf(raw: string): RegisteredKind | null {
 }
 
 export function replayKindOf(flag: string | null, file: string): RegisteredKind | null {
-    return readerKindOf(flag ?? (file.includes('/.codex/') ? 'codex' : 'claude'));
+    return readerKindOf(flag ?? harnessOfTranscriptPath(file) ?? 'claude');
 }
 
 export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {

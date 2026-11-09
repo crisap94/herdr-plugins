@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { claudeHome, claudeSessionIdOfPid } from '@stateforge-labs/harness-adapters/claude';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { PositiveCount } from '#src/recap/domain/count.ts';
@@ -13,18 +11,12 @@ const CLAUDE_APP = 'claude-code';
 export type SessionOfTerminal = (terminal: HcTerminal) => SessionId | null;
 
 function claudeSessionFile(root: Directory, pid: PositiveCount): SessionId | null {
-    try {
-        const decoded: unknown = JSON.parse(readFileSync(join(root, 'sessions', `${pid}.json`), 'utf8'));
-        const id: unknown = typeof decoded === 'object' && decoded !== null ? Reflect.get(decoded, 'sessionId') : undefined;
-        const parsed = parseSessionId(id);
-        return parsed.kind === 'ok' ? parsed.value : null;
-    } catch {
-        return null;
-    }
+    const parsed = parseSessionId(claudeSessionIdOfPid(pid, root));
+    return parsed.kind === 'ok' ? parsed.value : null;
 }
 
 export function defaultClaudeHome(): Directory | null {
-    const parsed = parseDirectory(join(homedir(), '.claude'));
+    const parsed = parseDirectory(claudeHome());
     return parsed.kind === 'ok' ? parsed.value : null;
 }
 

@@ -1,16 +1,14 @@
 {
   "src/adapters/capability/catalogue.ts": {
-    "parameter": 4,
-    "return": 4,
-    "container": 3
+    "parameter": 2,
+    "return": 1
   },
   "src/adapters/capability/compaction-plans.ts": {
     "parameter": 4,
     "return": 2
   },
   "src/adapters/capability/context-window.ts": {
-    "parameter": 3,
-    "return": 1,
+    "parameter": 2,
     "container": 3
   },
   "src/adapters/capability/handoff-plans.ts": {
@@ -244,11 +242,6 @@
     "container": 1,
     "property": 3
   },
-  "src/adapters/transcripts/claude/tool-calls.ts": {
-    "parameter": 1,
-    "container": 1,
-    "assertion": 1
-  },
   "src/adapters/transcripts/claude/transcripts.ts": {
     "parameter": 15,
     "container": 2,
@@ -295,11 +288,6 @@
   "src/adapters/transcripts/opencode/parts.ts": {
     "parameter": 2
   },
-  "src/adapters/transcripts/opencode/tool-calls.ts": {
-    "parameter": 1,
-    "container": 1,
-    "assertion": 1
-  },
   "src/adapters/transcripts/opencode/transcripts.ts": {
     "parameter": 14,
     "return": 1,
@@ -319,9 +307,9 @@
     "container": 2
   },
   "src/adapters/transcripts/tool-calls.ts": {
-    "parameter": 13,
-    "return": 8,
-    "container": 8,
+    "parameter": 8,
+    "return": 4,
+    "container": 4,
     "property": 2
   }
 }

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { tuiChrome } from '@stateforge-labs/harness-adapters/tui';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
@@ -9,19 +10,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 
 const SCREEN_LINES = 200;
 export const SCREEN_READER_ID = '*';
-export const CLAUDE_SCREEN_CHROME: ScreenChrome = {
-    boxOnly: /^[\s\-_=─━═│┃┌┐└┘├┤┬┴┼╭╮╰╯▔▁|+]*$/u,
-    lines: [
-        /esc to interrupt/i,
-        /shift\+tab to cycle/i,
-        /\? for shortcuts/i,
-        /^\s*⏵⏵/u,
-        /(?:bypass permissions|auto-accept|auto mode) (?:on|off)/i,
-        /\(ctrl\+[a-z] to [a-z ]+\)/i,
-        /^\s*[✻✽✶✳✢·*] .*… \(\d+s/u,
-        /^\s*[❯›>] *$/u,
-    ],
-};
+export const CLAUDE_SCREEN_CHROME: ScreenChrome = tuiChrome('claude');
 
 const hashOf = (text: string): string => createHash('sha1').update(text).digest('hex').slice(0, 16);
 
