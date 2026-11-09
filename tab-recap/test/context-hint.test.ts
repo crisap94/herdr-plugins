@@ -5,7 +5,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { present } from '#src/recap/render/present.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { contextWindows } from '#src/adapters/context-window.ts';
+import { contextWindows } from '#src/adapters/capability/context-window.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';

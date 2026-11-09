@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_SETTLE_MAX_MS } from '#src/recap/application/handoff-limits.ts';
-import { SETTLE_SOURCE } from '#src/adapters/handoff-plan-registry.ts';
+import { SETTLE_SOURCE } from '#src/adapters/capability/handoff-plans.ts';
 
 const planOf = (kind: string): HandoffPlan => {
     const result = handoffPlans.forKind(kind);

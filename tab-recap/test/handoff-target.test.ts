@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveTarget } from '#src/recap/application/handoff-target.ts';
 import type { TargetDeps } from '#src/recap/application/handoff-target.ts';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';

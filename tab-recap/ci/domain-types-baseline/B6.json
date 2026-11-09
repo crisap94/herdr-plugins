@@ -1,4 +1,21 @@
 {
+  "src/adapters/capability/catalogue.ts": {
+    "parameter": 4,
+    "return": 4,
+    "container": 3
+  },
+  "src/adapters/capability/compaction-plans.ts": {
+    "parameter": 4,
+    "return": 2
+  },
+  "src/adapters/capability/context-window.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 3
+  },
+  "src/adapters/capability/handoff-plans.ts": {
+    "parameter": 3
+  },
   "src/adapters/claude-context.ts": {
     "container": 1,
     "assertion": 1
@@ -67,19 +84,10 @@
     "container": 6,
     "property": 8
   },
-  "src/adapters/compaction-plan-registry.ts": {
-    "parameter": 4,
-    "return": 2
-  },
   "src/adapters/context-values.ts": {
     "parameter": 1,
     "return": 1,
     "container": 2
-  },
-  "src/adapters/context-window.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 3
   },
   "src/adapters/custom-harness.ts": {
     "parameter": 4,
@@ -136,9 +144,6 @@
     "parameter": 4,
     "return": 2,
     "container": 1
-  },
-  "src/adapters/handoff-plan-registry.ts": {
-    "parameter": 3
   },
   "src/adapters/harness-brief.ts": {
     "parameter": 2,
@@ -227,11 +232,6 @@
     "parameter": 1,
     "return": 2,
     "container": 4
-  },
-  "src/adapters/model-catalogue.ts": {
-    "parameter": 4,
-    "return": 4,
-    "container": 3
   },
   "src/adapters/opencode-context.ts": {
     "container": 1

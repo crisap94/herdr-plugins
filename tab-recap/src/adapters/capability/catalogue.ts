@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
-import { obj } from './jsonl.ts';
-import type { Row } from './jsonl.ts';
+import { obj } from '../jsonl.ts';
+import type { Row } from '../jsonl.ts';
 
 export function catalogueFile(env: Readonly<Record<string, string | undefined>> = process.env): string {
     const cache = env['XDG_CACHE_HOME'];

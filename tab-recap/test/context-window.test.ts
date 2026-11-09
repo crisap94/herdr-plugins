@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { windowOfKind } from '#src/adapters/context-window.ts';
+import { windowOfKind } from '#src/adapters/capability/context-window.ts';
 import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';

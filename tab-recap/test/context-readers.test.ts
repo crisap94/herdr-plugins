@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
+import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
 import { claudeObserved } from '#src/adapters/claude-context.ts';
 import { codexObserved } from '#src/adapters/codex-context.ts';
 import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';

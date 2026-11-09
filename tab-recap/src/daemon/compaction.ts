@@ -10,7 +10,7 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { RecapJob } from '#src/recap/application/recap-job.ts';

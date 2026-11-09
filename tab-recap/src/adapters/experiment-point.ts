@@ -9,7 +9,7 @@ import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
-import { claudeWindowOf } from './context-window.ts';
+import { claudeWindowOf } from './capability/context-window.ts';
 import { extractClaude } from './claude-rows.ts';
 import { claudeInFlight } from './claude-in-flight.ts';
 import { claudeObserved } from './claude-context.ts';
