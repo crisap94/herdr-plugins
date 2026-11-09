@@ -204,8 +204,7 @@
   },
   "src/adapters/db/transcripts.ts": {
     "parameter": 5,
-    "property": 3,
-    "assertion": 2
+    "property": 3
   },
   "src/adapters/db/typeid.ts": {
     "parameter": 2,
