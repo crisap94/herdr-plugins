@@ -76,7 +76,7 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 ## Gates
 
 ```bash
-bun install            # tsgo, oxlint (dev) and the runtime dependencies @stateforge-labs/herdr-sdk and drizzle-orm (pinned exactly)
+bun install            # tsgo, oxlint (dev) and the runtime dependencies @stateforge-labs/herdr-sdk, @stateforge-labs/harness-adapters, @stateforge-labs/harness-hooks and drizzle-orm (pinned exactly)
 bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
 bash ci/test.sh        # bun test
 ```
