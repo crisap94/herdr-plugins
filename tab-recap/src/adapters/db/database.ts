@@ -15,6 +15,7 @@ import type { Retention } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
+import { closeDatabase } from './connection.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
@@ -91,7 +92,7 @@ export function storeOver(db: Database, options: StoreOptions = {}): Store {
         closedDays: options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS,
         worktrees: new WorktreeStatusRepository(db), paneNotes: new PaneNotesRepository(db), paneAlerts: new PaneAlertsRepository(db),
         checkpoint: (): void => { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); },
-        close: (): void => { db.close(); },
+        close: (): void => { closeDatabase(db); },
     };
 }
 

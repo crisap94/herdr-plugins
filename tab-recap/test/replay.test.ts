@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { connect } from '#src/adapters/db/connection.ts';
+import { closeDatabase, connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { factsOfTab } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -61,7 +61,7 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
         const path = join(live, 'tab-recap.db');
         const opened = openDatabase(path);
         assert.equal(opened.kind, 'ready');
-        opened.db.close();
+        closeDatabase(opened.db);
         const before = hash(path);
         const { summarizer, shown } = scripted([[add('goal', 'Add a cart to the shop')], [add('decisions', 'Store carts in SQLite', 'no server needed')], [add('done', 'Added cart totals')], [add('done', 'Opened !34 for feat/cart')], [add('needs', 'Should guests keep their basket?')], [{ op: 'close', id: 'f5', why: 'answered' }, add('done', 'Guests keep their basket in a cookie')]]);
         const scratch = scratchStore();

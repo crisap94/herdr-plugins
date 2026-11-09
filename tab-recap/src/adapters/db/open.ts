@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import { backUp, backupsOf } from './backup.ts';
-import { connect, connectReadOnly, MEMORY } from './connection.ts';
+import { closeDatabase, connect, connectReadOnly, MEMORY } from './connection.ts';
 import { latestVersion, migrate, versionOf } from './migrate.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
@@ -42,7 +42,7 @@ export function openDatabase(path: string, migrations: readonly Migration[] = MI
     const db = connect(path);
     const current = versionOf(db);
     if (current > known) {
-        db.close();
+        closeDatabase(db);
         return newerThan(path, known) ?? { kind: 'ready', db: connect(path) };
     }
     if (current === 0) {
