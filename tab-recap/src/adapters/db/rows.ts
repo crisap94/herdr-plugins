@@ -34,7 +34,7 @@ export function blob(row: Row, key: string): Uint8Array {
     if (!(value instanceof Uint8Array) || value.length !== 16) {
         throw new BadRow(`${key} is not an id`);
     }
-    return value;
+    return value.constructor === Uint8Array ? value : Uint8Array.from(value);
 }
 
 export const flag = (row: Row, key: string): boolean => whole(row, key) === 1;

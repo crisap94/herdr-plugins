@@ -1,5 +1,4 @@
 import { blob, integer, sqliteView, text } from 'drizzle-orm/sqlite-core';
-import type { RowId } from './columns.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
@@ -38,9 +37,9 @@ export const factReadable = sqliteView('fact_readable', {
 }).existing();
 
 export const openFacts = sqliteView('open_facts', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'fact'>>(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     tabId: text('tab_id').$type<TabId>(),
-    taskId: blob('task_id', { mode: BLOB_MODE }).$type<RowId<'task'>>(),
+    taskId: blob('task_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     section: text('section'),
     text: text('text'),
     why: text('why'),
@@ -51,8 +50,8 @@ export const openFacts = sqliteView('open_facts', {
     state: text('state'),
     closedWhy: text('closed_why'),
     closedAt: integer('closed_at'),
-    bornRun: blob('born_run', { mode: BLOB_MODE }).$type<RowId<'run'>>(),
-    lastRun: blob('last_run', { mode: BLOB_MODE }).$type<RowId<'run'>>(),
+    bornRun: blob('born_run', { mode: BLOB_MODE }).$type<Uint8Array>(),
+    lastRun: blob('last_run', { mode: BLOB_MODE }).$type<Uint8Array>(),
     language: text('language'),
     anchor: text('anchor'),
 }).existing();
@@ -66,10 +65,10 @@ export const handoffAnswerReadable = sqliteView('handoff_answer_readable', {
 
 export const lastGoodRun = sqliteView('last_good_run', {
     tabId: text('tab_id').$type<TabId>(),
-    runId: blob('run_id', { mode: BLOB_MODE }).$type<RowId<'run'>>(),
+    runId: blob('run_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
 }).existing();
 
 export const lastGoodRunByChapter = sqliteView('last_good_run_by_chapter', {
-    chapterId: blob('chapter_id', { mode: BLOB_MODE }).$type<RowId<'chapter'>>(),
-    runId: blob('run_id', { mode: BLOB_MODE }).$type<RowId<'run'>>(),
+    chapterId: blob('chapter_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
+    runId: blob('run_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
 }).existing();

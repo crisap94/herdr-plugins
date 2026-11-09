@@ -1,5 +1,4 @@
 import { blob, integer, sqliteView, text } from 'drizzle-orm/sqlite-core';
-import type { RowId } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
@@ -27,7 +26,7 @@ export const chapterReadable = sqliteView('chapter_readable', {
 }).existing();
 
 export const chapterSpan = sqliteView('chapter_span', {
-    chapterId: blob('chapter_id', { mode: BLOB_MODE }).$type<RowId<'chapter'>>(),
+    chapterId: blob('chapter_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     tabId: text('tab_id').$type<TabId>(),
     n: integer('n'),
     startedAt: integer('started_at'),

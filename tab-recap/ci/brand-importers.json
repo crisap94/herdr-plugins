@@ -1,5 +1,4 @@
 [
-  "src/adapters/db/drizzle/columns.ts",
   "src/adapters/transcripts/claude/prompt.ts",
   "src/recap/domain/autocompact.ts",
   "src/recap/domain/backend.ts",

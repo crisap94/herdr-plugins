@@ -1,11 +1,10 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { RowId } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { BriefOrigin, Stage } from '#src/ports/compaction-records.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const compaction = sqliteTable('compaction', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'compaction'>>().primaryKey().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     tabId: text('tab_id').$type<TabId>().notNull(),
     pane: text('pane').$type<PaneId>().notNull(),
     agent: text('agent').notNull(),
@@ -22,7 +21,7 @@ export const compaction = sqliteTable('compaction', {
     retried: integer('retried').notNull(),
     why: text('why'),
     dismissedAt: integer('dismissed_at'),
-    boundaryId: blob('boundary_id', { mode: BLOB_MODE }).$type<RowId<'boundary'>>(),
+    boundaryId: blob('boundary_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     origin: text('origin').notNull(),
     answer: text('answer'),
     queued: integer('queued').notNull(),

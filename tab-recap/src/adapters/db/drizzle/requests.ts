@@ -1,10 +1,9 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { RowId } from './columns.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const request = sqliteTable('request', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'request'>>().primaryKey().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     at: integer('at').notNull(),
     kind: text('kind').notNull(),
     target: text('target').notNull(),

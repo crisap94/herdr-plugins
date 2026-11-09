@@ -1,6 +1,5 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { RowId } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
@@ -105,7 +104,7 @@ export const closedLane = sqliteTable(
         closedAt: integer('closed_at').notNull(),
         agent: text('agent').notNull(),
         cwd: text('cwd'),
-        taskId: blob('task_id', { mode: BLOB_MODE }).$type<RowId<'task'>>(),
+        taskId: blob('task_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
         taskName: text('task_name'),
     },
     compositeKey('tabId', 'pane', 'closedAt'),

@@ -1,13 +1,12 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { RowId } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const fact = sqliteTable('fact', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'fact'>>().primaryKey().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     tabId: text('tab_id').$type<TabId>().notNull(),
-    taskId: blob('task_id', { mode: BLOB_MODE }).$type<RowId<'task'>>().notNull(),
+    taskId: blob('task_id', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
     section: text('section').notNull(),
     text: text('text').notNull(),
     why: text('why'),
@@ -18,21 +17,21 @@ export const fact = sqliteTable('fact', {
     state: text('state').notNull(),
     closedWhy: text('closed_why'),
     closedAt: integer('closed_at'),
-    bornRun: blob('born_run', { mode: BLOB_MODE }).$type<RowId<'run'>>().notNull(),
-    lastRun: blob('last_run', { mode: BLOB_MODE }).$type<RowId<'run'>>().notNull(),
+    bornRun: blob('born_run', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
+    lastRun: blob('last_run', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
     language: text('language').notNull(),
     anchor: text('anchor'),
 });
 
 export const factTurn = sqliteTable('fact_turn', {
-    factId: blob('fact_id', { mode: BLOB_MODE }).$type<RowId<'fact'>>().notNull(),
-    transcriptId: blob('transcript_id', { mode: BLOB_MODE }).$type<RowId<'transcript'>>().notNull(),
+    factId: blob('fact_id', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
+    transcriptId: blob('transcript_id', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
     at: integer('at').notNull(),
 }, compositeKey('factId', 'transcriptId', 'at'));
 
 export const verdict = sqliteTable('verdict', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'verdict'>>().primaryKey().notNull(),
-    runId: blob('run_id', { mode: BLOB_MODE }).$type<RowId<'run'>>().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
+    runId: blob('run_id', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
     itemKey: text('item_key'),
     checkId: text('check_id').notNull(),
     pass: integer('pass').notNull(),
@@ -53,7 +52,7 @@ export const ask = sqliteTable('ask', {
 }, compositeKey('exchange', 'requester', 'id'));
 
 export const handoffAnswer = sqliteTable('handoff_answer', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'handoff'>>().primaryKey().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     at: integer('at').notNull(),
     outcome: text('outcome').notNull(),
     reason: text('reason'),

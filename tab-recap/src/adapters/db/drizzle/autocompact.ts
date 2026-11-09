@@ -1,13 +1,12 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { RowId } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DecisionGate, DecisionMode, DecisionVerdict } from '#src/ports/autocompact-records.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const autocompactDecision = sqliteTable('autocompact_decision', {
-    id: blob('id', { mode: BLOB_MODE }).$type<RowId<'decision'>>().primaryKey().notNull(),
+    id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     tabId: text('tab_id').$type<TabId>().notNull(),
     pane: text('pane').$type<PaneId>().notNull(),
     agent: text('agent').notNull(),
@@ -24,7 +23,7 @@ export const autocompactDecision = sqliteTable('autocompact_decision', {
     costMicroUsd: integer('cost_micro_usd').notNull(),
     tookMs: integer('took_ms'),
     why: text('why'),
-    compactionId: blob('compaction_id', { mode: BLOB_MODE }).$type<RowId<'compaction'>>(),
+    compactionId: blob('compaction_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     requested: integer('requested').notNull(),
     askedVerdict: text('asked_verdict').$type<DecisionVerdict>(),
     coverageOutcome: text('coverage_outcome'),
@@ -36,7 +35,7 @@ export const autocompactDecision = sqliteTable('autocompact_decision', {
 });
 
 export const autocompactBrief = sqliteTable('autocompact_brief', {
-    decisionId: blob('decision_id', { mode: BLOB_MODE }).$type<RowId<'decision'>>().primaryKey().notNull(),
+    decisionId: blob('decision_id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
     briefedAt: integer('briefed_at').notNull(),
     body: blob('body', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
 });
