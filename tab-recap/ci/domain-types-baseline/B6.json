@@ -152,16 +152,10 @@
   "src/adapters/git-lane-repo.ts": {
     "parameter": 4
   },
-  "src/adapters/git-porcelain.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 1
-  },
   "src/adapters/git-worksite.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 2,
-    "property": 1
+    "parameter": 4,
+    "return": 2,
+    "container": 1
   },
   "src/adapters/glow.ts": {
     "parameter": 6,

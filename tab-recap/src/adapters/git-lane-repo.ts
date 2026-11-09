@@ -1,46 +1,37 @@
-import { duration } from '#src/recap/domain/time.ts';
+import { promises as fsp } from 'node:fs';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
-import { unknown, type Unknown } from '#src/ports/unknowable.ts';
-import { webOf } from './remote-web.ts';
-import { run, scrubbedEnv } from './process.ts';
-import type { Runner, RunResult } from './process.ts';
+import { unknown } from '#src/ports/unknowable.ts';
+import { REPO_TTL_MS, TIMEOUT_MS } from './git-constants.ts';
+import { handleOf, openRepo, unreadable, withinBudget } from './git-reach.ts';
+import { branchOf, originWebOf } from './git-reach-history.ts';
 
-export const REPO_TTL_MS = 10_000;
-export const TIMEOUT_MS = 1500;
-const NOT_A_REPOSITORY = 128;
-const ENOENT = 127;
-
-export const GIT: readonly string[] = ['-c', 'core.fsmonitor=false'];
-export const ROOT_ARGS: readonly string[] = [...GIT, 'rev-parse', '--show-toplevel'];
-export const BRANCH_ARGS: readonly string[] = [...GIT, 'symbolic-ref', '--short', '-q', 'HEAD'];
-
-export const ORIGIN_ARGS: readonly string[] = [...GIT, 'remote', 'get-url', 'origin'];
-
-export function gitEnv(): NodeJS.ProcessEnv {
-    return { ...scrubbedEnv(), GIT_OPTIONAL_LOCKS: '0' };
-}
-
-export function failure(result: RunResult): Unknown {
-    if (result.timedOut) {
-        return unknown({ why: 'timeout', after: duration(TIMEOUT_MS) });
-    }
-    if (result.code === ENOENT) {
-        return unknown({ why: 'unreachable', detail: 'git is not installed' });
-    }
-    return unknown({ why: 'failed', code: result.code, detail: result.stderr.trim().slice(0, 200) });
+export async function repoAt(directory: Directory): Promise<RepoResult> {
+    return withinBudget(TIMEOUT_MS, async (deadline): Promise<RepoResult> => {
+        const lookup = await openRepo(directory, fsp);
+        if (lookup.kind !== 'worktree') {
+            return lookup;
+        }
+        const handle = handleOf(lookup.worktree, deadline, fsp);
+        const branch = await branchOf(handle);
+        if (branch.kind === 'err') {
+            return unreadable(branch.error);
+        }
+        const web = await originWebOf(handle);
+        return { kind: 'repo', root: lookup.worktree.root, branch: branch.value, web };
+    });
 }
 
 export class GitLaneRepo implements LaneRepo {
     private readonly cache = new Map<string, { readonly result: RepoResult; readonly at: number }>();
     private readonly inflight = new Map<string, Promise<RepoResult>>();
-    private readonly runner: Runner;
     private readonly clock: Clock;
     private readonly ttlMs: number;
 
-    constructor(clock: Clock, runner: Runner = run, ttlMs: number = REPO_TTL_MS) {
+    constructor(clock: Clock, ttlMs: number = REPO_TTL_MS) {
         this.clock = clock;
-        this.runner = runner;
         this.ttlMs = ttlMs;
     }
 
@@ -64,16 +55,7 @@ export class GitLaneRepo implements LaneRepo {
     }
 
     private async look(cwd: string): Promise<RepoResult> {
-        const options = { input: '', timeoutMs: TIMEOUT_MS, cwd, env: gitEnv() };
-        const [root, branch, origin] = await Promise.all([this.runner('git', ROOT_ARGS, options), this.runner('git', BRANCH_ARGS, options), this.runner('git', ORIGIN_ARGS, options)]);
-        if (root.code === NOT_A_REPOSITORY) {
-            return { kind: 'no-repo' };
-        }
-        if (root.code !== 0 || root.timedOut) {
-            return failure(root);
-        }
-        const name = branch.code === 0 ? branch.stdout.trim() : '';
-        const web = origin.code === 0 ? webOf(origin.stdout) : null;
-        return { kind: 'repo', root: root.stdout.trim(), branch: name === '' ? null : name, web };
+        const directory = parseDirectory(cwd);
+        return directory.kind === 'ok' ? repoAt(directory.value) : unknown({ why: 'unreadable', detail: directory.error.kind });
     }
 }

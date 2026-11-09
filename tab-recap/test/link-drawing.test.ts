@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { memoryStore } from '#test/db/support.ts';
-import { GitLaneRepo, ORIGIN_ARGS, ROOT_ARGS } from '#src/adapters/git-lane-repo.ts';
-import type { Runner, RunResult } from '#src/adapters/process.ts';
+import { addRemote } from 'isomorphic-git';
+import { promises as fsp } from 'node:fs';
+import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
 import { en } from '#src/i18n/en.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -17,6 +18,7 @@ import { present } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { plain, visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
+import { makeRepo } from './fixtures/git-repo.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;
@@ -100,20 +102,24 @@ test('two repositories in one task: only full URLs are linked; one repository: t
 });
 
 test('a remote with a token: nothing stored and nothing drawn holds the secret (remote → port → database → column)', async () => {
-    const answers = new Map<readonly string[], string>([[ROOT_ARGS, '/w/shop\n'], [ORIGIN_ARGS, 'https://oauth2:s3cr3t-token@gitlab.example/acme/shop.git\n']]);
-    const runner: Runner = (_command, args): Promise<RunResult> => Promise.resolve({ code: 0, stdout: answers.get(args) ?? 'feat/cart\n', stderr: '', timedOut: false });
-    const webs = new LaneWebs(new GitLaneRepo({ now: (): Instant => instant(0) }, runner));
-    await webs.refresh(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: '/w/shop' }));
-    const { views, db } = memoryStore();
-    const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of('w1:p1'))] };
-    views.writeTab(view);
-    const stored = JSON.stringify(db.prepare('SELECT * FROM lane').all());
-    assert.ok(stored.includes(BASE) && !stored.includes('s3cr3t') && !stored.includes('oauth2'), stored);
-    const read = views.readTab('w1:t1');
-    assert.ok(read !== null);
-    const text = drawn({ ...viewOf({ done: ['!3 merged', '`src/a.ts` in a1b2c3d4'] }, read.lanes) }).join('\n');
-    assert.ok(text.includes(open(`${BASE}/-/merge_requests/3`)));
-    assert.ok(!text.includes('s3cr3t') && !text.includes('oauth2'));
+    const shop = await makeRepo('link-token-', { 'a.txt': 'x\n' });
+    try {
+        await addRemote({ fs: { promises: fsp }, dir: shop.root, remote: 'origin', url: 'https://oauth2:s3cr3t-token@gitlab.example/acme/shop.git' });
+        const webs = new LaneWebs(new GitLaneRepo({ now: (): Instant => instant(0) }));
+        await webs.refresh(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root }));
+        const { views, db } = memoryStore();
+        const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of('w1:p1'))] };
+        views.writeTab(view);
+        const stored = JSON.stringify(db.prepare('SELECT * FROM lane').all());
+        assert.ok(stored.includes(BASE) && !stored.includes('s3cr3t') && !stored.includes('oauth2'), stored);
+        const read = views.readTab('w1:t1');
+        assert.ok(read !== null);
+        const text = drawn({ ...viewOf({ done: ['!3 merged', '`src/a.ts` in a1b2c3d4'] }, read.lanes) }).join('\n');
+        assert.ok(text.includes(open(`${BASE}/-/merge_requests/3`)));
+        assert.ok(!text.includes('s3cr3t') && !text.includes('oauth2'));
+    } finally {
+        shop.clean();
+    }
 });
 
 test('a flagged link (a description where a reference belongs) is kept and drawn as plain text, with no hyperlink', () => {
