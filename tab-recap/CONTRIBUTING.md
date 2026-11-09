@@ -113,11 +113,11 @@ An upgrade first copies the database to `tab-recap.db.v<old>.bak` (the newest th
 **newer** plugin than the one running is opened read-only and left alone: the daemon says so and exits, the columns show the
 message. **Rolling back** a schema change: stop the daemon (`tab-recap.stop`), put the plugin's older version back, restore the
 backup (`cp tab-recap.db.v<n>.bak tab-recap.db`, and delete `tab-recap.db-wal` / `-shm`), start it. To go back to 1.5.1, see the
-plugin's README ("State and rolling back").
+plugin's reference (`docs/REFERENCE.md`, "State and rolling back").
 
 ## Screenshots
 
-The README's pictures are drawn from the plugin's own views with invented data. After a change to
+The reference's pictures are drawn from the plugin's own views with invented data. After a change to
 what the column, bar or settings modal show, regenerate and commit them:
 
 ```bash

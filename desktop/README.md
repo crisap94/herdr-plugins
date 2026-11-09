@@ -14,4 +14,4 @@ herdr-app check ~/.config/herdr-app/mods/tab-recap
 ```
 
 `mods/tab-recap/RECIPE.md` has the key binding and the optional layout blocks. The plugin's daemon must run with
-`TAB_RECAP_FRONTEND=gui` (see `tab-recap/README.md`, "Desktop app") for the mod to have data.
+`TAB_RECAP_FRONTEND=gui` (see `tab-recap/docs/REFERENCE.md`, "Desktop app") for the mod to have data.

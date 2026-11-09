@@ -30,3 +30,12 @@ Status: **shipped** = released · *planned* = intended, not started.
 
 - Harness profiles for gemini, cursor-agent, qwen and copilot, once they can be tested: each is added after live probes show it can run without tools and without keeping a session.
 - More interface languages.
+
+## Not built yet *(planned)*
+
+- The compact and reply list in the expanded view is disabled until it can be tested end to end.
+- Mark done has no undo yet.
+- Notices (the daemon telling you about a state change) are not built.
+- Click-through on a link in the expanded view is still open.
+- The recommended window of 60 000 ms before a close is asked again is pending measurement.
+- The recall-replay gate that would decide the defaults of the pipeline and the prune is not built.

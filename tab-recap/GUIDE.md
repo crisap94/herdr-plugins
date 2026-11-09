@@ -13,7 +13,7 @@ the exceptions are the [compaction](#compact-an-agent) you ask for, the `tab-rec
 
 Every item is held to one [rubric](schema/recap-rubric.md) (atomic, specific, about the work, with the reason for a
 decision, …). Plain-code gates refuse what fails it before the recap is stored, and `tab-recap eval` scores stored recaps against it —
-see [how recaps are checked](README.md#how-recaps-are-checked).
+see [how recaps are checked](docs/REFERENCE.md#how-recaps-are-checked).
 
 <p align="center">
   <img src="docs/screens/column-en.png" alt="The recap column: who is in the tab, then the tab's recap" width="340">
@@ -232,7 +232,7 @@ The decider is the recap writer's harness at low effort, or the TypeSafe `jev` A
 that service, and the brief and its facts too when the brief is checked. The brief check has its own decider,
 `TAB_RECAP_AUTOCOMPACT_COVERAGE_BY`: `auto` (the default: Jev when a key is found, else the moment decider), `jev` or `decider`. `auto` (the default) sends the brief and its facts to the remote Jev service as soon as a TypeSafe key is found, whatever `TAB_RECAP_AUTOCOMPACT_BY` says; set `decider` to keep the check on your own harness. The key is read from `TAB_RECAP_JEV_KEY`, else `TYPESAFE_API_KEY`, else
 `~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
-key: [tab-recap/README.md](README.md#autocompact).
+key: [tab-recap/docs/REFERENCE.md](docs/REFERENCE.md#autocompact).
 
 ## Chapters and how long things are kept
 
@@ -266,7 +266,7 @@ The writer receives one XML document (version 2) per run — the tab's agents wi
 branch, the **ledger** (the open facts of each task and the ones closed in the last two hours, each with an
 id), the agents' own summaries, and each new prompt, reply and tool call with its time — defined by
 [`tab-recap/schema/recap-input.dtd`](schema/recap-input.dtd). It answers **operations** on the ledger (`add`, `update`, `close`), not a whole new recap; see
-[How the recap is kept](README.md#how-the-recap-is-kept).
+[How the recap is kept](docs/REFERENCE.md#how-the-recap-is-kept).
 
 **Your own command:** set `TAB_RECAP_BACKEND=custom` and `TAB_RECAP_CUSTOM_CMD` to a command line
 (no shell) that reads the prompt (the document, then the instructions) on stdin and prints on stdout the
@@ -381,4 +381,4 @@ daemon log is `daemon.log` in that state folder (by default
   until you run `tab-recap.start` again.
 
 The full reference (all actions, the extension point, the design) is in
-[`tab-recap/README.md`](README.md).
+[`tab-recap/docs/REFERENCE.md`](docs/REFERENCE.md).
