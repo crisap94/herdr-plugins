@@ -256,4 +256,71 @@ expect pass "a release whose changelog was completed afterwards" second
 expect pass "the tag is at the commit that completed the changelog" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$repair_commit" "$CURL_LOG"
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
+gh="$scratch/github"
+gh_notes="$scratch/github-notes.md"; printf '#### Added\n\n- the new thing\n' > "$gh_notes"
+gh_empty="$scratch/github-empty.md"; : > "$gh_empty"
+cat > "$scratch/curl-github" <<'SH'
+#!/usr/bin/env bash
+method=GET; url=""; out=""; body=""
+echo "$*" >> "$GH_LOG"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        -w | -H) shift 2 ;;
+        --request) method="$2"; shift 2 ;;
+        --data-binary) body="${2#@}"; shift 2 ;;
+        -s) shift ;;
+        *) url="$1"; shift ;;
+    esac
+done
+echo '{}' > "$out"
+[ -n "$body" ] && cp "$body" "$GH_STATE/body.json"
+case "$method $url" in
+    "GET "*/git/ref/tags/*)
+        polls=$(( $(cat "$GH_STATE/polls" 2>/dev/null || echo 0) + 1 ))
+        echo "$polls" > "$GH_STATE/polls"
+        if [ "$polls" -ge "${FAKE_TAG_AFTER:-1}" ]; then echo 200; else echo 404; fi ;;
+    "GET "*/releases/tags/*)
+        if [ -e "$GH_STATE/posted" ]; then echo "${FAKE_AFTER_POST:-404}"; else echo "${FAKE_RELEASE_CODE:-404}"; fi ;;
+    "POST "*/releases) : > "$GH_STATE/posted"; echo "${FAKE_POST_CODE:-201}" ;;
+    *) echo 599 ;;
+esac
+SH
+chmod +x "$scratch/curl-github"
+github() {
+    GITHUB_RELEASE_TOKEN=bite-github-token GITHUB_REPO=group/project GITHUB_API=https://example.invalid/github \
+        GITHUB_RELEASE_ATTEMPTS=3 GITHUB_RELEASE_INTERVAL=0 CURL="$scratch/curl-github" GH_LOG="$gh/log" GH_STATE="$gh" \
+        bash "$HERE/github-release.sh" "$@"
+}
+ghtest() { rm -rf "$gh"; mkdir -p "$gh"; expect "$@"; }
+gh_exit() { rm -rf "$gh"; mkdir -p "$gh"; github "$@" > /dev/null 2>&1; echo $?; }
+exit_of() { "$@" > /dev/null 2>&1; echo $?; }
+
+ghtest fail "a github release with no arguments is bad usage" github
+[ "$(gh_exit)" = "2" ] || { echo "bite: a github release without arguments must exit 2" >&2; wrong=$((wrong + 1)); }
+[ "$(gh_exit demo-v1.1.0)" = "2" ] || { echo "bite: a github release without a notes file must exit 2" >&2; wrong=$((wrong + 1)); }
+[ "$(gh_exit demo-1.1.0 "$gh_notes")" = "2" ] || { echo "bite: a github release on a tag that is not <plugin>-v<x.y.z> must exit 2" >&2; wrong=$((wrong + 1)); }
+[ "$(gh_exit demo-v1.1.0-rc1 "$gh_notes")" = "2" ] || { echo "bite: a github release on a prerelease tag must exit 2" >&2; wrong=$((wrong + 1)); }
+[ "$(exit_of env -u GITHUB_RELEASE_TOKEN GITHUB_REPO=group/project bash "$HERE/github-release.sh" demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a github release without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(exit_of env -u GITHUB_REPO GITHUB_RELEASE_TOKEN=bite-github-token bash "$HERE/github-release.sh" demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a github release without its repository must exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(gh_exit demo-v1.1.0 "$scratch/absent-notes.md")" = "3" ] || { echo "bite: a github release without its notes file must exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(gh_exit demo-v1.1.0 "$gh_empty")" = "3" ] || { echo "bite: a github release with empty notes must exit 3" >&2; wrong=$((wrong + 1)); }
+FAKE_TAG_AFTER=99 ghtest fail "a tag that never reaches GitHub" github demo-v1.1.0 "$gh_notes"
+[ "$(FAKE_TAG_AFTER=99 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a tag that never reaches GitHub must exit 3" >&2; wrong=$((wrong + 1)); }
+FAKE_TAG_AFTER=2 ghtest pass "a tag that appears on the second check" github demo-v1.1.0 "$gh_notes"
+FAKE_RELEASE_CODE=200 ghtest pass "a release that already exists" github demo-v1.1.0 "$gh_notes"
+FAKE_RELEASE_CODE=200 ghtest pass "an existing release is not created again" github demo-v1.1.0 "$gh_notes"
+expect fail "an existing release is not created again" grep -q -- "--request POST" "$gh/log"
+ghtest pass "a created release" github demo-v1.1.0 "$gh_notes"
+grep -q '"name":"demo 1.1.0"' "$gh/body.json" || { echo "bite: the created release is not titled demo 1.1.0" >&2; wrong=$((wrong + 1)); }
+grep -q '"tag_name":"demo-v1.1.0"' "$gh/body.json" && grep -q '"draft":false' "$gh/body.json" && grep -q '"prerelease":false' "$gh/body.json" && grep -q 'the new thing' "$gh/body.json" || { echo "bite: the created release lacks its tag, its notes, or is a draft or a prerelease" >&2; wrong=$((wrong + 1)); }
+FAKE_POST_CODE=500 FAKE_AFTER_POST=200 ghtest pass "a release created meanwhile after a failed creation" github demo-v1.1.0 "$gh_notes"
+FAKE_POST_CODE=422 ghtest fail "a creation that fails and no release exists" github demo-v1.1.0 "$gh_notes"
+[ "$(FAKE_POST_CODE=422 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a refused creation must exit 3" >&2; wrong=$((wrong + 1)); }
+FAKE_RELEASE_CODE=500 ghtest fail "a release lookup that does not answer" github demo-v1.1.0 "$gh_notes"
+rm -rf "$gh"; mkdir -p "$gh"
+out="$(FAKE_POST_CODE=500 github demo-v1.1.0 "$gh_notes" 2>&1)"
+grep -q bite-github-token <<< "$out" && { echo "bite: the token was printed" >&2; wrong=$((wrong + 1)); }
+grep -q bite-github-token "$gh/log" && { echo "bite: the token reached a command line" >&2; wrong=$((wrong + 1)); }
+
 [ "$wrong" -eq 0 ]
