@@ -99,6 +99,11 @@ on `main`, Phase B lanes are not told by the build, and the merge request names 
   or drops one (B2's `domain/legacy.ts`, which `domain/lane.ts` will import) must update it, or the manifest test and
   `engine-self-contained` fail. `ci/check-lane.ts` lets every lane edit it, as it does `test/`; the manifest test keeps the
   edit exact, and a lane merge request that grows the list says why in its description.
+- Overlap with Phase B of `domain-type-gates`, to name in the merge request: B1 (`ports/recap-records.ts`,
+  `ports/transcript-source.ts`, `ci/domain-types-baseline/B1.json`), B2 (`domain/intent.ts`, the new `domain/recap-cause.ts`)
+  and B3 (`application/recap-job.ts`, `replay.ts`, `dispatch.ts`, the new `engine.ts`, `ci/domain-types-baseline/B3.json`).
+  Whichever side lands second rebases, one lane at a time. Phase B's tasks say that a lane changing the engine closure updates
+  `ci/engine-files.json`.
 - `FollowedSession` is still herdr's `Lane`, and its `pane` is the session's identity: the job keys its cursors by pane and
   transcript (`recap-job.ts`, `placeOf`), and `history` reads `Ledger.historyOf(scope, session.pane)`. A host with only a
   session id and a records path must choose a pane. If it takes the session id, a `/clear` in the same terminal starts a new
