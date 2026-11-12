@@ -11,12 +11,15 @@ branch="release/$plugin-v$version"
 if [ -z "${PUSH_URL:-}" ]; then
     [ -n "${CI_SERVER_HOST:-}" ] && [ -n "${CI_PROJECT_PATH:-}" ] \
         || { echo "release-publish: 3 — NOT COVERED: CI_SERVER_HOST or CI_PROJECT_PATH is not set" >&2; exit 3; }
-    PUSH_URL="https://oauth2:${RELEASE_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    PUSH_URL="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
 fi
 push_url="$PUSH_URL"
 body="$(mktemp)"
-trap 'rm -f "$body"' EXIT
-api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "PRIVATE-TOKEN: $RELEASE_TOKEN" "$@"; }
+headers="$(mktemp)"
+trap 'rm -f "$body" "$headers"' EXIT
+printf 'PRIVATE-TOKEN: %s\n' "$RELEASE_TOKEN" > "$headers"
+api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "@$headers" "$@"; }
+git_auth=(-c 'credential.helper=' -c 'credential.helper=!f() { echo username=oauth2; echo "password=$RELEASE_TOKEN"; }; f')
 
 open=""
 page=1
@@ -35,9 +38,9 @@ if [ -n "$open" ]; then
     exit 0
 fi
 
-seen="$(git ls-remote "$push_url" "refs/heads/$branch" | cut -f1)" \
+seen="$(git "${git_auth[@]}" ls-remote "$push_url" "refs/heads/$branch" | cut -f1)" \
     || { echo "release-publish: 3 — NOT COVERED: could not ask the remote whether $branch exists" >&2; exit 3; }
-git push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
+git "${git_auth[@]}" push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
     || { echo "release-publish: 3 — NOT COVERED: could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 3; }
 
 description="## What changes for the user

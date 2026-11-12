@@ -124,6 +124,7 @@ expect fail "an API that does not answer properly" asked 500
 
 cat > "$scratch/curl-fake" <<'SH'
 #!/usr/bin/env bash
+echo "$*" >> "${CURL_ARGV:-/dev/null}"
 out=""; method=GET; url=""; data=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -146,7 +147,7 @@ case "$method $url" in
 esac
 SH
 chmod +x "$scratch/curl-fake"
-export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
+export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CURL_ARGV="$scratch/curl-argv.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
 export CI_PROJECT_PATH=group/project CI_SERVER_HOST=example.invalid RELEASE_TOKEN=bite-token CI_COMMIT_SHA="$(git rev-parse HEAD)"
 git init --quiet --bare "$scratch/remote.git"
 export PUSH_URL="$scratch/remote.git"
@@ -191,6 +192,13 @@ FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 : > "$CURL_LOG"
 expect pass "a release published as a merge request" publish
+grep -q bite-token "$scratch/curl-argv.log" && { echo "bite: the release token reached a curl command line" >&2; wrong=$((wrong + 1)); }
+grep -q -- "-H @" "$scratch/curl-argv.log" || { echo "bite: the release API call must send its token from a header file" >&2; wrong=$((wrong + 1)); }
+rm -f "$scratch/git-trace.log"
+env -u PUSH_URL CI_SERVER_HOST=127.0.0.1:1 GIT_TRACE="$scratch/git-trace.log" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1
+grep -q "ls-remote" "$scratch/git-trace.log" || { echo "bite: the remote lookup did not run, so the argv probe proves nothing" >&2; wrong=$((wrong + 1)); }
+grep -q bite-token "$scratch/git-trace.log" && { echo "bite: the release token reached a git command line or URL" >&2; wrong=$((wrong + 1)); }
+printf 'protocol=https\nhost=example.invalid\n\n' | RELEASE_TOKEN=bite-token git -c 'credential.helper=' -c 'credential.helper=!f() { echo username=oauth2; echo "password=$RELEASE_TOKEN"; }; f' credential fill 2>/dev/null | grep -qx 'password=bite-token' || { echo "bite: the git credential helper does not hand the release token to git" >&2; wrong=$((wrong + 1)); }
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release did not push exactly its branch: $(remote_refs)" >&2; wrong=$((wrong + 1)); }
 expect pass "the merge request carries the label land" grep -q "POST .*merge_requests .*labels=land,changelog::internal" "$CURL_LOG"
 expect pass "the merge request is from the release branch to main" grep -q "source_branch=release/demo-v1.1.0 target_branch=main" "$CURL_LOG"
