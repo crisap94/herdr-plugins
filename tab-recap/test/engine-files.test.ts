@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { cruise } from 'dependency-cruiser';
 
 const root = new URL('../', import.meta.url);
-const entry = 'src/recap/application/recap-job.ts';
+const entry = 'src/recap/application/engine.ts';
 
 const closureOf = async (start: string): Promise<readonly string[]> => {
   const result = await cruise([start], {
@@ -25,7 +25,7 @@ const closureOf = async (start: string): Promise<readonly string[]> => {
 const manifest = (): Record<string, readonly string[]> =>
   JSON.parse(readFileSync(new URL('ci/engine-files.json', root), 'utf8'));
 
-test('the files listed as the engine are exactly the import closure of the recap job', async () => {
+test('the files listed as the engine are exactly the import closure of the engine facade', async () => {
   const listed = Object.values(manifest()).flat().toSorted();
   assert.deepEqual(await closureOf(entry), listed);
 });

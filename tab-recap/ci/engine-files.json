@@ -22,6 +22,7 @@
     "src/recap/application/chunking.ts",
     "src/recap/application/correction-input.ts",
     "src/recap/application/curator-input.ts",
+    "src/recap/application/engine.ts",
     "src/recap/application/enumerate-answer.ts",
     "src/recap/application/enumerate-input.ts",
     "src/recap/application/enumerate.ts",

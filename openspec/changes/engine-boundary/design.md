@@ -22,8 +22,8 @@ lane, the baselines and exceptions are keyed by path, and released migrations ar
 flight that edits those files would have to be rebased onto the move. A manifest and one graph rule draw the same line with no
 path changing: `ci/engine-files.json` lists the engine's files, and `engine-self-contained` in `.dependency-cruiser.cjs` fails when
 a listed file imports one that is not listed (`node:util` is the one other module allowed). A test, modelled on
-`test/brand-importers.test.ts`, asserts that the manifest equals the closure computed from `recap-job.ts`, so the list cannot
-drift. The physical move is a later change, once the line has held.
+`test/brand-importers.test.ts`, asserts that the manifest equals the closure computed from the facade `engine.ts` (which imports `recap-job.ts`, so the
+closure is the job's plus the facade), so the list cannot drift. The physical move is a later change, once the line has held.
 
 ### D2. The vocabulary is an alias at the facade only
 
@@ -51,11 +51,15 @@ createEngine({ source, store, models, environment, settings, ran? }): Engine
 | --- | --- |
 | `turnEnded(scope, sessions, cause)` | `RecapJob.request` |
 | `refresh(scope, sessions)` | `RecapJob.refreshNow` |
-| `sessionStarted(scope, sessions)` | `refresh` |
+| `sessionStarted(scope, sessions)` | no effect in this slice |
 | `compacted(scope, sessions)` | `refresh`; the reader already finds the boundary from the records |
 | `history(scope, session)` | `Ledger.historyOf` |
 
-It returns facts, not text: rendering stays out of the core. Consumers in the daemon take `Pick<Engine, ...>` of what they use, so
+It returns facts, not text: rendering stays out of the core. The plugs group every member of `RecapJobDeps` once: `source`
+(`transcripts`), `store` (`records`, `ledger`), `models` (`summarizer`, `enumerator`), `environment` (`clock`, `repos`, `log`),
+`settings` (`language`, `writerView`, `keepInput`, `pipeline`, `debounce`) and `ran`; an optional knob left out stays unset, so
+the job's defaults hold. `compacted` needs no signal of its own: the transcript reader reports the boundary as a `compacted` mark
+in the chunk it reads, and `marksOf` (`boundaries.ts`) records it with the run. Consumers in the daemon take `Pick<Engine, ...>` of what they use, so
 `RecapJob` is constructed in one place.
 
 ### D4. Behaviour is pinned before anything moves

@@ -42,10 +42,10 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 
 ## 6. Facade
 
-- [ ] 6.1 `src/recap/application/engine.ts` per design D3: `createEngine({ source, store, models, environment, settings, ran? })`
+- [x] 6.1 `src/recap/application/engine.ts` per design D3: `createEngine({ source, store, models, environment, settings, ran? })`
       returning `turnEnded`, `refresh`, `sessionStarted`, `compacted` and `history`, which return facts, not text. Verify: a test
       drives each method over the scratch store, and the facade is in the manifest.
-- [ ] 6.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 6.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 7. Re-point replay
 
