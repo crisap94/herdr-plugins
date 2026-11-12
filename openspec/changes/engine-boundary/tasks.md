@@ -51,6 +51,8 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 
 - [x] 7.1 `src/recap/application/replay.ts` builds its job through `createEngine`; `bin/replay.ts` is unchanged. Verify: `bun
       bin/tab-recap.mjs eval --replay <fixture>` gives the same output before and after, and the golden test is unchanged.
+      Ran instead: the golden test, which drives `replay` through the facade, unchanged; `eval --replay` was not run, since it
+      calls a live model whose output differs run to run.
 - [x] 7.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 8. Re-point the daemon
@@ -58,6 +60,8 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 - [x] 8.1 `src/daemon/main.ts` builds the engine once; `daemon/dispatch-parts.ts`, `daemon/compaction.ts`, `daemon/handoff.ts`,
       `daemon/autocompact.ts` and `application/dispatch.ts` take `Pick<Engine, ...>`. Verify: `RecapJob` is constructed in one place
       only, and a recap is written after a turn when the plugin runs from the checkout on one tab.
+      Ran instead: typecheck and the suite. The live check (one tab, one turn, from the checkout) has not run; run it before
+      merge.
 - [x] 8.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 9. No-herdr proof

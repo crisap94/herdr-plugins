@@ -60,5 +60,6 @@ the resulting facts with a committed snapshot.
 
 #### Scenario: Replay through the facade
 
-- **WHEN** `bun bin/tab-recap.mjs eval --replay <fixture>` runs before and after replay is re-pointed to `createEngine`
-- **THEN** both runs SHALL give the same output
+- **WHEN** replay is re-pointed to build its job through `createEngine`
+- **THEN** the golden test, which drives `replay` in `src/recap/application/replay.ts`, SHALL pass with its committed snapshot
+  unchanged
