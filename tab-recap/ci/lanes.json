@@ -58,6 +58,7 @@
       "src/ports/summarizer.ts",
       "src/ports/tab-views.ts",
       "src/ports/transcript-registry.ts",
+      "src/ports/transcript-source.ts",
       "src/ports/transcripts.ts",
       "src/ports/unknowable.ts",
       "src/ports/verdicts.ts",
