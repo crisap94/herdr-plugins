@@ -43,7 +43,8 @@ loaded.
 #### Scenario: A compacted session is recapped
 
 - **WHEN** the same test reads `test/fixtures/claude-compact-boundary.jsonl` and calls `compacted`
-- **THEN** the reader SHALL find the boundary from the records and the run SHALL read only the turns after it
+- **THEN** the reader SHALL find the boundary from the records and the run SHALL record one `compacted` break with the
+  boundary's time and trigger
 
 ### Requirement: The writer's input is byte-identical before and after
 
