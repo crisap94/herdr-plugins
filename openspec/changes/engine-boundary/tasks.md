@@ -8,37 +8,37 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 - [ ] 1.1 This change (proposal, design, tasks, `specs/tab-recap/engine-boundary/spec.md`) and the `CONTEXT.md` rows **Engine**,
       **Scope**, **Followed session** and the engine's sense of **Host**, before any code. Verify: `openspec validate engine-boundary
       --strict` passes and the vocabulary step of `ci/lint.sh` passes.
-- [ ] 1.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 1.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 2. Pin behaviour
 
-- [ ] 2.1 `test/engine-golden.test.ts`: replay `test/fixtures/replay-claude.jsonl` with a fake summarizer and the scratch store
+- [x] 2.1 `test/engine-golden.test.ts`: replay `test/fixtures/replay-claude.jsonl` with a fake summarizer and the scratch store
       (`src/adapters/db/scratch.ts`); snapshot the writer's input bytes and the resulting facts. Verify: the test passes, and it is
       unchanged by every later group.
-- [ ] 2.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 2.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 3. `RecapCause` out of the intents
 
-- [ ] 3.1 New `src/recap/domain/recap-cause.ts`; `domain/intent.ts` re-exports it; `recap-job.ts` and `ports/recap-records.ts`
+- [x] 3.1 New `src/recap/domain/recap-cause.ts`; `domain/intent.ts` re-exports it; `recap-job.ts` and `ports/recap-records.ts`
       import the new file; regenerate `ci/lanes.json` with `bun ci/lanes-generate.ts`. Verify: `board.ts` and `intent.ts` are no
       longer in the closure of `recap-job.ts`, and the golden test is unchanged.
-- [ ] 3.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 3.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 4. Screens leak
 
-- [ ] 4.1 If `ports/screens.ts` is reached through `ports/transcript-registry.ts`, narrow the engine's source to `readerFor(agent)`;
+- [x] 4.1 If `ports/screens.ts` is reached through `ports/transcript-registry.ts`, narrow the engine's source to `readerFor(agent)`;
       the screen fallback stays on the host side. Verify: `ports/screens.ts` is not in the closure, and the golden test is unchanged.
-- [ ] 4.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 4.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 5. Manifest and guard
 
-- [ ] 5.1 `ci/engine-files.json`, read by `.dependency-cruiser.cjs` the way `ci/brand-importers.json` is, and the rule
+- [x] 5.1 `ci/engine-files.json`, read by `.dependency-cruiser.cjs` the way `ci/brand-importers.json` is, and the rule
       `engine-self-contained`: an engine file imports only engine files (and `node:util`). Verify: a bad probe (an engine file
       importing `src/daemon/`) fails the rule with the path named; a good probe passes.
-- [ ] 5.2 `test/engine-files.test.ts`, modelled on `test/brand-importers.test.ts`: the manifest equals the computed closure of
+- [x] 5.2 `test/engine-files.test.ts`, modelled on `test/brand-importers.test.ts`: the manifest equals the computed closure of
       `recap-job.ts`. Verify: the test fails when a file is added to or removed from the manifest by hand.
-- [ ] 5.3 Add `engine-self-contained` to the red-lines table in `tab-recap/CLAUDE.md`. Verify: the row exists.
-- [ ] 5.4 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 5.3 Add `engine-self-contained` to the red-lines table in `tab-recap/CLAUDE.md`. Verify: the row exists.
+- [x] 5.4 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 6. Facade
 

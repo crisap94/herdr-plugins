@@ -70,6 +70,13 @@ unchanged; a step that needs to change it is a behaviour change and out of scope
 `board.ts` and `intent.ts` leave the closure. If `ports/screens.ts` is reached through `ports/transcript-registry.ts`, the engine's
 source narrows to `readerFor(agent)`, and the screen fallback stays on the host side.
 
+`ports/screens.ts` was reached through `recap-input.ts` (its `isScreenSource`), not through the registry; the prefix moved to
+`ports/transcript-source.ts` instead, and the registry stays as it is. Three files the closure still holds are herdr's lane model,
+not engine material: `domain/lane.ts` (a lane with its pane, tab and workspace), `domain/status.ts` (herdr's agent status) and
+`domain/ids.ts` (`PaneId`, `TabId` and `WorkspaceId` beside the session ids). Cutting them means retyping the job's inputs, which
+is the facade's work (D2, D3). Until then `ci/engine-files.json` lists them apart from `engine`, under
+`herdrLaneModelUntilTheFacadeSpeaksScopeAndFollowedSession`, so the debt is visible; the rule treats both lists as one.
+
 ## Order
 
 Each step is its own small merge request and ends with the gates passing. Steps 3 and 4 touch the same folders as Phase B of

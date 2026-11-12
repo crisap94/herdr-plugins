@@ -1,7 +1,9 @@
 const brandImporters = require('./ci/brand-importers.json');
+const engineFiles = require('./ci/engine-files.json');
 
 const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
 const brandFile = exact('src/recap/domain/brand.ts');
+const engine = Object.values(engineFiles).flat().map(exact);
 
 module.exports = {
   options: {
@@ -57,6 +59,12 @@ module.exports = {
       severity: 'error',
       from: { pathNot: [...brandImporters.map(exact), brandFile] },
       to: { path: brandFile },
+    },
+    {
+      name: 'engine-self-contained',
+      severity: 'error',
+      from: { path: engine },
+      to: { pathNot: [...engine, '^(node:)?util$'] },
     },
     {
       name: 'drizzle-adapter-only',

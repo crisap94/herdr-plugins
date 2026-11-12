@@ -1014,6 +1014,7 @@
       "test/desktop-api-health.test.ts",
       "test/desktop-entry.test.ts",
       "test/domain-baseline.test.ts",
+      "test/engine-files.test.ts",
       "test/fakes/ask-ledger.ts",
       "test/fakes/closed-days.ts",
       "test/fakes/closed-lanes-memory.ts",
