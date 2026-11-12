@@ -96,6 +96,11 @@ that add an import to an engine file are told by the build.
   or drops one (B2's `domain/legacy.ts`, which `domain/lane.ts` will import) must update it, or the manifest test and
   `engine-self-contained` fail. `ci/check-lane.ts` lets every lane edit it, as it does `test/`; the manifest test keeps the
   edit exact, and a lane merge request that grows the list says why in its description.
+- `gui-port` uses "engine" in a wider sense: its `design.md` calls `src/recap`, the ports, the readers, the harness jobs and
+  the store the engine, and `src/adapters/desktop/engine.ts` exports `DesktopEngine` and `EngineParts`, a desktop read model
+  unrelated to `createEngine`. The vocabulary check allows the word, so it cannot tell the two apart. Follow-up, owned by
+  `gui-port`: rename that file and its types to a desktop read model, and say "core" or name the folders where its docs mean
+  more than the closure of `engine.ts`.
 
 ## Hand-written pieces kept
 
