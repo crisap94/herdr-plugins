@@ -49,9 +49,9 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 
 ## 7. Re-point replay
 
-- [ ] 7.1 `src/recap/application/replay.ts` builds its job through `createEngine`; `bin/replay.ts` is unchanged. Verify: `bun
+- [x] 7.1 `src/recap/application/replay.ts` builds its job through `createEngine`; `bin/replay.ts` is unchanged. Verify: `bun
       bin/tab-recap.mjs eval --replay <fixture>` gives the same output before and after, and the golden test is unchanged.
-- [ ] 7.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 7.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 8. Re-point the daemon
 
