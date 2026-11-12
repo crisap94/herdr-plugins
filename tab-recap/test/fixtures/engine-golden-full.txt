@@ -1,0 +1,821 @@
+=== replayed
+{
+  "windows": 6,
+  "turns": 6,
+  "costUsd": 1.56,
+  "writerCalls": 6,
+  "enumerationCalls": 6
+}
+=== writer input 1 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:01:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger/>
+<candidates>
+ <candidate section="done" anchor="Add a cart to the shop" agent="a1">Candidate number one</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:00">Add a cart to the shop</turn>
+  <turn role="agent" at="09:01">I will start with the cart model in src/cart.ts.</turn>
+</transcript>
+</recap_input>
+=== writer input 2 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:06:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+</ledger>
+<candidates>
+ <candidate section="done" anchor="Use SQLite for it, no server" agent="a1">Candidate number two</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:05">Use SQLite for it, no server</turn>
+  <turn role="agent" at="09:06">Done: carts are stored in SQLite (src/cart.ts). Tests next.</turn>
+</transcript>
+</recap_input>
+=== writer input 3 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:11:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+</ledger>
+<candidates>
+ <candidate section="done" anchor="also add totals" agent="a1">Candidate number three</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:10">also add totals</turn>
+  <turn role="agent" at="09:11">Added totals in src/totals.ts; the cart tests pass.</turn>
+</transcript>
+</recap_input>
+=== writer input 4 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:16:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+</ledger>
+<candidates>
+ <candidate section="done" anchor="open a merge request" agent="a1">Candidate number four</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:15">open a merge request</turn>
+  <turn role="agent" at="09:16">Opened !34 for feat/cart; the pipeline is running.</turn>
+</transcript>
+</recap_input>
+=== writer input 5 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:21:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Candidate number four</fact>
+</ledger>
+<candidates>
+ <candidate section="done" anchor="can guests keep their basket?" agent="a1">Candidate number five</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:20">can guests keep their basket?</turn>
+  <turn role="agent" at="09:21">That needs your call: cookie or account? I will wait.</turn>
+</transcript>
+</recap_input>
+=== writer input 6 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:26:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Candidate number four</fact>
+ <fact id="f5" section="done" first="09:21" last="09:21" anchor="can guests keep their basket?">Candidate number five</fact>
+</ledger>
+<candidates>
+ <candidate section="done" anchor="cookie is fine" agent="a1">Candidate number six</candidate>
+</candidates>
+<transcript agent="a1">
+  <turn role="user" at="09:25">cookie is fine</turn>
+  <turn role="agent" at="09:26">Guests keep their basket in a cookie; !34 is green and ready to merge.</turn>
+</transcript>
+</recap_input>
+=== enumeration input 1
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:01:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:00">Add a cart to the shop</turn>
+  <turn role="agent" at="09:01">I will start with the cart model in src/cart.ts.</turn>
+</chunk>
+</enumerate_input>
+=== enumeration input 2
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:06:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:05">Use SQLite for it, no server</turn>
+  <turn role="agent" at="09:06">Done: carts are stored in SQLite (src/cart.ts). Tests next.</turn>
+</chunk>
+</enumerate_input>
+=== enumeration input 3
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:11:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:10">also add totals</turn>
+  <turn role="agent" at="09:11">Added totals in src/totals.ts; the cart tests pass.</turn>
+</chunk>
+</enumerate_input>
+=== enumeration input 4
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:16:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:15">open a merge request</turn>
+  <turn role="agent" at="09:16">Opened !34 for feat/cart; the pipeline is running.</turn>
+</chunk>
+</enumerate_input>
+=== enumeration input 5
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:21:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<triggers>
+<trigger id="g1" kind="question" section="needs" at="09:20">can guests keep their basket?</trigger>
+</triggers>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:20">can guests keep their basket?</turn>
+  <turn role="agent" at="09:21">That needs your call: cookie or account? I will wait.</turn>
+</chunk>
+</enumerate_input>
+=== enumeration input 6
+<enumerate_input version="1" language="en">
+<tab id="replay:t1" now="2026-10-07T09:26:00Z" zone="UTC"/>
+<sections>
+<section id="goal">what the operator wants, in one short sentence</section>
+<section id="now">what the agents are doing right now</section>
+<section id="needs">what the operator must answer or approve before work can go on</section>
+<section id="done">what is finished, newest first</section>
+<section id="decisions">choices made, and why when it is not obvious</section>
+<section id="next">what comes next</section>
+<section id="links">files, branches, merge requests, commands, hosts worth keeping</section>
+<section id="rules">standing constraints the operator stated and still wants kept</section>
+</sections>
+<chunk agent="a1" index="1" of="1">
+  <turn role="user" at="09:25">cookie is fine</turn>
+  <turn role="agent" at="09:26">Guests keep their basket in a cookie; !34 is green and ready to merge.</turn>
+</chunk>
+</enumerate_input>
+=== run 1
+{
+  "tab": "replay:t1",
+  "at": 1791363660000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 1 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:01:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger/>
+<transcript agent="a1">
+  <turn role="user" at="09:00">Add a cart to the shop</turn>
+  <turn role="agent" at="09:01">I will start with the cart model in src/cart.ts.</turn>
+</transcript>
+</recap_input>
+=== run 1 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": true,
+    "anchor": "Add a cart to the shop"
+  }
+]
+=== run 1 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": true,
+    "anchor": "Add a cart to the shop"
+  }
+]
+=== run 2
+{
+  "tab": "replay:t1",
+  "at": 1791363960000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 2 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:06:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:05">Use SQLite for it, no server</turn>
+  <turn role="agent" at="09:06">Done: carts are stored in SQLite (src/cart.ts). Tests next.</turn>
+</transcript>
+</recap_input>
+=== run 2 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": true,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 2 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": true,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 3
+{
+  "tab": "replay:t1",
+  "at": 1791364260000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 3 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:11:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:10">also add totals</turn>
+  <turn role="agent" at="09:11">Added totals in src/totals.ts; the cart tests pass.</turn>
+</transcript>
+</recap_input>
+=== run 3 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number three",
+    "fact": "fct_#3",
+    "born": true,
+    "anchor": "also add totals"
+  }
+]
+=== run 3 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  },
+  {
+    "key": "state/t1/done/2",
+    "section": "done",
+    "text": "Candidate number three",
+    "fact": "fct_#3",
+    "born": true,
+    "anchor": "also add totals"
+  }
+]
+=== run 4
+{
+  "tab": "replay:t1",
+  "at": 1791364560000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 4 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:16:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:15">open a merge request</turn>
+  <turn role="agent" at="09:16">Opened !34 for feat/cart; the pipeline is running.</turn>
+</transcript>
+</recap_input>
+=== run 4 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number four",
+    "fact": "fct_#4",
+    "born": true,
+    "anchor": "open a merge request"
+  }
+]
+=== run 4 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  },
+  {
+    "key": "state/t1/done/2",
+    "section": "done",
+    "text": "Candidate number three",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/3",
+    "section": "done",
+    "text": "Candidate number four",
+    "fact": "fct_#4",
+    "born": true,
+    "anchor": "open a merge request"
+  }
+]
+=== run 5
+{
+  "tab": "replay:t1",
+  "at": 1791364860000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 5 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:21:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Candidate number four</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:20">can guests keep their basket?</turn>
+  <turn role="agent" at="09:21">That needs your call: cookie or account? I will wait.</turn>
+</transcript>
+</recap_input>
+=== run 5 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number five",
+    "fact": "fct_#5",
+    "born": true,
+    "anchor": "can guests keep their basket?"
+  }
+]
+=== run 5 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  },
+  {
+    "key": "state/t1/done/2",
+    "section": "done",
+    "text": "Candidate number three",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/3",
+    "section": "done",
+    "text": "Candidate number four",
+    "fact": "fct_#4",
+    "born": false,
+    "anchor": "open a merge request"
+  },
+  {
+    "key": "state/t1/done/4",
+    "section": "done",
+    "text": "Candidate number five",
+    "fact": "fct_#5",
+    "born": true,
+    "anchor": "can guests keep their basket?"
+  }
+]
+=== run 6
+{
+  "tab": "replay:t1",
+  "at": 1791365160000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 6 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:26:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="done" first="09:01" last="09:01" anchor="Add a cart to the shop">Candidate number one</fact>
+ <fact id="f2" section="done" first="09:06" last="09:06" anchor="Use SQLite for it, no server">Candidate number two</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Candidate number three</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Candidate number four</fact>
+ <fact id="f5" section="done" first="09:21" last="09:21" anchor="can guests keep their basket?">Candidate number five</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:25">cookie is fine</turn>
+  <turn role="agent" at="09:26">Guests keep their basket in a cookie; !34 is green and ready to merge.</turn>
+</transcript>
+</recap_input>
+=== run 6 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Candidate number six",
+    "fact": "fct_#6",
+    "born": true,
+    "anchor": "cookie is fine"
+  }
+]
+=== run 6 state items
+[
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Candidate number one",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Candidate number two",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  },
+  {
+    "key": "state/t1/done/2",
+    "section": "done",
+    "text": "Candidate number three",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/3",
+    "section": "done",
+    "text": "Candidate number four",
+    "fact": "fct_#4",
+    "born": false,
+    "anchor": "open a merge request"
+  },
+  {
+    "key": "state/t1/done/4",
+    "section": "done",
+    "text": "Candidate number five",
+    "fact": "fct_#5",
+    "born": false,
+    "anchor": "can guests keep their basket?"
+  },
+  {
+    "key": "state/t1/done/5",
+    "section": "done",
+    "text": "Candidate number six",
+    "fact": "fct_#6",
+    "born": true,
+    "anchor": "cookie is fine"
+  }
+]
+=== recap
+{
+  "tab": "replay:t1",
+  "lanes": [
+    {
+      "pane": "replay:p1",
+      "agent": "claude",
+      "transcript": "<fixtures>/replay-claude.jsonl",
+      "cursor": 6,
+      "tail": null,
+      "title": null,
+      "lastPrompt": null,
+      "claudeRecap": null
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "name": "",
+      "lanes": [
+        "replay:p1"
+      ],
+      "sections": {
+        "goal": "",
+        "now": [],
+        "needs": [],
+        "done": [
+          "Candidate number six",
+          "Candidate number five",
+          "Candidate number four",
+          "Candidate number three",
+          "Candidate number two"
+        ],
+        "decisions": [],
+        "next": [],
+        "links": [],
+        "rules": []
+      },
+      "markdown": "## Goal\n—\n\n## Now\n—\n\n## Needs you\n—\n\n## Done\n- Candidate number six\n- Candidate number five\n- Candidate number four\n- Candidate number three\n- Candidate number two\n\n## Decisions\n—\n\n## Next\n—\n\n## Links\n—"
+    }
+  ],
+  "at": 1791365160000,
+  "running": false,
+  "backend": "fake",
+  "error": null,
+  "costUsd": 1.56,
+  "language": "en"
+}
+=== last run
+{
+  "at": 1791365160000,
+  "cause": "requested"
+}
+=== facts
+[
+  {
+    "id": "fct_#1",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number one",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "Add a cart to the shop",
+    "firstAt": 1791363660000,
+    "lastAt": 1791363660000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#2",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number two",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "Use SQLite for it, no server",
+    "firstAt": 1791363960000,
+    "lastAt": 1791363960000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#3",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number three",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "also add totals",
+    "firstAt": 1791364260000,
+    "lastAt": 1791364260000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#4",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number four",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "open a merge request",
+    "firstAt": 1791364560000,
+    "lastAt": 1791364560000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#5",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number five",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "can guests keep their basket?",
+    "firstAt": 1791364860000,
+    "lastAt": 1791364860000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#6",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Candidate number six",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "cookie is fine",
+    "firstAt": 1791365160000,
+    "lastAt": 1791365160000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  }
+]
