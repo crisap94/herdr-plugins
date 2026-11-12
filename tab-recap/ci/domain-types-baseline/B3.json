@@ -241,8 +241,7 @@
     "property": 6
   },
   "src/recap/application/handoff-content.ts": {
-    "parameter": 3,
-    "return": 4,
+    "parameter": 1,
     "property": 2
   },
   "src/recap/application/handoff-flow.ts": {

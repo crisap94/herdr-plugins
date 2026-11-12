@@ -5,7 +5,7 @@ import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/doma
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
-import type { HandoffReference, OmittedCounts } from './handoff-markdown.ts';
+import type { HandoffParts, HandoffReference, OmittedCounts } from './handoff-markdown.ts';
 import { serializeHandoff } from './handoff-markdown.ts';
 
 export interface HandoffFit {
@@ -19,6 +19,10 @@ export interface HandoffFit {
 
 export type FittedHandoff = { readonly kind: 'text'; readonly text: string; readonly omitted: OmittedCounts } | { readonly kind: 'too-large' };
 
+export type GroupsFit = Pick<HandoffFit, 'groups' | 'withheld'>;
+export type GroupsShown = Pick<HandoffParts, 'groups' | 'omitted'>;
+export type GroupsText = (shown: GroupsShown) => FittedHandoff;
+
 const FIRST_TO_GO: readonly HandoffGroupId[] = ['now', 'next'];
 const SECOND_TO_GO: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
 
@@ -31,9 +35,9 @@ interface Victim {
 
 const byteLength = (text: string): number => new TextEncoder().encode(text).byteLength;
 
-const countOf = (fit: HandoffFit, dropped: Dropped, id: HandoffGroupId): number => (fit.groups.find((group) => group.id === id)?.capped ?? 0) + (dropped[id] ?? 0);
+const countOf = (fit: GroupsFit, dropped: Dropped, id: HandoffGroupId): number => (fit.groups.find((group) => group.id === id)?.capped ?? 0) + (dropped[id] ?? 0);
 
-const omittedOf = (fit: HandoffFit, dropped: Dropped): OmittedCounts => ({
+const omittedOf = (fit: GroupsFit, dropped: Dropped): OmittedCounts => ({
     done: countOf(fit, dropped, 'done'),
     links: countOf(fit, dropped, 'links'),
     closed: countOf(fit, dropped, 'closed'),
@@ -55,21 +59,13 @@ const victimOf = (groups: readonly HandoffGroup[]): Victim | null => oldestIn(gr
 const without = (groups: readonly HandoffGroup[], victim: Victim): readonly HandoffGroup[] =>
     groups.map((group) => (group.id === victim.group ? { ...group, entries: group.entries.filter((entry) => entry !== victim.entry) } : group));
 
-export function fitHandoff(fit: HandoffFit, budget: ByteBudget): FittedHandoff {
+export function fitGroups(fit: GroupsFit, budget: ByteBudget, textOf: GroupsText): FittedHandoff {
     let groups = fit.groups;
     const dropped: Dropped = {};
     for (;;) {
-        const omitted = omittedOf(fit, dropped);
-        const text = serializeHandoff({
-            reference: fit.reference,
-            note: fit.note,
-            freshnessText: fit.freshnessText,
-            worksiteText: fit.worksiteText,
-            groups,
-            omitted,
-        });
-        if (fits(budget, byteLength(text))) {
-            return { kind: 'text', text, omitted };
+        const shown = textOf({ groups, omitted: omittedOf(fit, dropped) });
+        if (shown.kind === 'text' && fits(budget, byteLength(shown.text))) {
+            return shown;
         }
         const victim = victimOf(groups);
         if (victim === null) {
@@ -78,4 +74,12 @@ export function fitHandoff(fit: HandoffFit, budget: ByteBudget): FittedHandoff {
         groups = without(groups, victim);
         Object.assign(dropped, { [victim.group]: (dropped[victim.group] ?? 0) + 1 });
     }
+}
+
+export function fitHandoff(fit: HandoffFit, budget: ByteBudget): FittedHandoff {
+    return fitGroups(fit, budget, (shown): FittedHandoff => ({
+        kind: 'text',
+        text: serializeHandoff({ reference: fit.reference, note: fit.note, freshnessText: fit.freshnessText, worksiteText: fit.worksiteText, ...shown }),
+        omitted: shown.omitted,
+    }));
 }

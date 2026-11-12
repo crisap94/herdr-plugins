@@ -47,7 +47,7 @@ const entryLines = (group: HandoffGroup, entry: HandoffEntry): readonly string[]
     ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${entry.reason}`]),
 ];
 
-const groupLines = (group: HandoffGroup): readonly string[] =>
+export const groupLinesOf = (group: HandoffGroup): readonly string[] =>
     group.entries.length === 0 ? [] : ['', `## ${HEADINGS[group.id]}`, ...group.entries.flatMap((entry) => entryLines(group, entry))];
 
 export function serializeHandoff(parts: HandoffParts): string {
@@ -62,7 +62,7 @@ export function serializeHandoff(parts: HandoffParts): string {
         '',
         '## Freshness',
         parts.freshnessText,
-        ...parts.groups.flatMap(groupLines),
+        ...parts.groups.flatMap(groupLinesOf),
         ...omitted,
         ...worksite,
     ].join('\n');
