@@ -88,6 +88,10 @@ that add an import to an engine file are told by the build.
 - `ports/unknowable.ts:39` says "pane". The string stays; a test pins it.
 - `RecapJob` waits 2.5 s to settle before a run, so a short-lived process must call `refresh`, not `turnEnded`.
 - The closure counted by hand (about 93 files) may differ from the computed one; the manifest test is the authority.
+- `ci/engine-files.json` belongs to no work lane, yet a Phase B lane of `domain-type-gates` that adds a file to the closure
+  or drops one (B2's `domain/legacy.ts`, which `domain/lane.ts` will import) must update it, or the manifest test and
+  `engine-self-contained` fail. `ci/check-lane.ts` lets every lane edit it, as it does `test/`; the manifest test keeps the
+  edit exact, and a lane merge request that grows the list says why in its description.
 
 ## Hand-written pieces kept
 

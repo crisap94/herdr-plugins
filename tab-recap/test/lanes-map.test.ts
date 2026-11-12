@@ -100,6 +100,10 @@ test('a lane cannot edit the pipeline file', () => {
     assert.equal(result.status, 1);
 });
 
+test('a lane merge request that grows or shrinks the engine closure may update the engine manifest', () => {
+    assert.equal(lane('B2', ['tab-recap/src/recap/domain/lane.ts', 'tab-recap/src/recap/domain/legacy.ts', 'tab-recap/ci/engine-files.json']).status, 0);
+});
+
 test('a lane merge request may edit the tests and fakes of another lane, and still not its source', () => {
     const other = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes.B3.find((file: string) => file.startsWith('test/'));
     assert.equal(lane('B2', [`tab-recap/${String(other)}`, 'tab-recap/test/fakes/ask-ledger.ts']).status, 0);

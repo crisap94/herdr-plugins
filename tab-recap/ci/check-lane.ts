@@ -5,6 +5,7 @@ import { loadLanes, parseLanes, type Lanes } from '../bin/lane-map.ts';
 const PREFIX = 'tab-recap/';
 const LANES_PATH = `${PREFIX}ci/lanes.json`;
 const PIPELINE = '.gitlab-ci.yml';
+const ENGINE_MANIFEST = `${PREFIX}ci/engine-files.json`;
 
 const adapts = process.env['LANE_ADAPTS'] === '1';
 const lane = process.argv[2];
@@ -62,11 +63,15 @@ function adaptsForeignSource(file: string): boolean {
     return adapts && otherOwner.has(file) && file.startsWith(`${PREFIX}src/`) && !file.endsWith('/legacy.ts');
 }
 
+function openToEveryLane(file: string): boolean {
+    return file === ENGINE_MANIFEST || file.startsWith(`${PREFIX}test/`);
+}
+
 function allowed(file: string): boolean {
     if (file === PIPELINE) return false;
     if (!file.startsWith(PREFIX)) return true;
     if (file === LANES_PATH) return foreignKeys().length === 0;
-    if (file.startsWith(`${PREFIX}test/`) || ownPaths.has(file) || adaptsForeignSource(file)) return true;
+    if (openToEveryLane(file) || ownPaths.has(file) || adaptsForeignSource(file)) return true;
     if (file === `${PREFIX}ci/domain-types-baseline/${lane}.json` || file === `${PREFIX}ci/domain-types-exceptions/${lane}.json`) return true;
     return file.endsWith('/legacy.ts') && ownFolders.has(dirname(file));
 }
