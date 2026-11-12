@@ -20,11 +20,19 @@ printf 'Authorization: Bearer %s\nAccept: application/vnd.github+json\nX-GitHub-
 api() { "${CURL:-curl}" -s --connect-timeout 10 --max-time 30 -o "$body" -w '%{http_code}' -H "@$headers" "$@"; }
 exists() { api "$api_url/repos/$GITHUB_REPO/releases/tags/$tag"; }
 
+code="$(api "$api_url/repos/$GITHUB_REPO")"
+[ "$code" = "200" ] \
+    || { echo "github-release: 3 — NOT COVERED: reading the repository $GITHUB_REPO answered HTTP $code: GITHUB_RELEASE_TOKEN is expired or cannot read it (it needs Contents read and write on this repository), or GITHUB_REPO or GITHUB_API is wrong: fix it, then run this job again" >&2; exit 3; }
+
 tagged=0
 code=""
 for ((attempt = 1; attempt <= attempts; attempt++)); do
     code="$(api "$api_url/repos/$GITHUB_REPO/git/ref/tags/$tag")"
-    [ "$code" = "200" ] && { tagged=1; break; }
+    case "$code" in
+        200) tagged=1; break ;;
+        404 | 000 | 429 | 5??) ;;
+        *) echo "github-release: 3 — NOT COVERED: looking up $tag on GitHub answered HTTP $code, which retrying does not fix: check GITHUB_RELEASE_TOKEN and GITHUB_REPO, then run this job again" >&2; exit 3 ;;
+    esac
     [ "$attempt" -lt "$attempts" ] && sleep "$interval"
 done
 [ "$tagged" -eq 1 ] \

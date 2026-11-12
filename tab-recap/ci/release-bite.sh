@@ -276,7 +276,9 @@ done
 echo '{}' > "$out"
 [ -n "$body" ] && cp "$body" "$GH_STATE/body.json"
 case "$method $url" in
+    "GET "*/repos/group/project) echo "${FAKE_REPO_CODE:-200}" ;;
     "GET "*/git/ref/tags/*)
+        [ -n "${FAKE_REF_CODE:-}" ] && { echo "$FAKE_REF_CODE"; exit 0; }
         polls=$(( $(cat "$GH_STATE/polls" 2>/dev/null || echo 0) + 1 ))
         echo "$polls" > "$GH_STATE/polls"
         if [ "$polls" -ge "${FAKE_TAG_AFTER:-1}" ]; then echo 200; else echo 404; fi ;;
@@ -318,6 +320,13 @@ FAKE_POST_CODE=500 FAKE_AFTER_POST=200 ghtest pass "a release created meanwhile 
 FAKE_POST_CODE=422 ghtest fail "a creation that fails and no release exists" github demo-v1.1.0 "$gh_notes"
 [ "$(FAKE_POST_CODE=422 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a refused creation must exit 3" >&2; wrong=$((wrong + 1)); }
 FAKE_RELEASE_CODE=500 ghtest fail "a release lookup that does not answer" github demo-v1.1.0 "$gh_notes"
+[ "$(FAKE_REPO_CODE=401 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a token that cannot read the repository must exit 3" >&2; wrong=$((wrong + 1)); }
+rm -rf "$gh"; mkdir -p "$gh"; FAKE_REPO_CODE=401 github demo-v1.1.0 "$gh_notes" > /dev/null 2>&1
+grep -q "git/ref" "$gh/log" && { echo "bite: a token that cannot read the repository must not poll for the tag" >&2; wrong=$((wrong + 1)); }
+rm -rf "$gh"; mkdir -p "$gh"; FAKE_REF_CODE=401 github demo-v1.1.0 "$gh_notes" > "$scratch/gh-401.out" 2>&1
+[ "$(grep -c "git/ref" "$gh/log")" = "1" ] || { echo "bite: an authentication failure on the tag lookup must stop at the first check, not retry" >&2; wrong=$((wrong + 1)); }
+grep -q "HTTP 401" "$scratch/gh-401.out" && grep -q "not on GitHub" "$scratch/gh-401.out" && { echo "bite: an authentication failure must not be reported as a tag the mirror has not carried" >&2; wrong=$((wrong + 1)); }
+grep -q "HTTP 401" "$scratch/gh-401.out" || { echo "bite: an authentication failure on the tag lookup must name its HTTP code" >&2; wrong=$((wrong + 1)); }
 rm -rf "$gh"; mkdir -p "$gh"
 out="$(FAKE_POST_CODE=500 github demo-v1.1.0 "$gh_notes" 2>&1)"
 grep -q -- "--connect-timeout 10 --max-time 30" "$gh/log" || { echo "bite: a GitHub call has no connect or total time limit, so a stalled call blocks the job" >&2; wrong=$((wrong + 1)); }
