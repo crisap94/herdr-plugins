@@ -96,6 +96,13 @@ that add an import to an engine file are told by the build.
   or drops one (B2's `domain/legacy.ts`, which `domain/lane.ts` will import) must update it, or the manifest test and
   `engine-self-contained` fail. `ci/check-lane.ts` lets every lane edit it, as it does `test/`; the manifest test keeps the
   edit exact, and a lane merge request that grows the list says why in its description.
+- `FollowedSession` is still herdr's `Lane`, and its `pane` is the session's identity: the job keys its cursors by pane and
+  transcript (`recap-job.ts`, `placeOf`), and `history` reads `Ledger.historyOf(scope, session.pane)`. A host with only a
+  session id and a records path must choose a pane. If it takes the session id, a `/clear` in the same terminal starts a new
+  id, a new pane, and an empty `history`; if it shares one pane across the sessions of a scope, their histories mix.
+  `test/engine-plain-session.test.ts` uses a fixed pane, so it shows neither. Follow-up, with the Scope and Followed-session
+  retyping (D2, D5): the facade takes its own followed session (session, agent, cwd, title and a host-chosen stable key),
+  builds the `Lane` inside `createEngine`, and names the key that history and the cursors use.
 - `gui-port` uses "engine" in a wider sense: its `design.md` calls `src/recap`, the ports, the readers, the harness jobs and
   the store the engine, and `src/adapters/desktop/engine.ts` exports `DesktopEngine` and `EngineParts`, a desktop read model
   unrelated to `createEngine`. The vocabulary check allows the word, so it cannot tell the two apart. Follow-up, owned by
