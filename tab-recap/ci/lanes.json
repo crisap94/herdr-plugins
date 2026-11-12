@@ -318,6 +318,7 @@
       "test/duplicate-columns.test.ts",
       "test/eligibility.test.ts",
       "test/engine-golden.test.ts",
+      "test/engine-plain-session.test.ts",
       "test/engine.test.ts",
       "test/env-relocation.test.ts",
       "test/event-kinds.test.ts",
@@ -1027,6 +1028,7 @@
       "test/fakes/expanded-fixture.ts",
       "test/fakes/fact-at.ts",
       "test/fakes/facts.ts",
+      "test/fakes/golden-writer.ts",
       "test/fakes/handoff-answers.ts",
       "test/fakes/handoff-delivery.ts",
       "test/fakes/handoff-flow-harness.ts",
@@ -1127,6 +1129,7 @@
       "test/release.test.ts",
       "test/support/bun-env.ts",
       "test/support/bun-test.d.ts",
+      "test/support/closure.ts",
       "test/xmllint.ts"
     ]
   }

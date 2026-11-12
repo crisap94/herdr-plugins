@@ -62,13 +62,14 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 
 ## 9. No-herdr proof
 
-- [ ] 9.1 `test/engine-plain-session.test.ts`: the engine over the Claude transcript reader, the scratch store and fixture paths
+- [x] 9.1 `test/engine-plain-session.test.ts`: the engine over the Claude transcript reader, the scratch store and fixture paths
       (`claude-compact-boundary.jsonl` for the compaction case), importing nothing from `adapters/herdr`, `transport` or `daemon`.
       Verify: the test passes and its imports hold none of those folders.
-- [ ] 9.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 9.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 10. Archive
 
 - [ ] 10.1 Once every other task is checked, run `openspec archive engine-boundary` in the same merge request as the last task.
       Verify: `openspec validate --specs --strict` passes and `openspec/specs/tab-recap/engine-boundary/spec.md` exists.
+      Left open with 1.1: the `openspec` CLI is not installed where groups 1 to 9 ran, so neither validate nor archive has run.
 - [ ] 10.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
