@@ -12,7 +12,9 @@ if [ -z "$dry" ]; then
         || { echo "prepare-release: 1 — main has moved since this pipeline started; run it again on the new tip" >&2; exit 1; }
 fi
 
-json="$(GITLAB_TOKEN="$RELEASE_TOKEN" bun tab-recap/ci/next-release.ts --to "$(git rev-parse HEAD)")"
+next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else bun tab-recap/ci/next-release.ts "$@"; fi; }
+json="$(GITLAB_TOKEN="$RELEASE_TOKEN" next_release --to "$(git rev-parse HEAD)")" \
+    || { echo "prepare-release: 3 — NOT COVERED: could not work out the release (an unlabelled merge request in the range, or the API did not answer): label it or fix the API, then run the pipeline on main again" >&2; exit 3; }
 version="$(printf '%s' "$json" | field version)"
 previous="$(printf '%s' "$json" | field previous)"
 if [ -z "$version" ]; then

@@ -134,14 +134,18 @@ the previous `tab-recap-v*` tag: any `breaking` makes a major release, else any 
 else any `fixed`/`changed` a patch; only `internal` means no release.
 
 1. Merge the merge requests (each with its label) into `main`.
-2. On `main`'s pipeline, run the manual **`release:prepare`** job. It works out the next version
+2. `release:prepare` runs by itself on every push to `main`, with no button. It works out the next version
    (`ci/next-release.sh` prints it with the section it will write), updates the manifest,
    `package.json`, the lockfile and `CHANGELOG.md` (one bullet per MR: title and `(!number)`, grouped
    under Breaking/Added/Changed/Fixed, `internal` left out), commits that on the branch
    `release/tab-recap-vX.Y.Z` and opens a merge request from it labelled `land` (`ci/release-publish.sh`);
    it never pushes `main`. If nothing is due it says so and stops; while a release merge request is open
    it will not prepare another, and it refuses while a prepared release is still untagged (the manifest
-   is ahead of the newest tag). When the merge train has landed that merge request, **`release:tag`**
+   is ahead of the newest tag). The refusal is exit 1, a warning (`allow_failure: exit_codes: 1`, as
+   `release:tag`) so `main` stays green; exit 3 (a missing token, or a merge request the release cannot
+   be worked out for) fails the job. The release merge request is the human gate: nothing in this
+   repository merges it (the `land` label is set on it, and no job here reads that label), so a
+   maintainer merges it by hand, or the owner wires the merge train or auto-merge. When the merge train has landed that merge request, **`release:tag`**
    (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a
    dated changelog section and no tag) creates the annotated tag `tab-recap-vX.Y.Z` at the newest commit
    that touched the manifest or `CHANGELOG.md` (the release commit, or the merge request that completed

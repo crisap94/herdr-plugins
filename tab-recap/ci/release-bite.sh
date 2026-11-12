@@ -334,4 +334,23 @@ grep -q bite-github-token <<< "$out" && { echo "bite: the token was printed" >&2
 grep -q bite-github-token "$gh/log" && { echo "bite: the token reached a command line" >&2; wrong=$((wrong + 1)); }
 [ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const rules = y["release:github"].rules; process.exit(rules.length > 0 && rules.every((r) => r.if.includes("$CI_COMMIT_TAG =~ /^tab-recap-v/") && !r.if.includes("CI_COMMIT_REF_PROTECTED")) ? 0 : 1)' "$HERE/../../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: release:github must run on every tab-recap-v tag: on an unprotected one it fails on its missing token, where a protected-only rule would skip the release in silence" >&2; wrong=$((wrong + 1)); }
 
+prep="$scratch/prep"; mkdir -p "$prep/tab-recap/ci" && cd "$prep" || exit 3
+cp "$HERE/prepare-release.sh" tab-recap/ci/prepare-release.sh
+printf 'id = "tab-recap"\nname = "Tab Recap"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > tab-recap/herdr-plugin.toml
+git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
+git add -A && git commit --quiet -m release
+git init --quiet --bare "$scratch/prep-remote.git" && git remote add origin "$scratch/prep-remote.git" && git push --quiet origin main || exit 3
+prep_next() { printf '%s' "$1" > "$scratch/prep-next.json"; printf '#!/usr/bin/env bash\ncat "%s"\n' "$scratch/prep-next.json" > "$scratch/prep-next"; chmod +x "$scratch/prep-next"; }
+prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash tab-recap/ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
+prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":1}'
+[ "$(prep_exit)" = "0" ] || { echo "bite: after the release merge request lands and is tagged, the push pipeline on main must find no release due (exit 0)" >&2; wrong=$((wrong + 1)); }
+prep_next '{"previous":"tab-recap-v1.0.0","version":"1.1.0","bump":"minor","section":"### [1.1.0] — 2026-11-12","merged":2}'
+[ "$(prep_exit)" = "1" ] || { echo "bite: a release prepared but not yet tagged must refuse to prepare another (exit 1), so the merge request that lands does not loop" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho "no" >&2\nexit 1\n' > "$scratch/prep-broken"; chmod +x "$scratch/prep-broken"
+[ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+[ "$(env -u RELEASE_TOKEN bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
+cd "$repo" || exit 3
+
 [ "$wrong" -eq 0 ]

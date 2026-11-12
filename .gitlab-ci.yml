@@ -103,10 +103,10 @@ release:prepare:
   needs: [lint, test, "test:floor"]
   variables:
     GIT_DEPTH: "0"
+  allow_failure:
+    exit_codes: 1
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
-      when: manual
-      allow_failure: true
   script:
     - bash tab-recap/ci/prepare-release.sh
 
