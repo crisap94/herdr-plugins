@@ -165,12 +165,15 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    variables: `GITHUB_RELEASE_TOKEN` (masked and protected; a fine-grained GitHub token with
    Contents read and write on one repository) and `GITHUB_REPO` (`owner/name`). The GitHub workflow
    `release` no longer runs on tag push; it is a manual fallback (Run workflow, with an existing tag).
-   `release:github` runs only on a protected tag (`CI_COMMIT_REF_PROTECTED`), so the tag pattern
-   `tab-recap-v*` must be protected in GitLab (Settings > Repository > Protected tags).
+   `release:github` runs on every `tab-recap-v*` tag. Its token is a protected variable, so the tag
+   pattern `tab-recap-v*` must be protected in GitLab (Settings > Repository > Protected tags): on an
+   unprotected tag the job has no token and fails with exit 3, it does not skip.
    A tag made before this job existed has no `release:github` in its own `.gitlab-ci.yml`: GitLab
    reads the pipeline config at the tag, so retrying or re-running its pipeline cannot add the job.
-   `tab-recap-v3.0.0` and `tab-recap-v3.0.1` are published only by the manual GitHub `release`
-   workflow (Run workflow, with that tag). Tags from this change on are published by `release:github`.
+   `tab-recap-v3.0.0` and `tab-recap-v3.0.1` are such tags: publish each by running
+   `ci/github-release.sh <tag> <notes-file>` by hand (the notes from `ci/release-notes.sh`), since the
+   manual GitHub `release` workflow tests on macOS first and cannot publish while that check is red.
+   Tags from this change on are published by `release:github`.
 
 `[Unreleased]` in the changelog stays empty: entries are written only by `release:prepare`
 (a hand-written entry makes it stop). To preview a release, run `bash tab-recap/ci/next-release.sh`
