@@ -55,10 +55,10 @@ Paths are under `tab-recap/`. Each numbered group is its own merge request. Ever
 
 ## 8. Re-point the daemon
 
-- [ ] 8.1 `src/daemon/main.ts` builds the engine once; `daemon/dispatch-parts.ts`, `daemon/compaction.ts`, `daemon/handoff.ts`,
+- [x] 8.1 `src/daemon/main.ts` builds the engine once; `daemon/dispatch-parts.ts`, `daemon/compaction.ts`, `daemon/handoff.ts`,
       `daemon/autocompact.ts` and `application/dispatch.ts` take `Pick<Engine, ...>`. Verify: `RecapJob` is constructed in one place
       only, and a recap is written after a turn when the plugin runs from the checkout on one tab.
-- [ ] 8.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [x] 8.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
 ## 9. No-herdr proof
 
