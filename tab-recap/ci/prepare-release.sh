@@ -32,9 +32,12 @@ fi
 section="$(mktemp)"
 trap 'rm -f "$section"' EXIT
 printf '%s' "$json" | field section > "$section"
-bun tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous"
-bash tab-recap/ci/check-version.sh
-bash tab-recap/ci/release-notes.sh tab-recap "$version"
+bun tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous" \
+    || { echo "prepare-release: 3 — NOT COVERED: writing the release $version into the changelog and manifest failed" >&2; exit 3; }
+bash tab-recap/ci/check-version.sh \
+    || { echo "prepare-release: 3 — NOT COVERED: the versions of release $version do not agree" >&2; exit 3; }
+bash tab-recap/ci/release-notes.sh tab-recap "$version" \
+    || { echo "prepare-release: 3 — NOT COVERED: the release notes for $version could not be read back" >&2; exit 3; }
 if [ -n "$dry" ]; then
     git --no-pager diff --stat
     echo "dry run: nothing committed, pushed or opened"

@@ -142,8 +142,9 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    it never pushes `main`. If nothing is due it says so and stops; while a release merge request is open
    it will not prepare another, and it refuses while a prepared release is still untagged (the manifest
    is ahead of the newest tag). The refusal is exit 1, a warning (`allow_failure: exit_codes: 1`, as
-   `release:tag`) so `main` stays green; exit 3 (a missing token, or a merge request the release cannot
-   be worked out for) fails the job. The release merge request is the human gate: nothing in this
+   `release:tag`) so `main` stays green; exit 1 is only those two refusals, and exit 3 (a missing token,
+   a release that cannot be worked out, written or checked, or a push or merge request the forge refused)
+   fails the job. The release merge request is the human gate: nothing in this
    repository merges it (the `land` label is set on it, and no job here reads that label), so a
    maintainer merges it by hand, or the owner wires the merge train or auto-merge. When the merge train has landed that merge request, **`release:tag`**
    (`ci/tag-release.sh`, run on every push to `main` and a no-op unless the manifest carries a version with a

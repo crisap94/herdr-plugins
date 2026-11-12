@@ -187,6 +187,7 @@ FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelate
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
+[ "$(FAKE_MR_CODE=500 publish > /dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the forge refuses must fail the job (exit 3), not pass as the refusal exit 1" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 : > "$CURL_LOG"
 expect pass "a release published as a merge request" publish

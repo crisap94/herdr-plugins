@@ -38,7 +38,7 @@ fi
 seen="$(git ls-remote "$push_url" "refs/heads/$branch" | cut -f1)" \
     || { echo "release-publish: 3 — NOT COVERED: could not ask the remote whether $branch exists" >&2; exit 3; }
 git push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
-    || { echo "release-publish: 1 — could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 1; }
+    || { echo "release-publish: 3 — NOT COVERED: could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 3; }
 
 description="## What changes for the user
 
@@ -51,5 +51,5 @@ code="$(api --request POST --data-urlencode "source_branch=$branch" --data-urlen
     --data-urlencode "title=$plugin: release $version" --data-urlencode "labels=land,changelog::internal" \
     --data-urlencode "remove_source_branch=true" --data-urlencode "description=$description" \
     "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests")"
-[ "$code" = "201" ] || { echo "release-publish: 1 — opening the merge request answered HTTP $code ($branch is pushed: open it by hand with the label land)" >&2; exit 1; }
+[ "$code" = "201" ] || { echo "release-publish: 3 — NOT COVERED: opening the merge request answered HTTP $code ($branch is pushed: open it by hand with the label land)" >&2; exit 3; }
 echo "opened the release merge request for $plugin $version from $branch"
