@@ -219,6 +219,7 @@
       "src/recap/domain/porcelain.ts",
       "src/recap/domain/questions.ts",
       "src/recap/domain/quote.ts",
+      "src/recap/domain/recap-cause.ts",
       "src/recap/domain/reconciliation.ts",
       "src/recap/domain/registered-kinds.ts",
       "src/recap/domain/retention.ts",

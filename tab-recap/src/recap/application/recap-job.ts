@@ -1,5 +1,5 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { RecapCause } from '#src/recap/domain/intent.ts';
+import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
