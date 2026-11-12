@@ -13,8 +13,14 @@ if [ -z "$dry" ]; then
 fi
 
 next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else bun tab-recap/ci/next-release.ts "$@"; fi; }
-json="$(GITLAB_TOKEN="$RELEASE_TOKEN" next_release --to "$(git rev-parse HEAD)")" \
-    || { echo "prepare-release: 3 — NOT COVERED: could not work out the release (an unlabelled merge request in the range, or the API did not answer): label it or fix the API, then run the pipeline on main again" >&2; exit 3; }
+json=""
+for attempt in 1 2 3; do
+    if json="$(GITLAB_TOKEN="$RELEASE_TOKEN" next_release --to "$(git rev-parse HEAD)")"; then break; fi
+    json=""
+    [ "$attempt" -lt 3 ] && sleep "${RELEASE_RETRY_INTERVAL:-10}"
+done
+[ -n "$json" ] \
+    || { echo "prepare-release: 3 — NOT COVERED: could not work out the release (an unlabelled merge request in the range, or the API did not answer after 3 attempts): label it or fix the API, then run the pipeline on main again" >&2; exit 3; }
 version="$(printf '%s' "$json" | field version)"
 previous="$(printf '%s' "$json" | field previous)"
 if [ -z "$version" ]; then

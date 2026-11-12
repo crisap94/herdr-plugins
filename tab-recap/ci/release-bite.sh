@@ -349,6 +349,7 @@ printf 'id = "tab-recap"\nname = "Tab Recap"\nversion = "1.1.0"\nmin_herdr_versi
 git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
 git add -A && git commit --quiet -m release
 git init --quiet --bare "$scratch/prep-remote.git" && git remote add origin "$scratch/prep-remote.git" && git push --quiet origin main || exit 3
+export RELEASE_RETRY_INTERVAL=0
 prep_next() { printf '%s' "$1" > "$scratch/prep-next.json"; printf '#!/usr/bin/env bash\ncat "%s"\n' "$scratch/prep-next.json" > "$scratch/prep-next"; chmod +x "$scratch/prep-next"; }
 prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash tab-recap/ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
 prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":1}'
@@ -357,6 +358,11 @@ prep_next '{"previous":"tab-recap-v1.0.0","version":"1.1.0","bump":"minor","sect
 [ "$(prep_exit)" = "1" ] || { echo "bite: a release prepared but not yet tagged must refuse to prepare another (exit 1), so the merge request that lands does not loop" >&2; wrong=$((wrong + 1)); }
 printf '#!/usr/bin/env bash\necho "no" >&2\nexit 1\n' > "$scratch/prep-broken"; chmod +x "$scratch/prep-broken"
 [ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho x >> "%s"\nexit 1\n' "$scratch/prep-always.count" > "$scratch/prep-always"; chmod +x "$scratch/prep-always"; rm -f "$scratch/prep-always.count"
+[ "$(NEXT_RELEASE="$scratch/prep-always" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] && [ "$(wc -l < "$scratch/prep-always.count" | tr -d ' ')" = "3" ] || { echo "bite: a next-release that keeps failing must be asked 3 times, then end with exit 3" >&2; wrong=$((wrong + 1)); }
+printf '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}' > "$scratch/prep-flaky.json"
+printf '#!/usr/bin/env bash\nn=$(cat "%s" 2>/dev/null || echo 0)\necho $((n + 1)) > "%s"\n[ "$n" -ge 1 ] || exit 1\ncat "%s"\n' "$scratch/prep-flaky.count" "$scratch/prep-flaky.count" "$scratch/prep-flaky.json" > "$scratch/prep-flaky"; chmod +x "$scratch/prep-flaky"; rm -f "$scratch/prep-flaky.count"
+[ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
 [ "$(env -u RELEASE_TOKEN bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
 echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
 [ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }

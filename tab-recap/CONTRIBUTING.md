@@ -161,7 +161,8 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    version in a normal merge request (the manifest, `package.json`, the lockfile, the CHANGELOG heading
    and its link reference) or tag the release commit by hand; `release:prepare` refuses meanwhile. A
    merge request without a `changelog::` label anywhere in the range also stops the job (exit 3) until
-   it is labelled.
+   it is labelled. The release lookup is tried three times, ten seconds apart (`RELEASE_RETRY_INTERVAL`),
+   so one failed API answer does not end the job; only three failures in a row are exit 3.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the
