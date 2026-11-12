@@ -320,6 +320,7 @@ FAKE_POST_CODE=422 ghtest fail "a creation that fails and no release exists" git
 FAKE_RELEASE_CODE=500 ghtest fail "a release lookup that does not answer" github demo-v1.1.0 "$gh_notes"
 rm -rf "$gh"; mkdir -p "$gh"
 out="$(FAKE_POST_CODE=500 github demo-v1.1.0 "$gh_notes" 2>&1)"
+grep -q -- "--connect-timeout 10 --max-time 30" "$gh/log" || { echo "bite: a GitHub call has no connect or total time limit, so a stalled call blocks the job" >&2; wrong=$((wrong + 1)); }
 grep -q bite-github-token <<< "$out" && { echo "bite: the token was printed" >&2; wrong=$((wrong + 1)); }
 grep -q bite-github-token "$gh/log" && { echo "bite: the token reached a command line" >&2; wrong=$((wrong + 1)); }
 

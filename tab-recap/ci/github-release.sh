@@ -17,7 +17,7 @@ headers="$(mktemp)"
 payload="$(mktemp)"
 trap 'rm -f "$body" "$headers" "$payload"' EXIT
 printf 'Authorization: Bearer %s\nAccept: application/vnd.github+json\nX-GitHub-Api-Version: 2022-11-28\n' "$GITHUB_RELEASE_TOKEN" > "$headers"
-api() { "${CURL:-curl}" -s -o "$body" -w '%{http_code}' -H "@$headers" "$@"; }
+api() { "${CURL:-curl}" -s --connect-timeout 10 --max-time 30 -o "$body" -w '%{http_code}' -H "@$headers" "$@"; }
 exists() { api "$api_url/repos/$GITHUB_REPO/releases/tags/$tag"; }
 
 tagged=0
