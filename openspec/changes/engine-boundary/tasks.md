@@ -1,7 +1,7 @@
 # Tasks: cut the engine boundary in place
 
-Paths are under `tab-recap/`. Each numbered group is its own merge request. Every group ends with the plugin gates passing
-(`bash ci/lint.sh` and `bash ci/test.sh`, from `tab-recap/`). No step changes the writer's input or the stored values.
+Paths are under `tab-recap/`. Each numbered group is its own commit on one branch; design "Order" says how they merge.
+Every group ends with the plugin gates passing (`bash ci/lint.sh` and `bash ci/test.sh`, from `tab-recap/`). No step changes the writer's input or the stored values.
 
 ## 1. Change and vocabulary
 

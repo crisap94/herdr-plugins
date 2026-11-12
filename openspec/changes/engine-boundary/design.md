@@ -83,9 +83,12 @@ is the facade's work (D2, D3). Until then `ci/engine-files.json` lists them apar
 
 ## Order
 
-Each step is its own small merge request and ends with the gates passing. Steps 3 and 4 touch the same folders as Phase B of
-`domain-type-gates`, so they stay as small as possible and rebase per lane. The guard (step 5) merges early, so other branches
-that add an import to an engine file are told by the build.
+Each step ends with the gates passing. Steps 3 and 4 touch the same folders as Phase B of `domain-type-gates`, so they stay as
+small as possible and rebase per lane. The plan was one merge request per step, with the guard (step 5) merged early so other
+branches that add an import to an engine file are told by the build. As built, groups 1 to 9 sit on one branch,
+`refactor/engine-boundary`, one commit per group plus the review fixes, so each group reads as its own commit. Before merge the
+owner either opens them as stacked merge requests (1-2, 3-4, 5, 6, 7, 8, 9, 10) or merges the branch as one; until the guard is
+on `main`, Phase B lanes are not told by the build, and the merge request names the Phase B overlap (see Risks) instead.
 
 ## Risks
 
