@@ -12,11 +12,14 @@ attempts="${GITHUB_RELEASE_ATTEMPTS:-30}"
 interval="${GITHUB_RELEASE_INTERVAL:-20}"
 plugin="${tag%-v*}"
 version="${tag##*-v}"
-body="$(mktemp)"
-headers="$(mktemp)"
-payload="$(mktemp)"
+body=""
+headers=""
+payload=""
 trap 'rm -f "$body" "$headers" "$payload"' EXIT
-printf 'Authorization: Bearer %s\nAccept: application/vnd.github+json\nX-GitHub-Api-Version: 2022-11-28\n' "$GITHUB_RELEASE_TOKEN" > "$headers"
+body="$(mktemp)" && headers="$(mktemp)" && payload="$(mktemp)" \
+    || { echo "github-release: 3 — NOT COVERED: could not create a temporary file" >&2; exit 3; }
+printf 'Authorization: Bearer %s\nAccept: application/vnd.github+json\nX-GitHub-Api-Version: 2022-11-28\n' "$GITHUB_RELEASE_TOKEN" > "$headers" \
+    || { echo "github-release: 3 — NOT COVERED: could not write the request headers" >&2; exit 3; }
 api() { "${CURL:-curl}" -s --connect-timeout 10 --max-time 30 -o "$body" -w '%{http_code}' -H "@$headers" "$@"; }
 exists() { api "$api_url/repos/$GITHUB_REPO/releases/tags/$tag"; }
 
