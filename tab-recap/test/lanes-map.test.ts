@@ -184,3 +184,98 @@ test('with an empty skip list the map is compared as written: a formatting-only 
     const empty = written('empty-skip.txt', '# nothing\n');
     assert.equal(inTree(root, ['--check'], empty).status, 1);
 });
+
+const TRACK_PREFIXES = [
+    'src/engine/',
+    'test/engine-host/',
+    'test/conformance/',
+    'src/wire/',
+    'test/contracts/',
+    'src/adapters/hooks/',
+    'test/hooks/',
+    'src/pane/',
+    'src/daemon/view/',
+    'test/pane/',
+    'src/view-model/',
+    'test/view-model/',
+    'test/store/',
+    'test/host/',
+    'src/daemon/slots/',
+    'src/daemon/slots.ts',
+    'src/daemon/slot-table.ts',
+    'test/daemon-slots.test.ts',
+    'test/command-table.test.ts',
+] as const;
+
+function importOf(path: string): string {
+    return ["import '", '#', 'src/', path, "';\n"].join('');
+}
+
+function keysOf(root: string): Record<string, string[]> {
+    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(join(root, 'ci/lanes.json'), 'utf8'));
+    return parsed.lanes;
+}
+
+function keyHolding(root: string, file: string): string | undefined {
+    return Object.entries(keysOf(root)).find(([, files]) => files.includes(file))?.[0];
+}
+
+test('a file under every track prefix is in no key, and the generated map does not change', () => {
+    const root = mapped(TREE);
+    const before = readFileSync(join(root, 'ci/lanes.json'), 'utf8');
+    const added = TRACK_PREFIXES.map((prefix) => (prefix.endsWith('/') ? `${prefix}x.ts` : prefix));
+    for (const file of added) {
+        mkdirSync(join(root, dirname(file)), { recursive: true });
+        writeFileSync(join(root, file), '');
+    }
+    assert.equal(inTree(root, ['--check']).status, 0);
+    assert.equal(inTree(root, []).status, 0);
+    assert.equal(readFileSync(join(root, 'ci/lanes.json'), 'utf8'), before);
+    for (const file of ['src/daemon/slots/x.ts', 'src/daemon/slots.ts', 'src/adapters/hooks/x.ts']) assert.equal(keyHolding(root, file), undefined, file);
+    writeFileSync(join(root, 'src/daemon/zz-control.ts'), '');
+    assert.equal(inTree(root, []).status, 0);
+    assert.equal(keyHolding(root, 'src/daemon/zz-control.ts'), 'B7', 'a file outside the prefixes still joins its folder lane');
+});
+
+test('the carve-out puts the engine manifest in ENG and the store and view lists in STO and VIEW, before the folders, and tests follow them', () => {
+    const files = [
+        'src/protocol/result.ts',
+        'src/recap/application/thing.ts',
+        'src/recap/application/other.ts',
+        'src/adapters/db/open.ts',
+        'src/adapters/db/schema/migration.ts',
+        'src/adapters/db/rows.ts',
+        'src/recap/render/present.ts',
+        'src/recap/render/handoff-budget.ts',
+        'test/thing.test.ts',
+        'test/present.test.ts',
+        'test/open.test.ts',
+    ];
+    const root = treeWith(files);
+    writeFileSync(join(root, 'ci/engine-files.json'), `${JSON.stringify({ engine: ['src/recap/application/thing.ts'], other: ['src/recap/application/other.ts'] }, null, 2)}\n`);
+    writeFileSync(join(root, 'test/mixed.test.ts'), `${importOf('recap/application/thing.ts')}${importOf('protocol/result.ts')}`);
+    writeFileSync(join(root, 'test/engine-only.test.ts'), importOf('recap/application/thing.ts'));
+    assert.equal(inTree(root, []).status, 0);
+    const expected: Readonly<Record<string, string>> = {
+        'src/recap/application/thing.ts': 'ENG',
+        'test/thing.test.ts': 'ENG',
+        'test/engine-only.test.ts': 'ENG',
+        'src/recap/application/other.ts': 'B3',
+        'src/adapters/db/open.ts': 'STO',
+        'src/adapters/db/schema/migration.ts': 'STO',
+        'test/open.test.ts': 'STO',
+        'src/adapters/db/rows.ts': 'B5',
+        'src/recap/render/present.ts': 'VIEW',
+        'test/present.test.ts': 'VIEW',
+        'src/recap/render/handoff-budget.ts': 'B4',
+        'test/mixed.test.ts': 'B1',
+    };
+    for (const [file, key] of Object.entries(expected)) assert.equal(keyHolding(root, file), key, file);
+    assert.equal(inTree(root, ['--check']).status, 0);
+});
+
+test('without an engine manifest key ENG is empty and the engine file stays in its folder lane', () => {
+    const root = mapped(TREE);
+    assert.deepEqual(keysOf(root)['ENG'], []);
+    assert.equal(keyHolding(root, 'src/recap/application/thing.ts'), 'B3');
+});

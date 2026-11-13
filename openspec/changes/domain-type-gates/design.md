@@ -150,6 +150,9 @@ compiling against the legacy export until their own lane moves them. Legacy find
 the `legacy` category; a lane's verify line excludes only that category. Phase C deletes every `legacy.ts` once no caller remains.
 The old throwing constructors of `src/recap/domain/ids.ts` take this path in lane B2.
 
+An engine file is never changed by a lane. Its debt leaves with it. The package keeps the same rule with its own `legacy.ts` files
+and its own baseline. The files of lanes `STO` and `VIEW` follow the same rule.
+
 ### D8. Ownership is a checked map
 
 Phase A writes `ci/lanes.json`, which assigns every file of `src/` and `test/` to exactly one lane. A test file goes to the lane
@@ -157,6 +160,9 @@ of the module it is named after (`test/<name>.test.ts` follows `src/**/<name>.ts
 module it imports, in the order B2, B1, B3, B4, B5, B6, B7, B8. `test/fakes/` and `test/fixtures/` belong to the lead. A test
 fails when a file is missing from the map or listed twice, and each lane's CI job fails when its merge request edits a file the
 map gives to another lane. Another lane's test that needs a change goes through that lane or the lead.
+
+Lane `ENG` is assigned by manifest, not by folder. Tests named after an engine file follow it. Lanes `STO` and `VIEW` are assigned
+the same way, by the two file lists in `ci/lanes-generate.ts`. The three keys come last in the import order above.
 
 ## Phases and order
 
@@ -166,6 +172,8 @@ map gives to another lane. Another lane's test that needs a change goes through 
 - **Phase B** (lanes): B1 (protocol, ports) and B2 (domain) start at once. B3 to B8 may start at the same time, because D7 keeps the
   old exports compiling; each moves to the new B1 and B2 exports as they land.
 - **Phase C** (the lead): remove every `legacy.ts`, move `recap-one-brand-cast` into `rules/`, delete the baseline folder, final counts.
+- The change is archived when the plugin is clean. The package's remaining findings are tracked by its own baseline (roadmap step
+  ENG-7), not by this change.
 
 The three in-flight `lane-handoff*` changes: slice 1 lands before Phase A merges, and Phase A's baselines are generated on the merge
 result; slices 2 and 3 are written after Phase A and follow the gates (their new files start at zero).
@@ -181,14 +189,17 @@ resolves inside the fixture, not against the repository.
 
 | Lane | Folders | Files |
 | --- | --- | --- |
-| B1 protocol and ports | `src/protocol/`, `src/ports/` | 13 + 51 |
-| B2 domain | `src/recap/domain/` (gates included) | 72 |
-| B3 application | `src/recap/application/` | 94 |
-| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 16 + 7 + 4 |
-| B5 database | `src/adapters/db/` | 67 |
-| B6 other adapters | `src/adapters/` except `db/` | 78 |
-| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 16 + 4 + 1 + 1 + 1 |
+| B1 protocol and ports | `src/protocol/`, `src/ports/` | 14 + 50 |
+| B2 domain | `src/recap/domain/` (gates included) | 69 |
+| B3 application | `src/recap/application/` | 105 |
+| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 10 + 6 + 5 |
+| B5 database | `src/adapters/db/` | 89 |
+| B6 other adapters | `src/adapters/` except `db/` | 118 |
+| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 25 + 2 + 2 + 2 + 0 |
 | B8 experiments | `src/experiment/` | 17 |
+| ENG engine | the files of `ci/engine-files.json` key `engine`: typed in `packages/session-ledger` | 89 |
+| STO store mechanism | `src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`, `src/adapters/db/schema/migration.ts`: typed in `packages/session-ledger-sqlite` | 6 |
+| VIEW view | the 12 `src/recap/render/` files listed in `ci/lanes-generate.ts`: typed in `packages/recap-view` | 12 |
 
 A lane edits only the `src/` files and the `test/` files that `ci/lanes.json` gives it, plus its own `legacy.ts`, baseline file and
 exception file. New shared vocabulary goes through the lead.

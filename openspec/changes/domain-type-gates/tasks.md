@@ -73,20 +73,27 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
 Each lane converts its signatures and the properties of its declared types to domain types, turns its throwing constructors into
 parsers, removes its type assertions, moves any old export still used by another lane into its own `legacy.ts` (design D7), and
 lowers its baseline file. It edits only its `ci/lanes.json` files, its `legacy.ts`, its baseline and its exception file.
-A lane that adds a file to the engine's closure or drops one (change `engine-boundary`; B2's `legacy.ts` is one) also updates
-`ci/engine-files.json`, and `src/recap/application/engine.ts` belongs to B3.
+The 89 files of key `engine` in `ci/engine-files.json` are lane `ENG` in `ci/lanes.json`. No B lane edits them. They get their
+domain types inside `packages/session-ledger` after they move there (roadmap track ENG). A lane that needs another signature from
+an engine file wraps it in its own `legacy.ts`. The 6 files of lane `STO` (`src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`
+and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the `src/recap/render/` files listed in
+`ci/lanes-generate.ts`) are carved out the same way: they get their domain types in `packages/session-ledger-sqlite` and
+`packages/recap-view` (roadmap tracks STO and VIEW).
 
-- [ ] 4.1 B1 `src/protocol/`, `src/ports/`. Verify: B1's baseline holds only `legacy` counts.
-- [ ] 4.2 B2 `src/recap/domain/` (gates included), including the throwing constructors of `ids.ts`, whose wrappers move to
+- [ ] 4.1 B1 `src/protocol/`, `src/ports/`, except the files of lane `ENG`. Verify: B1's baseline holds only `legacy` counts.
+- [ ] 4.2 B2 `src/recap/domain/` (gates included), except the files of lane `ENG`, including the throwing constructors of `ids.ts`, whose wrappers move to
       `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts.
-- [ ] 4.3 B3 `src/recap/application/`. Verify: B3's baseline holds only `legacy` counts.
-- [ ] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`. Verify: B4's baseline holds only `legacy` counts.
-- [ ] 4.5 B5 `src/adapters/db/`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
+- [ ] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts.
+- [ ] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`, except the files of lanes `ENG` and `VIEW`. Verify: B4's baseline holds only `legacy` counts.
+- [ ] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
       counts.
 - [ ] 4.6 B6 `src/adapters/` except `db/`. Verify: B6's baseline holds only `legacy` counts.
 - [ ] 4.7 B7 `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/`. Verify: B7's baseline holds only
       `legacy` counts.
 - [ ] 4.8 B8 `src/experiment/`. Verify: B8's baseline holds only `legacy` counts.
+- [ ] 4.9 ENG: the engine files leave the plugin (roadmap step E2b). Verify: `ci/domain-types-baseline/ENG.json` is `{}` or absent.
+- [ ] 4.10 STO and VIEW: their files leave the plugin (roadmap steps P2, P1b-1 and P1b-2). Verify:
+      `ci/domain-types-baseline/STO.json` and `ci/domain-types-baseline/VIEW.json` are `{}` or absent.
 
 ## 5. Phase C: the hard gate (lead)
 
@@ -94,7 +101,8 @@ A lane that adds a file to the engine's closure or drops one (change `engine-bou
       `src/`, no exported function throws `NotAnIdentifierError`, and the test suite passes.
 - [ ] 5.2 Move `recap-one-brand-cast` from `rules/pending/` into `rules/` and delete `ci/domain-types-baseline/`; the check and the
       rule now fail on any finding. Verify: a probe adding one primitive parameter, and one adding `as PaneId`, each fail
-      `ci/lint.sh`.
+      `ci/lint.sh`. If `ENG.json`, `STO.json` or `VIEW.json` still has rows, those files stay; the folder is deleted by the step
+      that empties the last of them.
 - [ ] 5.3 Update the module map and the Context table in design.md to the final state. Verify: every count is zero except the
       listed exceptions.
 

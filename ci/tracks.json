@@ -1,0 +1,140 @@
+{
+  "locked": [
+    "bun.lock",
+    ".gitlab-ci.yml",
+    "ci/tracks.json",
+    "tab-recap/test/fixtures/engine-golden-*.txt"
+  ],
+  "tracks": {
+    "ENG": [
+      "packages/session-ledger/**",
+      "!packages/session-ledger/package.json",
+      "!packages/session-ledger/gates/{graph.sh,depcruise-verdict.ts,rules.sh,rules-bite.sh,verify-bite.sh,domain-types.sh,test.sh,check-boundaries.ts}",
+      "!packages/session-ledger/gates/bin/{check-domain-types.ts,domain-findings.ts,domain-syntax.ts,domain-exceptions.ts,domain-report.ts,domain-baseline.ts,lane-map.ts,result.ts}",
+      { "lane": "ENG" },
+      "tab-recap/src/engine/**",
+      "tab-recap/test/engine-host/**",
+      "tab-recap/test/conformance/**",
+      "tab-recap/test/fixtures/engine-golden-*.txt",
+      "tab-recap/test/{engine-golden,engine-plain-session,engine-files,engine}.test.ts",
+      "tab-recap/ci/engine-files.json",
+      "tab-recap/ci/domain-types-baseline/ENG.json",
+      "tab-recap/ci/domain-types-exceptions/ENG.json",
+      "tab-recap/src/daemon/slots/timing.ts",
+      "tab-recap/rules/graph/engine.cjs",
+      "tab-recap/ci/probes/depcruise/engine-*/**",
+      "tab-recap/ci/gates.d/engine-*.sh",
+      "ci/codemod/moves/ENG-*.tsv"
+    ],
+    "STO": [
+      "packages/session-ledger-sqlite/**",
+      "!packages/session-ledger-sqlite/package.json",
+      "!packages/session-ledger-sqlite/gates/{graph.sh,depcruise-verdict.ts,rules.sh,rules-bite.sh,verify-bite.sh,domain-types.sh,test.sh,check-boundaries.ts}",
+      "!packages/session-ledger-sqlite/gates/bin/{check-domain-types.ts,domain-findings.ts,domain-syntax.ts,domain-exceptions.ts,domain-report.ts,domain-baseline.ts,lane-map.ts,result.ts}",
+      { "lane": "STO" },
+      "tab-recap/ci/domain-types-baseline/STO.json",
+      "tab-recap/ci/domain-types-exceptions/STO.json",
+      "tab-recap/test/store/**",
+      "ci/codemod/moves/STO-*.tsv"
+    ],
+    "VIEW": [
+      "packages/recap-view/**",
+      "!packages/recap-view/package.json",
+      "!packages/recap-view/gates/{graph.sh,depcruise-verdict.ts,rules.sh,rules-bite.sh,verify-bite.sh,domain-types.sh,test.sh,check-boundaries.ts}",
+      "!packages/recap-view/gates/bin/{check-domain-types.ts,domain-findings.ts,domain-syntax.ts,domain-exceptions.ts,domain-report.ts,domain-baseline.ts,lane-map.ts,result.ts}",
+      { "lane": "VIEW" },
+      "tab-recap/ci/domain-types-baseline/VIEW.json",
+      "tab-recap/src/view-model/**",
+      "tab-recap/test/view-model/**",
+      "ci/codemod/moves/VIEW-*.tsv"
+    ],
+    "HOOK": [
+      "tab-recap/src/adapters/hooks/**",
+      "tab-recap/src/daemon/slots/hooks.ts",
+      "tab-recap/bin/commands/hooks.ts",
+      "tab-recap/test/hooks/**",
+      "tab-recap/hooks/**",
+      "tab-recap/rules/hooks-*.yml",
+      "tab-recap/rules/probes/hooks-*/**",
+      "tab-recap/rules/graph/hooks.cjs",
+      "tab-recap/ci/probes/depcruise/hooks-*/**",
+      "tab-recap/ci/gates.d/hooks-*.sh"
+    ],
+    "PANE": [
+      "tab-recap/src/pane/**",
+      "tab-recap/src/daemon/view/**",
+      "tab-recap/src/daemon/slots/{view,roll}.ts",
+      "tab-recap/bin/commands/pane.ts",
+      "tab-recap/test/pane/**",
+      "tab-recap/rules/pane-*.yml",
+      "tab-recap/rules/probes/pane-*/**",
+      "tab-recap/rules/graph/{pane,daemon-lazy}.cjs",
+      "tab-recap/ci/probes/depcruise/pane-*/**",
+      "tab-recap/ci/gates.d/pane-*.sh",
+      "ci/baselines/memory.{md,json}"
+    ],
+    "UP": [],
+    "HOST": [
+      "agent-sdk/**",
+      "desktop/**",
+      "tab-recap/test/host/**",
+      "ci/codemod/moves/HOST-*.tsv"
+    ],
+    "CI": [
+      ".github/**",
+      "ci/**",
+      "!ci/tracks.json",
+      "!ci/check-track.ts",
+      "!ci/codemod/**",
+      "!ci/baselines/**",
+      "!ci/test/{check-track,relocate,gates-in-sync,pipeline-rules,baselines}.test.ts",
+      "tab-recap/ci/**",
+      "!tab-recap/ci/{lanes.json,lanes-generate.ts,check-lane.ts,engine-files.json}",
+      "!tab-recap/ci/domain-types-*/**",
+      "tab-recap/gates/**",
+      "tab-recap/test/release.test.ts"
+    ],
+    "PHB": [
+      "openspec/changes/domain-type-gates/**",
+      "openspec/specs/tab-recap/code-gates/**"
+    ],
+    "SW": [
+      "tab-recap/herdr-plugin.toml",
+      "tab-recap/config.example.env",
+      "tab-recap/docs/**",
+      "tab-recap/README.md",
+      "tab-recap/GUIDE.md"
+    ],
+    "FND": [
+      "ci/tracks.json",
+      "ci/check-track.ts",
+      "ci/codemod/relocate.ts",
+      "ci/baselines/foundation.json",
+      "packages/*/package.json",
+      "packages/*/gates/{graph.sh,depcruise-verdict.ts,rules.sh,rules-bite.sh,verify-bite.sh,domain-types.sh,test.sh,check-boundaries.ts}",
+      "packages/*/gates/bin/{check-domain-types.ts,domain-findings.ts,domain-syntax.ts,domain-exceptions.ts,domain-report.ts,domain-baseline.ts,lane-map.ts,result.ts}",
+      "tab-recap/src/daemon/{slots,slot-table}.ts",
+      "tab-recap/test/{daemon-slots,command-table}.test.ts",
+      "tab-recap/bin/command-table.ts",
+      "tab-recap/.dependency-cruiser.cjs",
+      "tab-recap/rules/graph/workspace.cjs",
+      "tab-recap/ci/{lanes-generate.ts,check-lane.ts}",
+      "tab-recap/src/wire/**",
+      "tab-recap/test/contracts/**",
+      "tab-recap/ci/domain-types-exceptions/FND.json",
+      { "lane": "lead" }
+    ]
+  },
+  "shared": {
+    "tab-recap/CONTEXT.md": ["ENG", "HOOK", "PANE"],
+    "tab-recap/src/daemon/slots/hooks.ts": ["HOOK", "SW"],
+    "tab-recap/src/daemon/slots/view.ts": ["PANE", "SW"],
+    "tab-recap/src/daemon/slots/roll.ts": ["PANE", "SW"],
+    "tab-recap/src/daemon/slots/timing.ts": ["ENG", "SW"],
+    "tab-recap/test/conformance/pending-{REC,FCT}.json": ["ENG", "STO"],
+    "tab-recap/src/engine/**": ["ENG", "FND"],
+    "tab-recap/ci/{lint.sh,test.sh}": ["CI", "FND"],
+    "tab-recap/ci/gates.d/00-packages.sh": ["CI", "FND"]
+  },
+  "open": ["tab-recap/test/**"]
+}

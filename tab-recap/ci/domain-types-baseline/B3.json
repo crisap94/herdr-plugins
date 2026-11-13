@@ -1,12 +1,4 @@
 {
-  "src/recap/application/anchor-source.ts": {
-    "return": 1
-  },
-  "src/recap/application/ask-back.ts": {
-    "parameter": 1,
-    "return": 3,
-    "property": 3
-  },
   "src/recap/application/ask-restart.ts": {
     "parameter": 2,
     "return": 4,
@@ -35,19 +27,11 @@
     "container": 2,
     "property": 8
   },
-  "src/recap/application/boundaries.ts": {
-    "parameter": 2
-  },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
     "return": 1,
     "container": 8,
     "property": 7
-  },
-  "src/recap/application/chunking.ts": {
-    "parameter": 2,
-    "return": 3,
-    "property": 5
   },
   "src/recap/application/compact-keys.ts": {
     "parameter": 3
@@ -120,11 +104,6 @@
     "container": 4,
     "property": 19
   },
-  "src/recap/application/correction-input.ts": {
-    "parameter": 6,
-    "return": 8,
-    "container": 2
-  },
   "src/recap/application/counted-writer.ts": {
     "parameter": 1,
     "property": 1
@@ -138,12 +117,6 @@
     "return": 1,
     "container": 6,
     "property": 4
-  },
-  "src/recap/application/curator-input.ts": {
-    "parameter": 4,
-    "return": 5,
-    "container": 2,
-    "property": 10
   },
   "src/recap/application/decode.ts": {
     "parameter": 4,
@@ -165,22 +138,6 @@
     "return": 1,
     "container": 2,
     "property": 2
-  },
-  "src/recap/application/enumerate-answer.ts": {
-    "parameter": 8,
-    "return": 6,
-    "container": 8,
-    "property": 8,
-    "assertion": 1
-  },
-  "src/recap/application/enumerate-input.ts": {
-    "parameter": 1,
-    "return": 5,
-    "property": 11
-  },
-  "src/recap/application/enumerate.ts": {
-    "parameter": 2,
-    "property": 12
   },
   "src/recap/application/eval-label.ts": {
     "parameter": 13,
@@ -216,19 +173,6 @@
     "parameter": 7,
     "return": 3,
     "property": 3
-  },
-  "src/recap/application/extract-ground.ts": {
-    "parameter": 1,
-    "property": 3
-  },
-  "src/recap/application/extract-job.ts": {
-    "parameter": 8,
-    "return": 1,
-    "container": 2,
-    "property": 7
-  },
-  "src/recap/application/extract-pipeline.ts": {
-    "parameter": 3
   },
   "src/recap/application/freshness-block.ts": {
     "container": 1,
@@ -279,10 +223,6 @@
     "return": 2,
     "container": 1,
     "property": 2
-  },
-  "src/recap/application/hidden-codec.ts": {
-    "parameter": 1,
-    "return": 2
   },
   "src/recap/application/informer.ts": {
     "parameter": 5,
@@ -345,9 +285,6 @@
     "parameter": 1,
     "property": 1
   },
-  "src/recap/application/lane-hints.ts": {
-    "container": 1
-  },
   "src/recap/application/lane-recent.ts": {
     "parameter": 1,
     "container": 2
@@ -363,63 +300,12 @@
     "return": 1,
     "container": 2
   },
-  "src/recap/application/ledger-input.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 3,
-    "property": 1
-  },
-  "src/recap/application/ledger-reconcile.ts": {
-    "parameter": 9,
-    "return": 6,
-    "container": 8,
-    "property": 15
-  },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
     "return": 1,
     "container": 1
   },
-  "src/recap/application/local-time.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1,
-    "assertion": 1
-  },
-  "src/recap/application/ops-answer.ts": {
-    "parameter": 7,
-    "return": 11,
-    "container": 17,
-    "property": 5,
-    "assertion": 2
-  },
-  "src/recap/application/ops-gating.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 10,
-    "property": 6,
-    "assertion": 4
-  },
-  "src/recap/application/recap-input.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 3
-  },
-  "src/recap/application/recap-job.ts": {
-    "parameter": 8,
-    "return": 9,
-    "container": 3,
-    "property": 14
-  },
-  "src/recap/application/recap-shape.ts": {
-    "parameter": 4,
-    "return": 4,
-    "property": 1
-  },
   "src/recap/application/recap-wait.ts": {
-    "parameter": 1
-  },
-  "src/recap/application/reconcile.ts": {
     "parameter": 1
   },
   "src/recap/application/replay-judge.ts": {
@@ -477,11 +363,6 @@
   "src/recap/application/transcript-tail.ts": {
     "return": 1
   },
-  "src/recap/application/triggers.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 5
-  },
   "src/recap/application/typing-lease.ts": {
     "parameter": 6,
     "return": 1
@@ -490,27 +371,5 @@
     "return": 1,
     "container": 1,
     "property": 1
-  },
-  "src/recap/application/writer-candidates.ts": {
-    "return": 1
-  },
-  "src/recap/application/writer-clip.ts": {
-    "parameter": 4,
-    "property": 2
-  },
-  "src/recap/application/writer-context.ts": {
-    "parameter": 5,
-    "return": 9
-  },
-  "src/recap/application/writer-transcript.ts": {
-    "parameter": 4,
-    "return": 4,
-    "container": 2,
-    "property": 6
-  },
-  "src/recap/application/xml.ts": {
-    "parameter": 8,
-    "return": 7,
-    "container": 6
   }
 }

@@ -25,10 +25,6 @@
     "return": 2,
     "property": 4
   },
-  "src/ports/capability-reasons.ts": {
-    "parameter": 11,
-    "return": 14
-  },
   "src/ports/capability.ts": {
     "parameter": 2
   },
@@ -54,18 +50,10 @@
   "src/ports/context-windows.ts": {
     "parameter": 1
   },
-  "src/ports/curators.ts": {
-    "parameter": 1,
-    "property": 2
-  },
   "src/ports/decider.ts": {
     "parameter": 1,
     "container": 3,
     "property": 12
-  },
-  "src/ports/enumerators.ts": {
-    "parameter": 1,
-    "property": 4
   },
   "src/ports/extension.ts": {
     "return": 1,
@@ -104,10 +92,6 @@
     "parameter": 1,
     "property": 6
   },
-  "src/ports/lane-repo.ts": {
-    "parameter": 1,
-    "property": 3
-  },
   "src/ports/lane-settling.ts": {
     "parameter": 3,
     "property": 1
@@ -115,11 +99,6 @@
   "src/ports/lane-tokens.ts": {
     "parameter": 2,
     "container": 1
-  },
-  "src/ports/ledger.ts": {
-    "parameter": 4,
-    "container": 1,
-    "property": 7
   },
   "src/ports/model-catalogue.ts": {
     "parameter": 1,
@@ -136,15 +115,6 @@
     "parameter": 3,
     "container": 1,
     "property": 8
-  },
-  "src/ports/recap-input.ts": {
-    "container": 2,
-    "property": 31
-  },
-  "src/ports/recap-records.ts": {
-    "parameter": 6,
-    "return": 1,
-    "property": 27
   },
   "src/ports/requests.ts": {
     "parameter": 4,
@@ -175,36 +145,10 @@
     "container": 3,
     "property": 2
   },
-  "src/ports/stories.ts": {
-    "parameter": 3,
-    "property": 5
-  },
-  "src/ports/summarizer.ts": {
-    "container": 2,
-    "property": 10
-  },
   "src/ports/tab-views.ts": {
     "parameter": 2,
     "return": 1,
     "property": 12
-  },
-  "src/ports/transcript-registry.ts": {
-    "parameter": 5,
-    "return": 3,
-    "container": 2
-  },
-  "src/ports/transcript-source.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/ports/transcripts.ts": {
-    "parameter": 8,
-    "property": 19
-  },
-  "src/ports/unknowable.ts": {
-    "parameter": 1,
-    "return": 1,
-    "property": 6
   },
   "src/ports/verdicts.ts": {
     "parameter": 2,

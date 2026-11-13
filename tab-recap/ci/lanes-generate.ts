@@ -2,10 +2,11 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const LANES = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'] as const;
-const TEST_PRIORITY = ['B2', 'B1', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'] as const;
+const CARVED = ['ENG', 'STO', 'VIEW'] as const;
+const TEST_PRIORITY = ['B2', 'B1', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'ENG', 'STO', 'VIEW'] as const;
 const LEAD = 'lead';
 
-type Lane = typeof LANES[number] | typeof LEAD;
+type Lane = typeof LANES[number] | typeof CARVED[number] | typeof LEAD;
 
 const ROOT = new URL('../', import.meta.url).pathname;
 
@@ -27,6 +28,67 @@ const FOLDER_LANES: readonly (readonly [string, Lane])[] = [
     ['src/experiment/', 'B8'],
 ];
 
+const STO_FILES: readonly string[] = [
+    'src/adapters/db/backup.ts',
+    'src/adapters/db/connection.ts',
+    'src/adapters/db/migrate.ts',
+    'src/adapters/db/open.ts',
+    'src/adapters/db/rebuild.ts',
+    'src/adapters/db/schema/migration.ts',
+];
+
+const VIEW_FILES: readonly string[] = [
+    'src/recap/render/compaction-stage.ts',
+    'src/recap/render/expanded-regions.ts',
+    'src/recap/render/expanded.ts',
+    'src/recap/render/groups.ts',
+    'src/recap/render/hyperlink.ts',
+    'src/recap/render/linked.ts',
+    'src/recap/render/links.ts',
+    'src/recap/render/present.ts',
+    'src/recap/render/session-lines.ts',
+    'src/recap/render/timeline-breaks.ts',
+    'src/recap/render/timeline.ts',
+    'src/recap/render/wrap.ts',
+];
+
+const TRACK_PREFIXES: readonly string[] = [
+    'src/engine/',
+    'test/engine-host/',
+    'test/conformance/',
+    'src/wire/',
+    'test/contracts/',
+    'src/adapters/hooks/',
+    'test/hooks/',
+    'src/pane/',
+    'src/daemon/view/',
+    'test/pane/',
+    'src/view-model/',
+    'test/view-model/',
+    'test/store/',
+    'test/host/',
+    'src/daemon/slots/',
+    'src/daemon/slots.ts',
+    'src/daemon/slot-table.ts',
+    'test/daemon-slots.test.ts',
+    'test/command-table.test.ts',
+];
+
+const ENGINE_MANIFEST = join(ROOT, 'ci/engine-files.json');
+
+function engineFiles(): readonly string[] {
+    if (!existsSync(ENGINE_MANIFEST)) return [];
+    const parsed: unknown = JSON.parse(readFileSync(ENGINE_MANIFEST, 'utf8'));
+    if (typeof parsed !== 'object' || parsed === null || !('engine' in parsed) || !Array.isArray(parsed.engine)) return [];
+    return parsed.engine.filter((file): file is string => typeof file === 'string');
+}
+
+const CARVED_FILES: readonly (readonly [ReadonlySet<string>, Lane])[] = [
+    [new Set(engineFiles()), 'ENG'],
+    [new Set(STO_FILES), 'STO'],
+    [new Set(VIEW_FILES), 'VIEW'],
+];
+
 const SKIP_LIST = process.env['LANES_SKIP_LIST'] ?? join(ROOT, 'ci/atalaya-files.txt');
 const REPOSITORY_PREFIX = 'tab-recap/';
 
@@ -35,7 +97,7 @@ function skippedPaths(): readonly string[] {
     return readFileSync(SKIP_LIST, 'utf8').split('\n').map((line) => line.trim()).filter((line) => line !== '' && !line.startsWith('#') && line.startsWith(REPOSITORY_PREFIX)).map((line) => line.slice(REPOSITORY_PREFIX.length));
 }
 
-const SKIPPED = skippedPaths();
+const SKIPPED = [...TRACK_PREFIXES, ...skippedPaths()];
 
 function skipped(file: string): boolean {
     return SKIPPED.some((path) => (path.endsWith('/') ? file.startsWith(path) : file === path));
@@ -58,6 +120,8 @@ function filesUnder(folder: string): readonly string[] {
 }
 
 function laneOfSource(file: string): Lane {
+    const carved = CARVED_FILES.find(([files]) => files.has(file));
+    if (carved !== undefined) return carved[1];
     const found = FOLDER_LANES.find(([prefix]) => file.startsWith(prefix));
     return found === undefined ? LEAD : found[1];
 }
@@ -91,7 +155,7 @@ function build(): Readonly<Record<Lane, readonly string[]>> {
         sourceByBasename.set(stem, file);
     }
     for (const stem of duplicated) sourceByBasename.delete(stem);
-    const lanes: Record<Lane, string[]> = { B1: [], B2: [], B3: [], B4: [], B5: [], B6: [], B7: [], B8: [], lead: [] };
+    const lanes: Record<Lane, string[]> = { B1: [], B2: [], B3: [], B4: [], B5: [], B6: [], B7: [], B8: [], ENG: [], STO: [], VIEW: [], lead: [] };
     for (const file of sources) lanes[laneOfSource(file)].push(file);
     for (const file of filesUnder('test')) lanes[laneOfTest(file, sourceByBasename)].push(file);
     for (const lane of Object.keys(lanes) as Lane[]) lanes[lane].sort();
@@ -121,7 +185,7 @@ function problems(current: string): readonly string[] {
 }
 
 function withoutSkipped(text: string): string {
-    if (SKIPPED.length === 0) return text;
+    if (!listed(text).some(skipped)) return text;
     const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== 'object' || parsed === null || !('lanes' in parsed) || typeof parsed.lanes !== 'object' || parsed.lanes === null) return text;
     const lanes = Object.fromEntries(Object.entries(parsed.lanes).map(([lane, files]: [string, unknown]) => [lane, Array.isArray(files) ? files.filter((file) => typeof file !== 'string' || !skipped(file)) : files]));
