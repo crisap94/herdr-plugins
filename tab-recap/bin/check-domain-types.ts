@@ -261,7 +261,7 @@ const check = (configPath: string): Result<Report, string> => {
     if (sources.length === 0) {
         return err(`no file under src/ in ${configPath}`);
     }
-    const brands = program.getSourceFiles().filter((file) => [BRAND_FILE, PACKAGE_BRAND_FILE].includes(relative(root, file.fileName)));
+    const brands = program.getSourceFiles().filter((file) => relative(root, file.fileName) === BRAND_FILE || file.fileName.endsWith(`/${PACKAGE_BRAND_FILE}`));
     const scan: Scan = { checker, root, markers: markersOf(checker, brands), findings: [], declared: new Set(), queue: [] };
     sources.forEach((file) => scanFile(scan, file));
     for (let holder = scan.queue.pop(); holder !== undefined; holder = scan.queue.pop()) {
