@@ -145,8 +145,8 @@ output type has no field for them. The switch is experimental for that reason, a
 `@anthropic-ai/claude-agent-sdk` is a devDependency pinned to `0.3.311` exactly (the repository pins exactly), and a peer dependency
 `^0.3.311` for the program that uses the host. The host imports its hook types with `import type` only, so nothing from the SDK is
 loaded at run time. The install uses `--omit=optional`, so the bundled Claude Code binary is not downloaded: the types do not need it.
-The SDK's own peer dependencies (`zod`, `@anthropic-ai/sdk`, `@modelcontextprotocol/sdk`) are not installed here, and the type check
-does not need them; the installed types were checked against the facts in the Context table, and the differences are listed there.
+The install also brings the SDK's peer dependencies (`zod`, `@anthropic-ai/sdk`, `@modelcontextprotocol/sdk`) into `node_modules`; the
+type check does not load them. The installed types were checked against the facts in the Context table, and the differences are listed there.
 
 ## Risks
 

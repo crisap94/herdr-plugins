@@ -1,0 +1,33 @@
+id: sdk-host-boundary
+language: typescript
+severity: error
+message: >-
+  This host reaches tab-recap only through the engine facade, its domain and ports, and the claude-code host's shared
+  modules. Never a tab-recap adapter, a claude-code entry point or script.
+note: >-
+  Allowed under tab-recap/src/: recap/application/engine.ts, recap/domain/, ports/. Allowed under claude-code/src/:
+  compose, hook, lock, payload, read, runner, runner-plugs, sessions. Allowed under claude-code/test/support/.
+files:
+  - "**/src/**"
+  - "**/test/**"
+  - "**/examples/**"
+  - "**/scripts/**"
+  - "**/probes/sdk-host-boundary/**"
+rule:
+  all:
+    - any:
+        - kind: import_statement
+        - kind: export_statement
+        - kind: call_expression
+          has:
+            field: function
+            kind: import
+    - has:
+        kind: string
+        regex: "(tab-recap|claude-code)/"
+        stopBy: end
+    - not:
+        has:
+          kind: string
+          regex: "(tab-recap/src/(recap/application/engine\\.ts|recap/domain/[^./][^/]*\\.ts|ports/[^./][^/]*\\.ts)|claude-code/src/(compose|hook|lock|payload|read|runner|runner-plugs|sessions)\\.ts|claude-code/test/support/[^./][^/]*\\.ts)['\"]$"
+          stopBy: end
