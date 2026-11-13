@@ -5,7 +5,7 @@ Every group ends with the plugin gates passing (`bash ci/lint.sh` and `bash ci/t
 
 ## 1. Change and vocabulary
 
-- [ ] 1.1 This change (proposal, design, tasks, `specs/tab-recap/engine-boundary/spec.md`) and the `CONTEXT.md` rows **Engine**,
+- [x] 1.1 This change (proposal, design, tasks, `specs/tab-recap/engine-boundary/spec.md`) and the `CONTEXT.md` rows **Engine**,
       **Scope**, **Followed session** and the engine's sense of **Host**, before any code. Verify: `openspec validate engine-boundary
       --strict` passes and the vocabulary step of `ci/lint.sh` passes.
 - [x] 1.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
@@ -73,7 +73,7 @@ Every group ends with the plugin gates passing (`bash ci/lint.sh` and `bash ci/t
 
 ## 10. Archive
 
-- [ ] 10.1 Once every other task is checked, run `openspec archive engine-boundary` in the same merge request as the last task.
+- [x] 10.1 Once every other task is checked, run `openspec archive engine-boundary` in the same merge request as the last task.
       Verify: `openspec validate --specs --strict` passes and `openspec/specs/tab-recap/engine-boundary/spec.md` exists.
-      Left open with 1.1: the `openspec` CLI is not installed where groups 1 to 9 ran, so neither validate nor archive has run.
-- [ ] 10.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+      Ran with `npx --yes @fission-ai/openspec@1.12.0`, the version the archived changes name.
+- [x] 10.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.

@@ -68,9 +68,10 @@ async function golden(pipeline: Pipeline | undefined): Promise<string> {
 
 function matches(name: string, text: string): void {
     const path = join(import.meta.dirname, 'fixtures', name);
-    if (process.env['UPDATE_GOLDEN'] === '1' || !existsSync(path)) {
+    if (process.env['UPDATE_GOLDEN'] === '1') {
         writeFileSync(path, text);
     }
+    assert.ok(existsSync(path), `the golden fixture ${name} is committed; UPDATE_GOLDEN=1 is the only way to write it`);
     assert.equal(text, readFileSync(path, 'utf8'));
 }
 
