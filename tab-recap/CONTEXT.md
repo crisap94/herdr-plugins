@@ -222,6 +222,18 @@ Facts about a term that a reader needs and that no name or test states.
 ### Gates
 - **Gate `L`** is not a function in `recap/domain/gates/`: it labels the refusals of the ledger's own rules (a second `goal`, an update of a closed fact), found by a dry run of the fold against the facts the document showed. They are reported and sent back in the one retry like a gate's refusal, so everything that would be refused is known before anything is written.
 
+## Hooks
+
+Terms of the hook endpoint under `src/adapters/hooks/`. Only a merge request on a `track/HOOK-…` branch adds to this section.
+
+## Relay pane
+
+Terms of the relay pane under `src/pane/` and of the view server under `src/daemon/view/`. Only a merge request on a `track/PANE-…` branch adds to this section.
+
+## Engine host
+
+Terms of the engine host under `src/engine/`. Only a merge request on a `track/ENG-…` branch adds to this section.
+
 ## Banned synonyms
 
 `summary` → **recap** · `sidebar`, `panel` → **column** · `offset` → **cursor** ·
