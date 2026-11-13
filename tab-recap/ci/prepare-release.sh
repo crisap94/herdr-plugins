@@ -12,7 +12,15 @@ if [ -z "$dry" ]; then
         || { echo "prepare-release: 1 — main has moved since this pipeline started; run it again on the new tip" >&2; exit 1; }
 fi
 
-json="$(GITLAB_TOKEN="$RELEASE_TOKEN" bun tab-recap/ci/next-release.ts --to "$(git rev-parse HEAD)")"
+next_release() { if [ -n "${NEXT_RELEASE:-}" ]; then "$NEXT_RELEASE" "$@"; else bun tab-recap/ci/next-release.ts "$@"; fi; }
+json=""
+for attempt in 1 2 3; do
+    if json="$(GITLAB_TOKEN="$RELEASE_TOKEN" next_release --to "$(git rev-parse HEAD)")"; then break; fi
+    json=""
+    [ "$attempt" -lt 3 ] && sleep "${RELEASE_RETRY_INTERVAL:-10}"
+done
+[ -n "$json" ] \
+    || { echo "prepare-release: 3 — NOT COVERED: could not work out the release (an unlabelled merge request in the range, or the API did not answer after 3 attempts): label it or fix the API, then run the pipeline on main again" >&2; exit 3; }
 version="$(printf '%s' "$json" | field version)"
 previous="$(printf '%s' "$json" | field previous)"
 if [ -z "$version" ]; then
@@ -30,9 +38,12 @@ fi
 section="$(mktemp)"
 trap 'rm -f "$section"' EXIT
 printf '%s' "$json" | field section > "$section"
-bun tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous"
-bash tab-recap/ci/check-version.sh
-bash tab-recap/ci/release-notes.sh tab-recap "$version"
+bun tab-recap/ci/apply-release.ts tab-recap "$version" "$section" "$previous" \
+    || { echo "prepare-release: 3 — NOT COVERED: writing the release $version into the changelog and manifest failed" >&2; exit 3; }
+bash tab-recap/ci/check-version.sh \
+    || { echo "prepare-release: 3 — NOT COVERED: the versions of release $version do not agree" >&2; exit 3; }
+bash tab-recap/ci/release-notes.sh tab-recap "$version" \
+    || { echo "prepare-release: 3 — NOT COVERED: the release notes for $version could not be read back" >&2; exit 3; }
 if [ -n "$dry" ]; then
     git --no-pager diff --stat
     echo "dry run: nothing committed, pushed or opened"

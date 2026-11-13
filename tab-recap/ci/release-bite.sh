@@ -124,6 +124,7 @@ expect fail "an API that does not answer properly" asked 500
 
 cat > "$scratch/curl-fake" <<'SH'
 #!/usr/bin/env bash
+echo "$*" >> "${CURL_ARGV:-/dev/null}"
 out=""; method=GET; url=""; data=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -146,7 +147,7 @@ case "$method $url" in
 esac
 SH
 chmod +x "$scratch/curl-fake"
-export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
+export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CURL_ARGV="$scratch/curl-argv.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
 export CI_PROJECT_PATH=group/project CI_SERVER_HOST=example.invalid RELEASE_TOKEN=bite-token CI_COMMIT_SHA="$(git rev-parse HEAD)"
 git init --quiet --bare "$scratch/remote.git"
 export PUSH_URL="$scratch/remote.git"
@@ -187,9 +188,17 @@ FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelate
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
+[ "$(FAKE_MR_CODE=500 publish > /dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the forge refuses must fail the job (exit 3), not pass as the refusal exit 1" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 : > "$CURL_LOG"
 expect pass "a release published as a merge request" publish
+grep -q bite-token "$scratch/curl-argv.log" && { echo "bite: the release token reached a curl command line" >&2; wrong=$((wrong + 1)); }
+grep -q -- "-H @" "$scratch/curl-argv.log" || { echo "bite: the release API call must send its token from a header file" >&2; wrong=$((wrong + 1)); }
+rm -f "$scratch/git-trace.log"
+env -u PUSH_URL CI_SERVER_HOST=127.0.0.1:1 GIT_TRACE="$scratch/git-trace.log" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1
+grep -q "ls-remote" "$scratch/git-trace.log" || { echo "bite: the remote lookup did not run, so the argv probe proves nothing" >&2; wrong=$((wrong + 1)); }
+grep -q bite-token "$scratch/git-trace.log" && { echo "bite: the release token reached a git command line or URL" >&2; wrong=$((wrong + 1)); }
+printf 'protocol=https\nhost=example.invalid\n\n' | RELEASE_TOKEN=bite-token git -c 'credential.helper=' -c 'credential.helper=!f() { echo username=oauth2; echo "password=$RELEASE_TOKEN"; }; f' credential fill 2>/dev/null | grep -qx 'password=bite-token' || { echo "bite: the git credential helper does not hand the release token to git" >&2; wrong=$((wrong + 1)); }
 [ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release did not push exactly its branch: $(remote_refs)" >&2; wrong=$((wrong + 1)); }
 expect pass "the merge request carries the label land" grep -q "POST .*merge_requests .*labels=land,changelog::internal" "$CURL_LOG"
 expect pass "the merge request is from the release branch to main" grep -q "source_branch=release/demo-v1.1.0 target_branch=main" "$CURL_LOG"
@@ -333,5 +342,30 @@ grep -q -- "--connect-timeout 10 --max-time 30" "$gh/log" || { echo "bite: a Git
 grep -q bite-github-token <<< "$out" && { echo "bite: the token was printed" >&2; wrong=$((wrong + 1)); }
 grep -q bite-github-token "$gh/log" && { echo "bite: the token reached a command line" >&2; wrong=$((wrong + 1)); }
 [ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const rules = y["release:github"].rules; process.exit(rules.length > 0 && rules.every((r) => r.if.includes("$CI_COMMIT_TAG =~ /^tab-recap-v/") && !r.if.includes("CI_COMMIT_REF_PROTECTED")) ? 0 : 1)' "$HERE/../../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: release:github must run on every tab-recap-v tag: on an unprotected one it fails on its missing token, where a protected-only rule would skip the release in silence" >&2; wrong=$((wrong + 1)); }
+
+prep="$scratch/prep"; mkdir -p "$prep/tab-recap/ci" && cd "$prep" || exit 3
+cp "$HERE/prepare-release.sh" tab-recap/ci/prepare-release.sh
+printf 'id = "tab-recap"\nname = "Tab Recap"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > tab-recap/herdr-plugin.toml
+git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
+git add -A && git commit --quiet -m release
+git init --quiet --bare "$scratch/prep-remote.git" && git remote add origin "$scratch/prep-remote.git" && git push --quiet origin main || exit 3
+export RELEASE_RETRY_INTERVAL=0
+prep_next() { printf '%s' "$1" > "$scratch/prep-next.json"; printf '#!/usr/bin/env bash\ncat "%s"\n' "$scratch/prep-next.json" > "$scratch/prep-next"; chmod +x "$scratch/prep-next"; }
+prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash tab-recap/ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
+prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":1}'
+[ "$(prep_exit)" = "0" ] || { echo "bite: after the release merge request lands and is tagged, the push pipeline on main must find no release due (exit 0)" >&2; wrong=$((wrong + 1)); }
+prep_next '{"previous":"tab-recap-v1.0.0","version":"1.1.0","bump":"minor","section":"### [1.1.0] — 2026-11-12","merged":2}'
+[ "$(prep_exit)" = "1" ] || { echo "bite: a release prepared but not yet tagged must refuse to prepare another (exit 1), so the merge request that lands does not loop" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho "no" >&2\nexit 1\n' > "$scratch/prep-broken"; chmod +x "$scratch/prep-broken"
+[ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho x >> "%s"\nexit 1\n' "$scratch/prep-always.count" > "$scratch/prep-always"; chmod +x "$scratch/prep-always"; rm -f "$scratch/prep-always.count"
+[ "$(NEXT_RELEASE="$scratch/prep-always" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] && [ "$(wc -l < "$scratch/prep-always.count" | tr -d ' ')" = "3" ] || { echo "bite: a next-release that keeps failing must be asked 3 times, then end with exit 3" >&2; wrong=$((wrong + 1)); }
+printf '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}' > "$scratch/prep-flaky.json"
+printf '#!/usr/bin/env bash\nn=$(cat "%s" 2>/dev/null || echo 0)\necho $((n + 1)) > "%s"\n[ "$n" -ge 1 ] || exit 1\ncat "%s"\n' "$scratch/prep-flaky.count" "$scratch/prep-flaky.count" "$scratch/prep-flaky.json" > "$scratch/prep-flaky"; chmod +x "$scratch/prep-flaky"; rm -f "$scratch/prep-flaky.count"
+[ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
+[ "$(env -u RELEASE_TOKEN bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
+cd "$repo" || exit 3
 
 [ "$wrong" -eq 0 ]
