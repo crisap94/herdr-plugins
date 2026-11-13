@@ -17,9 +17,9 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 3. Old facts are rewritten until none is left in the old language
 
-- [ ] 3.1 The recap job sends as the previous language the stored language of the first open fact that is not in the recap
+- [x] 3.1 The recap job sends as the previous language the stored language of the first open fact that is not in the recap
       language, and the stored recap's language when there is none.
-- [ ] 3.2 The plugin gates pass.
+- [x] 3.2 The plugin gates pass.
 
 ## 4. Saving a language change rewrites every recap
 

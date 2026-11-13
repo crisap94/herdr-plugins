@@ -231,9 +231,11 @@ export class RecapJob {
         const now = this.deps.clock.now();
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
         const writerView = this.deps.writerView();
-        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now), writerView });
+        const facts = this.factsOf(prior.tab, tasks, now);
+        const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== language.want);
+        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts, writerView });
         const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
-        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
+        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: stale?.language ?? language.was } };
     }
 
     private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
