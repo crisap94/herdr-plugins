@@ -1,0 +1,34 @@
+id: host-engine-boundary
+language: typescript
+severity: error
+message: >-
+  This host reaches tab-recap only through the engine facade, its ports, domain, i18n, the restore and compaction helpers,
+  and the plug adapters (db, git, transcripts, harness, job). Never the daemon, the herdr transport, the column, setup,
+  compact or the protocol.
+note: >-
+  Allowed under tab-recap/src/: recap/application/engine.ts, recap/application/restore-text.ts,
+  recap/application/compaction-brief.ts, recap/application/compaction-message.ts, recap/render/restore-markdown.ts,
+  recap/domain/, ports/, i18n/, adapters/db/, adapters/git/, adapters/transcripts/, adapters/harness/, adapters/job/.
+files:
+  - "**/src/**"
+  - "**/test/**"
+  - "**/scripts/**"
+  - "**/probes/host-engine-boundary/**"
+rule:
+  all:
+    - any:
+        - kind: import_statement
+        - kind: export_statement
+        - kind: call_expression
+          has:
+            field: function
+            kind: import
+    - has:
+        kind: string
+        regex: "tab-recap/src/"
+        stopBy: end
+    - not:
+        has:
+          kind: string
+          regex: "tab-recap/src/(recap/application/(engine|restore-text|compaction-brief|compaction-message)\\.ts|recap/render/restore-markdown\\.ts|recap/domain/[^./][^/]*\\.ts|ports/[^./][^/]*\\.ts|i18n/[^./][^/]*\\.ts|adapters/(db|git|transcripts|harness|job)/[^.][^']*)['\"]$"
+          stopBy: end
