@@ -129,7 +129,7 @@ Settings live in `config.env` in the plugin's config folder, printed by `herdr p
 (by default `~/.config/herdr/plugins/config/tab-recap/config.env`). [`config.example.env`](config.example.env) lists
 every setting with its default.
 
-Environment variables win over the file. The file is re-read on every recap. Settings marked *(restart)* in the
+Environment variables win over the file, except for `TAB_RECAP_LOCALE` and `TAB_RECAP_RECAP_LANG`: for these two the file, which the settings modal writes, wins. The file is re-read on every recap. Settings marked *(restart)* in the
 example take effect after the daemon restarts.
 
 | setting | default | what it does |

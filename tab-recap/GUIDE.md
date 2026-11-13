@@ -326,7 +326,7 @@ herdr plugin config-dir tab-recap
 
 Copy [`config.example.env`](config.example.env) there and edit. It is re-read on every
 recap, so no restart is needed (except for the keys marked *restart* in the example). Environment
-variables win over the file. The ones people change:
+variables win over the file, except for the two language keys, where the file (what the settings modal writes) wins. The ones people change:
 
 | key | default | what it does |
 | --- | --- | --- |

@@ -94,7 +94,7 @@ test('the five launchers share one shape: plain JavaScript, no static import of 
 });
 
 test('a real launcher on this Bun loads its entry', () => {
-    const done = spawnSync(process.execPath, [join(ROOT, 'bin', 'tab-recap.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, TAB_RECAP_LOCALE: 'en' } });
+    const done = spawnSync(process.execPath, [join(ROOT, 'bin', 'tab-recap.mjs'), '--help'], { encoding: 'utf8', env: { ...process.env, HERDR_PLUGIN_CONFIG_DIR: join(tmpdir(), 'tab-recap-no-config'), TAB_RECAP_LOCALE: 'en' } });
     assert.equal(done.status, 0, done.stderr);
     assert.match(done.stdout, /USAGE: tab-recap /);
 });

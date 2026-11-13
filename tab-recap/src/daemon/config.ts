@@ -159,12 +159,12 @@ function readFile(): ReadonlyMap<string, string> {
 }
 
 export function configGetter(): (key: string) => string | undefined {
-    return (key: string): string | undefined => given(key) ?? readFile().get(key);
+    return (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? readFile().get(key) ?? given(key) : given(key) ?? readFile().get(key));
 }
 
 export function loadConfig(): Config {
     const file = readFile();
-    const get = (key: string): string | undefined => given(key) ?? file.get(key);
+    const get = (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? file.get(key) ?? given(key) : given(key) ?? file.get(key));
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
     const writerViewSettings = prunedWriterView(keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)), nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)));

@@ -31,7 +31,7 @@ test('the modal draws the expanded view; r asks for a recap, q and Esc close it'
             let output = '';
             const child = spawn('script', ['-qec', `stty cols 100 rows 12; exec ${process.execPath} ${entry}`, '/dev/null'], {
                 stdio: ['pipe', 'pipe', 'ignore'],
-                env: { ...process.env, TAB_RECAP_MODE: 'modal', TAB_RECAP_TAB: 'w1:t1', TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', HERDR_ENV: '', HERDR_SOCKET_PATH: join(dir, 'none.sock') },
+                env: { ...process.env, TAB_RECAP_MODE: 'modal', TAB_RECAP_TAB: 'w1:t1', TAB_RECAP_STATE: state, HERDR_PLUGIN_CONFIG_DIR: state, TAB_RECAP_LOCALE: 'en', HERDR_ENV: '', HERDR_SOCKET_PATH: join(dir, 'none.sock') },
             });
             children.push(child);
             child.stdout.setEncoding('utf8').on('data', (chunk: string) => { output += chunk; });

@@ -29,9 +29,9 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 5. The settings file wins for the language keys
 
-- [ ] 5.1 `loadConfig` and `configGetter` read `TAB_RECAP_LOCALE` and `TAB_RECAP_RECAP_LANG` from the file first; the modal does not
+- [x] 5.1 `loadConfig` and `configGetter` read `TAB_RECAP_LOCALE` and `TAB_RECAP_RECAP_LANG` from the file first; the modal does not
       lock those rows; the README, the guide and `config.example.env` say so.
-- [ ] 5.2 The plugin gates pass.
+- [x] 5.2 The plugin gates pass.
 
 ## 6. Status names the recap language and its source
 

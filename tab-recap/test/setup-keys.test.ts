@@ -77,12 +77,13 @@ test('interface language: auto · en · es; recap language: ui · en · es · fr
 
 test('a row an environment variable overrides is read-only and says which variable', () => {
     const locks = locksOf({ TAB_RECAP_WORDS: '300', TAB_RECAP_MODEL_CODEX: 'x', TAB_RECAP_LOCALE: 'es', TAB_RECAP_BACKEND: '' });
-    assert.deepEqual(locks, { model: 'TAB_RECAP_MODEL_CODEX', locale: 'TAB_RECAP_LOCALE' }, 'the retired TAB_RECAP_WORDS locks nothing');
+    assert.deepEqual(locks, { model: 'TAB_RECAP_MODEL_CODEX' }, 'the retired TAB_RECAP_WORDS locks nothing, and the language keys never lock: the settings file wins over the environment for them');
     const locked = typed(start(locks), ['l', '\r']).state;
     assert.equal(locked.editing, null);
     assert.equal(locked.note, 'locked');
-    const forced = { ...start(locks), draft: { ...draft, locale: 'en' as const, models: { ...draft.models, codex: 'other' } } };
+    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: 'other' } } };
     assert.equal(changes(forced).size, 0, 'a locked row is never written');
+assert.deepEqual(locksOf({ TAB_RECAP_LOCALE: 'es', TAB_RECAP_RECAP_LANG: 'es' }), {});
 });
 
 test('t starts one test with the draft; a second t while it runs does nothing; the result comes back', () => {

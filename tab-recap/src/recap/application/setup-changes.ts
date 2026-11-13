@@ -10,8 +10,8 @@ import { FIELDS } from './setup-state.ts';
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
     model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), ...LEGACY_MODEL_KEYS],
-    locale: ['TAB_RECAP_LOCALE'],
-    recapLanguage: ['TAB_RECAP_RECAP_LANG'],
+    locale: [],
+    recapLanguage: [],
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
     gitNote: ['TAB_RECAP_GIT_NOTE'],
     telemetryTags: ['TAB_RECAP_TELEMETRY_TAGS'],
