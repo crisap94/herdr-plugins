@@ -1,10 +1,6 @@
 name: release
 
-# A tag `<plugin>-v<x.y.z>` becomes a GitHub release whose notes are that version's CHANGELOG section.
-# Run it by hand (Actions → release → Run workflow) to (re)publish the release of an existing tag.
 on:
-  push:
-    tags: ['*-v*']
   workflow_dispatch:
     inputs:
       tag:

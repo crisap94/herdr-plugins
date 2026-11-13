@@ -38,6 +38,10 @@ The upstream repository is the source of truth; this GitHub repository is a **pu
 are welcome too, but the maintainer applies them upstream and they arrive back through the mirror;
 your PR is then closed with a link to the commit (your authorship is kept).
 
+Tags are mirrored too. The GitHub releases of the plugins are published by GitLab's `release:github`
+job from the tag pipeline, not by GitHub. The GitHub workflow `release` is a manual fallback: run it
+by hand with an existing tag if that job failed.
+
 ## Bug reports
 
 Please include:

@@ -160,8 +160,20 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
 3. The tag pipeline does the rest: `ci/check-release.sh` (name, annotated tag, commit on `main`,
    version above the previous one, the three versions equal, a dated and non-empty changelog section
    with its link, a manifest whose command files exist, no release for the tag yet), then the
-   release is created from that section. The mirror carries the tag to GitHub, whose workflow tests
-   it on Linux and macOS and creates the GitHub release from the same section.
+   release is created from that section. The job `release:github` waits until the mirror has carried
+   the tag to GitHub, then creates the GitHub release from the same section. It needs two CI
+   variables: `GITHUB_RELEASE_TOKEN` (masked and protected; a fine-grained GitHub token with
+   Contents read and write on one repository) and `GITHUB_REPO` (`owner/name`). The GitHub workflow
+   `release` no longer runs on tag push; it is a manual fallback (Run workflow, with an existing tag).
+   `release:github` runs on every `tab-recap-v*` tag. Its token is a protected variable, so the tag
+   pattern `tab-recap-v*` must be protected in GitLab (Settings > Repository > Protected tags): on an
+   unprotected tag the job has no token and fails with exit 3, it does not skip.
+   A tag made before this job existed has no `release:github` in its own `.gitlab-ci.yml`: GitLab
+   reads the pipeline config at the tag, so retrying or re-running its pipeline cannot add the job.
+   `tab-recap-v3.0.0` and `tab-recap-v3.0.1` are such tags: publish each by running
+   `ci/github-release.sh <tag> <notes-file>` by hand (the notes from `ci/release-notes.sh`), since the
+   manual GitHub `release` workflow tests on macOS first and cannot publish while that check is red.
+   Tags from this change on are published by `release:github`.
 
 `[Unreleased]` in the changelog stays empty: entries are written only by `release:prepare`
 (a hand-written entry makes it stop). To preview a release, run `bash tab-recap/ci/next-release.sh`
