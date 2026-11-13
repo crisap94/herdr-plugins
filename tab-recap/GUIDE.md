@@ -297,8 +297,8 @@ reason, a link resolves, a *needs* is something you can answer). The writer is a
 rubric says, and plain-code **gates** enforce the mechanical parts on every answer, with no model call: a
 fact about the agent instead of the work, a decision without a reason, a duplicate of a fact already in the
 ledger or a fact that does not quote its source (every new fact carries an *anchor*, a short quote from the turn
-it comes from) is sent back once, alone, and what is still refused is dropped; a link that does not resolve or
-a line in the wrong language is only flagged and kept. A
+it comes from) is sent back once, alone, and what is still refused is dropped; a line in the wrong language goes back the same way, and
+a link that does not resolve is only flagged and kept. A
 **judge** job (`tab-recap eval`) scores sampled runs against the rubric, one line of critique per failure,
 and tests whether the facts alone answer six questions (the goal, what finished, what waits on you, what
 must not be done, why a decision was made, what is next). `eval --label` and `eval --agree` check the judge

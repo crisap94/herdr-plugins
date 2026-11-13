@@ -437,9 +437,9 @@ edit a check in the file and both carry the new wording.
 **Gates.** Before a recap is stored every operation passes plain-code rules, no model involved. Only what would corrupt the ledger is
 **refused**: a fact whose subject is an agent (`claude completed the research…`), a decision that gives no reason, an add that repeats
 another fact of the task (word overlap of 0.6 or more), an operation on an id the ledger does not hold, a close without a reason,
-an add whose anchor is missing or not in the input, and a close as `answered` of anything that is not a question (a *needs* fact).
+an add whose anchor is missing or not in the input, a close as `answered` of anything that is not a question (a *needs* fact), and an add or update in the wrong language (English in a Spanish recap, Spanish in an English one).
 Facts that only look wrong are **flagged** and kept, so recall is not lost to a matter of form: a link that is not a reference
-(`!n`, `#n`, a SHA, a path, a URL, `name/with-slash`; it is drawn without a hyperlink), a fact in the wrong language, one that names
+(`!n`, `#n`, a SHA, a path, a URL, `name/with-slash`; it is drawn without a hyperlink), one that names
 nothing concrete and one that opens with a pronoun. The refused operations go back to the writer **once**, alone: a short
 `<correction_input>` (see [`schema/correction-input.dtd`](../schema/correction-input.dtd)) holds each of them with the rule that
 refused it and the facts it names — not the transcript — and the writer answers replacements for those only; what is still refused

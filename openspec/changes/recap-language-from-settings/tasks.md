@@ -11,9 +11,9 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 2. A fact in the wrong language is sent back
 
-- [ ] 2.1 G5 (`tab-recap/src/recap/domain/gates/language.ts`) refuses instead of flagging; the gate tests, `CONTEXT.md`,
+- [x] 2.1 G5 (`tab-recap/src/recap/domain/gates/language.ts`) refuses instead of flagging; the gate tests, `CONTEXT.md`,
       `docs/REFERENCE.md` and `GUIDE.md` say so.
-- [ ] 2.2 The plugin gates pass.
+- [x] 2.2 The plugin gates pass.
 
 ## 3. Old facts are rewritten until none is left in the old language
 

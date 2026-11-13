@@ -70,11 +70,11 @@ test('G4 link: the rubric\'s S-links fail is flagged (kept, drawn without a hype
     }
 });
 
-test('G5 language: a clear English line in a Spanish recap (and the reverse) is flagged and kept; short, mixed and other languages pass', () => {
+test('G5 language: a clear English line in a Spanish recap (and the reverse) is refused; short, mixed and other languages pass', () => {
     const english = 'The tests are failing after the merge.';
     const spanish = 'Las pruebas fallan después de la fusión.';
-    assert.equal(run(wrongLanguage, 'done', english, { language: 'es' }), 'flag');
-    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'en' }), 'flag');
+    assert.equal(run(wrongLanguage, 'done', english, { language: 'es' }), 'refuse');
+    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'en' }), 'refuse');
     assert.equal(run(wrongLanguage, 'done', english), 'pass');
     assert.equal(run(wrongLanguage, 'done', spanish, { language: 'es' }), 'pass');
     assert.equal(run(wrongLanguage, 'done', 'Merged !256', { language: 'es' }), 'pass', 'too short to tell');
