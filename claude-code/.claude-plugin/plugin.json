@@ -1,0 +1,6 @@
+{
+  "name": "session-ledger",
+  "version": "0.0.0",
+  "description": "Keeps a ledger of a plain Claude Code session from its hooks and puts its open facts back after a compaction or a resume",
+  "license": "MIT"
+}

@@ -64,6 +64,13 @@ test:floor:
     - xmllint --version
     - bash ci/test.sh
 
+claude-code:
+  extends: .tab-recap
+  stage: check
+  script:
+    - cd ../claude-code
+    - bun run check
+
 lane-scope:
   extends: .tab-recap
   stage: check

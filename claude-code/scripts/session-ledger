@@ -1,0 +1,4 @@
+#!/bin/sh
+command -v bun >/dev/null 2>&1 || { echo "session-ledger: bun is not on PATH" >&2; exit 3; }
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P) || exit 3
+exec bun "$root/src/cli.ts" "$@"

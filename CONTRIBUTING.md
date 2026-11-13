@@ -8,6 +8,11 @@ One plugin per directory, each self-contained (`herdr-plugin.toml` at its root),
 `CONTRIBUTING.md`, `ROADMAP.md` and `experiments/`. Setup, checks, house rules and the release steps of a
 plugin are in that plugin's `CONTRIBUTING.md`, not here.
 
+A folder that is not a herdr plugin, such as `claude-code/` (a Claude Code plugin over tab-recap's engine, not
+released), has no `herdr-plugin.toml`, no release steps and no `CHANGELOG.md` section. It still needs a `README.md`
+(what it is, how to check it), a row in the root `README.md` under "Other folders", and its checks wired into both CI
+configurations. Its commits are scoped to the folder: `claude-code: <change>`.
+
 ## Changelog and versions
 
 You do not edit `CHANGELOG.md` or any version. Every change reaches `main` through a merge request

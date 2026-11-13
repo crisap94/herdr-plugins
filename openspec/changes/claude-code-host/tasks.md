@@ -33,8 +33,28 @@ touches `claude-code/` ends with that folder's own tests and type check passing.
       with the runs over `tab-recap/test/fixtures/replay-claude.jsonl`.
 - [x] 2.4 Gates: from `claude-code/`, `bun run check` (type check, rules, tests) passes.
 
-## 3. Archive
+## 3. The plugin packaging and the commands (C3)
 
-- [ ] 3.1 Once every other task is checked, run `openspec archive claude-code-host` in the same merge request as the last task.
+- [x] 3.1 `claude-code/.claude-plugin/plugin.json` (`session-ledger`) and `hooks/hooks.json`: `SessionStart` (`compact|resume`,
+      10 s), `Stop` and `PostCompact` (async), `PreCompact` (10 s), each through `scripts/hook`, written against the current
+      plugins and hooks reference (design D6). Verify: `test/launcher.test.ts` reads both files.
+- [x] 3.2 `scripts/hook` (POSIX sh): silent exit 0 inside herdr, in a writer run, for a run not known to be interactive (unless
+      `SESSION_LEDGER_HEADLESS=on`), for `PreCompact` unless on, without bun; never fails the hook. Verify:
+      `test/launcher.test.ts` through `/bin/sh` with a fake runner, an empty `PATH` and a crashing bun.
+- [x] 3.3 `src/main.ts`, `src/hook.ts`, `src/start-runner.ts`, `src/run.ts`, `src/runner-plugs.ts`, `src/read.ts`: each event's
+      answer; the restore as `additionalContext` within 9,000 bytes; the `PreCompact` template line. Verify: `test/hook.test.ts`
+      gives the exact stdout and exit code for every event, the restore's JSON passes the forbidden-words check.
+- [x] 3.4 `scripts/session-ledger` (`show [--session <id>]`, `line`), `src/show.ts`, `src/sessions.ts`, `src/cli.ts`. Verify:
+      `test/show.test.ts` shows the facts the fake writer wrote, read-only.
+- [x] 3.5 The README (defaults and how to change them, how to try it, the cost, what is experimental and not done), a
+      `claude-code` job in `.gitlab-ci.yml` (stage check) and `.github/workflows/ci.yml`, a row under "Other folders" in the root
+      `README.md` and a paragraph in `CONTRIBUTING.md`.
+- [x] 3.6 Gates: from `claude-code/`, `bun run check` passes.
+- [ ] 3.7 Live checks with a real Claude Code session, left to the owner (none were run): the plan's end-to-end and manual
+      checks, listed in the README under "Not checked live".
+
+## 4. Archive
+
+- [ ] 4.1 Once every other task is checked, run `openspec archive claude-code-host` in the same merge request as the last task.
       Verify: `openspec validate --specs --strict` passes.
-- [ ] 3.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [ ] 4.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.

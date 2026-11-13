@@ -13,6 +13,12 @@ lives in its own directory and installs on its own.
 
 Install a plugin with `herdr plugin install crisap94/herdr-plugins/<plugin>`.
 
+## Other folders
+
+| folder | what it is | docs |
+| --- | --- | --- |
+| **claude-code** | experimental, not a herdr plugin and not released: the same ledger kept for a plain Claude Code session from its hooks, over tab-recap's engine | [README](claude-code/README.md) |
+
 ## Contributing
 
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers what every plugin shares: labels,

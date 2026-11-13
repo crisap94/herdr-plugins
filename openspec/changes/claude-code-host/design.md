@@ -81,6 +81,46 @@ The writer is built directly rather than through `daemon/backends.ts` `summarize
 a session only when `CLAUDE_CODE_ENTRYPOINT` is `cli` or `SESSION_LEDGER_HEADLESS=on`, the safest reading while that variable is
 unproven by a live capture.
 
+### D6. The plugin packaging and the commands
+
+Checked against the Claude Code plugin and hooks reference before writing:
+
+- The manifest is `.claude-plugin/plugin.json`; only `name` is required. `claude-code` and any name starting `claude-` are
+  reserved, so the plugin is named `session-ledger`.
+- `hooks/hooks.json` wraps the event map in a top-level `hooks` key. Every handler is `sh "${CLAUDE_PLUGIN_ROOT}/scripts/hook" <event>`.
+  `SessionStart` takes only `command` (and `mcp_tool`) handlers; it is matched to `compact|resume` with a 10 s timeout. `Stop` and
+  `PostCompact` are `async: true`. An async hook's printed JSON would reach the model on the next turn, so both print nothing.
+  `PreCompact` is synchronous with a 10 s timeout; its stdout becomes the compaction's instructions.
+- A `SessionStart` hook adds context by printing `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":...}}`.
+  Plain stdout would work too. Any context string over 10,000 characters is saved to a file and replaced by a 2,000-character
+  preview. So the host fits the restore to 9,000 bytes (`restoreContentOf` and `fitRestore`, C1's pieces), not the handoff's
+  16 KiB.
+- A plugin's `bin/` folder is put on the Bash tool's `PATH`, so the model could run anything there. The launcher and the
+  human's command live in `scripts/`, and `bin/` does not exist (a test holds this).
+- In a `-p` run, Claude Code kills async hooks still running at teardown. The runner is therefore started detached
+  (its own process group, stdio to the log), and `main.ts` returns at once.
+- A headless run cannot be told reliably. No hook payload field names the run mode. `CLAUDE_CODE_ENTRYPOINT` is not in
+  the documented environment variables. `CLAUDECODE` and `CLAUDE_CODE_CHILD_SESSION` are set for interactive and print runs
+  alike. The launcher follows a session only when `CLAUDE_CODE_ENTRYPOINT` is exactly `cli` or `SESSION_LEDGER_HEADLESS=on`.
+  An absent or other value costs nothing.
+
+`scripts/hook` (POSIX sh) exits 0 silently, before starting bun, in each of these cases: inside herdr, in a writer run, for a
+run that is not known to be interactive, for `PreCompact` unless it is on, and when bun is missing. Otherwise it runs
+`bun src/main.ts <event>` with stderr appended to the log, and exits 0 whatever bun does. `main.ts` reads the payload and
+answers in `hook.ts`:
+
+- `Stop` and `PostCompact` start `src/run.ts` detached, which notes the session in `<state>/sessions/` and runs the C2 runner
+  with the real writer. `PostCompact` calls `refresh`, the same call as `compacted`.
+- `SessionStart` `compact` or `resume` prints the context JSON from a read-only open of the ledger, or nothing.
+- `PreCompact`, when on, prints `guidanceOf` over `sectionsOfOpen(restore.open)`, cleaned by the brief's forbidden-word
+  filter. That is tab-recap's compaction template path, with no model call.
+
+The real harness runtime comes from a relative import of `tab-recap/node_modules/@stateforge-labs/harness-adapters/dist/src/runtime`,
+the same file tab-recap's bare import resolves to.
+
+`scripts/session-ledger show [--session <id>]` and `line` are for the human. They open the ledger read-only
+(`connectReadOnly`) and find a session in the sessions index by folder or id.
+
 ## Risks
 
 - The restore text frames the writer's facts as the agent's own notes. They were written by the writer from the transcript, not
@@ -96,6 +136,15 @@ unproven by a live capture.
   not found, and a same-named file in another project folder can win.
 - A `/clear` starts a new session id, so with the session id as the pane the restore of the new session is empty (`engine-boundary`
   Risks); that is the intended reading of "a fork does not inherit" until the facade takes a host-chosen stable key.
+
+- The headless reading rests on `CLAUDE_CODE_ENTRYPOINT`, which is undocumented. If interactive hooks do not see `cli`, nothing
+  is followed until `SESSION_LEDGER_HEADLESS=on`, which also follows print runs. Only a live capture settles it.
+- On `resume` the restore is keyed by the payload's `session_id`. If a resumed session gets a new id, the restore is empty, as for
+  `/clear`.
+- The runner script is a setting (`SESSION_LEDGER_RUNNER`), so tests can start a fake one. Anyone who can set the hook's
+  environment can already run code in it.
+- The sessions index is written by the runner before it refreshes. `show` finds a session only after its first `Stop`, and only
+  in the exact folder the session started in.
 
 ## Hand-written pieces kept
 
