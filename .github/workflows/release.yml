@@ -1,6 +1,8 @@
 name: release
 
 on:
+  push:
+    tags: ['*-v*']
   workflow_dispatch:
     inputs:
       tag:
@@ -12,14 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    uses: ./.github/workflows/ci.yml
-    with:
-      ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || '' }}
-
   release:
     name: create the release
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -51,4 +47,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           plugin="${TAG%-v*}"
+          if gh release view "$TAG" > /dev/null 2>&1; then echo "a release for $TAG exists already: nothing to publish"; exit 0; fi
           gh release create "$TAG" --verify-tag --title "$plugin ${TAG##*-v}" --notes-file notes.md

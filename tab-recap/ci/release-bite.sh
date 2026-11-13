@@ -265,83 +265,8 @@ expect pass "a release whose changelog was completed afterwards" second
 expect pass "the tag is at the commit that completed the changelog" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$repair_commit" "$CURL_LOG"
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
-gh="$scratch/github"
-gh_notes="$scratch/github-notes.md"; printf '#### Added\n\n- the new thing\n' > "$gh_notes"
-gh_empty="$scratch/github-empty.md"; : > "$gh_empty"
-cat > "$scratch/curl-github" <<'SH'
-#!/usr/bin/env bash
-method=GET; url=""; out=""; body=""
-echo "$*" >> "$GH_LOG"
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -o) out="$2"; shift 2 ;;
-        -w | -H) shift 2 ;;
-        --request) method="$2"; shift 2 ;;
-        --data-binary) body="${2#@}"; shift 2 ;;
-        -s) shift ;;
-        *) url="$1"; shift ;;
-    esac
-done
-echo '{}' > "$out"
-[ -n "$body" ] && cp "$body" "$GH_STATE/body.json"
-case "$method $url" in
-    "GET "*/repos/group/project) echo "${FAKE_REPO_CODE:-200}" ;;
-    "GET "*/git/ref/tags/*)
-        [ -n "${FAKE_REF_CODE:-}" ] && { echo "$FAKE_REF_CODE"; exit 0; }
-        polls=$(( $(cat "$GH_STATE/polls" 2>/dev/null || echo 0) + 1 ))
-        echo "$polls" > "$GH_STATE/polls"
-        if [ "$polls" -ge "${FAKE_TAG_AFTER:-1}" ]; then echo 200; else echo 404; fi ;;
-    "GET "*/releases/tags/*)
-        if [ -e "$GH_STATE/posted" ]; then echo "${FAKE_AFTER_POST:-404}"; else echo "${FAKE_RELEASE_CODE:-404}"; fi ;;
-    "POST "*/releases) : > "$GH_STATE/posted"; echo "${FAKE_POST_CODE:-201}" ;;
-    *) echo 599 ;;
-esac
-SH
-chmod +x "$scratch/curl-github"
-github() {
-    GITHUB_RELEASE_TOKEN=bite-github-token GITHUB_REPO=group/project GITHUB_API=https://example.invalid/github \
-        GITHUB_RELEASE_ATTEMPTS=3 GITHUB_RELEASE_INTERVAL=0 CURL="$scratch/curl-github" GH_LOG="$gh/log" GH_STATE="$gh" \
-        bash "$HERE/github-release.sh" "$@"
-}
-ghtest() { rm -rf "$gh"; mkdir -p "$gh"; expect "$@"; }
-gh_exit() { rm -rf "$gh"; mkdir -p "$gh"; github "$@" > /dev/null 2>&1; echo $?; }
-exit_of() { "$@" > /dev/null 2>&1; echo $?; }
-
-ghtest fail "a github release with no arguments is bad usage" github
-[ "$(gh_exit)" = "2" ] || { echo "bite: a github release without arguments must exit 2" >&2; wrong=$((wrong + 1)); }
-[ "$(gh_exit demo-v1.1.0)" = "2" ] || { echo "bite: a github release without a notes file must exit 2" >&2; wrong=$((wrong + 1)); }
-[ "$(gh_exit demo-1.1.0 "$gh_notes")" = "2" ] || { echo "bite: a github release on a tag that is not <plugin>-v<x.y.z> must exit 2" >&2; wrong=$((wrong + 1)); }
-[ "$(gh_exit demo-v1.1.0-rc1 "$gh_notes")" = "2" ] || { echo "bite: a github release on a prerelease tag must exit 2" >&2; wrong=$((wrong + 1)); }
-[ "$(exit_of env -u GITHUB_RELEASE_TOKEN GITHUB_REPO=group/project bash "$HERE/github-release.sh" demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a github release without its token must exit 3" >&2; wrong=$((wrong + 1)); }
-[ "$(exit_of env -u GITHUB_REPO GITHUB_RELEASE_TOKEN=bite-github-token bash "$HERE/github-release.sh" demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a github release without its repository must exit 3" >&2; wrong=$((wrong + 1)); }
-[ "$(gh_exit demo-v1.1.0 "$scratch/absent-notes.md")" = "3" ] || { echo "bite: a github release without its notes file must exit 3" >&2; wrong=$((wrong + 1)); }
-[ "$(gh_exit demo-v1.1.0 "$gh_empty")" = "3" ] || { echo "bite: a github release with empty notes must exit 3" >&2; wrong=$((wrong + 1)); }
-FAKE_TAG_AFTER=99 ghtest fail "a tag that never reaches GitHub" github demo-v1.1.0 "$gh_notes"
-[ "$(FAKE_TAG_AFTER=99 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a tag that never reaches GitHub must exit 3" >&2; wrong=$((wrong + 1)); }
-FAKE_TAG_AFTER=2 ghtest pass "a tag that appears on the second check" github demo-v1.1.0 "$gh_notes"
-FAKE_RELEASE_CODE=200 ghtest pass "a release that already exists" github demo-v1.1.0 "$gh_notes"
-FAKE_RELEASE_CODE=200 ghtest pass "an existing release is not created again" github demo-v1.1.0 "$gh_notes"
-expect fail "an existing release is not created again" grep -q -- "--request POST" "$gh/log"
-ghtest pass "a created release" github demo-v1.1.0 "$gh_notes"
-grep -q '"name":"demo 1.1.0"' "$gh/body.json" || { echo "bite: the created release is not titled demo 1.1.0" >&2; wrong=$((wrong + 1)); }
-grep -q '"tag_name":"demo-v1.1.0"' "$gh/body.json" && grep -q '"draft":false' "$gh/body.json" && grep -q '"prerelease":false' "$gh/body.json" && grep -q 'the new thing' "$gh/body.json" || { echo "bite: the created release lacks its tag, its notes, or is a draft or a prerelease" >&2; wrong=$((wrong + 1)); }
-FAKE_POST_CODE=500 FAKE_AFTER_POST=200 ghtest pass "a release created meanwhile after a failed creation" github demo-v1.1.0 "$gh_notes"
-FAKE_POST_CODE=422 ghtest fail "a creation that fails and no release exists" github demo-v1.1.0 "$gh_notes"
-[ "$(FAKE_POST_CODE=422 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a refused creation must exit 3" >&2; wrong=$((wrong + 1)); }
-FAKE_RELEASE_CODE=500 ghtest fail "a release lookup that does not answer" github demo-v1.1.0 "$gh_notes"
-[ "$(FAKE_REPO_CODE=401 gh_exit demo-v1.1.0 "$gh_notes")" = "3" ] || { echo "bite: a token that cannot read the repository must exit 3" >&2; wrong=$((wrong + 1)); }
-rm -rf "$gh"; mkdir -p "$gh"; FAKE_REPO_CODE=401 github demo-v1.1.0 "$gh_notes" > /dev/null 2>&1
-grep -q "git/ref" "$gh/log" && { echo "bite: a token that cannot read the repository must not poll for the tag" >&2; wrong=$((wrong + 1)); }
-rm -rf "$gh"; mkdir -p "$gh"; FAKE_REF_CODE=401 github demo-v1.1.0 "$gh_notes" > "$scratch/gh-401.out" 2>&1
-[ "$(grep -c "git/ref" "$gh/log")" = "1" ] || { echo "bite: an authentication failure on the tag lookup must stop at the first check, not retry" >&2; wrong=$((wrong + 1)); }
-grep -q "HTTP 401" "$scratch/gh-401.out" && grep -q "not on GitHub" "$scratch/gh-401.out" && { echo "bite: an authentication failure must not be reported as a tag the mirror has not carried" >&2; wrong=$((wrong + 1)); }
-grep -q "HTTP 401" "$scratch/gh-401.out" || { echo "bite: an authentication failure on the tag lookup must name its HTTP code" >&2; wrong=$((wrong + 1)); }
-rm -rf "$gh"; mkdir -p "$gh"
-out="$(FAKE_POST_CODE=500 github demo-v1.1.0 "$gh_notes" 2>&1)"
-grep -q -- "--connect-timeout 10 --max-time 30" "$gh/log" || { echo "bite: a GitHub call has no connect or total time limit, so a stalled call blocks the job" >&2; wrong=$((wrong + 1)); }
-grep -q bite-github-token <<< "$out" && { echo "bite: the token was printed" >&2; wrong=$((wrong + 1)); }
-grep -q bite-github-token "$gh/log" && { echo "bite: the token reached a command line" >&2; wrong=$((wrong + 1)); }
-[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const rules = y["release:github"].rules; process.exit(rules.length > 0 && rules.every((r) => r.if.includes("$CI_COMMIT_TAG =~ /^tab-recap-v/") && !r.if.includes("CI_COMMIT_REF_PROTECTED")) ? 0 : 1)' "$HERE/../../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: release:github must run on every tab-recap-v tag: on an unprotected one it fails on its missing token, where a protected-only rule would skip the release in silence" >&2; wrong=$((wrong + 1)); }
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const tags = y.on?.push?.tags ?? []; const jobs = Object.values(y.jobs); process.exit(tags.includes("*-v*") && y.on.workflow_dispatch !== undefined && jobs.length === 1 && jobs[0].needs === undefined && jobs[0].permissions?.contents === "write" ? 0 : 1)' "$HERE/../../.github/workflows/release.yml"; echo $?)" = "0" ] || { echo "bite: the GitHub release workflow must run on a mirrored <plugin>-v tag with its built-in token and wait on no other job: GitLab has gated the tag, and a job it waits on (the macOS check) blocks the release" >&2; wrong=$((wrong + 1)); }
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.exit(y["release:github"] === undefined ? 0 : 1)' "$HERE/../../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: GitLab must not publish the GitHub release too: the GitHub workflow does, and two publishers race" >&2; wrong=$((wrong + 1)); }
 
 prep="$scratch/prep"; mkdir -p "$prep/tab-recap/ci" && cd "$prep" || exit 3
 cp "$HERE/prepare-release.sh" tab-recap/ci/prepare-release.sh
