@@ -274,7 +274,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
     assert.equal(store.records.readRecap('w1:t1')?.language, 'es');
 });
 
-test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten even with nothing new', async () => {
+test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten on request, and a quiet focus does not call the writer', async () => {
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {
         backend: 'fake',
@@ -302,5 +302,5 @@ test('a recap already stamped in the wanted language but holding an open fact in
     calls.length = 0;
     await once(jobWith(quiet), 'requested');
     await once(jobWith(quiet), 'focused');
-    assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en'], ['es', 'en']]);
+    assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en']], 'the requested run rewrites; the quiet focus that follows does not call the writer again');
 });
