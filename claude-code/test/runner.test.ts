@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { FollowedSession, ScopeId } from '../../tab-recap/src/recap/application/engine.ts';
 import { composeEngine, followedOf, openingOf } from '../src/compose.ts';
-import { DEFAULT_MAX_HOLD_MS, LOCK_DIR, SessionLock, processAlive } from '../src/lock.ts';
+import { LOCK_DIR, SessionLock, processAlive, processStartOf } from '../src/lock.ts';
 import type { LockPlugs } from '../src/lock.ts';
 import { parsePayload } from '../src/payload.ts';
 import { fileLog, LOG_FILE, MAX_ROUNDS, runAfterStop } from '../src/runner.ts';
@@ -56,7 +56,7 @@ function recorded(fail: (call: number) => Error | null = () => null): Recorded {
     };
 }
 
-const lockPlugs = (host: TempHost, over: Partial<LockPlugs> = {}): LockPlugs => ({ dir: join(host.stateDir, LOCK_DIR), pid: process.pid, now: Date.now, alive: processAlive, maxHoldMs: DEFAULT_MAX_HOLD_MS, ...over });
+const lockPlugs = (host: TempHost, over: Partial<LockPlugs> = {}): LockPlugs => ({ dir: join(host.stateDir, LOCK_DIR), pid: process.pid, now: Date.now, alive: processAlive, startOf: processStartOf, ...over });
 
 function runnerPlugs(host: TempHost, over: Partial<RunnerPlugs> & Pick<RunnerPlugs, 'open'>): RunnerPlugs {
     return { lock: new SessionLock(host.hook.session, lockPlugs(host)), followed: followedOf(host.hook), settle: () => Promise.resolve(), log: host.plugs.log, ...over };
