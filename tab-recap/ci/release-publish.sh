@@ -40,7 +40,7 @@ fi
 
 seen="$(git "${git_auth[@]}" ls-remote "$push_url" "refs/heads/$branch" | cut -f1)" \
     || { echo "release-publish: 3 — NOT COVERED: could not ask the remote whether $branch exists" >&2; exit 3; }
-git "${git_auth[@]}" push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
+git "${git_auth[@]}" -c "url.$push_url.pushInsteadOf=$push_url" push --quiet "--force-with-lease=refs/heads/$branch:$seen" "$push_url" "HEAD:refs/heads/$branch" \
     || { echo "release-publish: 3 — NOT COVERED: could not push $branch (it moved since it was looked at, or the push was refused)" >&2; exit 3; }
 
 description="## What changes for the user
