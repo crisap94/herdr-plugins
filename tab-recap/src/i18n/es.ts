@@ -77,7 +77,7 @@ export const es: Messages = {
         saved: 'guardado — se aplica desde el próximo resumen',
         nothingToSave: 'no hay nada que guardar',
         saveFailed: (why) => `no se pudo guardar: ${why}`,
-        rewriting: 'se está reescribiendo el resumen de esta pestaña',
+        rewriting: 'se están reescribiendo los resúmenes de todas las pestañas',
         test: {
             running: 'probando…',
             ok: (seconds, cost) => `✓ funciona — ${seconds} s${cost === '' ? '' : ` · ${cost}`}`,

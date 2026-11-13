@@ -76,7 +76,7 @@ export const en: Messages = {
         saved: 'saved — applies to the next recap',
         nothingToSave: 'nothing to save',
         saveFailed: (why) => `could not save: ${why}`,
-        rewriting: "this tab's recap is being rewritten",
+        rewriting: "every tab's recap is being rewritten",
         test: {
             running: 'testing…',
             ok: (seconds, cost) => `✓ works — ${seconds} s${cost === '' ? '' : ` · ${cost}`}`,

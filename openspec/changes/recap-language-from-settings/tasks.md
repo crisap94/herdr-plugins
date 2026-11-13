@@ -23,9 +23,9 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 4. Saving a language change rewrites every recap
 
-- [ ] 4.1 `requestRewrites` in `tab-recap/src/recap/application/setup-changes.ts` requests the opener and every tab with a stored
+- [x] 4.1 `requestRewrites` in `tab-recap/src/recap/application/setup-changes.ts` requests the opener and every tab with a stored
       view and a recap; the settings modal calls it on every language save.
-- [ ] 4.2 The plugin gates pass.
+- [x] 4.2 The plugin gates pass.
 
 ## 5. The settings file wins for the language keys
 
