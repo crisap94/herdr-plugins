@@ -13,6 +13,8 @@ lives in its own directory and installs on its own.
 
 Install a plugin with `herdr plugin install crisap94/herdr-plugins/<plugin>`.
 
+The repository root is a Bun workspace: one `bun.lock` at the root, and `bun install` works from the root or from a plugin's directory.
+
 ## Contributing
 
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers what every plugin shares: labels,
