@@ -1,0 +1,9 @@
+{
+  "session_id": "fx-PostCompact-1",
+  "transcript_path": "/home/user/.claude/projects/p/fx-PostCompact-1.jsonl",
+  "cwd": "/tmp/work",
+  "prompt_id": "00000000-0000-4000-8000-000000000000",
+  "hook_event_name": "PostCompact",
+  "trigger": "manual",
+  "compact_summary": "PLACEHOLDER-compact_summary"
+}

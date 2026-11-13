@@ -20,8 +20,21 @@ touches `claude-code/` ends with that folder's own tests and type check passing.
       byte-identical.
 - [x] 1.5 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
 
-## 2. Archive
+## 2. The host's core (C2)
 
-- [ ] 2.1 Once every other task is checked, run `openspec archive claude-code-host` in the same merge request as the last task.
+- [x] 2.1 `claude-code/` with `package.json` (no dependencies), `tsconfig.json` (tab-recap's strict flags), `ci/rules.sh` and the
+      README: how it is built and checked, which tab-recap gates do not cover it, the owner defaults, how a headless run is told
+      (design D5). Verify: `bun run typecheck` passes.
+- [x] 2.2 `src/payload.ts` over the captured Claude payloads (copied to `claude-code/test/fixtures/payloads`, with hand-written
+      `compact` and `fork` starts). Verify: `test/payload.test.ts`.
+- [x] 2.3 `src/compose.ts`, `src/lock.ts`, `src/runner.ts`. Verify: `test/compose.test.ts`, `test/lock.test.ts`,
+      `test/runner.test.ts` with fakes, temporary folders and an injected settle: two runners give one run and one rerun, a stale
+      lock is stolen, a dead holder does not block the next `Stop`, refresh gets the payload's scope and session, the ledger ends
+      with the runs over `tab-recap/test/fixtures/replay-claude.jsonl`.
+- [x] 2.4 Gates: from `claude-code/`, `bun run check` (type check, rules, tests) passes.
+
+## 3. Archive
+
+- [ ] 3.1 Once every other task is checked, run `openspec archive claude-code-host` in the same merge request as the last task.
       Verify: `openspec validate --specs --strict` passes.
-- [ ] 2.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
+- [ ] 3.2 Gates: `bash ci/lint.sh` and `bash ci/test.sh` pass.
