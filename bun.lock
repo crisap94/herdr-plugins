@@ -12,6 +12,52 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/recap-view": {
+      "name": "@stateforge-labs/recap-view",
+      "version": "0.0.0",
+      "dependencies": {
+        "@stateforge-labs/session-ledger": "workspace:*",
+      },
+      "devDependencies": {
+        "@ast-grep/cli": "0.45.3",
+        "@types/node": "24.7.0",
+        "@typescript/native-preview": "7.0.0-dev.20260707.2",
+        "dependency-cruiser": "18.5.0",
+        "oxlint": "1.85.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/session-ledger": {
+      "name": "@stateforge-labs/session-ledger",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@ast-grep/cli": "0.45.3",
+        "@types/node": "24.7.0",
+        "@typescript/native-preview": "7.0.0-dev.20260707.2",
+        "dependency-cruiser": "18.5.0",
+        "oxlint": "1.85.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "6.0.3",
+      },
+    },
+    "packages/session-ledger-sqlite": {
+      "name": "@stateforge-labs/session-ledger-sqlite",
+      "version": "0.0.0",
+      "dependencies": {
+        "@stateforge-labs/session-ledger": "workspace:*",
+        "drizzle-orm": "0.45.4",
+      },
+      "devDependencies": {
+        "@ast-grep/cli": "0.45.3",
+        "@types/node": "24.7.0",
+        "@typescript/native-preview": "7.0.0-dev.20260707.2",
+        "dependency-cruiser": "18.5.0",
+        "oxlint": "1.85.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "6.0.3",
+      },
+    },
     "tab-recap": {
       "name": "herdr-tab-recap",
       "version": "3.0.2",
@@ -24,6 +70,9 @@
       },
       "devDependencies": {
         "@ast-grep/cli": "0.45.3",
+        "@stateforge-labs/recap-view": "workspace:*",
+        "@stateforge-labs/session-ledger": "workspace:*",
+        "@stateforge-labs/session-ledger-sqlite": "workspace:*",
         "@types/node": "24.7.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "dependency-cruiser": "18.5.0",
@@ -108,6 +157,12 @@
     "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.3.0", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-2zYnUFQO9F1PWyGBwbPaJXgpefN6PeNJPJf4YUs9IxIomSPEQbu8+P8j1cTEmQgUsXusxIMRhj2uvmiMexkVpg=="],
 
     "@stateforge-labs/herdr-sdk": ["@stateforge-labs/herdr-sdk@0.4.0", "", { "bin": { "herdr-drift": "bin/herdr-drift.js", "herdr-skill": "bin/herdr-skill.js" } }, "sha512-s2GRmzKYbjWO5IVCzBE+ShlE8scqeeBmQiVh09aWAre8vWLqyUMJdTA9cvt7OYzgGoNtZmLVa8EvcZc7VGFEkA=="],
+
+    "@stateforge-labs/recap-view": ["@stateforge-labs/recap-view@workspace:packages/recap-view"],
+
+    "@stateforge-labs/session-ledger": ["@stateforge-labs/session-ledger@workspace:packages/session-ledger"],
+
+    "@stateforge-labs/session-ledger-sqlite": ["@stateforge-labs/session-ledger-sqlite@workspace:packages/session-ledger-sqlite"],
 
     "@types/node": ["@types/node@24.7.0", "", { "dependencies": { "undici-types": "~7.14.0" } }, "sha512-IbKooQVqUBrlzWTi79E8Fw78l8k1RNtlDDNWsFZs7XonuQSJ8oNYfEeclhprUldXISRMLzBpILuKgPlIxm+/Yw=="],
 

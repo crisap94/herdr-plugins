@@ -1,0 +1,35 @@
+{
+  "name": "@stateforge-labs/session-ledger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The engine contract of tab-recap: the types and the few values a host and a store code against.",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./compaction-timing": "./src/compaction-timing/index.ts",
+    "./testkit": "./testkit/index.ts",
+    "./unstable/*": "./src/*"
+  },
+  "imports": {
+    "#src/*": "./src/*",
+    "#test/*": "./test/*"
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "tsgo --noEmit",
+    "test": "bash gates/run.sh test"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
+    "@types/node": "24.7.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "dependency-cruiser": "18.5.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "6.0.3"
+  },
+  "license": "MIT"
+}
