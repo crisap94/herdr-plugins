@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { posix, resolve } from 'node:path';
+import { posix, resolve, sep } from 'node:path';
 
 type Kind = 'drop' | 'path' | 'specifier' | 'text';
 
@@ -212,6 +212,8 @@ function planOf(root: string, rows: readonly Row[], tracked: readonly string[]):
     const live = tracked.filter((file) => !drops.includes(file));
     const mapPath = mapperOf(rows);
     const moves = new Map(live.filter((file) => mapPath(file) !== file).map((file) => [file, mapPath(file)]));
+    const outside = [...moves.values()].find((target) => !resolve(root, target).startsWith(`${resolve(root)}${sep}`));
+    if (outside !== undefined) return notCovered(`${outside} is outside the repository`);
     for (const row of rows.filter((candidate) => candidate.kind === 'path')) counts.set(row, [...moves.keys()].filter((file) => under(file, row.from)).length);
     const clash = [...moves.values()].find((target) => existsSync(resolve(root, target)) && !moves.has(target));
     if (clash !== undefined) return notCovered(`${clash} already exists`);

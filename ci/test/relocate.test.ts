@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -155,6 +155,27 @@ describe('relocate codemod', () => {
         const result = relocate(clash, '--write');
         expect(result.status).toBe(3);
         expect(result.stderr).toContain('README.md already exists');
+        expect(git('status', '--porcelain')).toBe('');
+    });
+
+    test('a move that climbs out of the repository exits 3 and creates nothing outside it', () => {
+        const escape = join(scratch, 'escape.tsv');
+        writeFileSync(escape, 'path\ttab-recap/src/other.ts\t../outside/x.ts\n');
+        const result = relocate(escape, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain('relocate: 3 — NOT COVERED: ../outside/x.ts is outside the repository');
+        expect(existsSync(join(scratch, 'outside'))).toBe(false);
+        expect(git('status', '--porcelain')).toBe('');
+    });
+
+    test('a move to an absolute path outside the repository exits 3 and creates nothing there', () => {
+        const target = join(scratch, 'absolute', 'x.ts');
+        const absolute = join(scratch, 'absolute.tsv');
+        writeFileSync(absolute, `path\ttab-recap/src/other.ts\t${target}\n`);
+        const result = relocate(absolute, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain(`relocate: 3 — NOT COVERED: ${target} is outside the repository`);
+        expect(existsSync(join(scratch, 'absolute'))).toBe(false);
         expect(git('status', '--porcelain')).toBe('');
     });
 });
