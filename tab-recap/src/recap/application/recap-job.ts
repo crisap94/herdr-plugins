@@ -210,10 +210,8 @@ export class RecapJob {
         const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
         const readings = await Promise.all(lanes.map((lane) => this.read(lane, prior, budget)));
         const want = this.deps.language();
-        const switched = hasRecap(prior) && prior.language !== want;
-        if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) {
-            return;
-        }
+        const switched = hasRecap(prior) && (prior.language !== want || this.deps.ledger.keysOf(prior.tab).some((key) => this.deps.ledger.openOf({ tab: prior.tab, key }).some((fact) => fact.language !== want)));
+        if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) return;
         await this.summarize(prior, readings, { want, switched, cause }, writerStarted);
     }
 
