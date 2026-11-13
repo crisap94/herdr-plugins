@@ -3,13 +3,13 @@ import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
 export const LOCK_DIR = 'locks';
-export const DEFAULT_MAX_HOLD_MS = 20 * 60 * 1000;
 export const UNWRITTEN_GRACE_MS = 5000;
 const TAKE_ATTEMPTS = 3;
 
 export interface Holder {
     readonly pid: number;
     readonly since: number;
+    readonly start: string | null;
     readonly token: string;
 }
 
@@ -18,7 +18,7 @@ export interface LockPlugs {
     readonly pid: number;
     readonly now: () => number;
     readonly alive: (pid: number) => boolean;
-    readonly maxHoldMs: number;
+    readonly startOf: (pid: number) => string | null;
 }
 
 export type Taken =
@@ -41,6 +41,16 @@ export function processAlive(pid: number): boolean {
     }
 }
 
+export function processStartOf(pid: number): string | null {
+    try {
+        const stat = readFileSync(`/proc/${String(pid)}/stat`, 'utf8');
+        const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+        return fields[19] ?? null;
+    } catch {
+        return null;
+    }
+}
+
 export const lockKeyOf = (session: string): string => encodeURIComponent(session).replaceAll('.', '%2E');
 
 function holderOf(text: string): Holder | null {
@@ -49,8 +59,8 @@ function holderOf(text: string): Holder | null {
         if (typeof parsed !== 'object' || parsed === null) {
             return null;
         }
-        const { pid, since, token } = parsed as Record<string, unknown>;
-        return typeof pid === 'number' && typeof since === 'number' && typeof token === 'string' ? { pid, since, token } : null;
+        const { pid, since, start = null, token } = parsed as Record<string, unknown>;
+        return typeof pid === 'number' && typeof since === 'number' && (typeof start === 'string' || start === null) && typeof token === 'string' ? { pid, since, start, token } : null;
     } catch {
         return null;
     }
@@ -128,7 +138,7 @@ export class SessionLock {
     }
 
     private create(): { readonly holder: Holder; readonly text: string } | null {
-        const holder: Holder = { pid: this.plugs.pid, since: this.plugs.now(), token: randomUUID() };
+        const holder: Holder = { pid: this.plugs.pid, since: this.plugs.now(), start: this.plugs.startOf(this.plugs.pid), token: randomUUID() };
         const text = JSON.stringify(holder);
         let fd: number;
         try {
@@ -171,7 +181,8 @@ export class SessionLock {
         if (seen.kind === 'unwritten') {
             return now - seen.at > UNWRITTEN_GRACE_MS;
         }
-        return !this.plugs.alive(seen.holder.pid) || now - seen.holder.since > this.plugs.maxHoldMs;
+        const { pid, start } = seen.holder;
+        return !this.plugs.alive(pid) || (start !== null && this.plugs.startOf(pid) !== start);
     }
 
     private steal(expected: string): boolean {

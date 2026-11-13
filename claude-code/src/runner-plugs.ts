@@ -3,7 +3,7 @@ import { createRuntime } from '../../tab-recap/node_modules/@stateforge-labs/har
 import type { Summarizer } from '../../tab-recap/src/ports/summarizer.ts';
 import { claudeWriter, followedOf, gitRepos, languageOf, openingOf, systemClock } from './compose.ts';
 import type { Environment, HostPlugs } from './compose.ts';
-import { DEFAULT_MAX_HOLD_MS, LOCK_DIR, processAlive, SessionLock } from './lock.ts';
+import { LOCK_DIR, processAlive, processStartOf, SessionLock } from './lock.ts';
 import type { HookSession } from './payload.ts';
 import { SETTLE_MS, sleepFor } from './runner.ts';
 import type { RunnerPlugs } from './runner.ts';
@@ -28,6 +28,6 @@ export function hostPlugsFor(hook: HookSession, env: Environment, stateDir: stri
 }
 
 export function runnerPlugsFor(hook: HookSession, env: Environment, stateDir: string, log: (line: string) => void): RunnerPlugs {
-    const lock = new SessionLock(hook.session, { dir: join(stateDir, LOCK_DIR), pid: process.pid, now: Date.now, alive: processAlive, maxHoldMs: DEFAULT_MAX_HOLD_MS });
+    const lock = new SessionLock(hook.session, { dir: join(stateDir, LOCK_DIR), pid: process.pid, now: Date.now, alive: processAlive, startOf: processStartOf });
     return { lock, followed: followedOf(hook), settle: sleepFor(SETTLE_MS), open: openingOf(hostPlugsFor(hook, env, stateDir, log)), log };
 }

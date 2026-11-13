@@ -77,7 +77,7 @@ Each of these is a default the owner can change: the settings below, or the code
 
 | Question | Default |
 | --- | --- |
-| Process model | one short-lived process per hook. `Stop` (async) starts a detached runner (`src/runner.ts`) that takes a per-session lock, waits the settle time (2.5 s, injected so tests do not sleep), calls `engine.refresh(scope, [session])`, and reruns while another `Stop` marked the session dirty meanwhile, at most 3 rounds in one runner. A stale lock (dead pid, or held longer than 20 minutes, which is taken as a reused pid) is stolen. No daemon |
+| Process model | one short-lived process per hook. `Stop` (async) starts a detached runner (`src/runner.ts`) that takes a per-session lock, waits the settle time (2.5 s, injected so tests do not sleep), calls `engine.refresh(scope, [session])`, and reruns while another `Stop` marked the session dirty meanwhile, at most 3 rounds in one runner. A stale lock (its pid is gone, or the pid now names a process with another start time, a reused pid) is stolen; a live holder keeps it however long it runs. No daemon |
 | Identity | one session = one scope (`claude-code:<session_id>`) with one followed session built from the hook's `session_id`; records from its `transcript_path`. The facade keys a followed session by its pane id today, so the pane is the session id too (debt, `engine-boundary` design, Risks) |
 | Storage | its own SQLite file `ledger.db` under `${XDG_STATE_HOME:-~/.local/state}/session-ledger/claude-code/`, or `SESSION_LEDGER_STATE_DIR`. Never the herdr plugin's store (`TAB_RECAP_STATE` and `HERDR_PLUGIN_STATE_DIR` are ignored). Locks in `locks/`, errors in `claude-code.log`, both in the same folder |
 | No double recaps | the launcher exits 0 silently inside herdr (`HERDR_ENV=1`) and in the engine's own writer runs: every writer run carries `SESSION_LEDGER_WRITER=1` in its environment (`markedRuntime`). herdr wins when both hosts could follow a session |
@@ -143,7 +143,9 @@ removes `CLAUDE_CODE_ENTRYPOINT` from their environment, and they carry the mark
 - **The lock** is a file created exclusively, so two racing processes cannot both create it (tested with four processes). A
   steal renames the stale file aside and checks that it moved the file it judged stale; if a fresh holder slipped in, it puts
   that file back. A narrow window remains in which a fresh lock could be replaced by a third process; the cost is one extra
-  writer run, never a corrupt ledger. A pid reused by another process looks alive; the 20-minute longest hold bounds that.
+  writer run, never a corrupt ledger. The lock records its holder's start time (`/proc/<pid>/stat`), so a reused pid is told
+  from the holder; no clock limit is used, so a suspend or a slow writer never loses a live holder its lock. Where `/proc` is
+  missing the start time is not kept and a reused pid looks alive until that process exits.
 - **A `Stop` that marks the session dirty** after the runner's last round, when the runner already ran its 3 rounds, is left
   for the next `Stop`.
 - **The writer runtime** cannot be a bare import from this folder (see above). `claudeWriter(runtime, env, log)` takes it, and

@@ -130,8 +130,9 @@ the same file tab-recap's bare import resolves to.
 - Two host processes write one SQLite file. WAL, `BEGIN IMMEDIATE` and a 2 s busy timeout make short writes safe (a test races
   two processes on a fresh ledger); a write held longer than 2 s fails the other with `SQLITE_BUSY`, which is logged and caught
   up by the next `Stop`.
-- The lock's steal leaves a narrow window in which a fresh lock can be replaced; the cost is one extra writer run. A reused pid
-  looks alive until the 20-minute longest hold.
+- The lock's steal leaves a narrow window in which a fresh lock can be replaced; the cost is one extra writer run. A holder is
+  judged by its pid and its process start time, never by a clock limit, so a suspend or a slow writer keeps a live holder's
+  lock; without `/proc` the start time is not kept and a reused pid looks alive until that process exits.
 - `ClaudeTranscripts` finds `<root>/*/<session>.jsonl`, the newest by mtime: a `transcript_path` not named after the session is
   not found, and a same-named file in another project folder can win.
 - A `/clear` starts a new session id, so with the session id as the pane the restore of the new session is empty (`engine-boundary`
