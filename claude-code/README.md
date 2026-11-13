@@ -61,7 +61,7 @@ rerun. Restores, `PreCompact`, `show` and `line` read the ledger and make no mod
 | A bare import from a file here | does not resolve (there is no `node_modules` here). That is why the harness runtime (`createRuntime` from `@stateforge-labs/harness-adapters/runtime`) is a plug the caller passes in. The runner imports the real one from tab-recap's `node_modules` by relative path (`src/runner-plugs.ts`) |
 | Type check | `bun run typecheck`: tab-recap's `tsgo` over `tsconfig.json`, with tab-recap's strict flags (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `erasableSyntaxOnly`, ...), `typeRoots` pointed at tab-recap's `@types`, and tab-recap's `types/*.d.ts` and `bun-sqlite.d.ts` included. It also checks every tab-recap file these files import |
 | Tests | `bun run test` (`bun test --isolate test/`), `node:test` style like tab-recap |
-| House rules | `bun run rules` (`ci/rules.sh`) runs tab-recap's ast-grep rules `recap-no-comments`, `recap-vocabulary`, `recap-no-suppression`, `recap-sqlite-readonly`, `recap-write-transactions`, `recap-no-drizzle-transaction` and `recap-never-types` over `src` and `test`, and checks each one still bites its bad probe |
+| House rules | `bun run rules` (`ci/rules.sh`) runs tab-recap's ast-grep rules `recap-no-comments`, `recap-vocabulary`, `recap-no-suppression`, `recap-sqlite-readonly`, `recap-write-transactions`, `recap-no-drizzle-transaction` and `recap-never-types` over `src` and `test`, and checks each one still bites its bad probe. Its own rule `host-engine-boundary` (`rules/host-engine-boundary.yml`) lets `src` and `test` import from `tab-recap/src/` only the facade `engine.ts`, the restore and compaction helpers, `recap/domain/`, `ports/`, `i18n/` and the plug adapters `db`, `git`, `transcripts`, `harness` and `job`; never the daemon, `adapters/herdr`, the column, setup, compact or the protocol. It must reject its bad probe and pass its good one |
 | Everything | `bun run check` = type check, rules, tests. CI runs it in the `claude-code` job of `.gitlab-ci.yml` and `.github/workflows/ci.yml` |
 
 **Not covered here by tab-recap's gates.** `tab-recap/ci/lint.sh` and `ci/test.sh` scan only `tab-recap/{src,bin,test}`, and the
@@ -69,7 +69,7 @@ repository's CI runs only in `tab-recap/`. So none of these reach this folder: o
 checks), the domain-types ratchet, the dependency-cruiser module graph (including `engine-self-contained` and `domain-pure`),
 the lane map `ci/lanes.json`, the engine manifest `ci/engine-files.json`, `recap-no-foreign-write`,
 `recap-host-probes-at-the-edge`, `recap-prompt-boundary` and the remaining ast-grep rules. The rules above are applied by
-`ci/rules.sh`; the rest is applied by hand: no comments, CONTEXT.md's vocabulary, engine calls only through the facade.
+`ci/rules.sh`; the rest is applied by hand. The rule checks direct imports only; what an allowed adapter imports in turn is tab-recap's module graph's job.
 
 ## Owner defaults
 

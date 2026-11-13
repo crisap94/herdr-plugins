@@ -66,7 +66,9 @@ needs no build step and no dependency of its own; a bare import written in a hos
 is a plug its caller passes in. Its `tsconfig.json` repeats tab-recap's strict flags and borrows tab-recap's `@types` and
 ambient declarations; `bun run typecheck` runs tab-recap's `tsgo` over it, `bun run test` its tests, and `bun run rules`
 (`ci/rules.sh`) the tab-recap ast-grep rules that apply outside the plugin (no comments, vocabulary, no suppression, read-only
-foreign SQLite, write transactions, no Drizzle transaction, never types), each checked to bite its bad probe from there.
+foreign SQLite, write transactions, no Drizzle transaction, never types), each checked to bite its bad probe from there,
+and its own rule `host-engine-boundary`, which keeps its imports from `tab-recap/src/` to the facade, the restore and compaction
+helpers, the domain, the ports, i18n and the plug adapters (db, git, transcripts, harness, job).
 tab-recap's `ci/lint.sh` and `ci/test.sh` scan only `tab-recap/`, and the repository's CI runs only there: oxlint, the
 domain-types ratchet, the module graph, the lane map and the engine manifest do not cover this folder (listed in its README).
 
