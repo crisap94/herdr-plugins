@@ -1,5 +1,5 @@
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
-import type { RecapCause } from '#src/recap/domain/intent.ts';
+import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';

@@ -1,1 +1,2 @@
 src/adapters/harness/library.ts	src/adapters/harness/claude.ts
+src/ports/transcript-source.ts	src/ports/screens.ts

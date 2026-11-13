@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -29,7 +29,7 @@ function recorder(fail = false): { readonly records: ClosedLane[]; readonly port
 
 function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (line: string) => void): Dispatch {
     return new Dispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
+        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<Engine, 'turnEnded'>,
         prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
         feedback: noop, ...silentClosures, ...(port === undefined ? {} : { closures: port }), closedDays: () => closedLaneDaysOf(days),
     });

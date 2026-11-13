@@ -20,7 +20,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { RecapJob } from './recap-job.ts';
+import type { Engine } from './engine.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export type Sharing = 'on' | 'off';
@@ -29,7 +29,7 @@ export interface DispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'turnEnded'>;
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
@@ -102,7 +102,7 @@ export class Dispatch {
                 await this.look(intent.lane);
                 return;
             case 'recap':
-                this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
+                this.deps.recaps.turnEnded(intent.tab, intent.lanes, intent.cause);
                 return;
             case 'save-hidden':
                 this.deps.visibility.writeHidden(intent.state);

@@ -1,4 +1,4 @@
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
@@ -33,7 +33,7 @@ export function wireAutocompact(parts: {
     readonly transcripts: TranscriptRegistry;
     readonly contexts: LaneContexts;
     readonly recent: LaneRecent;
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'refresh'>;
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
@@ -47,7 +47,7 @@ export function wireAutocompact(parts: {
         policy: () => read().autocompact, tuning: () => read().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingNow, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: Date.now() - process.uptime() * 1000,
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap); },
-        refresh: (tab, lanes) => refreshedWithin(parts.recaps.refreshNow(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
+        refresh: (tab, lanes) => refreshedWithin(parts.recaps.refresh(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
         lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => Date.now(), log: (line) => { parts.log(line); },
     });
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { closuresBetween } from '#src/recap/domain/closures.ts';
@@ -47,7 +47,7 @@ function recorder(): { readonly records: ClosedLane[]; readonly port: ClosureRec
 
 function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?: boolean; readonly closures?: ClosureRecorder; readonly days: string; readonly log: (line: string) => void }): Dispatch {
     return new Dispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
+        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<Engine, 'turnEnded'>,
         prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
         feedback: noop, ...silentClosures, closedDays: () => closedLaneDaysOf(options.days),
         ...(options.closures === undefined ? {} : { closures: options.closures }),

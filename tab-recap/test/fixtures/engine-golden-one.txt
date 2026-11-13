@@ -1,0 +1,676 @@
+=== replayed
+{
+  "windows": 6,
+  "turns": 6,
+  "costUsd": 1.5,
+  "writerCalls": 6,
+  "enumerationCalls": 0
+}
+=== writer input 1 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:01:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger/>
+<transcript agent="a1">
+  <turn role="user" at="09:00">Add a cart to the shop</turn>
+  <turn role="agent" at="09:01">I will start with the cart model in src/cart.ts.</turn>
+</transcript>
+</recap_input>
+=== writer input 2 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:06:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:05">Use SQLite for it, no server</turn>
+  <turn role="agent" at="09:06">Done: carts are stored in SQLite (src/cart.ts). Tests next.</turn>
+</transcript>
+</recap_input>
+=== writer input 3 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:11:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:10">also add totals</turn>
+  <turn role="agent" at="09:11">Added totals in src/totals.ts; the cart tests pass.</turn>
+</transcript>
+</recap_input>
+=== writer input 4 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:16:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:15">open a merge request</turn>
+  <turn role="agent" at="09:16">Opened !34 for feat/cart; the pipeline is running.</turn>
+</transcript>
+</recap_input>
+=== writer input 5 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:21:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Opened !34 for feat/cart</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:20">can guests keep their basket?</turn>
+  <turn role="agent" at="09:21">That needs your call: cookie or account? I will wait.</turn>
+</transcript>
+</recap_input>
+=== writer input 6 (language en, previous en, retry no)
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:26:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Opened !34 for feat/cart</fact>
+ <fact id="f5" section="needs" first="09:21" last="09:21" anchor="can guests keep their basket?">Should guests keep their basket?</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:25">cookie is fine</turn>
+  <turn role="agent" at="09:26">Guests keep their basket in a cookie; !34 is green and ready to merge.</turn>
+</transcript>
+</recap_input>
+=== run 1
+{
+  "tab": "replay:t1",
+  "at": 1791363660000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {},
+    "dropped": 0
+  }
+}
+=== run 1 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:01:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger/>
+<transcript agent="a1">
+  <turn role="user" at="09:00">Add a cart to the shop</turn>
+  <turn role="agent" at="09:01">I will start with the cart model in src/cart.ts.</turn>
+</transcript>
+</recap_input>
+=== run 1 added items
+[
+  {
+    "key": "t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": true,
+    "anchor": "Add a cart to the shop"
+  }
+]
+=== run 1 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": true,
+    "anchor": "Add a cart to the shop"
+  }
+]
+=== run 2
+{
+  "tab": "replay:t1",
+  "at": 1791363960000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {},
+    "dropped": 0
+  }
+}
+=== run 2 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:06:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:05">Use SQLite for it, no server</turn>
+  <turn role="agent" at="09:06">Done: carts are stored in SQLite (src/cart.ts). Tests next.</turn>
+</transcript>
+</recap_input>
+=== run 2 added items
+[
+  {
+    "key": "t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": true,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 2 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": true,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 3
+{
+  "tab": "replay:t1",
+  "at": 1791364260000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {},
+    "dropped": 0
+  }
+}
+=== run 3 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:11:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:10">also add totals</turn>
+  <turn role="agent" at="09:11">Added totals in src/totals.ts; the cart tests pass.</turn>
+</transcript>
+</recap_input>
+=== run 3 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "fact": "fct_#3",
+    "born": true,
+    "anchor": "also add totals"
+  }
+]
+=== run 3 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "fact": "fct_#3",
+    "born": true,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 4
+{
+  "tab": "replay:t1",
+  "at": 1791364560000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {},
+    "dropped": 0
+  }
+}
+=== run 4 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:16:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:15">open a merge request</turn>
+  <turn role="agent" at="09:16">Opened !34 for feat/cart; the pipeline is running.</turn>
+</transcript>
+</recap_input>
+=== run 4 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Opened !34 for feat/cart",
+    "fact": "fct_#4",
+    "born": true,
+    "anchor": "open a merge request"
+  }
+]
+=== run 4 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Opened !34 for feat/cart",
+    "fact": "fct_#4",
+    "born": true,
+    "anchor": "open a merge request"
+  },
+  {
+    "key": "state/t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 5
+{
+  "tab": "replay:t1",
+  "at": 1791364860000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 5 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:21:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Opened !34 for feat/cart</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:20">can guests keep their basket?</turn>
+  <turn role="agent" at="09:21">That needs your call: cookie or account? I will wait.</turn>
+</transcript>
+</recap_input>
+=== run 5 added items
+[
+  {
+    "key": "t1/needs/0",
+    "section": "needs",
+    "text": "Should guests keep their basket?",
+    "fact": "fct_#5",
+    "born": true,
+    "anchor": "can guests keep their basket?"
+  }
+]
+=== run 5 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/needs/0",
+    "section": "needs",
+    "text": "Should guests keep their basket?",
+    "fact": "fct_#5",
+    "born": true,
+    "anchor": "can guests keep their basket?"
+  },
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Opened !34 for feat/cart",
+    "fact": "fct_#4",
+    "born": false,
+    "anchor": "open a merge request"
+  },
+  {
+    "key": "state/t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== run 6
+{
+  "tab": "replay:t1",
+  "at": 1791365160000,
+  "language": "en",
+  "backend": "fake",
+  "hasInput": true,
+  "gateStats": {
+    "refused": {},
+    "flagged": {
+      "G8": 1
+    },
+    "dropped": 0
+  }
+}
+=== run 6 stored document
+<recap_input version="2">
+<tab id="replay:t1" now="2026-10-07T09:26:00Z" zone="UTC">
+<agent id="a1" kind="claude" label="" pane="replay:p1"/>
+</tab>
+<ledger>
+ <fact id="f1" section="goal" first="09:01" last="09:01" anchor="Add a cart to the shop">Add a cart to the shop</fact>
+ <fact id="f2" section="decisions" first="09:06" last="09:06" why="no server needed" anchor="Use SQLite for it, no server">Store carts in SQLite</fact>
+ <fact id="f3" section="done" first="09:11" last="09:11" anchor="also add totals">Added cart totals in src/totals.ts</fact>
+ <fact id="f4" section="done" first="09:16" last="09:16" anchor="open a merge request">Opened !34 for feat/cart</fact>
+ <fact id="f5" section="needs" first="09:21" last="09:21" anchor="can guests keep their basket?">Should guests keep their basket?</fact>
+</ledger>
+<transcript agent="a1">
+  <turn role="user" at="09:25">cookie is fine</turn>
+  <turn role="agent" at="09:26">Guests keep their basket in a cookie; !34 is green and ready to merge.</turn>
+</transcript>
+</recap_input>
+=== run 6 added items
+[
+  {
+    "key": "t1/done/0",
+    "section": "done",
+    "text": "Guests keep their basket in a cookie",
+    "fact": "fct_#6",
+    "born": true,
+    "anchor": "cookie is fine"
+  }
+]
+=== run 6 state items
+[
+  {
+    "key": "state/t1/goal/0",
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "fact": "fct_#1",
+    "born": false,
+    "anchor": "Add a cart to the shop"
+  },
+  {
+    "key": "state/t1/done/0",
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "fact": "fct_#3",
+    "born": false,
+    "anchor": "also add totals"
+  },
+  {
+    "key": "state/t1/done/1",
+    "section": "done",
+    "text": "Opened !34 for feat/cart",
+    "fact": "fct_#4",
+    "born": false,
+    "anchor": "open a merge request"
+  },
+  {
+    "key": "state/t1/done/2",
+    "section": "done",
+    "text": "Guests keep their basket in a cookie",
+    "fact": "fct_#6",
+    "born": true,
+    "anchor": "cookie is fine"
+  },
+  {
+    "key": "state/t1/decisions/0",
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "fact": "fct_#2",
+    "born": false,
+    "anchor": "Use SQLite for it, no server"
+  }
+]
+=== recap
+{
+  "tab": "replay:t1",
+  "lanes": [
+    {
+      "pane": "replay:p1",
+      "agent": "claude",
+      "transcript": "<fixtures>/replay-claude.jsonl",
+      "cursor": 6,
+      "tail": null,
+      "title": null,
+      "lastPrompt": null,
+      "claudeRecap": null
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "name": "",
+      "lanes": [
+        "replay:p1"
+      ],
+      "sections": {
+        "goal": "Add a cart to the shop",
+        "now": [],
+        "needs": [],
+        "done": [
+          "Guests keep their basket in a cookie",
+          "Opened !34 for feat/cart",
+          "Added cart totals in src/totals.ts"
+        ],
+        "decisions": [
+          "Store carts in SQLite"
+        ],
+        "next": [],
+        "links": [],
+        "rules": []
+      },
+      "markdown": "## Goal\nAdd a cart to the shop\n\n## Now\n—\n\n## Needs you\n—\n\n## Done\n- Guests keep their basket in a cookie\n- Opened !34 for feat/cart\n- Added cart totals in src/totals.ts\n\n## Decisions\n- Store carts in SQLite\n\n## Next\n—\n\n## Links\n—"
+    }
+  ],
+  "at": 1791365160000,
+  "running": false,
+  "backend": "fake",
+  "error": null,
+  "costUsd": 1.5,
+  "language": "en"
+}
+=== last run
+{
+  "at": 1791365160000,
+  "cause": "requested"
+}
+=== facts
+[
+  {
+    "id": "fct_#1",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "goal",
+    "text": "Add a cart to the shop",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "Add a cart to the shop",
+    "firstAt": 1791363660000,
+    "lastAt": 1791363660000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#2",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "decisions",
+    "text": "Store carts in SQLite",
+    "why": "no server needed",
+    "ref": null,
+    "agent": null,
+    "anchor": "Use SQLite for it, no server",
+    "firstAt": 1791363960000,
+    "lastAt": 1791363960000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#3",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Added cart totals in src/totals.ts",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "also add totals",
+    "firstAt": 1791364260000,
+    "lastAt": 1791364260000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#4",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Opened !34 for feat/cart",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "open a merge request",
+    "firstAt": 1791364560000,
+    "lastAt": 1791364560000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  },
+  {
+    "id": "fct_#5",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "needs",
+    "text": "Should guests keep their basket?",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "can guests keep their basket?",
+    "firstAt": 1791364860000,
+    "lastAt": 1791365160000,
+    "state": "closed",
+    "closedWhy": "answered",
+    "closedAt": 1791365160000,
+    "language": "en"
+  },
+  {
+    "id": "fct_#6",
+    "task": {
+      "tab": "replay:t1",
+      "key": "t1"
+    },
+    "section": "done",
+    "text": "Guests keep their basket in a cookie",
+    "why": null,
+    "ref": null,
+    "agent": null,
+    "anchor": "cookie is fine",
+    "firstAt": 1791365160000,
+    "lastAt": 1791365160000,
+    "state": "open",
+    "closedWhy": null,
+    "closedAt": null,
+    "language": "en"
+  }
+]

@@ -23,6 +23,7 @@ import type { Informer } from '#src/recap/application/informer.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { compactable, targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
@@ -178,7 +179,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
         config: () => config, awaiting: () => Promise.resolve({ kind: 'clear' }), store, transcripts: readers,
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,
-        recaps: { refreshNow: () => Promise.resolve() } as unknown as RecapJob,
+        recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<Engine, 'refresh'>,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider, events: { lane: () => undefined, inWorkspace: () => undefined },
         claims: new LaneClaims(), log: () => undefined,

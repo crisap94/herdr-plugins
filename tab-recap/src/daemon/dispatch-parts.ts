@@ -8,7 +8,7 @@ import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -25,7 +25,7 @@ export interface Box {
 export interface DispatchParts {
     readonly fleet: Fleet;
     readonly store: Store;
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'turnEnded'>;
     readonly transcripts: TranscriptRegistry;
     readonly webs: LaneWebs;
     readonly contexts: LaneContexts;

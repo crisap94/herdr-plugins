@@ -73,6 +73,8 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
 Each lane converts its signatures and the properties of its declared types to domain types, turns its throwing constructors into
 parsers, removes its type assertions, moves any old export still used by another lane into its own `legacy.ts` (design D7), and
 lowers its baseline file. It edits only its `ci/lanes.json` files, its `legacy.ts`, its baseline and its exception file.
+A lane that adds a file to the engine's closure or drops one (change `engine-boundary`; B2's `legacy.ts` is one) also updates
+`ci/engine-files.json`, and `src/recap/application/engine.ts` belongs to B3.
 
 - [ ] 4.1 B1 `src/protocol/`, `src/ports/`. Verify: B1's baseline holds only `legacy` counts.
 - [ ] 4.2 B2 `src/recap/domain/` (gates included), including the throwing constructors of `ids.ts`, whose wrappers move to

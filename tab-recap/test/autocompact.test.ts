@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
@@ -190,7 +190,7 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
     const told: string[] = [];
     const board = observe(emptyBoard(), { kind: 'reconciled', seen: { focusedTab: null, lanes: [{ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }], panes: ['w1:p1'], columns: [], widths: new Map() } }, instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
-        columns: {} as Columns, views: { writeTab: (): void => undefined } as unknown as TabViews, visibility: {} as ColumnVisibility, recaps: {} as RecapJob,
+        columns: {} as Columns, views: { writeTab: (): void => undefined } as unknown as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<Engine, 'turnEnded'>,
         prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, settled: (found): void => { told.push(`${found.pane}:${found.status}`); },
         ...silentClosures,

@@ -35,7 +35,7 @@ import { Informer, type Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard, lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import { RecapJob } from '#src/recap/application/recap-job.ts';
+import { createEngine } from '#src/recap/application/engine.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
@@ -110,16 +110,18 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
     const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
-    const recaps = new RecapJob({
-        transcripts,
-        records: store.records, ledger: store.ledger, clock, log, repos,
-        summarizer: (): Summarizer => backends.summarizer(),
-        language: (): string => loadConfig().recapLanguage,
-        keepInput: (): boolean => loadConfig().keepInputDays > 0,
-        pipeline: (): Pipeline => loadConfig().pipeline,
-        writerView: (): WriterView => loadConfig().writerView,
-        debounce: (): Debounce => loadConfig().recapDebounce,
-        enumerator: (): Enumerators | null => backends.enumerator(),
+    const recaps = createEngine({
+        source: { transcripts },
+        store: { records: store.records, ledger: store.ledger },
+        environment: { clock, log, repos },
+        models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
+        settings: {
+            language: (): string => loadConfig().recapLanguage,
+            keepInput: (): boolean => loadConfig().keepInputDays > 0,
+            pipeline: (): Pipeline => loadConfig().pipeline,
+            writerView: (): WriterView => loadConfig().writerView,
+            debounce: (): Debounce => loadConfig().recapDebounce,
+        },
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
     const box: Box = { informer: null, autocompact: null };

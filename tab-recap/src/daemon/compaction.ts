@@ -14,7 +14,7 @@ import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
@@ -41,7 +41,7 @@ export function wireCompaction(parts: {
     readonly ledger: Ledger;
     readonly boundaries: Boundaries;
     readonly webs: { of(pane: string): LaneWeb | null };
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'refresh'>;
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;
@@ -67,7 +67,7 @@ export function wireCompaction(parts: {
             const layout = await fleet.layout(tabId(tab));
             return isUnknown(layout) ? null : layout.focused;
         },
-        refresh: (tab, lanes) => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
+        refresh: (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,
