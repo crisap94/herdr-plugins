@@ -61,7 +61,7 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
       entry, and one adding a new entry, each fail the merge-base guard.
 - [x] 3.6 (!118) `ci/lanes.json` and its test (design D8), and a per-lane CI check that a merge request edits only its lane's files.
       Verify: a probe listing a file twice fails; a probe missing a file fails; a lane merge request touching another lane's file fails.
-- [ ] 3.7 Record in design.md's Context table the exact counts from the check, per category, and the run times of the check and the
+- [x] 3.7 Record in design.md's Context table the exact counts from the check, per category, and the run times of the check and the
       cruise. If both together add 60 seconds or more to `ci/lint.sh`, move the check to its own CI job. Verify: the row is replaced
       and, if needed, the CI job exists.
 - [x] 3.8 (!118) `CONTRIBUTING.md` gains a section on domain types: what the check refuses, where parsers live, how to read a
