@@ -65,7 +65,7 @@ rerun. Restores, `PreCompact`, `show` and `line` read the ledger and make no mod
 | Everything | `bun run check` = type check, rules, tests. CI runs it in the `claude-code` job of `.gitlab-ci.yml` and `.github/workflows/ci.yml` |
 
 **Not covered here by tab-recap's gates.** `tab-recap/ci/lint.sh` and `ci/test.sh` scan only `tab-recap/{src,bin,test}`, and the
-repository's CI runs only in `tab-recap/`. So none of these reach this folder: oxlint (its type-aware house rules and unsafe-any
+repository's CI runs them only there (this folder has its own `claude-code` job). So none of these reach this folder: oxlint (its type-aware house rules and unsafe-any
 checks), the domain-types ratchet, the dependency-cruiser module graph (including `engine-self-contained` and `domain-pure`),
 the lane map `ci/lanes.json`, the engine manifest `ci/engine-files.json`, `recap-no-foreign-write`,
 `recap-host-probes-at-the-edge`, `recap-prompt-boundary` and the remaining ast-grep rules. The rules above are applied by

@@ -12,6 +12,6 @@ command -v bun >/dev/null 2>&1 || exit 0
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." 2>/dev/null && pwd -P) || exit 0
 state=${SESSION_LEDGER_STATE_DIR:-${XDG_STATE_HOME:-${HOME:-/nonexistent}/.local/state}/session-ledger/claude-code}
 log=/dev/null
-mkdir -p "$state" 2>/dev/null && log=$state/claude-code.log
+mkdir -p "$state" 2>/dev/null && ( : >>"$state/claude-code.log" ) 2>/dev/null && log=$state/claude-code.log
 bun "$root/src/main.ts" "$event" 2>>"$log" || :
 exit 0

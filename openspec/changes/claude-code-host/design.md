@@ -69,7 +69,7 @@ ambient declarations; `bun run typecheck` runs tab-recap's `tsgo` over it, `bun 
 foreign SQLite, write transactions, no Drizzle transaction, never types), each checked to bite its bad probe from there,
 and its own rule `host-engine-boundary`, which keeps its imports from `tab-recap/src/` to the facade, the restore and compaction
 helpers, the domain, the ports, i18n and the plug adapters (db, git, transcripts, harness, job).
-tab-recap's `ci/lint.sh` and `ci/test.sh` scan only `tab-recap/`, and the repository's CI runs only there: oxlint, the
+tab-recap's `ci/lint.sh` and `ci/test.sh` scan only `tab-recap/`, and the repository's CI runs them only there (this folder has its own `claude-code` job): oxlint, the
 domain-types ratchet, the module graph, the lane map and the engine manifest do not cover this folder (listed in its README).
 
 The core has four files: `payload.ts` (a hook payload to a host event or a typed refusal), `compose.ts` (the plugs: tab-recap's
