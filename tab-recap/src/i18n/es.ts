@@ -77,7 +77,7 @@ export const es: Messages = {
         saved: 'guardado — se aplica desde el próximo resumen',
         nothingToSave: 'no hay nada que guardar',
         saveFailed: (why) => `no se pudo guardar: ${why}`,
-        rewriting: 'se está reescribiendo el resumen de esta pestaña',
+        rewriting: 'se están reescribiendo los resúmenes de todas las pestañas',
         test: {
             running: 'probando…',
             ok: (seconds, cost) => `✓ funciona — ${seconds} s${cost === '' ? '' : ` · ${cost}`}`,
@@ -166,6 +166,8 @@ export const es: Messages = {
         statusKeys: (bindings, configPath) => (bindings.length === 0 ? `teclas   ninguna tecla asignada — mira el README (se buscó en ${configPath})` : `teclas   ${bindings.map((b) => `${b.key} → ${b.action}`).join(', ')}`),
         statusDaemon: (pid, off, version) => `daemon   ${pid === null ? 'detenido' : `pid ${pid} v${version ?? '?'}`}${off ? ' (apagado)' : ''}`,
         statusBackend: (what) => `motor    ${what}`,
+        statusLanguage: 'idioma  ',
+        statusSources: { settings: 'archivo de ajustes', environment: 'variable de entorno', system: 'idioma del sistema' },
         statusExtensions: (ids) => `extensiones ${ids}`,
         statusState: 'estado  ',
         statusConfig: 'config  ',

@@ -244,3 +244,63 @@ test('a run logs how long it took and why it ran, written or failed', async () =
         assert.ok(lines.includes(want), `${want} in ${JSON.stringify(lines)}`);
     }
 });
+
+test('the rewrite line stays while an open fact is still in the old language, and goes once none is', async () => {
+    const calls: RecapRequest[] = [];
+    const answers = [answer(), answer({ op: 'update', id: 'f1', text: 'migrar la base de datos' }), answer()];
+    const summarizer: Summarizer = {
+        backend: 'fake',
+        contract: 'strict',
+        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answers[calls.length - 1] ?? answer(), costUsd: 0 }); },
+    };
+    const store = memoryStore();
+    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    seed(store, {
+        ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
+        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+    });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS,
+        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        language: (): string => 'es', log: (): void => undefined,
+    });
+    const once = async (): Promise<void> => {
+        job.request(tabId('w1:t1'), [lane], 'requested');
+        await new Promise((resolve) => { setTimeout(resolve, 20); });
+    };
+    await once();
+    await once();
+    await once();
+    assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en'], ['es', 'en'], ['es', 'es']], 'the switch run, then a run that left f1 in English, then a run after f1 was rewritten');
+    assert.equal(store.records.readRecap('w1:t1')?.language, 'es');
+});
+
+test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten on request, and a quiet focus does not call the writer', async () => {
+    const calls: RecapRequest[] = [];
+    const summarizer: Summarizer = {
+        backend: 'fake',
+        contract: 'strict',
+        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answer(), costUsd: 0 }); },
+    };
+    const store = memoryStore();
+    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    seed(store, {
+        ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
+        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+    });
+    const jobWith = (transcripts: Transcripts): RecapJob => new RecapJob({
+        writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS,
+        transcripts: registryWith({ claude: transcripts }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        language: (): string => 'es', log: (): void => undefined,
+    });
+    const once = async (job: RecapJob, cause: 'requested' | 'focused'): Promise<void> => {
+        job.request(tabId('w1:t1'), [lane], cause);
+        await new Promise((resolve) => { setTimeout(resolve, 20); });
+    };
+    await once(jobWith(transcriptsOf('claude')), 'requested');
+    assert.equal(store.records.readRecap('w1:t1')?.language, 'es');
+    assert.deepEqual(store.ledger.keysOf('w1:t1').flatMap((key) => store.ledger.openOf({ tab: 'w1:t1', key }).map((fact) => fact.language)), ['en']);
+    calls.length = 0;
+    await once(jobWith(quiet), 'requested');
+    await once(jobWith(quiet), 'focused');
+    assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en']], 'the requested run rewrites; the quiet focus that follows does not call the writer again');
+});

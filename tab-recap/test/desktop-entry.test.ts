@@ -10,7 +10,7 @@ const ENTRY = join(import.meta.dirname, '..', 'bin', 'tab-recap-desktop.ts');
 function desktop(args: string[], env: Record<string, string>): { status: number | null; out: string; err: string } {
     const done = spawnSync(process.execPath, [ENTRY, ...args], {
         encoding: 'utf8', timeout: 20_000,
-        env: { ...process.env, TAB_RECAP_STATE: '', HERDR_PLUGIN_STATE_DIR: '', TAB_RECAP_LOCALE: 'en', ...env },
+        env: { ...process.env, TAB_RECAP_STATE: '', HERDR_PLUGIN_STATE_DIR: '', HERDR_PLUGIN_CONFIG_DIR: join(tmpdir(), 'tab-recap-no-config'), TAB_RECAP_LOCALE: 'en', ...env },
     });
     return { status: done.status, out: done.stdout, err: done.stderr };
 }

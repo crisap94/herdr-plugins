@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
-import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
-import type { Locale, Messages } from '#src/i18n/index.ts';
+import { languageSetting, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
+import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
@@ -159,12 +159,24 @@ function readFile(): ReadonlyMap<string, string> {
 }
 
 export function configGetter(): (key: string) => string | undefined {
-    return (key: string): string | undefined => given(key) ?? readFile().get(key);
+    return (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? readFile().get(key) ?? given(key) : given(key) ?? readFile().get(key));
+}
+
+export function recapLanguageSource(): LanguageSource {
+    const file = readFile();
+    if (languageSetting(file.get('TAB_RECAP_RECAP_LANG') ?? given('TAB_RECAP_RECAP_LANG')) !== 'ui') {
+        return file.has('TAB_RECAP_RECAP_LANG') ? 'settings' : 'environment';
+    }
+    const locale = file.get('TAB_RECAP_LOCALE') ?? given('TAB_RECAP_LOCALE');
+    if (locale === 'en' || locale === 'es') {
+        return file.has('TAB_RECAP_LOCALE') ? 'settings' : 'environment';
+    }
+    return 'system';
 }
 
 export function loadConfig(): Config {
     const file = readFile();
-    const get = (key: string): string | undefined => given(key) ?? file.get(key);
+    const get = (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? file.get(key) ?? given(key) : given(key) ?? file.get(key));
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
     const writerViewSettings = prunedWriterView(keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)), nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)));

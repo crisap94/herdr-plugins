@@ -82,7 +82,7 @@ test('status prints the code version and the running daemon\'s pid and version',
     try {
         new Pidfile(dir).claim(process.pid, '1.2.3');
         const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
-            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, TAB_RECAP_LOCALE: locale },
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale },
         }).stdout;
         const manifest = readFileSync('herdr-plugin.toml', 'utf8');
         const code = parseVersion(manifest) ?? '';
@@ -144,7 +144,7 @@ test('status says which bun runs it and which keys are bound, or that none is', 
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
     try {
         const run = (config: string, locale = 'en'): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
-            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, TAB_RECAP_LOCALE: locale, HERDR_CONFIG_PATH: config },
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale, HERDR_CONFIG_PATH: config },
         }).stdout;
         writeFileSync(join(dir, 'config.toml'), CONFIG);
         const bound = run(join(dir, 'config.toml'));
@@ -153,6 +153,21 @@ test('status says which bun runs it and which keys are bound, or that none is', 
         assert.doesNotMatch(bound, /warning/, 'this bun is new enough');
         assert.match(run(join(dir, 'missing.toml')), /^keys     no key bound — see README/m);
         assert.match(run(join(dir, 'missing.toml'), 'es'), /^teclas   ninguna tecla asignada — mira el README/m);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('status names the recap language and where it came from', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
+    try {
+        const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale, TAB_RECAP_RECAP_LANG: '' },
+        }).stdout;
+        assert.match(run('en'), /^language en \(environment variable\)$/m);
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
+        assert.match(run('en'), /^language es \(settings file\)$/m);
+        assert.match(run('es'), /^idioma   es \(archivo de ajustes\)$/m);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

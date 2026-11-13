@@ -76,16 +76,17 @@ test('two refused adds are both listed in the correction', async () => {
     assert.match(retryDoc(asked[1]), /<operation op="add" section="decisions" anchor="go">Leave the unrelated db tab alone\.<\/operation>\s*<reason gate="G3">(?:<!\[CDATA\[)?a decision needs its reason/);
 });
 
-test('a repeat inside the answer is the ledger gate\'s (G2) and is sent back; a link that does not resolve and a wrong-language add are flagged, kept and not sent back', async () => {
+test('a repeat inside the answer is the ledger gate\'s (G2) and is sent back, and so is a wrong-language add (G5); a link that does not resolve is flagged, kept and not sent back', async () => {
     const first = ops(add('done', 'Both pipelines for !256 are green.'), add('done', 'Both pipelines for !256 are green, as checked.'), add('links', 'the thing from before'), add('next', 'Las pruebas fallan después de la fusión.'));
     const { summarizer, asked } = writer(first, ops(add('done', 'Both pipelines for !256 are green, checked twice.')));
     const done = await run(summarizer);
-    assert.deepEqual(texts(done).slice(0, 3), ['Both pipelines for !256 are green.', 'the thing from before', 'Las pruebas fallan después de la fusión.'], 'the dead link and the Spanish line are kept');
-    assert.ok(done.kind === 'ops' && done.stats.flagged['G4'] === 1 && done.stats.flagged['G5'] === 1, 'and counted as flagged');
+    assert.deepEqual(texts(done).slice(0, 2), ['Both pipelines for !256 are green.', 'the thing from before'], 'the dead link is kept');
+    assert.equal(texts(done).includes('Las pruebas fallan después de la fusión.'), false, 'the Spanish line was refused and the retry did not send it again');
+    assert.ok(done.kind === 'ops' && done.stats.flagged['G4'] === 1 && done.stats.refused['G5'] === 1 && done.stats.flagged['G5'] === undefined, 'the link is counted as flagged, the language as refused');
     const correction = retryDoc(asked[1]);
     assert.match(correction, /Both pipelines for !256 are green, as checked\.<\/operation>\s*<reason gate="G2">it repeats another fact added in this answer/);
     assert.doesNotMatch(correction, /G4/, 'a dead link is flagged and kept, never sent back');
-    assert.doesNotMatch(correction, /G5|Las pruebas/, 'a wrong-language fact is flagged and kept, never sent back');
+    assert.match(correction, /Las pruebas fallan después de la fusión\.<\/operation>\s*<reason gate="G5">(?:<!\[CDATA\[)?write this item in English, not Spanish/, 'a wrong-language fact is sent back with its reason');
 });
 
 test('the reasons are written in the recap\'s language', async () => {

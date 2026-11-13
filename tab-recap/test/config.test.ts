@@ -4,7 +4,7 @@ import { after } from 'node:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { configGetter, loadConfig, parseEnv } from '#src/daemon/config.ts';
+import { configGetter, loadConfig, parseEnv, recapLanguageSource } from '#src/daemon/config.ts';
 
 const isolatedConfigDir = mkdtempSync(join(tmpdir(), 'recap-config-isolated-'));
 process.env['HERDR_PLUGIN_CONFIG_DIR'] = isolatedConfigDir;
@@ -17,9 +17,10 @@ test('config.env: comments, blanks and quotes', () => {
     assert.equal(values.size, 2);
 });
 
-test('configGetter: the environment wins over config.env, and the file is re-read on every call', () => {
+test('configGetter: the environment wins over config.env except for the two language keys, and the file is re-read on every call', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
     const before = process.env['HERDR_PLUGIN_CONFIG_DIR'];
+    const language = [process.env['TAB_RECAP_LOCALE'], process.env['TAB_RECAP_RECAP_LANG']];
     process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
     try {
         const get = configGetter();
@@ -30,14 +31,21 @@ test('configGetter: the environment wins over config.env, and the file is re-rea
         writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_PROBE_A=two\n');
         assert.equal(get('TAB_RECAP_PROBE_A'), 'two');
         assert.equal(get('TAB_RECAP_PROBE_C'), undefined);
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=es\n');
+        process.env['TAB_RECAP_LOCALE'] = 'en';
+        assert.equal(get('TAB_RECAP_LOCALE'), 'es', 'for a language key the file wins');
+        process.env['TAB_RECAP_RECAP_LANG'] = 'Português';
+        assert.equal(get('TAB_RECAP_RECAP_LANG'), 'Português', 'and the environment fills a language key the file lacks');
     } finally {
+        if (language[0] === undefined) { delete process.env['TAB_RECAP_LOCALE']; } else { process.env['TAB_RECAP_LOCALE'] = language[0]; }
+        if (language[1] === undefined) { delete process.env['TAB_RECAP_RECAP_LANG']; } else { process.env['TAB_RECAP_RECAP_LANG'] = language[1]; }
         delete process.env['TAB_RECAP_PROBE_B'];
         if (before === undefined) { delete process.env['HERDR_PLUGIN_CONFIG_DIR']; } else { process.env['HERDR_PLUGIN_CONFIG_DIR'] = before; }
         rmSync(dir, { recursive: true });
     }
 });
 
-test('loadConfig: locale and recap language — ui follows the locale, an explicit recap language wins, free text is sanitised', () => {
+test('loadConfig: locale and recap language — ui follows the locale, an explicit recap language wins, the settings file beats the environment for both, free text is sanitised', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_LOCALE', 'TAB_RECAP_RECAP_LANG', 'LC_ALL'] as const;
     const saved = keys.map((key) => process.env[key]);
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
@@ -52,7 +60,9 @@ test('loadConfig: locale and recap language — ui follows the locale, an explic
         writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
         assert.deepEqual([loadConfig().locale, loadConfig().recapLanguage], ['en', 'es']);
         process.env['TAB_RECAP_RECAP_LANG'] = 'Deutsch!!';
-        assert.equal(loadConfig().recapLanguage, 'Deutsch');
+        assert.equal(loadConfig().recapLanguage, 'es', 'the settings file wins over the environment for the recap language');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=es\n');
+        assert.deepEqual([loadConfig().locale, loadConfig().recapLanguage], ['es', 'Deutsch'], 'the file wins for the interface language; a key it lacks comes from the environment, sanitised');
     } finally {
         keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
         rmSync(dir, { recursive: true });
@@ -139,6 +149,32 @@ test('loadConfig: the brief job is read from config.env — defaults, overrides,
         assert.equal(loadConfig().brief.by, 'off');
     } finally {
         if (before === undefined) { delete process.env['HERDR_PLUGIN_CONFIG_DIR']; } else { process.env['HERDR_PLUGIN_CONFIG_DIR'] = before; }
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test('recapLanguageSource: the settings file, then the environment, then the system language', () => {
+    const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_LOCALE', 'TAB_RECAP_RECAP_LANG', 'LC_ALL'] as const;
+    const saved = keys.map((key) => process.env[key]);
+    const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
+    try {
+        process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
+        process.env['LC_ALL'] = 'es_CL.UTF-8';
+        delete process.env['TAB_RECAP_LOCALE'];
+        delete process.env['TAB_RECAP_RECAP_LANG'];
+        assert.equal(recapLanguageSource(), 'system');
+        process.env['TAB_RECAP_LOCALE'] = 'en';
+        assert.equal(recapLanguageSource(), 'environment');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=es\n');
+        assert.equal(recapLanguageSource(), 'settings');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=auto\n');
+        assert.equal(recapLanguageSource(), 'system', 'auto in the settings file follows the system language whatever the environment says');
+        process.env['TAB_RECAP_RECAP_LANG'] = 'Deutsch';
+        assert.equal(recapLanguageSource(), 'environment');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
+        assert.equal(recapLanguageSource(), 'settings');
+    } finally {
+        keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
         rmSync(dir, { recursive: true });
     }
 });

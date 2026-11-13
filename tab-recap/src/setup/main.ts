@@ -7,6 +7,8 @@ import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON,
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { requestRewrites } from '#src/recap/application/setup-changes.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
@@ -93,15 +95,14 @@ async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
 function save(values: ReadonlyMap<string, string>, languageChanged: boolean): void {
     try {
         setValues(join(configDir(), 'config.env'), values, parseEnv);
-        const rewriting = languageChanged && tab !== '';
-        if (rewriting) {
+        if (languageChanged) {
             const store = openCliStore();
             if (store.kind !== 'ready') {
                 throw new Error(messages().database.newer(store.backup));
             }
-            store.requests.request(tab);
+            requestRewrites(tab === '' ? null : tabId(tab), store);
         }
-        state = saved(state, null, rewriting);
+        state = saved(state, null, languageChanged);
     } catch (error) {
         state = saved(state, error instanceof Error ? error.message : String(error), false);
     }
