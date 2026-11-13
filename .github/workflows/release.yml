@@ -1,7 +1,5 @@
 name: release
 
-# GitLab publishes the GitHub release of a `<plugin>-v<x.y.z>` tag (job release:github), once the mirror has carried the tag.
-# This workflow is the manual fallback: Actions → release → Run workflow, with an existing tag, to (re)publish its release.
 on:
   workflow_dispatch:
     inputs:
