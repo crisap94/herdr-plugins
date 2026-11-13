@@ -157,3 +157,18 @@ test('status says which bun runs it and which keys are bound, or that none is', 
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('status names the recap language and where it came from', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
+    try {
+        const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale, TAB_RECAP_RECAP_LANG: '' },
+        }).stdout;
+        assert.match(run('en'), /^language en \(environment variable\)$/m);
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
+        assert.match(run('en'), /^language es \(settings file\)$/m);
+        assert.match(run('es'), /^idioma   es \(archivo de ajustes\)$/m);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});

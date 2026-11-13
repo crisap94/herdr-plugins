@@ -4,7 +4,7 @@ import { after } from 'node:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { configGetter, loadConfig, parseEnv } from '#src/daemon/config.ts';
+import { configGetter, loadConfig, parseEnv, recapLanguageSource } from '#src/daemon/config.ts';
 
 const isolatedConfigDir = mkdtempSync(join(tmpdir(), 'recap-config-isolated-'));
 process.env['HERDR_PLUGIN_CONFIG_DIR'] = isolatedConfigDir;
@@ -149,6 +149,32 @@ test('loadConfig: the brief job is read from config.env — defaults, overrides,
         assert.equal(loadConfig().brief.by, 'off');
     } finally {
         if (before === undefined) { delete process.env['HERDR_PLUGIN_CONFIG_DIR']; } else { process.env['HERDR_PLUGIN_CONFIG_DIR'] = before; }
+        rmSync(dir, { recursive: true });
+    }
+});
+
+test('recapLanguageSource: the settings file, then the environment, then the system language', () => {
+    const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_LOCALE', 'TAB_RECAP_RECAP_LANG', 'LC_ALL'] as const;
+    const saved = keys.map((key) => process.env[key]);
+    const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
+    try {
+        process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
+        process.env['LC_ALL'] = 'es_CL.UTF-8';
+        delete process.env['TAB_RECAP_LOCALE'];
+        delete process.env['TAB_RECAP_RECAP_LANG'];
+        assert.equal(recapLanguageSource(), 'system');
+        process.env['TAB_RECAP_LOCALE'] = 'en';
+        assert.equal(recapLanguageSource(), 'environment');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=es\n');
+        assert.equal(recapLanguageSource(), 'settings');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_LOCALE=auto\n');
+        assert.equal(recapLanguageSource(), 'system', 'auto in the settings file follows the system language whatever the environment says');
+        process.env['TAB_RECAP_RECAP_LANG'] = 'Deutsch';
+        assert.equal(recapLanguageSource(), 'environment');
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
+        assert.equal(recapLanguageSource(), 'settings');
+    } finally {
+        keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
         rmSync(dir, { recursive: true });
     }
 });

@@ -9,6 +9,16 @@ export type Locale = 'en' | 'es';
 
 export type AgoUnit = 's' | 'min' | 'h' | 'd';
 
+export type LanguageSource = 'settings' | 'environment' | 'system';
+
+export type LanguageSourceName = 'settings file' | 'environment variable' | 'system language' | 'archivo de ajustes' | 'variable de entorno' | 'idioma del sistema';
+
+export interface LanguageSourceNames {
+    readonly settings: LanguageSourceName;
+    readonly environment: LanguageSourceName;
+    readonly system: LanguageSourceName;
+}
+
 export interface Messages {
     readonly locale: Locale;
     readonly badge: {
@@ -169,6 +179,8 @@ export interface Messages {
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;
+        readonly statusLanguage: 'language' | 'idioma  ';
+        readonly statusSources: LanguageSourceNames;
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;
         readonly statusConfig: string;

@@ -2,7 +2,7 @@ import { en } from './en.ts';
 import { es } from './es.ts';
 import type { Locale, Messages } from './messages.ts';
 
-export type { AgoUnit, Locale, Messages } from './messages.ts';
+export type { AgoUnit, LanguageSource, Locale, Messages } from './messages.ts';
 
 const CATALOGS: Readonly<Record<Locale, Messages>> = { en, es };
 

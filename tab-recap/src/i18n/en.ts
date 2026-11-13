@@ -165,6 +165,8 @@ export const en: Messages = {
         statusKeys: (bindings, configPath) => (bindings.length === 0 ? `keys     no key bound — see README (looked in ${configPath})` : `keys     ${bindings.map((b) => `${b.key} → ${b.action}`).join(', ')}`),
         statusDaemon: (pid, off, version) => `daemon   ${pid === null ? 'not running' : `pid ${pid} v${version ?? '?'}`}${off ? ' (switched off)' : ''}`,
         statusBackend: (what) => `backend  ${what}`,
+        statusLanguage: 'language',
+        statusSources: { settings: 'settings file', environment: 'environment variable', system: 'system language' },
         statusExtensions: (ids) => `extensions ${ids}`,
         statusState: 'state   ',
         statusConfig: 'config  ',

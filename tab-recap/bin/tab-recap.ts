@@ -17,7 +17,7 @@ import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDir, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { BACKEND_IDS, configDir, loadConfig, messagesOf, parseEnv, recapLanguageSource, stateDir } from '#src/daemon/config.ts';
 import { hasModel } from '#src/recap/domain/backend.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
@@ -117,6 +117,7 @@ function status(): number {
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
+        `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
         t.statusExtensions(STORED_NOTES_ID),
         `${t.statusState} ${stateDir()}`,
         `${t.statusConfig} ${join(configDir(), 'config.env')}`,

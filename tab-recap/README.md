@@ -102,7 +102,7 @@ Every command is a herdr plugin action, run with `herdr plugin action invoke tab
 | `columns` | hide every column, or show them all again |
 | `compact` | compact the focused agent (`TAB_RECAP_COMPACT_TARGET` picks the agents) |
 | `configure` | the settings modal: agent, model, interface and recap language |
-| `status` | the versions, the bound keys, the daemon, the backend, and the state and config paths |
+| `status` | the versions, the bound keys, the daemon, the backend, the recap language and where it was set (settings file, environment variable or system language), and the state and config paths |
 
 Bind actions to keys in `~/.config/herdr/config.toml`, then run `herdr server reload-config`:
 

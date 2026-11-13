@@ -35,8 +35,8 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 6. Status names the recap language and its source
 
-- [ ] 6.1 `recapLanguageSource` in `tab-recap/src/daemon/config.ts`; `tab-recap status` prints `language <code> (<source>)`.
-- [ ] 6.2 The plugin gates pass.
+- [x] 6.1 `recapLanguageSource` in `tab-recap/src/daemon/config.ts`; `tab-recap status` prints `language <code> (<source>)`.
+- [x] 6.2 The plugin gates pass.
 
 ## 7. Archive
 
