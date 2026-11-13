@@ -1,0 +1,38 @@
+{
+  "name": "@stateforge-labs/session-ledger-sqlite",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The SQLite store of the session ledger.",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./driver": "./src/driver.ts",
+    "./testkit": "./testkit/index.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*",
+    "#test/*": "./test/*"
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "tsgo --noEmit",
+    "test": "bash gates/run.sh test"
+  },
+  "dependencies": {
+    "@stateforge-labs/session-ledger": "workspace:*",
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
+    "@types/node": "24.7.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "dependency-cruiser": "18.5.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "6.0.3"
+  },
+  "license": "MIT"
+}

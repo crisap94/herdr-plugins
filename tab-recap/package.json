@@ -26,6 +26,9 @@
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
+    "@stateforge-labs/recap-view": "workspace:*",
+    "@stateforge-labs/session-ledger": "workspace:*",
+    "@stateforge-labs/session-ledger-sqlite": "workspace:*",
     "@types/node": "24.7.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "dependency-cruiser": "18.5.0",

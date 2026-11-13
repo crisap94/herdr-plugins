@@ -1,0 +1,36 @@
+{
+  "name": "@stateforge-labs/recap-view",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The view model of a recap, built from the session ledger.",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./unstable/*": "./src/*"
+  },
+  "imports": {
+    "#src/*": "./src/*",
+    "#test/*": "./test/*"
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "tsgo --noEmit",
+    "test": "bash gates/run.sh test"
+  },
+  "dependencies": {
+    "@stateforge-labs/session-ledger": "workspace:*"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
+    "@types/node": "24.7.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "dependency-cruiser": "18.5.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "6.0.3"
+  },
+  "license": "MIT"
+}
