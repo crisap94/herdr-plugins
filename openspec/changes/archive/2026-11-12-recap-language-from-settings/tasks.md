@@ -40,5 +40,5 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 7. Archive
 
-- [ ] 7.1 Every task above is checked; `openspec archive recap-language-from-settings` runs in this merge request and
+- [x] 7.1 Every task above is checked; `openspec archive recap-language-from-settings` runs in this merge request and
       `openspec validate --specs --strict` passes.
