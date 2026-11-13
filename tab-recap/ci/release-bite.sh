@@ -207,6 +207,13 @@ git commit --quiet --amend --allow-empty -m "another release commit"
 expect pass "a release branch left by an earlier run is overwritten" publish
 [ "$(git --git-dir="$scratch/remote.git" rev-parse refs/heads/release/demo-v1.1.0)" = "$(git rev-parse HEAD)" ] || { echo "bite: the stale release branch was not overwritten" >&2; wrong=$((wrong + 1)); }
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+git init --quiet --bare "$scratch/job-token.git" && printf '#!/bin/sh\nexit 1\n' > "$scratch/job-token.git/hooks/pre-receive" && chmod +x "$scratch/job-token.git/hooks/pre-receive" || exit 3
+git config "url.$scratch/job-token.git.insteadOf" "$scratch/remote.git"
+expect fail "the runner's rewrite refuses a plain push, so the next probe has something to bite" git push --quiet "$scratch/remote.git" HEAD:refs/heads/probe
+expect pass "a release is pushed although the runner rewrites the URL to its job token" publish
+[ "$(git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)')" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release push followed the runner's URL rewrite, where the job token may not push" >&2; wrong=$((wrong + 1)); }
+git config --unset "url.$scratch/job-token.git.insteadOf"
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
 
 : > "$CURL_LOG"
 export CI_COMMIT_SHA="$(git rev-parse HEAD)"
