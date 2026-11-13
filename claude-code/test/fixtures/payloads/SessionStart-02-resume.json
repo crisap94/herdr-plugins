@@ -1,0 +1,11 @@
+{
+  "session_id": "fx-SessionStart-2",
+  "transcript_path": "/home/user/.claude/projects/p/fx-SessionStart-2.jsonl",
+  "cwd": "/tmp/work",
+  "hook_event_name": "SessionStart",
+  "source": "resume",
+  "seconds_since_last_response": 9,
+  "context_tokens": 26897,
+  "prompt_cache_likely_expired": false,
+  "estimated_cache_write_usd": 0.2152
+}

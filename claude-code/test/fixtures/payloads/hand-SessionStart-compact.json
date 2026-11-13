@@ -1,0 +1,7 @@
+{
+  "session_id": "fx-SessionStart-compact",
+  "transcript_path": "/home/user/.claude/projects/p/fx-SessionStart-compact.jsonl",
+  "cwd": "/tmp/work",
+  "hook_event_name": "SessionStart",
+  "source": "compact"
+}

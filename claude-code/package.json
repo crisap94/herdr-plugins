@@ -1,0 +1,17 @@
+{
+  "name": "claude-code-session-ledger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A ledger kept for a plain Claude Code session, driven by Claude Code hooks, over the tab-recap engine",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "scripts": {
+    "typecheck": "../tab-recap/node_modules/.bin/tsgo --noEmit -p tsconfig.json",
+    "rules": "bash ci/rules.sh",
+    "test": "bun test --isolate test/",
+    "check": "bun run typecheck && bun run rules && bun run test"
+  },
+  "license": "MIT"
+}

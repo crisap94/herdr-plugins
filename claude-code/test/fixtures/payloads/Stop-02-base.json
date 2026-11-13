@@ -1,0 +1,14 @@
+{
+  "session_id": "fx-Stop-2",
+  "transcript_path": "/home/user/.claude/projects/p/fx-Stop-2.jsonl",
+  "cwd": "/home/user/.cache/tmp/-home-user-Work/fx-Stop-2/scratchpad/stop3.DWJO",
+  "prompt_id": "00000000-0000-4000-8000-000000000000",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "background_tasks": [],
+  "session_crons": []
+}
