@@ -80,7 +80,7 @@ Each of these is a default the owner can change: the settings below, or the code
 | Process model | one short-lived process per hook. `Stop` (async) starts a detached runner (`src/runner.ts`) that takes a per-session lock, waits the settle time (2.5 s, injected so tests do not sleep), calls `engine.refresh(scope, [session])`, and reruns while another `Stop` marked the session dirty meanwhile, at most 3 rounds in one runner. A stale lock (its pid is gone, or the pid now names a process with another start time, a reused pid) is stolen; a live holder keeps it however long it runs. No daemon |
 | Identity | one session = one scope (`claude-code:<session_id>`) with one followed session built from the hook's `session_id`; records from its `transcript_path`. The facade keys a followed session by its pane id today, so the pane is the session id too (debt, `engine-boundary` design, Risks) |
 | Storage | its own SQLite file `ledger.db` under `${XDG_STATE_HOME:-~/.local/state}/session-ledger/claude-code/`, or `SESSION_LEDGER_STATE_DIR`. Never the herdr plugin's store (`TAB_RECAP_STATE` and `HERDR_PLUGIN_STATE_DIR` are ignored). Locks in `locks/`, errors in `claude-code.log`, both in the same folder |
-| No double recaps | the launcher exits 0 silently inside herdr (`HERDR_ENV=1`) and in the engine's own writer runs: every writer run carries `SESSION_LEDGER_WRITER=1` in its environment (`markedRuntime`). herdr wins when both hosts could follow a session |
+| No double recaps | the launcher exits 0 silently inside herdr (`HERDR_ENV=1`) and in the engine's own writer runs: every writer run carries `SESSION_LEDGER_WRITER=1` in its environment (`markedRuntime`). herdr wins when both hosts could follow a session. The `agent-sdk` host sets `SESSION_LEDGER_HOST=agent-sdk` in the environment of the program's query, and the launcher exits 0 on that marker, so a session followed in-process is never followed twice |
 | Headless runs | `claude -p` is not followed unless `SESSION_LEDGER_HEADLESS=on`, because each followed turn costs a writer run. See below for how a headless run is told |
 | Forks | a fork does not inherit its parent's ledger: it has a new session id, so a new scope. `/clear` likewise starts empty |
 | Model-facing surface | none: the restore text is first person and names no tool; there is no tool or command for the model |
@@ -110,6 +110,7 @@ removes `CLAUDE_CODE_ENTRYPOINT` from their environment, and they carry the mark
 | `SESSION_LEDGER_MODEL`, `SESSION_LEDGER_EFFORT`, `SESSION_LEDGER_TIMEOUT_MS` | tab-recap's claude default model, default effort, 180000 | the writer run |
 | `SESSION_LEDGER_CLAUDE_POLICY_ACK` | `off` | as tab-recap's `TAB_RECAP_CLAUDE_POLICY_ACK`: without `on` the claude writer refuses to run on the login store |
 | `SESSION_LEDGER_HEADLESS` | off | follow `claude -p` runs too |
+| `SESSION_LEDGER_HOST` | unset | set to `agent-sdk` by the agent-sdk host (`agent-sdk/`) in the environment of its query; the launcher then exits 0 silently, so that host alone follows the session |
 | `SESSION_LEDGER_PRECOMPACT` | off | act on `PreCompact` |
 | `SESSION_LEDGER_RUNNER` | `src/run.ts` | the script the detached runner runs (the tests start a fake one; the later service can replace it) |
 

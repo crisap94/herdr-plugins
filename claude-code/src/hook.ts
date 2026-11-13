@@ -52,8 +52,8 @@ export function briefOf(facts: RestoreFacts): string {
 
 export const contextJson = (text: string): string => JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } });
 
-function factsOf(event: HostEvent, deps: HookDeps, shape: (facts: RestoreFacts) => string): string {
-    const followed = followedOf(event);
+export function factsOf(hook: HookSession, deps: Pick<HookDeps, 'stateDir' | 'clock' | 'log'>, shape: (facts: RestoreFacts) => string): string {
+    const followed = followedOf(hook);
     return readingWith(deps.stateDir, deps.clock, deps.log, (engine) => shape(engine.restore(followed.scope, followed.session)), '');
 }
 

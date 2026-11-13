@@ -2,6 +2,7 @@
 event=${1:-}
 [ "${HERDR_ENV:-}" = 1 ] && exit 0
 [ "${SESSION_LEDGER_WRITER:-}" = 1 ] && exit 0
+[ "${SESSION_LEDGER_HOST:-}" = agent-sdk ] && exit 0
 if [ "${SESSION_LEDGER_HEADLESS:-}" != on ] && [ "${CLAUDE_CODE_ENTRYPOINT:-}" != cli ]; then
     exit 0
 fi

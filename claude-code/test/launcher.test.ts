@@ -91,6 +91,18 @@ test('SESSION_LEDGER_HEADLESS=on follows a run the launcher cannot tell is inter
     }
 });
 
+test('the launcher stands down for a session the agent-sdk host follows, even when it would follow a cli or headless run', async () => {
+    const dir = scratch();
+    try {
+        const stateDir = join(dir, 'state');
+        assert.deepEqual(hookWith('Stop', payloadOf('Stop-01-base'), { SESSION_LEDGER_STATE_DIR: stateDir, SESSION_LEDGER_HOST: 'agent-sdk', SESSION_LEDGER_HEADLESS: 'on' }), QUIET);
+        await new Promise((resolve) => { setTimeout(resolve, 300); });
+        assert.deepEqual(runnerCalls(stateDir), []);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
 test('the launcher prints the context JSON after a compaction, and nothing for a startup', async () => {
     const { host } = await keptLedger('fx-SessionStart-compact');
     try {
