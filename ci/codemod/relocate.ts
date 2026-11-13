@@ -61,6 +61,14 @@ function rowOf(fields: readonly string[], line: number, where: string): Row {
     return { kind, line, from, to, glob: glob ?? null };
 }
 
+function chainOf(rows: readonly Row[]): void {
+    const moves = rows.filter((row) => row.kind === 'path');
+    for (const first of moves) {
+        const second = moves.find((candidate) => candidate !== first && (under(first.to, candidate.from) || under(candidate.from, first.to)));
+        if (second !== undefined) return notCovered(`path rows chain: ${first.from} ${first.to} is moved again by ${second.from} ${second.to}`);
+    }
+}
+
 function readMap(path: string): readonly Row[] {
     if (!existsSync(path)) return notCovered(`no map at ${path}`);
     const rows = readFileSync(path, 'utf8')
@@ -68,6 +76,7 @@ function readMap(path: string): readonly Row[] {
         .map((text, index) => ({ text: text.replace(/\r$/u, ''), line: index + 1 }))
         .filter(({ text }) => text.trim() !== '')
         .map(({ text, line }) => rowOf(text.split('\t'), line, path));
+    chainOf(rows);
     return rows.toSorted((left, right) => ORDER.indexOf(left.kind) - ORDER.indexOf(right.kind));
 }
 
@@ -205,6 +214,26 @@ function editsOf(root: string, rows: readonly Row[], files: ReadonlyMap<string, 
     return edits;
 }
 
+function lexists(path: string): boolean {
+    try {
+        lstatSync(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function throughLink(root: string, target: string): boolean {
+    const parts = posix.dirname(target).split('/').filter((part) => part !== '' && part !== '.');
+    let current = resolve(root);
+    for (const part of parts) {
+        current = `${current}${sep}${part}`;
+        if (!lexists(current)) return false;
+        if (lstatSync(current).isSymbolicLink()) return true;
+    }
+    return false;
+}
+
 function planOf(root: string, rows: readonly Row[], tracked: readonly string[]): Plan {
     const counts = new Map<Row | 'relative', number>();
     const drops = tracked.filter((file) => rows.some((row) => row.kind === 'drop' && under(file, row.from)));
@@ -214,6 +243,8 @@ function planOf(root: string, rows: readonly Row[], tracked: readonly string[]):
     const moves = new Map(live.filter((file) => mapPath(file) !== file).map((file) => [file, mapPath(file)]));
     const outside = [...moves.values()].find((target) => !resolve(root, target).startsWith(`${resolve(root)}${sep}`));
     if (outside !== undefined) return notCovered(`${outside} is outside the repository`);
+    const linked = [...moves.values()].find((target) => throughLink(root, target));
+    if (linked !== undefined) return notCovered(`${linked} passes through a symlink`);
     for (const row of rows.filter((candidate) => candidate.kind === 'path')) counts.set(row, [...moves.keys()].filter((file) => under(file, row.from)).length);
     const clash = [...moves.values()].find((target) => existsSync(resolve(root, target)) && !moves.has(target));
     if (clash !== undefined) return notCovered(`${clash} already exists`);

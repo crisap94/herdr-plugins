@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -177,5 +177,30 @@ describe('relocate codemod', () => {
         expect(result.stderr).toContain(`relocate: 3 — NOT COVERED: ${target} is outside the repository`);
         expect(existsSync(join(scratch, 'absolute'))).toBe(false);
         expect(git('status', '--porcelain')).toBe('');
+    });
+
+    test('a map whose path rows chain exits 3 and moves nothing', () => {
+        plant({ 'a/f.ts': 'export const f = 1;\n' });
+        git('add', '-A');
+        git('commit', '-q', '-m', 'chain fixture');
+        const chain = join(scratch, 'chain.tsv');
+        writeFileSync(chain, 'path\ta\tb\npath\tb\tc\n');
+        const result = relocate(chain, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain('relocate: 3 — NOT COVERED: path rows chain: a b is moved again by b c');
+        expect(git('status', '--porcelain')).toBe('');
+    });
+
+    test('a destination through a symlink exits 3 and creates nothing outside', () => {
+        const outside = join(scratch, 'outside-target');
+        mkdirSync(outside);
+        symlinkSync(outside, join(repo, 'link'));
+        const linked = join(scratch, 'linked.tsv');
+        writeFileSync(linked, 'path\ttab-recap/src/other.ts\tlink/moved.ts\n');
+        const result = relocate(linked, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain('relocate: 3 — NOT COVERED: link/moved.ts passes through a symlink');
+        expect(readdirSync(outside)).toEqual([]);
+        expect(git('diff', '--cached', '--name-only')).toBe('');
     });
 });
