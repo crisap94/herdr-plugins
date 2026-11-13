@@ -1,0 +1,9 @@
+[
+  {
+    "class": "brand",
+    "file": "src/recap/domain/brand.ts",
+    "function": "brand",
+    "parameter": null,
+    "reason": "the one brand function casts its carrier"
+  }
+]

@@ -16,11 +16,6 @@
     "property": 2,
     "assertion": 5
   },
-  "src/adapters/db/backup.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 1
-  },
   "src/adapters/db/boundaries.ts": {
     "parameter": 3,
     "return": 1,
@@ -41,9 +36,6 @@
     "return": 6,
     "container": 6,
     "assertion": 1
-  },
-  "src/adapters/db/connection.ts": {
-    "parameter": 2
   },
   "src/adapters/db/database.ts": {
     "parameter": 4,
@@ -112,23 +104,12 @@
     "parameter": 4,
     "container": 2
   },
-  "src/adapters/db/migrate.ts": {
-    "return": 2
-  },
-  "src/adapters/db/open.ts": {
-    "parameter": 4,
-    "property": 3
-  },
   "src/adapters/db/operator-anchors.ts": {
     "parameter": 1,
     "container": 1
   },
   "src/adapters/db/print-store.ts": {
     "parameter": 1
-  },
-  "src/adapters/db/rebuild.ts": {
-    "container": 1,
-    "property": 3
   },
   "src/adapters/db/recap-read.ts": {
     "parameter": 3,

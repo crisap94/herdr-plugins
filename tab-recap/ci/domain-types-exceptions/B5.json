@@ -53,10 +53,5 @@
     "class": "migration",
     "file": "src/adapters/db/schema/017-handoff.ts",
     "reason": "released in tab-recap-v2.5.0 or earlier and frozen by ci/check-migrations.sh"
-  },
-  {
-    "class": "migration",
-    "file": "src/adapters/db/schema/migration.ts",
-    "reason": "released in tab-recap-v2.5.0 or earlier and frozen by ci/check-migrations.sh"
   }
 ]
