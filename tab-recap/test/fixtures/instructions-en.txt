@@ -31,6 +31,8 @@ next      — what comes next (the column shows the newest 5)
 links     — files, branches, merge requests, commands, hosts worth keeping (the column shows the newest 6)
 rules      — standing constraints the operator stated and still wants kept, never drawn (the column shows the newest 5)
 
+Write every text and why in English. Keep the JSON keys and the words add, update, close in English.
+
 How to write:
 - Plain everyday words. Short sentences in the present tense, 16 words or fewer per text, 24 per why.
 - Name real things: file names, branch names, merge request numbers, commands, error messages.

@@ -5,9 +5,9 @@ Each group is one commit. Every group ends with the plugin gates passing (`bash 
 
 ## 1. The writer is always told the language
 
-- [ ] 1.1 `languageLines` in `tab-recap/src/adapters/job/prompts/recap-instructions.ts` gives English its own line; the reviewed
+- [x] 1.1 `languageLines` in `tab-recap/src/adapters/job/prompts/recap-instructions.ts` gives English its own line; the reviewed
       instructions in `tab-recap/test/fixtures/instructions-en.txt` carry it.
-- [ ] 1.2 The plugin gates pass.
+- [x] 1.2 The plugin gates pass.
 
 ## 2. A fact in the wrong language is sent back
 

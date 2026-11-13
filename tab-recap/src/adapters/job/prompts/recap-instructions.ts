@@ -8,15 +8,13 @@ import { RECONCILE_LINES } from './reconcile-instructions.ts';
 import { RUBRIC } from './rubric.ts';
 
 function languageLines(language: string, previous: string): string[] {
-    const own = language === 'en' ? [] : [
-        language === 'es'
-            ? 'Write every text and why in Spanish (neutral Latin American, informal "tú"). Keep the JSON keys and the words add, update, close in English.'
-            : `Write every text and why in ${languageName(language)}. Keep the JSON keys and the words add, update, close in English.`,
-    ];
+    const own = language === 'es'
+        ? 'Write every text and why in Spanish (neutral Latin American, informal "tú"). Keep the JSON keys and the words add, update, close in English.'
+        : `Write every text and why in ${languageName(language)}. Keep the JSON keys and the words add, update, close in English.`;
     const carried = previous === language ? [] : [
         `The facts in <ledger> are in ${languageName(previous)}: update every open fact that is still relevant, rewritten in ${languageName(language)}.`,
     ];
-    return [...own, ...carried, ...(own.length + carried.length > 0 ? [''] : [])];
+    return [own, ...carried, ''];
 }
 
 const SHAPE = [
