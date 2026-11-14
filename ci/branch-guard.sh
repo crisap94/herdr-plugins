@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 base="${GUARD_BASE:-origin/main}"
-allowlist="${GUARD_ALLOWLIST:-tab-recap/ci/atalaya-files.txt}"
+allowlist="${GUARD_ALLOWLIST:-ci/atalaya-files.txt}"
 
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "branch-guard: 3 — NOT COVERED: not a git repository" >&2; exit 3; }
 if [[ "$base" == origin/* ]]; then

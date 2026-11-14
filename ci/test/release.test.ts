@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { withJsonVersion, withRelease } from '../ci/apply-release.ts';
-import { bumpOf, bumped, entryOf, latestTag, release, renderSection } from '../ci/next-release.ts';
-import type { Get, MergeRequest } from '../ci/next-release.ts';
+import { withJsonVersion, withRelease } from '../apply-release.ts';
+import { bumpOf, bumped, entryOf, latestTag, release, renderSection } from '../next-release.ts';
+import type { Get, MergeRequest } from '../next-release.ts';
 
 const mr = (iid: number, title: string, labels: readonly string[], extra: Partial<MergeRequest> = {}): MergeRequest =>
     ({ iid, title, state: 'merged', target_branch: 'main', labels, ...extra });
@@ -109,7 +109,7 @@ test('apply keeps npm\'s own layout: a lockfile changes only its two versions', 
 });
 
 test('next-release rejects an unknown flag with a non-zero exit and the flag named', () => {
-    const script = join(import.meta.dirname, '..', 'ci', 'next-release.ts');
+    const script = join(import.meta.dirname, '..', 'next-release.ts');
     const ran = spawnSync(process.execPath, [script, '--previuos', 'tab-recap-v1.0.0'], { encoding: 'utf8' });
     assert.notEqual(ran.status, 0);
     assert.match(ran.stderr, /next-release: 1 .*--previuos/);

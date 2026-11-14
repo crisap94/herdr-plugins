@@ -89,7 +89,7 @@ const CARVED_FILES: readonly (readonly [ReadonlySet<string>, Lane])[] = [
     [new Set(VIEW_FILES), 'VIEW'],
 ];
 
-const SKIP_LIST = process.env['LANES_SKIP_LIST'] ?? join(ROOT, 'ci/atalaya-files.txt');
+const SKIP_LIST = process.env['LANES_SKIP_LIST'] ?? join(ROOT, '../ci/atalaya-files.txt');
 const REPOSITORY_PREFIX = 'tab-recap/';
 
 function skippedPaths(): readonly string[] {
