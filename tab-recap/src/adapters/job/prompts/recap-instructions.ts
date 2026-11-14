@@ -32,7 +32,7 @@ const sectionLine = (section: { id: SectionId; hint: string }): string => {
     return `${section.id.padEnd(10)}— ${section.hint} (${size})`;
 };
 
-export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry'>): string {
+export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry' | 'closeEvidence'>): string {
     if (request.retry !== undefined) {
         return correctionInstructions(request);
     }
@@ -53,7 +53,9 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '- every add has an "anchor": at most 120 characters copied word for word from a turn, a tool call or an agent note of this input that the fact comes from. Copy, never paraphrase: an add whose anchor is not in the input is refused.',
         '- update what changed: the same fact, now worded differently, with a new why, or in another state of progress.',
         '- close what finished ("done"), turned out wrong ("wrong"), was replaced ("superseded") or was answered ("answered"; only a question waiting on the operator, a "needs" fact).',
-        '- an update may carry an "anchor" too, the quote that shows the change. A close never does.',
+        ...(request.closeEvidence === 'on'
+            ? ['- an update may carry an "anchor" too, the quote that shows the change. A close with why "done" or "wrong" carries an "anchor" too: the quote from the input that shows it is done or wrong.']
+            : ['- an update may carry an "anchor" too, the quote that shows the change. A close never does.']),
         '- never add a fact that is in the ledger: update it. A fact closed less than two hours ago is not added again either.',
         ...(request.input.ledgers.some((ledger) => (ledger.hidden?.size ?? 0) > 0) ? ['- <hidden section="…" count="…"/> means open facts of that section that you cannot see or change. Never add a fact that repeats one of them; ids are only for facts you are shown.'] : []),
         '- a decision always has a "why": the reason, in your own words. On an add or an update of anything else "why" is null. On a close it is the reason code.',
