@@ -56,3 +56,37 @@ code="$(api --request POST --data-urlencode "source_branch=$branch" --data-urlen
     "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests")"
 [ "$code" = "201" ] || { echo "release-publish: 3 — NOT COVERED: opening the merge request answered HTTP $code ($branch is pushed: open it by hand with the label land)" >&2; exit 3; }
 echo "opened the release merge request for $plugin $version from $branch"
+
+if [ "${RELEASE_AUTO_MERGE:-}" != "1" ]; then
+    echo "the release merge request waits for a hand merge (RELEASE_AUTO_MERGE is not 1)"
+    exit 0
+fi
+facts() { bun -e 'const mr = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); const labels = Array.isArray(mr.labels) ? mr.labels.map((label) => (typeof label === "string" ? label : String(label?.name))) : []; console.log([mr.iid ?? "", mr.sha ?? "", labels.includes("release::hold") ? "hold" : "", mr.head_pipeline ? "pipeline" : ""].join("|"));' "$body" 2>/dev/null; }
+held_stop() { [ -z "$held" ] || { echo "release::hold is set: merge by hand after the live check"; exit 0; }; }
+IFS='|' read -r iid sha held piped <<< "$(facts)"
+[ -n "$iid" ] || { echo "auto-merge refused: the answer to the create call names no merge request: merge it by hand"; exit 0; }
+held_stop
+piped=""
+tries=0
+while [ -z "$piped" ]; do
+    tries=$((tries + 1))
+    [ "$tries" -le 20 ] || { echo "auto-merge refused: !$iid has no pipeline after 20 tries: merge !$iid by hand"; exit 0; }
+    [ "$tries" -eq 1 ] || sleep "${RELEASE_POLL_INTERVAL:-15}"
+    code="$(api "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$iid")"
+    case "$code" in
+        200) ;;
+        000 | "") echo "release-publish: 3 — NOT COVERED: the API could not be reached to read !$iid" >&2; exit 3 ;;
+        *) echo "auto-merge refused (HTTP $code): merge !$iid by hand"; exit 0 ;;
+    esac
+    IFS='|' read -r _ sha held piped <<< "$(facts)"
+    held_stop
+done
+[ -n "$sha" ] || { echo "auto-merge refused: !$iid names no head commit: merge !$iid by hand"; exit 0; }
+code="$(api --request PUT --data-urlencode "auto_merge=true" --data-urlencode "merge_when_pipeline_succeeds=true" \
+    --data-urlencode "squash=false" --data-urlencode "sha=$sha" \
+    "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$iid/merge")"
+case "$code" in
+    200 | 202) echo "auto-merge set for !$iid" ;;
+    000 | "") echo "release-publish: 3 — NOT COVERED: the API could not be reached to set auto-merge on !$iid" >&2; exit 3 ;;
+    *) echo "auto-merge refused (HTTP $code): merge !$iid by hand" ;;
+esac
