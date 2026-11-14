@@ -25,7 +25,8 @@
         { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
         { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
         { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
-        { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium" }
+        { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
     ],
     "dropOrder": ["codex-luna-low", "claude-sonnet-high"],
     "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium", "gradesOwnModel": ["claude-sonnet-medium", "claude-sonnet-high"] },

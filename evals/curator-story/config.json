@@ -23,7 +23,8 @@
         { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
         { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
         { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
-        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" }
+        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
     ],
     "dropOrder": ["claude-sonnet-high", "codex-luna-low"],
     "storyWords": 120,
@@ -43,6 +44,6 @@
     "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "blind": true, "ownModelRungs": ["claude-sonnet-medium", "claude-sonnet-high"] },
     "plants": { "plain": 4, "verbatim-copy": 6, "reworded-duplicate": 4, "near-pair": 5, "closed-tempting": 7, "waiting-on-operator": 5, "language-es": 3 },
     "sizes": { "small": 9, "medium": 10, "large": 5 },
-    "calls": { "job": 432, "judgeAtMost": 432 },
+    "calls": { "job": 504, "judgeAtMost": 504 },
     "audit": "The expected answers were written by a model and audited by nobody yet."
 }

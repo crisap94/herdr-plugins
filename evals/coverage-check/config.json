@@ -15,11 +15,12 @@
     { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
     { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
     { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium" },
-    { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" }
+    { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+    { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
   ],
   "codeCriteria": ["C1", "C2", "C3", "C4", "C4p", "C5", "C5a", "C5n", "C6", "C6d", "C8", "C8a", "C8b"],
   "judge": null,
-  "plannedCalls": { "job": 432, "judge": 0 },
+  "plannedCalls": { "job": 504, "judge": 0 },
   "stub": { "kept": 0.9, "notKept": 0.1 },
   "audit": "expected answers were written by a model and audited by nobody yet"
 }

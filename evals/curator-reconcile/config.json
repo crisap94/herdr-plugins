@@ -24,7 +24,8 @@
         { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
         { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
         { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
-        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" }
+        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
     ],
     "dropOrder": ["claude-sonnet-high", "codex-luna-low"],
     "codeCriteria": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"],
@@ -46,6 +47,6 @@
     "primaryPlants": { "stale": 8, "lookalike": 8, "compaction": 8 },
     "sizes": { "small": 7, "medium": 12, "large": 5 },
     "noOperationExpected": 11,
-    "calls": { "job": 432, "judgeAtMost": 432 },
+    "calls": { "job": 504, "judgeAtMost": 504 },
     "audit": "The expected answers were written by a model and audited by nobody yet."
 }

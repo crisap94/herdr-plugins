@@ -141,6 +141,7 @@ From `evals/lib/ladder.ts`, proven in `sdk-facts.md`. The shipped one is marked.
 | `codex-luna-medium` | codex | `gpt-6-luna` | medium | **shipped** |
 | `codex-luna-low` | codex | `gpt-6-luna` | low | |
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium | |
 | `claude-haiku-medium` | claude | `claude-haiku-5-5` | medium | |
 | `claude-sonnet-medium` | claude | `claude-sonnet-5-5` | medium | graded by its own model |
 | `claude-sonnet-high` | claude | `claude-sonnet-5-5` | high | graded by its own model |

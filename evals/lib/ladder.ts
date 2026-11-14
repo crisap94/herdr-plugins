@@ -7,6 +7,7 @@ export const LADDER: readonly Config[] = [
     { name: 'codex-luna-low', backend: 'codex', model: 'gpt-6-luna', effort: 'low' },
     { name: 'codex-luna-medium', backend: 'codex', model: 'gpt-6-luna', effort: 'medium' },
     { name: 'codex-sol-medium', backend: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+    { name: 'codex-terra-medium', backend: 'codex', model: 'gpt-6.1-terra', effort: 'medium' },
 ];
 
 export function ladder(shipped: Config, rungs: readonly Config[] = LADDER): Config[] {

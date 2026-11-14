@@ -141,6 +141,7 @@ From `evals/lib/ladder.ts` (`ladder(shipped)`); every (model, effort) pair is on
 | `claude-sonnet-high` | claude | `claude-sonnet-5-5` | high | judged by its own model |
 | `codex-luna-low` | codex | `gpt-6-luna` | low | |
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium | |
 
 Shipped: the plugin's default for this job is `{ by: 'recap', model: '', effort: 'medium' }` (`CURATE_DEFAULT`, `tab-recap/src/recap/domain/job.ts`): the recap job's backend at medium effort. The inventory counts 2545 of 2707 stored recap runs on `codex/gpt-6-luna`. The store does not record which model wrote a story, so this is the most likely shipped configuration, not a verified one.
 

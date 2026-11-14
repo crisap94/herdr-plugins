@@ -56,8 +56,8 @@ for (const [id, [q, n]] of Object.entries(want)) {
 }
 if (questions !== 444) bad(`${questions} questions, SPEC says 444`);
 if (items.filter((item) => item.expected.ok).length !== 9) bad('SPEC says 9 passing briefs');
-if (CONFIGS.length !== 6 || CONFIGS[0]?.name !== 'claude-haiku-low' || CONFIGS[0]?.shipped !== true || CONFIGS.some((config) => config.timeoutMs !== 180000)) bad('configurations differ from SPEC section 4');
-if (SMOKE_ITEMS.length * CONFIGS.length !== 12) bad('smoke is not 12 calls');
+if (CONFIGS.length !== 7 || CONFIGS[0]?.name !== 'claude-haiku-low' || CONFIGS[0]?.shipped !== true || CONFIGS.some((config) => config.timeoutMs !== 180000)) bad('configurations differ from SPEC section 4');
+if (SMOKE_ITEMS.length * CONFIGS.length !== 14) bad('smoke is not 14 calls');
 
 if (problems.length > 0) {
     for (const problem of problems) console.error(problem);

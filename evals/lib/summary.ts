@@ -128,11 +128,12 @@ function pairedOf(scored: readonly Scored[], config: string, versus: string, cri
 function decisionOf(configs: readonly ConfigSummary[], paired: readonly Paired[], shipped: string): string[] {
     if (configs.every((config) => config.answers === 0)) return ['No answers yet: nothing to decide.', AUDIT];
     const base = configs.find((config) => config.name === shipped);
+    if (base === undefined || base.answers === 0) return [`No answers yet for the shipped configuration ${shipped}: nothing to decide.`, AUDIT];
     const lines: string[] = [];
     const money = (config: ConfigSummary): string => (config.cost_usd === null ? 'cost not reported' : `$${config.cost_usd.toFixed(4)}`);
     const pace = (config: ConfigSummary): string => (config.latency_median_ms === null ? 'n/a' : `${Math.round(config.latency_median_ms)} ms`);
     for (const config of configs) {
-        if (config.name === shipped) continue;
+        if (config.name === shipped || config.answers === 0) continue;
         const mine = paired.filter((pair) => pair.config === config.name);
         const better = mine.filter((pair) => pair.only_config > pair.only_versus && pair.p < 0.05).map((pair) => pair.criterion);
         const worse = mine.filter((pair) => pair.only_versus > pair.only_config && pair.p < 0.05).map((pair) => `${pair.criterion} (p=${pair.p.toFixed(3)})`);
@@ -186,7 +187,8 @@ export function summarize<I, E>(input: {
     const criteria = criteriaOf(input.spec, input.judgeCheck);
     const shipped = (input.configs.find((config) => config.shipped === true) ?? input.configs[0])?.name ?? '';
     const configs = input.configs.map((config) => configSummary(input.scored, config, criteria));
-    const paired = input.configs.filter((config) => config.name !== shipped).flatMap((config) => criteria.map((criterion) => pairedOf(input.scored, config.name, shipped, criterion.id)));
+    const answered = (name: string): boolean => input.scored.some((each) => each.answer.config === name);
+    const paired = input.configs.filter((config) => config.name !== shipped && answered(config.name) && answered(shipped)).flatMap((config) => criteria.map((criterion) => pairedOf(input.scored, config.name, shipped, criterion.id)));
     const ownModel = configs.filter((config) => config.graded_by_own_model).map((config) => config.name);
     const cannot = [...CANNOT, ...(input.spec.notes?.cannot ?? [])];
     if (input.spec.judge !== null) cannot.push('Judge agreement with the owner: the judge criteria are checked only against planted labels, in judge-agreement part B.');
@@ -205,7 +207,7 @@ export function summarize<I, E>(input: {
         criteria,
         configs,
         paired,
-        suspects: suspectsOf(input.scored, input.configs, criteria),
+        suspects: suspectsOf(input.scored, input.configs.filter((config) => answered(config.name)), criteria),
         judge: judgeTotals(input.judged, input.spec.judge !== null),
         decision: decisionOf(configs, paired, shipped),
         can: [...CAN, ...(input.spec.notes?.can ?? [])],

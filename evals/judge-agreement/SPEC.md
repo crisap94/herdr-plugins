@@ -150,6 +150,7 @@ From `evals/lib/ladder.ts`, whose rungs `v2/sdk-facts.md` verified on this machi
 | `codex-luna-medium` | codex | `gpt-6-luna` | medium | shipped |
 | `codex-luna-low` | codex | `gpt-6-luna` | low | |
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium | |
 | `claude-haiku-medium` | claude | `claude-haiku-5-5` | medium | |
 | `claude-sonnet-medium` | claude | `claude-sonnet-5-5` | medium | |
 | `claude-sonnet-high` | claude | `claude-sonnet-5-5` | high | |

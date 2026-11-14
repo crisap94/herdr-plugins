@@ -38,7 +38,9 @@ export function report(summary: RunSummary): string {
         for (const config of summary.configs) {
             const stats = config.criteria[criterion.id];
             if (stats === undefined) continue;
-            lines.push(`| ${config.name} | ${shown(stats.answers)} | ${stats.missing} | ${shown(stats.items)} | ${stats.flips.length === 0 ? '' : stats.flips.join(', ')} |`);
+            const answers = stats.answers.n === 0 ? '0 answers' : shown(stats.answers);
+            const items = stats.items.n === 0 ? '0 items' : shown(stats.items);
+            lines.push(`| ${config.name} | ${answers} | ${stats.missing} | ${items} | ${stats.flips.length === 0 ? '' : stats.flips.join(', ')} |`);
         }
         lines.push('');
     }

@@ -112,6 +112,7 @@ From `evals/lib/ladder.ts` (verified in `v2/sdk-facts.md`). Six rungs, three per
 | Name | Backend | Model | Effort | |
 |---|---|---|---|---|
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | **shipped** |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium |  |
 | `claude-haiku-medium` | claude | `claude-haiku-5-5` | medium | |
 | `claude-sonnet-medium` | claude | `claude-sonnet-5-5` | medium | graded by its own model |
 | `claude-sonnet-high` | claude | `claude-sonnet-5-5` | high | graded by its own model |

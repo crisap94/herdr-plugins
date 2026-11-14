@@ -114,6 +114,7 @@ From `evals/lib/ladder.ts` (`ladder(shipped)`), every (model, effort) pair verif
 | `codex-luna-low` | codex | `gpt-6-luna` | low | the label on 19 stored decisions |
 | `codex-luna-medium` | codex | `gpt-6-luna` | medium | |
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium | |
 
 That is 8, two more than the 6 of v2/plan.md. It is affordable here because this eval makes no judge call and its inputs are under 4 kB. If the run must shrink, drop `codex-luna-medium` first, then `claude-sonnet-high` (`dropOrder` in `config.json`); never an item.
 

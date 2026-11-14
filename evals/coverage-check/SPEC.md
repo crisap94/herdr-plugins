@@ -123,6 +123,7 @@ From `v2/sdk-facts.md`: every model and effort below was accepted by its login o
 | `codex-luna-low` | Codex SDK | `gpt-6-luna` | low | |
 | `codex-luna-medium` | Codex SDK | `gpt-6-luna` | medium | |
 | `codex-sol-medium` | Codex SDK | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | Codex SDK | `gpt-6.1-terra` | medium | |
 
 Why this one is marked shipped: with no Jev key, `coverageDeciderFor` (`tab-recap/src/daemon/deciders.ts`) uses the decider job, whose default is the writer's harness at low effort with the harness default model (`DECIDER_DEFAULT` in `recap/domain/job.ts`; the claude harness defaults to `haiku` in `recap/domain/backend.ts`). Two limits on that claim:
 

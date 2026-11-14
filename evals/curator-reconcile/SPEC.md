@@ -160,6 +160,7 @@ From `evals/lib/ladder.ts`, whose rungs `v2/sdk-facts.md` verified (model and ef
 | `claude-sonnet-high` | claude | `claude-sonnet-5-5` | high | |
 | `codex-luna-low` | codex | `gpt-6-luna` | low | |
 | `codex-sol-medium` | codex | `gpt-6.1-sol` | medium | |
+| `codex-terra-medium` | codex | `gpt-6.1-terra` | medium | |
 
 Shipped: `CURATE_DEFAULT` in `tab-recap/src/recap/domain/job.ts` is `{ by: 'recap', model: '', effort: 'medium' }`, so the curator runs on the recap job's backend at medium effort. The inventory counts 2545 stored recap runs on `codex/gpt-6-luna`. The store does not record which model reconciled a ledger, and the owner's live configuration was not read. This is the most likely shipped configuration, not a verified one.
 

@@ -22,7 +22,8 @@
     { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
     { "name": "claude-haiku-medium", "backend": "claude", "model": "claude-haiku-5-5", "effort": "medium" },
     { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
-    { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" }
+    { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
+    { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
   ],
   "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium", "blind_to": ["configuration", "model", "effort", "repetition"], "graded_by_own_model": ["claude-sonnet-medium", "claude-sonnet-high"] },
   "criteria": [
@@ -51,6 +52,6 @@
     { "id": "WJ4", "grader": "judge", "kind": "capability", "applies_to": "answers that keep an add or an update" }
   ],
   "outputs": "$HOME/.local/state/tab-recap-evals/suite/writer/runs/<label>/",
-  "planned_calls": { "job": 432, "judge_at_most": 432 },
+  "planned_calls": { "job": 504, "judge_at_most": 504 },
   "out_of_scope": ["the correction round", "the enumerator pipeline", "real data", "language quality beyond gate G5 and W13"]
 }
