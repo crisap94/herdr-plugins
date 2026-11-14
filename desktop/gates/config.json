@@ -1,0 +1,6 @@
+{
+  "source": ["mods", "types", "test", "gates"],
+  "domain": "mods",
+  "hostTypes": "types/host.d.ts",
+  "hostModules": ["herdr", "gpui-kit", "gpui-base"]
+}
