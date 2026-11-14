@@ -10,9 +10,10 @@ import type { CloseOp, Operation, UpdateOp } from '#src/recap/domain/ops.ts';
 import { reconciliationOf } from '#src/recap/domain/reconciliation.ts';
 import type { Reconciled } from '#src/recap/domain/reconciliation.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { answerTextOf } from './recap-shape.ts';
 import { reconcileInput } from './curator-input.ts';
-import { judge } from './ops-gating.ts';
+import { batch } from './job-kit/batch.ts';
 
 export interface ReconcileParts {
     readonly writer: Curators;
@@ -53,7 +54,7 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     checked.refused.forEach((why) => { parts.log(`${where}: reconcile refused — ${why}`); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
     const ground = { key: task.key, tab: task.tab, shown: input.facts, open: openFacts, closedLately: [], source: '', language: parts.language, agents: task.agents };
-    const gated = judge(LEDGER_GATES, checked.ops.map(operationOf), ground, clock.now);
+    const gated = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: instant(clock.now) }, checked.ops.map(operationOf));
     gated.refused.forEach((finding) => { parts.log(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`); });
     if (gated.kept.length === 0) {
         return;

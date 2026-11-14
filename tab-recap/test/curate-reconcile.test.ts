@@ -182,3 +182,13 @@ test('the curator harness reconciles with its own instructions, and tells the st
     const told = await curator.write('<curator_input version="1"/>');
     assert.ok(told.kind === 'curated' && told.text.includes('at most 120 words') && !told.text.includes('Never add a fact.'));
 });
+
+test('an update of an unknown id is refused and logged, nothing is changed', async () => {
+    const { curate, ledger, logs } = setup([said({ ops: [
+        { op: 'update', id: 'f9', text: 'Invented change', why: 'one file', evidence: 'The migration tests pass now' },
+    ] })]);
+    await curate.run('w1:t1', 'turns');
+    assert.equal(ledger.allOf(T1).length, facts.length);
+    assert.equal(ledger.openOf(T1).length, 4);
+    assert.deepEqual(logs.filter((line) => line.includes('refused')).map((line) => line.replace(/^.*refused — /, '')), ['f9 is not an open fact (or is already changed)']);
+});
