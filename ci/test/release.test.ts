@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { withJsonVersion, withRelease } from '../apply-release.ts';
-import { bumpOf, bumped, entryOf, latestTag, release, renderSection } from '../next-release.ts';
+import { bumpOf, bumped, entryOf, latestTag, optionsOf, release, renderSection } from '../next-release.ts';
 import type { Get, MergeRequest } from '../next-release.ts';
 
 const mr = (iid: number, title: string, labels: readonly string[], extra: Partial<MergeRequest> = {}): MergeRequest =>
@@ -113,4 +114,35 @@ test('next-release rejects an unknown flag with a non-zero exit and the flag nam
     const ran = spawnSync(process.execPath, [script, '--previuos', 'tab-recap-v1.0.0'], { encoding: 'utf8' });
     assert.notEqual(ran.status, 0);
     assert.match(ran.stderr, /next-release: 1 .*--previuos/);
+});
+
+test('next-release options: --plugin names the plugin, PLUGIN is the fallback, tab-recap the default', () => {
+    assert.deepEqual(optionsOf([], {}), { previous: undefined, to: 'main', plugin: 'tab-recap' });
+    assert.equal(optionsOf(['--plugin', 'tab-recap'], {}).plugin, 'tab-recap');
+    assert.equal(optionsOf(['--plugin', 'demo'], {}).plugin, 'demo');
+    assert.equal(optionsOf([], { PLUGIN: 'other' }).plugin, 'other');
+    assert.equal(optionsOf(['--plugin', 'demo'], { PLUGIN: 'other' }).plugin, 'demo');
+    assert.deepEqual(optionsOf(['--previous', 'demo-v1.0.0', '--to', 'abc', '--plugin', 'demo'], {}), { previous: 'demo-v1.0.0', to: 'abc', plugin: 'demo' });
+    assert.throws(() => optionsOf(['--plugin', ''], {}), /--plugin needs the plugin name/);
+    assert.throws(() => optionsOf(['--plugin'], {}));
+});
+
+const demoGet: Get = (path) => Promise.resolve(path.startsWith('/repository/compare?from=demo-v2.3.4&to=abc') ? { commits: [{ id: 'c1' }] } : [mr(4, 'Fix the demo', ['changelog::fixed'])]);
+
+test('release: the plugin name decides the tag prefix the next version is counted from', async () => {
+    const result = await release(demoGet, 'demo-v2.3.4', 'abc', '2026-11-13', 'demo');
+    assert.equal(result.previous, 'demo-v2.3.4');
+    assert.equal(result.version, '2.3.5');
+    assert.equal(result.bump, 'patch');
+});
+
+test('release: the range of the foundation baseline gives the next version the baseline recorded', async () => {
+    const baseline = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'baselines', 'foundation.json'), 'utf8')) as { nextRelease: { previous: string; to: string; version: string | null; bump: string | null; merged: number } };
+    const { previous, to } = baseline.nextRelease;
+    const get: Get = (path) => Promise.resolve(path.startsWith(`/repository/compare?from=${previous}&to=${to}`) ? { commits: [{ id: to }] } : [mr(170, 'tab-recap: release 3.0.2', ['land', 'changelog::internal'])]);
+    const { plugin } = optionsOf(['--plugin', 'tab-recap', '--previous', previous, '--to', to], {});
+    const result = await release(get, previous, to, '2026-11-13', plugin);
+    assert.equal(result.version, baseline.nextRelease.version);
+    assert.equal(result.bump, baseline.nextRelease.bump);
+    assert.equal(result.merged, baseline.nextRelease.merged);
 });

@@ -296,6 +296,35 @@ printf '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null
 printf '#!/usr/bin/env bash\nn=$(cat "%s" 2>/dev/null || echo 0)\necho $((n + 1)) > "%s"\n[ "$n" -ge 1 ] || exit 1\ncat "%s"\n' "$scratch/prep-flaky.count" "$scratch/prep-flaky.count" "$scratch/prep-flaky.json" > "$scratch/prep-flaky"; chmod +x "$scratch/prep-flaky"; rm -f "$scratch/prep-flaky.count"
 [ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
 [ "$(env -u RELEASE_TOKEN bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+cat > "$scratch/prep-record" <<'SH'
+#!/usr/bin/env bash
+echo "$*" >> "$PREP_ARGS"
+cat "$PREP_JSON"
+SH
+chmod +x "$scratch/prep-record"
+export PREP_ARGS="$scratch/prep-args.log" PREP_JSON="$scratch/prep-next.json"
+prep_with() { rm -f "$PREP_ARGS"; RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-record" DRY_RUN=1 bash ci/prepare-release.sh "$@" > /dev/null 2>&1; echo $?; }
+asked_for() { grep -qx -- "--plugin $1 --to $(git rev-parse HEAD)" "$PREP_ARGS"; }
+prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(prep_with)" = "0" ] && asked_for tab-recap || { echo "bite: without an argument the release must be worked out for the plugin in tab-recap (next-release asked with --plugin tab-recap)" >&2; wrong=$((wrong + 1)); }
+[ "$(prep_with tab-recap)" = "0" ] && asked_for tab-recap || { echo "bite: the plugin directory tab-recap passed explicitly must be used (next-release asked with --plugin tab-recap)" >&2; wrong=$((wrong + 1)); }
+mkdir -p demo && printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > demo/herdr-plugin.toml && printf '{"name":"demo","version":"1.1.0"}\n' > demo/package.json
+prep_next '{"previous":"demo-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(prep_with demo)" = "0" ] && asked_for demo || { echo "bite: another plugin directory must be worked out for its own plugin id (next-release asked with --plugin demo)" >&2; wrong=$((wrong + 1)); }
+prep_next '{"previous":"demo-v1.1.0","version":"1.2.0","bump":"minor","section":"### [1.2.0] — 2026-11-13","merged":1}'
+[ "$(prep_with tab-recap)" = "1" ] || { echo "bite: a previous tag of another plugin must not count as this plugin's version (exit 1)" >&2; wrong=$((wrong + 1)); }
+cp "$HERE/apply-release.ts" "$HERE/check-version.sh" "$HERE/release-notes.sh" ci/
+printf '# Changelog\n\n## demo\n\n### [Unreleased]\n\n### [1.1.0] — 2026-11-01\n\n- first\n\n[Unreleased]: https://example.invalid/r/compare/demo-v1.1.0...HEAD\n[1.1.0]: https://example.invalid/r/compare/demo-v1.0.0...demo-v1.1.0\n\n## tab-recap\n\n### [Unreleased]\n\n### [1.1.0] — 2026-11-01\n\n- other\n\n[Unreleased]: https://example.invalid/r/compare/tab-recap-v1.1.0...HEAD\n' > CHANGELOG.md
+prep_next '{"previous":"demo-v1.1.0","version":"1.2.0","bump":"minor","section":"### [1.2.0] — 2026-11-13\n\n#### Added\n\n- a demo thing (!5)","merged":1}'
+[ "$(prep_with demo)" = "0" ] && grep -qx 'version = "1.2.0"' demo/herdr-plugin.toml && grep -q '"version": "1.2.0"' demo/package.json && grep -qx 'version = "1.1.0"' tab-recap/herdr-plugin.toml \
+    && [ "$(CHANGELOG=CHANGELOG.md bash ci/release-notes.sh demo 1.2.0 2>/dev/null)" = "$(printf '#### Added\n\n- a demo thing (!5)')" ] \
+    || { echo "bite: a dry run for another plugin directory must write that plugin's manifest, package.json and changelog part, and leave tab-recap alone" >&2; wrong=$((wrong + 1)); }
+rm -rf demo CHANGELOG.md ci/apply-release.ts ci/check-version.sh ci/release-notes.sh && git checkout --quiet -- .
+[ "$(prep_with nowhere)" = "3" ] || { echo "bite: a plugin directory without a manifest must end with exit 3" >&2; wrong=$((wrong + 1)); }
+for bad in tab-recap/ci ../tab-recap . ..; do
+    [ "$(prep_with "$bad")" = "2" ] || { echo "bite: the plugin directory $bad is not a folder directly under the repository root and must be refused as a usage error (exit 2)" >&2; wrong=$((wrong + 1)); }
+done
+[ -z "$(git status --porcelain)" ] || { echo "bite: the plugin directory cases left changes behind in the scratch repository" >&2; wrong=$((wrong + 1)); }
 echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
 [ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
 cd "$repo" || exit 3
