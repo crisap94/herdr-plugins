@@ -10,7 +10,7 @@ import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import { DEFAULT_PIPELINE, type Pipeline } from '#src/recap/domain/pipeline.ts';
+import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF } from '#src/recap/domain/debounce.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
@@ -34,6 +34,7 @@ export interface RecapJobDeps {
     language(): string;
     keepInput?(): boolean;
     pipeline?(): Pipeline;
+    closeEvidence?(): CloseEvidence;
     writerView(): WriterView;
     debounce?(): Debounce;
     enumerator?(): Enumerators | null;
@@ -222,7 +223,8 @@ export class RecapJob {
 
     private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
         const { deps } = this;
-        return extractPiped(summarizer, request, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, log: (line) => { deps.log(line); } });
+        const closeEvidence = deps.closeEvidence?.() ?? 'off';
+        return extractPiped(summarizer, { ...request, closeEvidence }, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, closeEvidence, log: (line) => { deps.log(line); } });
     }
 
     private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
