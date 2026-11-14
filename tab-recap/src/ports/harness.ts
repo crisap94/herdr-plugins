@@ -1,5 +1,6 @@
 import type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis } from '#src/recap/domain/confinement-notice.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Unknown } from './unknowable.ts';
 
 export interface HarnessCall {
@@ -10,6 +11,7 @@ export interface HarnessCall {
 export interface HarnessSettings {
     readonly model: string;
     readonly effort: Effort;
+    readonly timeoutMs?: Milliseconds;
 }
 
 export type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis };
