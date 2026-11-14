@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -226,5 +226,17 @@ test("a state directory with a space and a quote still runs hook.sh and uninstal
         uninstallHooks(dir, settings);
         assert.equal(read(room.settingsPath), original);
         assert.equal(existsSync(hookShimPath(dir)), false);
+    });
+});
+
+test('a settings file at mode 0600 stays 0600 through install and uninstall, and no temporary copy is left', async () => {
+    await inRoom((room) => {
+        chmodSync(room.settingsPath, 0o600);
+        const settings = claudeSettings(room.settingsPath);
+        installHooks(room.stateDir, settings, goodCurl);
+        assert.equal(statSync(room.settingsPath).mode & 0o777, 0o600);
+        uninstallHooks(room.stateDir, settings);
+        assert.equal(statSync(room.settingsPath).mode & 0o777, 0o600);
+        assert.deepEqual(readdirSync(join(room.home, '.claude')).filter((name) => name.endsWith('.tmp')), []);
     });
 });

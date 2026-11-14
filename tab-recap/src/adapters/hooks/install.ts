@@ -79,8 +79,9 @@ function writeSettings(path: FsPath, document: SettingsDocument, original: Text 
     const temporary = `${target}.${process.pid}.tmp`;
     mkdirSync(dirname(target), { recursive: true });
     rmSync(temporary, { force: true });
-    writeFileSync(temporary, serializeSettings(document, original), { mode: NEW_SETTINGS_MODE });
-    if (original !== null) chmodSync(temporary, statSync(target).mode & PERMISSION_BITS);
+    const mode = original === null ? NEW_SETTINGS_MODE : statSync(target).mode & PERMISSION_BITS;
+    writeFileSync(temporary, serializeSettings(document, original), { mode });
+    chmodSync(temporary, mode);
     renameSync(temporary, target);
 }
 
