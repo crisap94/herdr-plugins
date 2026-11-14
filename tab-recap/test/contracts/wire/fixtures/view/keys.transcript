@@ -1,0 +1,51 @@
+# WC 3.7: every key of the map once in the column. A scroll, a page or a jump gives a new frame; the other intents give none.
+# Ctrl-C never reaches the socket: localOf ends the pane locally.
+! open
+C {"t":"hello","protocol":1,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"welcome","protocol":1,"version":"9.9.9","title":"tab-recap","texts":{"connecting":"Connecting to the recap daemon…","down":"The recap daemon is not running.","downHint":"It starts again with the next herdr session.","mismatch":"This pane and the recap daemon speak different protocols."}}
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+! state connected
+C {"t":"key","key":"j"}
+! intent scroll
+D {"t":"frame","lines":["t1 line 2","t1 line 3","t1 line 4","t1 line 5","t1 line 6","column t1 40x6 @1"]}
+C {"t":"key","key":"\u001b[B"}
+! intent scroll
+D {"t":"frame","lines":["t1 line 3","t1 line 4","t1 line 5","t1 line 6","t1 line 7","column t1 40x6 @2"]}
+C {"t":"key","key":"k"}
+! intent scroll
+D {"t":"frame","lines":["t1 line 2","t1 line 3","t1 line 4","t1 line 5","t1 line 6","column t1 40x6 @1"]}
+C {"t":"key","key":"\u001b[A"}
+! intent scroll
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+C {"t":"key","key":" "}
+! intent page
+D {"t":"frame","lines":["t1 line 5","t1 line 6","t1 line 7","t1 line 8","t1 line 9","column t1 40x6 @4"]}
+C {"t":"key","key":"\u001b[6~"}
+! intent page
+D {"t":"frame","lines":["t1 line 8","t1 line 9","t1 line 10","t1 line 11","t1 line 12","column t1 40x6 @7"]}
+C {"t":"key","key":"b"}
+! intent page
+D {"t":"frame","lines":["t1 line 4","t1 line 5","t1 line 6","t1 line 7","t1 line 8","column t1 40x6 @3"]}
+C {"t":"key","key":"\u001b[5~"}
+! intent page
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+C {"t":"key","key":"G"}
+! intent jump
+D {"t":"frame","lines":["t1 line 8","t1 line 9","t1 line 10","t1 line 11","t1 line 12","column t1 40x6 @7"]}
+C {"t":"key","key":"g"}
+! intent jump
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+C {"t":"key","key":"r"}
+! intent refresh
+C {"t":"key","key":"c"}
+! intent compact
+C {"t":"key","key":"s"}
+! intent configure
+C {"t":"key","key":"h"}
+! intent hide
+C {"t":"key","key":"\r"}
+! intent show-modal
+C {"t":"key","key":"x"}
+C {"t":"ping"}
+D {"t":"pong"}
+! state connected

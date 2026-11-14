@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, MOUSE_OFF, MOUSE_ON, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { LineSplitter, decodeClient, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { initialConn, step } from '#src/wire/view/connection.ts';
@@ -10,6 +11,7 @@ import { ENTER, LEAVE, paintOf } from '#src/wire/view/paint.ts';
 import { DEFAULT_TEXTS, LIMITS, PROTOCOL } from '#src/wire/view/protocol.ts';
 import type { IntentMessage, Key, Role, Tap } from '#src/wire/view/protocol.ts';
 import { hookShimPath, hooksSocketPath, viewSocketPath } from '#src/wire/paths.ts';
+import { readTranscript } from '#test/contracts/wire/fakes/transcript.ts';
 
 const FIXTURES = new URL('./wire/fixtures/view/', import.meta.url);
 
@@ -17,6 +19,17 @@ const fixture = (name: string): string => readFileSync(new URL(name, FIXTURES), 
 
 const tableOf = (name: string): readonly (readonly string[])[] =>
     fixture(name).split('\n').filter((line) => line.length > 0).slice(1).map((line) => line.split('\t'));
+
+const wireItems = (name: string): readonly { readonly line: number; readonly kind: 'C' | 'D'; readonly text: string }[] =>
+    readTranscript(fileURLToPath(new URL(name, FIXTURES))).items.flatMap((item) => (item.kind === 'C' || item.kind === 'D' ? [item] : []));
+
+const NOT_A_MESSAGE: ReadonlySet<string> = new Set([
+    'malformed.transcript:this line is not json',
+    'unknown-type.transcript:{"t":"zoom","level":2}',
+    'unknown-type.transcript:{"t":"glow","level":2}',
+]);
+
+const LINES_IN_TRANSCRIPTS = 91;
 
 const VALID_CLIENT = [
     '{"t":"hello","protocol":1,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":80,"rows":24,"colour":true}',
@@ -53,6 +66,21 @@ test('every valid daemon line decodes and encodes back to the same bytes', () =>
 
 test('encode writes the keys in the order of the interface, whatever order the object has', () => {
     assert.equal(encode({ rows: 30, cols: 100, t: 'resize' }), '{"t":"resize","cols":100,"rows":30}\n');
+});
+
+test('every C and D line of every transcript decodes and encodes back to the same bytes', () => {
+    const names = readdirSync(FIXTURES).filter((name) => name.endsWith('.transcript'));
+    assert.equal(names.length, 13);
+    let count = 0;
+    for (const name of names) {
+        for (const item of wireItems(name)) {
+            const decoded = item.kind === 'C' ? decodeClient(item.text) : decodeDaemon(item.text);
+            assert.ok(!('kind' in decoded) || NOT_A_MESSAGE.has(`${name}:${item.text}`), `${name}:${item.line}`);
+            assert.ok('kind' in decoded || encode(decoded) === `${item.text}\n`, `${name}:${item.line}`);
+            count += 1;
+        }
+    }
+    assert.equal(count, LINES_IN_TRANSCRIPTS);
 });
 
 test('every line of invalid.ndjson is rejected as malformed with its reason', () => {
