@@ -1,0 +1,16 @@
+{
+  "source": ["src", "test", "testkit", "gates"],
+  "domain": "src",
+  "graph": ["src", "testkit"],
+  "moduleCountExclude": "src/index.ts",
+  "probes": "rules/gate-probes",
+  "exceptions": "gates/domain-types-exceptions.json",
+  "baseline": "gates/domain-types-baseline.json",
+  "brandFile": null,
+  "brandImporters": null,
+  "migrations": null,
+  "biteSeedDir": "gates",
+  "context": "../../tab-recap/CONTEXT.md",
+  "builtins": ["node:util"],
+  "declaredAhead": []
+}

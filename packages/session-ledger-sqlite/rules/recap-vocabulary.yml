@@ -1,0 +1,22 @@
+id: recap-vocabulary
+language: typescript
+severity: error
+message: >-
+  Banned synonym in an identifier. CONTEXT.md is the vocabulary: summary -> recap,
+  sidebar/panel -> column, offset -> cursor, worker -> daemon.
+note: >-
+  Words from the outside world (Claude's `away_summary`, a herdr field) may appear
+  as STRING LITERALS at an adapter's edge — never as our own names.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/test/**"
+  - "**/probes/recap-vocabulary/**"
+rule:
+  any:
+    - kind: identifier
+    - kind: property_identifier
+    - kind: type_identifier
+    - kind: shorthand_property_identifier
+    - kind: shorthand_property_identifier_pattern
+  regex: "(?i)(summary|sidebar|panel|offset|worker)"

@@ -1,0 +1,19 @@
+id: recap-no-comments
+language: typescript
+severity: error
+message: >-
+  A comment in the code. The code carries no comments: meaning belongs in names, types, small
+  functions and tests; rationale belongs in CONTEXT.md, the README or the OpenSpec design.
+note: >-
+  Directive pragmas are not comments for this rule: a type-checker or linter directive
+  (`@ts-expect-error`, `oxlint-disable…`, `ast-grep-ignore`) and a `/// <reference` line stay.
+files:
+  - "**/src/**"
+  - "**/test/**"
+  - "**/testkit/**"
+  - "**/gates/**"
+  - "**/probes/recap-no-comments/**"
+rule:
+  kind: comment
+  not:
+    regex: "^(//|/\\*)\\s*(@ts-(expect-error|ignore|nocheck|check)|oxlint-disable|ast-grep-ignore|eslint-disable)|^///\\s*<reference"

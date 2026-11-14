@@ -1,0 +1,9 @@
+{
+  "plugins": ["typescript"],
+  "rules": {
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-member-access": "error"
+  }
+}

@@ -82,5 +82,11 @@ bun bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire
 echo "the linters bite (a seeded violation must fail them):"
 bash ci/verify-bite.sh && echo "  ok    oxlint rejects the seeded rule violation and the seeded type errors" || fail "a linter accepted the seeded violation"
 
+echo "gates.d (each ci/gates.d/*.sh in name order: the package bridge and the tracks' own plugin gates):"
+for gate in ci/gates.d/*.sh; do
+    [ -f "$gate" ] || continue
+    bash "$gate" && echo "  ok    $(basename "$gate")" || fail "$(basename "$gate")"
+done
+
 [ "$failures" -eq 0 ] && { echo "lint: clean"; exit 0; }
 echo "lint: $failures finding(s)"; exit 1
