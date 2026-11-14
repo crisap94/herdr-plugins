@@ -10,6 +10,6 @@ export function wireCurate(parts: { readonly store: Store; readonly curator: () 
     const { store } = parts;
     return new Curate({
         records: store.records, ledger: store.ledger, stories: store.stories, writer: parts.curator, clock: () => Date.now(),
-        zone: () => Intl.DateTimeFormat().resolvedOptions().timeZone, language: () => loadConfig().recapLanguage, rubric: RUBRIC.items, tail: (lanes) => tailOf(parts.transcripts, lanes), every: () => loadConfig().reconcileEvery, log: (line) => { parts.log(line); },
+        zone: () => Intl.DateTimeFormat().resolvedOptions().timeZone, language: () => loadConfig().recapLanguage, rubric: RUBRIC.items, tail: (lanes) => tailOf(parts.transcripts, lanes), every: () => loadConfig().reconcileEvery, repair: () => loadConfig().curatorRepair, log: (line) => { parts.log(line); },
     });
 }

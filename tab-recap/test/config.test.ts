@@ -100,6 +100,20 @@ test('TAB_RECAP_TELEMETRY_TAGS: off unless explicitly on', () => {
     }
 });
 
+test('TAB_RECAP_CURATOR_REPAIR: off unless once; once in any case and spacing; anything else is off', () => {
+    const saved = process.env['TAB_RECAP_CURATOR_REPAIR'];
+    try {
+        delete process.env['TAB_RECAP_CURATOR_REPAIR'];
+        assert.equal(loadConfig().curatorRepair, 'off');
+        for (const [raw, mode] of [['once', 'once'], [' ONCE ', 'once'], ['on', 'off'], ['off', 'off']] as const) {
+            process.env['TAB_RECAP_CURATOR_REPAIR'] = raw;
+            assert.equal(loadConfig().curatorRepair, mode, raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_CURATOR_REPAIR']; } else { process.env['TAB_RECAP_CURATOR_REPAIR'] = saved; }
+    }
+});
+
 test('TAB_RECAP_RUN_DEBOUNCE_MS: a whole number of ms from 5000 to 300000 is the window; 0, unset or anything else is off', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_RUN_DEBOUNCE_MS'] as const;
     const saved = keys.map((key) => process.env[key]);
