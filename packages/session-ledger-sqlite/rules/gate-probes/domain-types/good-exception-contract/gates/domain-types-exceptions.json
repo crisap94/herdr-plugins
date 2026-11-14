@@ -1,0 +1,37 @@
+[
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "tab",
+    "reason": "probe: a plain field of a copied compaction-timing record"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/record.ts",
+    "symbol": "Row",
+    "field": "name",
+    "reason": "probe: a plain field of a copied record"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/record.ts",
+    "symbol": "Row",
+    "field": "tags",
+    "reason": "probe: a plain array field of a copied record"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/record.ts",
+    "symbol": "names",
+    "field": "return",
+    "reason": "probe: the plain return of a contract method"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/record.ts",
+    "symbol": "read",
+    "field": "name",
+    "reason": "probe: a plain parameter of a contract method"
+  }
+]
