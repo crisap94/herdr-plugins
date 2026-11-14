@@ -34,8 +34,8 @@ import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { parseRepairMode, repairModeOr } from '#src/recap/application/job-kit/repair.ts';
 import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
-import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { closeEvidenceOr, DEFAULT_PIPELINE, parseCloseEvidence, pipelineOf } from '#src/recap/domain/pipeline.ts';
+import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -52,6 +52,7 @@ export interface Config {
     readonly customCommand: string;
     readonly effort: Effort;
     readonly pipeline: Pipeline;
+    readonly writerCloseEvidence: CloseEvidence;
     readonly recapDebounce: Debounce;
     readonly reconcileEvery: number;
     readonly locale: Locale;
@@ -196,7 +197,7 @@ export function loadConfig(): Config {
         models: modelsOf(get, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
         effort: effortOf(get('TAB_RECAP_EFFORT')),
-        pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE,
+        pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE, writerCloseEvidence: closeEvidenceOr(parseCloseEvidence(get('TAB_RECAP_WRITER_CLOSE_EVIDENCE'))),
         recapDebounce: debounceOf(get('TAB_RECAP_RUN_DEBOUNCE_MS')),
         reconcileEvery: Math.max(1, Math.floor(number(get('TAB_RECAP_RECONCILE_EVERY'), RECONCILE_EVERY))),
         sizing: {

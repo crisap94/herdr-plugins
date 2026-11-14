@@ -114,6 +114,20 @@ test('TAB_RECAP_CURATOR_REPAIR: off unless once; once in any case and spacing; a
     }
 });
 
+test('TAB_RECAP_WRITER_CLOSE_EVIDENCE: off unless on; on in any case and spacing; anything else is off', () => {
+    const saved = process.env['TAB_RECAP_WRITER_CLOSE_EVIDENCE'];
+    try {
+        delete process.env['TAB_RECAP_WRITER_CLOSE_EVIDENCE'];
+        assert.equal(loadConfig().writerCloseEvidence, 'off');
+        for (const [raw, mode] of [['on', 'on'], [' ON ', 'on'], ['off', 'off'], ['maybe', 'off']] as const) {
+            process.env['TAB_RECAP_WRITER_CLOSE_EVIDENCE'] = raw;
+            assert.equal(loadConfig().writerCloseEvidence, mode, raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_WRITER_CLOSE_EVIDENCE']; } else { process.env['TAB_RECAP_WRITER_CLOSE_EVIDENCE'] = saved; }
+    }
+});
+
 test('TAB_RECAP_RUN_DEBOUNCE_MS: a whole number of ms from 5000 to 300000 is the window; 0, unset or anything else is off', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_RUN_DEBOUNCE_MS'] as const;
     const saved = keys.map((key) => process.env[key]);

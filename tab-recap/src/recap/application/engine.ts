@@ -11,7 +11,7 @@ export type EngineSource = Pick<RecapJobDeps, 'transcripts'>;
 export type EngineStore = Pick<RecapJobDeps, 'records' | 'ledger'>;
 export type EngineModels = Pick<RecapJobDeps, 'summarizer' | 'enumerator'>;
 export type EngineEnvironment = Pick<RecapJobDeps, 'clock' | 'repos' | 'log'>;
-export type EngineSettings = Pick<RecapJobDeps, 'language' | 'writerView' | 'keepInput' | 'pipeline' | 'debounce'>;
+export type EngineSettings = Pick<RecapJobDeps, 'language' | 'writerView' | 'keepInput' | 'pipeline' | 'closeEvidence' | 'debounce'>;
 
 export interface EnginePlugs extends Pick<RecapJobDeps, 'ran'> {
     readonly source: EngineSource;

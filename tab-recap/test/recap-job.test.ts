@@ -6,6 +6,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import type { CloseEvidence } from '#src/recap/domain/pipeline.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { firstTask, NO_REPOS, oneTask } from '#test/support.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -303,4 +304,30 @@ test('a recap already stamped in the wanted language but holding an open fact in
     await once(jobWith(quiet), 'requested');
     await once(jobWith(quiet), 'focused');
     assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en']], 'the requested run rewrites; the quiet focus that follows does not call the writer again');
+});
+
+test('the close-evidence setting reaches the writer request and the piped run; unset is off', async () => {
+    for (const setting of [undefined, 'off', 'on'] as const) {
+        const requests: RecapRequest[] = [];
+        const summarizer: Summarizer = {
+            backend: 'fake',
+            contract: 'strict',
+            write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answer({ op: 'close', id: 'f1', why: 'done' }), costUsd: 0 }); },
+        };
+        const store = memoryStore();
+        seed(store, {
+            ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
+            lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+        });
+        const deps = { writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS,
+            transcripts: registryWith({ claude: transcriptsOf('claude') }),
+            records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+        };
+        const job = new RecapJob(setting === undefined ? deps : { ...deps, closeEvidence: (): CloseEvidence => setting });
+        job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+        await new Promise((resolve) => { setTimeout(resolve, 20); });
+        const expected: CloseEvidence = setting ?? 'off';
+        assert.equal(requests[0]?.closeEvidence, expected, String(setting));
+        assert.equal(store.ledger.openOf({ tab: 'w1:t1', key: 't1' }).length, setting === 'on' ? 1 : 0, `open after ${String(setting)}`);
+    }
 });

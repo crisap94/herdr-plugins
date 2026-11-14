@@ -15,7 +15,7 @@ import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
 import { contextWindows } from '#src/adapters/capability/context-window.ts';
@@ -119,6 +119,7 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
             language: (): string => loadConfig().recapLanguage,
             keepInput: (): boolean => loadConfig().keepInputDays > 0,
             pipeline: (): Pipeline => loadConfig().pipeline,
+            closeEvidence: (): CloseEvidence => loadConfig().writerCloseEvidence,
             writerView: (): WriterView => loadConfig().writerView,
             debounce: (): Debounce => loadConfig().recapDebounce,
         },
