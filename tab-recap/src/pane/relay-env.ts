@@ -39,6 +39,22 @@ export function titleOf(role: Role): Pick<Welcome, 'title'> {
     return { title: role === 'bar' ? 'tab-recap:bar' : 'tab-recap' };
 }
 
+export function cookedExecve(stdin: Pick<ReadStream, 'isTTY' | 'setRawMode'>, execve: NonNullable<typeof process.execve>): NonNullable<typeof process.execve> {
+    return (file, args, env) => {
+        if (stdin.isTTY) {
+            stdin.setRawMode(false);
+        }
+        try {
+            return execve(file, args, env);
+        } catch (error) {
+            if (stdin.isTTY) {
+                stdin.setRawMode(true);
+            }
+            throw error;
+        }
+    };
+}
+
 export function relayEnvOf(env: NodeJS.ProcessEnv, pluginRoot: URL, home: URL = pathToFileURL(`${homedir()}/`)): RelayEnv {
     const set = new Map(Object.entries(env).filter((entry) => entry[1] !== undefined && entry[1] !== ''));
     const state = set.get('TAB_RECAP_STATE') ?? set.get('HERDR_PLUGIN_STATE_DIR');

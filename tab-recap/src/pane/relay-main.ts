@@ -1,6 +1,6 @@
 import { createConnection } from 'node:net';
 import { LEAVE } from '../wire/view/paint.ts';
-import { relayEnvOf } from './relay-env.ts';
+import { cookedExecve, relayEnvOf } from './relay-env.ts';
 import { runRelay } from './relay.ts';
 
 const PLUGIN_ROOT = new URL('../../', import.meta.url);
@@ -19,7 +19,7 @@ await runRelay(relayEnvOf(process.env, PLUGIN_ROOT), {
     setTimeout,
     clearTimeout,
     now: () => Date.now(),
-    execve: typeof process.execve === 'function' ? process.execve.bind(process) : null,
+    execve: typeof process.execve === 'function' ? cookedExecve(process.stdin, process.execve.bind(process)) : null,
     exit: (code) => process.exit(code),
     seen: null,
 });
