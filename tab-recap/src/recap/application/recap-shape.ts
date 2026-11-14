@@ -10,10 +10,26 @@ export function tidy(raw: string, limit = MAX_WORDS): string {
     return NOTHING.has(clipped.toLowerCase()) ? '' : clipped;
 }
 
+const TOKENS = /"(?:[^"\\]|\\.)*"|[{}]/g;
+
 export function objectIn(text: string): unknown {
     const from = text.indexOf('{');
     const to = text.lastIndexOf('}');
-    return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
+    if (from < 0 || to <= from) {
+        return undefined;
+    }
+    let depth = 0;
+    for (const token of text.slice(from).matchAll(TOKENS)) {
+        depth += Number(token[0] === '{') - Number(token[0] === '}');
+        if (depth === 0) {
+            try {
+                return JSON.parse(text.slice(from, from + token.index + 1));
+            } catch {
+                break;
+            }
+        }
+    }
+    return JSON.parse(text.slice(from, to + 1));
 }
 
 export function renderRecap(sections: RecapSections, headings: 'en' | 'es'): string {

@@ -37,10 +37,17 @@ test('harness decider: fenced JSON is read, extra keys are ignored', async () =>
     assert.deepEqual(found.kind === 'decided' ? found.answers : null, { closes_request: 1, stuck: 0 });
 });
 
-for (const [name, reply] of [['a missing id', '{"closes_request": 0.9}'], ['out of range', '{"closes_request": 1.2, "stuck": 0}'], ['a negative', '{"closes_request": -0.1, "stuck": 0}'], ['a string', '{"closes_request": "0.9", "stuck": 0}'], ['prose', 'I think the first is likely.'], ['an array', '[0.9, 0.1]'], ['null', 'null']] as const) {
+for (const [name, reply] of [['a missing id', '{"closes_request": 0.9}'], ['out of range', '{"closes_request": 1.2, "stuck": 0}'], ['a negative', '{"closes_request": -0.1, "stuck": 0}'], ['a string', '{"closes_request": "0.9", "stuck": 0}'], ['prose', 'I think the first is likely.'], ['an array', '[0.9, 0.1]'], ['null', 'null'], ['true and false', '{"closes_request": true, "stuck": false}'], ['true and false after prose', 'Answer: {"closes_request": true, "stuck": false}'], ['a missing id after prose', 'Answer: {"closes_request": 0.9} done'], ['out of range after prose', 'Answer: {"closes_request": 1.2, "stuck": 0} done'], ['a string after prose', 'Answer: {"closes_request": "0.9", "stuck": 0} done'], ['an array of the object', '[{"closes_request": 0.9, "stuck": 0.1}]'], ['an array of the object with prose after it', '[{"closes_request": 0.9, "stuck": 0.1}] done'], ['broken JSON after prose', 'Answer: {"closes_request": 0.9, "stuck": } done'], ['an array of the object after prose', 'Answer: [{"closes_request": 0.9, "stuck": 0.1}]']] as const) {
     test(`harness decider: ${name} is unreadable`, async () => {
         const found = await decider(reply).decider.ask({}, questions);
         assert.deepEqual(found.kind === 'unknown' ? found.why.why : found.kind, 'unreadable');
+    });
+}
+
+for (const [name, reply] of [['prose before the object', 'Here are the probabilities: {"closes_request": 0.92, "stuck": 0.03}'], ['prose after the object', '{"closes_request": 0.92, "stuck": 0.03}\nThe first is likely; the second is not.'], ['prose on both sides of a fenced object', 'Sure.\n```json\n{"closes_request": 0.92, "stuck": 0.03}\n```\nDone.'], ['a second object after the first', '{"closes_request": 0.92, "stuck": 0.03}\n{"closes_request": 0.1, "stuck": 0.9}'], ['a brace in a string and text after', '{"closes_request": 0.92, "stuck": 0.03, "why": "the } closes it"} }']] as const) {
+    test(`harness decider: ${name} is read`, async () => {
+        const found = await decider(reply).decider.ask({}, questions);
+        assert.deepEqual(found.kind === 'decided' ? found.answers : found.kind, { closes_request: 0.92, stuck: 0.03 });
     });
 }
 
