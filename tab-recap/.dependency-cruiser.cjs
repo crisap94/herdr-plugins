@@ -1,9 +1,11 @@
+const { readdirSync } = require('node:fs');
+const { join } = require('node:path');
 const brandImporters = require('./ci/brand-importers.json');
-const engineFiles = require('./ci/engine-files.json');
 
 const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
 const brandFile = exact('src/recap/domain/brand.ts');
-const engine = Object.values(engineFiles).flat().map(exact);
+const graphRules = join(__dirname, 'rules', 'graph');
+const fragments = readdirSync(graphRules).filter((name) => name.endsWith('.cjs')).toSorted().flatMap((name) => require(join(graphRules, name)));
 
 module.exports = {
   options: {
@@ -67,12 +69,6 @@ module.exports = {
       to: { path: brandFile },
     },
     {
-      name: 'engine-self-contained',
-      severity: 'error',
-      from: { path: engine },
-      to: { pathNot: [...engine, '^(node:)?util$'] },
-    },
-    {
       name: 'drizzle-adapter-only',
       severity: 'error',
       from: { pathNot: ['^src/adapters/db/', '^test/'] },
@@ -96,5 +92,6 @@ module.exports = {
       from: {},
       to: { couldNotResolve: true },
     },
+    ...fragments,
   ],
 };
