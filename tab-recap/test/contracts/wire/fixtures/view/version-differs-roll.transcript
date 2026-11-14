@@ -1,0 +1,10 @@
+# WC 3.6: the daemon runs 10.0.0, the pane runs 9.9.9 and the disk holds 10.0.0, so the pane re-executes toward 10.0.0.
+@ daemon-version 10.0.0
+@ disk-version 10.0.0
+! open
+C {"t":"hello","protocol":1,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"welcome","protocol":1,"version":"10.0.0","title":"tab-recap","texts":{"connecting":"Connecting to the recap daemon…","down":"The recap daemon is not running.","downHint":"It starts again with the next herdr session.","mismatch":"This pane and the recap daemon speak different protocols."}}
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+! effect reexec
+! state connecting
+! close pane

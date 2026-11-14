@@ -1,0 +1,13 @@
+# Rule V2: a line that is not JSON, and a first message that is not hello, are answered with bye malformed and a close.
+# WC 3.5: the pane treats bye malformed like bye protocol.
+! open
+C this line is not json
+D {"t":"bye","why":"malformed","protocol":1,"version":"9.9.9"}
+! state version-mismatch
+! close daemon
+! wait 30000
+! open
+C {"t":"ping"}
+D {"t":"bye","why":"malformed","protocol":1,"version":"9.9.9"}
+! state version-mismatch
+! close daemon
