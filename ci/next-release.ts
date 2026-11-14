@@ -29,6 +29,12 @@ export interface Release {
 
 export type Get = (path: string) => Promise<unknown>;
 
+export interface Options {
+    readonly previous: string | undefined;
+    readonly to: string;
+    readonly plugin: string;
+}
+
 const KINDS: readonly Kind[] = ['added', 'changed', 'fixed', 'internal'];
 const PREFIX = 'changelog::';
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -135,20 +141,28 @@ function api(): Get {
     };
 }
 
-async function main(): Promise<void> {
+export function optionsOf(args: readonly string[], env: Readonly<Record<string, string | undefined>>): Options {
     const { values } = parseArgs({
-        args: process.argv.slice(2),
-        options: { previous: { type: 'string' }, to: { type: 'string' } },
+        args: [...args],
+        options: { previous: { type: 'string' }, to: { type: 'string' }, plugin: { type: 'string' } },
         strict: true,
     });
-    const plugin = process.env.PLUGIN ?? 'tab-recap';
+    const plugin = values.plugin ?? env['PLUGIN'] ?? 'tab-recap';
+    if (plugin === '') {
+        throw new Error('--plugin needs the plugin name');
+    }
+    return { previous: values.previous, to: values.to ?? 'main', plugin };
+}
+
+async function main(): Promise<void> {
+    const { previous: given, to, plugin } = optionsOf(process.argv.slice(2), process.env);
     const tags = execFileSync('git', ['tag', '-l', `${plugin}-v*`], { encoding: 'utf8' }).split('\n');
-    const previous = values.previous ?? latestTag(tags, plugin);
+    const previous = given ?? latestTag(tags, plugin);
     if (previous === null) {
         throw new Error(`no ${plugin}-v* tag to start from`);
     }
     const date = process.env.RELEASE_DATE ?? new Date().toISOString().slice(0, 10);
-    const result = await release(api(), previous, values.to ?? 'main', date, plugin);
+    const result = await release(api(), previous, to, date, plugin);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
