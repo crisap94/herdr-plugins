@@ -1,0 +1,18 @@
+[
+  { "export": "InputAgent", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "LaneHint", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "TaskGroup", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "InputNote", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "InputTranscript", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "InputFact", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "InputLedger", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "InputCandidate", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "RecapInput", "origin": "tab-recap/src/ports/recap-input.ts" },
+  { "export": "RefusedOperation", "origin": "tab-recap/src/ports/summarizer.ts" },
+  { "export": "Correction", "origin": "tab-recap/src/ports/summarizer.ts" },
+  { "export": "RecapRequest", "origin": "tab-recap/src/ports/summarizer.ts" },
+  { "export": "Written", "origin": "tab-recap/src/ports/summarizer.ts" },
+  { "export": "Enumerated", "origin": "tab-recap/src/ports/enumerators.ts" },
+  { "export": "Curated", "origin": "tab-recap/src/ports/curators.ts" },
+  { "export": "CuratorMode", "origin": "tab-recap/src/ports/curators.ts" }
+]
