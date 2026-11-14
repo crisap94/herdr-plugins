@@ -137,11 +137,15 @@ while [ $# -gt 0 ]; do
     esac
 done
 echo "$method $url$data" >> "$CURL_LOG"
+created='{"iid":7,"labels":["land","changelog::internal"]}'
+empty='{}'
 case "$method $url" in
+    "GET "*merge_requests/[0-9]*) printf '%s' "${FAKE_MR_GET:-$empty}" > "$out"; echo "${FAKE_MR_GET_CODE:-200}" ;;
+    "PUT "*merge_requests/*/merge) echo '{}' > "$out"; echo "${FAKE_MERGE_CODE:-200}" ;;
     "GET "*merge_requests*page=2*) printf '%s' "${FAKE_LIST2:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
     "GET "*merge_requests*) printf '%s' "${FAKE_LIST:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
     "GET "*repository/tags/*) echo '{}' > "$out"; echo "${FAKE_TAG_CODE:-404}" ;;
-    "POST "*merge_requests*) echo '{}' > "$out"; echo "${FAKE_MR_CODE:-201}" ;;
+    "POST "*merge_requests*) printf '%s' "${FAKE_MR_BODY:-$created}" > "$out"; echo "${FAKE_MR_CODE:-201}" ;;
     "POST "*repository/tags*) echo '{}' > "$out"; echo "${FAKE_TAG_POST_CODE:-201}" ;;
     *) echo '{}' > "$out"; echo 599 ;;
 esac
@@ -149,6 +153,8 @@ SH
 chmod +x "$scratch/curl-fake"
 export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CURL_ARGV="$scratch/curl-argv.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
 export CI_PROJECT_PATH=group/project CI_SERVER_HOST=example.invalid RELEASE_TOKEN=bite-token CI_COMMIT_SHA="$(git rev-parse HEAD)"
+unset RELEASE_AUTO_MERGE
+export RELEASE_POLL_INTERVAL=0
 git init --quiet --bare "$scratch/remote.git"
 export PUSH_URL="$scratch/remote.git"
 remote_refs() { git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)'; }
@@ -214,6 +220,39 @@ expect pass "a release is pushed although the runner rewrites the URL to its job
 [ "$(git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)')" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release push followed the runner's URL rewrite, where the job token may not push" >&2; wrong=$((wrong + 1)); }
 git config --unset "url.$scratch/job-token.git.insteadOf"
 git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+
+auto() { : > "$CURL_LOG"; : > "$scratch/curl-argv.log"; publish > "$scratch/auto.out" 2>&1; local status=$?; git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0 2>/dev/null; echo "$status"; }
+said() { grep -qxF -- "$1" "$scratch/auto.out"; }
+calls() { grep -c "^$1 " "$CURL_LOG"; }
+pipelined='{"iid":7,"sha":"abc123","labels":["land","changelog::internal"],"head_pipeline":{"id":5}}'
+[ "$(FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "the release merge request waits for a hand merge (RELEASE_AUTO_MERGE is not 1)" && [ "$(calls PUT)" = "0" ] && [ "$(calls GET | tr -d ' ')" = "1" ] \
+    || { echo "bite: dark: without RELEASE_AUTO_MERGE the release must print that it waits for a hand merge, exit 0, and make no merge call and no read of the merge request" >&2; wrong=$((wrong + 1)); }
+for value in 0 true yes; do
+    [ "$(RELEASE_AUTO_MERGE="$value" FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "the release merge request waits for a hand merge (RELEASE_AUTO_MERGE is not 1)" && [ "$(calls PUT)" = "0" ] \
+        || { echo "bite: dark: RELEASE_AUTO_MERGE=$value is not 1 and must make no merge call" >&2; wrong=$((wrong + 1)); }
+done
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "auto-merge set for !7" && [ "$(calls PUT)" = "1" ] \
+    && grep -q "^PUT .*/projects/1/merge_requests/7/merge auto_merge=true merge_when_pipeline_succeeds=true squash=false sha=abc123$" "$CURL_LOG" \
+    || { echo "bite: accept: with RELEASE_AUTO_MERGE=1 the release must ask once for auto-merge of !7 at its head commit, without squash, and print that it is set" >&2; wrong=$((wrong + 1)); }
+grep -q bite-token "$scratch/curl-argv.log" && { echo "bite: accept: the release token reached a curl command line" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=202 auto)" = "0" ] && said "auto-merge set for !7" \
+    || { echo "bite: accept: an auto-merge answered 202 is set" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=405 auto)" = "0" ] && said "auto-merge refused (HTTP 405): merge !7 by hand" \
+    || { echo "bite: refuse: a refused auto-merge must print the hand-merge line and exit 0" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET_CODE=404 auto)" = "0" ] && said "auto-merge refused (HTTP 404): merge !7 by hand" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a merge request that cannot be read back must print the hand-merge line, exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET='{"iid":7,"sha":"abc123","labels":[]}' auto)" = "0" ] && said "auto-merge refused: !7 has no pipeline after 20 tries: merge !7 by hand" && [ "$(calls GET | tr -d ' ')" = "21" ] && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a merge request with no pipeline after 20 reads must print the hand-merge line, exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_BODY='{}' FAKE_MR_GET="$pipelined" auto)" = "0" ] && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a create answer without a merge request number must exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=000 auto)" = "3" ] \
+    || { echo "bite: an API that cannot be reached for the merge call must end with exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET_CODE=000 auto)" = "3" ] \
+    || { echo "bite: an API that cannot be reached to read the merge request must end with exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_BODY='{"iid":7,"labels":["land","changelog::internal","release::hold"]}' FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "release::hold is set: merge by hand after the live check" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: hold: a release merge request created with release::hold must never be auto-merged (print the hold line, exit 0, no merge call)" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET='{"iid":7,"sha":"abc123","labels":["land","changelog::internal","release::hold"],"head_pipeline":{"id":5}}' auto)" = "0" ] && said "release::hold is set: merge by hand after the live check" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: hold: release::hold set by hand while the release waits for its pipeline must stop the auto-merge (print the hold line, exit 0, no merge call)" >&2; wrong=$((wrong + 1)); }
 
 : > "$CURL_LOG"
 export CI_COMMIT_SHA="$(git rev-parse HEAD)"
