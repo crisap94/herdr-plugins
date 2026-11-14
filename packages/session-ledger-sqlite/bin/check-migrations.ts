@@ -35,7 +35,7 @@ const NOT_COVERED = 3;
 const NUMBERED = /\/(\d+)-[^/]*\.ts$/;
 const USAGE = 'usage: bun bin/check-migrations.ts --dir <path> --tag-glob <glob> [--base <ref>] [--tag <tag>]';
 
-const transpiler = new (globalThis as unknown as { readonly Bun: BunRuntime }).Bun.Transpiler({ loader: 'ts', trimUnusedImports: true });
+const transpiler = new (globalThis as unknown as { readonly Bun: BunRuntime }).Bun.Transpiler({ loader: 'ts', trimUnusedImports: false });
 
 const say = (line: string): void => {
     process.stdout.write(`${line}\n`);

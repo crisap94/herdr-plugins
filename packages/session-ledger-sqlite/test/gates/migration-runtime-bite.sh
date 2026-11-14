@@ -39,6 +39,13 @@ export function up(db: Database): void {
     new Database(':memory:');
 }
 TS
+changed unused-import <<'TS' && { echo "bite: an unused runtime import passed" >&2; exit 1; }
+import { readFileSync } from 'node:fs';
+import type { Database } from 'bun:sqlite';
+export function up(db: Database): void {
+    db.exec('CREATE TABLE a (id INTEGER)');
+}
+TS
 git switch --quiet -C deleted main && git rm --quiet schema/001-first.ts && commit deleted
 migrations && { echo "bite: a deleted release passed" >&2; exit 1; }
 exit 0
