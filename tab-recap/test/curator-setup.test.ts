@@ -6,6 +6,8 @@ import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { curatorFor } from '#src/daemon/backends.ts';
 import type { Job } from '#src/recap/domain/job.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
+import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
@@ -121,4 +123,46 @@ test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFOR
             }
         });
     }
+});
+
+const answerOf = (value: string | undefined): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_ANSWER' ? value : undefined));
+
+test('the curator answer: TAB_RECAP_CURATE_ANSWER set to schema (trimmed, any case) asks for a schema answer; any other value, or none, keeps the text route', () => {
+    assert.deepEqual(answerOf(' Schema '), { ...CURATE_DEFAULT, answer: 'schema' });
+    for (const value of ['text', 'json', '', undefined]) {
+        assert.equal('answer' in answerOf(value), false, String(value));
+    }
+    assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
+});
+
+function recordingHarness(structured: StructuredSupport | undefined): { readonly harness: Harness; readonly calls: HarnessCall[] } {
+    const calls: HarnessCall[] = [];
+    const ran: Ran = { kind: 'ran', text: 'ok', costUsd: 0 };
+    const harness: Harness = {
+        id: 'fake',
+        label: () => 'fake',
+        limit: null,
+        ...(structured === undefined ? {} : { structured }),
+        run: (call) => {
+            calls.push(call);
+            return Promise.resolve(ran);
+        },
+    };
+    return { harness, calls };
+}
+
+const settings: HarnessSettings = { model: 'm', effort: 'low' };
+
+test('the curator asks for a schema answer only when it was asked for and the harness supports schema, in the mode it was given', async () => {
+    const schema = recordingHarness('schema');
+    await new HarnessCurator(schema.harness, settings, 'schema').write('document', 'reconcile');
+    assert.deepEqual(schema.calls[0]?.answer, { kind: 'schema', schema: 'reconcile' });
+    const unsupported = recordingHarness(undefined);
+    await new HarnessCurator(unsupported.harness, settings, 'schema').write('document');
+    assert.equal(unsupported.calls.length, 1);
+    assert.equal('answer' in (unsupported.calls[0] ?? {}), false);
+    const text = recordingHarness('schema');
+    await new HarnessCurator(text.harness, settings, 'text').write('document');
+    assert.equal(text.calls.length, 1);
+    assert.equal('answer' in (text.calls[0] ?? {}), false);
 });

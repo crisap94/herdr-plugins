@@ -1,6 +1,7 @@
 import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
-import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
+import type { Harness, HarnessCall, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import type { JobAnswer } from '#src/recap/domain/job.ts';
 import { CURATOR_INSTRUCTIONS } from './prompts/curator-instructions.ts';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from './prompts/curator-reconcile-instructions.ts';
 import { unfenced } from './prompts/recap-prompt.ts';
@@ -9,16 +10,19 @@ export class HarnessCurator implements Curators {
     readonly backend: string;
     private readonly harness: Harness;
     private readonly settings: HarnessSettings;
+    private readonly answer: JobAnswer;
 
-    constructor(harness: Harness, settings: HarnessSettings) {
+    constructor(harness: Harness, settings: HarnessSettings, answer: JobAnswer = 'text') {
         this.harness = harness;
         this.settings = settings;
+        this.answer = answer;
         this.backend = harness.label(settings);
     }
 
     async write(document: string, mode: CuratorMode = 'story'): Promise<Curated> {
         const instructions = mode === 'reconcile' ? RECONCILE_CURATOR_INSTRUCTIONS : CURATOR_INSTRUCTIONS;
-        const call = { instructions, input: document };
+        const schema = this.answer === 'schema' && this.harness.structured === 'schema';
+        const call: HarnessCall = schema ? { instructions, input: document, answer: { kind: 'schema', schema: mode } } : { instructions, input: document };
         if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(instructions) > this.harness.limit) {
             return unknown({ why: 'unreadable', detail: `the document is too long for ${this.harness.id}` });
         }
