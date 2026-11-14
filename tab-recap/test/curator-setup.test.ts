@@ -4,8 +4,11 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
+import { curatorFor } from '#src/daemon/backends.ts';
+import type { Job } from '#src/recap/domain/job.ts';
 import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const raw = { locale: undefined, recapLanguage: undefined };
@@ -21,6 +24,49 @@ test('the curator job: as the recap writer, no model of its own and medium effor
     assert.deepEqual(curateJobOf(given), { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
     assert.deepEqual(curateJobOf((key) => (key.endsWith('_MODEL') ? undefined : 'nonsense')), { by: 'recap', model: '', effort: 'medium' }, 'unknown values are the defaults');
     assert.equal(curateJobOf((key) => (key === 'TAB_RECAP_CURATE_BY' ? 'off' : undefined)).by, 'off');
+});
+
+const timed = (value: string): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_TIMEOUT_MS' ? value : undefined));
+
+test('the curator time limit: TAB_RECAP_CURATE_TIMEOUT_MS sets a positive whole number of milliseconds; anything else leaves the key out', () => {
+    assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
+    assert.deepEqual(timed('90000'), { ...CURATE_DEFAULT, timeoutMs: 90000 });
+    for (const value of ['0', '-5', 'abc', '1.5', '']) {
+        assert.equal('timeoutMs' in timed(value), false, value);
+    }
+});
+
+const CURATOR_KEYS = ['TAB_RECAP_BACKEND', 'TAB_RECAP_CLAUDE_POLICY_ACK', 'TAB_RECAP_CURATE_TIMEOUT_MS'];
+
+async function curatorLimit(limit: string | undefined): Promise<unknown> {
+    const { loadConfig } = await import('#src/daemon/config.ts');
+    const was = CURATOR_KEYS.map((key) => process.env[key]);
+    try {
+        Object.assign(process.env, { TAB_RECAP_BACKEND: 'claude', TAB_RECAP_CLAUDE_POLICY_ACK: 'on' });
+        if (limit === undefined) {
+            delete process.env['TAB_RECAP_CURATE_TIMEOUT_MS'];
+        } else {
+            process.env['TAB_RECAP_CURATE_TIMEOUT_MS'] = limit;
+        }
+        const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
+        await curatorFor(loadConfig(), ['claude'], 'work', runtime)?.write('document');
+        const request = runtime.calls[0]?.request;
+        return request === undefined ? undefined : { has: 'timeoutMs' in request, value: request.timeoutMs };
+    } finally {
+        for (const [at, key] of CURATOR_KEYS.entries()) {
+            const before = was[at];
+            if (before === undefined) {
+                delete process.env[key];
+            } else {
+                process.env[key] = before;
+            }
+        }
+    }
+}
+
+test('the curator call gets the time limit when TAB_RECAP_CURATE_TIMEOUT_MS sets one, and no limit of its own when it does not', async () => {
+    assert.deepEqual(await curatorLimit('90000'), { has: true, value: 90000 });
+    assert.deepEqual(await curatorLimit(undefined), { has: false, value: undefined });
 });
 
 test('the curator row is the last, a job row: each part is edited and saved under its variable', () => {
