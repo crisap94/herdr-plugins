@@ -1,0 +1,16 @@
+[
+  {
+    "class": "wire",
+    "file": "src/wire/frame.ts",
+    "symbol": "Frame",
+    "field": "lines",
+    "reason": "probe: a plain array field of a wire message"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/frame.ts",
+    "symbol": "Frame",
+    "field": "rows",
+    "reason": "probe: a plain number field of a wire message"
+  }
+]

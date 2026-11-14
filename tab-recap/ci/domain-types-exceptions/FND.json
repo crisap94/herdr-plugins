@@ -1,0 +1,415 @@
+[
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "hookShimPath",
+    "field": "return",
+    "reason": "WC 1, approved as written: its return of hookShimPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "hookShimPath",
+    "field": "stateDir",
+    "reason": "WC 1, approved as written: parameter stateDir of hookShimPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "hooksSocketPath",
+    "field": "return",
+    "reason": "WC 1, approved as written: its return of hooksSocketPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "hooksSocketPath",
+    "field": "stateDir",
+    "reason": "WC 1, approved as written: parameter stateDir of hooksSocketPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "viewSocketPath",
+    "field": "return",
+    "reason": "WC 1, approved as written: its return of viewSocketPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/paths.ts",
+    "symbol": "viewSocketPath",
+    "field": "stateDir",
+    "reason": "WC 1, approved as written: parameter stateDir of viewSocketPath is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "Ignored",
+    "field": "t",
+    "reason": "WC 3.3, approved as written: t of Ignored is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "Malformed",
+    "field": "why",
+    "reason": "WC 3.3, approved as written: why of Malformed is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "decodeClient",
+    "field": "line",
+    "reason": "WC 3.3, approved as written: parameter line of decodeClient is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "decodeDaemon",
+    "field": "line",
+    "reason": "WC 3.3, approved as written: parameter line of decodeDaemon is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "encode",
+    "field": "return",
+    "reason": "WC 3.3, approved as written: its return of encode is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "push",
+    "field": "chunk",
+    "reason": "WC 3.3, approved as written: parameter chunk of push is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "push",
+    "field": "return",
+    "reason": "WC 3.3, approved as written: return of push is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "<anonymous>",
+    "field": "afterMs",
+    "reason": "WC 3.5, approved as written: afterMs of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "<anonymous>",
+    "field": "keepFrame",
+    "reason": "WC 3.5, approved as written: keepFrame of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "<anonymous>",
+    "field": "protocol",
+    "reason": "WC 3.5, approved as written: protocol of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "<anonymous>",
+    "field": "toward",
+    "reason": "WC 3.5, approved as written: toward of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "<anonymous>",
+    "field": "version",
+    "reason": "WC 3.5, approved as written: version of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Conn",
+    "field": "attempt",
+    "reason": "WC 3.5, approved as written: attempt of Conn is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Conn",
+    "field": "failingSince",
+    "reason": "WC 3.5, approved as written: failingSince of Conn is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Conn",
+    "field": "hasFrame",
+    "reason": "WC 3.5, approved as written: hasFrame of Conn is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Facts",
+    "field": "canExec",
+    "reason": "WC 3.5, approved as written: canExec of Facts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Facts",
+    "field": "diskVersion",
+    "reason": "WC 3.5, approved as written: diskVersion of Facts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Facts",
+    "field": "now",
+    "reason": "WC 3.5, approved as written: now of Facts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Facts",
+    "field": "ownVersion",
+    "reason": "WC 3.5, approved as written: ownVersion of Facts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "Facts",
+    "field": "rolledFor",
+    "reason": "WC 3.5, approved as written: rolledFor of Facts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "step",
+    "field": "return",
+    "reason": "WC 3.5, approved as written: its return of step is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "<anonymous>",
+    "field": "lines",
+    "reason": "WC 3.7, approved as written: lines of a member of a union type in this file is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "intentOf",
+    "field": "return",
+    "reason": "WC 3.7, approved as written: its return of intentOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "localOf",
+    "field": "key",
+    "reason": "WC 3.7, approved as written: parameter key of localOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "localOf",
+    "field": "return",
+    "reason": "WC 3.7, approved as written: its return of localOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "ENTER",
+    "field": "return",
+    "reason": "WC 3.8, approved as written: its return of ENTER is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "ENTER",
+    "field": "title",
+    "reason": "WC 3.8, approved as written: parameter title of ENTER is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "colour",
+    "reason": "WC 3.8, approved as written: parameter colour of paintOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "lines",
+    "reason": "WC 3.8, approved as written: lines of paintOf is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "return",
+    "reason": "WC 3.8, approved as written: its return of paintOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "title",
+    "reason": "WC 3.8, approved as written: parameter title of paintOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Bye",
+    "field": "protocol",
+    "reason": "WC 3.3, approved as written: protocol of Bye is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Bye",
+    "field": "version",
+    "reason": "WC 3.3, approved as written: version of Bye is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "FrameMessage",
+    "field": "lines",
+    "reason": "WC 3.3, approved as written: lines of FrameMessage is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "colour",
+    "reason": "WC 3.3, approved as written: colour of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "cols",
+    "reason": "WC 3.3, approved as written: cols of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "pane",
+    "reason": "WC 3.3, approved as written: pane of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "protocol",
+    "reason": "WC 3.3, approved as written: protocol of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "rows",
+    "reason": "WC 3.3, approved as written: rows of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "tab",
+    "reason": "WC 3.3, approved as written: tab of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Hello",
+    "field": "version",
+    "reason": "WC 3.3, approved as written: version of Hello is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Key",
+    "field": "key",
+    "reason": "WC 3.3, approved as written: key of Key is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Resize",
+    "field": "cols",
+    "reason": "WC 3.3, approved as written: cols of Resize is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Resize",
+    "field": "rows",
+    "reason": "WC 3.3, approved as written: rows of Resize is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "StatusTexts",
+    "field": "connecting",
+    "reason": "WC 3.3, approved as written: connecting of StatusTexts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "StatusTexts",
+    "field": "down",
+    "reason": "WC 3.3, approved as written: down of StatusTexts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "StatusTexts",
+    "field": "downHint",
+    "reason": "WC 3.3, approved as written: downHint of StatusTexts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "StatusTexts",
+    "field": "mismatch",
+    "reason": "WC 3.3, approved as written: mismatch of StatusTexts is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Tap",
+    "field": "col",
+    "reason": "WC 3.3, approved as written: col of Tap is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Tap",
+    "field": "row",
+    "reason": "WC 3.3, approved as written: row of Tap is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Welcome",
+    "field": "protocol",
+    "reason": "WC 3.3, approved as written: protocol of Welcome is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Welcome",
+    "field": "title",
+    "reason": "WC 3.3, approved as written: title of Welcome is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/protocol.ts",
+    "symbol": "Welcome",
+    "field": "version",
+    "reason": "WC 3.3, approved as written: version of Welcome is a plain field of the view wire contract, checked by the codec at the socket edge"
+  }
+]
