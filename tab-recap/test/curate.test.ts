@@ -119,6 +119,28 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
     assert.deepEqual(garbage.logs, ['curator w1:t1 t1: refused — the answer is not JSON', 'curator w1:t1 t1: no paragraph in the answer; the old one stays']);
 });
 
+test('a story answer with text around its JSON object is read as that object', async () => {
+    const { curate, ledger, stories, logs } = setup([{ kind: 'curated', text: 'Here it is: {"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"One line."} Thanks.' }]);
+    await curate.run('w1:t1');
+    assert.equal(ledger.allOf(T1).find((each) => each.id === 'b')?.closedWhy, 'merged');
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'One line.');
+    assert.equal(logs.filter((line) => line.includes('refused')).length, 0);
+});
+
+test('a story answer that is not JSON is refused and nothing is stored', async () => {
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: 'not json' }]);
+    await curate.run('w1:t1');
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not JSON'));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
+test('a story answer that is a JSON array is refused and nothing is stored', async () => {
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: '[{"a":1}]' }]);
+    await curate.run('w1:t1');
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not an object'));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
 const settings = { model: '', effort: 'medium' } as const;
 
 test('the curator is a job on a harness: its instructions follow the document', async () => {

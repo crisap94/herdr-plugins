@@ -4,9 +4,11 @@ import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { curatorInput } from './curator-input.ts';
 import { newestChange } from './expanded-view.ts';
 import { Reconciling } from './ledger-reconcile.ts';
+import { answerTextOf } from './recap-shape.ts';
 import type { CurateWhy, ReconcilingDeps, RunEvent } from './ledger-reconcile.ts';
 
 export type { CurateWhy, RunEvent };
@@ -89,7 +91,8 @@ export class Curate {
 
     private store(run: CurationRun, answer: string, named: ReadonlyMap<string, Fact>): void {
         const [open, where] = [new Set([...named].filter(([, fact]) => fact.state === 'open').map(([id]) => id)), `curator ${run.task.tab} ${run.task.key}`];
-        const checked = curationOf(answer, open);
+        const read = parseText(answer);
+        const checked = curationOf(read.kind === 'ok' ? answerTextOf(read.value) : answer, open);
         checked.refused.forEach((why) => { this.deps.log(`${where}: refused — ${why}`); });
         const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? '', why: 'merged' }));
         const applied = this.deps.stories.keep(run, { story: checked.story, merges });
