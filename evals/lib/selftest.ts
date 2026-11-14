@@ -8,6 +8,7 @@ import { allPass, cohenKappa, flips, mcnemarExact, wilson } from './stats.ts';
 import { stubCalled } from './stub.ts';
 import { AUDIT } from './summary.ts';
 import type { Adapter, Answer, Call, Config, EvalSpec, Graded, Judged, Mark, RunSummary } from './types.ts';
+import { unparsedOf } from './unparsed.ts';
 
 const failures: string[] = [];
 
@@ -40,6 +41,11 @@ check('quoted finds a squashed quote', quoted('the  invoice\ntable', ['Next: wir
 check('quoted accepts an ellipsis between fragments', quoted('Next: wire ... table', ['Next: wire the invoice table now']));
 check('quoted rejects an invented quote', !quoted('the payment table', ['Next: wire the invoice table now']) && !quoted('', ['x']));
 check('parseJson strips fences', JSON.stringify(parseJson('```json\n{"a":1}\n```')) === '{"a":1}' && parseJson('not json') === null);
+check('a reconcile answer of {"ops":[]} is readable today', !unparsedOf('curator-reconcile', '{"ops":[]}', 'today'));
+check('a reconcile answer that is not JSON is unparsed today', unparsedOf('curator-reconcile', 'not json', 'today'));
+check('a story answer that is not JSON is unparsed today', unparsedOf('curator-story', 'not json', 'today'));
+check('a story answer that is an array is unparsed today', unparsedOf('curator-story', '[1]', 'today'));
+check('a reconcile answer that is an array is not unparsed today', !unparsedOf('curator-reconcile', '[1]', 'today'));
 
 interface ToyInput {
     readonly question: string;
