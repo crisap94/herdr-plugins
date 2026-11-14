@@ -9,6 +9,7 @@ import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import type { FakeCall } from '@stateforge-labs/harness-adapters/testing';
 import type { PolicedRuntime } from '#test/fakes/harness-runtime.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
+import type { HarnessCall } from '#src/ports/harness.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
@@ -186,6 +187,26 @@ test('labels: the default model shows, an empty model of codex and opencode show
     assert.equal(new LibraryHarness(runtime, 'claude', 1).label({ model: '', effort: 'low' }), 'claude/haiku');
     assert.equal(new LibraryHarness(runtime, 'codex', 1).label({ model: 'gpt-6-luna', effort: 'high' }), 'codex/gpt-6-luna');
     assert.equal(new LibraryHarness(runtime, 'opencode', 1).label(settings), 'opencode');
+});
+
+test('answer text, or no answer: the call runs as before, one headless run', async () => {
+    const absent = scripted('codex', { text: 'a' }, { text: 'b' });
+    assert.equal((await new LibraryHarness(absent, 'codex', 1000).run(call, settings)).kind, 'ran');
+    const text: HarnessCall = { ...call, answer: { kind: 'text' } };
+    assert.equal((await new LibraryHarness(absent, 'codex', 1000).run(text, settings)).kind, 'ran');
+    assert.equal(absent.calls.length, 2);
+});
+
+test('answer schema: Unknown failed with the structured-output detail, and no headless run starts', async () => {
+    const runtime = scripted('claude', { text: 'never' });
+    const schema: HarnessCall = { ...call, answer: { kind: 'schema', schema: 'writer' } };
+    const ran = await new LibraryHarness(runtime, 'claude', 1000, undefined, true).run(schema, settings);
+    assert.ok(isUnknown(ran) && ran.why.why === 'failed' && ran.why.code === 1 && ran.why.detail === 'structured output is not available in this harness library');
+    assert.equal(runtime.calls.length, 0);
+});
+
+test('the library harness declares structured support none', () => {
+    assert.equal(new LibraryHarness(fakeRuntime({ scripts: {} }), 'codex', 1000).structured, 'none');
 });
 
 test('guard: no run class, argument builder, session cleanup or --pure under adapters/harness', () => {

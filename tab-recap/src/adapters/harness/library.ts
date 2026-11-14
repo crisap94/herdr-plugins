@@ -1,6 +1,6 @@
 import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
 import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
-import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran } from '#src/ports/harness.ts';
+import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -14,6 +14,8 @@ export { LIBRARY_IDS } from './library-constants.ts';
 export type HarnessRuntime = Pick<Runtime, 'headless' | 'promptLimit' | 'capabilities' | 'policyNotice'>;
 
 export type LibraryId = Extract<HarnessId, 'claude' | 'codex' | 'opencode'>;
+
+type Refusal = Ran | null;
 
 const effortOf = (capabilities: Capabilities | null, effort: Effort): LibraryEffort =>
     capabilities === null || !isUsable(capabilities[CapabilityName.Effort][Engine.Cli]) || effort === 'default' ? LIBRARY_HARNESS.harnessDefaultEffort : effort;
@@ -35,6 +37,7 @@ function ranOf(output: RunOutput): Ran {
 export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
     readonly id: Id;
     readonly limit: number | null;
+    readonly structured: StructuredSupport = 'none';
     private readonly runtime: HarnessRuntime;
     private readonly timeoutMs: number;
     private readonly jobTag: JobTag | undefined;
@@ -54,13 +57,22 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
         return model === '' ? this.id : `${this.id}/${model}`;
     }
 
+    private refusalOf(call: HarnessCall): Refusal {
+        if (this.runtime.policyNotice(this.id, LIBRARY_HARNESS.loginStore) !== null && !this.claudeAck) {
+            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: LIBRARY_HARNESS.ackMessage });
+        }
+        if (call.answer?.kind === 'schema') {
+            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: 'structured output is not available in this harness library' });
+        }
+        return null;
+    }
+
     async run(call: HarnessCall, settings: HarnessSettings): Promise<Ran> {
+        const refused = this.refusalOf(call);
+        if (refused !== null) return refused;
         const login = { mode: LIBRARY_HARNESS.loginStore } as const;
         const ackRequired = this.runtime.policyNotice(this.id, LIBRARY_HARNESS.loginStore) !== null;
         const credential = ackRequired ? { ...login, acknowledgePolicy: true as const } : login;
-        if (ackRequired && !this.claudeAck) {
-            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: LIBRARY_HARNESS.ackMessage });
-        }
         const model = settings.model === '' ? MODEL_DEFAULTS[this.id] : settings.model;
         const capabilities = this.runtime.capabilities(this.id);
         const jobTag = this.jobTag;
