@@ -91,14 +91,14 @@ test('keys.tsv holds for intentOf and localOf', () => {
 
 test('states.tsv holds for step', () => {
     const rows = tableOf('states.tsv');
-    assert.equal(rows.length, 27);
-    for (const [state, attempt, failing, event, facts, next, effects] of rows) {
+    assert.equal(rows.length, 29);
+    for (const [state, attempt, failing, hasFrame, event, facts, next, effects] of rows) {
         const now: Facts = JSON.parse(facts ?? '');
         const conn: Conn = {
             state: state as ConnState,
             attempt: Number(attempt),
             failingSince: failing === '-' ? null : now.now - Number(failing),
-            hasFrame: state === 'connected',
+            hasFrame: hasFrame === 'true',
         };
         const result = step(conn, JSON.parse(event ?? '') as ConnEvent, now);
         assert.equal(result.conn.state, next, `${state} ${event} ${facts}`);
