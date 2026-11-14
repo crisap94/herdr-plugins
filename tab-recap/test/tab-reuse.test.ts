@@ -53,8 +53,7 @@ async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Rec
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
         records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
-    job.request(lane.tab, [lane], 'requested');
-    await new Promise((resolve) => { setTimeout(resolve, 20); });
+    await job.refreshNow(lane.tab, [lane]);
     return requests;
 }
 
