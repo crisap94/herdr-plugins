@@ -32,6 +32,8 @@ import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT, CLAUDE_POLICY_ACKS } from '#src/recap/domain/claude-policy-ack.ts';
 import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
+import { parseRepairMode, repairModeOr } from '#src/recap/application/job-kit/repair.ts';
+import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
 import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
@@ -63,6 +65,7 @@ export interface Config {
     readonly keepInputDays: number;
     readonly keepBrief: BriefRetention;
     readonly curator: Job;
+    readonly curatorRepair: RepairMode;
     readonly autocompact: AutocompactPolicy;
     readonly tuning: AutocompactTuning;
     readonly decider: DeciderJob;
@@ -215,7 +218,7 @@ export function loadConfig(): Config {
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         keepBrief: briefRetentionOf(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
-        curator: curateJobOf(get),
+        curator: curateJobOf(get), curatorRepair: repairModeOr(parseRepairMode(get('TAB_RECAP_CURATOR_REPAIR'))),
         autocompact: policyOf(get),
         tuning: tuningOf(get),
         decider: deciderJobOf(get),
