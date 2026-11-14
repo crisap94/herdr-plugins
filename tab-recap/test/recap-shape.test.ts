@@ -25,6 +25,48 @@ test('objectIn: the answer may be fenced or wrapped in a sentence — the JSON i
     assert.throws(() => objectIn('{"ops": [}'));
 });
 
+test('objectIn: the first complete object is read when text after it holds a brace or a second object', () => {
+    assert.deepEqual(objectIn('{"ops":[]}\nNote: I left {f2} alone.'), { ops: [] });
+    assert.deepEqual(objectIn('Here: {"ops":[{"op":"close","id":"f1","why":"done"}]}\n{"ops":[{"op":"close","id":"f9","why":"x"}]}'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
+    assert.deepEqual(objectIn('{"a":1} }'), { a: 1 });
+    assert.deepEqual(objectIn('{"a":1} {"b":'), { a: 1 });
+});
+
+test('objectIn: braces inside JSON strings and escaped quotes do not end the object', () => {
+    assert.deepEqual(objectIn('{"why":"closes } and { braces","n":{"m":1}} then }'), { why: 'closes } and { braces', n: { m: 1 } });
+    assert.deepEqual(objectIn('{"why":"say \\"}\\" now"} trailing }'), { why: 'say "}" now' });
+    assert.deepEqual(objectIn('{"path":"C:\\\\dir\\\\"} }'), { path: 'C:\\dir\\' });
+});
+
+const objectInBefore = (text: string): unknown => {
+    const from = text.indexOf('{');
+    const to = text.lastIndexOf('}');
+    return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
+};
+
+test('objectIn: every text read today reads to the same value', () => {
+    for (const text of [
+        '{"ops":[]}',
+        '```json\n{"ops":[]}\n```',
+        'Here you go: {"ops":[{"op":"close","id":"f1","why":"done"}]} Hope it helps!',
+        '{"verdicts":[{"item":"t1/now/0","check":"I1","pass":true,"critique":""}],"keyfacts":["a {b}"],"coverage":[{"keyfact":0,"item":null}]}',
+        '[{"a":1}]',
+        '{"a":"\\\\"}',
+        '  {"nested":{"deep":{"deeper":[{"x":"}"}]}}}  ',
+        'I could not do that',
+        '} only {',
+        '{ never closed',
+    ]) {
+        assert.deepEqual(objectIn(text), objectInBefore(text), text);
+    }
+});
+
+test('objectIn: a broken first object with no readable slice still throws', () => {
+    assert.throws(() => objectIn('{"ops": [} and more }'));
+    assert.throws(() => objectIn("{'a': 1}"));
+    assert.equal(objectIn('} {'), undefined);
+});
+
 test('renderer: golden output in English with empty sections as —', () => {
     const text = renderRecap({ ...NO_SECTIONS, goal: 'Ship the uploader', now: ['Running CI on !940'], done: ['Added backoff to upload.ts', 'Tests pass'], links: ['upload.ts', '!940'] }, 'en');
     assert.equal(text, [

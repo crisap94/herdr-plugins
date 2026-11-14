@@ -1,6 +1,7 @@
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { objectIn } from '#src/recap/application/recap-shape.ts';
 import { unfenced } from './prompts/recap-prompt.ts';
 
 const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
@@ -16,9 +17,10 @@ export function deciderInstructions(questions: Readonly<Record<string, Noul>>): 
 }
 
 export function probabilitiesOf(reply: string, ids: readonly string[]): Record<string, number> | null {
+    const answer = unfenced(reply);
     let parsed: unknown;
-    try { parsed = JSON.parse(unfenced(reply)); } catch { return null; }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+    try { parsed = answer.lastIndexOf('[', answer.indexOf('{')) >= 0 ? null : objectIn(answer); } catch { return null; }
+    if (typeof parsed !== 'object' || parsed === null) return null;
     const found: Record<string, number> = {};
     for (const id of ids) {
         const value = (parsed as Record<string, unknown>)[id];
