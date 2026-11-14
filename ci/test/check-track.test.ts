@@ -162,3 +162,56 @@ test('a shared slot file admits its own track and SW, and no other track', () =>
     assert.equal(check('track/ENG-x', ['tab-recap/src/daemon/slots/timing.ts']).status, 0);
     assert.equal(check('track/SW-x', ['tab-recap/src/daemon/slots/timing.ts']).status, 0);
 });
+
+test('probe owners: the wire-self-contained probes belong to FND (row FND-W1), not to CI', () => {
+    const probe = 'tab-recap/ci/probes/depcruise/wire-self-contained/bad/src/wire/view/protocol.ts';
+    assert.equal(check('track/FND-W1-view-wire-contract', [probe]).status, 0);
+    const refused = check('track/CI-x', [probe]);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /owned by FND/u);
+});
+
+test('probe owners: the workspace-types-only probes belong to FND (row FND-6b-1), not to CI', () => {
+    const probe = 'tab-recap/ci/probes/depcruise/workspace-types-only/good/src/index.ts';
+    assert.equal(check('track/FND-6b-1-seams', [probe]).status, 0);
+    const refused = check('track/CI-x', [probe]);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /owned by FND/u);
+});
+
+test('probe owners: a domain-types probe whose folder name contains exception-wire belongs to FND, not to CI', () => {
+    const probes = [
+        'tab-recap/ci/probes/domain-types/good-exception-wire/src/wire/frame.ts',
+        'tab-recap/ci/probes/domain-types/bad-exception-wire-outside/expect',
+        'tab-recap/ci/probes/domain-types/bad-exception-wire-parameter/ci/domain-types-exceptions/lead.json',
+    ];
+    assert.equal(check('track/FND-W1-view-wire-contract', probes).status, 0);
+    const refused = check('track/CI-x', [probes[0] ?? '']);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /owned by FND/u);
+});
+
+test('probe owners: the pane-closure probes belong to PANE (row M3) and the hooks-only-in-adapter probes to HOOK (row H1b)', () => {
+    const pane = 'tab-recap/ci/probes/depcruise/pane-closure/bad/src/pane/relay.ts';
+    assert.equal(check('track/PANE-M3-relay', [pane]).status, 0);
+    const paneRefused = check('track/FND-x', [pane]);
+    assert.equal(paneRefused.status, 1);
+    assert.match(paneRefused.stderr, /owned by PANE/u);
+    const hooks = 'tab-recap/ci/probes/depcruise/hooks-only-in-adapter/bad/src/main.ts';
+    assert.equal(check('track/HOOK-H1b-endpoint', [hooks]).status, 0);
+    const hooksRefused = check('track/CI-x', [hooks]);
+    assert.equal(hooksRefused.status, 1);
+    assert.match(hooksRefused.stderr, /owned by HOOK/u);
+});
+
+test('probe owners: every other probe folder stays with CI', () => {
+    const others = [
+        'tab-recap/ci/probes/domain-types/good-exception-callback/tsconfig.json',
+        'tab-recap/ci/probes/depcruise/no-circular/bad/src/a.ts',
+        'tab-recap/ci/probes/domain-types/tsconfig.base.json',
+    ];
+    assert.equal(check('track/CI-x', others).status, 0);
+    const refused = check('track/FND-x', [others[0] ?? '']);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /owned by CI/u);
+});

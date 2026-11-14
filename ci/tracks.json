@@ -90,6 +90,8 @@
       "!ci/test/{check-track,relocate,gates-in-sync,pipeline-rules,baselines}.test.ts",
       "tab-recap/ci/**",
       "!tab-recap/ci/{lanes.json,lanes-generate.ts,check-lane.ts,engine-files.json}",
+      "!tab-recap/ci/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
+      "!tab-recap/ci/probes/domain-types/*exception-wire*/**",
       "!tab-recap/ci/domain-types-*/**",
       "tab-recap/gates/**",
       "tab-recap/test/release.test.ts"
@@ -122,6 +124,8 @@
       "tab-recap/src/wire/**",
       "tab-recap/test/contracts/**",
       "tab-recap/ci/domain-types-exceptions/FND.json",
+      "tab-recap/ci/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
+      "tab-recap/ci/probes/domain-types/*exception-wire*/**",
       { "lane": "lead" }
     ]
   },
