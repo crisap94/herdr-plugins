@@ -67,6 +67,10 @@ function chainOf(rows: readonly Row[]): void {
         const second = moves.find((candidate) => candidate !== first && (under(first.to, candidate.from) || under(candidate.from, first.to)));
         if (second !== undefined) return notCovered(`path rows chain: ${first.from} ${first.to} is moved again by ${second.from} ${second.to}`);
     }
+    for (const first of moves) {
+        const second = moves.find((candidate) => candidate !== first && under(candidate.from, first.from));
+        if (second !== undefined) return notCovered(`path rows overlap: ${first.from} ${first.to} and ${second.from} ${second.to}`);
+    }
 }
 
 function readMap(path: string): readonly Row[] {

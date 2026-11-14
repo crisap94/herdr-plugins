@@ -191,6 +191,18 @@ describe('relocate codemod', () => {
         expect(git('status', '--porcelain')).toBe('');
     });
 
+    test('a map whose path sources overlap exits 3 and moves nothing', () => {
+        plant({ 'a/b/f.ts': 'export const f = 1;\n' });
+        git('add', '-A');
+        git('commit', '-q', '-m', 'overlap fixture');
+        const overlap = join(scratch, 'overlap.tsv');
+        writeFileSync(overlap, 'path\ta\tx\npath\ta/b\ty\n');
+        const result = relocate(overlap, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain('relocate: 3 — NOT COVERED: path rows overlap: a x and a/b y');
+        expect(git('status', '--porcelain')).toBe('');
+    });
+
     test('a destination through a symlink exits 3 and creates nothing outside', () => {
         const outside = join(scratch, 'outside-target');
         mkdirSync(outside);
