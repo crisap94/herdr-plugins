@@ -6,7 +6,7 @@ const runtimeOf = (source: string): string => transpiler.transformSync(source);
 
 const [tag, file] = process.argv.slice(2);
 if (tag === undefined || file === undefined) {
-    process.stderr.write('migration-runtime: usage: bun ci/migration-runtime.ts <tag> <file>\n');
+    process.stderr.write('migration-runtime: usage: bun gates/migrations/migration-runtime.ts <tag> <file>\n');
     process.exit(3);
 }
 const released = execFileSync('git', ['show', `${tag}:${file}`], { encoding: 'utf8' });

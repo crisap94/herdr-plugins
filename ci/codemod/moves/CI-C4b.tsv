@@ -1,0 +1,7 @@
+path	tab-recap/ci/check-migrations.sh	tab-recap/gates/migrations/check-migrations.sh
+path	tab-recap/ci/migration-runtime.ts	tab-recap/gates/migrations/migration-runtime.ts
+path	tab-recap/ci/migration-number-bite.sh	tab-recap/gates/migrations/migration-number-bite.sh
+path	tab-recap/ci/migration-runtime-bite.sh	tab-recap/gates/migrations/migration-runtime-bite.sh
+text	bash ci/check-migrations.sh	bash gates/migrations/check-migrations.sh	tab-recap/ci/lint.sh
+text	bash ci/migration-runtime-bite.sh	bash gates/migrations/migration-runtime-bite.sh	tab-recap/ci/lint.sh
+text	bash ci/migration-number-bite.sh	bash gates/migrations/migration-number-bite.sh	tab-recap/ci/lint.sh

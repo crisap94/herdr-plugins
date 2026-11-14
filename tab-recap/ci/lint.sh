@@ -66,12 +66,12 @@ echo "domain types over the tree (the ratchet: no signature gets worse, no basel
 bun bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run bun bin/check-domain-types.ts --json and lower or fix"
 
 echo "migrations (a released one runs unchanged, its types may move; a new one is numbered the base's highest plus one):"
-bash ci/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"
+bash gates/migrations/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"
 
 echo "the released-migration rule bites (a type-only change passes; a changed statement, a new runtime import and a deletion fail):"
-bash ci/migration-runtime-bite.sh && echo "  ok    released migrations" || fail "the released-migration rule let a runtime change through, or refused a type-only change"
+bash gates/migrations/migration-runtime-bite.sh && echo "  ok    released migrations" || fail "the released-migration rule let a runtime change through, or refused a type-only change"
 echo "the migration numbering bites (the next number and a run of them pass; a gap, a repeat and a duplicate fail):"
-bash ci/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
+bash gates/migrations/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
 
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
 bash ../ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"

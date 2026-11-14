@@ -27,6 +27,7 @@
     "test",
     "docs/screens/render.ts",
     "ci/*.ts",
+    "gates/migrations/*.ts",
     "types/*.d.ts"
   ],
   "exclude": [
