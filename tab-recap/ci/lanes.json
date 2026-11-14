@@ -390,6 +390,7 @@
       "src/recap/application/in-flight.ts",
       "src/recap/application/informer.ts",
       "src/recap/application/input-retention.ts",
+      "src/recap/application/job-kit/story-repair.ts",
       "src/recap/application/judge-anchors.ts",
       "src/recap/application/judge-answer.ts",
       "src/recap/application/judge-context.ts",

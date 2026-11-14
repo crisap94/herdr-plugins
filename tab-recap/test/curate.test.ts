@@ -10,6 +10,7 @@ import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { inputOf } from '#src/recap/application/recap-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
+import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
 import { timelineOf } from '#src/recap/render/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
@@ -22,14 +23,15 @@ import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 
 const T1 = { tab: 'w1:t1', key: 't1' };
 
-function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger } = {}): { curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
+function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger; readonly repair?: RepairMode } = {}):{ curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
     const ledger = over.ledger ?? new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue] = [[] as string[], [] as string[], { now: NOW }, [...answers]];
     const writer: Curators = { backend: 'fake/test', write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: 'no more answers' })); } };
-    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => clock.now, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, log: (line) => { logs.push(line); } };
+    const mode = over.repair;
+    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => clock.now, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
     const curate = new Curate(deps);
     return { curate, ledger, stories, store, logs, calls, clock };
 }
@@ -147,4 +149,56 @@ test('the curator is a job on a harness: its instructions follow the document', 
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const written = await new HarnessCurator(echo, settings).write('<curator_input version="1"/>');
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
+});
+
+const MERGE_F9 = { op: 'close', id: 'f9', why: 'merged', into: 'f2' };
+const MERGE_F1 = { op: 'close', id: 'f1', why: 'merged', into: 'f2' };
+const F9_REFUSAL = 'curator w1:t1 t1: refused — f9 is not an open fact (or is already merged)';
+
+test('with repair off, a refused story answer gets no second call and is stored as it was', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' })]);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(F9_REFUSAL));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'First.');
+});
+
+test('with repair once, a clean merge and a paragraph get no repair call', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1], story: 'Good.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Good.');
+});
+
+test('with repair once, a refused merge is sent back once with the first answer, and the repaired answer is stored', async () => {
+    const first = JSON.stringify({ ops: [MERGE_F9], story: 'First.' });
+    const { curate, calls, logs, stories } = setup([{ kind: 'curated', text: first }, answer({ ops: [MERGE_F1], story: 'Fixed.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.startsWith(calls[0] ?? ''), 'the repair call carries the same document first');
+    assert.ok(calls[1]?.includes(`<previous-answer>\n${first}\n</previous-answer>`));
+    assert.ok(calls[1]?.includes('- f9 is not an open fact (or is already merged)'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 1 refused'));
+    assert.equal(logs.filter((line) => line.includes('refused —')).length, 0, 'the repaired answer has nothing refused');
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Fixed.');
+});
+
+test('with repair once, an answer with no paragraph is sent back once, and a repair that gives none keeps the first answer', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1] })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.includes('- no paragraph'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 0 refused'));
+    assert.ok(logs.some((line) => line.includes('no paragraph in the answer; the old one stays')));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
+test('with repair once, a repair that is not JSON is not stored: the first answer is kept', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' }), { kind: 'curated', text: 'not json' }], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes(F9_REFUSAL));
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'First.');
 });

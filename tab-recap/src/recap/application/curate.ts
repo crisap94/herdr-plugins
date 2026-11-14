@@ -8,6 +8,8 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { curatorInput } from './curator-input.ts';
 import { newestChange } from './expanded-view.ts';
 import { Reconciling } from './ledger-reconcile.ts';
+import { storyAnswerOf } from './job-kit/story-repair.ts';
+import type { StoryReading } from './job-kit/story-repair.ts';
 import { answerTextOf } from './recap-shape.ts';
 import type { CurateWhy, ReconcilingDeps, RunEvent } from './ledger-reconcile.ts';
 
@@ -83,7 +85,20 @@ export class Curate {
                 deps.log(`curator ${tab} ${task.id}: ${writer.backend} gave none (${saying(answered.why)})`);
                 return;
             }
-            this.store({ task: { tab, key: task.id }, at: now, language: deps.language() }, answered.text, named);
+            const run: CurationRun = { task: { tab, key: task.id }, at: now, language: deps.language() };
+            const reading: StoryReading = (answer) => {
+                const open = new Set<string>();
+                for (const [id, fact] of named) {
+                    if (fact.state === 'open') {
+                        open.add(id);
+                    }
+                }
+                const text = answer.kind === 'curated' ? answer.text : '';
+                const read = parseText(text);
+                return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, open);
+            };
+            const kept = await storyAnswerOf(deps, { writer, run, sent: parseText(document), first: answered, reading });
+            this.store(run, kept.kind === 'curated' ? kept.text : answered.text, named);
         } finally {
             this.running.delete(key);
         }
