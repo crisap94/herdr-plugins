@@ -82,6 +82,34 @@ printf "export const five = 5;\n" > "$scratch/bad-wildcard/src/unstable/five.ts"
 run bad-wildcard
 if [ "$status" -eq 1 ] && grep -q "uncovered: ./unstable/five.ts five (src/unstable/five.ts)" <<<"$out"; then echo "  ok    bad-wildcard: an export of a file a wildcard entry matches fails when no test uses it"; else fail "bad-wildcard: exit $status, expected 1 naming ./unstable/five.ts five: $out"; fi
 
+probe bad-require
+cat > "$scratch/bad-require/package.json" <<'JSON'
+{
+  "name": "@probe/unit",
+  "type": "module",
+  "exports": {
+    ".": { "require": "./src/index.ts" },
+    "./extra": { "require": "./src/extra.ts" }
+  }
+}
+JSON
+printf "export const four = 4;\n" >> "$scratch/bad-require/src/index.ts"
+run bad-require
+if [ "$status" -eq 1 ] && grep -qF "uncovered: . four (src/index.ts)" <<<"$out"; then echo "  ok    bad-require: an export of an entry that only has the require condition is checked and fails when no test uses it"; else fail "bad-require: exit $status, expected 1 naming . four (src/index.ts): $out"; fi
+
+probe bad-unreadable
+cat > "$scratch/bad-unreadable/package.json" <<'JSON'
+{
+  "name": "@probe/unit",
+  "type": "module",
+  "exports": {
+    ".": { "browser": "./src/index.ts" }
+  }
+}
+JSON
+run bad-unreadable
+if [ "$status" -eq 1 ] && grep -qF "unreadable entry: . has no target under the conditions bun, import, require, default" <<<"$out"; then echo "  ok    bad-unreadable: an entry with no readable condition is a finding"; else fail "bad-unreadable: exit $status, expected 1 naming the unreadable entry: $out"; fi
+
 for spec in "../src/index.ts" "#src/index.ts" "@probe/unit/src/index.ts"; do
     probe bad-private
     printf "import { two } from '%s';\n\nexport const seen = two;\n" "$spec" > "$scratch/bad-private/test/x.test.ts"

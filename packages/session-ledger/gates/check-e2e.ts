@@ -17,7 +17,7 @@ type Fields = Readonly<Record<string, unknown>>;
 
 const SOURCE_FILE = /\.(ts|mts|cts|tsx|mjs|cjs|js)$/;
 const BUILTIN = /^(node|bun):/;
-const CONDITIONS = ['bun', 'import', 'default'];
+const CONDITIONS = ['bun', 'import', 'require', 'default'];
 const E2E = 'test/e2e/';
 const EXEMPT = 'test/gates/';
 
@@ -59,6 +59,15 @@ const exportsOf = (manifest: Fields): ReadonlyMap<string, string> => {
         const target = targetOf(value);
         return target === null ? [] : [[key, target] as const];
     }));
+};
+
+const unreadableOf = (manifest: Fields): readonly string[] => {
+    const map = manifest.exports;
+    if (!isFields(map)) {
+        return [];
+    }
+    return Object.entries(map).flatMap(([key, value]) =>
+        value === null || targetOf(value) !== null ? [] : [`unreadable entry: ${key} has no target under the conditions ${CONDITIONS.join(', ')}`]);
 };
 
 const wildcardEntries = (root: string, key: string, target: string): readonly Entry[] => {
@@ -247,7 +256,8 @@ export const scopeOf = (root: string): Scope => {
 export const checkE2e = (root: string): Report => {
     const notes: string[] = [];
     const entries = entriesOf(root, notes);
-    const findings = [...coverageOf(root, entries, notes), ...importsOf(scopeOf(root))];
+    const scope = scopeOf(root);
+    const findings = [...coverageOf(root, entries, notes), ...importsOf(scope), ...unreadableOf(scope.manifest)];
     return { notes, findings };
 };
 
