@@ -62,6 +62,7 @@
     "src/recap/domain/gates/g10-close-why.ts",
     "src/recap/domain/gates/g11-anchor.ts",
     "src/recap/domain/gates/g12-answered.ts",
+    "src/recap/domain/gates/g13-close-evidence.ts",
     "src/recap/domain/gates/g2-ledger-duplicate.ts",
     "src/recap/domain/gates/g6-unknown-id.ts",
     "src/recap/domain/gates/gate.ts",
