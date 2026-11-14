@@ -1,0 +1,33 @@
+{
+  "src/contract/engine.ts": {
+    "parameter": 17,
+    "return": 5,
+    "property": 9
+  },
+  "src/contract/environment.ts": {
+    "parameter": 1,
+    "return": 2
+  },
+  "src/contract/events.ts": {
+    "container": 1,
+    "property": 8
+  },
+  "src/contract/facts.ts": {
+    "property": 7
+  },
+  "src/contract/ids.ts": {
+    "container": 5,
+    "assertion": 5
+  },
+  "src/contract/kernel.ts": {
+    "parameter": 3,
+    "return": 1,
+    "property": 8,
+    "assertion": 1
+  },
+  "src/contract/session.ts": {
+    "parameter": 4,
+    "return": 1,
+    "property": 8
+  }
+}

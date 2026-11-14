@@ -103,8 +103,21 @@ test('test.sh fails on a failing test seeded in test/', SLOW, () => {
     assert.equal(run.status, 1, run.output);
 });
 
+function committed(unit: string): void {
+    const git = (...args: readonly string[]): void => {
+        spawnSync('git', ['-c', 'user.name=seed', '-c', 'user.email=seed@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: unit, encoding: 'utf8' });
+    };
+    git('init', '-q');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'seed');
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+}
+
 test('run.sh lint fails when one runner fails, and names it', SLOW, () => {
-    const run = seeded((unit) => write(unit, 'src/index.ts', '// a seeded comment\nexport {};\n'), ['bash', 'gates/run.sh', 'lint']);
+    const run = seeded((unit) => {
+        committed(unit);
+        write(unit, 'src/index.ts', `// a seeded comment\n${readFileSync(join(unit, 'src/index.ts'), 'utf8')}`);
+    }, ['bash', 'gates/run.sh', 'lint']);
     assert.equal(run.status, 1, run.output);
     assert.match(run.output, /FAIL {2}rules \(ast-grep/);
     assert.match(run.output, /lint: 1 finding\(s\)/);
