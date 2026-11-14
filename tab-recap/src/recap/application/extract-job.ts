@@ -7,9 +7,11 @@ import type { Gate } from '#src/recap/domain/gates/gate.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
 import { parseAnswer } from './ops-answer.ts';
 import type { Resolving, Tasked } from './ops-answer.ts';
-import { forTask, judge, keptOf, refusedIn, retryFor } from './ops-gating.ts';
+import { forTask, keptOf, refusedIn, retryFor } from './ops-gating.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
+import { batch } from './job-kit/batch.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const ATTEMPTS = 2;
 
@@ -33,7 +35,7 @@ const OLD_HINT = 'you answered a recap; answer operations on the ledger only: {"
 const gatesFor = (ground: Ground, contract: JobContract): readonly Gate[] => (contract === 'free-text' ? ground.gates.filter((gate) => gate.id !== 'G11') : ground.gates);
 
 function judged(ground: Ground, ops: readonly Tasked[], contract: JobContract): readonly Judged[] {
-    return ground.grounds.map((each) => judge(gatesFor(ground, contract), forTask(ops, each.key), each, ground.now));
+    return ground.grounds.map((each) => batch('writer', { gates: gatesFor(ground, contract), task: each, at: instant(ground.now) }, forTask(ops, each.key)));
 }
 
 interface Outcome {
