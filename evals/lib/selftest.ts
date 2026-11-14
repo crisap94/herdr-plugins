@@ -46,6 +46,9 @@ check('a reconcile answer that is not JSON is unparsed today', unparsedOf('curat
 check('a story answer that is not JSON is unparsed today', unparsedOf('curator-story', 'not json', 'today'));
 check('a story answer that is an array is unparsed today', unparsedOf('curator-story', '[1]', 'today'));
 check('a reconcile answer that is an array is not unparsed today', !unparsedOf('curator-reconcile', '[1]', 'today'));
+check('a reconcile answer wrapped in prose is unparsed today', unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'today'));
+check('a reconcile answer wrapped in prose is not unparsed by the P0 reader', !unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'p0'));
+check('a reconcile answer that is not JSON is unparsed by the P0 reader', unparsedOf('curator-reconcile', 'not json', 'p0'));
 
 interface ToyInput {
     readonly question: string;
