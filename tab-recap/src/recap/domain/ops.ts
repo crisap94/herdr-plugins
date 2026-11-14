@@ -1,5 +1,6 @@
 import type { ClosedWhy, Fact, FactId, RunId, Section, TaskId } from './fact.ts';
 import { sameTask } from './fact.ts';
+import type { Text } from './text.ts';
 
 export interface AddOp {
     readonly op: 'add';
@@ -24,6 +25,7 @@ export interface CloseOp {
     readonly op: 'close';
     readonly id: string;
     readonly why: ClosedWhy | null;
+    readonly anchor?: Text;
 }
 
 export type Operation = AddOp | UpdateOp | CloseOp;
