@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-migrations="$HERE/ci/check-migrations.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+migrations="$HERE/check-migrations.sh"
 scratch="$(mktemp -d)"
 released="$(mktemp -d)"
 trap 'rm -rf "$scratch" "$released"' EXIT
