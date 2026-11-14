@@ -49,6 +49,12 @@ module.exports = {
       to: { pathNot: ['^src/protocol/exchanges/', '^src/protocol/[^/]+\\.ts$'] },
     },
     {
+      name: 'wire-self-contained',
+      severity: 'error',
+      from: { path: '^src/wire/' },
+      to: { pathNot: ['^src/wire/', '^[a-z_]+$', '^[a-z_]+/[a-z]+$'] },
+    },
+    {
       name: 'transport-boundary',
       severity: 'error',
       from: { pathNot: ['^src/adapters/herdr/fleet\\.ts$', '^src/transport/'] },
@@ -81,7 +87,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true, pathNot: '\\.d\\.ts$' },
+      from: { orphan: true, pathNot: ['\\.d\\.ts$', '^src/(wire|engine|view-model|pane|adapters/hooks|daemon/view|daemon/slots)/'] },
       to: {},
     },
     {
