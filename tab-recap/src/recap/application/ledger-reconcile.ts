@@ -9,6 +9,8 @@ import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { CloseOp, Operation, UpdateOp } from '#src/recap/domain/ops.ts';
 import { reconciliationOf } from '#src/recap/domain/reconciliation.ts';
 import type { Reconciled } from '#src/recap/domain/reconciliation.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { answerTextOf } from './recap-shape.ts';
 import { reconcileInput } from './curator-input.ts';
 import { judge } from './ops-gating.ts';
 
@@ -46,7 +48,8 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
         parts.log(`${where}: ${writer.backend} gave none to reconcile (${saying(answered.why)})`);
         return;
     }
-    const checked = reconciliationOf(answered.text, input.facts, input.tail);
+    const read = parseText(answered.text);
+    const checked = reconciliationOf(read.kind === 'ok' ? answerTextOf(read.value) : answered.text, input.facts, input.tail);
     checked.refused.forEach((why) => { parts.log(`${where}: reconcile refused — ${why}`); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
     const ground = { key: task.key, tab: task.tab, shown: input.facts, open: openFacts, closedLately: [], source: '', language: parts.language, agents: task.agents };
