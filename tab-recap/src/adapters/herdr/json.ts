@@ -5,6 +5,7 @@ import { seenFrom, tokensOf } from '#src/recap/application/decode.ts';
 import { sessionOfForKind } from './session-registry.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { LayoutResult } from '#src/ports/columns.ts';
@@ -31,7 +32,8 @@ export function reconciliationOf(snapshot: Json): Reconciliation {
     const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent, sessionOfForKind)).filter((lane): lane is SeenLane => lane !== null);
     const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
     const focused = str(snapshot['focused_tab_id']);
-    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths };
+    const tabs = Array.isArray(snapshot['tabs']) ? { tabs: list(snapshot['tabs']).map((tab) => str(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
+    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths, ...tabs };
 }
 
 export function paneTokensOf(snapshot: Json): ReadonlyMap<string, TokenMap> {

@@ -11,7 +11,7 @@ import type { RunInputs } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
-import type { Retention } from '#src/ports/retention.ts';
+import type { Retention, TabRetirement } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
@@ -63,7 +63,7 @@ export interface Store {
     readonly stories: Stories;
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
-    readonly retention: Retention;
+    readonly retention: Retention & TabRetirement;
     readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
     readonly closedDays: ClosedLaneDays;
     readonly worktrees: WorktreeStatusWriter & WorktreeStatusReader;

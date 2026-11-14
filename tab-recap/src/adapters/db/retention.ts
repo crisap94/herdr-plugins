@@ -1,14 +1,24 @@
 import type { Database } from 'bun:sqlite';
-import { and, asc, count, eq, isNull, lt, sql } from 'drizzle-orm';
-import type { Removed, Retention } from '#src/ports/retention.ts';
+import { and, asc, count, eq, gte, isNull, lt, max, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import type { Removed, Retention, Retirement, TabRetirement } from '#src/ports/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { boundary, chapter, compaction, fact, run, tab as tabs, tabVisibility } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { one } from './rows.ts';
+import { ids } from './uuid7.ts';
 
-export class RetentionRepository implements Retention {
+const RETIRED = 'c.n > 1 AND NOT EXISTS (SELECT 1 FROM boundary b WHERE b.chapter_id = c.id)';
+
+export const retiredFloor = (tab: TabId): SQL<Count> => sql<Count>`COALESCE((SELECT MAX(c.n) FROM chapter c WHERE c.tab_id = ${tab} AND ${sql.raw(RETIRED)}), 1)`;
+
+export const retiredSince = (tab: TabId): SQL<Instant> => sql<Instant>`COALESCE((SELECT MAX(c.started_at) FROM chapter c WHERE c.tab_id = ${tab} AND ${sql.raw(RETIRED)}), -1)`;
+
+export class RetentionRepository implements Retention, TabRetirement {
     private readonly db: Database;
     private readonly orm: Orm;
     private readonly hasFacts: boolean;
@@ -35,6 +45,19 @@ export class RetentionRepository implements Retention {
             this.orm.delete(tabVisibility).where(eq(tabVisibility.tabId, id)).run();
             this.orm.delete(tabs).where(eq(tabs.id, id)).run();
             return removed;
+        });
+    }
+
+    retire(tab: TabId, at: Instant): Retirement {
+        return writeTx(this.db, () => {
+            const written = this.orm.select({ n: count() }).from(run).innerJoin(chapter, eq(chapter.id, run.chapterId))
+                .where(and(eq(chapter.tabId, tab), gte(chapter.n, retiredFloor(tab)))).get()?.n ?? 0;
+            if (written === 0) {
+                return 'nothing';
+            }
+            const last = this.orm.select({ n: max(chapter.n) }).from(chapter).where(eq(chapter.tabId, tab)).get()?.n ?? 1;
+            this.orm.insert(chapter).values({ id: ids.next(), tabId: tab, n: last + 1, startedAt: Number(at) }).run();
+            return 'retired';
         });
     }
 

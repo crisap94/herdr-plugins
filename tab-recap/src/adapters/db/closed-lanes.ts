@@ -1,5 +1,5 @@
 import type { Database } from 'bun:sqlite';
-import { and, asc, count, desc, eq, gte, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -23,6 +23,7 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { closedLane, run as runs, runTask as runTasks, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
+import { retiredSince } from './retention.ts';
 import { BadRow, isRow, one } from './rows.ts';
 
 type WindowOff = 0 | 1;
@@ -185,7 +186,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
         try {
             const { off, cutoff } = windowOf(now, this.days);
             return { kind: 'listed', records: off === 1 ? [] : this.orm.select(closedFields).from(closedLane).leftJoin(tasks, eq(tasks.id, closedLane.taskId))
-                .where(and(eq(closedLane.tabId, tab), gte(closedLane.closedAt, cutoff))).orderBy(desc(closedLane.closedAt), asc(closedLane.pane)).all().map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
+                .where(and(eq(closedLane.tabId, tab), gte(closedLane.closedAt, cutoff), gt(closedLane.closedAt, retiredSince(tab)))).orderBy(desc(closedLane.closedAt), asc(closedLane.pane)).all().map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
         } catch (error) {
             return unreadableOf(failureCauseOf(error));
         }

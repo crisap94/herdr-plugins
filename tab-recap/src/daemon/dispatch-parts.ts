@@ -36,7 +36,7 @@ export interface DispatchParts {
 export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
-        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
+        closures: parts.store.closedLanes, retirements: parts.store.retention, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

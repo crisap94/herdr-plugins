@@ -1,5 +1,5 @@
 import type { Database } from 'bun:sqlite';
-import { and, asc, desc, eq, exists, isNotNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, gte, isNotNull, or, sql } from 'drizzle-orm';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
@@ -8,6 +8,7 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { chapter as chapters, lastGoodRun, run as runs, runTask as runTasks, runTaskLane as runTaskLanes, tab as tabs, task as tasks, transcript as transcripts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
+import { retiredFloor } from './retention.ts';
 import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
@@ -56,7 +57,8 @@ export class RecapReader {
 
     private facts(tab: TabId): { readonly run: Uint8Array | null; readonly at: number | null; readonly language: string } {
         const good = this.orm.select({ id: runs.id, at: runs.at, language: runs.language }).from(runs)
-            .innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id)).where(eq(lastGoodRun.tabId, tab)).get();
+            .innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id)).innerJoin(chapters, eq(chapters.id, runs.chapterId))
+            .where(and(eq(lastGoodRun.tabId, tab), gte(chapters.n, retiredFloor(tab)))).get();
         if (good !== undefined) {
             return { run: blob(good, 'id'), at: whole(good, 'at'), language: text(good, 'language') };
         }
