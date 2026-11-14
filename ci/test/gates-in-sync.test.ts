@@ -13,6 +13,8 @@ const SYNCED = [
     'domain-types.sh',
     'test.sh',
     'check-boundaries.ts',
+    'check-e2e.ts',
+    'e2e-bite.sh',
     'bin/check-domain-types.ts',
     'bin/domain-findings.ts',
     'bin/domain-syntax.ts',

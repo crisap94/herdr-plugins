@@ -20,6 +20,8 @@ gate() {
 }
 
 gate "boundaries (imports stay in the package; src/ imports only its dependencies and allowed built-ins)" bun gates/check-boundaries.ts
+gate "e2e (every runtime export of every entry point is used by a test under test/e2e/; tests import only public entry points)" bun gates/check-e2e.ts
+gate "the e2e gate bites (an export no test uses and a test that imports src/ fail; a covered package passes)" bash gates/e2e-bite.sh
 gate "rules (ast-grep: each passes on the tree and bites its bad probe; the vocabulary is documented)" bash gates/rules.sh
 gate "pending rules and the oxlint unsafe-any probe bite" bash gates/rules-bite.sh
 gate "oxlint (type-aware: the tsconfig flags and the house rules)" bun --bun node_modules/.bin/oxlint --type-aware .

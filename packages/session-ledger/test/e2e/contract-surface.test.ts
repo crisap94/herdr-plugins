@@ -3,10 +3,10 @@ import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import ts from 'typescript';
-import * as root from '#src/index.ts';
+import * as root from '@stateforge-labs/session-ledger';
 
-const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..');
-const surfaceDir = join(packageRoot, 'test', 'surface');
+const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
+const surfaceDir = join(packageRoot, 'test', 'e2e', 'surface');
 
 const ELEVEN = [
     'UNREAD',
@@ -56,14 +56,14 @@ test('every surface fixture compiles', () => {
 
 test('a fixture that names a missing type does not compile', () => {
     const seeded = join(surfaceDir, 'seeded-missing.types.ts');
-    const source = "import type { NotAContractName } from '#src/index.ts';\nexport type Probe = NotAContractName;\n";
+    const source = "import type { NotAContractName } from '@stateforge-labs/session-ledger';\nexport type Probe = NotAContractName;\n";
     const errors = errorsOf([seeded], new Map([[seeded, source]]));
     assert.ok(errors.some((message) => message.includes('NotAContractName')));
 });
 
 test('a fixture that breaks a type assertion does not compile', () => {
     const seeded = join(surfaceDir, 'seeded-false.types.ts');
-    const source = "import type { Engine, SessionKey } from '#src/index.ts';\ntype Holds<T extends true> = T;\nexport type Probe = Holds<Parameters<Engine['turnEnded']>[1] extends SessionKey ? true : false>;\n";
+    const source = "import type { Engine, SessionKey } from '@stateforge-labs/session-ledger';\ntype Holds<T extends true> = T;\nexport type Probe = Holds<Parameters<Engine['turnEnded']>[1] extends SessionKey ? true : false>;\n";
     const errors = errorsOf([seeded], new Map([[seeded, source]]));
     assert.ok(errors.length > 0);
 });
