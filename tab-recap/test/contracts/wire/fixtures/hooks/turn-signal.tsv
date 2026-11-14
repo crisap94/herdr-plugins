@@ -1,0 +1,15 @@
+lane_status	status_ended_ms_ago	signal
+working	-	as-status
+working	0	as-status
+working	120000	as-status
+idle	0	none
+idle	29999	none
+idle	30000	none
+idle	30001	direct
+idle	-	direct
+done	1200	none
+done	-	direct
+blocked	1200	none
+blocked	-	direct
+unknown	1200	none
+unknown	-	direct

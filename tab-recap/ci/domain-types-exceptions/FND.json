@@ -1,6 +1,55 @@
 [
   {
     "class": "wire",
+    "file": "src/wire/hooks/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "text",
+    "reason": "WC 4.4, approved as written: text of the context answer of HookAnswer is a plain field of the hook wire contract, sent back to the harness at the hook edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/contract.ts",
+    "symbol": "HookCall",
+    "field": "cwd",
+    "reason": "WC 4.4, approved as written: cwd of HookCall is a plain field of the hook wire contract, read from the harness payload at the hook edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/contract.ts",
+    "symbol": "HookCall",
+    "field": "native",
+    "reason": "WC 4.4, approved as written: native of HookCall is a plain field of the hook wire contract, read from the harness payload at the hook edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/contract.ts",
+    "symbol": "HookCall",
+    "field": "session",
+    "reason": "WC 4.4, approved as written: session of HookCall is a plain field of the hook wire contract, read from the harness payload at the hook edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/turn-signal.ts",
+    "symbol": "turnSignalOf",
+    "field": "lane",
+    "reason": "WC 4.7, approved as written: parameter lane of turnSignalOf is part of the hook wire contract's Stop rule signature"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/turn-signal.ts",
+    "symbol": "turnSignalOf",
+    "field": "now",
+    "reason": "WC 4.7, approved as written: parameter now of turnSignalOf is part of the hook wire contract's Stop rule signature"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/hooks/turn-signal.ts",
+    "symbol": "turnSignalOf",
+    "field": "statusEndedAt",
+    "reason": "WC 4.7, approved as written: parameter statusEndedAt of turnSignalOf is part of the hook wire contract's Stop rule signature"
+  },
+  {
+    "class": "wire",
     "file": "src/wire/paths.ts",
     "symbol": "hookShimPath",
     "field": "return",
