@@ -18,6 +18,10 @@ test('the judge job takes its own harness, model and effort; `off` and `default`
     assert.equal(judgeJobOf(config({ TAB_RECAP_JUDGE_EFFORT: 'default' })).effort, 'default');
 });
 
+test('the judge has no time limit of its own: TAB_RECAP_JUDGE_TIMEOUT_MS sets none', () => {
+    assert.equal('timeoutMs' in judgeJobOf(config({ TAB_RECAP_JUDGE_TIMEOUT_MS: '90000' })), false);
+});
+
 test('where the judge runs: `recap` is the writer\'s harness and its model, another harness has its own, off is nowhere', () => {
     const recap = { backend: 'claude', models } as const;
     assert.deepEqual(placementOf(JUDGE_DEFAULT, recap, ['claude', 'codex']), { harness: 'claude', model: 'sonnet', effort: 'medium' });

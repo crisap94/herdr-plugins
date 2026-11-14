@@ -64,7 +64,7 @@ export function judgeFor(config: Config, available: readonly string[], work: str
 
 export function curatorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort, ...(placed.timeoutMs === undefined ? {} : { timeoutMs: placed.timeoutMs }) });
 }
 
 export class Backends {
