@@ -1,136 +1,45 @@
 [
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "hookShimPath",
-    "parameter": null,
+    "symbol": "hookShimPath",
+    "field": "return",
     "reason": "WC 1, approved as written: its return of hookShimPath is part of the view wire contract's signature at the socket edge"
   },
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "hookShimPath",
-    "parameter": "stateDir",
+    "symbol": "hookShimPath",
+    "field": "stateDir",
     "reason": "WC 1, approved as written: parameter stateDir of hookShimPath is part of the view wire contract's signature at the socket edge"
   },
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "hooksSocketPath",
-    "parameter": null,
+    "symbol": "hooksSocketPath",
+    "field": "return",
     "reason": "WC 1, approved as written: its return of hooksSocketPath is part of the view wire contract's signature at the socket edge"
   },
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "hooksSocketPath",
-    "parameter": "stateDir",
+    "symbol": "hooksSocketPath",
+    "field": "stateDir",
     "reason": "WC 1, approved as written: parameter stateDir of hooksSocketPath is part of the view wire contract's signature at the socket edge"
   },
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "viewSocketPath",
-    "parameter": null,
+    "symbol": "viewSocketPath",
+    "field": "return",
     "reason": "WC 1, approved as written: its return of viewSocketPath is part of the view wire contract's signature at the socket edge"
   },
   {
-    "class": "callback",
+    "class": "wire",
     "file": "src/wire/paths.ts",
-    "function": "viewSocketPath",
-    "parameter": "stateDir",
+    "symbol": "viewSocketPath",
+    "field": "stateDir",
     "reason": "WC 1, approved as written: parameter stateDir of viewSocketPath is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/codec.ts",
-    "function": "decodeClient",
-    "parameter": "line",
-    "reason": "WC 3.3, approved as written: parameter line of decodeClient is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/codec.ts",
-    "function": "decodeDaemon",
-    "parameter": "line",
-    "reason": "WC 3.3, approved as written: parameter line of decodeDaemon is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/codec.ts",
-    "function": "encode",
-    "parameter": null,
-    "reason": "WC 3.3, approved as written: its return of encode is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/codec.ts",
-    "function": "push",
-    "parameter": "chunk",
-    "reason": "WC 3.3, approved as written: parameter chunk of push is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/connection.ts",
-    "function": "step",
-    "parameter": null,
-    "reason": "WC 3.5, approved as written: its return of step is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/keys.ts",
-    "function": "intentOf",
-    "parameter": null,
-    "reason": "WC 3.7, approved as written: its return of intentOf is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/keys.ts",
-    "function": "localOf",
-    "parameter": "key",
-    "reason": "WC 3.7, approved as written: parameter key of localOf is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/keys.ts",
-    "function": "localOf",
-    "parameter": null,
-    "reason": "WC 3.7, approved as written: its return of localOf is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/paint.ts",
-    "function": "ENTER",
-    "parameter": null,
-    "reason": "WC 3.8, approved as written: its return of ENTER is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/paint.ts",
-    "function": "ENTER",
-    "parameter": "title",
-    "reason": "WC 3.8, approved as written: parameter title of ENTER is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/paint.ts",
-    "function": "paintOf",
-    "parameter": "colour",
-    "reason": "WC 3.8, approved as written: parameter colour of paintOf is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/paint.ts",
-    "function": "paintOf",
-    "parameter": null,
-    "reason": "WC 3.8, approved as written: its return of paintOf is part of the view wire contract's signature at the socket edge"
-  },
-  {
-    "class": "callback",
-    "file": "src/wire/view/paint.ts",
-    "function": "paintOf",
-    "parameter": "title",
-    "reason": "WC 3.8, approved as written: parameter title of paintOf is part of the view wire contract's signature at the socket edge"
   },
   {
     "class": "wire",
@@ -145,6 +54,34 @@
     "symbol": "Malformed",
     "field": "why",
     "reason": "WC 3.3, approved as written: why of Malformed is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "decodeClient",
+    "field": "line",
+    "reason": "WC 3.3, approved as written: parameter line of decodeClient is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "decodeDaemon",
+    "field": "line",
+    "reason": "WC 3.3, approved as written: parameter line of decodeDaemon is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "encode",
+    "field": "return",
+    "reason": "WC 3.3, approved as written: its return of encode is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/codec.ts",
+    "symbol": "push",
+    "field": "chunk",
+    "reason": "WC 3.3, approved as written: parameter chunk of push is part of the view wire contract's signature at the socket edge"
   },
   {
     "class": "wire",
@@ -246,6 +183,13 @@
   },
   {
     "class": "wire",
+    "file": "src/wire/view/connection.ts",
+    "symbol": "step",
+    "field": "return",
+    "reason": "WC 3.5, approved as written: its return of step is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
     "file": "src/wire/view/keys.ts",
     "symbol": "<anonymous>",
     "field": "lines",
@@ -253,10 +197,66 @@
   },
   {
     "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "intentOf",
+    "field": "return",
+    "reason": "WC 3.7, approved as written: its return of intentOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "localOf",
+    "field": "key",
+    "reason": "WC 3.7, approved as written: parameter key of localOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/keys.ts",
+    "symbol": "localOf",
+    "field": "return",
+    "reason": "WC 3.7, approved as written: its return of localOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "ENTER",
+    "field": "return",
+    "reason": "WC 3.8, approved as written: its return of ENTER is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "ENTER",
+    "field": "title",
+    "reason": "WC 3.8, approved as written: parameter title of ENTER is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "colour",
+    "reason": "WC 3.8, approved as written: parameter colour of paintOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
     "file": "src/wire/view/paint.ts",
     "symbol": "paintOf",
     "field": "lines",
     "reason": "WC 3.8, approved as written: lines of paintOf is a plain field of the view wire contract, checked by the codec at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "return",
+    "reason": "WC 3.8, approved as written: its return of paintOf is part of the view wire contract's signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/view/paint.ts",
+    "symbol": "paintOf",
+    "field": "title",
+    "reason": "WC 3.8, approved as written: parameter title of paintOf is part of the view wire contract's signature at the socket edge"
   },
   {
     "class": "wire",

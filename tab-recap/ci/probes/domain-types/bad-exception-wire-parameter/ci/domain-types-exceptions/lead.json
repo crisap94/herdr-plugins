@@ -1,9 +1,0 @@
-[
-  {
-    "class": "wire",
-    "file": "src/wire/value.ts",
-    "symbol": "echo",
-    "field": "value",
-    "reason": "probe: a wire exception never covers a parameter"
-  }
-]

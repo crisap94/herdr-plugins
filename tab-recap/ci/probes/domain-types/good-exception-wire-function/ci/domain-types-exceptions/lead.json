@@ -1,0 +1,16 @@
+[
+  {
+    "class": "wire",
+    "file": "src/wire/value.ts",
+    "symbol": "echo",
+    "field": "return",
+    "reason": "probe: the plain return of a wire function"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/value.ts",
+    "symbol": "echo",
+    "field": "value",
+    "reason": "probe: a plain parameter of a wire function"
+  }
+]

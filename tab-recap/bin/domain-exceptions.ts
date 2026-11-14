@@ -2,10 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { Finding } from './domain-findings.ts';
+import type { Category, Finding } from './domain-findings.ts';
 
 export const BRAND_FILE = 'src/recap/domain/brand.ts';
 const WIRE_FOLDER = 'src/wire/';
+const WIRE_CATEGORIES: ReadonlySet<Category> = new Set<Category>(['property', 'container', 'parameter', 'return']);
 const SCHEMA_DIR = 'src/adapters/db/schema';
 const RELEASE_TAGS = 'tab-recap-v*';
 
@@ -131,7 +132,7 @@ const fieldOf = (finding: Finding): string => finding.parameter ?? finding.site.
 
 const matchesWire = (entry: Extract<Entry, { readonly class: 'wire' }>, finding: Finding): boolean =>
     entry.file.startsWith(WIRE_FOLDER) &&
-    (finding.category === 'property' || finding.category === 'container') &&
+    WIRE_CATEGORIES.has(finding.category) &&
     entry.symbol === finding.owner &&
     entry.field === fieldOf(finding);
 
