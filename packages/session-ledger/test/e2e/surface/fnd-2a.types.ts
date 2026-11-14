@@ -29,7 +29,7 @@ import type {
     Unknowable,
     Unknown,
     Workplaces,
-} from '#src/index.ts';
+} from '@stateforge-labs/session-ledger';
 
 type Holds<T extends true> = T;
 

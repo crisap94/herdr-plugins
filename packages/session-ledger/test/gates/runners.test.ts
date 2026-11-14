@@ -42,6 +42,16 @@ test('check-boundaries fails on a node:fs import seeded in src/', SLOW, () => {
     assert.match(run.output, /src\/zz-seed\.ts: node:fs is not an allowed built-in/);
 });
 
+test('check-e2e fails on an export seeded in src/index.ts that no test uses, and on a test seeded with a src/ import', SLOW, () => {
+    const run = seeded((unit) => {
+        write(unit, 'src/index.ts', `${readFileSync(join(unit, 'src/index.ts'), 'utf8')}export const seededValue = 1;\n`);
+        write(unit, 'test/zz-seed.test.ts', "import { ok } from '../src/contract/kernel.ts';\n\nexport const seen = ok;\n");
+    }, ['bun', 'gates/check-e2e.ts']);
+    assert.equal(run.status, 1, run.output);
+    assert.match(run.output, /uncovered: \. seededValue \(src\/index\.ts\)/);
+    assert.match(run.output, /private import: test\/zz-seed\.test\.ts:1: \.\.\/src\/contract\/kernel\.ts/);
+});
+
 test('rules.sh fails on a comment seeded in src/', SLOW, () => {
     const run = seeded((unit) => write(unit, 'src/zz-seed.ts', '// a seeded comment\nexport const seeded = 1;\n'), ['bash', 'gates/rules.sh']);
     assert.equal(run.status, 1, run.output);
