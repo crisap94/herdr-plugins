@@ -1,0 +1,13 @@
+{
+  "name": "tab-recap-evals",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.325",
+    "@openai/codex-sdk": "0.169.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.0",
+    "typescript": "6.0.3"
+  }
+}
