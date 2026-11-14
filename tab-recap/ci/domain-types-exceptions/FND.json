@@ -92,6 +92,41 @@
   },
   {
     "class": "wire",
+    "file": "src/wire/socket-claim.ts",
+    "symbol": "<anonymous>",
+    "field": "bytes",
+    "reason": "WC 4.6, approved as written: bytes of the too-long arm of Claim is a plain field of the socket claim rule, the byte length of the socket path at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/socket-claim.ts",
+    "symbol": "<anonymous>",
+    "field": "detail",
+    "reason": "WC 4.6, approved as written: detail of the unknown arm of Claim is a plain field of the socket claim rule, the error text the caller logs at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/socket-claim.ts",
+    "symbol": "<anonymous>",
+    "field": "probeMs",
+    "reason": "WC 4.6, approved as written: probeMs of the options of claimSocket is a plain field of the socket claim rule, the probe timeout at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/socket-claim.ts",
+    "symbol": "claimSocket",
+    "field": "options",
+    "reason": "WC 4.6, approved as written: parameter options of claimSocket is part of the socket claim rule signature at the socket edge"
+  },
+  {
+    "class": "wire",
+    "file": "src/wire/socket-claim.ts",
+    "symbol": "claimSocket",
+    "field": "path",
+    "reason": "WC 4.6, approved as written: parameter path of claimSocket is part of the socket claim rule signature at the socket edge"
+  },
+  {
+    "class": "wire",
     "file": "src/wire/view/codec.ts",
     "symbol": "Ignored",
     "field": "t",
