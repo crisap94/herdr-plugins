@@ -889,6 +889,7 @@
       "src/recap/application/extract-pipeline.ts",
       "src/recap/application/hidden-codec.ts",
       "src/recap/application/job-kit/batch.ts",
+      "src/recap/application/job-kit/repair.ts",
       "src/recap/application/job-kit/stage.ts",
       "src/recap/application/job-kit/writer-tools.ts",
       "src/recap/application/lane-hints.ts",
