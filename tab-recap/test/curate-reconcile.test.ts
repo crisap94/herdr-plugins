@@ -235,7 +235,7 @@ test('with repair once, the repair document lists the refused operation, and a f
     await curate.run('w1:t1', 'turns');
     assert.equal(calls.length, 2);
     const [, repair] = calls;
-    assert.ok(repair?.document.includes('\n\n<refused>\n- f9 is not an open fact (or is already changed)\n</refused>\n\nYour previous answer had refused operations'), repair?.document);
+    assert.ok(repair?.document.includes(`\n\n<previous-answer>\n${JSON.stringify({ ops: [FIRST_UNKNOWN] })}\n</previous-answer>\n\n<refused>\n- f9 is not an open fact (or is already changed)\n</refused>\n\nYour previous answer, in <previous-answer>, had refused operations`), repair?.document);
     assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
 });
 

@@ -47,6 +47,7 @@ type Reading = (answer: Curated) => Reconciliation;
 
 interface Round {
     readonly sent: Result<Text, ParseFailure>;
+    readonly said: Result<Text, ParseFailure>;
     readonly reading: Reading;
     readonly ground: TaskGround;
     readonly checked: Reconciliation;
@@ -55,13 +56,13 @@ interface Round {
 
 async function repairedOf(parts: ReconcileParts, task: ReconcileTask, round: Round): Promise<Judged> {
     const refusals = round.checked.refused.length + round.first.refused.length;
-    if ((parts.repair?.() ?? 'off') !== 'once' || refusals === 0 || round.sent.kind === 'err') {
+    if (parts.repair?.() !== 'once' || refusals === 0 || round.sent.kind === 'err' || round.said.kind === 'err') {
         return round.first;
     }
     const { writer } = parts;
     const where = `curator ${task.tab} ${task.key}`;
     parts.log(`${where}: reconcile repair — ${refusals} refused`);
-    const repair = await writer.write(reconcileRepair(round.sent.value, round.checked, round.first), 'reconcile');
+    const repair = await writer.write(reconcileRepair(round.sent.value, round.said.value, round.checked, round.first), 'reconcile');
     if (isUnknown(repair)) {
         parts.log(`${where}: ${writer.backend} gave no repair (${saying(repair.why)})`);
         return round.first;
@@ -105,7 +106,7 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     const ground: TaskGround = { key: task.key, tab: task.tab, shown: input.facts, open: openFacts, closedLately: [], source: '', language: parts.language, agents: task.agents };
     const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: instant(clock.now) }, checked.ops.map(operationOf));
     first.refused.forEach((finding) => { parts.log(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`); });
-    const gated = await repairedOf(parts, task, { sent: parseText(input.document), reading, ground, checked, first });
+    const gated = await repairedOf(parts, task, { sent: parseText(input.document), said: parseText(answered.text), reading, ground, checked, first });
     if (gated.kept.length === 0) {
         return;
     }
