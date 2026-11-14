@@ -1,0 +1,12 @@
+path	tab-recap/ci/apply-release.ts	ci/apply-release.ts
+path	tab-recap/ci/check-version.sh	ci/check-version.sh
+path	tab-recap/ci/next-release.sh	ci/next-release.sh
+path	tab-recap/ci/next-release.ts	ci/next-release.ts
+path	tab-recap/ci/release-bite.sh	ci/release-bite.sh
+path	tab-recap/ci/release-publish.sh	ci/release-publish.sh
+path	tab-recap/ci/branch-guard.sh	ci/branch-guard.sh
+path	tab-recap/ci/guard-bite.sh	ci/guard-bite.sh
+path	tab-recap/ci/host-limits.sh	ci/lib/host-limits.sh
+path	tab-recap/test/release.test.ts	ci/test/release.test.ts
+drop	tab-recap/ci/atalaya-files.txt
+text	bash tab-recap/ci/branch-guard.sh	bash ci/branch-guard.sh	.gitlab-ci.yml

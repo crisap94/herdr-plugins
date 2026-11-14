@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-dir="${PLUGIN_DIR:-$HERE/..}"
+dir="${PLUGIN_DIR:-$HERE/../tab-recap}"
 for file in herdr-plugin.toml package.json; do
     [ -f "$dir/$file" ] || { echo "check-version: 3 — NOT COVERED: no $dir/$file" >&2; exit 3; }
 done

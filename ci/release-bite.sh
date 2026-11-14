@@ -272,32 +272,53 @@ expect pass "a release whose changelog was completed afterwards" second
 expect pass "the tag is at the commit that completed the changelog" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$repair_commit" "$CURL_LOG"
 expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
 
-[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const tags = y.on?.push?.tags ?? []; const jobs = Object.values(y.jobs); process.exit(tags.includes("*-v*") && y.on.workflow_dispatch !== undefined && jobs.length === 1 && jobs[0].needs === undefined && jobs[0].permissions?.contents === "write" ? 0 : 1)' "$HERE/../../.github/workflows/release.yml"; echo $?)" = "0" ] || { echo "bite: the GitHub release workflow must run on a mirrored <plugin>-v tag with its built-in token and wait on no other job: GitLab has gated the tag, and a job it waits on (the macOS check) blocks the release" >&2; wrong=$((wrong + 1)); }
-[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.exit(y["release:github"] === undefined ? 0 : 1)' "$HERE/../../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: GitLab must not publish the GitHub release too: the GitHub workflow does, and two publishers race" >&2; wrong=$((wrong + 1)); }
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const tags = y.on?.push?.tags ?? []; const jobs = Object.values(y.jobs); process.exit(tags.includes("*-v*") && y.on.workflow_dispatch !== undefined && jobs.length === 1 && jobs[0].needs === undefined && jobs[0].permissions?.contents === "write" ? 0 : 1)' "$HERE/../.github/workflows/release.yml"; echo $?)" = "0" ] || { echo "bite: the GitHub release workflow must run on a mirrored <plugin>-v tag with its built-in token and wait on no other job: GitLab has gated the tag, and a job it waits on (the macOS check) blocks the release" >&2; wrong=$((wrong + 1)); }
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.exit(y["release:github"] === undefined ? 0 : 1)' "$HERE/../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: GitLab must not publish the GitHub release too: the GitHub workflow does, and two publishers race" >&2; wrong=$((wrong + 1)); }
 
-prep="$scratch/prep"; mkdir -p "$prep/tab-recap/ci" && cd "$prep" || exit 3
-cp "$HERE/prepare-release.sh" tab-recap/ci/prepare-release.sh
+prep="$scratch/prep"; mkdir -p "$prep/ci" "$prep/tab-recap" && cd "$prep" || exit 3
+cp "$HERE/prepare-release.sh" ci/prepare-release.sh
 printf 'id = "tab-recap"\nname = "Tab Recap"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > tab-recap/herdr-plugin.toml
 git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
 git add -A && git commit --quiet -m release
 git init --quiet --bare "$scratch/prep-remote.git" && git remote add origin "$scratch/prep-remote.git" && git push --quiet origin main || exit 3
 export RELEASE_RETRY_INTERVAL=0
 prep_next() { printf '%s' "$1" > "$scratch/prep-next.json"; printf '#!/usr/bin/env bash\ncat "%s"\n' "$scratch/prep-next.json" > "$scratch/prep-next"; chmod +x "$scratch/prep-next"; }
-prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash tab-recap/ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
+prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
 prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":1}'
 [ "$(prep_exit)" = "0" ] || { echo "bite: after the release merge request lands and is tagged, the push pipeline on main must find no release due (exit 0)" >&2; wrong=$((wrong + 1)); }
 prep_next '{"previous":"tab-recap-v1.0.0","version":"1.1.0","bump":"minor","section":"### [1.1.0] — 2026-11-12","merged":2}'
 [ "$(prep_exit)" = "1" ] || { echo "bite: a release prepared but not yet tagged must refuse to prepare another (exit 1), so the merge request that lands does not loop" >&2; wrong=$((wrong + 1)); }
 printf '#!/usr/bin/env bash\necho "no" >&2\nexit 1\n' > "$scratch/prep-broken"; chmod +x "$scratch/prep-broken"
-[ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+[ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
 printf '#!/usr/bin/env bash\necho x >> "%s"\nexit 1\n' "$scratch/prep-always.count" > "$scratch/prep-always"; chmod +x "$scratch/prep-always"; rm -f "$scratch/prep-always.count"
-[ "$(NEXT_RELEASE="$scratch/prep-always" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] && [ "$(wc -l < "$scratch/prep-always.count" | tr -d ' ')" = "3" ] || { echo "bite: a next-release that keeps failing must be asked 3 times, then end with exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(NEXT_RELEASE="$scratch/prep-always" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] && [ "$(wc -l < "$scratch/prep-always.count" | tr -d ' ')" = "3" ] || { echo "bite: a next-release that keeps failing must be asked 3 times, then end with exit 3" >&2; wrong=$((wrong + 1)); }
 printf '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}' > "$scratch/prep-flaky.json"
 printf '#!/usr/bin/env bash\nn=$(cat "%s" 2>/dev/null || echo 0)\necho $((n + 1)) > "%s"\n[ "$n" -ge 1 ] || exit 1\ncat "%s"\n' "$scratch/prep-flaky.count" "$scratch/prep-flaky.count" "$scratch/prep-flaky.json" > "$scratch/prep-flaky"; chmod +x "$scratch/prep-flaky"; rm -f "$scratch/prep-flaky.count"
-[ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
-[ "$(env -u RELEASE_TOKEN bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
+[ "$(env -u RELEASE_TOKEN bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
 echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
-[ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash tab-recap/ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
 cd "$repo" || exit 3
+
+clean() { local script="$1"; shift; env -i PATH="$PATH" HOME="$HOME" LC_ALL=C CI_MERGE_REQUEST_LABELS="$labels" CI_MERGE_REQUEST_DESCRIPTION="$good" bash "$script" "$@" 2>&1; echo "exit $?"; }
+forwarded() {
+    local name="$1" want="$2" root forward
+    shift 2
+    root="$(clean "$HERE/$name.sh" "$@")"
+    forward="$(clean "$HERE/../tab-recap/ci/$name.sh" "$@")"
+    [ "${root##*exit }" = "$want" ] && [ "$forward" = "$root" ] \
+        || { echo "bite: tab-recap/ci/$name.sh must forward to ci/$name.sh with the same output and exit (wanted $want; ci/ gave ${root##*exit }, the forwarder ${forward##*exit })" >&2; wrong=$((wrong + 1)); }
+}
+released="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$HERE/../tab-recap/herdr-plugin.toml" | head -n 1)"
+labels=changelog::internal
+forwarded check-mr 0
+labels=bug
+forwarded check-mr 1
+forwarded prepare-release 3
+forwarded tag-release 3
+forwarded check-release 2
+forwarded check-release 1 not-a-tag
+forwarded release-notes 2
+forwarded release-notes 0 tab-recap "$released"
 
 [ "$wrong" -eq 0 ]

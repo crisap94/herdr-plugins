@@ -4,7 +4,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
 [ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
-. ci/host-limits.sh
+. ../ci/lib/host-limits.sh
 
 if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; else AST="$(command -v ast-grep || true)"; fi
 [ -n "$AST" ] || { echo "lint: 3 — NOT COVERED: no ast-grep: run 'bun install'" >&2; exit 3; }
@@ -42,10 +42,10 @@ for word in $banned; do
 done
 
 echo "versions agree (manifest = package.json):"
-bash ci/check-version.sh || fail "the plugin's version is not one number"
+bash ../ci/check-version.sh || fail "the plugin's version is not one number"
 
 echo "the release scripts bite (what is right passes, what is wrong fails):"
-bash ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
+bash ../ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, release rules" || fail "a release script accepted what it must reject, or rejected what it must accept"
 
 echo "oxlint (type-aware: one program type-checks the tree with the tsconfig flags and runs the house rules):"
 bun --bun node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
@@ -74,7 +74,7 @@ echo "the migration numbering bites (the next number and a run of them pass; a g
 bash ci/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
 
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
-bash ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"
+bash ../ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"
 
 echo "protocol names (no copy of a wire name outside src/protocol):"
 bun bin/check-protocol-names.ts && echo "  ok    protocol names" || fail "a wire name is copied outside src/protocol"
