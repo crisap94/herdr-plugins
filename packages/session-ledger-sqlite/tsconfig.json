@@ -25,7 +25,8 @@
     "src",
     "test",
     "testkit",
-    "gates"
+    "gates",
+    "bin"
   ],
   "exclude": [
     "node_modules"
