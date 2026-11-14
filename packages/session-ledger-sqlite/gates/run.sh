@@ -26,6 +26,8 @@ gate "oxlint (type-aware: the tsconfig flags and the house rules)" bun --bun nod
 gate "the linters bite (a seeded violation and seeded type errors fail oxlint)" bash gates/verify-bite.sh
 gate "module graph (dependency-cruiser: the rules hold, bite their fixtures, the cruise sees every module)" bash gates/graph.sh
 gate "domain types (the probes behave, the ratchet holds, the merge-base guard holds)" bash gates/domain-types.sh
+gate "the released-migration rule bites (a type-only change passes; a changed statement, a new runtime import and a deletion fail)" bash test/gates/migration-runtime-bite.sh
+gate "the migration numbering bites (the next number and a run of them pass; a gap, a repeat and a duplicate fail)" bash test/gates/migration-number-bite.sh
 
 [ "$failures" -eq 0 ] && { echo "$unit lint: clean"; exit 0; }
 echo "$unit lint: $failures finding(s)"; exit 1

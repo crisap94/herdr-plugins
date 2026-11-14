@@ -1,5 +1,5 @@
 {
-  "source": ["src", "test", "testkit", "gates"],
+  "source": ["src", "test", "testkit", "gates", "bin"],
   "domain": "src",
   "graph": ["src", "testkit"],
   "moduleCountExclude": "src/index.ts",
