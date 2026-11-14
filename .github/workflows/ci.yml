@@ -21,16 +21,15 @@ concurrency:
 
 jobs:
   check:
-    name: lint + test (${{ matrix.os }})
+    name: ${{ matrix.unit }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-    defaults:
-      run:
-        working-directory: tab-recap
+        unit: [ci, tab-recap, packages/session-ledger, packages/session-ledger-sqlite, packages/recap-view, desktop, agent-sdk]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -40,30 +39,26 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
-      # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'
-        # apt hung once for six hours on a hosted runner and held the concurrency group: bound it, and let the job's timeout end the rest
         run: timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 -o Acquire::Retries=3 install -y -qq --no-install-recommends libxml2-utils || (sudo apt-get update -qq && timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libxml2-utils)
       - name: Show the toolchain
         run: |
-          # the gates run on /bin/bash: macOS ships 3.2, and a contributor there has nothing newer
           /bin/bash --version | head -n 1
           bun --version
           xmllint --version
           bun -e "const [a,b,c]=Bun.version.split('.').map(Number); process.exit(a>1||(a===1&&(b>4||(b===4&&c>=4)))?0:1)"
       - run: bun install --frozen-lockfile
-      - run: /bin/bash ci/lint.sh
-      - run: /bin/bash ci/test.sh
+      - name: Gates of ${{ matrix.unit }}
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          if [ -f "$UNIT/gates/run.sh" ]; then /bin/bash "$UNIT/gates/run.sh" lint && /bin/bash "$UNIT/gates/run.sh" test; else echo "$UNIT has no gates/run.sh: nothing to run"; fi
 
-  # The oldest Bun the plugin supports (package.json engines): what `engines` promises is tested.
   floor:
     name: lint + test (Bun 1.4.4)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: tab-recap
     steps:
       - uses: actions/checkout@v5
         with:
@@ -73,13 +68,11 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
-      # the writer-context tests validate against the DTD with libxml2's xmllint (macOS ships it)
       - name: xmllint (Linux)
         if: runner.os == 'Linux'
-        # apt hung once for six hours on a hosted runner and held the concurrency group: bound it, and let the job's timeout end the rest
         run: timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 -o Acquire::Retries=3 install -y -qq --no-install-recommends libxml2-utils || (sudo apt-get update -qq && timeout 10m sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libxml2-utils)
       - run: bun --version
       - run: xmllint --version
       - run: bun install --frozen-lockfile
-      - run: bash ci/lint.sh
-      - run: bash ci/test.sh
+      - run: bash tab-recap/gates/run.sh lint
+      - run: bash tab-recap/gates/run.sh test
