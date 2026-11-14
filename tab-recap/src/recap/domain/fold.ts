@@ -26,6 +26,7 @@ export interface Reconciliation {
     readonly panes: readonly string[];
     readonly columns: readonly SeenColumn[];
     readonly widths: ReadonlyMap<string, number>;
+    readonly tabs?: readonly TabId[];
 }
 
 export interface RestoredObservation {
@@ -164,6 +165,15 @@ function newerThan(placed: Placement, seen: Reconciliation): boolean {
     return seen.at !== undefined && placed.since !== undefined && seen.at < placed.since;
 }
 
+function goneTabs(board: Board, seen: Reconciliation, now: Instant): readonly Intent[] {
+    if (seen.tabs === undefined) {
+        return [];
+    }
+    const live = new Set<string>([...seen.tabs, ...seen.lanes.map((lane) => lane.tabId), ...seen.columns.map((column) => column.tabId)]);
+    const known = new Set<TabId>([...board.widths.keys(), ...board.columns.keys(), ...[...board.lanes.values()].map((lane) => lane.tab), ...(board.persisted ?? []).map((lane) => lane.tab)]);
+    return [...known].filter((tab) => !live.has(tab)).map((tab) => ({ kind: 'tab-gone', tab, at: now }));
+}
+
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
     const lanes = new Map<PaneId, Lane>();
     for (const raw of seen.lanes.filter((lane) => wanted(lane, policy))) {
@@ -192,7 +202,7 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     const published: Intent[] = publishedTabs.map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
     const closes: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tabId as TabId, column: extra.paneId as PaneId }));
-    return step(next, [...closedIntents(closures), ...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
+    return step(next, [...closedIntents(closures), ...goneTabs(board, seen, now), ...turnsEndedBetween(board, next), ...published, ...reads, ...closes], !sameSet);
 }
 
 function onRestored(board: Board, lanes: readonly RestoredLane[]): Step {

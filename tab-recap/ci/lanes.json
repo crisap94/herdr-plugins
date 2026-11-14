@@ -307,6 +307,7 @@
       "test/retention.test.ts",
       "test/screen-reading.test.ts",
       "test/session-facts.test.ts",
+      "test/tab-reuse.test.ts",
       "test/tab-views-live-lanes.test.ts",
       "test/text-collapse.test.ts",
       "test/typing-lease.test.ts",
