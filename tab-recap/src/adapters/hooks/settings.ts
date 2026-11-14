@@ -18,6 +18,11 @@ export interface HarnessSettings {
 
 const DEFAULT_INDENT = '  ';
 const INDENT = /^(?<indent>[ \t]+)\S/mu;
+const SHELL_SAFE = /^[A-Za-z0-9_@%+=:,./-]+$/u;
+
+function shellWord(shim: FsPath): Text {
+    return must(parseText(SHELL_SAFE.test(shim) ? shim : `'${shim.replaceAll("'", "'\\''")}'`));
+}
 
 export function parseSettingsDocument(input: unknown): Result<SettingsDocument, Text> {
     try {
@@ -33,14 +38,15 @@ export function parseSettingsDocument(input: unknown): Result<SettingsDocument, 
 export function addCommandHooks(document: SettingsDocument, shim: FsPath, events: readonly HookEvent[]): SettingsDocument {
     const before = document['hooks'];
     const hooks: Record<string, unknown> = isFields(before) ? { ...before } : {};
+    const word = shellWord(shim);
     const missing = events.filter((event) => {
         const groups = hooks[event];
-        return !(Array.isArray(groups) && groups.some((group) => isFields(group) && Array.isArray(group['hooks']) && group['hooks'].some((handler) => isFields(handler) && handler['command'] === `${shim} ${event}`)));
+        return !(Array.isArray(groups) && groups.some((group) => isFields(group) && Array.isArray(group['hooks']) && group['hooks'].some((handler) => isFields(handler) && handler['command'] === `${word} ${event}`)));
     });
     for (const event of missing) {
         const groups = hooks[event];
         const list: readonly unknown[] = Array.isArray(groups) ? groups : [];
-        hooks[event] = [...list, { hooks: [{ type: 'command', command: `${shim} ${event}` }] }];
+        hooks[event] = [...list, { hooks: [{ type: 'command', command: `${word} ${event}` }] }];
     }
     return missing.length === 0 ? document : must(parseSettingsDocument({ ...document, hooks }));
 }
@@ -48,7 +54,7 @@ export function addCommandHooks(document: SettingsDocument, shim: FsPath, events
 export function removeCommandHooks(document: SettingsDocument, shim: FsPath): SettingsDocument {
     const before = document['hooks'];
     if (!isFields(before)) return document;
-    const mine = `${shim} `;
+    const mine = `${shellWord(shim)} `;
     let removed = 0;
     const hooks: Record<string, unknown> = {};
     for (const [event, groups] of Object.entries(before)) {

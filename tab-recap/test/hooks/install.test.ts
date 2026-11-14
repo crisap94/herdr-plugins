@@ -209,3 +209,22 @@ test('the installed hook.sh prints the reply of K5-session-start-compact-restore
         }
     });
 });
+
+test("a state directory with a space and a quote still runs hook.sh and uninstalls cleanly", async () => {
+    await inRoom((room) => {
+        const dir = fsPath(join(room.home, "my state's dir"));
+        const original = read(room.settingsPath);
+        const settings = claudeSettings(room.settingsPath);
+        installHooks(dir, settings, goodCurl);
+        const json = JSON.parse(read(room.settingsPath)) as { hooks: { Stop: { hooks: { command: string }[] }[] } };
+        const command = json.hooks.Stop.at(-1)?.hooks[0]?.command;
+        assert.ok(command);
+        writeFileSync(hookShimPath(dir), '#!/bin/sh\nprintf "%s" "$1"\n', { mode: 0o700 });
+        const ran = spawnSync('sh', ['-c', command], { encoding: 'utf8', input: '' });
+        assert.equal(ran.status, 0);
+        assert.equal(ran.stdout, 'Stop');
+        uninstallHooks(dir, settings);
+        assert.equal(read(room.settingsPath), original);
+        assert.equal(existsSync(hookShimPath(dir)), false);
+    });
+});
