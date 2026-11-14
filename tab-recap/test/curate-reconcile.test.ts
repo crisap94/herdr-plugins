@@ -73,6 +73,13 @@ test('a stale question is closed as answered, on the quote of the operator\'s re
     assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
 });
 
+test('a reconcile answer wrapped in a sentence is read: the stale question is closed as answered, as when the answer is bare JSON', async () => {
+    const { curate, ledger, logs } = setup([{ kind: 'curated', text: `Here you go: ${JSON.stringify({ ops: [ANSWERED] })} Done.` }]);
+    await curate.run('w1:t1', 'turns');
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+    assert.ok(!logs.some((line) => /reconcile refused/.test(line)), logs.join('\n'));
+});
+
 test('an update with a quote changes the fact; a merge needs no quote; each passes the writer\'s gates', async () => {
     const { curate, ledger, logs } = setup([said({ ops: [
         { op: 'update', id: 'f3', text: 'The migration tests pass', evidence: 'The migration tests pass now' },

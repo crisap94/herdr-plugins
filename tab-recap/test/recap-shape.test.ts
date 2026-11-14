@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
+import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
@@ -30,6 +31,26 @@ test('objectIn: the first complete object is read when text after it holds a bra
     assert.deepEqual(objectIn('Here: {"ops":[{"op":"close","id":"f1","why":"done"}]}\n{"ops":[{"op":"close","id":"f9","why":"x"}]}'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
     assert.deepEqual(objectIn('{"a":1} }'), { a: 1 });
     assert.deepEqual(objectIn('{"a":1} {"b":'), { a: 1 });
+});
+
+test('answerTextOf: a whole JSON answer is kept; a JSON object wrapped in text is read as its first object; anything else is kept as it is', () => {
+    const cases: readonly (readonly [string, string])[] = [
+        ['{"ops":[]}', '{"ops":[]}'],
+        ['[{"a":1}]', '[{"a":1}]'],
+        ['not json', 'not json'],
+        ['{"ops": [}', '{"ops": [}'],
+        ['Sure: {"ops":[{"op":"close","id":"f1"}]} hope it helps', '{"ops":[{"op":"close","id":"f1"}]}'],
+        ['{"a":1} and {"b":2}', '{"a":1}'],
+        ['', ''],
+        ['x [1,2] y', 'x [1,2] y'],
+    ];
+    for (const [input, expected] of cases) {
+        const read = parseText(input);
+        if (read.kind !== 'ok') {
+            assert.fail(input);
+        }
+        assert.equal(answerTextOf(read.value), expected, input);
+    }
 });
 
 test('objectIn: braces inside JSON strings and escaped quotes do not end the object', () => {
