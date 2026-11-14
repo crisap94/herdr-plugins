@@ -18,6 +18,7 @@ import { summarizerFor } from '#src/daemon/backends.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
 
 const call = { instructions: 'do', input: 'in' };
 const settings = { model: '', effort: 'low' } as const;
@@ -62,6 +63,22 @@ test('claude: the request carries the instructions, the input, haiku as the defa
     await new LibraryHarness(runtime, 'claude', 1000, undefined, true).run(call, settings);
     const { request } = firstCall(runtime);
     assert.deepEqual(request, { instructions: 'do', input: 'in', effort: 'low', model: 'haiku' });
+});
+
+test('the request has no timeoutMs without a per-call limit, and the headless options keep the constructor value', async () => {
+    const runtime = scripted('claude', { text: 'answer' });
+    await new LibraryHarness(runtime, 'claude', 1234, undefined, true).run(call, settings);
+    const { options, request } = firstCall(runtime);
+    assert.equal(Object.hasOwn(request, 'timeoutMs'), false);
+    assert.equal(options.timeoutMs, 1234);
+});
+
+test('a per-call limit goes into the request as timeoutMs, and the headless options keep the constructor value', async () => {
+    const runtime = scripted('claude', { text: 'answer' });
+    await new LibraryHarness(runtime, 'claude', 1234, undefined, true).run(call, { ...settings, timeoutMs: 5000 as Milliseconds });
+    const { options, request } = firstCall(runtime);
+    assert.equal(request.timeoutMs, 5000);
+    assert.equal(options.timeoutMs, 1234);
 });
 
 test('claude without the acknowledgement: Unknown failed naming the key, and no run call is made', async () => {

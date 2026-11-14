@@ -72,7 +72,8 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
             persist: capabilities === null || !isUsable(capabilities[CapabilityName.Ephemeral][Engine.Cli]),
             timeoutMs: this.timeoutMs,
         });
-        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(capabilities, settings.effort), ...(model === '' ? {} : { model }) });
+        const timeout = settings.timeoutMs === undefined ? {} : { timeoutMs: settings.timeoutMs };
+        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(capabilities, settings.effort), ...(model === '' ? {} : { model }), ...timeout });
         return result.ok ? ranOf(result.value) : failedOf(result.failure);
     }
 }
