@@ -70,7 +70,7 @@ test('an empty list is a valid answer; the old recap shape is told apart from a 
     assert.deepEqual(parse('[1,2]'), { kind: 'invalid', why: 'the answer holds no JSON object' });
 });
 
-test('an anchor is tidied to one line and cut to 120 characters at a word; an update may carry one, a close never does', () => {
+test('an anchor is tidied to one line and cut to 120 characters at a word; an update or a close may carry one', () => {
     const long = Array.from({ length: 40 }, (_, index) => `word${index}`).join(' ');
     const answer = parse({ ops: [
         { op: 'add', section: 'done', text: 'x', anchor: '  Merged !34\n  after green  ' },
@@ -85,5 +85,16 @@ test('an anchor is tidied to one line and cut to 120 characters at a word; an up
     assert.equal(anchors[0], 'Merged !34 after green');
     assert.ok(typeof anchors[1] === 'string' && anchors[1].length <= 120 && long.startsWith(anchors[1]) && /word\d+$/.test(anchors[1]), 'cut back to a whole word');
     assert.equal(anchors[2], 'a'.repeat(120), 'a single long word is cut where it is');
-    assert.deepEqual([anchors[3], anchors[4], anchors[5], anchors[6]], [null, null, 'the change', undefined]);
+    assert.deepEqual([anchors[3], anchors[4], anchors[5], anchors[6]], [null, null, 'the change', 'ignored']);
+});
+
+test('a close keeps a non-empty anchor; without one, or with a blank one, it has no anchor key', () => {
+    const [kept] = opsOf(parse({ ops: [{ op: 'close', id: 'f1', why: 'done', anchor: 'tests pass' }] }));
+    assert.deepEqual(kept, { task: 't1', op: { op: 'close', id: 'f1', why: 'done', anchor: 'tests pass' } });
+    const [bare] = opsOf(parse({ ops: [{ op: 'close', id: 'f1', why: 'done' }] }));
+    assert.deepEqual(bare, { task: 't1', op: { op: 'close', id: 'f1', why: 'done' } });
+    const [empty] = opsOf(parse({ ops: [{ op: 'close', id: 'f1', why: 'done', anchor: '' }] }));
+    assert.deepEqual(empty, { task: 't1', op: { op: 'close', id: 'f1', why: 'done' } });
+    const [blank] = opsOf(parse({ ops: [{ op: 'close', id: 'f1', why: 'done', anchor: '   ' }] }));
+    assert.deepEqual(blank, { task: 't1', op: { op: 'close', id: 'f1', why: 'done' } });
 });
