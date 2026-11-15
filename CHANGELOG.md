@@ -8,6 +8,24 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [3.1.0] — 2026-11-15
+
+#### Added
+
+- tab-recap: let the curator take its own time limit (!205)
+- tab-recap: let the curator ask for a schema answer when its harness supports one (!210)
+- tab-recap: add the TAB_RECAP_CURATOR_REPAIR key, off by default (!217)
+- tab-recap: add the TAB_RECAP_WRITER_CLOSE_EVIDENCE key, off by default (!218)
+
+#### Fixed
+
+- fix(tab-recap): handoff follow-ups: one source-refusal mapping, print logs an unreadable closed source, causes are typed (!139)
+- fix(tab-recap): a tab id herdr reuses for a new tab starts from an empty ledger (!195)
+- tab-recap: read the first complete JSON object of a model answer, with text around it (!200)
+- tab-recap: read the reconcile answer's JSON object when text surrounds it (!201)
+- tab-recap: read the story answer's JSON object when text surrounds it (!207)
+- tab-recap: refuse a story over 120 words instead of cutting it (!220)
+
 ### [3.0.2] — 2026-11-13
 
 #### Changed
@@ -303,7 +321,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.2...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.1.0...HEAD
+[3.1.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.2...tab-recap-v3.1.0
 [3.0.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.1...tab-recap-v3.0.2
 [3.0.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.0...tab-recap-v3.0.1
 [3.0.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v2.6.2...tab-recap-v3.0.0
