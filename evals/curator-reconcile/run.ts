@@ -3,8 +3,10 @@ import { join } from 'node:path';
 import { runEval } from '../lib/cli.ts';
 import { STATE_ROOT } from '../lib/env.ts';
 import { LADDER, ladder } from '../lib/ladder.ts';
-import { lastByKey, readJsonl } from '../lib/runner.ts';
+import { armMarkdown, flagOf, guardMode, repairFlag, writeArm } from '../lib/arm.ts';
+import { lastByKey, readJsonl, runDir } from '../lib/runner.ts';
 import type { Answer, Config, EvalSpec, Item } from '../lib/types.ts';
+import { reconcileCounters, reconcileRound } from './arm.ts';
 import { JUDGE_CRITERIA } from './judge-criteria.ts';
 import { loadItems, prompt, type Expected, type Input, type ReconcileItem } from './prompt.ts';
 import { CODE_CRITERIA, extras, extrasMarkdown, grade, judgeView, stubAnswer } from './scoring.ts';
@@ -96,7 +98,11 @@ export function argvOf(raw: readonly string[]): string[] {
 }
 
 try {
-    const { dir, summary } = await runEval(spec, argvOf(process.argv.slice(2)));
+    const argv = argvOf(process.argv.slice(2));
+    const mode = repairFlag(argv);
+    const label = flagOf(argv, '--label') ?? (argv.includes('--stub') ? 'stub' : null);
+    if (label !== null) guardMode(runDir(flagOf(argv, '--root') ?? STATE_ROOT, NAME, label), '--repair', mode);
+    const { dir, summary } = await runEval(spec, argv, mode === null ? {} : { round: reconcileRound(mode) });
     const chosen = items.slice(0, summary.items);
     const ids = new Set(chosen.map((item) => item.id));
     const names = summary.configs.map((config) => config.name);
@@ -104,6 +110,10 @@ try {
     const found = extras(chosen, answers, names, summary.audit);
     writeFileSync(join(dir, 'extras.json'), `${JSON.stringify(found, null, 2)}\n`);
     appendFileSync(join(dir, 'report.md'), extrasMarkdown(found));
+    if (mode !== null) {
+        const block = { mode, configs: reconcileCounters(chosen, answers, names, mode) };
+        writeArm(dir, block, armMarkdown(NAME, block));
+    }
     console.log(dir);
     process.exit(0);
 } catch (error) {
