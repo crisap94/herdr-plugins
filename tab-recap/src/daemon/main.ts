@@ -32,6 +32,7 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { wireEngine } from './engine-wire.ts';
+import { onBeatOf } from './follow-board.ts';
 import type { Engine, LedgerEvent } from '@stateforge-labs/session-ledger';
 import type { Clock } from '#src/ports/clock.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -136,7 +137,7 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
-        onBeat: (): void => { worktrees.registry.beat(board()); },
+        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board),
         onStatus: turns,
         onPaneTokens: (pane, tokens): void => { worktrees.feed.update(paneId(pane), notesOf(tokens)); answers.onPaneTokens(pane, tokens); exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]))); },
         sessionIdentity: sessionOfForKind,
