@@ -4,13 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { armLine, armMarkdown, type ArmCounters, flagOf, guardMode, repairFlag, writeArm } from './arm.ts';
 import { runEval } from './cli.ts';
-import { readJsonl, REPO, runDir } from './runner.ts';
+import { type ArmedAnswer, readJsonl, REPO, runDir } from './runner.ts';
 import { parseJson, quoted, unparsed } from './scoring.ts';
 import { allPass, cohenKappa, flips, mcnemarExact, wilson } from './stats.ts';
 import { stubCalled } from './stub.ts';
 import { AUDIT } from './summary.ts';
-import type { Adapter, Answer, Call, Config, EvalSpec, Graded, Judged, Mark, RunSummary } from './types.ts';
+import type { Adapter, Answer, Call, Called, Config, EvalSpec, Graded, Judged, Mark, RunSummary } from './types.ts';
 import { unparsedOf } from './unparsed.ts';
+import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
+import { reconcileCounters, reconcileRound } from '../curator-reconcile/arm.ts';
+import { builtOf, loadItems, prompt as reconcilePrompt, type ReconcileItem, SYSTEM } from '../curator-reconcile/prompt.ts';
+import { checkedOf, CODE_CRITERIA, grade as gradeReconcile, stubAnswer } from '../curator-reconcile/scoring.ts';
 
 const failures: string[] = [];
 
@@ -106,6 +110,144 @@ const toy: EvalSpec<ToyInput, ToyExpected> = {
 
 const root = mkdtempSync(join(tmpdir(), 'tab-recap-evals-selftest-'));
 const quiet = { log: (_line: string) => undefined };
+
+const ARM_CONFIG: Config = { name: 'claude-arm', backend: 'claude', model: 'claude-arm-model', effort: 'low', shipped: true };
+const ARM_BAD = '{"ops":[{"op":"close","id":"f999","why":"done","evidence":"x"}]}';
+
+interface Fake {
+    readonly adapter: Adapter;
+    readonly calls: Call[];
+}
+
+// Answers ARM_BAD to the first call and `repair` to the repair call, the one that carries the previous answer.
+function badThen(repair: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return call.user.includes('<previous-answer>') ? repair : stubCalled(ARM_BAD);
+    };
+    return { adapter, calls };
+}
+
+function answering(reply: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return reply;
+    };
+    return { adapter, calls };
+}
+
+const rowsOf = (dir: string): ArmedAnswer[] => readJsonl<ArmedAnswer>(join(dir, 'answers.jsonl'));
+
+function armSpec(items: readonly ReconcileItem[]): EvalSpec {
+    return {
+        name: 'curator-reconcile',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: CODE_CRITERIA,
+        judge: null,
+        prompt: (item) => reconcilePrompt(item as ReconcileItem),
+        grade: (item, text) => gradeReconcile(item as ReconcileItem, text),
+        stub: (item) => stubAnswer(item as ReconcileItem),
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function armRun(root: string, label: string, items: readonly ReconcileItem[], fake: Adapter, mode: 'off' | 'once', extra: readonly string[] = []): Promise<string> {
+    const run = await runEval(armSpec(items), ['--root', root, '--label', label, '--reps', '1', ...extra], { ...quiet, adapters: { claude: fake, codex: fake }, round: reconcileRound(mode) });
+    return run.dir;
+}
+
+// The repair arm of curator-reconcile, driven through the plugin's own reconcileTask with fake adapters.
+async function reconcileArm(root: string): Promise<void> {
+    const item = loadItems(join(import.meta.dirname, '..', 'curator-reconcile', 'dataset.jsonl')).find((each) => each.id === 'rec-01-stale-easy-done');
+    if (item === undefined) throw new Error('the arm checks need rec-01-stale-easy-done');
+    const clean = stubAnswer(item);
+    const kept = checkedOf(item, clean)?.kept.length ?? 0;
+
+    const once = badThen(stubCalled(clean));
+    const onceDir = await armRun(root, 'arm-once', [item], once.adapter, 'once');
+    const onceRow = rowsOf(onceDir)[0];
+    check('a once run makes a repair call and keeps its answer', once.calls.length === 2 && onceRow?.arm?.repair_calls === 1 && onceRow.text === clean && (onceRow.arm?.applied_ops ?? 0) === kept && kept > 0);
+    const second = once.calls[1];
+    check('the repair call carries the reconcile instructions, the config model and the previous answer', second?.system === RECONCILE_CURATOR_INSTRUCTIONS && second.model === ARM_CONFIG.model && second.user.includes('<previous-answer>') && second.user.includes(ARM_BAD));
+
+    const off = badThen(stubCalled(clean));
+    const offDir = await armRun(root, 'arm-off', [item], off.adapter, 'off');
+    const offRow = rowsOf(offDir)[0];
+    check('an off run makes one call and keeps the first answer', off.calls.length === 1 && offRow?.arm?.repair_calls === 0 && offRow.text === ARM_BAD && offRow.arm?.applied_ops === 0);
+    check('both arms send the eval prompt byte for byte on the first call', [once, off].every((fake) => fake.calls[0]?.system === SYSTEM && fake.calls[0].user === builtOf(item).document));
+
+    const clean1 = answering(stubCalled(clean));
+    const cleanDir = await armRun(root, 'arm-clean', [item], clean1.adapter, 'once');
+    check('a clean first answer makes one call and no repair', clean1.calls.length === 1 && rowsOf(cleanDir)[0]?.arm?.repair_calls === 0);
+
+    const notJson = badThen(stubCalled('not json'));
+    const notJsonDir = await armRun(root, 'arm-not-json', [item], notJson.adapter, 'once');
+    const notJsonRow = rowsOf(notJsonDir)[0];
+    check('a repair that is not JSON leaves the first answer in place', notJson.calls.length === 2 && notJsonRow?.arm?.repair_calls === 1 && notJsonRow.text === ARM_BAD);
+
+    const failed = badThen({ ...stubCalled(''), text: null, failure_kind: 'failed', failure_detail: 'x' });
+    const failedDir = await armRun(root, 'arm-failed', [item], failed.adapter, 'once');
+    const failedRow = rowsOf(failedDir)[0];
+    check('a failed repair call keeps the first answer and the row has no failure', failed.calls.length === 2 && failedRow?.failure_kind === null && failedRow.text === ARM_BAD && failedRow.arm?.repair_calls === 1);
+
+    check('the row counts both calls and the repair tokens are the second call alone', onceRow?.input_tokens === 200 && onceRow.arm?.repair_input_tokens === 100 && onceRow.arm.repair_output_tokens === Math.ceil(clean.length / 4));
+
+    const busy = (): { readonly adapter: Adapter; readonly peak: () => number } => {
+        let now = 0;
+        let most = 0;
+        const adapter: Adapter = async (call) => {
+            now += 1;
+            most = Math.max(most, now);
+            await new Promise((done) => setTimeout(done, 5));
+            now -= 1;
+            return stubCalled(call.user.includes('<previous-answer>') ? clean : ARM_BAD);
+        };
+        return { adapter, peak: () => most };
+    };
+    const pair = [{ ...item, id: 'a' }, { ...item, id: 'b' }];
+    const one = busy();
+    const oneDir = await armRun(root, 'arm-conc-1', pair, one.adapter, 'once', ['--concurrency', '1']);
+    const two = busy();
+    const twoDir = await armRun(root, 'arm-conc-2', pair, two.adapter, 'once', ['--concurrency', '2']);
+    check('one pool slot runs one call at a time, and each job makes two calls', one.peak() === 1 && rowsOf(oneDir).length === 2 && rowsOf(oneDir).every((row) => row.attempts === 2));
+    check('two pool slots run at most two calls at a time, and each job makes two calls', two.peak() <= 2 && rowsOf(twoDir).every((row) => row.attempts === 2));
+
+    const aCounters = reconcileCounters([item], rowsOf(offDir), [ARM_CONFIG.name], 'off')[0];
+    const cCounters = reconcileCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once')[0];
+    const line = `curator-reconcile ${ARM_CONFIG.name} A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied ${kept} unparsed 0 refused 0 repair calls 1 tokens 100/${Math.ceil(clean.length / 4)}`;
+    check('the counters of an off run and a once run make the EVAL-7 line', aCounters !== undefined && cCounters !== undefined && armLine('curator-reconcile', aCounters, cCounters) === line);
+
+    const unmeasured = badThen({ ...stubCalled(clean), input_tokens: 0, output_tokens: 0 });
+    const unmeasuredDir = await armRun(root, 'arm-unmeasured', [item], unmeasured.adapter, 'once');
+    const unmeasuredC = reconcileCounters([item], rowsOf(unmeasuredDir), [ARM_CONFIG.name], 'once')[0];
+    check('a repair with no measured tokens ends the line unmeasured', unmeasuredC?.tokens_measured === false && aCounters !== undefined && unmeasuredC !== undefined && armLine('curator-reconcile', aCounters, unmeasuredC).endsWith('repair calls 1 tokens unmeasured'));
+
+    const before = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const block = { mode: 'once', configs: reconcileCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once') };
+    const markdown = armMarkdown('curator-reconcile', block);
+    writeArm(onceDir, block, markdown);
+    const after = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const rest = Object.fromEntries(Object.entries(after).filter(([key]) => key !== 'arm'));
+    const armed = after['arm'] as { readonly mode?: unknown; readonly configs?: unknown[] } | undefined;
+    check('writeArm adds one arm config row and keeps every other summary key', JSON.stringify(rest) === JSON.stringify(before) && armed?.mode === 'once' && armed.configs?.length === 1);
+    check('writeArm ends the report with the arm section', readFileSync(join(onceDir, 'report.md'), 'utf8').endsWith(markdown) && markdown.includes('## curator-reconcile: arm repair once (reported only)'));
+
+    const offSummary = JSON.parse(readFileSync(join(offDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const onceSummary = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const cliOff = runDir(root, 'curator-reconcile', 'cli-off');
+    writeFileSync(join(cliOff, 'summary.json'), JSON.stringify({ ...offSummary, arm: { mode: 'off', configs: [aCounters] } }));
+    const cliOnce = runDir(root, 'curator-reconcile', 'cli-once');
+    writeFileSync(join(cliOnce, 'summary.json'), JSON.stringify({ ...onceSummary, arm: { mode: 'once', configs: [cCounters] } }));
+    const cliArgs = [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', root];
+    const printed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-off', '--c', 'cli-once'], { encoding: 'utf8' });
+    check('the arm CLI prints the EVAL-7 line for a real off run and a real once run', printed.status === 0 && printed.stdout.trim() === line);
+    const reversed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-once', '--c', 'cli-off'], { encoding: 'utf8' });
+    check('the arm CLI refuses real runs given the wrong way round', reversed.status !== 0);
+}
 
 try {
     let refused = false;
@@ -224,6 +366,7 @@ try {
     check('the arm CLI prints the EVAL-7 line for two hand-made runs', good.status === 0 && good.stdout.trim() === armedLine);
     const swapped = spawnSync(process.execPath, [...cliArgs, '--a', 'rc', '--c', 'ra'], { encoding: 'utf8' });
     check('the arm CLI refuses a run A that is not arm off', swapped.status !== 0 && swapped.stderr.includes('run rc is not arm off'));
+    await reconcileArm(root);
 } finally {
     rmSync(root, { recursive: true, force: true });
 }
