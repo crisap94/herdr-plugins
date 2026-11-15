@@ -27,6 +27,8 @@ Every command runs from `evals/`.
 | Rescore without a call | `bun curator-story/run.ts --report-only --label <label>` |
 | Typecheck | `node_modules/.bin/tsc -p curator-story/tsconfig.json` |
 | Dataset check | `bun curator-story/check-dataset.ts` |
+| Fresh set: build it (writes `dataset-fresh.jsonl` and `fresh-sample.md`) | `bun curator-story/build-dataset.ts --fresh` |
+| Fresh set: run it (label must start with `fresh-`; no `--smoke`) | `bun curator-story/run.ts --fresh --label fresh-<label>` |
 
 The library's flags also work: `--configs a,b`, `--reps N`, `--items N`, `--seed N`, `--max-calls N`, `--max-judge-calls N`, `--concurrency N`, `--retry-failed`, `--judge-check file.json`. `--smoke` sets the items and the repetitions itself and refuses `--items` and `--reps`.
 

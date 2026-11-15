@@ -4,10 +4,14 @@ import { curatorInput } from '../../tab-recap/src/recap/application/curator-inpu
 import { localTime } from '../../tab-recap/src/recap/application/local-time.ts';
 import type { ClosedWhy, Fact, FactId, Section } from '../../tab-recap/src/recap/domain/fact.ts';
 import { checkedTokens } from './tokens.ts';
+import { FRESH_ITEMS, FRESH_SEED, rngOf, sampleOf } from '../lib/fresh.ts';
+import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';
 
 const NOW = Date.parse('2026-11-10T16:30:00Z');
 const ZONE = 'UTC';
 const MINUTE = 60_000;
+// Without --fresh this writes dataset.jsonl exactly as before. With --fresh it writes dataset-fresh.jsonl and fresh-sample.md.
+const fresh = process.argv.includes('--fresh');
 
 interface Draft {
     readonly k: string;
@@ -28,7 +32,7 @@ interface Project {
 
 interface Plan {
     readonly id: string;
-    readonly project: keyof typeof PROJECTS;
+    readonly project: string;
     readonly name: string;
     readonly language: 'en' | 'es';
     readonly plants: readonly string[];
@@ -41,6 +45,7 @@ interface Plan {
     readonly near?: readonly (readonly [string, string])[];
     readonly waiting?: { readonly keys: readonly string[]; readonly gist: string };
     readonly closed?: readonly { readonly k: string; readonly must_not_say: string; readonly current: string | null }[];
+    readonly traps?: readonly Trap[];
 }
 
 const PROJECTS = {
@@ -69,6 +74,34 @@ const PASSED = [
     (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['now', 'superseded', `Reading the ${part} ${unit} before changing it`],
     (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['next', 'done', `Rebase the ${part} ${unit} branch on main`],
     (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['now', 'done', `Waiting for the pipeline of the ${part} ${unit}`],
+];
+
+const UNIT_ES: Readonly<Record<string, readonly [string, 'el' | 'la']>> = {
+    screen: ['pantalla', 'la'], handler: ['handler', 'el'], template: ['plantilla', 'la'], chart: ['chart', 'el'], package: ['paquete', 'el'], model: ['modelo', 'el'],
+};
+
+function unitEs(part: string, unit: string): { readonly the: string; readonly of: string } {
+    const [noun, article] = UNIT_ES[unit] ?? [unit, 'el'];
+    return { the: `${article} ${noun} ${part}`, of: `${article === 'el' ? 'del' : 'de la'} ${noun} ${part}` };
+}
+
+const DONE_ES = [
+    (part: string, unit: string) => `Añadidas pruebas de regresión para ${unitEs(part, unit).the}`,
+    (part: string, unit: string) => `Quitado el código muerto ${unitEs(part, unit).of}`,
+    (part: string, unit: string) => `Reescrito ${unitEs(part, unit).the} sobre la nueva base`,
+    (part: string, unit: string) => `Corregidos los avisos del linter ${unitEs(part, unit).of}`,
+    (part: string, unit: string) => `Revisado ${unitEs(part, unit).the} sin encontrar defectos abiertos`,
+    (part: string, unit: string) => `Añadido un ejemplo completo ${unitEs(part, unit).of}`,
+    (part: string, unit: string) => `Renombradas las exportaciones ${unitEs(part, unit).of} según la regla de nombres`,
+    (part: string, unit: string) => `Medido ${unitEs(part, unit).the}: dentro del presupuesto`,
+];
+
+const PASSED_ES = [
+    (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['now', 'superseded', `Pasando las comprobaciones ${unitEs(part, unit).of}`],
+    (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['next', 'done', `Abrir la revisión ${unitEs(part, unit).of}`],
+    (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['now', 'superseded', `Leyendo ${unitEs(part, unit).the} antes de cambiar nada`],
+    (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['next', 'done', `Hacer rebase sobre main de la rama ${unitEs(part, unit).of}`],
+    (part: string, unit: string): readonly [Section, ClosedWhy, string] => ['now', 'done', `Esperando el pipeline ${unitEs(part, unit).of}`],
 ];
 
 const f = (k: string, s: Section, at: number, t: string, more: Partial<Pick<Draft, 'why' | 'ref' | 'closed'>> = {}): Draft => ({ k, s, at, t, ...more });
@@ -424,15 +457,11 @@ const PLANS: readonly Plan[] = [
     },
 ];
 
-function rngOf(seed: string): () => number {
-    let state = createHash('sha256').update(seed).digest().readUInt32LE(0);
-    return () => {
-        state = (state + 0x6d2b79f5) >>> 0;
-        let mixed = Math.imul(state ^ (state >>> 15), state | 1);
-        mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
-        return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-    };
-}
+// The fresh set reads its own plans and projects. Today's run reads PLANS and PROJECTS, and its ids and draws take no salt.
+const SOURCE: readonly Plan[] = fresh ? FRESH_PLANS : PLANS;
+const PROJECT_SET: Readonly<Record<string, Project>> = fresh ? FRESH_PROJECTS : PROJECTS;
+const SALT = fresh ? `${FRESH_SEED}/` : '';
+const PRIMARIES = ['close-bait', 'closed-merge-bait', 'chain-bait', 'long-pressure', 'thin-ledger'];
 
 const BASE32 = '0123456789abcdefghjkmnpqrstvwxyz';
 
@@ -464,7 +493,10 @@ function fillerOf(plan: Plan, taken: Set<number>, rng: () => number): Timed[] {
     if (count < 0) {
         throw new Error(`${plan.id}: total ${plan.total} is under its ${plan.core.length + copies.length} written facts`);
     }
-    const project: Project = PROJECTS[plan.project];
+    const project = PROJECT_SET[plan.project];
+    if (project === undefined) throw new Error(`${plan.id}: no project ${plan.project}`);
+    const spanish = fresh && plan.language === 'es';
+    const [donePool, passedPool] = spanish ? [DONE_ES, PASSED_ES] : [DONE, PASSED];
     const parts = shuffled(project.parts, rng);
     const passedParts = shuffled(project.parts, rng);
     const linkParts = shuffled(project.parts, rng);
@@ -483,20 +515,20 @@ function fillerOf(plan: Plan, taken: Set<number>, rng: () => number): Timed[] {
         if (roll < 0.22) {
             if (links % 2 === 0 && links / 2 < linkParts.length) {
                 const part = linkParts[links / 2] as string;
-                out.push({ k: `x${index}`, s: 'links', at, minute, t: `${part} ${project.unit} source`, ref: project.path(part) });
+                out.push({ k: `x${index}`, s: 'links', at, minute, t: spanish ? `Código fuente ${unitEs(part, project.unit).of}` : `${part} ${project.unit} source`, ref: project.path(part) });
             } else {
                 let run = 4000 + Math.floor(rng() * 5000);
                 while (runs.has(run)) {
                     run += 1;
                 }
                 runs.add(run);
-                out.push({ k: `x${index}`, s: 'links', at, minute, t: `CI run ${run}`, ref: `https://ci.${project.host}.test/runs/${run}` });
+                out.push({ k: `x${index}`, s: 'links', at, minute, t: spanish ? `Ejecución de CI ${run}` : `CI run ${run}`, ref: `https://ci.${project.host}.test/runs/${run}` });
             }
             links += 1;
-        } else if (roll < 0.22 + closedShare && passed < passedParts.length * PASSED.length) {
+        } else if (roll < 0.22 + closedShare && passed < passedParts.length * passedPool.length) {
             const part = passedParts[passed % passedParts.length] as string;
             const round = Math.floor(passed / passedParts.length);
-            const make = PASSED[((passed % passedParts.length) + round * 2) % PASSED.length] as (typeof PASSED)[number];
+            const make = passedPool[((passed % passedParts.length) + round * 2) % passedPool.length] as (typeof PASSED)[number];
             const [section, why, text] = make(part, project.unit);
             const until = Math.min(plan.span - 1, minute + 5 + Math.floor(rng() * 55));
             out.push({ k: `x${index}`, s: section, at, minute, t: text, closed: [why, (until / plan.span) * 100] });
@@ -504,7 +536,7 @@ function fillerOf(plan: Plan, taken: Set<number>, rng: () => number): Timed[] {
         } else {
             const part = parts[done % parts.length] as string;
             const round = Math.floor(done / parts.length);
-            const make = DONE[((done % parts.length) + round * 3) % DONE.length] as (typeof DONE)[number];
+            const make = donePool[((done % parts.length) + round * 3) % donePool.length] as (typeof DONE)[number];
             const withRef = rng() < 0.38;
             out.push({ k: `x${index}`, s: 'done', at, minute, t: make(part, project.unit), ...(withRef ? { ref: project.path(part) } : {}) });
             done += 1;
@@ -513,8 +545,33 @@ function fillerOf(plan: Plan, taken: Set<number>, rng: () => number): Timed[] {
     return out;
 }
 
-function build(plan: Plan, index: number): Record<string, unknown> {
-    const rng = rngOf(plan.id);
+interface SampleExpected {
+    readonly merge_pairs: readonly { readonly ids: readonly string[]; readonly kind: string; readonly keep: string | null }[];
+    readonly no_merge: readonly (readonly string[])[];
+    readonly waiting_on_operator: { readonly ids: readonly string[]; readonly gist: string } | null;
+    readonly closed_ids: readonly { readonly id: string; readonly closed_why: string | null; readonly must_not_say: string; readonly current: string | null }[];
+    readonly names_and_numbers: readonly string[];
+    readonly times: readonly string[];
+}
+
+// The row build() returns, typed for the sample writer; the JSON written to the dataset is the same object.
+interface Built {
+    readonly id: string;
+    readonly plants: readonly string[];
+    readonly tags: readonly string[];
+    readonly input: {
+        readonly name: string;
+        readonly language: string;
+        readonly clock: unknown;
+        readonly facts: readonly { readonly section: string; readonly text: string; readonly state: string; readonly closedWhy: string | null; readonly why: string | null; readonly ref: string | null }[];
+    };
+    readonly shape: { readonly facts: number; readonly open: number; readonly closed: number; readonly document_bytes_without_rubric: number };
+    readonly expected: SampleExpected;
+    readonly fresh?: { readonly seed: string; readonly traps: readonly Trap[] } | undefined;
+}
+
+function build(plan: Plan, index: number): Built {
+    const rng = rngOf(`${SALT}${plan.id}`);
     const start = NOW - plan.span * MINUTE;
     const minuteOf = (at: number): number => Math.round((at / 100) * plan.span);
     const byKey = new Map(plan.core.map((draft) => [draft.k, draft] as const));
@@ -541,7 +598,7 @@ function build(plan: Plan, index: number): Record<string, unknown> {
         const lastAt = Math.min(closedAt ?? NOW, firstAt + (1 + Math.floor(rng() * 12)) * MINUTE);
         const fact: Fact = {
             id: factId(`${plan.id}/${draft.k}`), task, section: draft.s, text: draft.t, why: draft.why ?? null, ref: draft.ref ?? null, agent: plan.name, anchor: null,
-            firstAt, lastAt, state: draft.closed === undefined ? 'open' : 'closed', closedWhy: draft.closed?.[0] ?? null, closedAt, language: plan.language === 'es' && plan.id.includes('plain') ? 'es' : 'en',
+            firstAt, lastAt, state: draft.closed === undefined ? 'open' : 'closed', closedWhy: draft.closed?.[0] ?? null, closedAt, language: plan.language === 'es' && (fresh || plan.id.includes('plain')) ? 'es' : 'en',
         };
         return { key: draft.k, fact };
     }).sort((a, b) => a.fact.firstAt - b.fact.firstAt || (a.fact.id < b.fact.id ? -1 : 1));
@@ -556,6 +613,11 @@ function build(plan: Plan, index: number): Record<string, unknown> {
         }
         return `f${at + 1}`;
     };
+    const traps = (plan.traps ?? []).map((trap) => ({
+        kind: trap.kind,
+        expect: trap.expect,
+        ops: trap.ops.map((op) => ({ op: op.op, id: idOf(op.id), why: op.why, ...(op.into === undefined ? {} : { into: idOf(op.into) }) })),
+    }));
     const time = (ms: number): string => localTime(ms, NOW, ZONE);
     const allowed = new Set<string>();
     for (const source of [plan.name, ...facts.flatMap((fact) => [fact.text, fact.why ?? '', fact.ref ?? ''])]) {
@@ -585,9 +647,43 @@ function build(plan: Plan, index: number): Record<string, unknown> {
             names_and_numbers: [...allowed].sort(),
             times: [...times].sort(),
         },
+        fresh: fresh ? { seed: FRESH_SEED, traps } : undefined,
     };
 }
 
-const lines = PLANS.map((plan, index) => JSON.stringify(build(plan, index)));
-writeFileSync(new URL('./dataset.jsonl', import.meta.url), `${lines.join('\n')}\n`);
-console.log(`${lines.length} items written`);
+function sampleMarkdown(rows: readonly Built[]): string {
+    const picked = new Set(sampleOf(rows.map((row) => ({ id: row.id, plants: row.plants })), PRIMARIES));
+    const parts = [
+        `# curator-story fresh sample (seed ${FRESH_SEED})`, '',
+        'Six of the 24 fresh items, picked by the seed. Each section gives the plants, the ledger in short form (fN is the position in the ledger), the answer key in plain words and the traps.', '',
+    ];
+    for (const row of rows.filter((each) => picked.has(each.id))) {
+        parts.push(`## ${row.id}`, '', `plants: ${row.plants.join(', ')}; size: ${row.tags[0]}`, '', '### Ledger', '');
+        row.input.facts.forEach((fact, at) => {
+            const state = fact.state === 'closed' ? `closed as ${fact.closedWhy}` : 'open';
+            parts.push(`- f${at + 1} [${fact.section}, ${state}] ${fact.text}${fact.why === null ? '' : ` (why: ${fact.why})`}${fact.ref === null ? '' : ` (ref: ${fact.ref})`}`);
+        });
+        const { expected } = row;
+        parts.push('', '### Answer key', '');
+        expected.merge_pairs.forEach((pair) => parts.push(`- merge ${pair.ids.join(' and ')} (${pair.kind}${pair.keep === null ? '' : `, keep ${pair.keep}`})`));
+        expected.no_merge.forEach((pair) => parts.push(`- keep apart ${pair.join(' and ')}: they differ in a material detail`));
+        if (expected.waiting_on_operator !== null) parts.push(`- waiting on the operator: ${expected.waiting_on_operator.ids.join(', ')}; ${expected.waiting_on_operator.gist}`);
+        expected.closed_ids.forEach((one) => parts.push(`- closed ${one.id} (${one.closed_why}): must not say "${one.must_not_say}"${one.current === null ? '' : `; current ${one.current}`}`));
+        parts.push('', '### Traps', '');
+        (row.fresh?.traps ?? []).forEach((trap) => parts.push(`- ${trap.kind}, expect ${trap.expect}: ${JSON.stringify(trap.ops)}`));
+        parts.push('', 'owner: ', '');
+    }
+    return `${parts.join('\n')}\n`;
+}
+
+const rows = SOURCE.map((plan, index) => build(plan, index));
+if (fresh && rows.length !== FRESH_ITEMS) throw new Error(`${rows.length} fresh items, expected ${FRESH_ITEMS}`);
+const lines = rows.map((row) => JSON.stringify(row));
+const out = new URL(fresh ? './dataset-fresh.jsonl' : './dataset.jsonl', import.meta.url);
+writeFileSync(out, `${lines.join('\n')}\n`);
+if (fresh) {
+    writeFileSync(new URL('./fresh-sample.md', import.meta.url), sampleMarkdown(rows));
+    console.log(`${lines.length} fresh items -> ${out.pathname}`);
+} else {
+    console.log(`${lines.length} items written`);
+}

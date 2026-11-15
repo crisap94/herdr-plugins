@@ -44,6 +44,14 @@
     "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "blind": true, "ownModelRungs": ["claude-sonnet-medium", "claude-sonnet-high"] },
     "plants": { "plain": 4, "verbatim-copy": 6, "reworded-duplicate": 4, "near-pair": 5, "closed-tempting": 7, "waiting-on-operator": 5, "language-es": 3 },
     "sizes": { "small": 9, "medium": 10, "large": 5 },
+    "fresh": {
+        "dataset": "dataset-fresh.jsonl",
+        "items": 24,
+        "seed": "fresh-1/2026-11-14",
+        "plants": { "close-bait": 5, "near-pair": 7, "waiting-on-operator": 8, "verbatim-copy": 8, "closed-tempting": 10, "language-es": 2, "closed-merge-bait": 5, "json-in-fact": 2, "chain-bait": 4, "long-pressure": 6, "thin-ledger": 4 },
+        "sizes": { "small": 9, "medium": 11, "large": 4 },
+        "traps": { "refused": 33, "kept": 7 }
+    },
     "calls": { "job": 504, "judgeAtMost": 504 },
     "audit": "The expected answers were written by a model and audited by nobody yet."
 }

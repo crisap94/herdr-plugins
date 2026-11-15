@@ -6,6 +6,7 @@ import { ladder } from '../lib/ladder.ts';
 import { resultsCsv, writeJson, writeText } from '../lib/output.ts';
 import { report } from '../lib/report.ts';
 import { armMarkdown, guardMode, repairFlag, writeArm } from '../lib/arm.ts';
+import { datasetOf } from '../lib/fresh.ts';
 import { lastByKey, readJsonl, runDir, runJobs, selectedConfigs, selectedItems, sha256, writePrompt } from '../lib/runner.ts';
 import type { RunOptions } from '../lib/runner.ts';
 import { stubJudge } from '../lib/stub.ts';
@@ -20,7 +21,9 @@ import { CODE_CRITERIA, grade, outsideTokens, readAnswer } from './scoring.ts';
 
 interface Settings {
     readonly name: string;
+    readonly dataset: string;
     readonly items: number;
+    readonly fresh: { readonly dataset: string; readonly items: number };
     readonly repetitions: number;
     readonly shipped: Config;
     readonly configs: readonly Config[];
@@ -112,7 +115,7 @@ function tokenReport(items: readonly StoryItem[], answers: readonly Answer[]): s
 export function argvOf(argv: readonly string[]): { readonly argv: readonly string[]; readonly smoke: boolean; readonly resume: boolean } {
     const smoke = argv.includes('--smoke');
     const resume = argv.includes('--resume');
-    const rest = argv.filter((arg) => arg !== '--smoke' && arg !== '--resume');
+    const rest = argv.filter((arg) => arg !== '--smoke' && arg !== '--resume' && arg !== '--fresh');
     if (smoke && (rest.includes('--items') || rest.includes('--reps'))) throw new Error('--smoke sets the items and the repetitions itself: drop --items and --reps');
     if (resume && !rest.includes('--label')) throw new Error('--resume needs the --label of the run to continue');
     if (smoke && !rest.includes('--label')) rest.push('--label', rest.includes('--stub') ? 'smoke-stub' : 'smoke');
@@ -122,7 +125,11 @@ export function argvOf(argv: readonly string[]): { readonly argv: readonly strin
 export async function run(input: readonly string[]): Promise<string> {
     const { argv, smoke, resume } = argvOf(input);
     const mode = repairFlag(argv);
-    const chosen: EvalSpec<Input, Expected> = smoke ? { ...spec, items: ITEMS.filter((item) => SMOKE_IDS.includes(item.id)) } : spec;
+    const choice = datasetOf({ dataset: SETTINGS.dataset, items: SETTINGS.items }, SETTINGS.fresh, input);
+    const dataItems = choice.fresh ? loadItems(new URL(choice.dataset, import.meta.url)) : ITEMS;
+    if (dataItems.length !== choice.items) throw new Error(`${choice.dataset} holds ${dataItems.length} items, config.json says ${choice.items}`);
+    const base: EvalSpec<Input, Expected> = choice.fresh ? { ...spec, items: dataItems } : spec;
+    const chosen: EvalSpec<Input, Expected> = smoke ? { ...base, items: base.items.filter((item) => SMOKE_IDS.includes(item.id)) } : base;
     validate(chosen);
     const parsed = parseOptions(chosen, argv, mode === null ? {} : { round: storyRound(mode) });
     if (resume && !existsSync(join(parsed.root, chosen.name, 'runs', parsed.label, 'answers.jsonl'))) throw new Error(`nothing to resume: no answers.jsonl in the run ${parsed.label}`);

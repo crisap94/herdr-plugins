@@ -38,8 +38,8 @@ interface Row {
     readonly expected: Expected;
 }
 
-export function loadItems(): StoryItem[] {
-    const text = readFileSync(new URL('./dataset.jsonl', import.meta.url), 'utf8');
+export function loadItems(file: URL = new URL('./dataset.jsonl', import.meta.url)): StoryItem[] {
+    const text = readFileSync(file, 'utf8');
     return text.split('\n').filter((line) => line.trim() !== '').map((line) => {
         const row = JSON.parse(line) as Row;
         return { id: row.id, plants: row.plants, input: row.input, expected: row.expected };
