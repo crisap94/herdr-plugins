@@ -70,5 +70,5 @@ export interface Requests extends HandoffRequester, HandoffResponder {
 }
 
 export interface CompactionQueue {
-    compactQueued(tab: string, pane: string): boolean;
+    compactQueued(tab: TabId, pane: PaneId): boolean;
 }

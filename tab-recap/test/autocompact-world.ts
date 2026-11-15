@@ -1,6 +1,7 @@
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
@@ -33,7 +34,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const queued = new Set<string>();
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason('test')) : observedFrom(runningCount(state.inFlight), state.background, flightReason(`${state.inFlight} running`))); },
-        recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tab, pane) }, compactions: store.compactions, decisions: store.autocompact,
+        recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(tab), pane) }, compactions: store.compactions, decisions: store.autocompact,
         requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); },
         lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); }, startedAt,
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },

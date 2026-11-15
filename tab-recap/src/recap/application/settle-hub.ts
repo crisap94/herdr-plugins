@@ -2,6 +2,7 @@ import type { Agents } from '#src/ports/agents.ts';
 import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
 const SETTLE_MS = 4000;
 const POLL_MS = 2000;
@@ -45,7 +46,7 @@ export class SettleHub implements LaneSettling {
         }
     }
 
-    async settled(pane: string, since: number, timeoutMs: number): Promise<Settled> {
+    async settled(pane: string, since: Instant, timeoutMs: number): Promise<Settled> {
         const heard = this.last.get(pane);
         if (heard !== undefined && heard.at >= since && READY.has(heard.status)) {
             return { kind: 'settled', status: heard.status };

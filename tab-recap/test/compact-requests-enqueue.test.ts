@@ -11,7 +11,7 @@ import type { CompactRequest } from '#src/ports/requests.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
@@ -49,7 +49,7 @@ test('an enqueue that throws leaves no ask behind, so the same request is taken 
     const first = handler(asks, tokens, queue, asked);
     first.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
-    assert.deepEqual([asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), tokens.reports.length, asked.length], [false, 0, 0]);
+    assert.deepEqual([asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), tokens.reports.length, asked.length], [false, 0, 0]);
     queue.throwing = false;
     first.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
     await flush();
@@ -91,7 +91,7 @@ test('the ask is recorded before the request is queued, so the queue never sees 
         board,
         requests: {
             requestCompact: (): void => {
-                seenAtEnqueue.push(asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'));
+                seenAtEnqueue.push(asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')));
             },
         },
         asks,

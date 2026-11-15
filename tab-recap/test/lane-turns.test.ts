@@ -23,7 +23,7 @@ function turns(): { heard: (pane: string, status: string) => void; store: Return
     const settled: string[] = [];
     const hub = new SettleHub({ agents: { status: (): never => { throw new Error('no poll'); } }, listening: (): boolean => true, pause: (): Promise<void> => Promise.resolve(), now: (): number => 100 });
     const heard = laneTurns({ hub, compactions: store.compactions, board: (): Board => board, now: (): number => 100 });
-    void hub.settled('w1:p1', 0, 1000).then((done) => { settled.push(done.kind === 'settled' ? done.status : 'timeout'); return done; });
+    void hub.settled('w1:p1', instant(0), 1000).then((done) => { settled.push(done.kind === 'settled' ? done.status : 'timeout'); return done; });
     return { heard, store, settled };
 }
 

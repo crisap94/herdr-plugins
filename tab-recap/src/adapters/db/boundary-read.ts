@@ -3,6 +3,7 @@ import { and, asc, count, eq, max, sql } from 'drizzle-orm';
 import type { Boundaries, Break } from '#src/ports/boundaries.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
@@ -38,7 +39,7 @@ export class BoundaryRepository implements Boundaries {
         return guarded(() => this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, tabId(tab))).get()?.n ?? 0, 0);
     }
 
-    lastBreakAt(tab: string, pane: string): number | null {
+    lastBreakAt(tab: TabId, pane: string): number | null {
         return guarded(() => this.orm.select({ at: max(boundary.at) }).from(boundary)
             .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
             .where(and(eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null, null);

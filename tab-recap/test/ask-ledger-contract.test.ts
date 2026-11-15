@@ -27,11 +27,11 @@ const DONE: AskOutcome = { kind: 'done' };
 for (const [name, make] of implementations) {
     test(`${name}: an ask is seen by its exchange, requester and id; the local 'cli' requester and another tool are other asks`, () => {
         const ledger = make();
-        assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), false);
+        assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), false);
         ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
         ledger.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('r7'), pane: paneId('w1:p1'), at: 2, ref: null });
         assert.deepEqual(
-            [ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.seen(COMPACT_EXCHANGE, reviewer, 'r7'), ledger.seen(COMPACT_EXCHANGE, 'cli', 'r7'), ledger.seen(handoff, coordinator, 'r7')],
+            [ledger.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), ledger.seen(COMPACT_EXCHANGE, reviewer, rid('r7')), ledger.seen(COMPACT_EXCHANGE, 'cli', rid('r7')), ledger.seen(handoff, coordinator, rid('r7'))],
             [true, false, true, false],
         );
     });
@@ -46,7 +46,7 @@ for (const [name, make] of implementations) {
     test(`${name}: an exchange with no descriptor is recorded, settled and seen like any other`, () => {
         const ledger = make();
         ledger.record({ exchange: handoff, requester: coordinator, id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: 'handoff-1' });
-        assert.equal(ledger.seen(handoff, coordinator, 'h1'), true);
+        assert.equal(ledger.seen(handoff, coordinator, rid('h1')), true);
         ledger.settle({ exchange: handoff, id: rid('h1'), pane: paneId('w1:p1') }, DONE);
         assert.deepEqual(ledger.unfinished(), []);
     });
@@ -79,7 +79,7 @@ for (const [name, make] of implementations) {
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('new-done'), pane: paneId('w1:p3') }, DONE);
         ledger.prune(500);
         assert.deepEqual(
-            [ledger.seen(COMPACT_EXCHANGE, coordinator, 'old-open'), ledger.seen(COMPACT_EXCHANGE, coordinator, 'old-done'), ledger.seen(COMPACT_EXCHANGE, coordinator, 'new-done')],
+            [ledger.seen(COMPACT_EXCHANGE, coordinator, rid('old-open')), ledger.seen(COMPACT_EXCHANGE, coordinator, rid('old-done')), ledger.seen(COMPACT_EXCHANGE, coordinator, rid('new-done'))],
             [true, false, true],
         );
         assert.deepEqual(ledger.unfinished().map((ask) => ask.id), ['old-open']);
@@ -102,7 +102,7 @@ for (const [name, make] of implementations) {
         ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
         ledger.record({ exchange: COMPACT_EXCHANGE, requester: reviewer, id: rid('r7'), pane: paneId('w1:p1'), at: 2, ref: null });
         ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
-        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.seen(COMPACT_EXCHANGE, reviewer, 'r7')], [false, true]);
+        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), ledger.seen(COMPACT_EXCHANGE, reviewer, rid('r7'))], [false, true]);
     });
 
     test(`${name}: withdraw keeps a settled ask`, () => {
@@ -110,7 +110,7 @@ for (const [name, make] of implementations) {
         ledger.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
         ledger.settle({ exchange: COMPACT_EXCHANGE, id: rid('r7'), pane: paneId('w1:p1') }, DONE);
         ledger.withdraw({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7') });
-        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), ledger.unfinished()], [true, []]);
+        assert.deepEqual([ledger.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), ledger.unfinished()], [true, []]);
     });
 
     test(`${name}: two requesters with the same id on one pane are settled together by one terminal answer`, () => {
@@ -138,6 +138,6 @@ test('SQLite: a read that fails answers seen, so nothing is acted on that cannot
     assert.equal(opened.kind, 'ready');
     const ledger = new AskLedgerRepository(opened.db);
     opened.db.exec('DROP TABLE ask');
-    assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, 'r7'), true);
+    assert.equal(ledger.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), true);
     assert.deepEqual(ledger.unfinished(), []);
 });

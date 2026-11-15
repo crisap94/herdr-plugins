@@ -16,7 +16,7 @@ import type { CompactRequest } from '#src/ports/requests.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const PANE = 'w1:p1';
 const lane = { paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: null };
@@ -132,7 +132,7 @@ test('a request a pane holds while sharing is off is remembered and never acted 
     void run.informer.run();
     await run.informer.enterSubscription();
     await flush();
-    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), 'r9'), true, 'remembered while off');
+    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), rid('r9')), true, 'remembered while off');
     run.control.on = true;
     await run.informer.reconcile();
     await flush();

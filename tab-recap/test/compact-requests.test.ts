@@ -11,7 +11,7 @@ import { Trail } from '#src/recap/application/compaction-trail.ts';
 import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { MemoryAskLedger } from './fakes/ask-ledger.ts';
+import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
@@ -21,7 +21,7 @@ import { take } from '#src/protocol/responder.ts';
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 
-const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(toolName(tool)), id);
+const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(toolName(tool)), rid(id));
 
 
 interface Harness {
@@ -161,7 +161,7 @@ test('a request that comes before the board exists waits for it, and is then act
         enabled: (): boolean => true, board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): number => 1000, log: (): void => undefined,
     });
     handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r9' });
-    assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', 'r9')], [[], [], false], 'not decided, not remembered, before the board');
+    assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', rid('r9'))], [[], [], false], 'not decided, not remembered, before the board');
     seeded = true;
     handler.tick();
     assert.deepEqual(asked.map((request) => request.answer), ['r9'], 'the board exists: it is a lane, so it is queued');
@@ -175,10 +175,10 @@ test('a request is remembered only after it is queued: a refused queue leaves it
         enabled: (): boolean => true, board: (): Board => board(), requests: { requestCompact: (): void => { if (refuse) throw new Error('database locked'); } }, asks, tokens, now: (): number => 1000, log: (): void => undefined,
     });
     handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    assert.equal(seen(asks, 'coordinator', 'r7'), false, 'not remembered: nothing was queued');
+    assert.equal(seen(asks, 'coordinator', rid('r7')), false, 'not remembered: nothing was queued');
     refuse = false;
     handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    assert.equal(seen(asks, 'coordinator', 'r7'), true);
+    assert.equal(seen(asks, 'coordinator', rid('r7')), true);
 });
 
 test('no answer is written on an empty pane', async () => {

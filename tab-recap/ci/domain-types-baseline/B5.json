@@ -1,6 +1,6 @@
 {
   "src/adapters/db/ask-ledger.ts": {
-    "parameter": 7,
+    "parameter": 6,
     "return": 2,
     "container": 2
   },
@@ -22,7 +22,7 @@
     "property": 1
   },
   "src/adapters/db/boundary-read.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 4,
     "assertion": 2
   },
@@ -121,13 +121,13 @@
     "assertion": 2
   },
   "src/adapters/db/requests.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 7,
     "container": 14,
     "property": 2
   },
   "src/adapters/db/retention.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "return": 1
   },
   "src/adapters/db/rows.ts": {

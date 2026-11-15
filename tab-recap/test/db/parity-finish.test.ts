@@ -4,6 +4,7 @@ import type { Database } from 'bun:sqlite';
 import { BoundaryRepository } from '#src/adapters/db/boundary-read.ts';
 import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import { SessionSourceRepository } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { TranscriptRows } from '#src/adapters/db/transcripts.ts';
@@ -98,7 +99,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('boundary reads: lastBreakAt takes the newest boundary of the pane', () => {
         withParity(seedAll, (parity) => {
-            expectSameRows(parity, { sql: LAST_BREAK, params: ['t1', 'p1'] }, [{ at: new BoundaryRepository(parity.raw).lastBreakAt('t1', 'p1') }]);
+            expectSameRows(parity, { sql: LAST_BREAK, params: ['t1', 'p1'] }, [{ at: new BoundaryRepository(parity.raw).lastBreakAt(tabId('t1'), 'p1') }]);
         });
     });
 
@@ -118,7 +119,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
                 compactions: count(parity, COUNTS.compactions, 't1'),
                 facts: count(parity, COUNTS.facts, 't1'),
             };
-            assert.deepStrictEqual(new RetentionRepository(parity.raw).remove('t1'), expected);
+            assert.deepStrictEqual(new RetentionRepository(parity.raw).remove(tabId('t1')), expected);
             assert.equal(count(parity, 'SELECT COUNT(*) AS n FROM tab WHERE id = ?', 't1'), 0);
         });
     });

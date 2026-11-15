@@ -1,5 +1,6 @@
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Done } from './columns.ts';
 import type { Unknown } from './unknowable.ts';
@@ -24,6 +25,6 @@ export interface LineBehavior {
 export interface Agents {
     status(pane: string): Promise<AgentState>;
     prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted>;
-    typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
+    typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
     askNote(tab: string, pane: string | null): Promise<Done>;
 }

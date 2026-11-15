@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { and, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
+import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -101,7 +101,7 @@ export class RequestsRepository implements Requests, CompactionQueue {
         this.orm = ormOf(db);
     }
 
-    compactQueued(tab: string, pane: string): boolean {
+    compactQueued(tab: TabId, pane: PaneId): boolean {
         return guarded(() => this.orm.select({ present: requestTable.id }).from(requestTable).where(and(eq(requestTable.kind, 'compact'), eq(requestTable.target, tab), or(eq(requestTable.pane, paneId(pane)), isNull(requestTable.pane)))).limit(1).get() !== undefined, false);
     }
 

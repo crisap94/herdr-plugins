@@ -94,7 +94,7 @@ test('one tab that cannot be removed does not stop the sweep', () => {
     tab(store, 'w1:a', 40);
     tab(store, 'w1:b', 41);
     const real = store.retention;
-    const flaky = { expired: (cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] => real.expired(cutoff, protectedTabs), remove: (id: string): Removed => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(id); } };
+    const flaky = { expired: (cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] => real.expired(cutoff, protectedTabs), remove: (id: string): Removed => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(tabId(id)); } };
     assert.equal(removeExpiredTabs({ retention: flaky, closures: store.closedLanes, clock: { now: () => instant(NOW) }, days: () => 30, log: (line) => { lines.push(line); } }, instant(NOW)), 1);
     assert.match(lines.join('\n'), /could not remove w1:a: locked[^]*removed w1:b/);
     assert.deepEqual([count(store.db, 'tab', 'w1:a'), count(store.db, 'tab', 'w1:b')], [1, 0]);

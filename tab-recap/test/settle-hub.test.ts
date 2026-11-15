@@ -27,7 +27,7 @@ function hub(options: { listening: boolean; statuses?: string[]; clock?: { at: n
 
 test('a push settles the waiter at once: the first idle/done after `since`, with no status poll; working does not', async () => {
     const { hub: waiting, polls } = hub({ listening: true });
-    const settled = waiting.settled('w1:p1', 1000, 60_000);
+    const settled = waiting.settled('w1:p1', instant(1000), 60_000);
     waiting.heard('w1:p1', 'working');
     waiting.heard('w1:p2', 'done');
     let resolved = false;
@@ -44,25 +44,25 @@ test('a push that came between the typing and the wait is not lost; one from bef
     const { hub: early } = hub({ listening: true, clock });
     early.heard('w1:p1', 'idle');
     clock.at = 1200;
-    assert.deepEqual(await early.settled('w1:p1', 1000, 5), { kind: 'timeout' }, 'an idle push from before the command says nothing about it');
+    assert.deepEqual(await early.settled('w1:p1', instant(1000), 5), { kind: 'timeout' }, 'an idle push from before the command says nothing about it');
     early.heard('w1:p1', 'done');
-    assert.deepEqual(await early.settled('w1:p1', 1000, 5), { kind: 'settled', status: 'done' });
+    assert.deepEqual(await early.settled('w1:p1', instant(1000), 5), { kind: 'settled', status: 'done' });
 });
 
 test('listening but silent: after the timeout the lane is looked at once, and a lane that settled unheard still counts', async () => {
     const quiet = hub({ listening: true, statuses: ['idle'] });
-    assert.deepEqual(await quiet.hub.settled('w1:p1', 1000, 5), { kind: 'settled', status: 'idle' });
+    assert.deepEqual(await quiet.hub.settled('w1:p1', instant(1000), 5), { kind: 'settled', status: 'idle' });
     const stuck = hub({ listening: true, statuses: ['working'] });
-    assert.deepEqual(await stuck.hub.settled('w1:p1', 1000, 5), { kind: 'timeout' });
+    assert.deepEqual(await stuck.hub.settled('w1:p1', instant(1000), 5), { kind: 'timeout' });
 });
 
 test('blind (no subscription): today\'s polling — a pause for the agent to start, then a status every 2 s until idle or done', async () => {
     const blind = hub({ listening: false, statuses: ['working', 'working', 'idle'] });
-    assert.deepEqual(await blind.hub.settled('w1:p1', 1000, 600_000), { kind: 'settled', status: 'idle' });
+    assert.deepEqual(await blind.hub.settled('w1:p1', instant(1000), 600_000), { kind: 'settled', status: 'idle' });
     assert.deepEqual(blind.pauses, [4000, 2000, 2000]);
     assert.equal(blind.polls.length, 3);
     const lost = hub({ listening: false, statuses: ['working', 'working', 'working', 'working', 'working', 'working'] });
-    assert.deepEqual(await lost.hub.settled('w1:p1', 1000, 9000), { kind: 'timeout' }, 'bounded by the timeout');
+    assert.deepEqual(await lost.hub.settled('w1:p1', instant(1000), 9000), { kind: 'timeout' }, 'bounded by the timeout');
 });
 
 const compacted = (at: number): Mark => ({ kind: 'compacted', at, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 });

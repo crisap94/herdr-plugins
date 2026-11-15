@@ -3,7 +3,7 @@ import { and, asc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
-import type { ExchangeName } from '#src/protocol/primitives.ts';
+import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { outcomeOf, outcomeText } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -45,7 +45,7 @@ export class AskLedgerRepository implements AskLedger {
         this.log = log;
     }
 
-    seen(exchange: ExchangeName, requester: Requester, id: string): boolean {
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean {
         return guarded(() => this.orm.select({ found: sql<number>`1` }).from(asks)
             .where(and(eq(asks.exchange, exchange), eq(asks.requester, requester), eq(asks.id, id))).get() !== undefined, true);
     }

@@ -1,11 +1,11 @@
 {
   "src/ports/agents.ts": {
-    "parameter": 6,
+    "parameter": 5,
     "container": 1,
     "property": 3
   },
   "src/ports/ask-ledger.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "return": 1,
     "property": 4
   },
@@ -21,7 +21,7 @@
     "property": 39
   },
   "src/ports/boundaries.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
     "property": 4
   },
@@ -93,7 +93,7 @@
     "property": 6
   },
   "src/ports/lane-settling.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "property": 1
   },
   "src/ports/lane-tokens.ts": {
@@ -117,12 +117,12 @@
     "property": 8
   },
   "src/ports/requests.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 2,
     "property": 12
   },
   "src/ports/retention.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "property": 5
   },
   "src/ports/run-inputs.ts": {

@@ -38,10 +38,10 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
         assert.deepEqual(unfinishedCompactionAsks(db), [], 'once interrupted, nothing is unfinished');
         const coordinator = must(toolName('coordinator'));
         const ask = { exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 3, ref: null };
-        assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), false);
+        assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), false);
         store.asks.record(ask);
-        assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, 'r7'), true);
-        assert.equal(store.asks.seen(COMPACT_EXCHANGE, must(toolName('other')), 'r7'), false, 'the same id from another tool is another request');
+        assert.equal(store.asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), true);
+        assert.equal(store.asks.seen(COMPACT_EXCHANGE, must(toolName('other')), rid('r7')), false, 'the same id from another tool is another request');
         store.asks.record(ask);
         store.requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p2', note: null, origin: 'request', answer: 'r8' });
         assert.deepEqual(store.requests.takeAnswered(), [{ pane: 'w1:p2', answer: 'r8' }]);
