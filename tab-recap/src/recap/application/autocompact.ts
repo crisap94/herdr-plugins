@@ -265,16 +265,16 @@ export class Autocompact {
 
     private async asking(lane: Lane, tuning: AutocompactTuning): Promise<Judged> {
         const decider = this.deps.decider();
-        const label = decider?.label ?? null;
         const state = autocompactState(await this.deps.recent(lane), this.deps.ledger.historyOf(String(lane.tab), String(lane.pane)));
-        const answered = decider === null ? null : await decider.ask(state, QUESTIONS);
+        const answered = decider === null ? null : await decider.ask(must(parseText(JSON.stringify(state))), QUESTIONS);
         if (answered === null || isUnknown(answered)) {
             const why = answered === null ? 'no decider is set up' : saying(answered.why);
             if (this.outage === 'reachable') this.deps.log(`autocompact: the decider is unreachable (${why}); decisions are unknown until it answers`);
             this.outage = 'unreachable';
-            return { ...UNKNOWN, why: must(parseText(why)), decider: label };
+            return { ...UNKNOWN, why: must(parseText(why)), decider: decider?.label ?? null };
         }
         this.outage = 'reachable';
-        return { verdict: verdictOf(answered.answers, tuning.verdict), answers: answered.answers, why: null, decider: label, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
+        const answers = Object.fromEntries(answered.answers);
+        return { verdict: verdictOf(answers, tuning.verdict), answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
     }
 }

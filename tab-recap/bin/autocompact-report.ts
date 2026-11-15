@@ -14,7 +14,7 @@ import { verbatimAgainstCode } from '#src/experiment/report-code.ts';
 import { decide } from '#src/experiment/report-rule.ts';
 import { mean } from '#src/experiment/stats.ts';
 
-const IDS = Object.keys(QUESTIONS);
+const IDS = [...QUESTIONS.keys()];
 const COVERAGE = ['brief_keeps_fact', 'brief_keeps_reason'] as const;
 type Labels = ReadonlyMap<string, Readonly<Record<string, 0 | 1>>>;
 

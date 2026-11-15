@@ -30,7 +30,7 @@
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
     "return": 1,
-    "container": 8,
+    "container": 7,
     "property": 7
   },
   "src/recap/application/compact-keys.ts": {

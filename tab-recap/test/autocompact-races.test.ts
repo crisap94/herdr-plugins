@@ -10,11 +10,12 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
+import { decidedOf } from './fakes/decider-fixtures.ts';
 
 const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
-const SAFE_DECISION: DecidedResult = { kind: 'decided', answers: SAFE, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' };
+const SAFE_DECISION: DecidedResult = decidedOf(SAFE);
 
 test('an unknown verdict is not unchanged: after the cooldown, with the same tokens, the lane is asked again', async () => {
     const w = world({ cooldownMs: 600_000 });

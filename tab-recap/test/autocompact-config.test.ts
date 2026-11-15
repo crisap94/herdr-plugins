@@ -11,6 +11,7 @@ import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { documentOf } from './fakes/decider-fixtures.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -172,7 +173,7 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
         await withEnvAsync({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, async () => {
             const decider = coverageDeciderFor(loadConfig(), ['claude'], '/work', runtime);
             assert.ok(decider instanceof JevDecider);
-            assert.ok(isUnknown(await decider.ask({}, {})), 'an unknown answer, never a probability');
+            assert.ok(isUnknown(await decider.ask(documentOf({}), new Map())), 'an unknown answer, never a probability');
         });
     } finally {
         if (was === undefined) { delete process.env['HOME']; } else { process.env['HOME'] = was; }

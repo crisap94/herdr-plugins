@@ -11,9 +11,11 @@ import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
 import { requestOf } from '#test/support.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { documentOf, textOf, noulOf } from './fakes/decider-fixtures.ts';
 
 const SETTINGS = { model: '', effort: 'low' } as const;
-const QUESTIONS: Record<string, Noul> = { stuck: { instructions: { question: 'same step failing?' }, criteria: { true: 'retries', false: 'progress' } } };
+const QUESTIONS: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([[textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')]]);
 const LARGE = 1_000_000;
 
 function limited(limit: number | null): { harness: Harness<'claude'>; calls: HarnessCall[] } {
@@ -36,7 +38,7 @@ test('a brief, curation, enumeration or decision longer than the harness limit i
     const enumerate = await new HarnessEnumerator(enumerated.harness, SETTINGS).write('<enumerate_input version="1"/>');
     assert.ok(isUnknown(enumerate));
     const decided = limited(1);
-    const decision = await new HarnessDecider(decided.harness, SETTINGS, () => 0).ask({ goal: 'merge' }, QUESTIONS);
+    const decision = await new HarnessDecider(decided.harness, SETTINGS, () => 0).ask(documentOf({ goal: 'merge' }), QUESTIONS);
     assert.ok(isUnknown(decision) && decision.why.why === 'unreadable');
     assert.deepEqual([brief.calls.length, curated.calls.length, enumerated.calls.length, decided.calls.length], [0, 0, 0, 0]);
 });

@@ -1,0 +1,7 @@
+import { brand, type Brand } from './brand.ts';
+
+export type Probability = Brand<number, 'Probability'>;
+
+export function parseProbability(input: unknown): Probability | null {
+    return typeof input === 'number' && Number.isFinite(input) && input >= 0 && input <= 1 ? brand<number, 'Probability'>(input) : null;
+}

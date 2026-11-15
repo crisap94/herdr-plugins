@@ -18,6 +18,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { must } from './db/support.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
+import { decidedOf } from './fakes/decider-fixtures.ts';
 
 test('on: a safe moment between the limits is recorded, logged with its figures and requested once with origin auto', async () => {
     const w = world();
@@ -26,7 +27,7 @@ test('on: a safe moment between the limits is recorded, logged with its figures 
     const row = must(rows(w)[0]);
     assert.deepEqual([row.verdict, row.askedVerdict, row.gate, row.mode, row.share, row.decider, row.tookMs, row.answers], ['compact', 'compact', 'ask', 'on', 62, 'fake · m', 550, SAFE]);
     assert.equal(row.costUsd, 0.00003);
-    assert.deepEqual(w.asked, [Object.keys(QUESTIONS).length]);
+    assert.deepEqual(w.asked, [QUESTIONS.size]);
     assert.deepEqual(w.logs, ['autocompact w1:p1: 62 % · closes 0.95 · continues 0.05 · choice 0.02 · verbatim 0.10 · subject 0.03 · stuck 0.01 → compact (on)']);
 });
 
@@ -144,10 +145,10 @@ test('a lane below the minimum (8 %), or within the cooldown, never reads the in
 
 test('a wait: not safe means wait, an undecided answer is recorded as undecided, and neither requests', async () => {
     const w = world();
-    w.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, asks_detailed_choice: 0.88 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
+    w.decide = (): DecidedResult => (decidedOf({ ...SAFE, asks_detailed_choice: 0.88 }));
     await w.service.consider(lane());
     const vague = world();
-    vague.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, needs_verbatim: 0.48 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
+    vague.decide = (): DecidedResult => (decidedOf({ ...SAFE, needs_verbatim: 0.48 }));
     await vague.service.consider(lane());
     assert.deepEqual([rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'wait', 'undecided', 0]);
 });
@@ -169,7 +170,7 @@ test('three lanes in a row with the decider down: three unknown decisions and on
     assert.deepEqual(rows(w).map((row) => row.verdict), ['unknown', 'unknown', 'unknown']);
     assert.equal(w.logs.filter((line) => line.includes('the decider is unreachable')).length, 1);
     assert.equal(w.requests.length, 0);
-    w.decide = (): DecidedResult => ({ kind: 'decided', answers: { ...SAFE, stuck: 0.9 }, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' });
+    w.decide = (): DecidedResult => (decidedOf({ ...SAFE, stuck: 0.9 }));
     w.share = 63;
     await w.service.consider(lane());
     w.decide = (): DecidedResult => unknown({ why: 'unreachable', detail: causeOf('x') });

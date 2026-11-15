@@ -1,11 +1,10 @@
 import type { Noul } from '#src/ports/decider.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
-const text = (part: string | object): string => (typeof part === 'string' ? part : JSON.stringify(part));
+const listed = (questions: ReadonlyMap<Text, Noul>): string[] =>
+    [...questions].map(([id, noul]) => `- ${id}: ${noul.instructions}\n  1 when: ${noul.criteria.true}\n  0 when: ${noul.criteria.false}`);
 
-const listed = (questions: Readonly<Record<string, Noul>>): string[] =>
-    Object.entries(questions).map(([id, noul]) => `- ${id}: ${text(noul.instructions)}\n  1 when: ${text(noul.criteria.true)}\n  0 when: ${text(noul.criteria.false)}`);
-
-export function labelInstructions(questions: Readonly<Record<string, Noul>>): string {
+export function labelInstructions(questions: ReadonlyMap<Text, Noul>): string {
     return [
         'You label moments of a coding agent\'s work. The input is a JSON document with `state` (what a decider saw when the agent went idle) and `hindsight`',
         '(the operator\'s next prompt, `next_prompt`, and the first entries that followed, `following`; tool entries have an empty or short `text`).',

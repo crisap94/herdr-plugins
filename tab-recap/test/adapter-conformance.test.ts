@@ -60,6 +60,7 @@ import { harness as handoffHarness, NOW, recapOf, request, SOURCE_LISTED, T1, TA
 import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { textOf } from './fakes/decider-fixtures.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -172,7 +173,7 @@ const sourceOf = (found: Located): string => {
 async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const decider: Decider = { label: 'fake', ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
+    const decider: Decider = { label: textOf('fake'), ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
     const env = (key: string): string | undefined => (key === 'TAB_RECAP_AUTOCOMPACT_KINDS' ? kind : undefined);
     const config = { autocompact: { ...policyOf(env), mode: 'on' }, tuning: tuningOf(() => undefined) } as unknown as Config;
     const service: Autocompact = wireAutocompact({

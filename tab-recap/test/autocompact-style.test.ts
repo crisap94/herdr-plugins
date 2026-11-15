@@ -11,6 +11,7 @@ import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Decider, DecidedResult } from '#src/ports/decider.ts';
 import { NOW, world, lane } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -24,7 +25,7 @@ function waitedMinutesAgo(w: World, minutes: number): void {
 
 const passes = async (style: string): Promise<boolean> => (await covered('the brief', NEEDS, keeping(0.65), tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)).ok;
 
-const keeping = (keeps: number): Decider => ({ label: 'fake', ask: (_state, questions): Promise<DecidedResult> => Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id) => [id, keeps])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }) });
+const keeping = (keeps: number): Decider => ({ label: textOf('fake'), ask: (_state, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, keeps])))) });
 const NEEDS = [{ section: 'needs', text: 'Keep the token', why: null }];
 
 test('balanced is today\'s numbers: the verdict 0.30 and 0.70 with the band 0.35–0.65, the pass mark 0.70, the ceiling 80, the cooldown ten minutes, no re-check', () => {

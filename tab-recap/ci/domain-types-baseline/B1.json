@@ -50,11 +50,6 @@
   "src/ports/context-windows.ts": {
     "parameter": 1
   },
-  "src/ports/decider.ts": {
-    "parameter": 1,
-    "container": 3,
-    "property": 11
-  },
   "src/ports/extension.ts": {
     "return": 1,
     "container": 2,

@@ -4,12 +4,14 @@ import { JevDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
 
 const SENTINEL = 'SENTINEL-KEY-123';
-const questions: Record<string, Noul> = {
-    closes_request: { instructions: 'Does last_reply deliver what last_prompt asked for?', criteria: { true: 'it reports done', false: 'it is an intermediate step' } },
-    stuck: { instructions: { question: 'same step failing?' }, criteria: { true: { signs: ['retry'] }, false: 'progress' } },
-};
+const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
+    [textOf('closes_request'), noulOf('Does last_reply deliver what last_prompt asked for?', 'it reports done', 'it is an intermediate step')],
+    [textOf('stuck'), noulOf('same step failing?', 'retry', 'progress')],
+]);
 const reply = (body: object, status = 200): Response => new Response(JSON.stringify(body), { status });
 const good = { model: 'jev-1.13.0', answers: { closes_request: { noul: 0.95 }, stuck: { noul: 0.04 } }, usage: { input_tokens: 732 } };
 
@@ -22,14 +24,14 @@ function decider(respond: (url: string, init: RequestInit) => Promise<Response>,
 
 test('jev: posts {model, state, questions} with the bearer key; the answers, tokens, cost (input × 0.042 / 1e6) and time come back', async () => {
     const { jev, seen } = decider(() => Promise.resolve(reply(good)));
-    const found = await jev.ask({ goal: 'x' }, questions);
-    assert.deepEqual(found, { kind: 'decided', answers: { closes_request: 0.95, stuck: 0.04 }, tokens: 732, costUsd: 732 * 0.042 / 1e6, tookMs: 550, model: 'jev-1.13.0' });
+    const found = await jev.ask(documentOf({ goal: 'x' }), questions);
+    assert.deepEqual(found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : found, { kind: 'decided', answers: { closes_request: 0.95, stuck: 0.04 }, tokens: 732, costUsd: 732 * 0.042 / 1e6, tookMs: 550, model: 'jev-1.13.0' });
     assert.equal(jev.label, 'jev · jev-1.13.0');
     const [call] = seen as [{ url: string; init: { headers: Record<string, string>; body: string } }];
     assert.equal(call.url, 'https://gateway.test/v1/systemone');
     assert.equal(call.init.headers['authorization'], `Bearer ${SENTINEL}`);
     const sent = JSON.parse(call.init.body) as { model: string; state: object; questions: Record<string, { type: string; instructions: unknown; criteria: unknown }> };
-    assert.deepEqual([sent.model, sent.state, sent.questions['closes_request']?.type, sent.questions['stuck']?.instructions, Object.keys(sent.questions)], ['jev-1.13.0', { goal: 'x' }, 'noul', { question: 'same step failing?' }, ['closes_request', 'stuck']]);
+    assert.deepEqual([sent.model, sent.state, sent.questions['closes_request']?.type, sent.questions['stuck']?.instructions, Object.keys(sent.questions)], ['jev-1.13.0', { goal: 'x' }, 'noul', 'same step failing?', ['closes_request', 'stuck']]);
 });
 
 const paths: readonly [string, () => Promise<Response>, RegExp][] = [
@@ -48,7 +50,7 @@ const paths: readonly [string, () => Promise<Response>, RegExp][] = [
 
 for (const [name, respond, say] of paths) {
     test(`jev: ${name} is unknown, and the key is in no part of what is said`, async () => {
-        const found = await decider(respond).jev.ask({}, questions);
+        const found = await decider(respond).jev.ask(documentOf({}), questions);
         assert.equal(found.kind, 'unknown');
         assert.match(saying(found.why), say);
         assert.ok(!JSON.stringify(found).includes(SENTINEL), JSON.stringify(found));
@@ -57,13 +59,13 @@ for (const [name, respond, say] of paths) {
 
 test('jev: no key means no call; the key is read at call time', async () => {
     const { jev, seen } = decider(() => Promise.resolve(reply(good)), null);
-    const found = await jev.ask({}, questions);
+    const found = await jev.ask(documentOf({}), questions);
     assert.deepEqual([found.kind, seen.length], ['unknown', 0]);
     assert.ok(!JSON.stringify(found).includes(SENTINEL));
 });
 
 test('jev: a missing usage costs nothing', async () => {
-    const found = await decider(() => Promise.resolve(reply({ answers: good.answers }))).jev.ask({}, questions);
+    const found = await decider(() => Promise.resolve(reply({ answers: good.answers }))).jev.ask(documentOf({}), questions);
     assert.deepEqual(found.kind === 'decided' ? [found.tokens, found.costUsd, found.model] : null, [0, 0, 'jev-1.13.0']);
 });
 

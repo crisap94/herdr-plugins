@@ -8,6 +8,7 @@ import { autocompactState, replyOf } from '#src/recap/application/autocompact-st
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-verdict.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { textOf } from './fakes/decider-fixtures.ts';
 
 const unwrap = (raw: string): Text => {
     const parsed = parseText(raw);
@@ -21,22 +22,22 @@ const FIXTURES = join(import.meta.dirname, 'fixtures', 'autocompact');
 const OFFERS: Readonly<Record<string, true>> = { closes_request: true, announces_continuation: true };
 
 test('the six questions are the ones the verdict uses; each has instructions and both criteria, and names a field in backticks', () => {
-    assert.deepEqual(Object.keys(QUESTIONS).toSorted(), [...MUST_BE_LOW, ...ONE_MUST_BE_HIGH].toSorted());
-    for (const [id, question] of Object.entries(QUESTIONS)) {
+    assert.deepEqual([...QUESTIONS.keys()].toSorted(), [...MUST_BE_LOW, ...ONE_MUST_BE_HIGH].toSorted());
+    for (const [id, question] of QUESTIONS) {
         assert.match(JSON.stringify(question.instructions), /`(last_prompt|last_reply|recent_turns|goal|open_work)`/, id);
         assert.ok(JSON.stringify(question.criteria.true).length > 10 && JSON.stringify(question.criteria.false).length > 10, id);
     }
 });
 
 test('every question has a yes and a no fixture holding exactly the state fields, and every field is named by a question', () => {
-    assert.deepEqual(readdirSync(FIXTURES).toSorted(), Object.keys(QUESTIONS).toSorted());
-    for (const id of Object.keys(QUESTIONS)) {
+    assert.deepEqual(readdirSync(FIXTURES).toSorted(), [...QUESTIONS.keys()].toSorted());
+    for (const id of QUESTIONS.keys()) {
         assert.deepEqual(readdirSync(join(FIXTURES, id)).toSorted(), ['no.json', 'yes.json', ...(id in OFFERS ? ['offer.json'] : [])].toSorted(), id);
         for (const name of ['yes', 'no', ...(id in OFFERS ? ['offer'] : [])]) {
             assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(FIXTURES, id, `${name}.json`), 'utf8')) as object), FIELDS, `${id}/${name}`);
         }
     }
-    const text = JSON.stringify(QUESTIONS);
+    const text = JSON.stringify([...QUESTIONS]);
     for (const field of FIELDS) assert.ok(text.includes(`\`${field}\``), `no question names ${field}`);
     assert.deepEqual(Object.keys(autocompactState([], [])), FIELDS, 'the builder produces no other field');
 });
@@ -67,8 +68,8 @@ test('a long reply keeps its first 600 and last 1 200 characters around […]', 
 });
 
 test('an offer to the operator closes the request and is not a continuation: the criteria say so, and both offer fixtures end with the offer', () => {
-    assert.match(JSON.stringify(QUESTIONS['closes_request']?.criteria.true), /offer/);
-    assert.match(JSON.stringify(QUESTIONS['announces_continuation']?.instructions), /waits for the operator/);
+    assert.match(JSON.stringify(QUESTIONS.get(textOf('closes_request'))?.criteria.true), /offer/);
+    assert.match(JSON.stringify(QUESTIONS.get(textOf('announces_continuation'))?.instructions), /waits for the operator/);
     for (const id of Object.keys(OFFERS)) {
         const offer = JSON.parse(readFileSync(join(FIXTURES, id, 'offer.json'), 'utf8')) as { last_reply: string };
         assert.match(offer.last_reply, /\?$/, id);

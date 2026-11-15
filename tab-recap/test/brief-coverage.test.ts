@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { Text } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { en } from '#src/i18n/en.ts';
@@ -23,13 +24,14 @@ import { memoryStore, must } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 const fact = (section: string, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
 const HISTORY = [fact('goal', 'Ship the cart rewrite'), fact('decisions', 'Keep SQLite', 'one file'), fact('next', 'Tag the release'), fact('done', 'Merged !12'), fact('rules', 'Never push to main', null, 'closed')];
 
-function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): Decider & { asked: Record<string, Noul>[] } {
-    const asked: Record<string, Noul>[] = [];
-    return { label: 'fake', asked, ask: (_state, questions): Promise<DecidedResult> => { asked.push({ ...questions }); return Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id) => [id, answers[id] ?? fallback])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }); } };
+function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): Decider & { asked: ReadonlyMap<Text, Noul>[] } {
+    const asked: ReadonlyMap<Text, Noul>[] = [];
+    return { label: textOf('fake'), asked, ask: (_state, questions): Promise<DecidedResult> => { asked.push(questions); return Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, answers[id] ?? fallback])))); } };
 }
 
 test('the facts: the open goal, now, needs, decisions, next and rules, in the ledger\'s order, at most 40', () => {
@@ -39,9 +41,9 @@ test('the facts: the open goal, now, needs, decisions, next and rules, in the le
 
 test('the questions: keeps_<i> per fact, reason_<i> per decision with a reason; each names its fact\'s fields in backticks', () => {
     const questions = questionsFor(factsOf(HISTORY));
-    assert.deepEqual(Object.keys(questions), ['keeps_0', 'keeps_1', 'reason_1', 'keeps_2']);
-    assert.match(JSON.stringify(questions['keeps_1']?.instructions), /`brief`.*`facts\[1\]\.text`/);
-    assert.match(JSON.stringify(questions['reason_1']?.instructions), /`facts\[1\]\.why`/);
+    assert.deepEqual([...questions.keys()], ['keeps_0', 'keeps_1', 'reason_1', 'keeps_2']);
+    assert.match(JSON.stringify(questions.get(textOf('keeps_1'))?.instructions), /`brief`.*`facts\[1\]\.text`/);
+    assert.match(JSON.stringify(questions.get(textOf('reason_1'))?.instructions), /`facts\[1\]\.why`/);
 });
 
 test('missing: a goal, needs, decisions or rules fact (or a decision\'s reason) below 0.70; now and next never block', () => {
@@ -54,7 +56,7 @@ test('missing: a goal, needs, decisions or rules fact (or a decision\'s reason) 
 test('covered: the brief and the facts are the one state; ok when nothing blocks; a decider that cannot answer is not ok and says why', async () => {
     const decider = deciding({ keeps_2: 0.4 });
     assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], missingFacts: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 });
-    const broken: Decider = { label: 'x', ask: () => Promise.resolve(unknown({ why: 'timeout', after: 10_000 as never })) };
+    const broken: Decider = { label: textOf('x'), ask: () => Promise.resolve(unknown({ why: 'timeout', after: 10_000 as never })) };
     const result = await covered('b', factsOf(HISTORY), broken);
     assert.deepEqual([result.ok, result.missing, result.unknown], [false, [], 'timed out after 10000 ms']);
     assert.deepEqual(await covered('b', [], broken), { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null });

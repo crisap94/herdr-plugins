@@ -7,6 +7,7 @@ import type { DecidedResult } from '#src/ports/decider.ts';
 import type { DecisionMode } from '#src/ports/autocompact-records.ts';
 import { NOW, lane, rows, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
+import { decidedOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -14,14 +15,7 @@ function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 
     return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOf(env(keys)));
 }
 
-const answer = (closes: number, rest = 0.15): DecidedResult => ({
-    kind: 'decided',
-    answers: { closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest },
-    tokens: 1,
-    costUsd: 0,
-    tookMs: 1,
-    model: 'fake',
-});
+const answer = (closes: number, rest = 0.15): DecidedResult => (decidedOf({ closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest }));
 
 function decidedMinutesAgo(w: World, minutes: number, verdict: 'wait' | 'undecided' | 'compact', mode: DecisionMode = 'on'): void {
     w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: 0, tookMs: null, why: null });
@@ -44,7 +38,7 @@ test('the decider\'s answers under gentle: a warning of 0.25 is a wait, and unde
     const verdicts: Array<string | undefined> = [];
     for (const style of ['gentle', 'balanced', 'eager']) {
         const w = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: style });
-        w.decide = (): DecidedResult => ({ kind: 'decided', answers: warned, tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' });
+        w.decide = (): DecidedResult => (decidedOf(warned));
         w.share = 62;
         await w.service.consider(lane());
         verdicts.push(rows(w)[0]?.verdict);
