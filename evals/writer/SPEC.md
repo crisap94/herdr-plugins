@@ -179,3 +179,42 @@ Cannot show:
 - The dataset path is `evals/writer/dataset.jsonl`; plan v2 names `evals/<name>/dataset/items.jsonl`. One of the two should change.
 - The dataset is about 0.9 MB, most of it the filler ledgers of the 5 large items.
 - W13b asks for every open fact to be rewritten because the instructions say so; on the 90-fact item this is 86 updates in one answer.
+
+## 8 Fresh set (FRESH-1)
+
+A second set of 24 mocked items, built from `dataset-fresh-scenarios.ts` by `build-dataset.ts --fresh` with the seed `fresh-1/2026-11-14` (`evals/lib/fresh.ts`). It is written to `dataset-fresh.jsonl`, with a sample of six items for the owner in `fresh-sample.md`. The base set and its results are unchanged. Run it with `bun writer/run.ts --fresh --label fresh-<name>`; the label must start with `fresh-`, and `--smoke` is refused.
+
+Each fresh item carries a `fresh` block: the seed and its traps. A trap is one close operation, `why: done`, with an anchor, that the writer should not make. Every trap expects the ledger gates (`LEDGER_GATES`) to keep it (`expect: kept`). The kinds are `close-bait-intent`, `close-bait-partial`, `close-bait-other`, `close-bait-retracted` and `close-bait-hidden`. The close-evidence gate G13 refuses only `close-bait-hidden`, whose anchor is a sentence in a clipped middle of an agent turn that the writer never sees; `g13_refuses` records it per trap.
+
+Counts: 24 items; sizes small 14, medium 8, large 2; plants close-bait-intent 6, close-bait-partial 6, close-bait-other 6, close-bait-retracted 6, close-bait-hidden 6, quotable-close 20, quiet 2. Traps 30: 30 kept by the ledger gates, 0 refused; 6 refused by G13 (the hidden kind).
+
+Owner sample (`fresh-sample.md`): `writer-fresh-05`, `writer-fresh-06`, `writer-fresh-07`, `writer-fresh-14`, `writer-fresh-20`, `writer-fresh-23`.
+
+| item | size | plants | traps | refused by G13 |
+| --- | --- | --- | --- | --- |
+| writer-fresh-01 | small | close-bait-intent, quotable-close | 1 | 0 |
+| writer-fresh-02 | small | close-bait-partial, quotable-close | 1 | 0 |
+| writer-fresh-03 | small | close-bait-other, quotable-close | 1 | 0 |
+| writer-fresh-04 | medium | close-bait-hidden, quotable-close | 1 | 1 |
+| writer-fresh-05 | small | close-bait-retracted, quotable-close | 1 | 0 |
+| writer-fresh-06 | small | close-bait-intent, close-bait-partial, quotable-close | 2 | 0 |
+| writer-fresh-07 | medium | close-bait-hidden, quotable-close | 1 | 1 |
+| writer-fresh-08 | small | close-bait-other, quotable-close | 1 | 0 |
+| writer-fresh-09 | small | close-bait-retracted, quotable-close | 1 | 0 |
+| writer-fresh-10 | small | close-bait-intent, quiet | 1 | 0 |
+| writer-fresh-11 | medium | close-bait-partial, close-bait-hidden, quotable-close | 2 | 1 |
+| writer-fresh-12 | medium | close-bait-other, quotable-close | 1 | 0 |
+| writer-fresh-13 | small | close-bait-retracted, quotable-close | 1 | 0 |
+| writer-fresh-14 | medium | close-bait-hidden, quotable-close | 1 | 1 |
+| writer-fresh-15 | medium | close-bait-intent, close-bait-retracted, quotable-close | 2 | 0 |
+| writer-fresh-16 | small | close-bait-partial, quotable-close | 1 | 0 |
+| writer-fresh-17 | small | close-bait-other, close-bait-retracted | 2 | 0 |
+| writer-fresh-18 | large | close-bait-hidden, close-bait-partial, quotable-close | 2 | 1 |
+| writer-fresh-19 | small | close-bait-intent, quotable-close | 1 | 0 |
+| writer-fresh-20 | small | close-bait-other, quiet | 1 | 0 |
+| writer-fresh-21 | medium | close-bait-partial, quotable-close | 1 | 0 |
+| writer-fresh-22 | large | close-bait-retracted, close-bait-other, quotable-close | 2 | 0 |
+| writer-fresh-23 | small | close-bait-hidden | 1 | 1 |
+| writer-fresh-24 | medium | close-bait-intent, quotable-close | 1 | 0 |
+
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-8 does not start.

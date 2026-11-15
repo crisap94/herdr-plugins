@@ -4,6 +4,15 @@
   "version": 1,
   "dataset": "dataset.jsonl",
   "dataset_items": 24,
+  "fresh": {
+    "dataset": "dataset-fresh.jsonl",
+    "items": 24,
+    "seed": "fresh-1/2026-11-14",
+    "plants": { "close-bait-intent": 6, "close-bait-partial": 6, "close-bait-other": 6, "close-bait-retracted": 6, "close-bait-hidden": 6, "quotable-close": 20, "quiet": 2 },
+    "sizes": { "small": 14, "medium": 8, "large": 2 },
+    "traps": { "refused": 0, "kept": 30 },
+    "close_evidence_refused": 6
+  },
   "dataset_origin": "mocked: invented content of fictional projects, shaped like the real writer inputs; built by build-dataset.ts, checked by check-dataset.ts",
   "audit": "The expected answers were written by a model and audited by nobody yet.",
   "repetitions": 3,

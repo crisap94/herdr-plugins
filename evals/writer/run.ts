@@ -6,6 +6,7 @@ import { guardMode, writeArm } from '../lib/arm.ts';
 import { judgeAll } from '../lib/judge.ts';
 import { LADDER, ladder } from '../lib/ladder.ts';
 import { resultsCsv, writeJson, writeText } from '../lib/output.ts';
+import { datasetOf } from '../lib/fresh.ts';
 import { report } from '../lib/report.ts';
 import { lastByKey, readJsonl, runDir, runJobs, selectedConfigs, selectedItems, sha256, writePrompt } from '../lib/runner.ts';
 import type { RunOptions } from '../lib/runner.ts';
@@ -25,6 +26,7 @@ const SMOKE_CALLS = 12;
 interface ConfigFile {
     readonly dataset: string;
     readonly dataset_items: number;
+    readonly fresh: { readonly dataset: string; readonly items: number };
     readonly repetitions: number;
     readonly shipped: string;
     readonly ladder: readonly Config[];
@@ -34,14 +36,16 @@ interface ConfigFile {
 
 const here = import.meta.dirname;
 const file = JSON.parse(readFileSync(join(here, 'config.json'), 'utf8')) as ConfigFile;
-const items = loadItems(join(here, file.dataset));
+// --fresh picks the fresh set (label fresh-<name>); without it the run reads the base dataset, as before.
+const chosen = datasetOf({ dataset: file.dataset, items: file.dataset_items }, file.fresh, process.argv);
+const items = loadItems(join(here, chosen.dataset));
 const shipped = LADDER.find((config) => config.name === file.shipped);
 if (shipped === undefined) throw new Error(`${NAME}: the shipped configuration ${file.shipped} is not in the library ladder`);
 const configs = ladder(shipped, LADDER);
 
 const rung = (config: Config): string => `${config.name}|${config.backend}|${config.model}|${config.effort}`;
 const same = (a: readonly string[], b: readonly string[]): boolean => JSON.stringify(a) === JSON.stringify(b);
-if (items.length !== file.dataset_items) throw new Error(`${NAME}: ${items.length} items in ${file.dataset}, config.json says ${file.dataset_items}`);
+if (items.length !== chosen.items) throw new Error(`${NAME}: ${items.length} items in ${chosen.dataset}, config.json says ${chosen.items}`);
 if (!same(configs.map(rung).sort(), file.ladder.map(rung).sort())) throw new Error(`${NAME}: the ladder differs from config.json ladder`);
 if (!same([...CODE_CRITERIA, ...JUDGE_IDS], file.criteria.map((criterion) => criterion.id))) throw new Error(`${NAME}: the criteria differ from config.json criteria`);
 if (!same(JUDGE_IDS, file.criteria.filter((criterion) => criterion.grader === 'judge').map((criterion) => criterion.id))) throw new Error(`${NAME}: the judge criteria differ from config.json`);
