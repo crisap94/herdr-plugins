@@ -11,7 +11,7 @@ import { answerRestart } from '#src/recap/application/ask-restart.ts';
 import type { RestartDeps } from '#src/recap/application/ask-restart.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
-import { exchangeName, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -20,7 +20,7 @@ import { handoffLike } from './fakes/protocol-exchanges.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
-const coordinator = must(toolName('coordinator'));
+const coordinator = must(parseToolName('coordinator'));
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
 interface Daemon {
@@ -135,7 +135,7 @@ test('a local handoff ask goes to the handoff channel, not the local stub, and w
 test('an unfinished ask of an exchange with no descriptor here is settled interrupted and writes no token', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: must(exchangeName('orphan')), requester: coordinator, id: rid('o1'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: must(parseExchangeName('orphan')), requester: coordinator, id: rid('o1'), pane: paneId('w1:p1'), at: 1, ref: null });
     restart(asks, tokens, true, []);
     assert.deepEqual([tokens.reports, asks.unfinished()], [[], []]);
 });

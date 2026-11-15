@@ -12,7 +12,7 @@ import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
 import { compact as compactExchange, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
@@ -21,7 +21,7 @@ import { take } from '#src/protocol/responder.ts';
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 
-const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(toolName(tool)), rid(id));
+const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(parseToolName(tool)), rid(id));
 
 
 interface Harness {

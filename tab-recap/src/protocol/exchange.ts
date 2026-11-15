@@ -1,5 +1,5 @@
 import type { Result } from './result.ts';
-import { LIMITS, tokenName, tokenValue } from './primitives.ts';
+import { LIMITS, parseTokenName, parseTokenValue } from './primitives.ts';
 import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
@@ -56,9 +56,9 @@ export const terminalsOf = (exchange: Exchange): readonly Terminal[] => [
     ...(exchange.unsupportedReasons ?? []).map((reason): Terminal => ({ kind: 'unsupported', reason })),
 ];
 
-export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => tokenName(`${ANSWER_PREFIX}${exchange.name}`);
+export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => parseTokenName(`${ANSWER_PREFIX}${exchange.name}`);
 
-export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => tokenName(`${exchange.requestPrefix}${tool}`);
+export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => parseTokenName(`${exchange.requestPrefix}${tool}`);
 
 const ANSWER_SEPARATOR = ':';
 
@@ -66,7 +66,7 @@ const answerText = (id: string, stage: string): string => `${id}${ANSWER_SEPARAT
 
 export function answerValue(exchange: Exchange, id: string, stage: string): Result<TokenValue, Refusal> {
     const text = answerText(id, stage);
-    return tokenValue(exchange.truncatesAnswer ? text.slice(0, LIMITS.valueMax) : text);
+    return parseTokenValue(exchange.truncatesAnswer ? text.slice(0, LIMITS.valueMax) : text);
 }
 
 export const badIdValue = (rawId: string): TokenValue => answerText(rawId.slice(0, LIMITS.idMax), failureStage('bad-id')) as TokenValue;

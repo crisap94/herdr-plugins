@@ -1,6 +1,6 @@
 import { HANDOFF_FAILURES, HANDOFF_REFUSALS, HANDOFF_UNSUPPORTED } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
-import { exchangeName, exchangeVersion } from '../primitives.ts';
+import { parseExchangeName, parseExchangeVersion } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const HANDOFF_STAGES = { queued: 'queued', running: 'running', delivered: 'delivered' } as const;
@@ -15,8 +15,8 @@ export const HANDOFF_EVENTS = {
 } as const;
 
 export const handoff = {
-    name: must(exchangeName('handoff')),
-    version: must(exchangeVersion(1)),
+    name: must(parseExchangeName('handoff')),
+    version: must(parseExchangeVersion(1)),
     requestPrefix: 'handoff-req-',
     request: [
         { kind: 'id', grammar: 'token-safe' },

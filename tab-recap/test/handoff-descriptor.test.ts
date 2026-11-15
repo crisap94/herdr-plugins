@@ -4,7 +4,7 @@ import { capabilityValue } from '#src/protocol/capability.ts';
 import { terminalStage, terminalsOf, parseRequest } from '#src/protocol/exchange.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
-import { exchangeVersion, LIMITS } from '#src/protocol/primitives.ts';
+import { parseExchangeVersion, LIMITS } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_DEADLINE_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
@@ -25,7 +25,7 @@ test('the target is the workspace and pane parts, and refresh is read only as th
 });
 
 test('the handoff capability is listed only when its setting is on', () => {
-    const version = must(exchangeVersion(1));
+    const version = must(parseExchangeVersion(1));
     assert.equal(must(capabilityValue(EXCHANGES, version, (setting) => setting === 'TAB_RECAP_HERDR_EVENTS')), 'compact1,kinds1');
     assert.equal(must(capabilityValue(EXCHANGES, version, () => true)), 'compact1,handoff1,kinds1');
 });

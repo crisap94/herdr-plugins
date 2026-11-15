@@ -1,6 +1,6 @@
 import { err, ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, exchangeName, exchangeVersion } from './primitives.ts';
+import { LIMITS, parseExchangeName, parseExchangeVersion } from './primitives.ts';
 import type { TokenName } from './primitives.ts';
 import { answerToken, INTERRUPTED_REASON, terminalStage, terminalsOf } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
@@ -29,10 +29,10 @@ function longestAnswer(exchange: Exchange): number {
 }
 
 function checkExchange(exchange: Exchange): Result<TokenName, RegistryRefusal> {
-    if (exchangeName(exchange.name).kind === 'err') {
+    if (parseExchangeName(exchange.name).kind === 'err') {
         return refusal('bad-name', exchange.name);
     }
-    if (exchangeVersion(exchange.version).kind === 'err') {
+    if (parseExchangeVersion(exchange.version).kind === 'err') {
         return refusal('bad-version', String(exchange.version));
     }
     if (!exchange.failureReasons.includes(INTERRUPTED_REASON)) {

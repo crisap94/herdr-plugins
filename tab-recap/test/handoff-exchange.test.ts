@@ -10,7 +10,7 @@ import { paneId } from '#src/recap/domain/ids.ts';
 import type { Ask, NewAsk } from '#src/ports/ask-ledger.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HandoffExchangeResponder, withdrawAsked, type TokenEntries } from '#src/recap/application/handoff-exchange.ts';
 import type { HandoffOffer } from '#src/recap/domain/handoff-ask.ts';
@@ -24,7 +24,7 @@ import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
-const ask = (ref: string | null): Ask => ({ exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref, outcome: null });
+const ask = (ref: string | null): Ask => ({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref, outcome: null });
 
 const lanes = ['w1:p1', 'w1:p2', 'w2:p7'].map((pane) => laneFrom({ paneId: pane, tabId: pane.replace(':p', ':t'), workspaceId: pane.split(':')[0] ?? '', agent: 'claude', status: 'idle' }));
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });

@@ -2,17 +2,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CAPABILITY_TOKEN, capabilityValue, parseCapability } from '#src/protocol/capability.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
-import { exchangeName, exchangeVersion, tokenName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseTokenName } from '#src/protocol/primitives.ts';
 import type { ExchangeVersion } from '#src/protocol/primitives.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { compactLike, handoffLike, nameOf, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
 
-const version = (n: number): ExchangeVersion => unwrap(exchangeVersion(n));
+const version = (n: number): ExchangeVersion => unwrap(parseExchangeVersion(n));
 
-const renamed = (exchange: Exchange, name: string, n: number): Exchange => ({ ...exchange, name: unwrap(exchangeName(name)), version: version(n) });
+const renamed = (exchange: Exchange, name: string, n: number): Exchange => ({ ...exchange, name: unwrap(parseExchangeName(name)), version: version(n) });
 
 test('the capability token name is a valid token name', () => {
-    assert.equal(tokenName(CAPABILITY_TOKEN).kind, 'ok');
+    assert.equal(parseTokenName(CAPABILITY_TOKEN).kind, 'ok');
 });
 
 test('the capability value for compact alone is compact1 with the kinds version', () => {

@@ -3,7 +3,7 @@ import type { ParsedValue } from '#src/protocol/codec.ts';
 import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import { isFailureStage, failureStage } from '#src/protocol/exchange.ts';
-import { LIMITS, requestId } from '#src/protocol/primitives.ts';
+import { LIMITS, parseRequestId } from '#src/protocol/primitives.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from './ask-outcome.ts';
@@ -18,7 +18,7 @@ const ID_GRAMMAR = must(idGrammarOf(compact.request));
 const fitNote = (id: RequestId, note: string): string | null => (note.trim() === '' ? null : note.slice(0, VALUE_MAX - id.length - 1));
 
 export const parseAskId = (raw: string): RequestId | null => {
-    const id = requestId(raw, ID_GRAMMAR);
+    const id = parseRequestId(raw, ID_GRAMMAR);
     return id.kind === 'ok' ? id.value : null;
 };
 

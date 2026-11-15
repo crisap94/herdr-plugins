@@ -4,7 +4,7 @@ import { answerToken, answerValue, defineExchange, parseRequest, requestName, se
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import type { RegistryRefusal } from '#src/protocol/registry.ts';
-import { exchangeName, exchangeVersion, requestId, tokenName, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseRequestId, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
 import type { RequestId, TokenName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
@@ -17,8 +17,8 @@ const brand = <T, E>(result: Result<T, E>): T => {
 };
 
 const probe = (raw: string, over: Partial<Exchange> = {}): Exchange => defineExchange({
-    name: brand(exchangeName(raw)),
-    version: brand(exchangeVersion(1)),
+    name: brand(parseExchangeName(raw)),
+    version: brand(parseExchangeVersion(1)),
     requestPrefix: 'probe-req-',
     request: [{ kind: 'id', grammar: 'token-safe' }],
     answerStages: ['queued', 'running', 'done'],
@@ -30,7 +30,7 @@ const probe = (raw: string, over: Partial<Exchange> = {}): Exchange => defineExc
     ...over,
 });
 
-const names = (raws: readonly string[]): readonly TokenName[] => raws.map((raw) => brand(tokenName(raw)));
+const names = (raws: readonly string[]): readonly TokenName[] => raws.map((raw) => brand(parseTokenName(raw)));
 
 const refused = (result: Result<unknown, RegistryRefusal>): RegistryRefusal => {
     if (result.kind === 'ok') {
@@ -82,19 +82,19 @@ test('a registry whose own names exceed ten per pane is refused, and ten is acce
 test('the answer token and request names derive from the exchange', () => {
     const exchange = probe('probe');
     assert.deepEqual(brand(answerToken(exchange)), 'tab-recap-probe');
-    assert.deepEqual(brand(requestName(exchange, brand(toolName('coordinator')))), 'probe-req-coordinator');
+    assert.deepEqual(brand(requestName(exchange, brand(parseToolName('coordinator')))), 'probe-req-coordinator');
 });
 
 test('a truncating exchange answers exactly as the compaction answer did', () => {
     const exchange = probe('compact', { request: [{ kind: 'id', grammar: 'legacy-length' }], truncatesAnswer: true });
-    const id: RequestId = brand(requestId('r.7', 'legacy-length'));
+    const id: RequestId = brand(parseRequestId('r.7', 'legacy-length'));
     const stage = 'failed-' + 'z'.repeat(90);
     assert.equal(brand(answerValue(exchange, id, stage)), brand(answerValue(compact, 'r.7', stage)));
 });
 
 test('a refusing exchange refuses a value longer than 80 characters instead of truncating it', () => {
     const exchange = probe('probe');
-    const id = brand(requestId('r_7', 'token-safe'));
+    const id = brand(parseRequestId('r_7', 'token-safe'));
     assert.deepEqual(answerValue(exchange, id, 'x'.repeat(80)), { kind: 'err', error: { reason: 'too-long', subject: 'TokenValue' } });
 });
 
@@ -103,7 +103,7 @@ test('a request is parsed and serialized by its exchange descriptor', () => {
         request: [{ kind: 'id', grammar: 'token-safe' }, { kind: 'word', name: 'tool', optional: false }],
     });
     const parsed = parseRequest(exchange, 'r_7:coordinator');
-    assert.deepEqual(parsed, { kind: 'ok', value: { id: brand(requestId('r_7', 'token-safe')), tool: 'coordinator' } });
+    assert.deepEqual(parsed, { kind: 'ok', value: { id: brand(parseRequestId('r_7', 'token-safe')), tool: 'coordinator' } });
     if (parsed.kind === 'ok') {
         assert.deepEqual(serializeRequest(exchange, parsed.value), { kind: 'ok', value: 'r_7:coordinator' });
     }

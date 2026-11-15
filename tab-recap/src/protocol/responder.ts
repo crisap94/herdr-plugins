@@ -1,6 +1,6 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { requestId, toolName } from './primitives.ts';
+import { parseRequestId, parseToolName } from './primitives.ts';
 import type { ExchangeName, Refusal, RequestId, TokenValue, ToolName } from './primitives.ts';
 import { answerToken, answerValue, badIdValue, parseRequest } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
@@ -31,13 +31,13 @@ function readOne(registry: Registry, seen: SeenCheck, name: string, raw: string)
     if (exchange === undefined || raw === '') {
         return NONE;
     }
-    const tool = toolName(name.slice(exchange.requestPrefix.length));
+    const tool = parseToolName(name.slice(exchange.requestPrefix.length));
     const grammar = idGrammarOf(exchange.request);
     if (tool.kind === 'err' || grammar.kind === 'err') {
         return NONE;
     }
     const rawId = idTextOf(raw);
-    if (requestId(rawId, grammar.value).kind === 'err') {
+    if (parseRequestId(rawId, grammar.value).kind === 'err') {
         return { kind: 'refused', refused: { exchange, tool: tool.value, rawId, answer: badIdValue(rawId) } };
     }
     const parsed = parseRequest(exchange, raw);

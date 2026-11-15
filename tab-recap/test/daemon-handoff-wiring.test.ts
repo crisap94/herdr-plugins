@@ -4,7 +4,7 @@ import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from '#src/daemon
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
@@ -35,7 +35,7 @@ test('the answer prune cuts at the answer time-to-live before now', () => {
 
 test('the restart hook hands each unfinished handoff ask to the runner, as interrupted', () => {
     const seen: Ask[] = [];
-    const ask: Ask = { exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(requestId('0123456789abcdef', 'legacy-length')), pane: paneId('w1:p1'), at: 1, ref: null, outcome: null };
+    const ask: Ask = { exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId('0123456789abcdef', 'legacy-length')), pane: paneId('w1:p1'), at: 1, ref: null, outcome: null };
     handoffRestartOf({ interrupted: (taken: Ask): void => { seen.push(taken); } })(ask);
     assert.deepEqual(seen, [ask]);
 });

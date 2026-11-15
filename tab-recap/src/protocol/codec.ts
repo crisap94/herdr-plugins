@@ -1,6 +1,6 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, WORD_SHAPES, parseWord, refuse, requestId, tokenValue } from './primitives.ts';
+import { LIMITS, WORD_SHAPES, parseWord, refuse, parseRequestId, parseTokenValue } from './primitives.ts';
 import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
 
 export interface IdSpec {
@@ -99,7 +99,7 @@ export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue):
             segments.push(piece.value);
         }
     }
-    return tokenValue(segments.join(':'));
+    return parseTokenValue(segments.join(':'));
 }
 
 interface Read {
@@ -140,7 +140,7 @@ export function parseValue(specs: readonly FieldSpec[], raw: string): Result<Par
         return layout;
     }
     const idText = idTextOf(raw);
-    const id = requestId(idText, layout.value.grammar);
+    const id = parseRequestId(idText, layout.value.grammar);
     if (id.kind === 'err') {
         return id;
     }

@@ -3,7 +3,7 @@ import type { Registry } from '#src/protocol/registry.ts';
 import { defineExchange, parseRequest } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { exchangeName, exchangeVersion, tokenName, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
 import type { TokenName, ToolName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
@@ -15,15 +15,15 @@ export function unwrap<T, E>(result: Result<T, E>): T {
     return result.value;
 }
 
-export const nameOf = (raw: string): TokenName => unwrap(tokenName(raw));
+export const nameOf = (raw: string): TokenName => unwrap(parseTokenName(raw));
 
-export const toolOf = (raw: string): ToolName => unwrap(toolName(raw));
+export const toolOf = (raw: string): ToolName => unwrap(parseToolName(raw));
 
 export const parsedOf = (exchange: Exchange, raw: string): ParsedValue => unwrap(parseRequest(exchange, raw));
 
 export const compactLike: Exchange = defineExchange({
-    name: unwrap(exchangeName('compact')),
-    version: unwrap(exchangeVersion(1)),
+    name: unwrap(parseExchangeName('compact')),
+    version: unwrap(parseExchangeVersion(1)),
     requestPrefix: 'compact-req-',
     request: [
         { kind: 'id', grammar: 'legacy-length' },
@@ -38,8 +38,8 @@ export const compactLike: Exchange = defineExchange({
 });
 
 export const handoffLike: Exchange = defineExchange({
-    name: unwrap(exchangeName('handoff')),
-    version: unwrap(exchangeVersion(1)),
+    name: unwrap(parseExchangeName('handoff')),
+    version: unwrap(parseExchangeVersion(1)),
     requestPrefix: 'handoff-req-',
     request: [
         { kind: 'id', grammar: 'token-safe' },

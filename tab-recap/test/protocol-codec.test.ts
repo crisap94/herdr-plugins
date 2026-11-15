@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseValue, serializeValue } from '#src/protocol/codec.ts';
 import type { FieldSpec, ParsedValue } from '#src/protocol/codec.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { IdGrammar, RequestId, TokenValue } from '#src/protocol/primitives.ts';
 
 const ID_LEGACY: FieldSpec = { kind: 'id', grammar: 'legacy-length' };
@@ -13,7 +13,7 @@ const URGENT: FieldSpec = { kind: 'flag', name: 'urgent', text: 'urgent' };
 const PHASE: FieldSpec = { kind: 'word', name: 'phase', optional: true };
 
 const idOf = (raw: string, grammar: IdGrammar): RequestId => {
-    const id = requestId(raw, grammar);
+    const id = parseRequestId(raw, grammar);
     if (id.kind === 'err') {
         throw new Error(`bad test id ${raw}`);
     }

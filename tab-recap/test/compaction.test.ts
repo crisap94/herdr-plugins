@@ -28,7 +28,7 @@ import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
@@ -486,7 +486,7 @@ test('a request that joins a running compaction is settled in the ask ledger whe
     const handler = new CompactRequests({
         enabled: (): boolean => true, board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): number => NOW, log: (): void => undefined,
     });
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(toolName('coordinator')), id: rid('r1'), pane: paneId('w1:p1'), at: NOW, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('r1'), pane: paneId('w1:p1'), at: NOW, ref: null });
     const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stage); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
     await Promise.all([
         compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),

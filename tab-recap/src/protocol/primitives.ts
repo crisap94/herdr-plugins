@@ -100,9 +100,4 @@ export function parseExchangeVersion(raw: unknown): Result<ExchangeVersion, Refu
         : refuse('bad-grammar', 'ExchangeVersion');
 }
 
-export const tokenName = parseTokenName;
-export const tokenValue = parseTokenValue;
 export const requestId = parseRequestId;
-export const toolName = parseToolName;
-export const exchangeName = parseExchangeName;
-export const exchangeVersion = parseExchangeVersion;

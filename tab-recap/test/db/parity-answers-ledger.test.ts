@@ -10,7 +10,7 @@ import { HandoffAnswersRepository } from '#src/adapters/db/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { idOf, typeIdOf } from '#src/adapters/db/typeid.ts';
-import { exchangeName, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -29,9 +29,9 @@ const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const decisionOf = (n: number): string => typeIdOf('decision', keyOf(n));
 const bodyOf = (brief: string): Uint8Array => encode({ brief, appended: [], checked: [] });
-const EXCHANGE = must(exchangeName(COMPACT_EXCHANGE));
-const COORD = must(toolName('coord'));
-const CLI = must(toolName('cli'));
+const EXCHANGE = must(parseExchangeName(COMPACT_EXCHANGE));
+const COORD = must(parseToolName('coord'));
+const CLI = must(parseToolName('cli'));
 
 const memory = (seed: (db: Database) => void): Database => {
     const opened = openDatabase(MEMORY);

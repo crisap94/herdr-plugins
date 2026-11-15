@@ -1,6 +1,6 @@
 import { COMPACT_FAILURES } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
-import { exchangeName, exchangeVersion } from '../primitives.ts';
+import { parseExchangeName, parseExchangeVersion } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'done' } as const;
@@ -16,8 +16,8 @@ export const COMPACT_EVENTS = {
 } as const;
 
 export const compact = {
-    name: must(exchangeName('compact')),
-    version: must(exchangeVersion(1)),
+    name: must(parseExchangeName('compact')),
+    version: must(parseExchangeVersion(1)),
     requestPrefix: 'compact-req-',
     request: [
         { kind: 'id', grammar: 'legacy-length' },

@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
-import { exchangeName, requestId, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseRequestId, parseToolName } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { outcomeOf, outcomeText } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
@@ -17,14 +17,14 @@ const requesterOf = (raw: string): Requester | null => {
     if (raw === LOCAL_REQUESTER) {
         return LOCAL_REQUESTER;
     }
-    const parsed = toolName(raw);
+    const parsed = parseToolName(raw);
     return parsed.kind === 'ok' ? parsed.value : null;
 };
 
 function askOf(row: Row, log: (line: string) => void): readonly Ask[] {
-    const exchange = exchangeName(text(row, 'exchange'));
+    const exchange = parseExchangeName(text(row, 'exchange'));
     const requester = requesterOf(text(row, 'requester'));
-    const id = requestId(text(row, 'id'), 'legacy-length');
+    const id = parseRequestId(text(row, 'id'), 'legacy-length');
     const raw = maybeText(row, 'outcome');
     const outcome = raw === null ? null : outcomeOf(raw);
     if (exchange.kind !== 'ok' || requester === null || id.kind !== 'ok' || (raw !== null && outcome === null)) {

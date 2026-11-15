@@ -1,6 +1,6 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { refuse, tokenValue } from './primitives.ts';
+import { refuse, parseTokenValue } from './primitives.ts';
 import type { ExchangeVersion, Refusal, TokenName, TokenValue } from './primitives.ts';
 import type { Exchange } from './exchange.ts';
 
@@ -49,7 +49,7 @@ export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: Ex
         return refuse('bad-grammar', offending.name);
     }
     const items = exchanges.filter(enabled(isOn)).map((exchange) => `${exchange.name}${exchange.version}`);
-    return tokenValue([...items, `${KINDS}${kindsVersion}`].join(','));
+    return parseTokenValue([...items, `${KINDS}${kindsVersion}`].join(','));
 }
 
 export function parseCapability(raw: string): Result<Capability, Refusal> {
