@@ -67,16 +67,21 @@ export function curatorFor(config: Config, available: readonly string[], work: s
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort, ...(placed.timeoutMs === undefined ? {} : { timeoutMs: placed.timeoutMs }) }, placed.answer ?? 'text');
 }
 
+interface HarnessSources {
+    readonly herdr: Harnesses;
+    readonly path: Harnesses;
+}
+
 export class Backends {
     private available: readonly string[] = [];
     private warned = false;
     private readonly work: string;
     private readonly runtime: HarnessRuntime;
-    private readonly sources: { readonly herdr: Harnesses; readonly path: Harnesses };
+    private readonly sources: HarnessSources;
     private readonly notifier: Notifier;
     private readonly log: (line: string) => void;
 
-    constructor(root: string, sources: { readonly herdr: Harnesses; readonly path: Harnesses }, notifier: Notifier, log: (line: string) => void, runtime: HarnessRuntime) {
+    constructor(root: string, sources: HarnessSources, notifier: Notifier, log: (line: string) => void, runtime: HarnessRuntime) {
         this.work = join(root, 'summarizer');
         this.runtime = runtime;
         this.sources = sources;

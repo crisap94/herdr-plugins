@@ -7,32 +7,31 @@
     "property": 2
   },
   "src/daemon/autocompact.ts": {
-    "parameter": 8,
+    "parameter": 7,
     "return": 2
   },
   "src/daemon/backends.ts": {
-    "parameter": 9,
+    "parameter": 8,
     "container": 7,
-    "property": 3
+    "property": 2
   },
   "src/daemon/bounded.ts": {
     "parameter": 2
   },
   "src/daemon/compaction.ts": {
-    "parameter": 19,
-    "return": 5,
-    "container": 1,
-    "property": 3
+    "parameter": 18,
+    "return": 3,
+    "container": 1
   },
   "src/daemon/config.ts": {
     "parameter": 14,
     "return": 10,
     "container": 6,
-    "property": 9,
+    "property": 8,
     "assertion": 1
   },
   "src/daemon/curate.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "return": 4
   },
   "src/daemon/deciders.ts": {
@@ -41,7 +40,7 @@
     "container": 3
   },
   "src/daemon/handoff.ts": {
-    "parameter": 11,
+    "parameter": 9,
     "return": 4,
     "container": 2
   },
@@ -49,7 +48,7 @@
     "parameter": 5
   },
   "src/daemon/lane-turns.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 1
   },
   "src/daemon/main.ts": {
@@ -65,7 +64,7 @@
     "return": 1
   },
   "src/daemon/shutdown.ts": {
-    "parameter": 3
+    "parameter": 2
   },
   "src/daemon/state.ts": {
     "parameter": 4

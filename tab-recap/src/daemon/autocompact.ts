@@ -26,7 +26,7 @@ export async function awaitingNow(pane: string): Promise<Waiting> {
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value };
 }
 
-export function wireAutocompact(parts: {
+interface AutocompactParts {
     readonly config?: () => Config;
     readonly awaiting?: (pane: string) => Promise<Waiting>;
     readonly store: Store;
@@ -39,7 +39,9 @@ export function wireAutocompact(parts: {
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
     log(line: string): void;
-}): Autocompact {
+}
+
+export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const { store } = parts;
     const flight = new TranscriptInFlight(parts.transcripts);
     const read = parts.config ?? loadConfig;

@@ -4,7 +4,11 @@ import { within } from './bounded.ts';
 
 export const SHUTDOWN_MS = 15_000;
 
-export async function shutDown(columns: Pick<Columns, 'closeEvery'>, informer: { stop(): void }, log: (line: string) => void, ms: number = SHUTDOWN_MS): Promise<void> {
+interface StoppableInformer {
+    stop(): void;
+}
+
+export async function shutDown(columns: Pick<Columns, 'closeEvery'>, informer: StoppableInformer, log: (line: string) => void, ms: number = SHUTDOWN_MS): Promise<void> {
     log('stopping: closing every column');
     informer.stop();
     const result = await within(columns.closeEvery(), ms, null);
