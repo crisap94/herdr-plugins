@@ -2,6 +2,7 @@ import type { Curated, Curators } from '#src/ports/curators.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
 import type { Result } from '#src/protocol/result.ts';
 import type { Curation } from '#src/recap/domain/curation.ts';
+import { STORY_TOO_LONG } from '#src/recap/domain/curation.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -19,10 +20,12 @@ export interface StoryRound {
 
 export function storyRepair(document: Text, answer: Text, checked: Curation): Text {
     const lines = [document, '', '<previous-answer>', answer, '</previous-answer>', '', '<refused>'];
+    let tooLong = false;
     for (const why of checked.refused) {
         lines.push(`- ${why}`);
+        tooLong = tooLong || why.startsWith(STORY_TOO_LONG);
     }
-    if (checked.story === null) {
+    if (checked.story === null && !tooLong) {
         lines.push('- no paragraph');
     }
     lines.push('</refused>', '', 'Your previous answer, in <previous-answer>, had problems, listed in <refused>. Answer again with the whole JSON object: keep the merges that were not refused, fix or leave out each refused one, and write the paragraph.');
