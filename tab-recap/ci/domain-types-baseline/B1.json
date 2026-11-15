@@ -159,10 +159,8 @@
     "assertion": 1
   },
   "src/protocol/exchange.ts": {
-    "parameter": 8,
-    "return": 3,
-    "property": 2,
-    "assertion": 1
+    "parameter": 4,
+    "property": 2
   },
   "src/protocol/owners.ts": {
     "container": 1

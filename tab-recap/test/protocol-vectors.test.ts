@@ -12,7 +12,7 @@ import { observe } from '../src/protocol/requester.ts';
 import { answer, take } from '../src/protocol/responder.ts';
 import type { SeenCheck } from '../src/protocol/responder.ts';
 import type { ParsedValue } from '../src/protocol/codec.ts';
-import { parseWireText } from '../src/protocol/primitives.ts';
+import { parseIdText, parseWireText } from '../src/protocol/primitives.ts';
 import type { Refusal, RequestId, TokenValue } from '../src/protocol/primitives.ts';
 import type { Result } from '../src/protocol/result.ts';
 import { must } from '../src/protocol/result.ts';
@@ -132,13 +132,13 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: answers are id and stage, cut and refused as published`, () => {
         for (const item of vector.answers) {
-            assert.deepEqual(valueOf(answerValue(exchange, item.id as RequestId, item.stage)), item.expect, JSON.stringify(item));
+            assert.deepEqual(valueOf(answerValue(exchange, parseIdText(item.id), item.stage)), item.expect, JSON.stringify(item));
         }
     });
 
     test(`${exchange.name}: bad ids are answered as published`, () => {
         for (const item of vector.badIds) {
-            assert.equal(badIdValue(item.rawId), item.expect, JSON.stringify(item.rawId));
+            assert.equal(badIdValue(parseIdText(item.rawId)), item.expect, JSON.stringify(item.rawId));
         }
     });
 

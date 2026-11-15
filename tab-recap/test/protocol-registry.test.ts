@@ -4,7 +4,7 @@ import { answerToken, answerValue, defineExchange, parseRequest, requestName, se
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import type { RegistryRefusal } from '#src/protocol/registry.ts';
-import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseRequestId, parseRequestPrefix, parseTokenName, parseWireText, parseToolName } from '#src/protocol/primitives.ts';
+import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseIdText, parseRequestId, parseRequestPrefix, parseTokenName, parseWireText, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AnswerStage, RequestId, RequestPrefix, TokenName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
@@ -94,13 +94,13 @@ test('a truncating exchange answers exactly as the compaction answer did', () =>
     const exchange = probe('compact', { request: [{ kind: 'id', grammar: 'legacy-length' }], answerFit: 'truncate' });
     const id: RequestId = brand(parseRequestId('r.7', 'legacy-length'));
     const failed = 'failed-' + 'z'.repeat(90);
-    assert.equal(brand(answerValue(exchange, id, failed)), brand(answerValue(compact, 'r.7', failed)));
+    assert.equal(brand(answerValue(exchange, parseIdText(id), failed)), brand(answerValue(compact, parseIdText('r.7'), failed)));
 });
 
 test('a refusing exchange refuses a value longer than 80 characters instead of truncating it', () => {
     const exchange = probe('probe');
     const id = brand(parseRequestId('r_7', 'token-safe'));
-    assert.deepEqual(answerValue(exchange, id, 'x'.repeat(80)), { kind: 'err', error: { reason: 'too-long', subject: 'TokenValue' } });
+    assert.deepEqual(answerValue(exchange, parseIdText(id), 'x'.repeat(80)), { kind: 'err', error: { reason: 'too-long', subject: 'TokenValue' } });
 });
 
 test('a request is parsed and serialized by its exchange descriptor', () => {

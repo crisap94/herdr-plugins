@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { answer, take } from '#src/protocol/responder.ts';
 import type { SeenCheck, Taking } from '#src/protocol/responder.ts';
-import { parseRequestId } from '#src/protocol/primitives.ts';
+import { parseIdText, parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, ToolName } from '#src/protocol/primitives.ts';
 import { badIdValue } from '#src/protocol/exchange.ts';
 import { compactLike, handoffLike, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
@@ -61,7 +61,7 @@ test('a bad compact id is refused with exactly the answer the current code write
     for (const rawId of ['', 'x'.repeat(17), 'r'.repeat(40)]) {
         assert.deepEqual(
             refusedOf({ 'compact-req-coordinator': `${rawId}:note` }).map((refusal) => refusal.answer),
-            [badIdValue(rawId)],
+            [badIdValue(parseIdText(rawId))],
             `id ${JSON.stringify(rawId)}`,
         );
     }

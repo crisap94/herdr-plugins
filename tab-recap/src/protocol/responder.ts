@@ -71,6 +71,6 @@ export function answer(exchange: Exchange, id: RequestId, stage: string): Result
     if (name.kind === 'err') {
         return name;
     }
-    const value = answerValue(exchange, id, stage);
+    const value = answerValue(exchange, parseIdText(id), stage);
     return value.kind === 'err' ? value : ok({ name: name.value, value: value.value });
 }

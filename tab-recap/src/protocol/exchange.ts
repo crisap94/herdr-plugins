@@ -1,6 +1,7 @@
+import { must } from './result.ts';
 import type { Result } from './result.ts';
 import { LIMITS, parseTokenName, parseTokenValue } from './primitives.ts';
-import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
+import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, IdText, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
@@ -34,9 +35,11 @@ export const UNSUPPORTED_PREFIX = 'unsupported-';
 
 export const defineExchange = (exchange: Exchange): Exchange => exchange;
 
-export const failureStage = (reason: string): string => `${FAILURE_PREFIX}${reason}`;
+export type FailureStage = `${typeof FAILURE_PREFIX}${ReasonWord}`;
 
-export const isFailureStage = (stage: string): boolean => stage.startsWith(FAILURE_PREFIX);
+export const failureStage = (reason: ReasonWord): FailureStage => `${FAILURE_PREFIX}${reason}`;
+
+export const isFailureStage = (stage: string): stage is FailureStage => stage.startsWith(FAILURE_PREFIX);
 
 export type TerminalKind = 'failed' | 'refused' | 'unsupported';
 
@@ -64,14 +67,16 @@ export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenNam
 
 const ANSWER_SEPARATOR = ':';
 
-const answerText = (id: string, stage: string): string => `${id}${ANSWER_SEPARATOR}${stage}`;
+const answerText = (id: IdText, stage: string, fit: AnswerFit): Result<TokenValue, Refusal> => {
+    const text = `${id}${ANSWER_SEPARATOR}${stage}`;
+    return parseTokenValue(fit === 'truncate' ? text.slice(0, LIMITS.valueMax) : text);
+};
 
-export function answerValue(exchange: Exchange, id: string, stage: string): Result<TokenValue, Refusal> {
-    const text = answerText(id, stage);
-    return parseTokenValue(exchange.answerFit === 'truncate' ? text.slice(0, LIMITS.valueMax) : text);
+export function answerValue(exchange: Exchange, id: IdText, stage: string): Result<TokenValue, Refusal> {
+    return answerText(id, stage, exchange.answerFit);
 }
 
-export const badIdValue = (rawId: string): TokenValue => answerText(rawId.slice(0, LIMITS.idMax), failureStage('bad-id')) as TokenValue;
+export const badIdValue = (rawId: IdText): TokenValue => must(parseTokenValue(`${rawId.slice(0, LIMITS.idMax)}${ANSWER_SEPARATOR}${failureStage('bad-id')}`));
 
 export interface AnswerSplit {
     readonly id: string;
