@@ -5,10 +5,29 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
 
+export interface ResyncDecoded {
+    readonly kind: 'resync';
+}
+
+export interface UnknownDecoded {
+    readonly kind: 'unknown';
+    readonly rawKind: string;
+}
+
 export type Decoded =
     | Observation
-    | { readonly kind: 'resync' }
-    | { readonly kind: 'unknown'; readonly rawKind: string };
+    | ResyncDecoded
+    | UnknownDecoded;
+
+export interface PaneSession {
+    readonly pane: string;
+    readonly session: string;
+}
+
+export interface PaneTokens {
+    readonly pane: string;
+    readonly tokens: Readonly<Record<string, string>>;
+}
 
 function text(value: unknown): string | null {
     return typeof value === 'string' && value !== '' ? value : null;
@@ -65,13 +84,13 @@ export function sessionOf(data: Readonly<Record<string, unknown>>, identity: Ses
     return null;
 }
 
-export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): { readonly pane: string; readonly session: string } | null {
+export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): PaneSession | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data, identity);
     return pane === null || session === null ? null : { pane, session };
 }
 
-export function tokensOf(data: Readonly<Record<string, unknown>>): { readonly pane: string; readonly tokens: Readonly<Record<string, string>> } | null {
+export function tokensOf(data: Readonly<Record<string, unknown>>): PaneTokens | null {
     const pane = field(data, 'pane_id');
     const raw = nested(data, 'pane')['tokens'] ?? data['tokens'];
     if (pane === null || typeof raw !== 'object' || raw === null || Array.isArray(raw)) {

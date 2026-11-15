@@ -42,7 +42,7 @@
     "container": 1
   },
   "src/recap/render/compare.ts": {
-    "parameter": 6,
+    "parameter": 4,
     "return": 4,
     "container": 4,
     "property": 2

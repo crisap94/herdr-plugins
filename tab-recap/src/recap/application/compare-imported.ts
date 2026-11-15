@@ -19,13 +19,63 @@ export interface Side {
     readonly size: number;
 }
 
-export type ChapterResult =
-    | { readonly kind: 'compared'; readonly n: number; readonly at: number; readonly keyfacts: number; readonly imported: Side; readonly replay: Side }
-    | { readonly kind: 'skipped'; readonly n: number; readonly at: number; readonly why: string };
+interface ComparedChapter {
+    readonly kind: 'compared';
+    readonly n: number;
+    readonly at: number;
+    readonly keyfacts: number;
+    readonly imported: Side;
+    readonly replay: Side;
+}
+
+interface SkippedChapter {
+    readonly kind: 'skipped';
+    readonly n: number;
+    readonly at: number;
+    readonly why: string;
+}
+
+export type ChapterResult = ComparedChapter | SkippedChapter;
+
+interface SideTotal extends Pick<Side, 'coverage' | 'filler'> {
+    readonly readback: Share;
+}
+
+interface ComparisonTotal {
+    readonly imported: SideTotal;
+    readonly replay: SideTotal;
+}
 
 export interface Comparison {
     readonly chapters: readonly ChapterResult[];
-    readonly total: { readonly imported: Pick<Side, 'coverage' | 'filler'> & { readonly readback: Share }; readonly replay: Pick<Side, 'coverage' | 'filler'> & { readonly readback: Share } };
+    readonly total: ComparisonTotal;
+    readonly costUsd: number;
+}
+
+interface CarryParts {
+    readonly input: string;
+    readonly keyfacts: readonly string[] | null;
+    readonly state: readonly RunItem[];
+}
+
+interface Carried {
+    readonly found: Carrying | string;
+    readonly costUsd: number;
+}
+
+interface SideParts {
+    readonly input: string;
+    readonly state: readonly RunItem[];
+    readonly found: Carrying;
+}
+
+interface SideOutcome {
+    readonly side: Side;
+    readonly costUsd: number;
+}
+
+interface ChapterOutcome {
+    readonly result: ChapterResult;
     readonly costUsd: number;
 }
 
@@ -44,7 +94,7 @@ function evidenceOf(inputs: RunInputs, runs: readonly StoredRun[]): string {
     return kept.join('\n');
 }
 
-async function carrying(deps: JudgeDeps, parts: { readonly input: string; readonly keyfacts: readonly string[] | null; readonly state: readonly RunItem[] }): Promise<{ readonly found: Carrying | string; readonly costUsd: number }> {
+async function carrying(deps: JudgeDeps, parts: CarryParts): Promise<Carried> {
     const asked = await deps.judge.ask('cover', coverDocument(parts));
     if (isUnknown(asked)) {
         return { found: saying(asked.why), costUsd: 0 };
@@ -53,14 +103,14 @@ async function carrying(deps: JudgeDeps, parts: { readonly input: string; readon
     return { found: parsed.kind === 'ok' ? parsed.value : parsed.why, costUsd: asked.costUsd };
 }
 
-async function sideOf(deps: JudgeDeps, parts: { readonly input: string; readonly state: readonly RunItem[]; readonly found: Carrying }): Promise<{ readonly side: Side; readonly costUsd: number }> {
+async function sideOf(deps: JudgeDeps, parts: SideParts): Promise<SideOutcome> {
     const measured = measureState(parts.state, parts.found);
     const back = await readBack(deps, { items: parts.state, input: parts.input, keyfacts: parts.found.keyfacts });
     return { side: { coverage: measured.coverage, filler: measured.filler, readback: back.grades, size: parts.state.length }, costUsd: back.costUsd };
 }
 
-async function compareChapter(deps: CompareDeps, chapter: ImportedChapter, runs: readonly StoredRun[], since: number): Promise<{ readonly result: ChapterResult; readonly costUsd: number }> {
-    const skip = (why: string, costUsd = 0): { result: ChapterResult; costUsd: number } => ({ result: { kind: 'skipped', n: chapter.n, at: chapter.at, why }, costUsd });
+async function compareChapter(deps: CompareDeps, chapter: ImportedChapter, runs: readonly StoredRun[], since: number): Promise<ChapterOutcome> {
+    const skip = (why: string, costUsd = 0): ChapterOutcome => ({ result: { kind: 'skipped', n: chapter.n, at: chapter.at, why }, costUsd });
     const at = runs.findLast((run) => run.at <= chapter.at);
     const last = runs.at(-1);
     if (at === undefined || last === undefined || chapter.at > last.at + SLACK_MS) {
@@ -87,7 +137,7 @@ async function compareChapter(deps: CompareDeps, chapter: ImportedChapter, runs:
 const NONE: Share = { passed: 0, total: 0 };
 const passes = (side: Side): Share => ({ passed: side.readback?.filter((grade) => grade.pass).length ?? 0, total: side.readback === null ? 0 : 6 });
 
-function totalOf(results: readonly ChapterResult[], pick: (result: ChapterResult & { kind: 'compared' }) => Side): Comparison['total']['imported'] {
+function totalOf(results: readonly ChapterResult[], pick: (result: ComparedChapter) => Side): SideTotal {
     const compared = results.flatMap((result) => (result.kind === 'compared' ? [pick(result)] : []));
     return {
         coverage: compared.reduce((sum, side) => plus(sum, side.coverage), NONE), filler: compared.reduce((sum, side) => plus(sum, side.filler), NONE),

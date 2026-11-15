@@ -34,20 +34,21 @@ export interface RestoredObservation {
     readonly lanes: readonly RestoredLane[];
 }
 
-export type Observation =
-    | { readonly kind: 'detected'; readonly lane: SeenLane }
-    | { readonly kind: 'closed'; readonly pane: PaneId }
-    | { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
-    | { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
-    | { readonly kind: 'reconciled'; readonly seen: Reconciliation }
-    | { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
-    | { readonly kind: 'column-failed'; readonly tab: TabId }
-    | { readonly kind: 'focused'; readonly tab: TabId }
-    | { readonly kind: 'requested'; readonly tab: TabId }
-    | { readonly kind: 'switched'; readonly enabled: boolean }
-    | { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
-    | { readonly kind: 'hidden-restored'; readonly state: HiddenState }
-    | RestoredObservation;
+export interface DetectedObservation { readonly kind: 'detected'; readonly lane: SeenLane }
+export interface ClosedObservation { readonly kind: 'closed'; readonly pane: PaneId }
+export interface StatusObservation { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
+export interface SessionObservation { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
+export interface ReconciledObservation { readonly kind: 'reconciled'; readonly seen: Reconciliation }
+export interface ColumnOpenedObservation { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
+export interface ColumnFailedObservation { readonly kind: 'column-failed'; readonly tab: TabId }
+export interface FocusedObservation { readonly kind: 'focused'; readonly tab: TabId }
+export interface RequestedObservation { readonly kind: 'requested'; readonly tab: TabId }
+export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean }
+export interface VisibilityObservation { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
+export interface HiddenRestoredObservation { readonly kind: 'hidden-restored'; readonly state: HiddenState }
+
+export type Observation = DetectedObservation | ClosedObservation | StatusObservation | SessionObservation | ReconciledObservation | ColumnOpenedObservation
+    | ColumnFailedObservation | FocusedObservation | RequestedObservation | SwitchedObservation | VisibilityObservation | HiddenRestoredObservation | RestoredObservation;
 
 export interface Outcome {
     readonly board: Board;

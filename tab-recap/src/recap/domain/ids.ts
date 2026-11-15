@@ -10,9 +10,17 @@ export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;
 export type AgentKind = Brand<string, 'AgentKind'>;
-export type AgentSession =
-    | { readonly kind: 'id'; readonly value: SessionId }
-    | { readonly kind: 'path'; readonly value: SessionPath };
+export interface AgentSessionId {
+    readonly kind: 'id';
+    readonly value: SessionId;
+}
+
+export interface AgentSessionPath {
+    readonly kind: 'path';
+    readonly value: SessionPath;
+}
+
+export type AgentSession = AgentSessionId | AgentSessionPath;
 
 export class NotAnIdentifierError extends Error {
     override readonly name = 'NotAnIdentifierError';
