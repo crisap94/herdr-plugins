@@ -18,7 +18,9 @@ import { TranscriptRows } from './transcripts.ts';
 import { typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
 
-const causeOf = (raw: string): RecapCause | 'imported' | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
+type LastCause = RecapCause | 'imported';
+
+const causeOf = (raw: string): LastCause | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
 
 export class RecapRecordsRepository implements RecapRecords {
     private readonly db: Database;
@@ -46,7 +48,7 @@ export class RecapRecordsRepository implements RecapRecords {
     }
 
     lastRunOf(tab: string): LastRun | null {
-        return guarded(() => {
+        return guarded((): LastRun | null => {
             const row = this.orm.select({ at: runs.at, cause: runs.cause }).from(runs).innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id))
                 .where(eq(lastGoodRun.tabId, tabId(tab))).get() ?? null;
             const cause = row === null ? null : causeOf(row.cause);

@@ -70,7 +70,14 @@ function idOrdered(rows: readonly Row[]): readonly Row[] {
     return rows.toSorted((a, b) => compareIds(blob(a, 'id'), blob(b, 'id')));
 }
 
-function wordOf(hidden: boolean | 'toggle'): string {
+type HiddenWord = boolean | 'toggle';
+
+interface AnsweredPane {
+    readonly pane: string;
+    readonly answer: string;
+}
+
+function wordOf(hidden: HiddenWord): string {
     if (hidden === 'toggle') {
         return 'toggle';
     }
@@ -132,8 +139,8 @@ export class RequestsRepository implements Requests, CompactionQueue {
         return guarded(() => idOrdered(this.orm.delete(requestTable).where(eq(requestTable.kind, 'handoff')).returning(HANDOFF_VIEW).all()).flatMap((row) => handoffRowOf(row) ?? []), []);
     }
 
-    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[] {
-        return guarded(() => this.orm.delete(requestTable).where(and(eq(requestTable.kind, 'compact'), isNotNull(requestTable.answer))).returning({ id: requestTable.id, pane: requestTable.pane, answer: requestTable.answer }).all().flatMap((row) => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
+    takeAnswered(): readonly AnsweredPane[] {
+        return guarded(() => this.orm.delete(requestTable).where(and(eq(requestTable.kind, 'compact'), isNotNull(requestTable.answer))).returning({ id: requestTable.id, pane: requestTable.pane, answer: requestTable.answer }).all().flatMap((row): AnsweredPane[] => { const pane = maybeText(row, 'pane'); return pane === null ? [] : [{ pane, answer: text(row, 'answer') }]; }), []);
     }
 
     takeCurations(): readonly TabId[] {

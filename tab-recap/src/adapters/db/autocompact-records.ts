@@ -19,6 +19,16 @@ const COVERAGE_GATE = 'coverage';
 const NO_COUNTS: DecisionCounts = { decisions: 0, compacted: 0, waited: 0 };
 const MICRO = 1e6;
 
+interface LatestDecision {
+    readonly id: Uint8Array;
+    readonly gate: DecisionGate;
+}
+
+interface KeptLane {
+    readonly tab: string;
+    readonly pane: string;
+}
+
 const NEWEST_COLUMNS = {
     id: autocompactDecision.id, tab_id: autocompactDecision.tabId, pane: autocompactDecision.pane, agent: autocompactDecision.agent, at: autocompactDecision.at,
     mode: autocompactDecision.mode, share: autocompactDecision.share, tokens: autocompactDecision.tokens, window: autocompactDecision.window, gate: autocompactDecision.gate,
@@ -113,7 +123,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     }
 
     linkLatest(tab: string, pane: string, compactionId: string): LinkedDecision | null {
-        const [row, target] = [guarded(() => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
+        const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', compactionId)];
         if (row === null || target === null) return null;
@@ -172,7 +182,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         if (key !== null) writeTx(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 
-    pruneSkips(keep: readonly { readonly tab: string; readonly pane: string }[]): void {
+    pruneSkips(keep: readonly KeptLane[]): void {
         const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
         writeTx(this.db, () => {
             for (const skip of this.skips()) {

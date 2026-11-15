@@ -8,7 +8,16 @@ import type { ImportedFact, ImportedItem, ImportedRun } from './items-to-facts.t
 const hex = (id: Uint8Array): string => Buffer.from(id).toString('hex');
 const bytes = (id: string): Uint8Array => Uint8Array.from(Buffer.from(id, 'hex'));
 
-function runsOfTasks(db: Database): ReadonlyMap<string, { readonly tab: string; readonly task: Uint8Array; readonly runs: ImportedRun[] }> {
+interface TaskOwner {
+    readonly tab: string;
+    readonly task: Uint8Array;
+}
+
+interface TaskRuns extends TaskOwner {
+    readonly runs: ImportedRun[];
+}
+
+function runsOfTasks(db: Database): ReadonlyMap<string, TaskRuns> {
     const carried = all(db.prepare('SELECT rt.task_id, k.tab_id, r.id AS run_id, r.at, r.language, r.error IS NULL AS good FROM run_task rt JOIN run r ON r.id = rt.run_id JOIN task k ON k.id = rt.task_id ORDER BY rt.task_id, r.id'));
     const items = new Map<string, ImportedItem[]>();
     for (const row of all(db.prepare("SELECT run_id, task_id, section, position, text FROM item WHERE view = 'recap'"))) {
@@ -26,7 +35,7 @@ function runsOfTasks(db: Database): ReadonlyMap<string, { readonly tab: string; 
     return tasks;
 }
 
-function write(db: Database, owner: { readonly tab: string; readonly task: Uint8Array }, facts: readonly ImportedFact[]): void {
+function write(db: Database, owner: TaskOwner, facts: readonly ImportedFact[]): void {
     const insert = db.prepare(`INSERT INTO fact (id, tab_id, task_id, section, text, why, ref, agent, first_at, last_at, state, closed_why, closed_at, born_run, last_run, language)
       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`);
     for (const fact of facts) {

@@ -14,6 +14,11 @@ export interface ImportedRun {
     readonly items: readonly ImportedItem[];
 }
 
+export interface FactClosure {
+    readonly why: ClosedWhy;
+    readonly at: number;
+}
+
 export interface ImportedFact {
     readonly section: Section;
     readonly text: string;
@@ -22,7 +27,7 @@ export interface ImportedFact {
     readonly lastAt: number;
     readonly bornRun: string;
     readonly lastRun: string;
-    readonly closed: { readonly why: ClosedWhy; readonly at: number } | null;
+    readonly closed: FactClosure | null;
     readonly language: string;
 }
 
@@ -49,7 +54,12 @@ interface Live {
     lastIndex: number;
 }
 
-function keysOf(items: readonly ImportedItem[]): readonly { readonly item: ImportedItem; readonly key: string }[] {
+interface KeyedItem {
+    readonly item: ImportedItem;
+    readonly key: string;
+}
+
+function keysOf(items: readonly ImportedItem[]): readonly KeyedItem[] {
     const seen = new Map<string, number>();
     return items.toSorted((a, b) => a.position - b.position).map((item) => {
         const base = `${item.section}\u0000${normalised(item.text)}`;
