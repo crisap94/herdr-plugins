@@ -25,7 +25,7 @@
     "parameter": 7,
     "return": 2,
     "container": 2,
-    "property": 8
+    "property": 7
   },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
@@ -61,7 +61,7 @@
   },
   "src/recap/application/compaction-coverage.ts": {
     "parameter": 3,
-    "return": 4,
+    "return": 3,
     "container": 5,
     "property": 11,
     "assertion": 2
@@ -75,7 +75,7 @@
     "property": 8
   },
   "src/recap/application/compaction-lanes.ts": {
-    "return": 2,
+    "return": 1,
     "property": 2
   },
   "src/recap/application/compaction-message.ts": {
@@ -102,7 +102,6 @@
     "property": 15
   },
   "src/recap/application/counted-writer.ts": {
-    "parameter": 1,
     "property": 1
   },
   "src/recap/application/coverage-verdict.ts": {
@@ -131,13 +130,13 @@
     "container": 3
   },
   "src/recap/application/edit-counts.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 1,
     "container": 2,
     "property": 2
   },
   "src/recap/application/eval-label.ts": {
-    "parameter": 13,
+    "parameter": 11,
     "return": 2,
     "container": 5,
     "property": 4
@@ -163,12 +162,11 @@
   "src/recap/application/eval-stats.ts": {
     "parameter": 4,
     "return": 4,
-    "container": 1,
     "property": 12
   },
   "src/recap/application/expanded-view.ts": {
-    "parameter": 7,
-    "return": 3,
+    "parameter": 6,
+    "return": 2,
     "property": 3
   },
   "src/recap/application/freshness-block.ts": {
@@ -178,8 +176,7 @@
   "src/recap/application/handoff-confirmation.ts": {
     "parameter": 5,
     "return": 1,
-    "container": 1,
-    "property": 6
+    "property": 5
   },
   "src/recap/application/handoff-content.ts": {
     "parameter": 3,
@@ -196,8 +193,7 @@
   "src/recap/application/handoff-print.ts": {
     "parameter": 1,
     "return": 1,
-    "container": 1,
-    "property": 1
+    "container": 1
   },
   "src/recap/application/handoff-render.ts": {
     "property": 7
@@ -291,7 +287,7 @@
     "property": 4
   },
   "src/recap/application/lane-webs.ts": {
-    "parameter": 3,
+    "parameter": 1,
     "return": 1,
     "container": 2
   },

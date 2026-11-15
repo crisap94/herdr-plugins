@@ -31,7 +31,12 @@ export function laneClosedRefusal(point: ClosePoint): Refusal {
     return { stage: 'skipped', reason: COMPACT_FAILURES.skipped, why: LANE_CLOSED, toast: null, closedAt: point };
 }
 
-export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly Lane[], claim: (lane: Lane) => boolean): { readonly owned: Lane[]; readonly held: Lane[] } {
+interface ClaimSplit {
+    readonly owned: Lane[];
+    readonly held: Lane[];
+}
+
+export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly Lane[], claim: (lane: Lane) => boolean): ClaimSplit {
     const owned: Lane[] = [];
     const held: Lane[] = [];
     for (const lane of lanes) {

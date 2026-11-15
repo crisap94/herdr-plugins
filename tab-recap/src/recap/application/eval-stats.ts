@@ -55,7 +55,11 @@ export interface GateReport {
     readonly dropped: number;
 }
 
-export function gateReportOf(counts: readonly { readonly stats: GateStats }[]): GateReport {
+interface GateCount {
+    readonly stats: GateStats;
+}
+
+export function gateReportOf(counts: readonly GateCount[]): GateReport {
     const gates = [...new Set(counts.flatMap(({ stats }) => [...Object.keys(stats.refused), ...Object.keys(stats.flagged)]))].toSorted((a, b) => a.localeCompare(b, 'en', { numeric: true }));
     return {
         runs: counts.length,

@@ -21,12 +21,29 @@ export function candidatesOf(runs: readonly StoredRun[], inputs: Pick<RunInputs,
     return found;
 }
 
-export type Answer =
-    | { readonly kind: 'pass' }
-    | { readonly kind: 'fail'; readonly checks: readonly string[] }
-    | { readonly kind: 'skip' }
-    | { readonly kind: 'quit' }
-    | { readonly kind: 'again'; readonly why: string };
+interface PassAnswer {
+    readonly kind: 'pass';
+}
+
+interface FailAnswer {
+    readonly kind: 'fail';
+    readonly checks: readonly string[];
+}
+
+interface SkipAnswer {
+    readonly kind: 'skip';
+}
+
+interface QuitAnswer {
+    readonly kind: 'quit';
+}
+
+interface AgainAnswer {
+    readonly kind: 'again';
+    readonly why: string;
+}
+
+export type Answer = PassAnswer | FailAnswer | SkipAnswer | QuitAnswer | AgainAnswer;
 
 export const checksFor = (section: string): readonly string[] => [...ITEM_CHECKS, `S-${section}`];
 

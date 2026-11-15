@@ -33,12 +33,16 @@ export interface PrintStore {
     close(): void;
 }
 
+interface TargetStatus {
+    status(pane: string): Promise<AgentState>;
+}
+
 export interface PrintDeps {
     readonly openStore: () => PrintStore;
     readonly transcripts: TranscriptRegistry;
     readonly worksite: WorksiteDeps;
     readonly tokens: PaneTokens;
-    readonly target: { status(pane: string): Promise<AgentState> };
+    readonly target: TargetStatus;
     readonly closedDays: ClosedLaneDays;
     readonly now: () => number;
     readonly log: (line: Text) => void;

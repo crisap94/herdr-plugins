@@ -18,9 +18,18 @@ export interface Baseline {
     readonly before: Before;
 }
 
+interface TranscriptBefore {
+    readonly before: string | null;
+}
+
 interface Evidence {
-    readonly transcript: { readonly before: string | null } | null;
+    readonly transcript: TranscriptBefore | null;
     readonly status: boolean;
+}
+
+interface LatestOf {
+    readonly lane: Lane;
+    readonly latest: Latest;
 }
 
 interface Observed {
@@ -71,7 +80,7 @@ export class HandoffConfirmation {
         return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: sessionId(current) } : lane;
     }
 
-    private async latestOf(lane: Lane): Promise<{ readonly lane: Lane; readonly latest: Latest }> {
+    private async latestOf(lane: Lane): Promise<LatestOf> {
         const current = await this.sessionOf(lane);
         const reader = this.deps.transcripts.readerFor(String(lane.agent));
         const located = reader === undefined ? null : await reader.locate(current);
