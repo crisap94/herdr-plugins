@@ -175,9 +175,8 @@
     "container": 1
   },
   "src/protocol/primitives.ts": {
-    "parameter": 11,
-    "property": 1,
-    "assertion": 3
+    "parameter": 1,
+    "property": 1
   },
   "src/protocol/registry.ts": {
     "parameter": 1,

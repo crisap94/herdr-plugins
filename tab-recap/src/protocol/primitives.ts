@@ -1,5 +1,6 @@
 import { err, ok } from './result.ts';
 import type { Result } from './result.ts';
+import { brand } from '../recap/domain/brand.ts';
 import type { Brand } from '../recap/domain/brand.ts';
 
 export const LIMITS = {
@@ -12,12 +13,17 @@ export const LIMITS = {
     versionMax: 99,
 } as const;
 
+type Limit = (typeof LIMITS)[keyof typeof LIMITS];
+
 export type TokenName = Brand<string, 'TokenName'>;
 export type TokenValue = Brand<string, 'TokenValue'>;
+export type Word = Brand<string, 'Word'>;
 export type RequestId = Brand<string, 'RequestId'>;
 export type ToolName = Brand<string, 'ToolName'>;
 export type ExchangeName = Brand<string, 'ExchangeName'>;
 export type ExchangeVersion = Brand<number, 'ExchangeVersion'>;
+
+type Candidate = Brand<string, 'Candidate'>;
 
 export type IdGrammar = 'legacy-length' | 'token-safe';
 
@@ -40,31 +46,63 @@ const REQUEST_ID_SHAPE: Readonly<Record<IdGrammar, RegExp>> = {
 
 export const refuse = (reason: RefusalReason, subject: string): Result<never, Refusal> => err({ reason, subject });
 
-export function checkedText<T extends string>(subject: string, raw: string, max: number, shape: RegExp): Result<T, Refusal> {
+function checkedText(raw: Candidate, max: Limit, shape: RegExp): Result<Candidate, RefusalReason> {
     if (raw === '') {
-        return refuse('empty', subject);
+        return err<RefusalReason>('empty');
     }
     if (raw.length > max) {
-        return refuse('too-long', subject);
+        return err<RefusalReason>('too-long');
     }
     if (!shape.test(raw)) {
-        return refuse('bad-characters', subject);
+        return err<RefusalReason>('bad-characters');
     }
-    return ok(raw as T);
+    return ok(raw);
 }
 
-export const tokenName = (raw: string): Result<TokenName, Refusal> => checkedText<TokenName>('TokenName', raw, LIMITS.nameMax, WORD_SHAPE);
+export function parseWord(raw: unknown, max: Limit, shape: RegExp): Result<Word, RefusalReason> {
+    if (typeof raw !== 'string') {
+        return err<RefusalReason>('bad-grammar');
+    }
+    const text = checkedText(brand<string, 'Candidate'>(raw), max, shape);
+    return text.kind === 'ok' ? ok(brand<string, 'Word'>(text.value)) : text;
+}
 
-export const tokenValue = (raw: string): Result<TokenValue, Refusal> =>
-    raw.length > LIMITS.valueMax ? refuse('too-long', 'TokenValue') : ok(raw as TokenValue);
+export function parseTokenName(raw: unknown): Result<TokenName, Refusal> {
+    const word = parseWord(raw, LIMITS.nameMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'TokenName'>(word.value)) : refuse(word.error, 'TokenName');
+}
 
-export const requestId = (raw: string, grammar: IdGrammar): Result<RequestId, Refusal> =>
-    checkedText<RequestId>('RequestId', raw, LIMITS.idMax, REQUEST_ID_SHAPE[grammar]);
+export function parseTokenValue(raw: unknown): Result<TokenValue, Refusal> {
+    if (typeof raw !== 'string') {
+        return refuse('bad-grammar', 'TokenValue');
+    }
+    return raw.length > LIMITS.valueMax ? refuse('too-long', 'TokenValue') : ok(brand<string, 'TokenValue'>(raw));
+}
 
-export const toolName = (raw: string): Result<ToolName, Refusal> => checkedText<ToolName>('ToolName', raw, LIMITS.toolMax, WORD_SHAPE);
+export function parseRequestId(raw: unknown, grammar: IdGrammar): Result<RequestId, Refusal> {
+    const word = parseWord(raw, LIMITS.idMax, REQUEST_ID_SHAPE[grammar]);
+    return word.kind === 'ok' ? ok(brand<string, 'RequestId'>(word.value)) : refuse(word.error, 'RequestId');
+}
 
-export const exchangeName = (raw: string): Result<ExchangeName, Refusal> =>
-    checkedText<ExchangeName>('ExchangeName', raw, LIMITS.exchangeMax, /^[a-z][a-z0-9-]*$/);
+export function parseToolName(raw: unknown): Result<ToolName, Refusal> {
+    const word = parseWord(raw, LIMITS.toolMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'ToolName'>(word.value)) : refuse(word.error, 'ToolName');
+}
 
-export const exchangeVersion = (n: number): Result<ExchangeVersion, Refusal> =>
-    Number.isInteger(n) && n >= 1 && n <= LIMITS.versionMax ? ok(n as ExchangeVersion) : refuse('bad-grammar', 'ExchangeVersion');
+export function parseExchangeName(raw: unknown): Result<ExchangeName, Refusal> {
+    const word = parseWord(raw, LIMITS.exchangeMax, /^[a-z][a-z0-9-]*$/);
+    return word.kind === 'ok' ? ok(brand<string, 'ExchangeName'>(word.value)) : refuse(word.error, 'ExchangeName');
+}
+
+export function parseExchangeVersion(raw: unknown): Result<ExchangeVersion, Refusal> {
+    return typeof raw === 'number' && Number.isInteger(raw) && raw >= 1 && raw <= LIMITS.versionMax
+        ? ok(brand<number, 'ExchangeVersion'>(raw))
+        : refuse('bad-grammar', 'ExchangeVersion');
+}
+
+export const tokenName = parseTokenName;
+export const tokenValue = parseTokenValue;
+export const requestId = parseRequestId;
+export const toolName = parseToolName;
+export const exchangeName = parseExchangeName;
+export const exchangeVersion = parseExchangeVersion;

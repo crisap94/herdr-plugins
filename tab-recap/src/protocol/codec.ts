@@ -1,6 +1,6 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, WORD_SHAPES, checkedText, refuse, requestId, tokenValue } from './primitives.ts';
+import { LIMITS, WORD_SHAPES, parseWord, refuse, requestId, tokenValue } from './primitives.ts';
 import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
 
 export interface IdSpec {
@@ -72,7 +72,11 @@ function pieceOf(field: Field, value: ParsedValue): Result<string | null, Refusa
     if (typeof text !== 'string') {
         return refuse('bad-grammar', field.name);
     }
-    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, shapeOf(field.shape)) : checkedRest(field, text);
+    if (field.kind === 'word') {
+        const word = parseWord(text, LIMITS.valueMax, shapeOf(field.shape));
+        return word.kind === 'ok' ? word : refuse(word.error, field.name);
+    }
+    return checkedRest(field, text);
 }
 
 export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue): Result<TokenValue, Refusal> {
@@ -113,8 +117,8 @@ function readField(field: Field, segments: readonly string[], at: number): Resul
         return field.optional ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
     }
     if (field.kind === 'word') {
-        const word = checkedText(field.name, segment, LIMITS.valueMax, shapeOf(field.shape));
-        return word.kind === 'ok' ? ok({ value: word.value, at: at + 1 }) : word;
+        const word = parseWord(segment, LIMITS.valueMax, shapeOf(field.shape));
+        return word.kind === 'ok' ? ok({ value: word.value, at: at + 1 }) : refuse(word.error, field.name);
     }
     const text = checkedRest(field, segments.slice(at).join(':'));
     return text.kind === 'ok' ? ok({ value: text.value, at: segments.length }) : text;
