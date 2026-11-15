@@ -114,3 +114,118 @@ test('the released migrations are the files of the latest release tag, not the r
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+const wire: Entry = {
+    class: 'wire',
+    file: 'src/wire/view/protocol.ts',
+    symbol: 'Hello',
+    field: 'cols',
+    reason: 'a plain field of the approved view wire contract',
+};
+
+const wireFinding = (overrides: Partial<Finding>): Finding =>
+    finding({ file: 'src/wire/view/protocol.ts', category: 'property', owner: 'Hello', parameter: null, site: 'property cols', reason: 'resolves to number', ...overrides });
+
+test('a wire entry names a file, a symbol, a field and a reason', () => {
+    assert.deepEqual(parseEntry(wire), { kind: 'ok', value: wire });
+});
+
+test('a wire entry without a symbol, a field or a reason is refused', () => {
+    assert.equal(parseEntry({ ...wire, symbol: '' }).kind, 'err');
+    assert.equal(parseEntry({ ...wire, field: undefined }).kind, 'err');
+    assert.equal(parseEntry({ ...wire, reason: '' }).kind, 'err');
+});
+
+test('a wire exception covers the property finding of its symbol and field, and no other field or symbol', () => {
+    const rows = wireFinding({ site: 'property rows' });
+    const resize = wireFinding({ owner: 'Resize' });
+    assert.deepEqual(applyEntries([wireFinding({}), rows, resize], [wire], []), { findings: [rows, resize], stale: [] });
+});
+
+test('a wire exception covers a container finding of a property, of a parameter and of a return', () => {
+    const lines: Entry = { ...wire, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'lines' };
+    const returned: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'push', field: 'return' };
+    const frame: Entry = { ...wire, symbol: 'FrameMessage', field: 'lines' };
+    const findings = [
+        wireFinding({ file: 'src/wire/view/paint.ts', category: 'container', owner: 'paintOf', parameter: 'lines', site: 'parameter lines' }),
+        wireFinding({ file: 'src/wire/view/codec.ts', category: 'container', owner: 'push', site: 'return' }),
+        wireFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' }),
+    ];
+    assert.deepEqual(applyEntries(findings, [lines, returned, frame], []), { findings: [], stale: [] });
+});
+
+test('a wire exception covers the parameter finding of its function and parameter, and no other parameter or function', () => {
+    const entry: Entry = { ...wire, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'title' };
+    const title = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'title', site: 'parameter title' });
+    const colour = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'colour', site: 'parameter colour' });
+    const enter = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'ENTER', parameter: 'title', site: 'parameter title' });
+    assert.deepEqual(applyEntries([title, colour, enter], [entry], []), { findings: [colour, enter], stale: [] });
+});
+
+test('a wire exception names a return by the field return and covers only the return finding of its function', () => {
+    const entry: Entry = { ...wire, file: 'src/wire/paths.ts', symbol: 'viewSocketPath', field: 'return' };
+    const returned = wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' });
+    const parameter = wireFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' });
+    const other = wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'hooksSocketPath', site: 'return' });
+    assert.deepEqual(applyEntries([returned, parameter, other], [entry], []), { findings: [parameter, other], stale: [] });
+});
+
+test('a wire exception never covers an assertion finding', () => {
+    const entry: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'line' };
+    const cast = wireFinding({ file: 'src/wire/view/codec.ts', category: 'assertion', owner: 'decodeClient', parameter: 'line', site: 'type assertion' });
+    const outcome = applyEntries([cast], [entry], []);
+    assert.deepEqual(outcome.findings, [cast]);
+    assert.deepEqual(outcome.stale, ['not supported: exception src/wire/view/codec.ts decodeClient line matches no finding']);
+});
+
+test('a wire exception for a parameter the function does not have is stale and excepts nothing', () => {
+    const entry: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'text' };
+    const line = wireFinding({ file: 'src/wire/view/codec.ts', category: 'parameter', owner: 'decodeClient', parameter: 'line', site: 'parameter line' });
+    assert.deepEqual(applyEntries([line], [entry], []), {
+        findings: [line],
+        stale: ['not supported: exception src/wire/view/codec.ts decodeClient text matches no finding'],
+    });
+});
+
+test('a wire exception for a parameter or a return outside src/wire/ is stale and excepts nothing', () => {
+    const parameter: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'echo', field: 'value' };
+    const returned: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'echo', field: 'return' };
+    const hits = [finding({}), finding({ category: 'return', parameter: null, site: 'return' })];
+    assert.deepEqual(applyEntries(hits, [parameter, returned], []), {
+        findings: hits,
+        stale: [
+            'not supported: exception src/domain/value.ts echo value is not under src/wire/',
+            'not supported: exception src/domain/value.ts echo return is not under src/wire/',
+        ],
+    });
+});
+
+test('a callback exception under src/wire/ still covers its parameter and its return', () => {
+    const parameter: Entry = { class: 'callback', file: 'src/wire/paths.ts', function: 'viewSocketPath', parameter: 'stateDir', reason: 'a Node callback' };
+    const returned: Entry = { ...parameter, parameter: null };
+    const hits = [
+        wireFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' }),
+        wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' }),
+    ];
+    assert.deepEqual(applyEntries(hits, [parameter, returned], []), { findings: [], stale: [] });
+});
+
+test('a wire exception outside src/wire/ is stale and excepts nothing', () => {
+    const entry: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'Size', field: 'width' };
+    const hit = finding({ category: 'property', owner: 'Size', parameter: null, site: 'property width' });
+    assert.deepEqual(applyEntries([hit], [entry], []), {
+        findings: [hit],
+        stale: ['not supported: exception src/domain/value.ts Size width is not under src/wire/'],
+    });
+});
+
+test('a wire exception matching no finding is stale, and the stale line begins not supported', () => {
+    assert.deepEqual(applyEntries([], [wire], []).stale, ['not supported: exception src/wire/view/protocol.ts Hello cols matches no finding']);
+});
+
+test('a callback exception never covers a property or a container finding', () => {
+    const entry: Entry = { class: 'callback', file: 'src/wire/view/protocol.ts', function: 'Hello', parameter: null, reason: 'a Node callback' };
+    const property = wireFinding({});
+    const container = wireFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' });
+    assert.deepEqual(applyEntries([property, container], [entry], []).findings, [property, container]);
+});

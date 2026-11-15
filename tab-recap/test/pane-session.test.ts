@@ -4,7 +4,10 @@ import { createServer } from 'node:net';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
+import { resetHerdrClients } from '#src/adapters/herdr/client.ts';
+import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
+import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
+const PONG = { protocol: PROTOCOL, version: 'test' };
 import { isUnknown } from '#src/ports/unknowable.ts';
 
 async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: string; calls: string[]; done: () => void }> {
@@ -16,8 +19,10 @@ async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: st
         socket.on('data', (chunk: string) => {
             for (const line of chunk.split('\n').filter((entry) => entry !== '')) {
                 const request = JSON.parse(line) as { id: string; method: string };
-                calls.push(request.method);
-                socket.write(`${JSON.stringify({ id: request.id, result: reply(request.method) })}\n`);
+                if (request.method !== 'ping') {
+                    calls.push(request.method);
+                }
+                socket.write(`${JSON.stringify({ id: request.id, result: request.method === 'ping' ? PONG : reply(request.method) })}\n`);
             }
         });
     });
@@ -28,14 +33,17 @@ async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: st
 async function withHerdr<T>(path: string, body: () => Promise<T>): Promise<T> {
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = path;
+    resetHerdrClients();
     try {
         return await body();
     } finally {
+        resetHerdrClients();
         if (before === undefined) {
             delete process.env['HERDR_SOCKET_PATH'];
         } else {
             process.env['HERDR_SOCKET_PATH'] = before;
         }
+        resetHerdrClients();
     }
 }
 

@@ -3,7 +3,7 @@ language: typescript
 severity: error
 message: >-
   The operating system and the PATH are probed only at the edge: src/host/ and the per-OS adapters
-  (`*-posix.ts`, `*-windows.ts`, `*-xdg.ts`). Everything else asks the Host port, ConfigPaths or ProcessControl.
+  (`*-posix.ts`, `*-xdg.ts`). Everything else asks the Host port, ConfigPaths or ProcessControl.
 note: >-
   Bad: `process.platform`, `os.platform()`, `os.type()`, `import { platform } from 'node:os'`, `process.env.PATH`
   (also `process.env['PATH']`). `homedir()` and `tmpdir()` are not host probes: they stay allowed everywhere.
@@ -14,7 +14,6 @@ files:
 ignores:
   - "**/src/host/**"
   - "**/*-posix.ts"
-  - "**/*-windows.ts"
   - "**/*-xdg.ts"
 rule:
   any:

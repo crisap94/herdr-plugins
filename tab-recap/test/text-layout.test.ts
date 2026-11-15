@@ -28,6 +28,25 @@ test('width: a flag is one character of two cells; a symbol without emoji presen
     assert.equal(visibleLength('⚑▸●'), 3);
 });
 
+test('width: CJK text takes two cells per character', () => {
+    assert.equal(visibleLength('日本語'), 6);
+});
+
+test('width: a keycap sequence is two cells', () => {
+    assert.equal(visibleLength('1️⃣'), 2);
+});
+
+test('width: a tab and a zero-width space take no cells', () => {
+    assert.equal(visibleLength('a\tb'), 2);
+    assert.equal(visibleLength('a\u200Bb'), 2);
+});
+
+test('wrap: CJK text never leaves a line wider than 8 cells', () => {
+    for (const line of wrap('日本語日本語', 8)) {
+        assert.ok(visibleLength(line) <= 8, line);
+    }
+});
+
 test('wrap: emoji near the edge move to the next line, no line is wider than 8 cells', () => {
     for (const line of wrap('xxxxxxx 📝📝📝', 8)) {
         assert.ok(visibleLength(line) <= 8, line);

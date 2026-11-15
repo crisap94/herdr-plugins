@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import assert from 'node:assert/strict';
-import { ScreenTranscripts } from '#src/adapters/screen-transcripts.ts';
+import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { LivePromptSource } from '#src/recap/application/dispatch.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -132,7 +132,7 @@ function dispatchWith(prompts: LivePromptSource): { dispatch: Dispatch; written:
     const views = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as TabViews;
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
-        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as RecapJob, prompts, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
+        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: {} as Pick<Engine, 'turnEnded'>, prompts, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, ...silentClosures,
     });
     return { dispatch, written };

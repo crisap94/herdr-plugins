@@ -1,6 +1,7 @@
 import { SECTIONS } from '#src/i18n/sections.ts';
 import { MAX_WORDS } from '#src/recap/domain/shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 const NOTHING = new Set(['', '-', '—', '–', 'none', 'n/a', 'ninguno', 'ninguna', 'nada']);
 
@@ -10,10 +11,45 @@ export function tidy(raw: string, limit = MAX_WORDS): string {
     return NOTHING.has(clipped.toLowerCase()) ? '' : clipped;
 }
 
+const TOKENS = /"(?:[^"\\]|\\.)*"|[{}]/g;
+
 export function objectIn(text: string): unknown {
     const from = text.indexOf('{');
     const to = text.lastIndexOf('}');
-    return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
+    if (from < 0 || to <= from) {
+        return undefined;
+    }
+    let depth = 0;
+    for (const token of text.slice(from).matchAll(TOKENS)) {
+        depth += Number(token[0] === '{') - Number(token[0] === '}');
+        if (depth === 0) {
+            try {
+                return JSON.parse(text.slice(from, from + token.index + 1));
+            } catch {
+                break;
+            }
+        }
+    }
+    return JSON.parse(text.slice(from, to + 1));
+}
+
+export function answerTextOf(answer: Text): Text {
+    try {
+        JSON.parse(answer);
+        return answer;
+    } catch {
+        let value;
+        try {
+            value = objectIn(answer);
+        } catch {
+            return answer;
+        }
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+            return answer;
+        }
+        const text = parseText(JSON.stringify(value));
+        return text.kind === 'ok' ? text.value : answer;
+    }
 }
 
 export function renderRecap(sections: RecapSections, headings: 'en' | 'es'): string {

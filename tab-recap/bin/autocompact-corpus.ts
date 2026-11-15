@@ -1,12 +1,12 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
-import { ExperimentStore } from '#src/adapters/experiment-store.ts';
-import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment-files.ts';
-import { pointOf, shareAt } from '#src/adapters/experiment-point.ts';
-import type { Point } from '#src/adapters/experiment-point.ts';
-import { eventsOf } from '#src/adapters/transcript-events.ts';
+import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
+import { ExperimentStore } from '#src/adapters/experiment/store.ts';
+import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
+import { pointOf, shareAt } from '#src/adapters/experiment/point.ts';
+import type { Point } from '#src/adapters/experiment/point.ts';
+import { eventsOf } from '#src/adapters/experiment/events.ts';
 import { outcomesOf } from '#src/experiment/outcomes.ts';
 import type { Outcome } from '#src/experiment/outcomes.ts';
 import { stratify } from '#src/experiment/stratify.ts';

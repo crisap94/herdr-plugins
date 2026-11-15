@@ -10,7 +10,7 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
       `tab-recap/CONTEXT.md` before any code; every noun a lane needs later goes through the lead. Verify: the vocabulary step of
       `ci/lint.sh` passes.
 - [x] 1.2 (!118) Add `typescript` (pinned to an exact 6.x release, not 7) and `dependency-cruiser` (exact version) to `devDependencies`;
-      `dependencies` stays absent. Verify: `package.json` has no `dependencies` field, `npm ci` passes, and `node -e
+      `dependencies` stays absent. Verify: `package.json` has no `dependencies` field, `bun install --frozen-lockfile` passes, and `bun -e
       "require('typescript').version"` prints a 6.x version.
 - [x] 1.3 (!118) The shared vocabulary every lane needs before it starts: the parser signature, the common text, count and duration value
       types and the ids, each with its `parse<Name>` returning the one `Result`, in `src/recap/domain/`. Verify: each has a parser test
@@ -61,7 +61,7 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
       entry, and one adding a new entry, each fail the merge-base guard.
 - [x] 3.6 (!118) `ci/lanes.json` and its test (design D8), and a per-lane CI check that a merge request edits only its lane's files.
       Verify: a probe listing a file twice fails; a probe missing a file fails; a lane merge request touching another lane's file fails.
-- [ ] 3.7 Record in design.md's Context table the exact counts from the check, per category, and the run times of the check and the
+- [x] 3.7 Record in design.md's Context table the exact counts from the check, per category, and the run times of the check and the
       cruise. If both together add 60 seconds or more to `ci/lint.sh`, move the check to its own CI job. Verify: the row is replaced
       and, if needed, the CI job exists.
 - [x] 3.8 (!118) `CONTRIBUTING.md` gains a section on domain types: what the check refuses, where parsers live, how to read a
@@ -73,18 +73,27 @@ landed. Every group ends with the plugin gates passing (`bash ci/lint.sh` and `b
 Each lane converts its signatures and the properties of its declared types to domain types, turns its throwing constructors into
 parsers, removes its type assertions, moves any old export still used by another lane into its own `legacy.ts` (design D7), and
 lowers its baseline file. It edits only its `ci/lanes.json` files, its `legacy.ts`, its baseline and its exception file.
+The 89 files of key `engine` in `ci/engine-files.json` are lane `ENG` in `ci/lanes.json`. No B lane edits them. They get their
+domain types inside `packages/session-ledger` after they move there (roadmap track ENG). A lane that needs another signature from
+an engine file wraps it in its own `legacy.ts`. The 6 files of lane `STO` (`src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`
+and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the `src/recap/render/` files listed in
+`ci/lanes-generate.ts`) are carved out the same way: they get their domain types in `packages/session-ledger-sqlite` and
+`packages/recap-view` (roadmap tracks STO and VIEW).
 
-- [ ] 4.1 B1 `src/protocol/`, `src/ports/`. Verify: B1's baseline holds only `legacy` counts.
-- [ ] 4.2 B2 `src/recap/domain/` (gates included), including the throwing constructors of `ids.ts`, whose wrappers move to
+- [ ] 4.1 B1 `src/protocol/`, `src/ports/`, except the files of lane `ENG`. Verify: B1's baseline holds only `legacy` counts.
+- [ ] 4.2 B2 `src/recap/domain/` (gates included), except the files of lane `ENG`, including the throwing constructors of `ids.ts`, whose wrappers move to
       `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts.
-- [ ] 4.3 B3 `src/recap/application/`. Verify: B3's baseline holds only `legacy` counts.
-- [ ] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`. Verify: B4's baseline holds only `legacy` counts.
-- [ ] 4.5 B5 `src/adapters/db/`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
+- [ ] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts.
+- [ ] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`, except the files of lanes `ENG` and `VIEW`. Verify: B4's baseline holds only `legacy` counts.
+- [ ] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
       counts.
 - [ ] 4.6 B6 `src/adapters/` except `db/`. Verify: B6's baseline holds only `legacy` counts.
 - [ ] 4.7 B7 `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/`. Verify: B7's baseline holds only
       `legacy` counts.
 - [ ] 4.8 B8 `src/experiment/`. Verify: B8's baseline holds only `legacy` counts.
+- [ ] 4.9 ENG: the engine files leave the plugin (roadmap step E2b). Verify: `ci/domain-types-baseline/ENG.json` is `{}` or absent.
+- [ ] 4.10 STO and VIEW: their files leave the plugin (roadmap steps P2, P1b-1 and P1b-2). Verify:
+      `ci/domain-types-baseline/STO.json` and `ci/domain-types-baseline/VIEW.json` are `{}` or absent.
 
 ## 5. Phase C: the hard gate (lead)
 
@@ -92,7 +101,8 @@ lowers its baseline file. It edits only its `ci/lanes.json` files, its `legacy.t
       `src/`, no exported function throws `NotAnIdentifierError`, and the test suite passes.
 - [ ] 5.2 Move `recap-one-brand-cast` from `rules/pending/` into `rules/` and delete `ci/domain-types-baseline/`; the check and the
       rule now fail on any finding. Verify: a probe adding one primitive parameter, and one adding `as PaneId`, each fail
-      `ci/lint.sh`.
+      `ci/lint.sh`. If `ENG.json`, `STO.json` or `VIEW.json` still has rows, those files stay; the folder is deleted by the step
+      that empties the last of them.
 - [ ] 5.3 Update the module map and the Context table in design.md to the final state. Verify: every count is zero except the
       listed exceptions.
 

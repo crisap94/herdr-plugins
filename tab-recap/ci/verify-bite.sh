@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# A gate that cannot fail is not a gate: seed one rule violation and three plain type errors (an
-# assignment, a syntax the tsconfig refuses, an optional property the tsconfig keeps exact) in scratch
-# files, run the SAME command as the main gate (oxlint --type-aware over the tree: the one type check)
-# in its one-line-per-finding format, and require it to reject each seed by name and by its code (a type
-# error seeded in each root of the tsconfig include is rejected too: src, test, bin and ci). The
-# type seeds carry no rule violation, so only the type check can reject them. The seeds carry this
-# run's process id and are removed on every exit path.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
+tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
+[ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 dir="src/recap/domain"
 rule_seed="$dir/zz-bite-$$-rule.ts"
 type_seed="$dir/zz-bite-$$-type.ts"
@@ -40,7 +35,7 @@ for seed in $root_seeds; do
 export const seededCount: number = 'not a number';
 TS
 done
-output="$(NO_COLOR=1 node_modules/.bin/oxlint --type-aware --format unix . 2>&1)"
+output="$(NO_COLOR=1 bun --bun node_modules/.bin/oxlint --type-aware --format unix . 2>&1)"
 status=$?
 rejected=1
 [ "$status" -ne 0 ] \

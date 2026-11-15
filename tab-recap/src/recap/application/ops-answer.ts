@@ -3,6 +3,7 @@ import { WRITER_CLOSES, isSection } from '#src/recap/domain/fact.ts';
 import { ANCHOR_CHARS } from '#src/recap/domain/gates/g11-anchor.ts';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { localTime } from './local-time.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 
@@ -78,7 +79,12 @@ function updateOf(fields: Fields): Operation | string {
 function closeOf(fields: Fields): Operation | string {
     const id = idOf(fields);
     const reason: ClosedWhy | undefined = WRITER_CLOSES.find((each) => each === fields['why']);
-    return id === '' ? 'a close needs an id' : { op: 'close', id, why: reason ?? null };
+    const anchor = anchorOf(fields['anchor']);
+    const kept = anchor === null ? null : parseText(anchor);
+    if (id === '') {
+        return 'a close needs an id';
+    }
+    return kept?.kind === 'ok' ? { op: 'close', id, why: reason ?? null, anchor: kept.value } : { op: 'close', id, why: reason ?? null };
 }
 
 function operationOf(fields: Fields, resolving: Resolving): Operation | string {

@@ -1,0 +1,38 @@
+2026-11-08T16:15:00.011Z start agent a1 on tb1: {"address":"t7","agent":"bash","cwd":"~","name":"a1","state":"live","turn":0} 
+2026-11-08T16:15:00.017Z start agent a2 on tb2: {"address":"t8","agent":"bash","cwd":"~","name":"a2","state":"live","turn":0} 
+2026-11-08T16:15:00.820Z daemon pid 2066369 mode=socket
+2026-11-08T16:15:01.125Z index has 2 rows after 304 ms: [["tb2","idle"],["tb1","idle"]]
+2026-11-08T16:15:01.125Z rss at start 125208 kB
+2026-11-08T16:16:31.127Z idle 90s: hc spawns through PATH shim since start of idle = 0
+2026-11-08T16:16:31.127Z hc spawns from daemon start to end of idle = 0
+2026-11-08T16:16:31.168Z status a1->working: index shows it after 41 ms
+2026-11-08T16:16:31.209Z status a1->blocked: index shows it after 41 ms
+2026-11-08T16:16:31.270Z status a1->done: index shows it after 60 ms
+2026-11-08T16:16:31.311Z status a1->idle: index shows it after 40 ms
+2026-11-08T16:16:31.372Z status a2->blocked: index shows it after 61 ms
+2026-11-08T16:16:31.412Z status a2->working: index shows it after 40 ms
+2026-11-08T16:16:31.412Z rows now: [["tb2","working"],["tb1","idle"]]
+2026-11-08T16:16:31.437Z after kill a2: row={"tab":"tb2","name":"tb2","status":"idle","at":1794154591418,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]} (20 ms)
+2026-11-08T16:16:34.454Z after rm a2: tb2 row STILL PRESENT {"tab":"tb2","name":"tb2","status":"idle","at":1794154591418,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]}; rows [["tb1","idle"],["tb2","idle"]]
+2026-11-08T16:16:34.480Z sockets before restart: 2
+2026-11-08T16:16:34.510Z hc server restart returned after 31 ms: {"core":{"id":"be18423958235d3e219f2d480050986b","name":"HOST"},"finished":3,"holder":{"current":true,"instance":"83a476427c9c0951694933e9f6ff4
+2026-11-08T16:16:34.515Z start agent a3 on tb3: {"address":"t9","agent":"bash","cwd":"~","name":"a3","state":"live","turn":0} 
+2026-11-08T16:17:34.527Z after restart: new agent tb3 row working after TIMEOUT
+2026-11-08T16:17:34.544Z daemon alive: false; sockets now: 0
+2026-11-08T16:17:39.559Z status a3->blocked: index shows it after TIMEOUT (row=undefined)
+2026-11-08T16:17:39.559Z rows after restart: [["tb1","idle"],["tb2","idle"]]; tb1 row {"tab":"tb1","name":"tb1","status":"idle","at":1794154593725,"recapAt":1794154593720,"writing":"resting","headline":"Wiring the form to the API","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":1,"lanes":[{"terminal":"t7","agent":"fakeagent","status":"idle","name":"t7","contextPercent":null,"hint":"no","stage":null}]}
+node:fs:483
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/proc/2066369/status'
+    at readFileSync (node:fs:483:20)
+    at rss (file://~/Projects/homelab/herdr-plugins-gui-port/docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/scripts/t1-verify/driver.mjs:20:51)
+    at file://~/Projects/homelab/herdr-plugins-gui-port/docs/research/studies/2026-11-08-desktop-transport-cli-vs-socket/scripts/t1-verify/driver.mjs:106:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/proc/2066369/status'
+}
+
+Node.js v24.22.0

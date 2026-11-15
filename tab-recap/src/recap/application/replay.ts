@@ -15,8 +15,8 @@ import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { RecapJob } from './recap-job.ts';
-import type { RecapJobDeps } from './recap-job.ts';
+import { createEngine } from './engine.ts';
+import type { Engine, EngineModels, EngineSettings } from './engine.ts';
 
 export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
@@ -73,16 +73,22 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
     return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight };
 }
 
-function pipelineOf(deps: ReplayDeps): Pick<RecapJobDeps, 'pipeline' | 'enumerator' | 'writerView'> {
-    const chosen = deps.pipeline;
-    return { ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }), writerView: (): WriterView => deps.writerView };
+function modelsOf(deps: ReplayDeps): EngineModels {
+    return { summarizer: deps.summarizer, ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }) };
 }
 
-function jobOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): RecapJob {
-    return new RecapJob({
-        transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, (kind): string => capabilityWording('history-unavailable', kind)), records: deps.records, ledger: deps.ledger, repos: deps.repos, summarizer: deps.summarizer,
-        language: (): string => deps.language, log: deps.log, clock: { now: (): Instant => instant(at.now) },
-        ...pipelineOf(deps),
+function settingsOf(deps: ReplayDeps): EngineSettings {
+    const chosen = deps.pipeline;
+    return { language: (): string => deps.language, ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), writerView: (): WriterView => deps.writerView };
+}
+
+function engineOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): Engine {
+    return createEngine({
+        source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
+        store: { records: deps.records, ledger: deps.ledger },
+        models: modelsOf(deps),
+        environment: { clock: { now: (): Instant => instant(at.now) }, repos: deps.repos, log: deps.log },
+        settings: settingsOf(deps),
     });
 }
 
@@ -92,10 +98,10 @@ async function entriesOf(reader: Transcripts, file: string, size: number): Promi
     return result.entries;
 }
 
-async function runWindows(job: RecapJob, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
+async function runWindows(engine: Engine, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
     for (; at.turn < windows.length; at.turn += 1) {
         at.now = endOf(windows[at.turn], at.now);
-        await job.refreshNow(tabId(label), [lane]);
+        await engine.refresh(tabId(label), [lane]);
     }
 }
 
@@ -104,9 +110,9 @@ export async function replay(deps: ReplayDeps, file: string, label: string, size
     const turns = windowsOf(entries);
     const windows = windowsOf(entries, mergeTurns);
     const at: Position = { turn: 0, now: windows.at(0)?.at(0)?.at ?? 1 };
-    const job = jobOf(deps, file, windows, at);
+    const engine = engineOf(deps, file, windows, at);
     const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
-    await runWindows(job, lane, windows, at, label);
+    await runWindows(engine, lane, windows, at, label);
     const tasks = deps.records.readRecap(label)?.tasks ?? [];
     return { windows: windows.length, turns: turns.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })), costUsd: deps.records.readRecap(label)?.costUsd ?? 0 };
 }

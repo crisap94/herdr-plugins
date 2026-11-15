@@ -1,0 +1,17 @@
+2026-11-08T16:43:43.685Z daemon 2377057 up, state in ~/.cache/hcs/t1-state2
+2026-11-08T16:44:43.688Z perf window=60s status-tracked=0 status-full=0 locate=2 git-dir-event=0 status-coalesced=0 failed=0 cpu=74ms cpu-share=0% rss=123MiB
+2026-11-08T16:45:25.890Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:27.981Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:28.981Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:30.536Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:30.982Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:37.237Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:38.238Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:40.239Z blind at snapshot: unreachable: the core is down; reconnecting
+2026-11-08T16:45:43.686Z perf window=60s status-tracked=0 status-full=0 locate=6 git-dir-event=0 status-coalesced=0 failed=0 cpu=153ms cpu-share=0% rss=127MiB
+2026-11-08T16:46:43.688Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=55ms cpu-share=0% rss=127MiB
+2026-11-08T16:47:43.688Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=59ms cpu-share=0% rss=115MiB
+2026-11-08T16:48:43.689Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=48ms cpu-share=0% rss=116MiB
+2026-11-08T16:49:43.691Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=53ms cpu-share=0% rss=116MiB
+2026-11-08T16:50:38.904Z stopping: closing every column
+2026-11-08T16:50:38.905Z stopping: closed 0 columns

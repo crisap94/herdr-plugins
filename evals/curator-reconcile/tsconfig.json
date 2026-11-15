@@ -1,0 +1,4 @@
+{
+  "extends": "../lib/tsconfig.json",
+  "include": ["prompt.ts", "scoring.ts", "judge-criteria.ts", "run.ts", "build-dataset.ts", "check-dataset.ts", "dataset-source/*.ts"]
+}

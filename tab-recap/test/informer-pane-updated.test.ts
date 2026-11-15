@@ -5,7 +5,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 class Herdr implements FleetSource {

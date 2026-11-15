@@ -1,4 +1,4 @@
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import { needsIdle } from '#src/recap/domain/compaction-plan.ts';
 

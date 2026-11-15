@@ -1,5 +1,5 @@
 // The README's screenshots, step one: the plugin's own views, drawn from invented data into HTML.
-// `node docs/screens/render.ts [outDir]` writes one page per screen; `shoot.mjs` turns them into PNGs.
+// `bun docs/screens/render.ts [outDir]` writes one page per screen; `shoot.mjs` turns them into PNGs.
 // Gated like the code: it only calls the pure views (`present`, `presentBar`, `setupView`).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -169,7 +169,7 @@ function columnView(fixture: Fixture): ColumnView {
 }
 
 function setupState(locale: 'en' | 'es'): Setup {
-    const models = { claude: 'haiku', codex: '', opencode: '', hermes: '', custom: '' };
+    const models = { claude: 'haiku', codex: '', opencode: '', custom: '' };
     const draft = draftFrom({ backend: 'claude', models }, { locale, recapLanguage: 'ui' });
     return withAvailable(initial(draft, {}), ['claude', 'codex', 'opencode']);
 }

@@ -5,6 +5,8 @@ export interface Merge {
 
 export const STORY_WORDS = 120;
 
+export const STORY_TOO_LONG = 'the paragraph is too long';
+
 export interface Curation {
     readonly merges: readonly Merge[];
     readonly story: string | null;
@@ -23,7 +25,7 @@ export function storyOf(raw: unknown): string | null {
     if (words.length === 0) {
         return null;
     }
-    return words.length <= STORY_WORDS ? words.join(' ') : `${words.slice(0, STORY_WORDS).join(' ')}…`;
+    return words.length <= STORY_WORDS ? words.join(' ') : null;
 }
 
 interface Merged {
@@ -74,5 +76,10 @@ export function curationOf(answer: string, open: ReadonlySet<string>): Curation 
             refused.push(why);
         }
     }
-    return { merges, story: storyOf(parsed['story']), refused };
+    const said = parsed['story'];
+    const count = typeof said === 'string' ? said.trim().split(/\s+/u).length : 0;
+    if (count > STORY_WORDS) {
+        refused.push(`${STORY_TOO_LONG}: ${count} words, at most ${STORY_WORDS}`);
+    }
+    return { merges, story: storyOf(said), refused };
 }

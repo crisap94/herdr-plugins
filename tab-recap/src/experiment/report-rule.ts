@@ -1,4 +1,4 @@
-import type { ArmName } from '#src/adapters/experiment-arms.ts';
+import type { ArmName } from '#src/adapters/experiment/arms.ts';
 
 export const WITHIN_POINTS = 0.03;
 export const MAX_DRIFT = 0.15;

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "desktop-api.v1.schema.json",
+  "title": "tab-recap desktop API v1: every response body",
+  "description": "One definition per response. The tab and index definitions check only the envelope; the full tab document is gui-tab.v2.schema.json.",
+  "$defs": {
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "port", "token", "pid", "startedAt"],
+      "properties": {
+        "version": { "const": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "token": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "pid": { "type": "integer", "minimum": 1 },
+        "startedAt": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "version", "pid", "startedAt", "seq"],
+      "properties": {
+        "ok": { "const": true },
+        "version": { "const": 1 },
+        "pid": { "type": "integer", "minimum": 1 },
+        "startedAt": { "type": "integer", "minimum": 0 },
+        "seq": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "index": {
+      "type": "object",
+      "required": ["version", "tabs"],
+      "properties": {
+        "version": { "const": 1 },
+        "tabs": { "type": "array", "items": { "type": "object", "required": ["tab"], "properties": { "tab": { "type": "string", "minLength": 1 } } } }
+      }
+    },
+    "tab": {
+      "type": "object",
+      "required": ["version", "tab"],
+      "properties": {
+        "version": { "const": 2 },
+        "tab": { "type": "string", "minLength": 1 }
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq", "epoch", "reset", "events"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 0 },
+        "epoch": { "type": "integer", "minimum": 0 },
+        "reset": { "type": "boolean" },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["seq", "topic", "tab", "at"],
+            "properties": {
+              "seq": { "type": "integer", "minimum": 1 },
+              "topic": { "enum": ["index", "tab", "notice"] },
+              "tab": { "type": ["string", "null"] },
+              "at": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "queued": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["queued"],
+      "properties": { "queued": { "const": true } }
+    },
+    "answered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["answered", "id"],
+      "properties": {
+        "answered": { "const": true },
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "compactMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "model", "text", "limit", "noteLimit"],
+      "properties": {
+        "kind": { "const": "guidance" },
+        "model": { "const": false },
+        "text": { "type": "string" },
+        "limit": { "const": 3000 },
+        "noteLimit": { "const": 280 }
+      }
+    },
+    "handoffMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "text"],
+      "properties": {
+        "kind": { "const": "handoff" },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error"],
+      "properties": {
+        "error": { "enum": ["unauthorized", "bad-host", "not-found", "method-not-allowed", "payload-too-large", "unknown-tab", "too-many-leases", "bad-request", "internal", "unknown-need", "not-a-need", "not-open", "note-too-long", "unknown-pane", "handoff-refused", "unavailable"] },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

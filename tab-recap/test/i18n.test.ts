@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { instructions, message } from '#src/adapters/recap-prompt.ts';
+import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { languageName, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { localeOf } from '#src/daemon/config.ts';
@@ -25,6 +25,7 @@ test('sections: seven, always in this order, with both headings; a heading is re
 test('instructions: the operations contract — add, update, close, the sections and what the column shows; the language only changes the values', () => {
     const en = instructions({ ...base, language: 'en' });
     assert.match(en, /Answer with ONLY one JSON object/);
+    assert.match(en, /Write every text and why in English\. Keep the JSON keys and the words add, update, close in English\./);
     assert.match(en, /\{"op": "add", "section": "done", "text": "\.\.\."/);
     assert.match(en, /\{"op": "update", "id": "f12"/);
     assert.match(en, /\{"op": "close", "id": "f3", "why": "done"\}/);
@@ -51,6 +52,7 @@ test('instructions: a ledger in another language is updated to the new one', () 
     const switching = instructions({ ...base, language: 'es', previousLanguage: 'en' });
     assert.match(switching, /The facts in <ledger> are in English: update every open fact that is still relevant, rewritten in Spanish/);
     assert.doesNotMatch(instructions({ ...base, language: 'en' }), /rewritten in/);
+    assert.match(instructions({ ...base, language: 'en', retry: { tasks: false, refused: [] } as never }), /Write every text and why in English\./);
 });
 
 test('a switch with nothing new still gives the model something to do; a retry says what was wrong', () => {

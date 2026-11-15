@@ -1,13 +1,14 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { SystemClock } from '#src/adapters/system-clock.ts';
-import { modalTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
+import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { SystemClock } from '#src/adapters/os/system-clock.ts';
+import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { requestNoteOf } from '#src/recap/application/compact-start.ts';
@@ -129,7 +130,7 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
 function deliverDeps(): DeliverDeps {
     const pidfile = new Pidfile(stateDir());
     return {
-        pacing: { now: Date.now, sleep: (ms) => new Promise((resolve) => { setTimeout(resolve, ms); }) },
+        pacing: { now: Date.now, sleep },
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),
         cliVersion: codeVersion(),
         openStore: () => {

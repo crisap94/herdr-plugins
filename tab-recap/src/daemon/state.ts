@@ -2,7 +2,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { importFiles } from '#src/adapters/db/import/import-files.ts';
 import { LegacyFiles } from '#src/adapters/db/import/legacy-files.ts';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import { loadConfig, messagesOf } from './config.ts';
 

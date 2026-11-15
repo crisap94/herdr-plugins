@@ -1,0 +1,39 @@
+{
+ "list": {
+  "cli_ms": {
+   "n": 50,
+   "median": 6.5,
+   "p95": 9.99,
+   "min": 5.23,
+   "max": 37.36
+  },
+  "socket_ms": {
+   "n": 50,
+   "median": 3.82,
+   "p95": 5.65,
+   "min": 3.03,
+   "max": 26.58
+  },
+  "cli_bytes": 1433,
+  "socket_bytes": 8837
+ },
+ "get": {
+  "cli_ms": {
+   "n": 50,
+   "median": 1.76,
+   "p95": 2.2,
+   "min": 1.43,
+   "max": 4.76
+  },
+  "socket_ms": {
+   "n": 50,
+   "median": 0.03,
+   "p95": 0.05,
+   "min": 0.02,
+   "max": 0.12
+  },
+  "cli_bytes": 691,
+  "socket_bytes": 725
+ },
+ "connect_ms": 0.21
+}

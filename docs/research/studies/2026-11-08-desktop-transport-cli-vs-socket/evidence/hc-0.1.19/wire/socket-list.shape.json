@@ -1,0 +1,66 @@
+{
+ "hidden_finished": "int",
+ "machines": [
+  {
+   "host": "str",
+   "id": "str",
+   "name": "str",
+   "session": "NoneType",
+   "state": "str",
+   "target": "str",
+   "temporary": "boolean",
+   "version": "str",
+   "via": "boolean"
+  }
+ ],
+ "terminals": [
+  {
+   "address": "str",
+   "argv": [
+    "str"
+   ],
+   "cols": "int",
+   "created_ms": "int",
+   "cwd": "str",
+   "die_with_parent": "boolean",
+   "exit_code": "NoneType",
+   "finished_ms": "NoneType",
+   "foreground": {
+    "argv": [
+     "str"
+    ],
+    "cwd": "str",
+    "name": "str",
+    "pid": "int"
+   },
+   "identity": "str",
+   "keep": "boolean",
+   "labels": {
+    "herdr.seen": "str",
+    "herdr.space": "str",
+    "herdr.tab": "str",
+    "where": "str"
+   },
+   "name": "NoneType",
+   "notify": "boolean",
+   "parent": "NoneType",
+   "pid": "int",
+   "reason": "NoneType",
+   "reported": "boolean",
+   "rm": "boolean",
+   "rows": "int",
+   "screen": "str",
+   "signal": "NoneType",
+   "state": "str",
+   "status": {
+    "app": "str",
+    "msg": "str",
+    "state": "str"
+   },
+   "status_ms": "int",
+   "template": "NoneType",
+   "title": "str",
+   "turn": "int"
+  }
+ ]
+}

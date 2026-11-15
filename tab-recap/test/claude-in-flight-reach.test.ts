@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/claude-transcripts.ts';
-import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/claude-in-flight.ts';
+import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/transcripts/claude/transcripts.ts';
+import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/transcripts/claude/in-flight.ts';
 
 const TAIL = 512 * 1024;
 const MB = 1024 * 1024;

@@ -1,5 +1,5 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { RecapCause } from '#src/recap/domain/intent.ts';
+import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -10,7 +10,7 @@ import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import { DEFAULT_PIPELINE, type Pipeline } from '#src/recap/domain/pipeline.ts';
+import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF } from '#src/recap/domain/debounce.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
@@ -34,6 +34,7 @@ export interface RecapJobDeps {
     language(): string;
     keepInput?(): boolean;
     pipeline?(): Pipeline;
+    closeEvidence?(): CloseEvidence;
     writerView(): WriterView;
     debounce?(): Debounce;
     enumerator?(): Enumerators | null;
@@ -210,10 +211,8 @@ export class RecapJob {
         const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
         const readings = await Promise.all(lanes.map((lane) => this.read(lane, prior, budget)));
         const want = this.deps.language();
-        const switched = hasRecap(prior) && prior.language !== want;
-        if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) {
-            return;
-        }
+        const switched = hasRecap(prior) && (prior.language !== want || (cause !== 'focused' && this.deps.ledger.keysOf(prior.tab).some((key) => this.deps.ledger.openOf({ tab: prior.tab, key }).some((fact) => fact.language !== want))));
+        if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) return;
         await this.summarize(prior, readings, { want, switched, cause }, writerStarted);
     }
 
@@ -224,16 +223,19 @@ export class RecapJob {
 
     private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
         const { deps } = this;
-        return extractPiped(summarizer, request, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, log: (line) => { deps.log(line); } });
+        const closeEvidence = deps.closeEvidence?.() ?? 'off';
+        return extractPiped(summarizer, { ...request, closeEvidence }, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, closeEvidence, log: (line) => { deps.log(line); } });
     }
 
     private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
         const now = this.deps.clock.now();
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
         const writerView = this.deps.writerView();
-        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts: this.factsOf(prior.tab, tasks, now), writerView });
+        const facts = this.factsOf(prior.tab, tasks, now);
+        const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== language.want);
+        const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts, writerView });
         const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
-        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: language.was } };
+        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: stale?.language ?? language.was } };
     }
 
     private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {

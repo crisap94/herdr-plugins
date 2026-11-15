@@ -1,0 +1,36 @@
+{
+    "name": "moment-decider",
+    "dataset": "dataset.jsonl",
+    "items": 24,
+    "repetitions": 3,
+    "input": {
+        "shape": "{ recent: Entry[], history: HistoryFact[] }",
+        "builder": "tab-recap/src/recap/application/autocompact-state.ts#autocompactState",
+        "questions": "tab-recap/src/recap/application/autocompact-questions.ts#QUESTIONS",
+        "system": "tab-recap/src/adapters/job/decider.ts#deciderInstructions(QUESTIONS)",
+        "user": "JSON.stringify(autocompactState(input.recent, input.history))",
+        "parser": "tab-recap/src/adapters/job/decider.ts#probabilitiesOf(text, Object.keys(QUESTIONS))",
+        "gate": "tab-recap/src/recap/domain/autocompact-verdict.ts#verdictOf(answers, THRESHOLDS)"
+    },
+    "questions": ["closes_request", "announces_continuation", "asks_detailed_choice", "needs_verbatim", "changes_subject", "stuck"],
+    "shipped": { "name": "codex-sol-low", "backend": "codex", "model": "gpt-6.1-sol", "effort": "low", "shipped": true },
+    "configs": [
+        { "name": "codex-sol-low", "backend": "codex", "model": "gpt-6.1-sol", "effort": "low", "shipped": true },
+        { "name": "claude-haiku-low", "backend": "claude", "model": "claude-haiku-5-5", "effort": "low" },
+        { "name": "claude-haiku-medium", "backend": "claude", "model": "claude-haiku-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
+        { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
+        { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium" },
+        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
+    ],
+    "dropOrder": ["codex-luna-medium", "claude-sonnet-high"],
+    "codeCriteria": ["C1", "C2", "C2M", "C3", "C4", "C5", "C6", "Q_closes_request", "Q_announces_continuation", "Q_asks_detailed_choice", "Q_needs_verbatim", "Q_changes_subject", "Q_stuck"],
+    "reportedOnly": ["verdict_stable", "undecided_rate", "brier"],
+    "judgeCriteria": [],
+    "confidentWrong": { "trueBelow": 0.1, "falseAbove": 0.9 },
+    "plants": { "mid-work": 5, "finished-idle": 5, "waiting-on-operator": 4, "verbatim": 5, "just-compacted": 2, "long-idle-unfinished": 3 },
+    "secondaryPlants": ["command-running", "changes-subject", "stuck", "prompt-outside-recent-turns", "long-reply-clipped", "reply-opens-with-done", "open-work-over-twelve", "no-goal", "detailed-choice", "closes-but-unsafe", "options-from-operator", "optional-offer", "exact-text-recoverable", "stopped-partial"],
+    "audit": "The expected answers were written by a model and audited by nobody yet."
+}

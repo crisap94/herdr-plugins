@@ -1,0 +1,392 @@
+#!/usr/bin/env bash
+set -uo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+scratch="$(mktemp -d)"
+trap 'rm -rf "$scratch"' EXIT
+export LC_ALL=C
+wrong=0
+expect() {
+    local want="$1" what="$2"; shift 2
+    "$@" >/dev/null 2>&1 && got=pass || got=fail
+    [ "$got" = "$want" ] || { echo "bite: $what — wanted $want, got $got" >&2; wrong=$((wrong + 1)); }
+}
+
+plugin="$scratch/demo"; mkdir -p "$plugin"
+printf 'id = "demo"\nversion = "1.1.0"\n' > "$plugin/herdr-plugin.toml"
+printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
+cat > "$scratch/CHANGELOG.md" <<'MD'
+# Changelog
+
+## demo
+
+### [Unreleased]
+
+#### Added
+
+- not released yet
+
+### [1.1.0] — 2026-10-05
+
+#### Added
+
+- the new thing
+
+### [1.0.0] — 2026-10-04
+
+First release.
+
+### [0.9.0] — 2026-10-01
+
+[Unreleased]: https://example.invalid/compare/demo-v1.1.0...HEAD
+[1.1.0]: https://example.invalid/releases/demo-v1.1.0
+
+## other
+
+### [1.1.0] — 2026-10-05
+
+- belongs to the other plugin
+MD
+notes() { CHANGELOG="$scratch/CHANGELOG.md" bash "$HERE/release-notes.sh" "$@"; }
+version() { PLUGIN_DIR="$plugin" CHANGELOG="$scratch/CHANGELOG.md" bash "$HERE/check-version.sh" "$@"; }
+
+expect pass "notes of 1.1.0" notes demo 1.1.0
+out="$(notes demo 1.1.0 2>/dev/null)"
+[ "$out" = "$(printf '#### Added\n\n- the new thing')" ] || { echo "bite: the 1.1.0 notes are not exactly its section: $out" >&2; wrong=$((wrong + 1)); }
+expect fail "notes of a version that is not there" notes demo 2.0.0
+expect fail "notes of an empty section" notes demo 0.9.0
+expect fail "notes of Unreleased" notes demo Unreleased
+expect fail "notes of another plugin's version" notes nothing 1.1.0
+expect fail "notes without a version" notes demo
+
+expect pass "consistent versions" version
+printf '{"name":"demo","version":"1.2.0"}\n' > "$plugin/package.json"
+expect fail "a package.json on another version" version
+printf '{"name":"demo","version":"1.1.0"}\n' > "$plugin/package.json"
+printf 'id = "demo"\nversion = "1.2.0"\n' > "$plugin/herdr-plugin.toml"
+expect fail "a manifest that disagrees with the rest" version
+
+mr() { CI_MERGE_REQUEST_LABELS="$1" CI_MERGE_REQUEST_DESCRIPTION="$2" bash "$HERE/check-mr.sh"; }
+good=$'## What changes for the user\n\nA key hides the column.\n\n## Why\n\n<!-- why -->\nPhones are small.\n\n## Checklist\n\n- [ ] gates'
+expect pass "one kind label and both sections" mr "bug,changelog::added" "$good"
+expect pass "a kind plus breaking" mr "changelog::fixed,changelog::breaking" "$good"
+expect pass "a comment that spans lines is ignored, the text after it counts" mr "changelog::internal" $'## What changes for the user\n<!-- a\nmulti-line hint -->\nNothing.\n## Why\nCleanup.'
+expect fail "no changelog label" mr "bug" "$good"
+expect fail "no label at all" mr "" "$good"
+expect fail "two kinds" mr "changelog::added,changelog::fixed" "$good"
+expect fail "only breaking" mr "changelog::breaking" "$good"
+expect fail "an unknown changelog:: label" mr "changelog::added,changelog::nope" "$good"
+expect fail "a section left as the template's comment" mr "changelog::added" $'## What changes for the user\n<!-- say it -->\n\n## Why\nBecause.'
+expect fail "a missing Why section" mr "changelog::added" $'## What changes for the user\nA key.'
+expect fail "an empty description" mr "changelog::added" ""
+
+repo="$scratch/repo"; mkdir -p "$repo" && cp -R "$plugin" "$repo/demo" && cp "$scratch/CHANGELOG.md" "$repo/CHANGELOG.md" && cd "$repo" || exit 3
+mkdir -p demo/bin && echo 'export {};' > demo/bin/run.ts
+printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["bun", "bin/run.ts", "go"]\n' > demo/herdr-plugin.toml
+git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
+git add -A && git commit --quiet -m release
+export MAIN_REF=main PLUGIN_DIR="$repo/demo"
+release() { bash "$HERE/check-release.sh" "$@"; }
+retag() { git tag -d "$1" >/dev/null 2>&1; git tag -a "$1" -m "$1"; }
+retag demo-v1.1.0
+expect pass "a good release" release demo-v1.1.0
+for bad in demo-1.1.0 demo-v01.1.0 demo-v1.1.0-rc1 demo-v1.1 other-v1.1.0; do
+    retag "$bad"; expect fail "the name $bad" release "$bad"; git tag -d "$bad" >/dev/null
+done
+git tag -d demo-v1.1.0 >/dev/null; git tag demo-v1.1.0
+expect fail "a lightweight tag" release demo-v1.1.0
+retag demo-v1.1.0
+retag demo-v1.1.1
+expect fail "a tag whose version the manifest does not carry" release demo-v1.1.1
+git tag -d demo-v1.1.1 >/dev/null
+retag demo-v1.2.0
+expect fail "an older version than the newest tag" release demo-v1.1.0
+git tag -d demo-v1.2.0 >/dev/null
+retag demo-v1.1.0
+git switch --quiet -c side && echo x > side.txt && git add -A && git commit --quiet -m side && retag demo-v1.1.0
+expect fail "a tag off main" release demo-v1.1.0
+git switch --quiet main && retag demo-v1.1.0
+without() { sed -e "$1" "$scratch/CHANGELOG.md" > "$scratch/changelog.variant"; CHANGELOG="$scratch/changelog.variant" release demo-v1.1.0; }
+expect fail "no section for the version" without 's/^### \[1.1.0\].*/### [1.1.1] — 2026-10-05/'
+expect fail "an undated section" without 's/^### \[1.1.0\] — .*/### [1.1.0]/'
+expect fail "no link reference" without '/^\[1.1.0\]: /d'
+expect fail "an empty section" without '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}'
+printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\ncommand = ["bun", "bin/gone.ts", "go"]\n' > demo/herdr-plugin.toml
+expect fail "a manifest command whose file does not exist" release demo-v1.1.0
+printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n\n[[actions]]\nid = "go"\n' > demo/herdr-plugin.toml
+expect fail "a manifest table without a command" release demo-v1.1.0
+git checkout --quiet -- demo/herdr-plugin.toml
+printf '#!/bin/sh\necho 200\n' > "$scratch/curl-200"; printf '#!/bin/sh\necho 404\n' > "$scratch/curl-404"; printf '#!/bin/sh\necho 500\n' > "$scratch/curl-500"
+chmod +x "$scratch"/curl-*
+asked() { CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1 CURL="$scratch/curl-$1" release demo-v1.1.0; }
+expect fail "a release that already exists" asked 200
+expect pass "no release yet" asked 404
+expect fail "an API that does not answer properly" asked 500
+
+cat > "$scratch/curl-fake" <<'SH'
+#!/usr/bin/env bash
+echo "$*" >> "${CURL_ARGV:-/dev/null}"
+out=""; method=GET; url=""; data=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        --request) method="$2"; shift 2 ;;
+        -w | -H) shift 2 ;;
+        --data-urlencode) data="$data $2"; shift 2 ;;
+        -s) shift ;;
+        *) url="$1"; shift ;;
+    esac
+done
+echo "$method $url$data" >> "$CURL_LOG"
+created='{"iid":7,"labels":["land","changelog::internal"]}'
+empty='{}'
+case "$method $url" in
+    "GET "*merge_requests/[0-9]*) printf '%s' "${FAKE_MR_GET:-$empty}" > "$out"; echo "${FAKE_MR_GET_CODE:-200}" ;;
+    "PUT "*merge_requests/*/merge) echo '{}' > "$out"; echo "${FAKE_MERGE_CODE:-200}" ;;
+    "GET "*merge_requests*page=2*) printf '%s' "${FAKE_LIST2:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
+    "GET "*merge_requests*) printf '%s' "${FAKE_LIST:-[]}" > "$out"; echo "${FAKE_LIST_CODE:-200}" ;;
+    "GET "*repository/tags/*) echo '{}' > "$out"; echo "${FAKE_TAG_CODE:-404}" ;;
+    "POST "*merge_requests*) printf '%s' "${FAKE_MR_BODY:-$created}" > "$out"; echo "${FAKE_MR_CODE:-201}" ;;
+    "POST "*repository/tags*) echo '{}' > "$out"; echo "${FAKE_TAG_POST_CODE:-201}" ;;
+    *) echo '{}' > "$out"; echo 599 ;;
+esac
+SH
+chmod +x "$scratch/curl-fake"
+export CURL="$scratch/curl-fake" CURL_LOG="$scratch/curl.log" CURL_ARGV="$scratch/curl-argv.log" CI_API_V4_URL=https://example.invalid/api/v4 CI_PROJECT_ID=1
+export CI_PROJECT_PATH=group/project CI_SERVER_HOST=example.invalid RELEASE_TOKEN=bite-token CI_COMMIT_SHA="$(git rev-parse HEAD)"
+unset RELEASE_AUTO_MERGE
+export RELEASE_POLL_INTERVAL=0
+git init --quiet --bare "$scratch/remote.git"
+export PUSH_URL="$scratch/remote.git"
+remote_refs() { git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)'; }
+publish() { bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0; }
+tagit() { bash "$HERE/tag-release.sh"; }
+cat > "$scratch/next-fake" <<'SH'
+#!/usr/bin/env bash
+version="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$PLUGIN_DIR/herdr-plugin.toml" | head -n 1)"
+default="{\"version\":\"$version\",\"section\":null}"
+printf '%s' "${FAKE_NEXT:-$default}"
+SH
+chmod +x "$scratch/next-fake"
+export NEXT_RELEASE="$scratch/next-fake"
+
+: > "$CURL_LOG"
+expect fail "a release without its token" env -u RELEASE_TOKEN bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
+expect fail "a release without a version" bash "$HERE/release-publish.sh" demo
+FAKE_LIST_CODE=500 expect fail "a merge request list that does not answer" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge requests could not be listed" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request that is open already" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a second release branch was pushed while a release merge request is open" >&2; wrong=$((wrong + 1)); }
+expect fail "no merge request opened while one is open" grep -q "POST .*merge_requests" "$CURL_LOG"
+FAKE_LIST='not json' expect fail "an open merge request list that is not JSON" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request list was not JSON" >&2; wrong=$((wrong + 1)); }
+expect fail "a release without a host to push to" env -u PUSH_URL -u CI_SERVER_HOST bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0
+full="$(bun -e 'console.log(JSON.stringify(Array.from({ length: 100 }, (_, i) => ({ iid: i + 100, source_branch: "feature/n" + i }))))')"
+FAKE_LIST="$full" FAKE_LIST2='[{"iid":7,"source_branch":"release/demo-v1.0.0","source_project_id":1,"target_project_id":1}]' expect pass "a release merge request on the second page of open merge requests" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed over a release merge request on the second page" >&2; wrong=$((wrong + 1)); }
+lookup_exit() { PUSH_URL="$scratch/no-such-remote.git" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1; echo $?; }
+[ "$(lookup_exit)" = "3" ] || { echo "bite: a remote that cannot be asked must end with exit 3 before any push" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='{"iid":7}' expect fail "an open merge request answer that is not a list" publish
+[ -z "$(remote_refs)" ] || { echo "bite: a release was pushed although the open merge request answer was not a list" >&2; wrong=$((wrong + 1)); }
+FAKE_LIST='[{"iid":9,"source_branch":"release/demo-v1.0.0","source_project_id":5,"target_project_id":1}]' expect pass "a merge request from a fork does not count as the release merge request" publish
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: a merge request from a fork blocked the release" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+FAKE_LIST='[{"iid":8,"source_branch":"feature/other"}]' expect pass "an unrelated open merge request does not block the release" publish
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: an unrelated open merge request blocked the release" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+FAKE_MR_CODE=403 expect fail "a merge request the forge refuses" publish
+[ "$(FAKE_MR_CODE=500 publish > /dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the forge refuses must fail the job (exit 3), not pass as the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+: > "$CURL_LOG"
+expect pass "a release published as a merge request" publish
+grep -q bite-token "$scratch/curl-argv.log" && { echo "bite: the release token reached a curl command line" >&2; wrong=$((wrong + 1)); }
+grep -q -- "-H @" "$scratch/curl-argv.log" || { echo "bite: the release API call must send its token from a header file" >&2; wrong=$((wrong + 1)); }
+rm -f "$scratch/git-trace.log"
+env -u PUSH_URL CI_SERVER_HOST=127.0.0.1:1 GIT_TRACE="$scratch/git-trace.log" bash "$HERE/release-publish.sh" demo 1.1.0 1.0.0 > /dev/null 2>&1
+grep -q "ls-remote" "$scratch/git-trace.log" || { echo "bite: the remote lookup did not run, so the argv probe proves nothing" >&2; wrong=$((wrong + 1)); }
+grep -q bite-token "$scratch/git-trace.log" && { echo "bite: the release token reached a git command line or URL" >&2; wrong=$((wrong + 1)); }
+printf 'protocol=https\nhost=example.invalid\n\n' | RELEASE_TOKEN=bite-token git -c 'credential.helper=' -c 'credential.helper=!f() { echo username=oauth2; echo "password=$RELEASE_TOKEN"; }; f' credential fill 2>/dev/null | grep -qx 'password=bite-token' || { echo "bite: the git credential helper does not hand the release token to git" >&2; wrong=$((wrong + 1)); }
+[ "$(remote_refs)" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release did not push exactly its branch: $(remote_refs)" >&2; wrong=$((wrong + 1)); }
+expect pass "the merge request carries the label land" grep -q "POST .*merge_requests .*labels=land,changelog::internal" "$CURL_LOG"
+expect pass "the merge request is from the release branch to main" grep -q "source_branch=release/demo-v1.1.0 target_branch=main" "$CURL_LOG"
+expect fail "the release creates no tag" grep -q "POST .*repository/tags" "$CURL_LOG"
+git commit --quiet --amend --allow-empty -m "another release commit"
+expect pass "a release branch left by an earlier run is overwritten" publish
+[ "$(git --git-dir="$scratch/remote.git" rev-parse refs/heads/release/demo-v1.1.0)" = "$(git rev-parse HEAD)" ] || { echo "bite: the stale release branch was not overwritten" >&2; wrong=$((wrong + 1)); }
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+git init --quiet --bare "$scratch/job-token.git" && printf '#!/bin/sh\nexit 1\n' > "$scratch/job-token.git/hooks/pre-receive" && chmod +x "$scratch/job-token.git/hooks/pre-receive" || exit 3
+git config "url.$scratch/job-token.git.insteadOf" "$scratch/remote.git"
+expect fail "the runner's rewrite refuses a plain push, so the next probe has something to bite" git push --quiet "$scratch/remote.git" HEAD:refs/heads/probe
+expect pass "a release is pushed although the runner rewrites the URL to its job token" publish
+[ "$(git --git-dir="$scratch/remote.git" for-each-ref --format='%(refname)')" = "refs/heads/release/demo-v1.1.0" ] || { echo "bite: the release push followed the runner's URL rewrite, where the job token may not push" >&2; wrong=$((wrong + 1)); }
+git config --unset "url.$scratch/job-token.git.insteadOf"
+git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0
+
+auto() { : > "$CURL_LOG"; : > "$scratch/curl-argv.log"; publish > "$scratch/auto.out" 2>&1; local status=$?; git --git-dir="$scratch/remote.git" update-ref -d refs/heads/release/demo-v1.1.0 2>/dev/null; echo "$status"; }
+said() { grep -qxF -- "$1" "$scratch/auto.out"; }
+calls() { grep -c "^$1 " "$CURL_LOG"; }
+pipelined='{"iid":7,"sha":"abc123","labels":["land","changelog::internal"],"head_pipeline":{"id":5}}'
+[ "$(FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "the release merge request waits for a hand merge (RELEASE_AUTO_MERGE is not 1)" && [ "$(calls PUT)" = "0" ] && [ "$(calls GET | tr -d ' ')" = "1" ] \
+    || { echo "bite: dark: without RELEASE_AUTO_MERGE the release must print that it waits for a hand merge, exit 0, and make no merge call and no read of the merge request" >&2; wrong=$((wrong + 1)); }
+for value in 0 true yes; do
+    [ "$(RELEASE_AUTO_MERGE="$value" FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "the release merge request waits for a hand merge (RELEASE_AUTO_MERGE is not 1)" && [ "$(calls PUT)" = "0" ] \
+        || { echo "bite: dark: RELEASE_AUTO_MERGE=$value is not 1 and must make no merge call" >&2; wrong=$((wrong + 1)); }
+done
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "auto-merge set for !7" && [ "$(calls PUT)" = "1" ] \
+    && grep -q "^PUT .*/projects/1/merge_requests/7/merge auto_merge=true merge_when_pipeline_succeeds=true squash=false sha=abc123$" "$CURL_LOG" \
+    || { echo "bite: accept: with RELEASE_AUTO_MERGE=1 the release must ask once for auto-merge of !7 at its head commit, without squash, and print that it is set" >&2; wrong=$((wrong + 1)); }
+grep -q bite-token "$scratch/curl-argv.log" && { echo "bite: accept: the release token reached a curl command line" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=202 auto)" = "0" ] && said "auto-merge set for !7" \
+    || { echo "bite: accept: an auto-merge answered 202 is set" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=405 auto)" = "0" ] && said "auto-merge refused (HTTP 405): merge !7 by hand" \
+    || { echo "bite: refuse: a refused auto-merge must print the hand-merge line and exit 0" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET_CODE=404 auto)" = "0" ] && said "auto-merge refused (HTTP 404): merge !7 by hand" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a merge request that cannot be read back must print the hand-merge line, exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET='{"iid":7,"sha":"abc123","labels":[]}' auto)" = "0" ] && said "auto-merge refused: !7 has no pipeline after 20 tries: merge !7 by hand" && [ "$(calls GET | tr -d ' ')" = "21" ] && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a merge request with no pipeline after 20 reads must print the hand-merge line, exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_BODY='{}' FAKE_MR_GET="$pipelined" auto)" = "0" ] && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: refuse: a create answer without a merge request number must exit 0 and make no merge call" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET="$pipelined" FAKE_MERGE_CODE=000 auto)" = "3" ] \
+    || { echo "bite: an API that cannot be reached for the merge call must end with exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET_CODE=000 auto)" = "3" ] \
+    || { echo "bite: an API that cannot be reached to read the merge request must end with exit 3" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_BODY='{"iid":7,"labels":["land","changelog::internal","release::hold"]}' FAKE_MR_GET="$pipelined" auto)" = "0" ] && said "release::hold is set: merge by hand after the live check" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: hold: a release merge request created with release::hold must never be auto-merged (print the hold line, exit 0, no merge call)" >&2; wrong=$((wrong + 1)); }
+[ "$(RELEASE_AUTO_MERGE=1 FAKE_MR_GET='{"iid":7,"sha":"abc123","labels":["land","changelog::internal","release::hold"],"head_pipeline":{"id":5}}' auto)" = "0" ] && said "release::hold is set: merge by hand after the live check" && [ "$(calls PUT)" = "0" ] \
+    || { echo "bite: hold: release::hold set by hand while the release waits for its pipeline must stop the auto-merge (print the hold line, exit 0, no merge call)" >&2; wrong=$((wrong + 1)); }
+
+: > "$CURL_LOG"
+export CI_COMMIT_SHA="$(git rev-parse HEAD)"
+expect pass "a merged release gets its tag" tagit
+release_commit="$(git rev-list --max-parents=0 HEAD)"
+expect pass "the tag is created at the commit with the API" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$release_commit" "$CURL_LOG"
+git commit --quiet --allow-empty -m "a later commit on main"
+: > "$CURL_LOG"
+CI_COMMIT_SHA="$(git rev-parse HEAD)" expect pass "a tag run on a later tip" tagit
+expect pass "the tag is at the release commit, not at the later tip" grep -q "POST .*repository/tags tag_name=demo-v1.1.0 ref=$release_commit" "$CURL_LOG"
+: > "$CURL_LOG"
+FAKE_TAG_CODE=200 expect pass "a version that is tagged already" tagit
+expect fail "no second tag for a tagged version" grep -q "POST " "$CURL_LOG"
+: > "$CURL_LOG"
+undated() { sed -e 's/^### \[1.1.0\] — .*/### [1.1.0]/' "$scratch/CHANGELOG.md" > "$scratch/changelog.undated"; CHANGELOG="$scratch/changelog.undated" tagit; }
+expect pass "a version without a dated changelog section is not a release" undated
+expect fail "nothing is asked or created for it" test -s "$CURL_LOG"
+FAKE_TAG_CODE=500 expect fail "a tag lookup that does not answer" tagit
+FAKE_TAG_POST_CODE=500 expect fail "a tag the forge refuses" tagit
+tag_exit() { bash "$HERE/tag-release.sh" > /dev/null 2>&1; echo $?; }
+[ "$(FAKE_TAG_POST_CODE=500 tag_exit)" = "3" ] || { echo "bite: a tag the forge refuses must end with exit 3, not a warning" >&2; wrong=$((wrong + 1)); }
+git tag demo-v1.2.0
+expect fail "a version below the newest release" tagit
+git tag -d demo-v1.2.0 >/dev/null
+nolink() { sed -e '/^\[1.1.0\]: /d' "$scratch/CHANGELOG.md" > "$scratch/changelog.nolink"; CHANGELOG="$scratch/changelog.nolink" tagit; }
+expect fail "a version without its changelog link reference" nolink
+FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' expect fail "a merge request merged since the release was prepared and missing from the section" tagit
+covered() { sed -e 's/^- the new thing$/- the new thing (!41)/' "$scratch/CHANGELOG.md" > "$scratch/changelog.covered"; CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.1.0","section":"### [1.1.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
+expect pass "every merge request of the release is in the section" covered
+nothingdue() { FAKE_NEXT='{"version":null,"section":null}' tagit; }
+expect fail "no merge request calls for a release" nothingdue
+higher() { CHANGELOG="$scratch/changelog.covered" FAKE_NEXT='{"version":"1.2.0","section":"### [1.2.0] — 2026-10-05\n\n#### Added\n\n- the new thing (!41)"}' tagit; }
+expect fail "merge requests that call for a larger version than the prepared one" higher
+emptysection() { sed -e '/^### \[1.1.0\]/,/^### \[1.0.0\]/{/^### \[/!d;}' "$scratch/CHANGELOG.md" > "$scratch/changelog.empty"; CHANGELOG="$scratch/changelog.empty" tagit; }
+expect fail "a version whose changelog section is empty" emptysection
+printf '{"name":"demo","version":"1.0.9"}\n' > demo/package.json
+expect fail "a package.json on another version" tagit
+git checkout --quiet -- demo/package.json
+for file in herdr-plugin.toml package.json; do
+    sed -e 's/1\.1\.0/1.1.1/g' "demo/$file" > "$scratch/next.$file" && cp "$scratch/next.$file" "demo/$file"
+done
+git add -A && git commit --quiet -m "release 1.1.1"
+second_release="$(git rev-parse HEAD)"
+git commit --quiet --allow-empty -m "after the second release"
+sed -e 's/1\.1\.0/1.1.1/g' "$scratch/CHANGELOG.md" > "$scratch/changelog.next"
+: > "$CURL_LOG"
+second() { CI_COMMIT_SHA="$(git rev-parse HEAD)" CHANGELOG="$scratch/changelog.next" tagit; }
+expect pass "a second release among several commits" second
+expect pass "the tag is at the commit that set 1.1.1, not the root or the tip" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$second_release" "$CURL_LOG"
+printf '\n- a line added later\n' >> CHANGELOG.md
+git add -A && git commit --quiet -m "complete the changelog"
+repair_commit="$(git rev-parse HEAD)"
+git commit --quiet --allow-empty -m "after the repair"
+: > "$CURL_LOG"
+expect pass "a release whose changelog was completed afterwards" second
+expect pass "the tag is at the commit that completed the changelog" grep -q "POST .*repository/tags tag_name=demo-v1.1.1 ref=$repair_commit" "$CURL_LOG"
+expect fail "a tag run without a commit" env -u CI_COMMIT_SHA bash "$HERE/tag-release.sh"
+
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const tags = y.on?.push?.tags ?? []; const jobs = Object.values(y.jobs); process.exit(tags.includes("*-v*") && y.on.workflow_dispatch !== undefined && jobs.length === 1 && jobs[0].needs === undefined && jobs[0].permissions?.contents === "write" ? 0 : 1)' "$HERE/../.github/workflows/release.yml"; echo $?)" = "0" ] || { echo "bite: the GitHub release workflow must run on a mirrored <plugin>-v tag with its built-in token and wait on no other job: GitLab has gated the tag, and a job it waits on (the macOS check) blocks the release" >&2; wrong=$((wrong + 1)); }
+[ "$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.exit(y["release:github"] === undefined ? 0 : 1)' "$HERE/../.gitlab-ci.yml"; echo $?)" = "0" ] || { echo "bite: GitLab must not publish the GitHub release too: the GitHub workflow does, and two publishers race" >&2; wrong=$((wrong + 1)); }
+
+prep="$scratch/prep"; mkdir -p "$prep/ci" "$prep/tab-recap" && cd "$prep" || exit 3
+cp "$HERE/prepare-release.sh" ci/prepare-release.sh
+printf 'id = "tab-recap"\nname = "Tab Recap"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > tab-recap/herdr-plugin.toml
+git init --quiet -b main . && git config user.name bite && git config user.email bite@example.invalid || exit 3
+git add -A && git commit --quiet -m release
+git init --quiet --bare "$scratch/prep-remote.git" && git remote add origin "$scratch/prep-remote.git" && git push --quiet origin main || exit 3
+export RELEASE_RETRY_INTERVAL=0
+prep_next() { printf '%s' "$1" > "$scratch/prep-next.json"; printf '#!/usr/bin/env bash\ncat "%s"\n' "$scratch/prep-next.json" > "$scratch/prep-next"; chmod +x "$scratch/prep-next"; }
+prep_exit() { RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" DRY_RUN=1 bash ci/prepare-release.sh > /dev/null 2>&1; echo $?; }
+prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":1}'
+[ "$(prep_exit)" = "0" ] || { echo "bite: after the release merge request lands and is tagged, the push pipeline on main must find no release due (exit 0)" >&2; wrong=$((wrong + 1)); }
+prep_next '{"previous":"tab-recap-v1.0.0","version":"1.1.0","bump":"minor","section":"### [1.1.0] — 2026-11-12","merged":2}'
+[ "$(prep_exit)" = "1" ] || { echo "bite: a release prepared but not yet tagged must refuse to prepare another (exit 1), so the merge request that lands does not loop" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho "no" >&2\nexit 1\n' > "$scratch/prep-broken"; chmod +x "$scratch/prep-broken"
+[ "$(NEXT_RELEASE="$scratch/prep-broken" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a merge request the release cannot read must end with exit 3, not the refusal exit 1" >&2; wrong=$((wrong + 1)); }
+printf '#!/usr/bin/env bash\necho x >> "%s"\nexit 1\n' "$scratch/prep-always.count" > "$scratch/prep-always"; chmod +x "$scratch/prep-always"; rm -f "$scratch/prep-always.count"
+[ "$(NEXT_RELEASE="$scratch/prep-always" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] && [ "$(wc -l < "$scratch/prep-always.count" | tr -d ' ')" = "3" ] || { echo "bite: a next-release that keeps failing must be asked 3 times, then end with exit 3" >&2; wrong=$((wrong + 1)); }
+printf '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}' > "$scratch/prep-flaky.json"
+printf '#!/usr/bin/env bash\nn=$(cat "%s" 2>/dev/null || echo 0)\necho $((n + 1)) > "%s"\n[ "$n" -ge 1 ] || exit 1\ncat "%s"\n' "$scratch/prep-flaky.count" "$scratch/prep-flaky.count" "$scratch/prep-flaky.json" > "$scratch/prep-flaky"; chmod +x "$scratch/prep-flaky"; rm -f "$scratch/prep-flaky.count"
+[ "$(NEXT_RELEASE="$scratch/prep-flaky" RELEASE_TOKEN=bite-token DRY_RUN=1 bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "0" ] && [ "$(cat "$scratch/prep-flaky.count")" = "2" ] || { echo "bite: a next-release that fails once must be asked again, not end the pipeline" >&2; wrong=$((wrong + 1)); }
+[ "$(env -u RELEASE_TOKEN bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "3" ] || { echo "bite: a prepare without its token must exit 3" >&2; wrong=$((wrong + 1)); }
+cat > "$scratch/prep-record" <<'SH'
+#!/usr/bin/env bash
+echo "$*" >> "$PREP_ARGS"
+cat "$PREP_JSON"
+SH
+chmod +x "$scratch/prep-record"
+export PREP_ARGS="$scratch/prep-args.log" PREP_JSON="$scratch/prep-next.json"
+prep_with() { rm -f "$PREP_ARGS"; RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-record" DRY_RUN=1 bash ci/prepare-release.sh "$@" > /dev/null 2>&1; echo $?; }
+asked_for() { grep -qx -- "--plugin $1 --to $(git rev-parse HEAD)" "$PREP_ARGS"; }
+prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(prep_with)" = "0" ] && asked_for tab-recap || { echo "bite: without an argument the release must be worked out for the plugin in tab-recap (next-release asked with --plugin tab-recap)" >&2; wrong=$((wrong + 1)); }
+[ "$(prep_with tab-recap)" = "0" ] && asked_for tab-recap || { echo "bite: the plugin directory tab-recap passed explicitly must be used (next-release asked with --plugin tab-recap)" >&2; wrong=$((wrong + 1)); }
+mkdir -p demo && printf 'id = "demo"\nname = "Demo"\nversion = "1.1.0"\nmin_herdr_version = "0.9.0"\n' > demo/herdr-plugin.toml && printf '{"name":"demo","version":"1.1.0"}\n' > demo/package.json
+prep_next '{"previous":"demo-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(prep_with demo)" = "0" ] && asked_for demo || { echo "bite: another plugin directory must be worked out for its own plugin id (next-release asked with --plugin demo)" >&2; wrong=$((wrong + 1)); }
+prep_next '{"previous":"demo-v1.1.0","version":"1.2.0","bump":"minor","section":"### [1.2.0] — 2026-11-13","merged":1}'
+[ "$(prep_with tab-recap)" = "1" ] || { echo "bite: a previous tag of another plugin must not count as this plugin's version (exit 1)" >&2; wrong=$((wrong + 1)); }
+cp "$HERE/apply-release.ts" "$HERE/check-version.sh" "$HERE/release-notes.sh" ci/
+printf '# Changelog\n\n## demo\n\n### [Unreleased]\n\n### [1.1.0] — 2026-11-01\n\n- first\n\n[Unreleased]: https://example.invalid/r/compare/demo-v1.1.0...HEAD\n[1.1.0]: https://example.invalid/r/compare/demo-v1.0.0...demo-v1.1.0\n\n## tab-recap\n\n### [Unreleased]\n\n### [1.1.0] — 2026-11-01\n\n- other\n\n[Unreleased]: https://example.invalid/r/compare/tab-recap-v1.1.0...HEAD\n' > CHANGELOG.md
+prep_next '{"previous":"demo-v1.1.0","version":"1.2.0","bump":"minor","section":"### [1.2.0] — 2026-11-13\n\n#### Added\n\n- a demo thing (!5)","merged":1}'
+[ "$(prep_with demo)" = "0" ] && grep -qx 'version = "1.2.0"' demo/herdr-plugin.toml && grep -q '"version": "1.2.0"' demo/package.json && grep -qx 'version = "1.1.0"' tab-recap/herdr-plugin.toml \
+    && [ "$(CHANGELOG=CHANGELOG.md bash ci/release-notes.sh demo 1.2.0 2>/dev/null)" = "$(printf '#### Added\n\n- a demo thing (!5)')" ] \
+    || { echo "bite: a dry run for another plugin directory must write that plugin's manifest, package.json and changelog part, and leave tab-recap alone" >&2; wrong=$((wrong + 1)); }
+rm -rf demo CHANGELOG.md ci/apply-release.ts ci/check-version.sh ci/release-notes.sh && git checkout --quiet -- .
+[ "$(prep_with nowhere)" = "3" ] || { echo "bite: a plugin directory without a manifest must end with exit 3" >&2; wrong=$((wrong + 1)); }
+for bad in tab-recap/ci ../tab-recap . ..; do
+    [ "$(prep_with "$bad")" = "2" ] || { echo "bite: the plugin directory $bad is not a folder directly under the repository root and must be refused as a usage error (exit 2)" >&2; wrong=$((wrong + 1)); }
+done
+[ -z "$(git status --porcelain)" ] || { echo "bite: the plugin directory cases left changes behind in the scratch repository" >&2; wrong=$((wrong + 1)); }
+echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit main has not carried" && prep_next '{"previous":"tab-recap-v1.1.0","version":null,"bump":null,"section":null,"merged":0}'
+[ "$(RELEASE_TOKEN=bite-token NEXT_RELEASE="$scratch/prep-next" bash ci/prepare-release.sh >/dev/null 2>&1; echo $?)" = "1" ] || { echo "bite: a pipeline whose commit is not the tip of origin/main must refuse (exit 1)" >&2; wrong=$((wrong + 1)); }
+cd "$repo" || exit 3
+
+clean() { local script="$1"; shift; env -i PATH="$PATH" HOME="$HOME" LC_ALL=C CI_MERGE_REQUEST_LABELS="$labels" CI_MERGE_REQUEST_DESCRIPTION="$good" bash "$script" "$@" 2>&1; echo "exit $?"; }
+forwarded() {
+    local name="$1" want="$2" root forward
+    shift 2
+    root="$(clean "$HERE/$name.sh" "$@")"
+    forward="$(clean "$HERE/../tab-recap/ci/$name.sh" "$@")"
+    [ "${root##*exit }" = "$want" ] && [ "$forward" = "$root" ] \
+        || { echo "bite: tab-recap/ci/$name.sh must forward to ci/$name.sh with the same output and exit (wanted $want; ci/ gave ${root##*exit }, the forwarder ${forward##*exit })" >&2; wrong=$((wrong + 1)); }
+}
+released="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$HERE/../tab-recap/herdr-plugin.toml" | head -n 1)"
+labels=changelog::internal
+forwarded check-mr 0
+labels=bug
+forwarded check-mr 1
+forwarded prepare-release 3
+forwarded tag-release 3
+forwarded check-release 2
+forwarded check-release 1 not-a-tag
+forwarded release-notes 2
+forwarded release-notes 0 tab-recap "$released"
+
+[ "$wrong" -eq 0 ]

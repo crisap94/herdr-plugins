@@ -1,11 +1,11 @@
 import { writeTx } from '#src/adapters/db/connection.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
-import { readPaneSession } from '#src/adapters/herdr-fleet.ts';
-import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { GitWorksiteReader } from '#src/adapters/git-worksite.ts';
-import { TranscriptInFlight } from '#src/adapters/transcript-in-flight.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
+import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
+import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
+import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
@@ -24,7 +24,7 @@ import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
@@ -208,11 +208,11 @@ export function handoffRestartOf(runner: Pick<HandoffRunner, 'interrupted'>): (a
 
 export interface HandoffWiring {
     readonly store: Store;
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly transcripts: TranscriptRegistry;
     readonly repos: LaneRepo;
     readonly claims: LaneClaims;
-    readonly recaps: Pick<RecapJob, 'refreshNow'>;
+    readonly recaps: Pick<Engine, 'refresh'>;
     readonly board: () => Board;
     readonly mirror: HandoffMirror;
     readonly pause: (ms: number) => Promise<void>;
@@ -241,7 +241,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
         target: { plans: handoffPlans, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
-        claims, refresh: (tab: string, lanes: readonly Lane[]): Promise<RefreshStatus> => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
+        claims, refresh: (tab: string, lanes: readonly Lane[]): Promise<RefreshStatus> => refreshedWithin(recaps.refresh(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
         render: renderHandoff({
             records: store.records,
             transcripts,

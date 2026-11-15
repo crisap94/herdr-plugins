@@ -1,0 +1,7 @@
+# WC 3.4 step 3: a pane that speaks protocol 2 gets bye protocol with the daemon's numbers; no re-exec is allowed, so the pane shows the mismatch.
+! open
+C {"t":"hello","protocol":2,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"bye","why":"protocol","protocol":1,"version":"9.9.9"}
+! state version-mismatch
+! close daemon
+! state version-mismatch

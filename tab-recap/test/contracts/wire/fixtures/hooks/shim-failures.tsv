@@ -1,0 +1,7 @@
+case	endpoint	stdout	exit
+daemon-not-running	absent	{}	0
+stale-socket	refuses	{}	0
+server-error	status-500	{}	0
+not-admitted	status-403	{}	0
+not-an-object	body-text	{}	0
+no-answer-in-time	slow	{}	0

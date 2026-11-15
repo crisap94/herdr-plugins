@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLAUDE_SCREEN_CHROME } from '#src/adapters/screen-transcripts.ts';
+import { CLAUDE_SCREEN_CHROME } from '#src/adapters/transcripts/screen.ts';
 import { cleanScreen } from '#src/recap/application/screen-text.ts';
 
 test('screen chrome filtering keeps the old output for Claude chrome, box lines, spinners, and repeated lines', () => {

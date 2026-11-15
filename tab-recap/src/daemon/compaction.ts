@@ -1,6 +1,7 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
@@ -10,10 +11,10 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
@@ -33,14 +34,14 @@ export function coverageOf(decider: Decider | null, tuning: () => AutocompactTun
 }
 
 export function wireCompaction(parts: {
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly records: RecapRecords;
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;
     readonly ledger: Ledger;
     readonly boundaries: Boundaries;
     readonly webs: { of(pane: string): LaneWeb | null };
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'refresh'>;
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;
@@ -59,14 +60,14 @@ export function wireCompaction(parts: {
     return new Compaction({
         compactionPlans,
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
-        brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: () => Date.now(),
+        brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: sleep, now: () => Date.now(),
         lanes: (tab) => lanesOf(informer.current, tabId(tab)),
         listsPane: (pane) => listsPane(informer.current, paneId(pane)),
         focused: async (tab) => {
             const layout = await fleet.layout(tabId(tab));
             return isUnknown(layout) ? null : layout.focused;
         },
-        refresh: (tab, lanes) => refreshedWithin(recaps.refreshNow(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
+        refresh: (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,

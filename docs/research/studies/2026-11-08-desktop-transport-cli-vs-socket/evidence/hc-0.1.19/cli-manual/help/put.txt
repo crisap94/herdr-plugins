@@ -1,0 +1,11 @@
+Send a local file beside a terminal (on its machine); prints where it landed
+
+Usage: hc put [OPTIONS] <TERMINAL> <FILE>
+
+Arguments:
+  <TERMINAL>  The terminal: `t7`, a name, or `machine/t7`
+  <FILE>      The file's name, kept so `.png` stays `.png` (CLI: the local file to send)
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

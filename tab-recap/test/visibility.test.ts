@@ -46,6 +46,7 @@ function label(intent: Intent): string {
         case 'close-column':
         case 'publish':
         case 'give-up':
+        case 'tab-gone':
             return `${intent.kind} ${intent.tab}`;
         case 'lane-closed':
             return `lane-closed ${intent.closed.pane}`;

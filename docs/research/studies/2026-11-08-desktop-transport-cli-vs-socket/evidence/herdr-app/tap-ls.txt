@@ -1,0 +1,4 @@
+C->S "{\"ls\":true}\n"
+S->C "{\"spaces\":[{\"id\":\"sp6c5c4f1c2dfc628a9a9f28a0bf67302d\",\"name\":\"space-1\",\"folder\":\"~/Proje ...[trimmed: workspace names and folders removed]
+C->S "{\"status\":true}\n"
+S->C "{\"zoom\":1.0,\"font_size\":14.0,\"ui_font_size\":13.0,\"space\":\"sp0dcc9ef66f76aa9a7ecce125e1857f43\", ...[trimmed: workspace names and folders removed]

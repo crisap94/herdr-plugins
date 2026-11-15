@@ -1,0 +1,12 @@
+Put this terminal on a core terminal (detach: ctrl+\)
+
+Usage: hc attach [OPTIONS] [TERMINAL]
+
+Arguments:
+  [TERMINAL]  The terminal: `t7`, a name, or `machine/t7`
+
+Options:
+      --json               JSON output even in a terminal
+      --observe            Watch only: never type or resize
+      --history <HISTORY>  Scrollback lines to show first (main screen only) [default: 0]
+  -h, --help               Print help

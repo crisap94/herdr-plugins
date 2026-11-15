@@ -1,4 +1,5 @@
 import type { Operation } from '#src/recap/domain/ops.ts';
+import type { CloseEvidence } from '#src/recap/domain/pipeline.ts';
 import type { InputFact, RecapInput } from './recap-input.ts';
 import type { Unknown } from './unknowable.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
@@ -22,6 +23,7 @@ export interface RecapRequest {
     readonly previousLanguage: string;
     readonly correction?: string;
     readonly retry?: Correction;
+    readonly closeEvidence?: CloseEvidence;
 }
 
 export type Written = { readonly kind: 'written'; readonly text: string; readonly costUsd: number } | Unknown;

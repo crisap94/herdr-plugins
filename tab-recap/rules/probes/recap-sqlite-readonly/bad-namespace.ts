@@ -1,5 +1,5 @@
-import * as sqlite from 'node:sqlite';
+import * as sqlite from 'bun:sqlite';
 
-export function open(path: string): sqlite.DatabaseSync {
-    return new sqlite.DatabaseSync(path, { open: true });
+export function open(path: string): sqlite.Database {
+    return new sqlite.Database(path, { create: true });
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC, rubricOf } from '#src/adapters/rubric.ts';
-import { instructions } from '#src/adapters/recap-prompt.ts';
+import { RUBRIC, rubricOf } from '#src/adapters/job/prompts/rubric.ts';
+import { instructions } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { checkIds, examplesOf, RUBRIC_TEXT } from '#test/rubric.ts';
 import { requestOf } from '#test/support.ts';
 

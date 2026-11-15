@@ -1,0 +1,44 @@
+{
+ "address": "str",
+ "argv": [
+  "str"
+ ],
+ "cols": "int",
+ "created_ms": "int",
+ "cwd": "str",
+ "die_with_parent": "bool",
+ "exit_code": "NoneType",
+ "finished_ms": "NoneType",
+ "foreground": {
+  "argv": [
+   "str"
+  ],
+  "cwd": "str",
+  "name": "str",
+  "pid": "int"
+ },
+ "identity": "str",
+ "keep": "bool",
+ "labels": {
+  "herdr.seen": "str",
+  "herdr.space": "str",
+  "herdr.tab": "str",
+  "where": "str"
+ },
+ "name": "NoneType",
+ "notify": "bool",
+ "parent": "NoneType",
+ "pid": "int",
+ "reason": "NoneType",
+ "reported": "bool",
+ "rm": "bool",
+ "rows": "int",
+ "screen": "str",
+ "signal": "NoneType",
+ "state": "str",
+ "status": "NoneType",
+ "status_ms": "NoneType",
+ "template": "NoneType",
+ "title": "str",
+ "turn": "int"
+}

@@ -69,19 +69,19 @@ time, and SHALL be shown outside the database with a type prefix (for example `r
 - **WHEN** a prefixed id with the wrong prefix, length or alphabet is read
 - **THEN** it SHALL be refused, not decoded
 
-### Requirement: Supported Node versions
+### Requirement: Supported Bun versions
 
-tab-recap SHALL run on Node 24.21.0 and later and SHALL refuse to start, saying so, on older Node. No
-launch of the plugin SHALL need a command-line flag to keep Node warnings out of columns or logs.
+tab-recap SHALL run on Bun 1.4.4 and later and SHALL refuse to start, saying so, on older Bun. No
+launch of the plugin SHALL need a command-line flag to keep runtime warnings out of columns or logs.
 
-#### Scenario: Old Node
+#### Scenario: Old Bun
 
-- **WHEN** the plugin is started on Node 24.20
-- **THEN** it SHALL print that Node 24.21.0 or later is needed and not start
+- **WHEN** the plugin is started on Bun 1.4.3
+- **THEN** it SHALL print that Bun 1.4.4 or later is needed and not start
 
 #### Scenario: No warning on the minimum
 
-- **WHEN** a column, the daemon or the command-line entry runs on Node 24.21.0 without extra flags
+- **WHEN** a column, the daemon or the command-line entry runs on Bun 1.4.4 without extra flags
 - **THEN** nothing SHALL be printed about experimental features
 
 ### Requirement: Compactions are recorded

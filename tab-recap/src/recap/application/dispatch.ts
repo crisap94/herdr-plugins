@@ -12,6 +12,7 @@ import type { Axis } from '#src/recap/domain/layout.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
+import type { TabRetirement } from '#src/ports/retention.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
@@ -20,7 +21,8 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { RecapJob } from './recap-job.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import type { Engine } from './engine.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export type Sharing = 'on' | 'off';
@@ -29,11 +31,12 @@ export interface DispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'turnEnded'>;
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;
     readonly closures: ClosureRecorder;
+    readonly retirements?: TabRetirement;
     readonly events: LaneEvents;
     readonly sharing: () => Sharing;
     closedDays(): ClosedLaneDays;
@@ -102,7 +105,7 @@ export class Dispatch {
                 await this.look(intent.lane);
                 return;
             case 'recap':
-                this.deps.recaps.request(intent.tab, intent.lanes, intent.cause);
+                this.deps.recaps.turnEnded(intent.tab, intent.lanes, intent.cause);
                 return;
             case 'save-hidden':
                 this.deps.visibility.writeHidden(intent.state);
@@ -113,6 +116,9 @@ export class Dispatch {
             case 'lane-closed':
                 this.keep(intent.closed);
                 this.announce(intent.closed);
+                return;
+            case 'tab-gone':
+                this.retire(intent.tab, intent.at);
                 return;
             default: {
                 const exhaustive: never = intent;
@@ -134,6 +140,16 @@ export class Dispatch {
             this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
         } catch (error) {
             this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(error)})`)));
+        }
+    }
+
+    private retire(tab: TabId, at: Instant): void {
+        try {
+            if (this.deps.retirements?.retire(tab, at) === 'retired') {
+                this.deps.log(must(parseText(`tab ${tab}: gone from herdr, its tasks are retired`)));
+            }
+        } catch (error) {
+            this.deps.log(must(parseText(`tab ${tab}: tasks not retired (${failureCauseOf(error)})`)));
         }
     }
 

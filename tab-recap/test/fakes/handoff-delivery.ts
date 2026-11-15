@@ -1,4 +1,4 @@
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
 import type { AgentState, Agents, Prompted, PromptBehavior, PromptWait } from '#src/ports/agents.ts';
 import type { Located, PromptResult, Transcripts, ChunkResult } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';

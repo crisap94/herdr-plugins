@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { configPathsFor } from '#src/adapters/config-paths.ts';
-import { nodeHost } from '#src/host/node-host.mjs';
-import { messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
-import type { Locale, Messages } from '#src/i18n/index.ts';
+import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
+import { languageSetting, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
+import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
@@ -30,9 +29,13 @@ import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
 import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
+import { CLAUDE_POLICY_ACK_DEFAULT, CLAUDE_POLICY_ACKS } from '#src/recap/domain/claude-policy-ack.ts';
+import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
-import { DEFAULT_PIPELINE, pipelineOf } from '#src/recap/domain/pipeline.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { parseRepairMode, repairModeOr } from '#src/recap/application/job-kit/repair.ts';
+import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
+import { closeEvidenceOr, DEFAULT_PIPELINE, parseCloseEvidence, pipelineOf } from '#src/recap/domain/pipeline.ts';
+import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -49,6 +52,7 @@ export interface Config {
     readonly customCommand: string;
     readonly effort: Effort;
     readonly pipeline: Pipeline;
+    readonly writerCloseEvidence: CloseEvidence;
     readonly recapDebounce: Debounce;
     readonly reconcileEvery: number;
     readonly locale: Locale;
@@ -62,6 +66,7 @@ export interface Config {
     readonly keepInputDays: number;
     readonly keepBrief: BriefRetention;
     readonly curator: Job;
+    readonly curatorRepair: RepairMode;
     readonly autocompact: AutocompactPolicy;
     readonly tuning: AutocompactTuning;
     readonly decider: DeciderJob;
@@ -77,9 +82,10 @@ export interface Config {
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;
     readonly telemetryTags: TelemetryTags;
+    readonly claudePolicyAck: ClaudePolicyAck;
 }
 
-const defaults = configPathsFor(nodeHost().platform, homedir(), process.env);
+const defaults = xdgPaths(homedir());
 
 function given(key: string): string | undefined {
     const value = process.env[key];
@@ -157,12 +163,24 @@ function readFile(): ReadonlyMap<string, string> {
 }
 
 export function configGetter(): (key: string) => string | undefined {
-    return (key: string): string | undefined => given(key) ?? readFile().get(key);
+    return (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? readFile().get(key) ?? given(key) : given(key) ?? readFile().get(key));
+}
+
+export function recapLanguageSource(): LanguageSource {
+    const file = readFile();
+    if (languageSetting(file.get('TAB_RECAP_RECAP_LANG') ?? given('TAB_RECAP_RECAP_LANG')) !== 'ui') {
+        return file.has('TAB_RECAP_RECAP_LANG') ? 'settings' : 'environment';
+    }
+    const locale = file.get('TAB_RECAP_LOCALE') ?? given('TAB_RECAP_LOCALE');
+    if (locale === 'en' || locale === 'es') {
+        return file.has('TAB_RECAP_LOCALE') ? 'settings' : 'environment';
+    }
+    return 'system';
 }
 
 export function loadConfig(): Config {
     const file = readFile();
-    const get = (key: string): string | undefined => given(key) ?? file.get(key);
+    const get = (key: string): string | undefined => (key === 'TAB_RECAP_LOCALE' || key === 'TAB_RECAP_RECAP_LANG' ? file.get(key) ?? given(key) : given(key) ?? file.get(key));
     const glow = get('TAB_RECAP_GLOW');
     const pruneWriterView = get('TAB_RECAP_WRITER_PRUNE');
     const writerViewSettings = prunedWriterView(keepNewestOf(rangedInteger(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.fallback, KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max)), nextHoursOf(rangedInteger(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.fallback, NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max)));
@@ -179,7 +197,7 @@ export function loadConfig(): Config {
         models: modelsOf(get, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? '',
         effort: effortOf(get('TAB_RECAP_EFFORT')),
-        pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE,
+        pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE, writerCloseEvidence: closeEvidenceOr(parseCloseEvidence(get('TAB_RECAP_WRITER_CLOSE_EVIDENCE'))),
         recapDebounce: debounceOf(get('TAB_RECAP_RUN_DEBOUNCE_MS')),
         reconcileEvery: Math.max(1, Math.floor(number(get('TAB_RECAP_RECONCILE_EVERY'), RECONCILE_EVERY))),
         sizing: {
@@ -201,7 +219,7 @@ export function loadConfig(): Config {
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         keepBrief: briefRetentionOf(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
-        curator: curateJobOf(get),
+        curator: curateJobOf(get), curatorRepair: repairModeOr(parseRepairMode(get('TAB_RECAP_CURATOR_REPAIR'))),
         autocompact: policyOf(get),
         tuning: tuningOf(get),
         decider: deciderJobOf(get),
@@ -217,5 +235,6 @@ export function loadConfig(): Config {
         writerView: pruneWriterView === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,
         telemetryTags: telemetryTagsOf(get('TAB_RECAP_TELEMETRY_TAGS')),
+        claudePolicyAck: CLAUDE_POLICY_ACKS.find((ack) => ack === get('TAB_RECAP_CLAUDE_POLICY_ACK')?.trim().toLowerCase()) ?? CLAUDE_POLICY_ACK_DEFAULT,
     };
 }

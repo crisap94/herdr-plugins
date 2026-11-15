@@ -1,14 +1,21 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { BUSY_PRAGMA, MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+
+export function openFixture(path: string = MEMORY): Database {
+    const db = new Database(path);
+    db.exec(BUSY_PRAGMA);
+    db.exec('PRAGMA foreign_keys = ON');
+    return db;
+}
 
 export function memoryStore(options: StoreOptions = {}): Store {
     const opened = openDatabase(MEMORY);
@@ -18,7 +25,7 @@ export function memoryStore(options: StoreOptions = {}): Store {
     return storeOver(opened.db, options);
 }
 
-export const shapeOf = (db: DatabaseSync): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
+export const shapeOf = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
 export const scratchDir = (name: string): string => mkdtempSync(join(tmpdir(), `recap-${name}-`));

@@ -26,8 +26,8 @@ added fact that is a near-duplicate of an open fact of the task in the ledger, o
 or of another fact added in the same answer SHALL be refused and the correction SHALL name the fact to update;
 an operation on an unknown id SHALL be refused; a close without a why SHALL be refused; an added fact whose
 anchor is missing or is not found in the run's input SHALL be refused; a close with the reason `answered` on a
-fact that is not a question SHALL be refused; a link that does not resolve, a fact in the wrong language, a fact
-naming nothing concrete or one opening with a pronoun SHALL be flagged but kept. Refused operations SHALL be
+fact that is not a question SHALL be refused; an added or updated fact in the wrong language SHALL be refused; a link
+that does not resolve, a fact naming nothing concrete or one opening with a pronoun SHALL be flagged but kept. Refused operations SHALL be
 sent back once as a short correction holding only those operations, their reasons and anchors and the facts
 they refer to; operations still refused after the retry SHALL be dropped and the rest applied. The counts of
 refused, flagged and dropped operations per gate SHALL be stored with the run.
@@ -71,6 +71,11 @@ refused, flagged and dropped operations per gate SHALL be stored with the run.
 
 - **WHEN** two of nine operations are refused
 - **THEN** the retry document SHALL hold those two with their reasons and the facts they name, not the transcript, and the writer's answer SHALL replace only them
+
+#### Scenario: A fact in the wrong language
+
+- **WHEN** the recap language is Spanish and the writer adds "The tests are failing after the merge." to "done"
+- **THEN** the operation SHALL be refused, the correction SHALL say to write it in Spanish, and if the retry repeats it the run SHALL be stored without it
 
 ### Requirement: Every run's input is kept for judging
 

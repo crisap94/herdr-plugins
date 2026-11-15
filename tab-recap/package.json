@@ -1,11 +1,11 @@
 {
   "name": "herdr-tab-recap",
-  "version": "2.6.2",
+  "version": "3.0.2",
   "private": true,
   "type": "module",
   "description": "herdr plugin: a recap column on the right of every tab with a coding agent",
   "engines": {
-    "node": ">=24.21.0"
+    "bun": ">=1.4.4"
   },
   "imports": {
     "#src/*": "./src/*",
@@ -15,10 +15,20 @@
     "typecheck": "tsgo --noEmit",
     "lint": "bash ci/lint.sh",
     "test": "bash ci/test.sh",
-    "daemon": "node src/daemon/launch.mjs"
+    "daemon": "bun src/daemon/launch.mjs"
+  },
+  "dependencies": {
+    "@stateforge-labs/harness-adapters": "0.2.0",
+    "@stateforge-labs/harness-hooks": "0.3.0",
+    "@stateforge-labs/herdr-sdk": "0.4.0",
+    "drizzle-orm": "0.45.4",
+    "isomorphic-git": "1.44.4"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
+    "@stateforge-labs/recap-view": "workspace:*",
+    "@stateforge-labs/session-ledger": "workspace:*",
+    "@stateforge-labs/session-ledger-sqlite": "workspace:*",
     "@types/node": "24.7.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "dependency-cruiser": "18.5.0",

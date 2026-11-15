@@ -1,0 +1,21 @@
+{
+  "name": "herdr-plugins",
+  "private": true,
+  "type": "module",
+  "workspaces": ["tab-recap", "packages/*"],
+  "engines": { "bun": ">=1.4.4" },
+  "trustedDependencies": ["@ast-grep/cli"],
+  "scripts": {
+    "lint:root": "bash ci/gates/run.sh lint",
+    "test:root": "bash ci/gates/run.sh test",
+    "lint": "bun run lint:root && bun run --filter '*' lint",
+    "test": "bun run test:root && bun run --filter '*' test"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "6.0.3"
+  }
+}

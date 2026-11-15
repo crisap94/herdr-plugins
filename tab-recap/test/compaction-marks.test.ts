@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { extractClaude } from '#src/adapters/claude-rows.ts';
-import { codexMarks } from '#src/adapters/codex-marks.ts';
-import { extractCodex } from '#src/adapters/codex-transcripts.ts';
-import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { extractClaude } from '#src/adapters/transcripts/claude/rows.ts';
+import { codexMarks } from '#src/adapters/transcripts/codex/marks.ts';
+import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
+import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 

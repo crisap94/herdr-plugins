@@ -1,5 +1,5 @@
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 
-export function openForPrintFromClosed(path: string): DatabaseSync {
-    return new DatabaseSync(path, { timeout: 500 });
+export function openForPrintFromClosed(path: string): Database {
+    return new Database(path, { strict: true });
 }

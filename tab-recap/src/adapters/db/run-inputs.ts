@@ -1,8 +1,11 @@
 import { gunzipSync, gzipSync } from 'node:zlib';
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
+import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import type { ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import { all, blob, flag, guarded, maybeText, text, whole } from './rows.ts';
+import { run as runs, runInput } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { blob, flag, guarded, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 
@@ -21,33 +24,18 @@ function statsOf(raw: string | null): GateStats | null {
 }
 
 export class RunInputRows {
-    private readonly insert: StatementSync;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync) {
-        this.insert = db.prepare('INSERT INTO run_input (run_id, document, bytes) VALUES (?, ?, ?)');
+    constructor(db: Database) {
+        this.orm = ormOf(db);
     }
 
     put(run: Uint8Array, document: string): void {
-        this.insert.run(run, gzipSync(document), Buffer.byteLength(document));
+        this.orm.insert(runInput).values({ runId: run, document: gzipSync(document), bytes: Buffer.byteLength(document) }).run();
     }
 }
 
-const RUNS = `SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
-  FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
-  WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (?1 IS NULL OR c.tab_id = ?1) AND r.at >= ?2 AND (?3 = 0 OR i.run_id IS NOT NULL)
-  ORDER BY r.id DESC LIMIT ?4`;
-
-const SECTION_ORDER = "CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END";
-const COLUMNS = `t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ?1 AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position`;
-
-const ADDED = `SELECT ${COLUMNS} FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
-  WHERE f.born_run = ?1
-  ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`;
-
-const STATE = `SELECT ${COLUMNS} FROM fact f JOIN task t ON t.id = f.task_id
-  WHERE f.tab_id = (SELECT c.tab_id FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE r.id = ?1)
-    AND f.born_run <= ?1 AND (f.closed_at IS NULL OR f.closed_at > (SELECT at FROM run WHERE id = ?1))
-  ORDER BY t.key, ${SECTION_ORDER}, f.id`;
+const SECTION_ORDER = sql.raw("CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END");
 
 const storedRun = (row: Row): StoredRun => ({
     id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
@@ -60,47 +48,56 @@ const itemOf = (row: Row, prefix: string): RunItem => ({
 });
 
 export class RunInputsRepository implements RunInputs {
-    private readonly runsSelect: StatementSync;
-    private readonly documentSelect: StatementSync;
-    private readonly addedSelect: StatementSync;
-    private readonly stateSelect: StatementSync;
-    private readonly gatesSelect: StatementSync;
-    private readonly remove: StatementSync;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync) {
-        this.runsSelect = db.prepare(RUNS);
-        this.documentSelect = db.prepare('SELECT document FROM run_input WHERE run_id = ?');
-        this.addedSelect = db.prepare(ADDED);
-        this.stateSelect = db.prepare(STATE);
-        this.gatesSelect = db.prepare('SELECT at, gate_stats FROM run WHERE gate_stats IS NOT NULL AND at >= ? ORDER BY id DESC');
-        this.remove = db.prepare('DELETE FROM run_input WHERE run_id IN (SELECT id FROM run WHERE at < ?)');
+    constructor(db: Database) {
+        this.orm = ormOf(db);
     }
 
     runs(query: RunQuery): readonly StoredRun[] {
-        return guarded(() => all(this.runsSelect, query.tab, query.since ?? 0, query.withInput ? 1 : 0, query.limit).map(storedRun), []);
+        const tab = query.tab;
+        const since = query.since ?? 0;
+        const withInput = query.withInput ? 1 : 0;
+        return guarded(() => this.orm.all<Row>(sql`SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
+          FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
+          WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (${tab} IS NULL OR c.tab_id = ${tab}) AND r.at >= ${since} AND (${withInput} = 0 OR i.run_id IS NOT NULL)
+          ORDER BY r.id DESC LIMIT ${query.limit}`).map(storedRun), []);
     }
 
     document(run: string): string | null {
         const id = idOf('run', run);
-        const row = id === null ? undefined : this.documentSelect.get(id);
-        const packed = row === undefined ? null : row['document'];
+        const row = id === null ? undefined : this.orm.select({ document: runInput.document }).from(runInput).where(eq(runInput.runId, id)).get();
+        const packed = row?.document ?? null;
         return guarded(() => (packed instanceof Uint8Array ? gunzipSync(packed).toString('utf8') : null), null);
     }
 
     itemsOf(run: string, mode: ItemsMode): readonly RunItem[] {
         const id = idOf('run', run);
-        const [select, prefix] = mode === 'state' ? [this.stateSelect, 'state/'] : [this.addedSelect, ''];
-        return id === null ? [] : guarded(() => all(select, id).map((row) => itemOf(row, prefix)), []);
+        if (id === null) {
+            return [];
+        }
+        return guarded(() => (mode === 'state'
+            ? this.orm.all<Row>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+          FROM fact f JOIN task t ON t.id = f.task_id
+          WHERE f.tab_id = (SELECT c.tab_id FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE r.id = ${id})
+            AND f.born_run <= ${id} AND (f.closed_at IS NULL OR f.closed_at > (SELECT at FROM run WHERE id = ${id}))
+          ORDER BY t.key, ${SECTION_ORDER}, f.id`).map((row) => itemOf(row, 'state/'))
+            : this.orm.all<Row>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+          FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
+          WHERE f.born_run = ${id}
+          ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`).map((row) => itemOf(row, ''))), []);
     }
 
     gateCounts(since: number | null): readonly { readonly at: number; readonly stats: GateStats }[] {
-        return guarded(() => all(this.gatesSelect, since ?? 0).flatMap((row) => {
-            const stats = statsOf(maybeText(row, 'gate_stats'));
-            return stats === null ? [] : [{ at: whole(row, 'at'), stats }];
-        }), []);
+        return guarded(() => this.orm.select({ at: runs.at, gate_stats: runs.gateStats }).from(runs)
+            .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? 0))).orderBy(desc(runs.id)).all().flatMap((row) => {
+                const stats = statsOf(row.gate_stats);
+                return stats === null ? [] : [{ at: row.at, stats }];
+            }), []);
     }
 
     prune(before: number): number {
-        return Number(this.remove.run(before).changes);
+        return this.orm.delete(runInput).where(inArray(runInput.runId, this.orm.select({ id: runs.id }).from(runs).where(lt(runs.at, before))))
+            .returning({ runId: runInput.runId }).all().length;
     }
 }

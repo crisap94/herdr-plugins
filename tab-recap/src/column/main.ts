@@ -1,16 +1,17 @@
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { glowRenderer } from '#src/adapters/glow.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
-import { codeVersion, shouldRoll } from '#src/adapters/plugin-version.ts';
-import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { glowRenderer } from '#src/adapters/os/glow.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
+import { BEL, ESC, FRAME_END, FRAME_HOME, LINE_END, MOUSE_OFF, MOUSE_ON, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
+import { codeVersion, shouldRoll } from '#src/adapters/os/plugin-version.ts';
+import { BAR_TITLE, COLUMN_TITLE, HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown, Mode } from '#src/recap/render/present.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { Locale } from '#src/i18n/index.ts';
-import { loadExtensions, notesOf, warningsOf } from '#src/extensions/load.ts';
+import { notesOf, warningsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
-import { configGetter, loadConfig, stateDir } from '#src/daemon/config.ts';
+import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
 import { expandedScreen } from './expanded-modal.ts';
@@ -19,8 +20,6 @@ import { compactFromColumn } from './compact.ts';
 import { spawn } from 'node:child_process';
 import { stripVTControlCharacters } from 'node:util';
 
-const ESC = String.fromCodePoint(0x1b);
-const BEL = String.fromCodePoint(0x07);
 const TICK_MS = 1000;
 const LOCALE_MS = Number(process.env['TAB_RECAP_COLUMN_POLL_MS'] ?? '') || 3000;
 const GUTTER = 2;
@@ -41,10 +40,10 @@ const startedVersion = codeVersion();
 let settled = { at: 0, locale: config.locale, version: startedVersion };
 let candidate: string | null = null;
 let rollFailed = false;
-const extensions = [...loadExtensions(configGetter()), ...(store === null ? [] : [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })])];
+const extensions = store === null ? [] : [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })];
 const glow = glowRenderer(config.glow);
 const style = styleFor(process.stdout);
-const RESET = style === coloured ? `${ESC}[0m` : '';
+const RESET = style === coloured ? RESET_SGR : '';
 
 const expandedLines = mode === 'modal' ? expandedScreen(store) : null;
 
@@ -101,13 +100,13 @@ function size(): [number, number] {
 }
 
 function frameOf(lines: readonly string[]): string {
-    return lines.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n');
+    return lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n');
 }
 
 function paint(frame: string, force: boolean): void {
     if (force || frame !== lastFrame) {
         lastFrame = frame;
-        process.stdout.write(`${ESC}]2;${title}${BEL}${ESC}[H${frame}${ESC}[J`);
+        process.stdout.write(`${TITLE_OSC}${title}${BEL}${FRAME_HOME}${frame}${FRAME_END}`);
     }
 }
 
@@ -183,15 +182,12 @@ const KEYS: Readonly<Record<string, () => void>> = {
     '\r': openModal,
 };
 
-const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
-const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
-
 function restore(): void {
-    process.stdout.write(`${MOUSE_OFF}${ESC}[?25h${ESC}[?1049l`);
+    process.stdout.write(`${MOUSE_OFF}${SCREEN_OFF}`);
 }
 
 function enter(): void {
-    process.stdout.write(`${ESC}[?1049h${ESC}[?25l${mode === 'modal' ? '' : MOUSE_ON}${ESC}]2;${title}${BEL}`);
+    process.stdout.write(`${SCREEN_ON}${mode === 'modal' ? '' : MOUSE_ON}${TITLE_OSC}${title}${BEL}`);
 }
 
 enter();

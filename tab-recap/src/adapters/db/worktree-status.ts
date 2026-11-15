@@ -1,4 +1,5 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
+import { eq, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -10,13 +11,11 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
 import { writeTx } from './connection.ts';
-import { guarded, isRow, one } from './rows.ts';
+import { paneWorktree, worktreeStatus } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { guarded, isRow } from './rows.ts';
 
 type WorktreeStatusRow = WorktreeStatus;
-
-const READ = 'SELECT s.root AS root, s.branch AS branch, s.ahead AS ahead, s.tracked AS tracked, s.untracked AS untracked, s.at AS at FROM pane_worktree p JOIN worktree_status s ON s.root = p.root WHERE p.pane = ?';
-
-const WRITE = 'INSERT INTO worktree_status (root, branch, ahead, tracked, untracked, at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(root) DO UPDATE SET branch = excluded.branch, ahead = excluded.ahead, tracked = excluded.tracked, untracked = excluded.untracked, at = excluded.at';
 
 export function parseWorktreeStatusRow(input: unknown): Result<WorktreeStatusRow, ParseFailure> {
     if (!isRow(input)) {
@@ -50,53 +49,65 @@ export function parseWorktreeStatusRow(input: unknown): Result<WorktreeStatusRow
 }
 
 export class WorktreeStatusRepository implements WorktreeStatusWriter, WorktreeStatusReader {
-    private readonly db: DatabaseSync;
-    private readonly read: StatementSync;
-    private readonly upsert: StatementSync;
-    private readonly bound: StatementSync;
-    private readonly unbound: StatementSync;
-    private readonly dropStatus: StatementSync;
-    private readonly dropBindings: StatementSync;
+    private readonly db: Database;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
-        this.read = db.prepare(READ);
-        this.upsert = db.prepare(WRITE);
-        this.bound = db.prepare('INSERT INTO pane_worktree (pane, root) VALUES (?, ?) ON CONFLICT(pane) DO UPDATE SET root = excluded.root');
-        this.unbound = db.prepare('DELETE FROM pane_worktree WHERE pane = ?');
-        this.dropStatus = db.prepare('DELETE FROM worktree_status WHERE root = ?');
-        this.dropBindings = db.prepare('DELETE FROM pane_worktree WHERE root = ?');
+        this.orm = ormOf(db);
     }
 
     write(status: WorktreeStatus): void {
-        this.upsert.run(status.root, status.branch, status.ahead, status.tracked, status.untracked, status.at);
+        this.orm.insert(worktreeStatus).values({ root: status.root, branch: status.branch, ahead: status.ahead, tracked: status.tracked, untracked: status.untracked, at: status.at })
+            .onConflictDoUpdate({
+                target: worktreeStatus.root,
+                set: {
+                    branch: sql`excluded.branch`,
+                    ahead: sql`excluded.ahead`,
+                    tracked: sql`excluded.tracked`,
+                    untracked: sql`excluded.untracked`,
+                    at: sql`excluded.at`,
+                },
+            })
+            .run();
     }
 
     bind(pane: PaneId, root: Directory | null): void {
         if (root === null) {
-            this.unbound.run(pane);
+            this.orm.delete(paneWorktree).where(eq(paneWorktree.pane, pane)).run();
         } else {
-            this.bound.run(pane, root);
+            this.orm.insert(paneWorktree).values({ pane, root }).onConflictDoUpdate({ target: paneWorktree.pane, set: { root: sql`excluded.root` } }).run();
         }
     }
 
     drop(root: Directory): void {
         writeTx(this.db, () => {
-            this.dropBindings.run(root);
-            this.dropStatus.run(root);
+            this.orm.delete(paneWorktree).where(eq(paneWorktree.root, root)).run();
+            this.orm.delete(worktreeStatus).where(eq(worktreeStatus.root, root)).run();
         });
     }
 
     reset(): void {
         writeTx(this.db, () => {
-            this.db.exec('DELETE FROM pane_worktree');
-            this.db.exec('DELETE FROM worktree_status');
+            this.orm.delete(paneWorktree).run();
+            this.orm.delete(worktreeStatus).run();
         });
     }
 
     statusOf(pane: PaneId): WorktreeStatus | null {
         return guarded(() => {
-            const row = one(this.read, pane);
+            const row = this.orm.select({
+                root: worktreeStatus.root,
+                branch: worktreeStatus.branch,
+                ahead: worktreeStatus.ahead,
+                tracked: worktreeStatus.tracked,
+                untracked: worktreeStatus.untracked,
+                at: worktreeStatus.at,
+            })
+                .from(paneWorktree)
+                .innerJoin(worktreeStatus, eq(worktreeStatus.root, paneWorktree.root))
+                .where(eq(paneWorktree.pane, pane))
+                .get() ?? null;
             if (row === null) {
                 return null;
             }

@@ -1,11 +1,14 @@
-import { setValues } from '#src/adapters/config-file.ts';
+import { setValues } from '#src/adapters/os/config/file.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import { styleFor } from '#src/adapters/terminal-style.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { styleFor } from '#src/adapters/os/terminal-style.ts';
+import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { requestRewrites } from '#src/recap/application/setup-changes.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
@@ -14,12 +17,11 @@ import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { stripVTControlCharacters } from 'node:util';
 
 const style = styleFor(process.stdout);
-const ESC = String.fromCodePoint(0x1b);
-const RESET = style === coloured ? `${ESC}[0m` : '';
-const BEL = String.fromCodePoint(0x07);
+const RESET = style === coloured ? RESET_SGR : '';
 const GUTTER = 2;
 const TITLE = 'tab-recap:setup';
 const TINY: RecapRequest = {
@@ -67,7 +69,7 @@ function draw(): void {
         shown.push('');
     }
     shown.push(setupFooter(state, m, width, style));
-    process.stdout.write(`${ESC}[H${shown.map((line) => ` ${line}${RESET}${ESC}[K`).join('\r\n')}${ESC}[J`);
+    process.stdout.write(`${FRAME_HOME}${shown.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')}${FRAME_END}`);
 }
 
 async function available(): Promise<void> {
@@ -77,7 +79,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'));
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'), createRuntime());
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);
@@ -93,15 +95,14 @@ async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
 function save(values: ReadonlyMap<string, string>, languageChanged: boolean): void {
     try {
         setValues(join(configDir(), 'config.env'), values, parseEnv);
-        const rewriting = languageChanged && tab !== '';
-        if (rewriting) {
+        if (languageChanged) {
             const store = openCliStore();
             if (store.kind !== 'ready') {
                 throw new Error(messages().database.newer(store.backup));
             }
-            store.requests.request(tab);
+            requestRewrites(tab === '' ? null : tabId(tab), store);
         }
-        state = saved(state, null, rewriting);
+        state = saved(state, null, languageChanged);
     } catch (error) {
         state = saved(state, error instanceof Error ? error.message : String(error), false);
     }
@@ -119,10 +120,10 @@ function perform(effect: Effect): void {
 }
 
 function restore(): void {
-    process.stdout.write(`${ESC}[?25h${ESC}[?1049l`);
+    process.stdout.write(SCREEN_OFF);
 }
 
-process.stdout.write(`${ESC}[?1049h${ESC}[?25l${ESC}]2;${TITLE}${BEL}`);
+process.stdout.write(`${SCREEN_ON}${TITLE_OSC}${TITLE}${BEL}`);
 process.on('exit', restore);
 process.on('SIGTERM', () => { process.exit(0); });
 process.on('SIGINT', () => { process.exit(0); });

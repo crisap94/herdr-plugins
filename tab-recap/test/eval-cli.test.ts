@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { stateStore } from '#src/adapters/db/database.ts';
 import { cursor } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
+import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -15,7 +16,7 @@ function run(args: readonly string[], input = ''): { status: number | null; stdo
     const state = join(root, 'state');
     const ran = spawnSync(process.execPath, [entry, ...args], {
         encoding: 'utf8', input,
-        env: { PATH: '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' },
+        env: { PATH: '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
     });
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }
@@ -32,7 +33,7 @@ function seeded(): ReturnType<typeof run> {
 
 function against(state: string, args: readonly string[], input = ''): { status: number | null; stdout: string; stderr: string } {
     const ran = spawnSync(process.execPath, [entry, ...args], {
-        encoding: 'utf8', input, env: { PATH: '', HOME: state, HERDR_PLUGIN_CONFIG_DIR: join(state, '..', 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' },
+        encoding: 'utf8', input, env: { PATH: '', HOME: state, HERDR_PLUGIN_CONFIG_DIR: join(state, '..', 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
     });
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr };
 }

@@ -1,0 +1,9 @@
+[
+  {
+    "class": "callback",
+    "file": "src/domain/value.ts",
+    "function": "<anonymous>",
+    "parameter": "chunk",
+    "reason": "probe: a Node callback that forces a primitive, converted at once"
+  }
+]

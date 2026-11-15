@@ -1,0 +1,124 @@
+# Design: cut the engine boundary in place, with no behaviour change
+
+## Context
+
+| Fact | Where |
+| --- | --- |
+| The recap path starts at `RecapJob` (`request`, `refreshNow`); its import closure is about 93 files | `src/recap/application/recap-job.ts` |
+| `recap-job.ts:2` and `ports/recap-records.ts:2` import `RecapCause` from `domain/intent.ts`, which pulls the fold's board and intents into the closure | `src/recap/domain/intent.ts` |
+| The ledger's history is read through `Ledger.historyOf` | `src/ports/ledger.ts` |
+| Replay already runs the recap path with no herdr | `src/recap/application/replay.ts`, `bin/replay.ts` |
+| A scratch store and a recorded transcript exist for tests | `src/adapters/db/scratch.ts`, `test/fixtures/replay-claude.jsonl`, `test/fixtures/claude-compact-boundary.jsonl` |
+| A manifest read by the module graph, with a test that the manifest equals what it lists, already exists | `ci/brand-importers.json`, `.dependency-cruiser.cjs`, `test/brand-importers.test.ts` |
+| Gates name files by path: work lanes, per-lane baselines and exceptions, released migrations | `ci/lanes.json`, `ci/domain-types-baseline/`, `ci/domain-types-exceptions/`, `ci/check-migrations.sh` |
+| Other work is in flight in the same folders: Phase B of `domain-type-gates`, `gui-port`, the harness-adapters upgrade | `openspec/changes/` |
+
+## Decisions
+
+### D1. Cut in place, by a manifest and a dependency rule, not by moving files
+
+Moving the engine's files into a package would change every path the gates name: `ci/lanes.json` gives each file to a work
+lane, the baselines and exceptions are keyed by path, and released migrations are frozen byte for byte by path. Every branch in
+flight that edits those files would have to be rebased onto the move. A manifest and one graph rule draw the same line with no
+path changing: `ci/engine-files.json` lists the engine's files, and `engine-self-contained` in `.dependency-cruiser.cjs` fails when
+a listed file imports one that is not listed (`node:util` is the one other module allowed). A test, modelled on
+`test/brand-importers.test.ts`, asserts that the manifest equals the closure computed from the facade `engine.ts` (which imports `recap-job.ts`, so the
+closure is the job's plus the facade), so the list cannot drift. The physical move is a later change, once the line has held.
+
+### D2. The vocabulary is an alias at the facade only
+
+| Engine term | Means | In herdr today |
+| --- | --- | --- |
+| Engine | the host-independent core | (new) |
+| Scope | sessions followed together; the unit of one ledger | Tab |
+| Followed session | one agent conversation the engine reads | Lane |
+| Host | the program that reports events to the engine | the daemon |
+
+The engine's own files keep their names. Only the facade speaks the engine's words, and maps them to `TabId` and `Lane` in one
+place. Prompts, the DTD, SQL columns and stored values keep saying tab and lane, so the writer sees the same bytes and the store
+holds the same values. "Host" is already a noun in `CONTEXT.md` (the machine and runtime); the row is extended with the engine's
+sense rather than given a second row, and the two senses are told apart there.
+
+### D3. The facade
+
+`src/recap/application/engine.ts`:
+
+```ts
+createEngine({ source, store, models, environment, settings, ran? }): Engine
+```
+
+| Method | Is today |
+| --- | --- |
+| `turnEnded(scope, sessions, cause)` | `RecapJob.request` |
+| `refresh(scope, sessions)` | `RecapJob.refreshNow` |
+| `sessionStarted(scope, sessions)` | no effect in this slice |
+| `compacted(scope, sessions)` | `refresh`; the reader already finds the boundary from the records |
+| `history(scope, session)` | `Ledger.historyOf` |
+
+It returns facts, not text: rendering stays out of the core. The plugs group every member of `RecapJobDeps` once: `source`
+(`transcripts`), `store` (`records`, `ledger`), `models` (`summarizer`, `enumerator`), `environment` (`clock`, `repos`, `log`),
+`settings` (`language`, `writerView`, `keepInput`, `pipeline`, `debounce`) and `ran`; an optional knob left out stays unset, so
+the job's defaults hold. `compacted` needs no signal of its own: the transcript reader reports the boundary as a `compacted` mark
+in the chunk it reads, and `marksOf` (`boundaries.ts`) records it with the run. Consumers in the daemon take `Pick<Engine, ...>` of what they use, so
+`RecapJob` is constructed in one place.
+
+### D4. Behaviour is pinned before anything moves
+
+The first code step adds `test/engine-golden.test.ts`: it replays `test/fixtures/replay-claude.jsonl` with a fake summarizer and
+the scratch store, and snapshots the writer's input bytes and the resulting facts. Every later step must leave that snapshot
+unchanged; a step that needs to change it is a behaviour change and out of scope.
+
+### D5. Narrow leaks rather than widen the engine
+
+`RecapCause` moves to `src/recap/domain/recap-cause.ts` and `intent.ts` re-exports it, so in-flight branches keep compiling while
+`board.ts` and `intent.ts` leave the closure. If `ports/screens.ts` is reached through `ports/transcript-registry.ts`, the engine's
+source narrows to `readerFor(agent)`, and the screen fallback stays on the host side.
+
+`ports/screens.ts` was reached through `recap-input.ts` (its `isScreenSource`), not through the registry; the prefix moved to
+`ports/transcript-source.ts` instead, and the registry stays as it is. Three files the closure still holds are herdr's lane model,
+not engine material: `domain/lane.ts` (a lane with its pane, tab and workspace), `domain/status.ts` (herdr's agent status) and
+`domain/ids.ts` (`PaneId`, `TabId` and `WorkspaceId` beside the session ids). Cutting them means retyping the job's inputs, which
+is the facade's work (D2, D3). Until then `ci/engine-files.json` lists them apart from `engine`, under
+`herdrLaneModelUntilTheFacadeSpeaksScopeAndFollowedSession`, so the debt is visible; the rule treats both lists as one.
+
+## Order
+
+Each step ends with the gates passing. Steps 3 and 4 touch the same folders as Phase B of `domain-type-gates`, so they stay as
+small as possible and rebase per lane. The plan was one merge request per step, with the guard (step 5) merged early so other
+branches that add an import to an engine file are told by the build. As built, groups 1 to 9 sit on one branch,
+`refactor/engine-boundary`, one commit per group plus the review fixes, so each group reads as its own commit. Before merge the
+owner either opens them as stacked merge requests (1-2, 3-4, 5, 6, 7, 8, 9, 10) or merges the branch as one; until the guard is
+on `main`, Phase B lanes are not told by the build, and the merge request names the Phase B overlap (see Risks) instead.
+
+## Risks
+
+- `ports/unknowable.ts:39` says "pane". The string stays; a test pins it.
+- `RecapJob` waits 2.5 s to settle before a run, so a short-lived process must call `refresh`, not `turnEnded`.
+- The closure counted by hand (about 93 files) may differ from the computed one; the manifest test is the authority.
+- `ci/engine-files.json` belongs to no work lane, yet a Phase B lane of `domain-type-gates` that adds a file to the closure
+  or drops one (B2's `domain/legacy.ts`, which `domain/lane.ts` will import) must update it, or the manifest test and
+  `engine-self-contained` fail. `ci/check-lane.ts` lets every lane edit it, as it does `test/`; the manifest test keeps the
+  edit exact, and a lane merge request that grows the list says why in its description.
+- Overlap with Phase B of `domain-type-gates`, to name in the merge request: B1 (`ports/recap-records.ts`,
+  `ports/transcript-source.ts`, `ci/domain-types-baseline/B1.json`), B2 (`domain/intent.ts`, the new `domain/recap-cause.ts`)
+  and B3 (`application/recap-job.ts`, `replay.ts`, `dispatch.ts`, the new `engine.ts`, `ci/domain-types-baseline/B3.json`).
+  Whichever side lands second rebases, one lane at a time. Phase B's tasks say that a lane changing the engine closure updates
+  `ci/engine-files.json`.
+- `FollowedSession` is still herdr's `Lane`, and its `pane` is the session's identity: the job keys its cursors by pane and
+  transcript (`recap-job.ts`, `placeOf`), and `history` reads `Ledger.historyOf(scope, session.pane)`. A host with only a
+  session id and a records path must choose a pane. If it takes the session id, a `/clear` in the same terminal starts a new
+  id, a new pane, and an empty `history`; if it shares one pane across the sessions of a scope, their histories mix.
+  `test/engine-plain-session.test.ts` uses a fixed pane, so it shows neither. Follow-up, with the Scope and Followed-session
+  retyping (D2, D5): the facade takes its own followed session (session, agent, cwd, title and a host-chosen stable key),
+  builds the `Lane` inside `createEngine`, and names the key that history and the cursors use.
+- `gui-port` uses "engine" in a wider sense: its `design.md` calls `src/recap`, the ports, the readers, the harness jobs and
+  the store the engine, and `src/adapters/desktop/engine.ts` exports `DesktopEngine` and `EngineParts`, a desktop read model
+  unrelated to `createEngine`. The vocabulary check allows the word, so it cannot tell the two apart. Follow-up, owned by
+  `gui-port`: rename that file and its types to a desktop read model, and say "core" or name the folders where its docs mean
+  more than the closure of `engine.ts`.
+
+## Hand-written pieces kept
+
+The closure test walks imports with dependency-cruiser, already a devDependency and the repository's one source for import
+boundaries; no Bun or Node built-in resolves `#src/*` imports into a graph. The facade is a thin mapping over existing classes;
+nothing else is hand-written.

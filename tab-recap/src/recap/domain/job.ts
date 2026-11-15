@@ -2,13 +2,19 @@ import { JOB_HARNESSES, pick } from './backend.ts';
 import type { BackendChoice, BackendId } from './backend.ts';
 import { EFFORTS } from './effort.ts';
 import type { Effort } from './effort.ts';
+import { parseMilliseconds } from './time.ts';
+import type { Milliseconds } from './time.ts';
 
 export type JobBy = BackendChoice | 'recap' | 'off';
+
+export type JobAnswer = 'text' | 'schema';
 
 export interface Job {
     readonly by: JobBy;
     readonly model: string;
     readonly effort: Effort;
+    readonly timeoutMs?: Milliseconds;
+    readonly answer?: JobAnswer;
 }
 
 export const COMPACT_DEFAULT: Job = { by: 'recap', model: '', effort: 'high' };
@@ -55,7 +61,14 @@ export const compactJobOf = (get: (key: string) => string | undefined): Job => j
 
 export const CURATE_DEFAULT: Job = { by: 'recap', model: '', effort: 'medium' };
 
-export const curateJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_CURATE', CURATE_DEFAULT);
+export const curateJobOf = (get: (key: string) => string | undefined): Job => {
+    const job = jobFrom(get, 'TAB_RECAP_CURATE', CURATE_DEFAULT);
+    const raw = (get('TAB_RECAP_CURATE_TIMEOUT_MS') ?? '').trim();
+    const count = Number(raw);
+    const limit = parseMilliseconds(count);
+    const timed = raw !== '' && Number.isInteger(count) && count > 0 && limit.kind === 'ok' ? { ...job, timeoutMs: limit.value } : job;
+    return word(get('TAB_RECAP_CURATE_ANSWER')) === 'schema' ? { ...timed, answer: 'schema' } : timed;
+};
 
 export const deciderJobOf = (get: (key: string) => string | undefined): DeciderJob => jobFrom(get, 'TAB_RECAP_AUTOCOMPACT', DECIDER_DEFAULT, DECIDER_BY_CHOICES);
 
@@ -63,6 +76,8 @@ export interface Placement {
     readonly harness: BackendId;
     readonly model: string;
     readonly effort: Effort;
+    readonly timeoutMs?: Milliseconds;
+    readonly answer?: JobAnswer;
 }
 
 export interface RecapChoices {
@@ -75,5 +90,5 @@ export function placementOf(job: Job, recap: RecapChoices, available: readonly s
         return null;
     }
     const harness = pick(job.by === 'recap' ? recap.backend : job.by, available);
-    return harness === null ? null : { harness, model: job.model === '' ? recap.models[harness] : job.model, effort: job.effort };
+    return harness === null ? null : { harness, model: job.model === '' ? recap.models[harness] : job.model, effort: job.effort, ...(job.timeoutMs === undefined ? {} : { timeoutMs: job.timeoutMs }), ...(job.answer === undefined ? {} : { answer: job.answer }) };
 }

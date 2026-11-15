@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Pidfile } from '#src/adapters/pidfile.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { bounded } from '#src/daemon/bounded.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });

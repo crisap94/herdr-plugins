@@ -1,12 +1,17 @@
 import { BACKEND_IDS, LEGACY_MODEL_KEYS } from '#src/recap/domain/backend.ts';
+import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
+import type { RecapRecords } from '#src/ports/recap-records.ts';
+import type { Requests } from '#src/ports/requests.ts';
+import type { LiveLanes } from '#src/ports/tab-views.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
     model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), ...LEGACY_MODEL_KEYS],
-    locale: ['TAB_RECAP_LOCALE'],
-    recapLanguage: ['TAB_RECAP_RECAP_LANG'],
+    locale: [],
+    recapLanguage: [],
     screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
     gitNote: ['TAB_RECAP_GIT_NOTE'],
     telemetryTags: ['TAB_RECAP_TELEMETRY_TAGS'],
@@ -73,3 +78,18 @@ export function changes(state: Setup): ReadonlyMap<string, string> {
 }
 
 export const dirty = (state: Setup): boolean => changes(state).size > 0;
+
+export interface RewriteStore {
+    readonly views: LiveLanes;
+    readonly records: RecapRecords;
+    readonly requests: Requests;
+}
+
+export function requestRewrites(opener: TabId | null, store: RewriteStore): readonly TabId[] {
+    const live = store.views.liveLanes();
+    const seen = live.kind === 'read' ? live.lanes.map((lane) => lane.tab) : [];
+    const tabs = [...new Set([...(opener === null ? [] : [opener]), ...seen])]
+        .filter((tab) => tab === opener || hasRecap(store.records.readRecap(String(tab)) ?? blankRecap(String(tab))));
+    tabs.forEach((tab) => { store.requests.request(String(tab)); });
+    return tabs;
+}

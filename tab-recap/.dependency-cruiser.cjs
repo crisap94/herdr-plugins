@@ -1,12 +1,17 @@
+const { readdirSync } = require('node:fs');
+const { join } = require('node:path');
 const brandImporters = require('./ci/brand-importers.json');
 
 const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
 const brandFile = exact('src/recap/domain/brand.ts');
+const graphRules = join(__dirname, 'rules', 'graph');
+const fragments = readdirSync(graphRules).filter((name) => name.endsWith('.cjs')).toSorted().flatMap((name) => require(join(graphRules, name)));
 
 module.exports = {
   options: {
     tsPreCompilationDeps: true,
     doNotFollow: { path: 'node_modules' },
+    enhancedResolveOptions: { exportsFields: ['exports'], conditionNames: ['import', 'types', 'default'] },
   },
   forbidden: [
     {
@@ -46,9 +51,15 @@ module.exports = {
       to: { pathNot: ['^src/protocol/exchanges/', '^src/protocol/[^/]+\\.ts$'] },
     },
     {
+      name: 'wire-self-contained',
+      severity: 'error',
+      from: { path: '^src/wire/' },
+      to: { pathNot: ['^src/wire/', '^[a-z_]+$', '^[a-z_]+/[a-z]+$'] },
+    },
+    {
       name: 'transport-boundary',
       severity: 'error',
-      from: { pathNot: ['^src/adapters/herdr-fleet\\.ts$', '^src/transport/'] },
+      from: { pathNot: ['^src/adapters/herdr/fleet\\.ts$', '^src/transport/'] },
       to: { path: '^src/transport/' },
     },
     {
@@ -56,6 +67,12 @@ module.exports = {
       severity: 'error',
       from: { pathNot: [...brandImporters.map(exact), brandFile] },
       to: { path: brandFile },
+    },
+    {
+      name: 'drizzle-adapter-only',
+      severity: 'error',
+      from: { pathNot: ['^src/adapters/db/', '^test/'] },
+      to: { path: 'node_modules/drizzle-orm(/|$)' },
     },
     {
       name: 'no-circular',
@@ -66,7 +83,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true },
+      from: { orphan: true, pathNot: ['\\.d\\.ts$', '^src/(wire|engine|view-model|pane|adapters/hooks|daemon/view|daemon/slots)/'] },
       to: {},
     },
     {
@@ -75,5 +92,6 @@ module.exports = {
       from: {},
       to: { couldNotResolve: true },
     },
+    ...fragments,
   ],
 };

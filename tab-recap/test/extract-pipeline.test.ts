@@ -8,7 +8,7 @@ import { numbered } from '#src/recap/application/ledger-input.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { foldedOf } from '#src/recap/domain/gates/words.ts';
-import { gatesOf, PIPELINES, retriesTargeted } from '#src/recap/domain/pipeline.ts';
+import { closeEvidenceOr, gatesOf, parseCloseEvidence, PIPELINES, retriesTargeted } from '#src/recap/domain/pipeline.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { answer, scripted } from '#test/fakes/enumerator.ts';
 import type { Reply } from '#test/fakes/enumerator.ts';
@@ -154,4 +154,36 @@ test('enumerate retries with the whole document and a line per refusal, as 2.0 d
     assert.match(calls[1]?.correction ?? '', /G6/);
     assert.equal(calls[1]?.retry, undefined);
     assert.ok(calls[1]?.input.candidates?.length === 2, 'the whole document, candidates included');
+});
+
+const CLOSE_BARE = JSON.stringify({ ops: [{ op: 'close', id: 'f1', why: 'done' }] });
+const CLOSE_QUOTED = JSON.stringify({ ops: [{ op: 'close', id: 'f1', why: 'done', anchor: 'Added a retry with backoff in src/upload.ts' }] });
+
+async function closing(first: string, closeEvidence: 'on' | 'off' | undefined): Promise<{ done: Extracted; calls: RecapRequest[] }> {
+    const calls: RecapRequest[] = [];
+    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (asked): Promise<Written> => { calls.push(asked); return Promise.resolve({ kind: 'written', text: calls.length === 1 ? first : OPS, costUsd: 0.5 }); } };
+    const done = await extractPiped(summarizer, request(SMALL), ground, { pipeline: 'one', enumerator: null, ...(closeEvidence === undefined ? {} : { closeEvidence }), log: () => undefined });
+    return { done, calls };
+}
+
+const keptOps = (done: Extracted): number | undefined => (done.kind === 'ops' ? done.tasks[0]?.ops.length : undefined);
+
+test('close evidence: without the flag a close with no anchor is kept; with the flag on it is refused G13 and sent back, and a close with a quoted anchor is kept', async () => {
+    const absent = await closing(CLOSE_BARE, undefined);
+    assert.deepEqual([absent.calls.length, keptOps(absent.done)], [1, 1]);
+    const refused = await closing(CLOSE_BARE, 'on');
+    assert.equal(refused.calls.length, 2);
+    assert.match(JSON.stringify(refused.calls[1]?.retry ?? null), /G13/);
+    const quoted = await closing(CLOSE_QUOTED, 'on');
+    assert.deepEqual([quoted.calls.length, keptOps(quoted.done)], [1, 1]);
+});
+
+test('parseCloseEvidence: on is on, off, empty and absent are off, anything else is refused and reads as off', () => {
+    assert.deepEqual(parseCloseEvidence(' On '), { kind: 'ok', value: 'on' });
+    assert.deepEqual(parseCloseEvidence('off'), { kind: 'ok', value: 'off' });
+    assert.deepEqual(parseCloseEvidence(''), { kind: 'ok', value: 'off' });
+    assert.deepEqual(parseCloseEvidence(undefined), { kind: 'ok', value: 'off' });
+    assert.deepEqual(parseCloseEvidence('yes'), { kind: 'err', error: { kind: 'out-of-range' } });
+    assert.equal(closeEvidenceOr(parseCloseEvidence('yes')), 'off');
+    assert.equal(closeEvidenceOr(parseCloseEvidence('on')), 'on');
 });

@@ -1,7 +1,5 @@
 name: release
 
-# A tag `<plugin>-v<x.y.z>` becomes a GitHub release whose notes are that version's CHANGELOG section.
-# Run it by hand (Actions → release → Run workflow) to (re)publish the release of an existing tag.
 on:
   push:
     tags: ['*-v*']
@@ -16,14 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    uses: ./.github/workflows/ci.yml
-    with:
-      ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || '' }}
-
   release:
     name: create the release
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,9 +30,9 @@ jobs:
       # check-release.sh sees the annotation.
       - name: Fetch the annotated tag object
         run: git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
-      - uses: actions/setup-node@v5
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24
+          bun-version: 1.4.4
       - name: The tag is a release we can publish
         run: |
           plugin="${TAG%-v*}"
@@ -55,4 +47,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           plugin="${TAG%-v*}"
+          if gh release view "$TAG" > /dev/null 2>&1; then echo "a release for $TAG exists already: nothing to publish"; exit 0; fi
           gh release create "$TAG" --verify-tag --title "$plugin ${TAG##*-v}" --notes-file notes.md

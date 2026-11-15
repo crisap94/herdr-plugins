@@ -1,0 +1,13 @@
+# WC 3.5: a ping gets a pong; a ping without a pong within pongMs (5000 ms) is a lost connection.
+! open
+C {"t":"hello","protocol":1,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"welcome","protocol":1,"version":"9.9.9","title":"tab-recap","texts":{"connecting":"Connecting to the recap daemon…","down":"The recap daemon is not running.","downHint":"It starts again with the next herdr session.","mismatch":"This pane and the recap daemon speak different protocols."}}
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+! state connected
+C {"t":"ping"}
+D {"t":"pong"}
+! wait 10000
+C {"t":"ping"}
+! wait 5000
+! state connecting
+! close pane

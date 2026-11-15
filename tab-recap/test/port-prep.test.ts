@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadExtensions, notesOf } from '#src/extensions/load.ts';
+import { notesOf } from '#src/extensions/load.ts';
 import { en } from '#src/i18n/en.ts';
 import { viewOf } from '#src/recap/application/dispatch.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -10,7 +10,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { present } from '#src/recap/render/present.ts';
-import type { Extension, ExtensionFactory, Note, NotesResult } from '#src/ports/extension.ts';
+import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 
 const noGlow = (): null => null;
@@ -57,6 +57,4 @@ test('notes() may take the lanes and the locale, or nothing: both shapes type-ch
     assert.equal(merged.get('p')?.length, 1);
     notesOf([wanting, bare]);
     assert.deepEqual(received.slice(2), [undefined, undefined]);
-    const factory: ExtensionFactory = () => bare;
-    assert.equal(loadExtensions(() => undefined, [factory]).length, 1);
 });

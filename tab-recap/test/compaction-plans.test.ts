@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { needsIdle, NotAReasonError, QUEUES } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlan } from '#src/recap/domain/compaction-plan.ts';
 

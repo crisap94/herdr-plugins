@@ -1,0 +1,25 @@
+2026-11-08T16:32:50.702Z start agent a1 on tb1: {"address":"t13","agent":"bash","cwd":"~","name":"a1","state":"live","turn":0} 
+2026-11-08T16:32:50.708Z start agent a2 on tb2: {"address":"t14","agent":"bash","cwd":"~","name":"a2","state":"live","turn":0} 
+2026-11-08T16:32:51.511Z daemon pid 2287443 mode=socket
+2026-11-08T16:32:51.816Z index has 2 rows after 304 ms: [["tb2","idle"],["tb1","idle"]]
+2026-11-08T16:32:51.816Z rss at start 122312 kB
+2026-11-08T16:32:56.821Z idle 5s: hc spawns through PATH shim since start of idle = 0
+2026-11-08T16:32:56.821Z hc spawns from daemon start to end of idle = 0
+2026-11-08T16:32:56.862Z status a1->working: index shows it after 40 ms
+2026-11-08T16:32:56.923Z status a1->blocked: index shows it after 61 ms
+2026-11-08T16:32:56.964Z status a1->done: index shows it after 40 ms
+2026-11-08T16:32:57.025Z status a1->idle: index shows it after 61 ms
+2026-11-08T16:32:57.065Z status a2->blocked: index shows it after 40 ms
+2026-11-08T16:32:57.126Z status a2->working: index shows it after 61 ms
+2026-11-08T16:32:57.126Z rows now: [["tb2","working"],["tb1","idle"]]
+2026-11-08T16:32:57.152Z after kill a2: row={"tab":"tb2","name":"tb2","status":"idle","at":1794155577133,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]} (20 ms)
+2026-11-08T16:33:00.163Z after rm a2: tb2 row STILL PRESENT {"tab":"tb2","name":"tb2","status":"idle","at":1794155577133,"recapAt":null,"writing":"resting","headline":"","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":0,"lanes":[]}; rows [["tb1","idle"],["tb2","idle"]]
+2026-11-08T16:33:00.180Z sockets before restart: 2
+2026-11-08T16:33:00.219Z hc server restart returned after 38 ms: {"core":{"id":"be18423958235d3e219f2d480050986b","name":"HOST"},"finished":7,"holder":{"current":true,"instance":"ae3f5fc30dadba6c7e5891557df6b
+2026-11-08T16:33:00.223Z start agent a3 on tb3: {"address":"t15","agent":"bash","cwd":"~","name":"a3","state":"live","turn":0} 
+2026-11-08T16:33:00.224Z DAEMON EXITED code=13 signal=null
+2026-11-08T16:34:00.229Z after restart: new agent tb3 row working after TIMEOUT
+2026-11-08T16:34:00.248Z daemon alive: false; sockets now: 0
+2026-11-08T16:34:05.263Z status a3->blocked: index shows it after TIMEOUT (row=undefined)
+2026-11-08T16:34:05.263Z rows after restart: [["tb1","idle"],["tb2","idle"]]; tb1 row {"tab":"tb1","name":"tb1","status":"idle","at":1794155579434,"recapAt":1794155579430,"writing":"resting","headline":"Wiring the form to the API","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":1,"lanes":[{"terminal":"t13","agent":"fakeagent","status":"idle","name":"t13","contextPercent":null,"hint":"no","stage":null}]}
+2026-11-08T16:34:05.263Z total shim calls over whole run: 0

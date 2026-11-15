@@ -1,0 +1,9 @@
+[
+  {
+    "class": "wire",
+    "file": "src/domain/value.ts",
+    "symbol": "Size",
+    "field": "width",
+    "reason": "probe: a wire exception outside src/wire/ excepts nothing"
+  }
+]

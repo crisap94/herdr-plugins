@@ -10,7 +10,7 @@ export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
     }
     const db = connectReadOnly(path);
     try {
-        if (db.prepare("SELECT 1 AS found FROM sqlite_schema WHERE name = 'fact'").get() === undefined) {
+        if (db.prepare("SELECT 1 AS found FROM sqlite_schema WHERE name = 'fact'").get() === null) {
             return null;
         }
         const rows = new LedgerRows(db);

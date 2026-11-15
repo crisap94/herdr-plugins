@@ -1,7 +1,8 @@
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import { closeEvidenceGate } from '#src/recap/domain/gates/g13-close-evidence.ts';
 import { gatesOf, retriesTargeted } from '#src/recap/domain/pipeline.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import { askBackFor } from './ask-back.ts';
 import { deduplicated, enumerate, enumerateAsked } from './enumerate.ts';
 import type { EnumerateRun } from './enumerate.ts';
@@ -19,13 +20,16 @@ const STEPS: Readonly<Record<Pipeline, { readonly enumerate: boolean; readonly a
 export interface PipelineParts {
     readonly pipeline: Pipeline;
     readonly enumerator: Enumerators | null;
+    readonly closeEvidence?: CloseEvidence;
     log(line: string): void;
 }
 
 const costing = (done: Extracted, extra: number): Extracted => ({ ...done, cost: done.cost + extra });
 
+const withCloseEvidence = (base: Ground, parts: PipelineParts): Ground => (parts.closeEvidence === 'on' ? { ...base, gates: [...base.gates, closeEvidenceGate] } : base);
+
 export async function extractPiped(summarizer: Summarizer, request: RecapRequest, judging: Ground, parts: PipelineParts): Promise<Extracted> {
-    const ground: Ground = parts.pipeline === 'one' ? judging : { ...judging, gates: gatesOf(parts.pipeline), targeted: retriesTargeted(parts.pipeline) };
+    const ground: Ground = withCloseEvidence(parts.pipeline === 'one' ? judging : { ...judging, gates: gatesOf(parts.pipeline), targeted: retriesTargeted(parts.pipeline) }, parts);
     const lanes = request.input.transcripts.filter((lane) => lane.entries.length > 0);
     const { enumerator } = parts;
     if (!STEPS[parts.pipeline].enumerate || enumerator === null || lanes.length === 0) {

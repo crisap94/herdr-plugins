@@ -19,7 +19,7 @@ typed input would leave the line in the composer without effect.
 5. Repeat with a second plain prompt and then a background-task notification arriving while the compaction waits. Pass:
    neither merges with the compaction line; each is taken inside the running turn and the compaction still runs once.
 
-If any step fails, set `whileWorking` of the Claude plan back to `needs-idle` (`src/adapters/compaction-plan-registry.ts`)
+If any step fails, set `whileWorking` of the Claude plan back to `needs-idle` (`src/adapters/capability/compaction-plans.ts`)
 before releasing.
 
 ## Claude Code keeps background work across `/compact`
@@ -32,4 +32,4 @@ running across a compaction (`CLAUDE_SPLIT` is `separates`).
 2. Type `/compact keep the background tasks` when the agent is idle.
 3. Pass: each task's end notice, and the monitor's events, still reach the agent after the `compact_boundary` row.
 
-If any step fails, set `CLAUDE_SPLIT` back to `{ kind: 'foreground-only', why: 'claude-background-lost' }` (`src/adapters/claude-in-flight.ts`) before releasing.
+If any step fails, set `CLAUDE_SPLIT` back to `{ kind: 'foreground-only', why: 'claude-background-lost' }` (`src/adapters/transcripts/claude/in-flight.ts`) before releasing.

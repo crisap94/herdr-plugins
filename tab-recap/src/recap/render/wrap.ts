@@ -1,28 +1,13 @@
-import { stripVTControlCharacters, styleText } from 'node:util';
+import { styleText } from 'node:util';
 import type { AgoUnit } from '#src/i18n/messages.ts';
 import { CLOSE_LINK, LINK_SEQUENCE, linkAfter } from './hyperlink.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const CSI = new RegExp(`(${ESC}\\[[0-?]*[ -/]*[@-~]|${LINK_SEQUENCE})`, 'u');
-const EMOJI = /\p{Extended_Pictographic}/u;
-const EMOJI_PRESENTATION = /\p{Emoji_Presentation}|\uFE0F/u;
-const FLAG = /^\p{Regional_Indicator}{2}$/u;
-const MARKS_ONLY = /^\p{M}+$/u;
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-function cellsOf(character: string): number {
-    if (MARKS_ONLY.test(character)) {
-        return 0;
-    }
-    return (EMOJI.test(character) && EMOJI_PRESENTATION.test(character)) || FLAG.test(character) ? 2 : 1;
-}
-
 export function visibleLength(text: string): number {
-    let cells = 0;
-    for (const { segment } of graphemes.segment(stripVTControlCharacters(text))) {
-        cells += cellsOf(segment);
-    }
-    return cells;
+    return Bun.stringWidth(text);
 }
 
 function cut(text: string, room: number): [string, string] {
@@ -37,7 +22,7 @@ function cut(text: string, room: number): [string, string] {
             continue;
         }
         for (const { segment, index } of graphemes.segment(piece)) {
-            cells += cellsOf(segment);
+            cells += Bun.stringWidth(segment);
             if (cells > room && head !== '') {
                 return [`${head}${open === null ? '' : CLOSE_LINK}`, `${open ?? ''}${piece.slice(index)}${pieces.slice(at + 1).join('')}`];
             }

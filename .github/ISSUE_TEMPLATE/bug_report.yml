@@ -52,7 +52,7 @@ body:
     id: status
     attributes:
       label: Status output
-      description: Output of `node bin/tab-recap.ts status` (run in `tab-recap/`)
+      description: Output of `bun bin/tab-recap.ts status` (run in `tab-recap/`)
       render: text
     validations:
       required: true
@@ -60,5 +60,5 @@ body:
     id: log
     attributes:
       label: Log excerpt
-      description: Relevant lines from the daemon log (the path is in the status output)
+      description: Relevant lines from the daemon log (the path is in the status output). Do not paste transcripts, secrets or private paths: replace your home folder with `~`.
       render: text

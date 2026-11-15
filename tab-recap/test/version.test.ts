@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { codeVersion, parseVersion } from '#src/adapters/plugin-version.ts';
-import { bindingsOf, boundKeys, herdrConfigPath, nodeAtLeast, nodeMajor } from '#src/adapters/host-check.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
+import { codeVersion, parseVersion } from '#src/adapters/os/plugin-version.ts';
+import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/herdr/host-check.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -31,6 +31,8 @@ test('the version is the manifest\'s version line; missing or garbage is null', 
     assert.equal(parseVersion('version = "1.4"\n'), null);
     assert.equal(parseVersion('version = "1.4.1-rc1"\n'), null);
     assert.equal(parseVersion(''), null);
+    assert.equal(parseVersion('# head\nversion = "2.0.1" # bumped\n[meta]\nx = 1\n'), '2.0.1', 'a trailing comment and a later table still parse');
+    assert.equal(parseVersion('version = [\n'), null, 'invalid TOML is null');
 });
 
 test('codeVersion reads the manifest next to the code; no manifest is null', () => {
@@ -79,8 +81,8 @@ test('status prints the code version and the running daemon\'s pid and version',
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
     try {
         new Pidfile(dir).claim(process.pid, '1.2.3');
-        const run = (locale: string): string => spawnSync(process.execPath, ['--no-warnings', 'bin/tab-recap.ts', 'status'], {
-            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, TAB_RECAP_LOCALE: locale },
+        const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale },
         }).stdout;
         const manifest = readFileSync('herdr-plugin.toml', 'utf8');
         const code = parseVersion(manifest) ?? '';
@@ -111,25 +113,25 @@ command = "tab-recap.columns"
 key = "ctrl+alt+r"
 `;
 
-test('the node version parses to its major; anything else is null', () => {
-    assert.equal(nodeMajor('v24.1.0'), 24);
-    assert.equal(nodeMajor('v18.20.4'), 18);
-    assert.equal(nodeMajor('banana'), null);
-    assert.equal(nodeMajor(''), null);
+test('the bun version parses to its major; anything else is null', () => {
+    assert.equal(bunMajor('1.4.4'), 1);
+    assert.equal(bunMajor('banana'), null);
+    assert.equal(bunMajor(''), null);
 });
 
-test('the host check refuses Node 24.20.0 and accepts 24.21.0 and newer', () => {
-    assert.equal(nodeAtLeast('v24.20.0'), false);
-    assert.equal(nodeAtLeast('v24.14.0'), false);
-    assert.equal(nodeAtLeast('v24.21.0'), true);
-    assert.equal(nodeAtLeast('v25.0.0'), true);
-    assert.equal(nodeAtLeast('banana'), false);
+test('the host check refuses Bun 1.4.3 and accepts 1.4.4 and newer', () => {
+    assert.equal(bunAtLeast('1.4.3'), false);
+    assert.equal(bunAtLeast('1.4.4'), true);
+    assert.equal(bunAtLeast('1.5.0'), true);
+    assert.equal(bunAtLeast('banana'), false);
 });
 
 test('bindings: only tab-recap.* actions of [[keys.command]] blocks count, in either field order', () => {
     assert.deepEqual(bindingsOf(CONFIG), [{ key: 'prefix+r', action: 'tab-recap.column' }, { key: 'ctrl+alt+r', action: 'tab-recap.columns' }]);
     assert.deepEqual(bindingsOf('[keys]\nprefix = "ctrl+b"\n'), []);
     assert.deepEqual(bindingsOf('command = "tab-recap.column"\nkey = "x"\n'), [], 'outside a key block it binds nothing');
+    assert.deepEqual(bindingsOf('not = [toml'), [], 'invalid TOML binds nothing');
+    assert.deepEqual(bindingsOf('[[keys.command]]\ncommand = "tab-recap.column" # hide\nkey = "prefix+r"\n'), [{ key: 'prefix+r', action: 'tab-recap.column' }], 'field order and comments do not matter');
 });
 
 test('the config is HERDR_CONFIG_PATH, else ~/.config/herdr/config.toml; a missing file binds nothing', () => {
@@ -138,19 +140,34 @@ test('the config is HERDR_CONFIG_PATH, else ~/.config/herdr/config.toml; a missi
     assert.deepEqual(boundKeys('/nonexistent/config.toml'), []);
 });
 
-test('status says which node runs it and which keys are bound, or that none is', () => {
+test('status says which bun runs it and which keys are bound, or that none is', () => {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
     try {
-        const run = (config: string, locale = 'en'): string => spawnSync(process.execPath, ['--no-warnings', 'bin/tab-recap.ts', 'status'], {
-            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, TAB_RECAP_LOCALE: locale, HERDR_CONFIG_PATH: config },
+        const run = (config: string, locale = 'en'): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale, HERDR_CONFIG_PATH: config },
         }).stdout;
         writeFileSync(join(dir, 'config.toml'), CONFIG);
         const bound = run(join(dir, 'config.toml'));
-        assert.match(bound, new RegExp(`^node     ${process.execPath.replaceAll('/', '\\/')} ${process.version.replaceAll('.', '\\.')}$`, 'm'));
+        assert.match(bound, new RegExp(`^bun      ${process.execPath.replaceAll('/', '\\/')} ${(process.versions.bun ?? '').replaceAll('.', '\\.')}$`, 'm'));
         assert.match(bound, /^keys     prefix\+r → tab-recap\.column, ctrl\+alt\+r → tab-recap\.columns$/m);
-        assert.doesNotMatch(bound, /warning/, 'this node is new enough');
+        assert.doesNotMatch(bound, /warning/, 'this bun is new enough');
         assert.match(run(join(dir, 'missing.toml')), /^keys     no key bound — see README/m);
         assert.match(run(join(dir, 'missing.toml'), 'es'), /^teclas   ninguna tecla asignada — mira el README/m);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('status names the recap language and where it came from', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
+    try {
+        const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
+            encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale, TAB_RECAP_RECAP_LANG: '' },
+        }).stdout;
+        assert.match(run('en'), /^language en \(environment variable\)$/m);
+        writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_RECAP_LANG=es\n');
+        assert.match(run('en'), /^language es \(settings file\)$/m);
+        assert.match(run('es'), /^idioma   es \(archivo de ajustes\)$/m);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

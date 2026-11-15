@@ -1,0 +1,16 @@
+2026-11-08T16:25:47.443Z daemon 2201082 up, state in ~/.cache/hcs/t1-state/socket-keepalive
+2026-11-08T16:25:47.471Z autocompact t10: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:25:47.473Z autocompact t11: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:25:47.474Z blind at subscribe: the subscription ended
+2026-11-08T16:26:47.453Z perf window=60s status-tracked=0 status-full=0 locate=2 git-dir-event=0 status-coalesced=0 failed=0 cpu=87ms cpu-share=0% rss=121MiB
+2026-11-08T16:27:17.801Z blind at subscribe: the subscription ended
+2026-11-08T16:27:20.092Z recap tb1: written in 0.0 s (turn-ended)
+2026-11-08T16:27:21.390Z blind at subscribe: the subscription ended
+2026-11-08T16:27:23.980Z recap tb3: written in 0.0 s (turn-ended)
+2026-11-08T16:27:47.443Z perf window=60s status-tracked=0 status-full=0 locate=1 git-dir-event=0 status-coalesced=0 failed=0 cpu=128ms cpu-share=0% rss=122MiB
+2026-11-08T16:28:47.445Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=58ms cpu-share=0% rss=113MiB
+2026-11-08T16:29:47.445Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=42ms cpu-share=0% rss=115MiB
+2026-11-08T16:30:47.447Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=62ms cpu-share=0% rss=114MiB
+2026-11-08T16:31:47.458Z perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=37ms cpu-share=0% rss=114MiB
+2026-11-08T16:32:21.565Z stopping: closing every column
+2026-11-08T16:32:21.566Z stopping: closed 0 columns

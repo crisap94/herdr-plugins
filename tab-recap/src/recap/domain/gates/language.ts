@@ -30,6 +30,6 @@ export const wrongLanguage: Gate = {
         if ((wanted !== 'en' && wanted !== 'es') || found === null || found === wanted) {
             return null;
         }
-        return { kind: 'flag', gate: 'G5', reason: said(wanted, `write this item in English, not ${found === 'es' ? 'Spanish' : 'another language'}`, 'escribe este elemento en español, no en inglés') };
+        return { kind: 'refuse', gate: 'G5', reason: said(wanted, `write this item in English, not ${found === 'es' ? 'Spanish' : 'another language'}`, 'escribe este elemento en español, no en inglés') };
     },
 };

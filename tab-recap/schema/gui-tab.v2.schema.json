@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gui-tab.v2.schema.json",
+  "title": "A tab's recap, version 2, as the desktop mod reads it",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "tab", "name", "status", "at", "recapAt", "writing", "error", "lanes", "tasks", "locale", "zone", "backend", "versions", "warnings", "claudeRecaps", "groups", "breaks", "session", "cuts"],
+  "properties": {
+    "version": { "const": 2 },
+    "tab": { "$ref": "#/$defs/nonEmptyText" },
+    "name": { "$ref": "#/$defs/nonEmptyText" },
+    "status": { "$ref": "#/$defs/nonEmptyText" },
+    "at": { "$ref": "#/$defs/instant" },
+    "recapAt": { "anyOf": [{ "$ref": "#/$defs/instant" }, { "type": "null" }] },
+    "writing": { "enum": ["writing", "resting"] },
+    "error": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+    "lanes": { "type": "array", "items": { "$ref": "#/$defs/lane" } },
+    "tasks": { "type": "array", "items": { "$ref": "#/$defs/task" } },
+    "locale": { "enum": ["en", "es"] },
+    "zone": { "$ref": "#/$defs/text" },
+    "compactHint": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+    "backend": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+    "versions": { "$ref": "#/$defs/versions" },
+    "warnings": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "claudeRecaps": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
+    "breaks": { "type": "array", "items": { "$ref": "#/$defs/break" } },
+    "session": { "anyOf": [{ "$ref": "#/$defs/session" }, { "type": "null" }] },
+    "cuts": { "type": "array", "items": { "$ref": "#/$defs/cut" } }
+  },
+  "$defs": {
+    "text": { "type": "string" },
+    "nonEmptyText": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "count": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "instant": { "type": "number", "minimum": 0 },
+    "flag": { "enum": ["yes", "no"] },
+    "section": { "enum": ["goal", "now", "needs", "done", "decisions", "next", "links", "rules"] },
+    "closedWhy": { "enum": ["done", "wrong", "superseded", "answered", "merged", "rewritten"] },
+    "boundaryKind": { "enum": ["compacted", "switched"] },
+    "trigger": { "enum": ["auto", "manual", "plugin"] },
+    "origin": { "enum": ["operator", "auto", "request"] },
+    "windowSource": { "enum": ["agent", "catalogue", "table", "observed", "setting"] },
+    "runCause": { "enum": ["turn-ended", "focused", "requested"] },
+    "noteKind": { "enum": ["alert", "git", "token", "extension"] },
+    "stageId": { "enum": ["briefing", "compacting", "restoring", "compacted", "failed", "unconfirmed", "skipped"] },
+    "brief": { "enum": ["written", "template"] },
+    "cutPart": { "enum": ["timeline", "markdown", "text", "decisions", "prompt", "facts"] },
+    "forge": { "enum": ["gitlab", "github"] },
+    "factState": { "enum": ["open", "closed"] },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "url"],
+      "properties": {
+        "text": { "$ref": "#/$defs/text" },
+        "url": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "section", "text", "spans", "why", "ref", "agent", "firstAt", "lastAt", "state", "closedWhy", "closedAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyText" },
+        "section": { "$ref": "#/$defs/section" },
+        "text": { "$ref": "#/$defs/text" },
+        "spans": { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/span" } }, { "type": "null" }] },
+        "why": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "ref": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "agent": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "firstAt": { "$ref": "#/$defs/instant" },
+        "lastAt": { "$ref": "#/$defs/instant" },
+        "state": { "$ref": "#/$defs/factState" },
+        "closedWhy": { "anyOf": [{ "$ref": "#/$defs/closedWhy" }, { "type": "null" }] },
+        "closedAt": { "anyOf": [{ "$ref": "#/$defs/instant" }, { "type": "null" }] }
+      }
+    },
+    "regions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "now", "needs", "decisions", "next", "rules", "links"],
+      "properties": {
+        "goal": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "now": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "needs": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "decisions": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "next": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } }
+      }
+    },
+    "break": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "at", "trigger", "tokensBefore", "tokensAfter", "tookMs", "text"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/boundaryKind" },
+        "at": { "$ref": "#/$defs/instant" },
+        "trigger": { "anyOf": [{ "$ref": "#/$defs/trigger" }, { "type": "null" }] },
+        "tokensBefore": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "tokensAfter": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "tookMs": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "text": { "$ref": "#/$defs/text" }
+      }
+    },
+    "timelineRow": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "fact", "at", "clock", "day", "closed"],
+          "properties": {
+            "kind": { "const": "fact" },
+            "fact": { "$ref": "#/$defs/nonEmptyText" },
+            "at": { "$ref": "#/$defs/instant" },
+            "clock": { "$ref": "#/$defs/text" },
+            "day": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+            "closed": { "anyOf": [{ "$ref": "#/$defs/closedWhy" }, { "type": "null" }] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "at", "clock", "day", "break"],
+          "properties": {
+            "kind": { "const": "break" },
+            "at": { "$ref": "#/$defs/instant" },
+            "clock": { "$ref": "#/$defs/text" },
+            "day": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+            "break": { "$ref": "#/$defs/break" }
+          }
+        }
+      ]
+    },
+    "story": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "spans", "at"],
+      "properties": {
+        "text": { "$ref": "#/$defs/text" },
+        "spans": { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/span" } }, { "type": "null" }] },
+        "at": { "$ref": "#/$defs/instant" }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "now", "needs", "done", "decisions", "next", "links", "rules"],
+      "properties": {
+        "goal": { "$ref": "#/$defs/text" },
+        "now": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "needs": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "done": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "decisions": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "next": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "sections", "markdown", "facts", "regions", "timeline", "story", "curating", "needsWaitedMs"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyText" },
+        "name": { "$ref": "#/$defs/text" },
+        "sections": { "$ref": "#/$defs/sections" },
+        "markdown": { "$ref": "#/$defs/text" },
+        "facts": { "type": "array", "items": { "$ref": "#/$defs/fact" } },
+        "regions": { "$ref": "#/$defs/regions" },
+        "timeline": { "type": "array", "items": { "$ref": "#/$defs/timelineRow" } },
+        "story": { "anyOf": [{ "$ref": "#/$defs/story" }, { "type": "null" }] },
+        "curating": { "$ref": "#/$defs/flag" },
+        "needsWaitedMs": { "type": "array", "items": { "$ref": "#/$defs/count" } }
+      }
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mark", "label", "at", "details", "kind"],
+      "properties": {
+        "mark": { "$ref": "#/$defs/text" },
+        "label": { "$ref": "#/$defs/text" },
+        "at": { "anyOf": [{ "$ref": "#/$defs/instant" }, { "type": "null" }] },
+        "details": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "kind": { "$ref": "#/$defs/noteKind" }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens", "window", "share", "source"],
+      "properties": {
+        "tokens": { "$ref": "#/$defs/count" },
+        "window": { "$ref": "#/$defs/count" },
+        "share": { "$ref": "#/$defs/count" },
+        "source": { "$ref": "#/$defs/windowSource" }
+      }
+    },
+    "hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["percent", "window"],
+      "properties": {
+        "percent": { "$ref": "#/$defs/count" },
+        "window": { "$ref": "#/$defs/count" }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "stage", "queued", "writer", "brief", "why", "startedAt", "stageAt", "tokensBefore", "tokensAfter", "tookMs", "origin", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyText" },
+        "stage": { "$ref": "#/$defs/stageId" },
+        "queued": { "$ref": "#/$defs/flag" },
+        "writer": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "brief": { "anyOf": [{ "$ref": "#/$defs/brief" }, { "type": "null" }] },
+        "why": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "startedAt": { "$ref": "#/$defs/instant" },
+        "stageAt": { "$ref": "#/$defs/instant" },
+        "tokensBefore": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "tokensAfter": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "tookMs": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "origin": { "$ref": "#/$defs/origin" },
+        "text": { "$ref": "#/$defs/text" }
+      }
+    },
+    "compaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hint", "stage"],
+      "properties": {
+        "hint": { "anyOf": [{ "$ref": "#/$defs/hint" }, { "type": "null" }] },
+        "stage": { "anyOf": [{ "$ref": "#/$defs/stage" }, { "type": "null" }] }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "ahead", "changed"],
+      "properties": {
+        "branch": { "$ref": "#/$defs/text" },
+        "ahead": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "changed": { "$ref": "#/$defs/count" }
+      }
+    },
+    "web": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "forge", "branch"],
+      "properties": {
+        "base": { "$ref": "#/$defs/text" },
+        "forge": { "$ref": "#/$defs/forge" },
+        "branch": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] }
+      }
+    },
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pane", "agent", "status", "title", "cwd", "lastPrompt", "branch", "contextPercent", "since", "heading", "fromScreen", "context", "compaction", "notes", "git", "web"],
+      "properties": {
+        "pane": { "$ref": "#/$defs/nonEmptyText" },
+        "agent": { "$ref": "#/$defs/nonEmptyText" },
+        "status": { "$ref": "#/$defs/nonEmptyText" },
+        "title": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "cwd": { "anyOf": [{ "$ref": "#/$defs/nonEmptyText" }, { "type": "null" }] },
+        "lastPrompt": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "branch": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "contextPercent": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "since": { "anyOf": [{ "$ref": "#/$defs/instant" }, { "type": "null" }] },
+        "heading": { "$ref": "#/$defs/text" },
+        "fromScreen": { "$ref": "#/$defs/flag" },
+        "context": { "anyOf": [{ "$ref": "#/$defs/context" }, { "type": "null" }] },
+        "compaction": { "$ref": "#/$defs/compaction" },
+        "notes": { "type": "array", "items": { "$ref": "#/$defs/note" } },
+        "git": { "anyOf": [{ "$ref": "#/$defs/git" }, { "type": "null" }] },
+        "web": { "anyOf": [{ "$ref": "#/$defs/web" }, { "type": "null" }] }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin", "daemon", "stale"],
+      "properties": {
+        "plugin": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "daemon": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "stale": { "$ref": "#/$defs/flag" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "lanes"],
+      "properties": {
+        "task": { "anyOf": [{ "$ref": "#/$defs/nonEmptyText" }, { "type": "null" }] },
+        "lanes": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } }
+      }
+    },
+    "causeCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cause", "count"],
+      "properties": {
+        "cause": { "$ref": "#/$defs/runCause" },
+        "count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "byCause"],
+      "properties": {
+        "total": { "$ref": "#/$defs/count" },
+        "byCause": { "type": "array", "items": { "$ref": "#/$defs/causeCount" } }
+      }
+    },
+    "origins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator", "auto"],
+      "properties": {
+        "operator": { "$ref": "#/$defs/count" },
+        "auto": { "$ref": "#/$defs/count" }
+      }
+    },
+    "measured": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": { "$ref": "#/$defs/count" },
+        "after": { "$ref": "#/$defs/count" }
+      }
+    },
+    "compactions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "byOrigin", "measured"],
+      "properties": {
+        "count": { "$ref": "#/$defs/count" },
+        "byOrigin": { "$ref": "#/$defs/origins" },
+        "measured": { "type": "array", "items": { "$ref": "#/$defs/measured" } }
+      }
+    },
+    "agentShare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "share", "window"],
+      "properties": {
+        "label": { "$ref": "#/$defs/text" },
+        "share": { "$ref": "#/$defs/count" },
+        "window": { "$ref": "#/$defs/count" }
+      }
+    },
+    "fileCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "count"],
+      "properties": {
+        "path": { "$ref": "#/$defs/text" },
+        "count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "autocompact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisions", "compacted", "waited"],
+      "properties": {
+        "decisions": { "$ref": "#/$defs/count" },
+        "compacted": { "$ref": "#/$defs/count" },
+        "waited": { "$ref": "#/$defs/count" }
+      }
+    },
+    "started": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "forMs"],
+      "properties": {
+        "at": { "$ref": "#/$defs/instant" },
+        "forMs": { "$ref": "#/$defs/count" }
+      }
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "branch"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "branch": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["started", "runs", "compactions", "chapters", "agents", "repo", "files", "autocompact"],
+      "properties": {
+        "started": { "anyOf": [{ "$ref": "#/$defs/started" }, { "type": "null" }] },
+        "runs": { "anyOf": [{ "$ref": "#/$defs/runs" }, { "type": "null" }] },
+        "compactions": { "anyOf": [{ "$ref": "#/$defs/compactions" }, { "type": "null" }] },
+        "chapters": { "anyOf": [{ "$ref": "#/$defs/count" }, { "type": "null" }] },
+        "agents": { "type": "array", "items": { "$ref": "#/$defs/agentShare" } },
+        "repo": { "anyOf": [{ "$ref": "#/$defs/repo" }, { "type": "null" }] },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/fileCount" } },
+        "autocompact": { "anyOf": [{ "$ref": "#/$defs/autocompact" }, { "type": "null" }] }
+      }
+    },
+    "cut": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part", "task", "kept", "total"],
+      "properties": {
+        "part": { "$ref": "#/$defs/cutPart" },
+        "task": { "anyOf": [{ "$ref": "#/$defs/nonEmptyText" }, { "type": "null" }] },
+        "kept": { "$ref": "#/$defs/count" },
+        "total": { "$ref": "#/$defs/count" }
+      }
+    }
+  }
+}

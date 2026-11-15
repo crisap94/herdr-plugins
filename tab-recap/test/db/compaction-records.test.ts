@@ -2,13 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { connect } from '#src/adapters/db/connection.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
-import { memoryStore, newId, scratchDir } from './support.ts';
+import { memoryStore, newId, openFixture, scratchDir } from './support.ts';
 
 const store = (): ReturnType<typeof memoryStore> => {
     const made = memoryStore();
@@ -21,7 +20,7 @@ test('migration 4 from a v3 database with data: backup tab-recap.db.v3.bak, rows
     const dir = scratchDir('v3');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = new DatabaseSync(path);
+        const old = openFixture(path);
         old.exec('PRAGMA journal_mode = WAL');
         migrate(old, MIGRATIONS.slice(0, 3));
         old.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)");
@@ -32,7 +31,7 @@ test('migration 4 from a v3 database with data: backup tab-recap.db.v3.bak, rows
         assert.equal(opened.kind, 'ready');
         assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v3.bak']);
-        assert.equal(versionOf(new DatabaseSync(`${path}.v3.bak`)), 3);
+        assert.equal(versionOf(openFixture(`${path}.v3.bak`)), 3);
         assert.deepEqual({ ...(opened.db.prepare('SELECT target FROM request').get() as object) }, { target: 'w1:t1' });
         opened.db.prepare("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at) VALUES (?, 'w1:t1', 'p', 'claude', 'compacting', 1, 1)").run(newId());
         const view = opened.db.prepare('SELECT id, stage FROM compaction_readable').get() as { id: string; stage: string };

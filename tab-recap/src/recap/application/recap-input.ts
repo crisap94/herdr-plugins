@@ -1,7 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
-import { isScreenSource } from '#src/ports/screens.ts';
+import { isScreenSource } from '#src/ports/transcript-source.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';

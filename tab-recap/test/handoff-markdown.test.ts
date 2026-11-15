@@ -173,7 +173,7 @@ test('the rendered minute is the UTC minute under a non-UTC time zone', () => {
     const instant = Date.parse('2026-10-11T07:30:00Z');
     const script = `import { utcMinuteText } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'src', 'recap', 'render', 'utc-minute.ts')).href)};
 process.stdout.write(utcMinuteText(${instant}));`;
-    const child = spawnSync(process.execPath, ['--input-type=module', '--eval', script], { encoding: 'utf8', env: { ...process.env, TZ: 'America/Los_Angeles' } });
+    const child = spawnSync(process.execPath, ['--eval', script], { encoding: 'utf8', env: { ...process.env, TZ: 'America/Los_Angeles' } });
     assert.equal(child.status, 0, child.stderr);
     assert.equal(child.stdout, '2026-10-11 07:30Z');
     assert.equal(utcMinuteText(instant), '2026-10-11 07:30Z');

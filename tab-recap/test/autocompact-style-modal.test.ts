@@ -7,7 +7,7 @@ import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');

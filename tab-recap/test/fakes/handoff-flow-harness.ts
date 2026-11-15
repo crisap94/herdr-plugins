@@ -10,7 +10,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
-import { handoffPlans } from '#src/adapters/handoff-plan-registry.ts';
+import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';

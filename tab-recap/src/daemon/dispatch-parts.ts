@@ -1,5 +1,5 @@
 import type { Store } from '#src/adapters/db/database.ts';
-import type { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
@@ -8,7 +8,7 @@ import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { LivePrompts } from '#src/recap/application/live-prompts.ts';
-import type { RecapJob } from '#src/recap/application/recap-job.ts';
+import type { Engine } from '#src/recap/application/engine.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -23,9 +23,9 @@ export interface Box {
 }
 
 export interface DispatchParts {
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly store: Store;
-    readonly recaps: RecapJob;
+    readonly recaps: Pick<Engine, 'turnEnded'>;
     readonly transcripts: TranscriptRegistry;
     readonly webs: LaneWebs;
     readonly contexts: LaneContexts;
@@ -36,7 +36,7 @@ export interface DispatchParts {
 export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) => void): Dispatch {
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
-        closures: parts.store.closedLanes, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
+        closures: parts.store.closedLanes, retirements: parts.store.retention, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
         sizing: (): Sizing => loadConfig().sizing,
         board: (): Board => {
             if (box.informer === null) {

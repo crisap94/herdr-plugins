@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+SRC=$HOME/Projects/homelab/herdr-plugins-gui-port/tab-recap/gui
+DST=$HOME/.cache/hcs/app/mods/tab-recap
+rsync -a --delete --exclude gpui-kit.d.ts --exclude jsconfig.json $SRC/ $DST/
+if [ "$1" = "test" ]; then
+node -e '
+const fs=require("fs");
+let f;
+if (!process.env.NOLOG) {
+f=process.argv[1]+"/roles/strip.js";let s=fs.readFileSync(f,"utf8");
+s=s.replace("import { openOverlay, panes, props, shared } from \"herdr\";","import { openOverlay, panes, props, shared, exec } from \"herdr\";");
+s=s.replace("    const lane = row?.lanes.find((l) => l.terminal === pane.terminal);\n","    const lane = row?.lanes.find((l) => l.terminal === pane.terminal);\n    if (row && this.logged !== row.status + row.at) { this.logged = row.status + row.at; exec(\"sh\", [\"-c\", \"echo $(date +%s.%N) \" + row.status + \" \" + this.store.mode + \" >> $HOME/.cache/hcs/t2-render.log\"]); }\n");
+fs.writeFileSync(f,s);
+f=process.argv[1]+"/store.js";s=fs.readFileSync(f,"utf8");
+s=s.replace("import { readTextFile, watchFolder } from \"herdr\";","import { readTextFile, watchFolder, exec } from \"herdr\";");
+s=s.replace("    this.indexState = got.state;\n","    this.indexState = got.state;\n    exec(\"sh\", [\"-c\", \"echo $(date +%s.%N) \" + (got.rows ? got.rows.map((r) => r.status).join(\",\") : \"-\") + \" \" + this.mode + \" >> $HOME/.cache/hcs/t2-store.log\"]);\n");
+fs.writeFileSync(f,s);
+f=process.argv[1]+"/feed.js";s=fs.readFileSync(f,"utf8");
+s=s.replace("import { api } from \"./api.js\";","import { api } from \"./api.js\";\nimport { exec } from \"herdr\";\nconst lg = (m) => exec(\"sh\", [\"-c\", \"echo $(date +%s.%N) \" + m + \" >> $HOME/.cache/hcs/t2-feed.log\"]);");
+s=s.replace("    const res = await api.single(`${ROUTE.events}?since=${this.since}&wait=${LONG_POLL.wait}`);\n","    lg(\"poll-start since=\" + this.since);\n    const res = await api.single(`${ROUTE.events}?since=${this.since}&wait=${LONG_POLL.wait}`);\n    lg(\"poll-end \" + (res ? res.status + \" \" + res.text.slice(0, 120) : \"null\"));\n");
+fs.writeFileSync(f,s);
+}
+f=process.argv[1]+"/main.js";s=fs.readFileSync(f,"utf8");
+s=s.replace("import { props } from \"herdr\";","import { props, readTextFile, exec } from \"herdr\";\nimport { openLink } from \"./commands.js\";");
+const hook=`    cx.timer.every(300, (c) => {
+      const file = process_state + "/cmd." + this.name + ".json";
+      readTextFile(file).then((txt) => {
+        if (!txt) return;
+        exec("rm", ["-f", file]);
+        for (const m of JSON.parse(txt)) {
+          if (m.key) this.role.onKey({ key: m.key, modifiers: {} }, c);
+          else if (m.link) openLink(m.link);
+          else if (m.set) this.role[m.set] = m.value;
+          else if (m.call) this.role[m.call](...(m.a ?? []).map((x) => (x === "$cx" ? c : x)));
+        }
+        c.notify();
+      }, () => null);
+    });
+`.replace("process_state", JSON.stringify(process.env.STATE_DIR));
+s=s.replace("    this.role?.init?.(given, cx);\n","    this.role?.init?.(given, cx);\n"+hook);
+fs.writeFileSync(f,s);
+' $DST
+fi

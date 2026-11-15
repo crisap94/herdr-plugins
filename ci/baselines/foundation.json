@@ -1,0 +1,54 @@
+{
+  "commit": "1678ba350f985ced3b247502db8296bfa8a273c3",
+  "releaseCommit": "d81bb763fb28fd4184970a0de646c54f126ad4a4",
+  "tag": "tab-recap-v3.0.2",
+  "golden": {
+    "one": "8917c3770e98861433a375f222b8e836e60d072391ce3564aecc950273e9fefa",
+    "full": "a35182119af998b7cd93cfa8d4131ebd25d2072d0c1101f03994d0c5faec39c8"
+  },
+  "tests": {
+    "pass": 3025,
+    "fail": 0,
+    "files": 380
+  },
+  "lint": {
+    "exit": 0,
+    "ok": 65
+  },
+  "nextRelease": {
+    "command": "bash tab-recap/ci/next-release.sh",
+    "previous": "tab-recap-v3.0.2",
+    "to": "1678ba350f985ced3b247502db8296bfa8a273c3",
+    "version": null,
+    "bump": null,
+    "merged": 1,
+    "source": "offline: release() of tab-recap/ci/next-release.ts over git rev-list d81bb76..1678ba3 (one commit, the merge of !170); !170 carries land and changelog::internal as tab-recap/ci/release-publish.sh:54 sets them; the GitLab API was not called"
+  },
+  "domainTypes": {
+    "B1": 698,
+    "B2": 946,
+    "B3": 1442,
+    "B4": 1047,
+    "B5": 477,
+    "B6": 561,
+    "B7": 195,
+    "B8": 222,
+    "lead": 0,
+    "total": 5588
+  },
+  "engineFiles": {
+    "engine": 89,
+    "herdrLaneModelUntilTheFacadeSpeaksScopeAndFollowedSession": 3
+  },
+  "lanes": {
+    "B1": 125,
+    "B2": 296,
+    "B3": 193,
+    "B4": 44,
+    "B5": 132,
+    "B6": 133,
+    "B7": 39,
+    "B8": 19,
+    "lead": 133
+  }
+}

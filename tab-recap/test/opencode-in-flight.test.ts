@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { OpencodeTranscripts } from '#src/adapters/opencode-transcripts.ts';
+import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { splitReason } from '#src/ports/capability-reasons.ts';
 import { opencodeFixture, toolPart } from '#test/opencode-fixture.ts';
 

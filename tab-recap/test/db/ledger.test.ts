@@ -59,7 +59,7 @@ test('a failing write in the middle of an answer leaves nothing of it: the facts
     records.recordRun(run(100, []));
     assert.throws(() => ledger.apply(ref(db, 120), [add('done', 'kept?'), add('done', '')]), /CHECK constraint failed/);
     assert.deepEqual(ledger.allOf(TASK), []);
-    assert.equal(db.isTransaction, false);
+    assert.equal(db.inTransaction, false);
 });
 
 test('the schema refuses what the fold cannot: every CHECK of the table bites', () => {

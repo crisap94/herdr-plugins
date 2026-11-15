@@ -1,0 +1,26 @@
+{
+  "name": "coverage-check",
+  "dataset": "dataset.jsonl",
+  "datasetSha256": "7f1952ec174e128f944c55a884527e0a4e843c1e3330f07acc1b73960280da2a",
+  "items": 24,
+  "repetitions": 3,
+  "passMark": 0.7,
+  "reportedMarks": [0.6, 0.7, 0.75],
+  "sweep": { "from": 0.3, "to": 0.95, "step": 0.05 },
+  "timeoutMs": 180000,
+  "shipped": "claude-haiku-low",
+  "configs": [
+    { "name": "claude-haiku-low", "backend": "claude", "model": "claude-haiku-5-5", "effort": "low", "shipped": true },
+    { "name": "claude-haiku-medium", "backend": "claude", "model": "claude-haiku-5-5", "effort": "medium" },
+    { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
+    { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
+    { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium" },
+    { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+    { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
+  ],
+  "codeCriteria": ["C1", "C2", "C3", "C4", "C4p", "C5", "C5a", "C5n", "C6", "C6d", "C8", "C8a", "C8b"],
+  "judge": null,
+  "plannedCalls": { "job": 504, "judge": 0 },
+  "stub": { "kept": 0.9, "notKept": 0.1 },
+  "audit": "expected answers were written by a model and audited by nobody yet"
+}

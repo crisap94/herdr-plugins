@@ -1,4 +1,5 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
+import { eq, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneNoteReader, PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
@@ -6,7 +7,9 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
-import { all, guarded, isRow } from './rows.ts';
+import { paneNote } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { guarded, isRow } from './rows.ts';
 
 type PaneNoteRow = NoteToken;
 
@@ -26,37 +29,41 @@ export function parsePaneNoteRow(input: unknown): Result<PaneNoteRow, ParseFailu
 }
 
 export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
-    private readonly db: DatabaseSync;
-    private readonly read: StatementSync;
-    private readonly insert: StatementSync;
-    private readonly clear: StatementSync;
+    private readonly db: Database;
+    private readonly orm: Orm;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
-        this.read = db.prepare('SELECT label, value FROM pane_note WHERE pane = ? ORDER BY label');
-        this.insert = db.prepare('INSERT OR REPLACE INTO pane_note (pane, label, value) VALUES (?, ?, ?)');
-        this.clear = db.prepare('DELETE FROM pane_note WHERE pane = ?');
+        this.orm = ormOf(db);
     }
 
     replace(pane: PaneId, notes: readonly NoteToken[]): void {
         writeTx(this.db, () => {
-            this.clear.run(pane);
-            notes.forEach((note) => { this.insert.run(pane, note.label, note.value); });
+            this.clear(pane);
+            notes.forEach((note) => {
+                this.orm.insert(paneNote).values({ pane, label: note.label, value: note.value })
+                    .onConflictDoUpdate({ target: [paneNote.pane, paneNote.label], set: { value: sql`excluded.value` } })
+                    .run();
+            });
         });
     }
 
     forget(pane: PaneId): void {
-        this.clear.run(pane);
+        this.clear(pane);
     }
 
     reset(): void {
-        this.db.exec('DELETE FROM pane_note');
+        this.orm.delete(paneNote).run();
     }
 
     notesOf(pane: PaneId): readonly NoteToken[] {
-        return guarded(() => all(this.read, pane).flatMap((row) => {
+        return guarded(() => this.orm.select({ label: paneNote.label, value: paneNote.value }).from(paneNote).where(eq(paneNote.pane, pane)).orderBy(paneNote.label).all().flatMap((row) => {
             const parsed = parsePaneNoteRow(row);
             return parsed.kind === 'ok' ? [parsed.value] : [];
         }), []);
+    }
+
+    private clear(pane: PaneId): void {
+        this.orm.delete(paneNote).where(eq(paneNote.pane, pane)).run();
     }
 }

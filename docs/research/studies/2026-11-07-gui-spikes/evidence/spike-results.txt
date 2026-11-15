@@ -1,0 +1,26 @@
+Results of the three spikes, 2026-11-07, herdr 0.9.5, herdr-app and hc (herdr-core) 0.1.18, throwaway hc session "sp".
+
+1. Daemon through hc
+   first  `hc run --bg --keep --no-parent --name tab-recap-d -- sleep 300` -> {"address":"t1","state":"live","name":"tab-recap-d"}
+   second same command                                                    -> error kind "name_taken" (stable, so `ensure` is idempotent)
+   `hc get <missing>`                                                     -> error kind "not_found"
+   `hc server restart`                                                    -> t1 still live ("programs keep running")
+   A mod's init ran `exec("sh", ["-c", ENSURE])` in a scratch herdr-app window: with no daemon it printed "started" and a terminal named
+   tab-recap-d appeared in the same hc session; with one running it printed "live". See floating-chip.png.
+
+2. Typing
+   `hc send probe '/compact'`          program received  ESC[200~/compact ESC[201~   then  CR   (a bracketed paste, then Enter)
+   `hc keys probe enter`               CR
+   `hc keys probe / c o m enter`       the characters one by one, then CR (raw keystrokes)
+   `hc keys probe /compact`            rejected: a key is one character or a name
+   `hc keys` rejects these printable characters: !"#$%&()*+:<>?@^_{|}~   (names such as `colon` and `underscore` are rejected too;
+   `shift+1` delivers "1", not "!"). It accepts letters, digits, space (as `space`) and ' , - . / ; = [ \ ] `
+   => a slash command can be typed as keystrokes, but arbitrary guidance text cannot; `hc send` always pastes.
+
+3. Session of a claude terminal
+   `hc get <t>` gives foreground.pid; ~/.claude/sessions/<pid>.json holds sessionId, cwd, status. No such lookup was tried for codex or opencode.
+
+4. Docking
+   In a scratch home, a new mod folder with place "bottom" or "right" was NOT docked into the main layout (no entry in installed.json or layouts/main.json),
+   whether present at first start or added while running. A floating block added to layouts/main.json in the scratch home DID show the mod
+   (herdr-app status lists it under floats) and kept it alive. `herdr-app do mod.open --name tab-recap` showed the overlay face. See both PNGs.

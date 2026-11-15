@@ -1,0 +1,57 @@
+{
+    "name": "curator-story",
+    "dataset": "dataset.jsonl",
+    "items": 24,
+    "repetitions": 3,
+    "input": {
+        "shape": "{ name: string, language: 'en' | 'es', facts: Fact[], clock: { now: number, zone: string } }",
+        "builder": "tab-recap/src/recap/application/curator-input.ts#curatorInput({ ...input, rubric: RUBRIC.items })",
+        "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC.items",
+        "system": "tab-recap/src/adapters/job/prompts/curator-instructions.ts#CURATOR_INSTRUCTIONS",
+        "user": "curatorInput(...).document",
+        "unfence": "tab-recap/src/adapters/job/prompts/recap-prompt.ts#unfenced(text)",
+        "parser": "tab-recap/src/recap/domain/curation.ts#curationOf(unfenced(text), openIds)",
+        "openIds": "the ids of curatorInput(...).facts whose state is 'open'",
+        "language": "tab-recap/src/recap/domain/gates/language.ts#languageOfLine",
+        "tokens": "evals/curator-story/tokens.ts#outsideOf({ names: expected.names_and_numbers, times: expected.times, facts: input.facts.length }, story)"
+    },
+    "shipped": { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },
+    "shippedBasis": "CURATE_DEFAULT in tab-recap/src/recap/domain/job.ts is { by: 'recap', model: '', effort: 'medium' }: the curator runs on the recap job's backend at medium effort. The inventory counts 2545 of 2707 stored recap runs on codex/gpt-6-luna. The store does not record which model wrote a story, so this is the most likely shipped configuration, not a verified one.",
+    "configs": [
+        { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },
+        { "name": "claude-haiku-medium", "backend": "claude", "model": "claude-haiku-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
+        { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
+        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
+    ],
+    "dropOrder": ["claude-sonnet-high", "codex-luna-low"],
+    "storyWords": 120,
+    "codeCriteria": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"],
+    "judgeCriteria": ["SJ1", "SJ2", "SJ3"],
+    "kinds": {
+        "regression": ["S1", "S2", "S3", "S4", "S5", "S6"],
+        "capability": ["S7", "S8", "S9", "S10", "S11", "SJ1", "SJ2", "SJ3"]
+    },
+    "appliesTo": {
+        "S7": "items with expected.merge_pairs",
+        "S8": "items with a reworded pair that the answer merged",
+        "S9": "items with expected.no_merge",
+        "SJ2": "all items; the planted cases are the items with expected.closed_ids",
+        "SJ3": "items with expected.waiting_on_operator"
+    },
+    "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "blind": true, "ownModelRungs": ["claude-sonnet-medium", "claude-sonnet-high"] },
+    "plants": { "plain": 4, "verbatim-copy": 6, "reworded-duplicate": 4, "near-pair": 5, "closed-tempting": 7, "waiting-on-operator": 5, "language-es": 3 },
+    "sizes": { "small": 9, "medium": 10, "large": 5 },
+    "fresh": {
+        "dataset": "dataset-fresh.jsonl",
+        "items": 24,
+        "seed": "fresh-1/2026-11-14",
+        "plants": { "close-bait": 5, "near-pair": 7, "waiting-on-operator": 8, "verbatim-copy": 8, "closed-tempting": 10, "language-es": 2, "closed-merge-bait": 5, "json-in-fact": 2, "chain-bait": 4, "long-pressure": 6, "thin-ledger": 4 },
+        "sizes": { "small": 9, "medium": 11, "large": 4 },
+        "traps": { "refused": 33, "kept": 7 }
+    },
+    "calls": { "job": 504, "judgeAtMost": 504 },
+    "audit": "The expected answers were written by a model and audited by nobody yet."
+}

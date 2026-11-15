@@ -1,0 +1,43 @@
+import { readFileSync } from 'node:fs';
+import { autocompactState, type AutocompactState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
+import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
+import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
+import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
+import type { HistoryFact } from '../../tab-recap/src/ports/ledger.ts';
+import type { Item, Prompt } from '../lib/types.ts';
+
+export type Side = 'true' | 'false' | 'open';
+
+export interface Evidence {
+    readonly question: string;
+    readonly field: keyof AutocompactState;
+    readonly quote: string;
+}
+
+export interface Input {
+    readonly recent: readonly Entry[];
+    readonly history: readonly HistoryFact[];
+}
+
+export interface Expected {
+    readonly answers: Readonly<Record<string, Side>>;
+    readonly verdict: 'compact' | 'wait';
+    readonly evidence: readonly Evidence[];
+    readonly note: string;
+}
+
+export type DeciderItem = Item<Input, Expected>;
+
+export const QUESTION_IDS: readonly string[] = Object.keys(QUESTIONS);
+
+export const SYSTEM: string = deciderInstructions(QUESTIONS);
+
+export const stateOf = (item: DeciderItem): AutocompactState => autocompactState(item.input.recent, item.input.history);
+
+export function prompt(item: DeciderItem): Prompt {
+    return { system: SYSTEM, user: JSON.stringify(stateOf(item)) };
+}
+
+export function loadItems(file: string): DeciderItem[] {
+    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as DeciderItem);
+}

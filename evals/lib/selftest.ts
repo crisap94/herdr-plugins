@@ -1,0 +1,596 @@
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { armLine, armMarkdown, type ArmCounters, flagOf, guardMode, repairFlag, writeArm } from './arm.ts';
+import { runEval } from './cli.ts';
+import { type ArmedAnswer, readJsonl, REPO, runDir } from './runner.ts';
+import { parseJson, quoted, unparsed } from './scoring.ts';
+import { allPass, cohenKappa, flips, mcnemarExact, wilson } from './stats.ts';
+import { stubCalled } from './stub.ts';
+import { AUDIT } from './summary.ts';
+import type { Adapter, Answer, Call, Called, Config, EvalSpec, Graded, Judged, Mark, RunSummary } from './types.ts';
+import { unparsedOf } from './unparsed.ts';
+import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
+import { reconcileCounters, reconcileRound } from '../curator-reconcile/arm.ts';
+import { builtOf, loadItems, prompt as reconcilePrompt, type ReconcileItem, SYSTEM } from '../curator-reconcile/prompt.ts';
+import { checkedOf, CODE_CRITERIA, grade as gradeReconcile, stubAnswer } from '../curator-reconcile/scoring.ts';
+import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-instructions.ts';
+import { storyCounters, storyRound } from '../curator-story/arm.ts';
+import { built as storyBuilt, loadItems as loadStoryItems, prompt as storyPrompt, type StoryItem } from '../curator-story/prompt.ts';
+import { CODE_CRITERIA as STORY_CRITERIA, grade as gradeStory } from '../curator-story/scoring.ts';
+import { closeEvidenceFlag, writerArmMarkdown, writerCounters, writerLine } from '../writer/arm.ts';
+import { loadItems as loadWriterItems, prompt as writerPrompt, type WriterItem } from '../writer/prompt.ts';
+import { CODE_CRITERIA as WRITER_CRITERIA, grade as gradeWriter, outcomeOf, stubAnswer as writerStub } from '../writer/scoring.ts';
+import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
+
+const failures: string[] = [];
+
+function check(name: string, ok: boolean): void {
+    if (!ok) failures.push(name);
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}`);
+}
+
+const near = (actual: number, expected: number): boolean => Math.abs(actual - expected) < 0.0005;
+
+function thrown(action: () => unknown): string | null {
+    try {
+        action();
+        return null;
+    } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+    }
+}
+
+check('wilson 0/10 is 0.000-0.278', near(wilson(0, 10).low, 0) && near(wilson(0, 10).high, 0.2775));
+check('wilson 5/10 is 0.237-0.763', near(wilson(5, 10).low, 0.2366) && near(wilson(5, 10).high, 0.7634));
+check('wilson 17/20 is 0.640-0.948', near(wilson(17, 20).low, 0.6396) && near(wilson(17, 20).high, 0.9476));
+check('wilson 20/20 lower bound is 0.839', near(wilson(20, 20).low, 0.8389) && near(wilson(20, 20).high, 1));
+check('wilson 0/0 is 0-1', wilson(0, 0).low === 0 && wilson(0, 0).high === 1);
+check('mcnemar 0 vs 6 is 0.03125', near(mcnemarExact(0, 6), 0.03125));
+check('mcnemar 1 vs 5 is 0.21875', near(mcnemarExact(1, 5), 0.21875));
+check('mcnemar 2 vs 10 is 0.03857', near(mcnemarExact(2, 10), 0.038574));
+check('mcnemar 3 vs 3 is 1', mcnemarExact(3, 3) === 1);
+check('mcnemar 0 vs 0 is 1', mcnemarExact(0, 0) === 1);
+check('mcnemar 0 vs 400 is finite', mcnemarExact(0, 400) >= 0 && mcnemarExact(0, 400) < 1e-100);
+check('kappa of a half-agreeing table is 0.5', near(cohenKappa([[true, true], [true, false], [false, false], [false, false]]) ?? -9, 0.5));
+check('kappa of full disagreement is -1', near(cohenKappa([[true, false], [false, true]]) ?? -9, -1));
+check('kappa with no variation is null', cohenKappa([[true, true], [true, true]]) === null);
+check('kappa of nothing is null', cohenKappa([]) === null);
+const byItem = new Map<string, Mark[]>([['a', [true, true, true]], ['b', [true, false, true]], ['c', [false, null, false]], ['d', [null, true, false]]]);
+check('flips are b and d', JSON.stringify(flips(byItem)) === JSON.stringify(['b', 'd']));
+check('all-pass needs every repetition', allPass([true, true, true]) === true && allPass([true, false, true]) === false && allPass([true, null]) === null && allPass([false, null]) === false && allPass([]) === null);
+check('quoted finds a squashed quote', quoted('the  invoice\ntable', ['Next: wire the invoice table now']));
+check('quoted accepts an ellipsis between fragments', quoted('Next: wire ... table', ['Next: wire the invoice table now']));
+check('quoted rejects an invented quote', !quoted('the payment table', ['Next: wire the invoice table now']) && !quoted('', ['x']));
+check('parseJson strips fences', JSON.stringify(parseJson('```json\n{"a":1}\n```')) === '{"a":1}' && parseJson('not json') === null);
+check('a reconcile answer of {"ops":[]} is readable today', !unparsedOf('curator-reconcile', '{"ops":[]}', 'today'));
+check('a reconcile answer that is not JSON is unparsed today', unparsedOf('curator-reconcile', 'not json', 'today'));
+check('a story answer that is not JSON is unparsed today', unparsedOf('curator-story', 'not json', 'today'));
+check('a story answer that is an array is unparsed today', unparsedOf('curator-story', '[1]', 'today'));
+check('a reconcile answer that is an array is not unparsed today', !unparsedOf('curator-reconcile', '[1]', 'today'));
+check('a reconcile answer wrapped in prose is unparsed today', unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'today'));
+check('a reconcile answer wrapped in prose is not unparsed by the P0 reader', !unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'p0'));
+check('a reconcile answer that is not JSON is unparsed by the P0 reader', unparsedOf('curator-reconcile', 'not json', 'p0'));
+
+interface ToyInput {
+    readonly question: string;
+}
+
+interface ToyExpected {
+    readonly answer: string;
+}
+
+const CODE = ['contract', 'correct'];
+
+function toyGrade(item: { readonly expected: ToyExpected }, text: string): Graded {
+    const parsed = parseJson(text) as { answer?: unknown } | null;
+    if (parsed === null || typeof parsed.answer !== 'string') return unparsed(CODE);
+    return { parsed: true, marks: { contract: true, correct: parsed.answer === item.expected.answer } };
+}
+
+const TOY_CONFIGS: readonly Config[] = [
+    { name: 'toy-a', backend: 'claude', model: 'toy-model-a', effort: 'low', shipped: true },
+    { name: 'toy-b', backend: 'claude', model: 'toy-model-b', effort: 'medium' },
+    { name: 'toy-c', backend: 'codex', model: 'toy-model-c', effort: 'low' },
+];
+
+const toy: EvalSpec<ToyInput, ToyExpected> = {
+    name: 'selftest',
+    items: ['i1', 'i2', 'i3', 'i4'].map((id, index) => ({ id, plants: ['toy'], input: { question: `What is the code word of orchard-${index}.test?` }, expected: { answer: `word-${index}` } })),
+    configs: TOY_CONFIGS,
+    repetitions: 3,
+    codeCriteria: CODE,
+    judge: {
+        criteria: [{ id: 'J1', rule: 'the answer states a code word.', breach: 'no code word is stated.' }],
+        view: (item, text) => ({ case: item.input.question, answer: text }),
+    },
+    prompt: (item) => ({ system: 'Answer with JSON {"answer": "<code word>"}.', user: item.input.question }),
+    grade: toyGrade,
+    stub: (item, config, repetition) => {
+        if (config.name === 'toy-c' && item.id === 'i4') return 'no json here';
+        if (config.name === 'toy-c' && item.id === 'i3') return JSON.stringify({ answer: 'wrong' });
+        if (config.name === 'toy-b' && item.id === 'i2' && repetition === 2) return JSON.stringify({ answer: 'wrong' });
+        return JSON.stringify({ answer: item.expected.answer });
+    },
+    notes: { can: [], cannot: ['Anything about tab-recap: this is the library self-test.'] },
+};
+
+const root = mkdtempSync(join(tmpdir(), 'tab-recap-evals-selftest-'));
+const quiet = { log: (_line: string) => undefined };
+
+const ARM_CONFIG: Config = { name: 'claude-arm', backend: 'claude', model: 'claude-arm-model', effort: 'low', shipped: true };
+const ARM_BAD = '{"ops":[{"op":"close","id":"f999","why":"done","evidence":"x"}]}';
+
+interface Fake {
+    readonly adapter: Adapter;
+    readonly calls: Call[];
+}
+
+// Answers ARM_BAD to the first call and `repair` to the repair call, the one that carries the previous answer.
+function badThen(repair: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return call.user.includes('<previous-answer>') ? repair : stubCalled(ARM_BAD);
+    };
+    return { adapter, calls };
+}
+
+function answering(reply: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return reply;
+    };
+    return { adapter, calls };
+}
+
+const rowsOf = (dir: string): ArmedAnswer[] => readJsonl<ArmedAnswer>(join(dir, 'answers.jsonl'));
+
+function armSpec(items: readonly ReconcileItem[]): EvalSpec {
+    return {
+        name: 'curator-reconcile',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: CODE_CRITERIA,
+        judge: null,
+        prompt: (item) => reconcilePrompt(item as ReconcileItem),
+        grade: (item, text) => gradeReconcile(item as ReconcileItem, text),
+        stub: (item) => stubAnswer(item as ReconcileItem),
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function armRun(root: string, label: string, items: readonly ReconcileItem[], fake: Adapter, mode: 'off' | 'once', extra: readonly string[] = []): Promise<string> {
+    const run = await runEval(armSpec(items), ['--root', root, '--label', label, '--reps', '1', ...extra], { ...quiet, adapters: { claude: fake, codex: fake }, round: reconcileRound(mode) });
+    return run.dir;
+}
+
+// The repair arm of curator-reconcile, driven through the plugin's own reconcileTask with fake adapters.
+async function reconcileArm(root: string): Promise<void> {
+    const item = loadItems(join(import.meta.dirname, '..', 'curator-reconcile', 'dataset.jsonl')).find((each) => each.id === 'rec-01-stale-easy-done');
+    if (item === undefined) throw new Error('the arm checks need rec-01-stale-easy-done');
+    const clean = stubAnswer(item);
+    const kept = checkedOf(item, clean)?.kept.length ?? 0;
+
+    const once = badThen(stubCalled(clean));
+    const onceDir = await armRun(root, 'arm-once', [item], once.adapter, 'once');
+    const onceRow = rowsOf(onceDir)[0];
+    check('a once run makes a repair call and keeps its answer', once.calls.length === 2 && onceRow?.arm?.repair_calls === 1 && onceRow.text === clean && (onceRow.arm?.applied_ops ?? 0) === kept && kept > 0);
+    const second = once.calls[1];
+    check('the repair call carries the reconcile instructions, the config model and the previous answer', second?.system === RECONCILE_CURATOR_INSTRUCTIONS && second.model === ARM_CONFIG.model && second.user.includes('<previous-answer>') && second.user.includes(ARM_BAD));
+
+    const off = badThen(stubCalled(clean));
+    const offDir = await armRun(root, 'arm-off', [item], off.adapter, 'off');
+    const offRow = rowsOf(offDir)[0];
+    check('an off run makes one call and keeps the first answer', off.calls.length === 1 && offRow?.arm?.repair_calls === 0 && offRow.text === ARM_BAD && offRow.arm?.applied_ops === 0);
+    check('both arms send the eval prompt byte for byte on the first call', [once, off].every((fake) => fake.calls[0]?.system === SYSTEM && fake.calls[0].user === builtOf(item).document));
+
+    const clean1 = answering(stubCalled(clean));
+    const cleanDir = await armRun(root, 'arm-clean', [item], clean1.adapter, 'once');
+    check('a clean first answer makes one call and no repair', clean1.calls.length === 1 && rowsOf(cleanDir)[0]?.arm?.repair_calls === 0);
+
+    const notJson = badThen(stubCalled('not json'));
+    const notJsonDir = await armRun(root, 'arm-not-json', [item], notJson.adapter, 'once');
+    const notJsonRow = rowsOf(notJsonDir)[0];
+    check('a repair that is not JSON leaves the first answer in place', notJson.calls.length === 2 && notJsonRow?.arm?.repair_calls === 1 && notJsonRow.text === ARM_BAD);
+
+    const failed = badThen({ ...stubCalled(''), text: null, failure_kind: 'failed', failure_detail: 'x' });
+    const failedDir = await armRun(root, 'arm-failed', [item], failed.adapter, 'once');
+    const failedRow = rowsOf(failedDir)[0];
+    check('a failed repair call keeps the first answer and the row has no failure', failed.calls.length === 2 && failedRow?.failure_kind === null && failedRow.text === ARM_BAD && failedRow.arm?.repair_calls === 1);
+
+    check('the row counts both calls and the repair tokens are the second call alone', onceRow?.input_tokens === 200 && onceRow.arm?.repair_input_tokens === 100 && onceRow.arm.repair_output_tokens === Math.ceil(clean.length / 4));
+
+    const busy = (): { readonly adapter: Adapter; readonly peak: () => number } => {
+        let now = 0;
+        let most = 0;
+        const adapter: Adapter = async (call) => {
+            now += 1;
+            most = Math.max(most, now);
+            await new Promise((done) => setTimeout(done, 5));
+            now -= 1;
+            return stubCalled(call.user.includes('<previous-answer>') ? clean : ARM_BAD);
+        };
+        return { adapter, peak: () => most };
+    };
+    const pair = [{ ...item, id: 'a' }, { ...item, id: 'b' }];
+    const one = busy();
+    const oneDir = await armRun(root, 'arm-conc-1', pair, one.adapter, 'once', ['--concurrency', '1']);
+    const two = busy();
+    const twoDir = await armRun(root, 'arm-conc-2', pair, two.adapter, 'once', ['--concurrency', '2']);
+    check('one pool slot runs one call at a time, and each job makes two calls', one.peak() === 1 && rowsOf(oneDir).length === 2 && rowsOf(oneDir).every((row) => row.attempts === 2));
+    check('two pool slots run at most two calls at a time, and each job makes two calls', two.peak() <= 2 && rowsOf(twoDir).every((row) => row.attempts === 2));
+
+    const aCounters = reconcileCounters([item], rowsOf(offDir), [ARM_CONFIG.name], 'off')[0];
+    const cCounters = reconcileCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once')[0];
+    const line = `curator-reconcile ${ARM_CONFIG.name} A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied ${kept} unparsed 0 refused 0 repair calls 1 tokens 100/${Math.ceil(clean.length / 4)}`;
+    check('the counters of an off run and a once run make the EVAL-7 line', aCounters !== undefined && cCounters !== undefined && armLine('curator-reconcile', aCounters, cCounters) === line);
+
+    const unmeasured = badThen({ ...stubCalled(clean), input_tokens: 0, output_tokens: 0 });
+    const unmeasuredDir = await armRun(root, 'arm-unmeasured', [item], unmeasured.adapter, 'once');
+    const unmeasuredC = reconcileCounters([item], rowsOf(unmeasuredDir), [ARM_CONFIG.name], 'once')[0];
+    check('a repair with no measured tokens ends the line unmeasured', unmeasuredC?.tokens_measured === false && aCounters !== undefined && unmeasuredC !== undefined && armLine('curator-reconcile', aCounters, unmeasuredC).endsWith('repair calls 1 tokens unmeasured'));
+
+    const before = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const block = { mode: 'once', configs: reconcileCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once') };
+    const markdown = armMarkdown('curator-reconcile', block);
+    writeArm(onceDir, block, markdown);
+    const after = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const rest = Object.fromEntries(Object.entries(after).filter(([key]) => key !== 'arm'));
+    const armed = after['arm'] as { readonly mode?: unknown; readonly configs?: unknown[] } | undefined;
+    check('writeArm adds one arm config row and keeps every other summary key', JSON.stringify(rest) === JSON.stringify(before) && armed?.mode === 'once' && armed.configs?.length === 1);
+    check('writeArm ends the report with the arm section', readFileSync(join(onceDir, 'report.md'), 'utf8').endsWith(markdown) && markdown.includes('## curator-reconcile: arm repair once (reported only)'));
+
+    const offSummary = JSON.parse(readFileSync(join(offDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const onceSummary = JSON.parse(readFileSync(join(onceDir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    const cliOff = runDir(root, 'curator-reconcile', 'cli-off');
+    writeFileSync(join(cliOff, 'summary.json'), JSON.stringify({ ...offSummary, arm: { mode: 'off', configs: [aCounters] } }));
+    const cliOnce = runDir(root, 'curator-reconcile', 'cli-once');
+    writeFileSync(join(cliOnce, 'summary.json'), JSON.stringify({ ...onceSummary, arm: { mode: 'once', configs: [cCounters] } }));
+    const cliArgs = [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', root];
+    const printed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-off', '--c', 'cli-once'], { encoding: 'utf8' });
+    check('the arm CLI prints the EVAL-7 line for a real off run and a real once run', printed.status === 0 && printed.stdout.trim() === line);
+    const reversed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-once', '--c', 'cli-off'], { encoding: 'utf8' });
+    check('the arm CLI refuses real runs given the wrong way round', reversed.status !== 0);
+    const cliOther = runDir(root, 'curator-reconcile', 'cli-other');
+    writeFileSync(join(cliOther, 'summary.json'), JSON.stringify({ ...onceSummary, arm: { mode: 'once', configs: [{ ...cCounters, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-off', '--c', 'cli-other'], { encoding: 'utf8' });
+    check('the arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
+}
+
+const STORY_FIXED = JSON.stringify({ ops: [], story: 'The work goes on.' });
+const STORY_BAD_MERGE = JSON.stringify({ ops: [{ op: 'close', id: 'f999', why: 'merged', into: 'f1' }], story: 'The work goes on.' });
+const STORY_NO_PARAGRAPH = '{"ops":[]}';
+
+// Answers `first` to the first call and `repair` to the repair call, the one that carries the previous answer.
+function firstThen(first: string, repair: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return call.user.includes('<previous-answer>') ? repair : stubCalled(first);
+    };
+    return { adapter, calls };
+}
+
+function storySpec(items: readonly StoryItem[]): EvalSpec {
+    return {
+        name: 'curator-story',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: STORY_CRITERIA,
+        judge: null,
+        prompt: (item) => storyPrompt(item as StoryItem),
+        grade: (item, text) => gradeStory(item as StoryItem, text),
+        stub: () => STORY_FIXED,
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function storyArmRun(root: string, label: string, items: readonly StoryItem[], fake: Adapter, mode: 'off' | 'once'): Promise<string> {
+    const run = await runEval(storySpec(items), ['--root', root, '--label', label, '--reps', '1'], { ...quiet, adapters: { claude: fake, codex: fake }, round: storyRound(mode) });
+    return run.dir;
+}
+
+// The repair arm of curator-story, driven through the plugin's own storyAnswerOf with fake adapters.
+async function storyArm(root: string): Promise<void> {
+    const item = loadStoryItems().find((each) => each.id === 'cs-07-verbatim-waiting-medium');
+    if (item === undefined) throw new Error('the story arm checks need cs-07-verbatim-waiting-medium');
+
+    const once = firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED));
+    const onceDir = await storyArmRun(root, 'story-once', [item], once.adapter, 'once');
+    const onceRow = rowsOf(onceDir)[0];
+    check('a story once run makes a repair call and keeps the repaired answer', once.calls.length === 2 && onceRow?.arm?.repair_calls === 1 && onceRow.text === STORY_FIXED);
+    const second = once.calls[1];
+    check('the story repair call carries the curator instructions, the config model and the previous answer', second?.system === CURATOR_INSTRUCTIONS && second.model === ARM_CONFIG.model && second.user.includes('<previous-answer>') && second.user.includes(STORY_BAD_MERGE));
+
+    const off = firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED));
+    const offDir = await storyArmRun(root, 'story-off', [item], off.adapter, 'off');
+    const offRow = rowsOf(offDir)[0];
+    check('a story off run makes one call and keeps the first answer', off.calls.length === 1 && offRow?.arm?.repair_calls === 0 && offRow.text === STORY_BAD_MERGE);
+    const document = storyBuilt(item).document;
+    check('both story arms send the eval prompt byte for byte on the first call', [once, off].every((fake) => fake.calls[0]?.system === CURATOR_INSTRUCTIONS && fake.calls[0].user === document) && storyPrompt(item).user === document);
+
+    const clean = answering(stubCalled(STORY_FIXED));
+    const cleanDir = await storyArmRun(root, 'story-clean', [item], clean.adapter, 'once');
+    check('a clean story first answer makes one call and no repair', clean.calls.length === 1 && rowsOf(cleanDir)[0]?.arm?.repair_calls === 0);
+
+    const noParagraph = firstThen(STORY_NO_PARAGRAPH, stubCalled('not json'));
+    const noParagraphDir = await storyArmRun(root, 'story-no-paragraph', [item], noParagraph.adapter, 'once');
+    const noParagraphRow = rowsOf(noParagraphDir)[0];
+    check('a story repair that is not JSON leaves the first answer in place', noParagraph.calls.length === 2 && noParagraphRow?.arm?.repair_calls === 1 && noParagraphRow.text === STORY_NO_PARAGRAPH);
+
+    const storyA = storyCounters([item], rowsOf(offDir), [ARM_CONFIG.name], 'off')[0];
+    const storyC = storyCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once')[0];
+    const line = `curator-story ${ARM_CONFIG.name} A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied 0 unparsed 0 refused 0 repair calls 1 tokens 100/${Math.ceil(STORY_FIXED.length / 4)}`;
+    check('the story counters of an off run and a once run make the EVAL-7 story line', storyA !== undefined && storyC !== undefined && armLine('curator-story', storyA, storyC) === line);
+}
+
+// One arm root with a reconcile pair and a story pair under the same labels, read back by the arm CLI.
+// The close-evidence arm of writer: X is the first item with an anchorless done or wrong close in its reference.
+const writerItems = loadWriterItems(join(import.meta.dirname, '..', 'writer', 'dataset.jsonl'));
+const closeIdOf = (item: WriterItem): string | null => {
+    for (const close of item.expected.must_close) {
+        const op = item.expected.reference_ops.find((each) => each.op === 'close' && each.id === close.id);
+        if (close.why.some((why) => /done|wrong/.test(why)) && op !== undefined && (op.anchor === undefined || op.anchor === null)) return close.id;
+    }
+    return null;
+};
+const writerX = writerItems.find((item) => closeIdOf(item) !== null) as WriterItem;
+const writerXId = closeIdOf(writerX) as string;
+const writerXEntry = writerX.expected.must_close.find((close) => close.id === writerXId) as { readonly id: string; readonly span: string };
+
+function writerSpec(items: readonly WriterItem[], mode: CloseEvidence | null): EvalSpec {
+    return {
+        name: 'writer',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: WRITER_CRITERIA,
+        judge: null,
+        prompt: (item) => writerPrompt(item as WriterItem, mode ?? undefined),
+        grade: (item, text) => gradeWriter(item as WriterItem, text, mode ?? undefined),
+        stub: (item) => writerStub(item as WriterItem),
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function writerRun(root: string, label: string, items: readonly WriterItem[], fake: Adapter, mode: CloseEvidence | null): Promise<string> {
+    const run = await runEval(writerSpec(items, mode), ['--root', root, '--label', label, '--reps', '1'], { ...quiet, adapters: { claude: fake, codex: fake } });
+    return run.dir;
+}
+
+async function writerArm(root: string): Promise<void> {
+    const flag = (argv: string[]) => thrown(() => closeEvidenceFlag(argv));
+    check('the close-evidence flag reads on', closeEvidenceFlag(['--close-evidence', 'on']) === 'on');
+    check('the close-evidence flag refuses yes', flag(['--close-evidence', 'yes']) === '--close-evidence must be off or on');
+    check('the close-evidence flag is null when absent', closeEvidenceFlag([]) === null);
+
+    check('the writer prompt with off equals the default prompt', writerItems.every((item) => JSON.stringify(writerPrompt(item, 'off')) === JSON.stringify(writerPrompt(item))));
+    const onSystem = writerPrompt(writerX, 'on').system;
+    const anchorLine = 'A close with why "done" or "wrong" carries an "anchor" too';
+    check('the writer prompt with on adds the anchor line once and drops the never line', onSystem.split(anchorLine).length === 2 && !onSystem.includes('A close never does.'));
+    check('the writer prompt with on keeps the user document', writerPrompt(writerX, 'on').user === writerPrompt(writerX).user);
+    check('the writer grade with off equals the default grade', writerItems.every((item) => JSON.stringify(gradeWriter(item, writerStub(item), 'off')) === JSON.stringify(gradeWriter(item, writerStub(item)))));
+
+    const onOutcome = outcomeOf(writerX, writerStub(writerX), 'on');
+    const g13 = onOutcome.refused.filter((finding) => finding.gate === 'G13').length;
+    const anchorless = (JSON.parse(writerStub(writerX)) as { ops: { op: string; id?: string; why?: string | null; anchor?: string | null }[] }).ops
+        .filter((op) => op.op === 'close' && (op.why === 'done' || op.why === 'wrong') && (op.anchor ?? '') === '')
+        .map((op) => op.id);
+    const refusedIds = onOutcome.refused.map((finding) => (onOutcome.given[finding.at] as { id?: string }).id);
+    check('the on outcome refuses each anchorless done or wrong close with one G13 finding and keeps no such close', anchorless.length >= 1 && g13 === anchorless.length && [...refusedIds].sort().join() === [...anchorless].sort().join() && onOutcome.refused.every((finding) => finding.gate === 'G13') && !onOutcome.kept.some((op) => op.op === 'close' && op.id === writerXId));
+
+    const stubOps = JSON.parse(writerStub(writerX)) as { ops: { op: string; id?: string; anchor?: string | null }[] };
+    const anchored = { ops: stubOps.ops.map((op) => (op.op === 'close' && op.id === writerXId ? { ...op, anchor: writerXEntry.span } : op)) };
+    const anchoredText = JSON.stringify(anchored);
+    const anchoredOn = outcomeOf(writerX, anchoredText, 'on');
+    check('an anchored close is kept with on and gets no G13 finding', !anchoredOn.refused.some((finding) => finding.gate === 'G13') && anchoredOn.kept.some((op) => op.op === 'close' && op.id === writerXId));
+
+    const first = outcomeOf(writerX, writerStub(writerX));
+    const second = outcomeOf(writerX, writerStub(writerX), 'on');
+    const third = outcomeOf(writerX, writerStub(writerX));
+    check('the outcome cache keeps the off and on answers apart', !first.refused.some((f) => f.gate === 'G13') && second.refused.some((f) => f.gate === 'G13') && !third.refused.some((f) => f.gate === 'G13'));
+
+    const offFake = answering(stubCalled(writerStub(writerX)));
+    const onFake = answering(stubCalled(writerStub(writerX)));
+    const offDir = await writerRun(root, 'arm-off', [writerX], offFake.adapter, 'off');
+    const onDir = await writerRun(root, 'arm-on', [writerX], onFake.adapter, 'on');
+    check('the on run sends the on system of the prompt', onFake.calls[0]?.system === onSystem);
+
+    const offRows = readJsonl<Answer>(join(offDir, 'answers.jsonl'));
+    const onRows = readJsonl<Answer>(join(onDir, 'answers.jsonl'));
+    const offCounts = writerCounters([writerX], offRows, [ARM_CONFIG.name], 'off')[0];
+    const onCounts = writerCounters([writerX], onRows, [ARM_CONFIG.name], 'on')[0];
+    if (offCounts === undefined || onCounts === undefined) throw new Error('the writer counters need one row per arm');
+    const c = offCounts.correct_closes_kept;
+    check('the writer counters give off with no g13 and on with the refusals', offCounts.wrongful_closes === 0 && offCounts.g13_refusals === 0 && onCounts.g13_refusals === g13 && onCounts.correct_closes_kept === c - g13 && onCounts.wrongful_closes === 0);
+    const line = `${ARM_CONFIG.name} off wrongful 0 correct ${c} g13 0 on wrongful 0 correct ${c - g13} g13 ${g13}`;
+    check('the writer line prints the EVAL-8 line', writerLine(offCounts, onCounts) === line);
+
+    const onBlock = { mode: 'on', configs: [onCounts] };
+    writeArm(onDir, onBlock, writerArmMarkdown(onBlock));
+    const onSummary = JSON.parse(readFileSync(join(onDir, 'summary.json'), 'utf8')) as { arm?: { mode: string } };
+    const onReport = readFileSync(join(onDir, 'report.md'), 'utf8');
+    const correctionLine = '- The correction round is not run: a close refused by G13 stays refused here, while the daemon would ask once more.';
+    check('writeArm adds the on arm block at the end of report.md with its correction-round line', onSummary.arm?.mode === 'on' && onReport.endsWith(writerArmMarkdown(onBlock)) && onReport.includes('## writer: arm close evidence on (reported only)') && onReport.includes(correctionLine));
+    const offBlock = { mode: 'off', configs: [offCounts] };
+    writeArm(offDir, offBlock, writerArmMarkdown(offBlock));
+
+    const cliArgs = [join(import.meta.dirname, '..', 'writer', 'arm.ts'), '--root', root];
+    const good = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-off', '--on', 'arm-on'], { encoding: 'utf8' });
+    check('the writer arm CLI prints the EVAL-8 line', good.status === 0 && good.stdout.trim() === line);
+    const swapped = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-on', '--on', 'arm-off'], { encoding: 'utf8' });
+    check('the writer arm CLI refuses swapped labels', swapped.status !== 0);
+    const otherDir = runDir(root, 'writer', 'arm-other');
+    writeFileSync(join(otherDir, 'summary.json'), JSON.stringify({ ...onSummary, arm: { mode: 'on', configs: [{ ...onCounts, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-off', '--on', 'arm-other'], { encoding: 'utf8' });
+    check('the writer arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
+
+    check('an on run refuses a folder that holds off answers', thrown(() => guardMode(offDir, '--close-evidence', 'on')) === 'this run holds answers of another arm');
+}
+
+async function pairArm(root: string): Promise<void> {
+    const pairRoot = join(root, 'pair');
+    const rec = loadItems(join(import.meta.dirname, '..', 'curator-reconcile', 'dataset.jsonl')).find((each) => each.id === 'rec-01-stale-easy-done');
+    const story = loadStoryItems().find((each) => each.id === 'cs-07-verbatim-waiting-medium');
+    if (rec === undefined || story === undefined) throw new Error('the pair checks need rec-01-stale-easy-done and cs-07-verbatim-waiting-medium');
+
+    const recClean = stubAnswer(rec);
+    const recOffDir = await armRun(pairRoot, 'armA', [rec], badThen(stubCalled(recClean)).adapter, 'off');
+    const recOnceDir = await armRun(pairRoot, 'armC', [rec], badThen(stubCalled(recClean)).adapter, 'once');
+    const recA = reconcileCounters([rec], rowsOf(recOffDir), [ARM_CONFIG.name], 'off')[0];
+    const recC = reconcileCounters([rec], rowsOf(recOnceDir), [ARM_CONFIG.name], 'once')[0];
+    const recOffBlock = { mode: 'off', configs: reconcileCounters([rec], rowsOf(recOffDir), [ARM_CONFIG.name], 'off') };
+    writeArm(recOffDir, recOffBlock, armMarkdown('curator-reconcile', recOffBlock));
+    const recOnceBlock = { mode: 'once', configs: reconcileCounters([rec], rowsOf(recOnceDir), [ARM_CONFIG.name], 'once') };
+    writeArm(recOnceDir, recOnceBlock, armMarkdown('curator-reconcile', recOnceBlock));
+
+    const storyOffDir = await storyArmRun(pairRoot, 'armA', [story], firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED)).adapter, 'off');
+    const storyOnceDir = await storyArmRun(pairRoot, 'armC', [story], firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED)).adapter, 'once');
+    const storyA = storyCounters([story], rowsOf(storyOffDir), [ARM_CONFIG.name], 'off')[0];
+    const storyC = storyCounters([story], rowsOf(storyOnceDir), [ARM_CONFIG.name], 'once')[0];
+    const storyOffBlock = { mode: 'off', configs: storyCounters([story], rowsOf(storyOffDir), [ARM_CONFIG.name], 'off') };
+    writeArm(storyOffDir, storyOffBlock, armMarkdown('curator-story', storyOffBlock));
+    const storyOnceBlock = { mode: 'once', configs: storyCounters([story], rowsOf(storyOnceDir), [ARM_CONFIG.name], 'once') };
+    writeArm(storyOnceDir, storyOnceBlock, armMarkdown('curator-story', storyOnceBlock));
+
+    if (recA === undefined || recC === undefined || storyA === undefined || storyC === undefined) throw new Error('the pair checks need one counter row per eval');
+    const expected = [armLine('curator-reconcile', recA, recC), armLine('curator-story', storyA, storyC)].join('\n');
+    const printed = spawnSync(process.execPath, [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', pairRoot, '--a', 'armA', '--c', 'armC'], { encoding: 'utf8' });
+    check('the arm CLI prints the reconcile line, then the story line, for one pair of labels', printed.status === 0 && printed.stdout.trim() === expected && printed.stdout.trim().split('\n').length === 2);
+}
+
+try {
+    let refused = false;
+    try {
+        runDir(join(REPO, 'evals'), 'selftest', 'inside');
+    } catch {
+        refused = true;
+    }
+    check('a run inside the repository is refused', refused);
+
+    const first = await runEval(toy, ['--stub', '--root', root], quiet);
+    const answers = readJsonl<Answer>(join(first.dir, 'answers.jsonl'));
+    check('stub run records 4 x 3 x 3 = 36 answers', answers.length === 36);
+    const csv = readFileSync(join(first.dir, 'results.csv'), 'utf8').trim().split('\n');
+    check('results.csv has a header and 36 rows', csv.length === 37);
+    check('results.csv columns', csv[0] === 'id,config,repetition,backend,model,effort,contract,correct,J1,input_tokens,output_tokens,reasoning_tokens,cost_usd,latency_ms,attempts,failure_kind');
+    const summary = JSON.parse(readFileSync(join(first.dir, 'summary.json'), 'utf8')) as RunSummary;
+    const b = summary.configs.find((config) => config.name === 'toy-b');
+    const c = summary.configs.find((config) => config.name === 'toy-c');
+    check('toy-b correct is 11 of 12 answers', b?.criteria['correct']?.answers.k === 11 && b.criteria['correct']?.answers.n === 12);
+    check('toy-b flips on i2', JSON.stringify(b?.criteria['correct']?.flips) === JSON.stringify(['i2']));
+    check('toy-b passes 3 of 4 items in every repetition', b?.criteria['correct']?.items.k === 3 && b.criteria['correct']?.items.n === 4);
+    check('toy-c fails the contract on i4 only', c?.criteria['contract']?.answers.k === 9 && c.criteria['contract']?.answers.n === 12);
+    check('toy-c fails the judge criterion where the answer did not parse, without a judge call', c?.criteria['J1']?.missing === 0 && c.criteria['J1']?.answers.n === 12);
+    check('toy-c correct is 6 of 12 answers', c?.criteria['correct']?.answers.k === 6 && c.criteria['correct']?.answers.n === 12);
+    check('toy-c unparsed answers counted', c?.failures['unparsed'] === 3);
+    check('paired rows cover 2 configurations x 3 criteria', summary.paired.length === 6);
+    check('summary carries the audit sentence', summary.audit === AUDIT);
+    const text = readFileSync(join(first.dir, 'report.md'), 'utf8').split('\n');
+    check('report starts with the title then Decision', (text[0] ?? '').startsWith('# selftest') && text[2] === '## Decision');
+    check('report carries the audit sentence', text.some((line) => line.includes(AUDIT)));
+    check('report has can and cannot sections', text.includes('## What this run can show') && text.includes('## What this run cannot show'));
+    check('prompt.md written', readFileSync(join(first.dir, 'prompt.md'), 'utf8').startsWith('# Prompt: selftest'));
+
+    await runEval(toy, ['--stub', '--root', root], quiet);
+    check('a second run repeats no finished call', readJsonl<Answer>(join(first.dir, 'answers.jsonl')).length === 36);
+    check('a second run repeats no judge call', readJsonl<Judged>(join(first.dir, 'judge.jsonl')).length === 33);
+
+    const capped = await runEval(toy, ['--stub', '--root', root, '--label', 'capped', '--max-calls', '5'], quiet);
+    check('the call cap stops at 5 answers', readJsonl<Answer>(join(capped.dir, 'answers.jsonl')).length === 5);
+    await runEval(toy, ['--stub', '--root', root, '--label', 'capped'], quiet);
+    check('resuming a capped run completes it to 36', readJsonl<Answer>(join(capped.dir, 'answers.jsonl')).length === 36);
+
+    const seen: Call[] = [];
+    let jobCalls = 0;
+    const fakeJob: Adapter = async (call) => {
+        jobCalls += 1;
+        if (jobCalls === 1) return { ...stubCalled(''), text: null, failure_kind: 'rate_limit', failure_detail: 'rate limit' };
+        const item = toy.items.find((each) => each.input.question === call.user);
+        return stubCalled(JSON.stringify({ answer: item?.expected.answer ?? '' }));
+    };
+    const fakeJudge: Adapter = async (call) => {
+        seen.push(call);
+        const answer = /<answer>\n([\s\S]*?)\n<\/answer>/.exec(call.user)?.[1] ?? '';
+        if (answer.includes('word-0') && seen.filter((each) => each.user === call.user).length === 1) return stubCalled('this is not json');
+        if (answer.includes('word-1')) return stubCalled('still not json');
+        if (answer.includes('word-2')) return stubCalled(JSON.stringify({ verdicts: [{ criterion: 'J1', verdict: 'pass', evidence: 'an invented quote' }] }));
+        return stubCalled(JSON.stringify({ verdicts: [{ criterion: 'J1', verdict: 'pass', evidence: answer.slice(0, 12) }] }));
+    };
+    const live = await runEval(toy, ['--root', root, '--label', 'fake', '--configs', 'toy-a', '--reps', '1'], { ...quiet, backoffMs: [1, 1], adapters: { claude: fakeJob, codex: fakeJob }, judgeAdapter: fakeJudge });
+    const liveAnswers = readJsonl<Answer>(join(live.dir, 'answers.jsonl'));
+    check('a rate limit is retried after backoff', liveAnswers.length === 4 && liveAnswers.some((answer) => answer.attempts === 2) && liveAnswers.every((answer) => answer.failure_kind === null));
+    const judged = new Map(readJsonl<Judged>(join(live.dir, 'judge.jsonl')).map((row) => [row.id, row]));
+    check('a malformed judge answer is retried once and then counts', judged.get('i1')?.calls === 2 && judged.get('i1')?.verdicts['J1']?.passed === true);
+    check('a judge answer malformed twice is scored missing', judged.get('i2')?.calls === 2 && judged.get('i2')?.verdicts['J1']?.passed === null && judged.get('i2')?.failure_kind === 'unparsed');
+    check('a pass without a verbatim quote is scored missing', judged.get('i3')?.verdicts['J1']?.passed === null);
+    check('a pass with a verbatim quote passes', judged.get('i4')?.verdicts['J1']?.passed === true);
+    const leaks = seen.filter((call) => TOY_CONFIGS.some((config) => `${call.system}\n${call.user}`.includes(config.name) || `${call.system}\n${call.user}`.includes(config.model)));
+    check('the judge never sees a configuration name or model', seen.length > 0 && leaks.length === 0);
+    check('the judge is called on claude-sonnet-5-5 with a schema', seen.every((call) => call.model === 'claude-sonnet-5-5' && call.schema !== undefined));
+    const plain = await runEval(toy, ['--stub', '--root', root, '--label', 'plain'], quiet);
+    const plainRows = readJsonl<Answer & { arm?: unknown }>(join(plain.dir, 'answers.jsonl'));
+    const plainSummary = JSON.parse(readFileSync(join(plain.dir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    check('a default run records rows with no arm and one attempt', plainRows.length === 36 && plainRows.every((row) => !('arm' in row) && row.attempts === 1));
+    check('a default run writes a summary with no arm', !('arm' in plainSummary));
+
+    check('the repair flag reads once, trimmed and lower-cased', repairFlag(['--repair', ' ONCE ']) === 'once');
+    check('the repair flag reads off, and no flag reads null', repairFlag(['--repair', 'off']) === 'off' && repairFlag([]) === null);
+    check('the repair flag refuses any other value', thrown(() => repairFlag(['--repair', 'on'])) === '--repair must be off or once');
+    check('a flag with no value is refused', thrown(() => flagOf(['--repair', '--stub'], '--repair')) === '--repair needs a value');
+
+    const guardOff = runDir(root, 'selftest', 'guard-off');
+    guardMode(guardOff, '--repair', 'off');
+    check('once over a folder that holds an off arm is refused', thrown(() => guardMode(guardOff, '--repair', 'once')) === 'this run holds answers of another arm');
+    check('a default run over a folder that holds an arm is refused', thrown(() => guardMode(guardOff, '--repair', null)) === 'this run was made with --repair off: pass the same flag');
+    const guardRows = runDir(root, 'selftest', 'guard-rows');
+    writeFileSync(join(guardRows, 'answers.jsonl'), '{}\n');
+    check('once over answers with no arm.json is refused', thrown(() => guardMode(guardRows, '--repair', 'once')) === 'this run holds answers of another arm');
+    const guardPlain = runDir(root, 'selftest', 'guard-plain');
+    check('a default run over a plain folder passes', thrown(() => guardMode(guardPlain, '--repair', null)) === null);
+
+    const countersA: ArmCounters = { config: 'claude-x', wrongful_closes: 0, applied_ops: 0, unparsed: 0, refused_ops: 1, repair_calls: 0, repair_input_tokens: 0, repair_output_tokens: 0, tokens_measured: true };
+    const countersC: ArmCounters = { config: 'claude-x', wrongful_closes: 0, applied_ops: 2, unparsed: 0, refused_ops: 0, repair_calls: 1, repair_input_tokens: 100, repair_output_tokens: 25, tokens_measured: true };
+    const armedLine = 'curator-reconcile claude-x A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied 2 unparsed 0 refused 0 repair calls 1 tokens 100/25';
+    check('the arm line reads both arms and the repair tokens', armLine('curator-reconcile', countersA, countersC) === armedLine);
+    check('the arm line ends unmeasured when the repair tokens were not measured', armLine('curator-reconcile', countersA, { ...countersC, tokens_measured: false }).endsWith('repair calls 1 tokens unmeasured'));
+    const markdown = armMarkdown('curator-reconcile', { mode: 'once', configs: [{ ...countersC, tokens_measured: false }] });
+    check('the arm table has the heading and an unmeasured cell', markdown.includes('## curator-reconcile: arm repair once (reported only)') && markdown.includes('| claude-x | 0 | 2 | 0 | 0 | 1 | unmeasured |'));
+
+    const handOnce = runDir(root, 'curator-reconcile', 'hand-once');
+    writeFileSync(join(handOnce, 'summary.json'), JSON.stringify({ eval: 'curator-reconcile', items: 1, repetitions: 1, dataset_sha256: 'd' }));
+    writeFileSync(join(handOnce, 'report.md'), '# report\n');
+    const onceBlock = { mode: 'once', configs: [countersC] };
+    writeArm(handOnce, onceBlock, armMarkdown('curator-reconcile', onceBlock));
+    const handSummary = JSON.parse(readFileSync(join(handOnce, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    check('writeArm adds the arm block and keeps every other key', JSON.stringify(handSummary) === JSON.stringify({ eval: 'curator-reconcile', items: 1, repetitions: 1, dataset_sha256: 'd', arm: onceBlock }));
+    const handReport = readFileSync(join(handOnce, 'report.md'), 'utf8');
+    check('writeArm appends the arm section to report.md', handReport.startsWith('# report\n') && handReport.includes('## curator-reconcile: arm repair once (reported only)'));
+
+    const runA = runDir(root, 'curator-reconcile', 'ra');
+    writeFileSync(join(runA, 'summary.json'), JSON.stringify({ items: 1, repetitions: 1, dataset_sha256: 'd', arm: { mode: 'off', configs: [countersA] } }));
+    const runC = runDir(root, 'curator-reconcile', 'rc');
+    writeFileSync(join(runC, 'summary.json'), JSON.stringify({ items: 1, repetitions: 1, dataset_sha256: 'd', arm: { mode: 'once', configs: [countersC] } }));
+    const cliArgs = [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', root];
+    const good = spawnSync(process.execPath, [...cliArgs, '--a', 'ra', '--c', 'rc'], { encoding: 'utf8' });
+    check('the arm CLI prints the EVAL-7 line for two hand-made runs', good.status === 0 && good.stdout.trim() === armedLine);
+    const swapped = spawnSync(process.execPath, [...cliArgs, '--a', 'rc', '--c', 'ra'], { encoding: 'utf8' });
+    check('the arm CLI refuses a run A that is not arm off', swapped.status !== 0 && swapped.stderr.includes('run rc is not arm off'));
+    await reconcileArm(root);
+    await storyArm(root);
+    await pairArm(root);
+    await writerArm(root);
+} finally {
+    rmSync(root, { recursive: true, force: true });
+}
+
+if (failures.length > 0) {
+    console.error(`${failures.length} self-test check(s) failed: ${failures.join('; ')}`);
+    process.exit(1);
+}
+console.log('self-test passed');

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
-import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
@@ -72,8 +72,8 @@ test('an agent with a reader of its own never goes to the screen reader; a sourc
 
 test('a lane nobody can read is reported by name, and does not stop the others', async () => {
     const own = recording('claude', (pane) => `/t/${pane}`);
-    const { store } = await recapOf(registryWith({ claude: own.reader }), ['hermes', 'claude']);
-    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p1: no reader for hermes/);
+    const { store } = await recapOf(registryWith({ claude: own.reader }), ['gemini', 'claude']);
+    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p1: no reader for gemini/);
     assert.deepEqual(store.records.readRecap('w1:t1')?.lanes.map((lane) => lane.cursor), [0, 1]);
 });
 

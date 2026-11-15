@@ -5,10 +5,10 @@ import { JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 
 test('the typed registry derives the existing ordered job harness lists and defaults', () => {
-    assert.deepEqual(BACKEND_IDS, ['claude', 'codex', 'opencode', 'hermes', 'custom']);
-    assert.deepEqual(AUTO_ORDER, ['claude', 'codex', 'opencode', 'hermes']);
-    assert.deepEqual(MODEL_DEFAULTS, { claude: 'haiku', codex: '', opencode: '', hermes: '', custom: '' });
-    assert.deepEqual(JOB_BY_CHOICES, ['recap', 'auto', 'claude', 'codex', 'opencode', 'hermes', 'custom', 'off']);
+    assert.deepEqual(BACKEND_IDS, ['claude', 'codex', 'opencode', 'custom']);
+    assert.deepEqual(AUTO_ORDER, ['claude', 'codex', 'opencode']);
+    assert.deepEqual(MODEL_DEFAULTS, { claude: 'haiku', codex: '', opencode: '', custom: '' });
+    assert.deepEqual(JOB_BY_CHOICES, ['recap', 'auto', 'claude', 'codex', 'opencode', 'custom', 'off']);
     assert.deepEqual(LEGACY_MODEL_KEYS, ['TAB_RECAP_CLAUDE_MODEL', 'TAB_RECAP_CODEX_MODEL']);
 });
 
@@ -25,7 +25,6 @@ test('custom declares the free-text contract, no model and no enumerator', () =>
         automatic: false,
         availabilityMark: false,
         customCommand: true,
-        setupNote: null,
         job: { contract: 'free-text', enumerates: false, envScrub: [] },
     });
 });

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractClaude } from '#src/adapters/claude-rows.ts';
-import { extractCodex } from '#src/adapters/codex-transcripts.ts';
+import { extractClaude } from '#src/adapters/transcripts/claude/rows.ts';
+import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-outcome.ts';
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';

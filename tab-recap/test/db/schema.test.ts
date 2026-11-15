@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { memoryStore, newId } from './support.ts';
 
-const fresh = (): DatabaseSync => memoryStore().db;
+const fresh = (): Database => memoryStore().db;
 
-function withRun(db: DatabaseSync): { run: Uint8Array; task: Uint8Array; transcript: Uint8Array; chapter: Uint8Array } {
+function withRun(db: Database): { run: Uint8Array; task: Uint8Array; transcript: Uint8Array; chapter: Uint8Array } {
     const [run, task, transcript, chapter] = [newId(), newId(), newId(), newId()];
     db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('t', 1, 1)").run();
     db.prepare("INSERT INTO transcript (id, tab_id, pane, agent, source, attached, cursor, first_seen) VALUES (?, 't', 'p', 'claude', 's', 1, 0, 1)").run(transcript);
@@ -18,7 +18,7 @@ function withRun(db: DatabaseSync): { run: Uint8Array; task: Uint8Array; transcr
 
 interface Bullet { readonly view: string; readonly section: string; readonly position: number; readonly text?: string }
 
-const item = (db: DatabaseSync, ids: { run: Uint8Array; task: Uint8Array }, bullet: Bullet): void => {
+const item = (db: Database, ids: { run: Uint8Array; task: Uint8Array }, bullet: Bullet): void => {
     db.prepare('INSERT INTO item (run_id, task_id, view, section, position, text) VALUES (?, ?, ?, ?, ?, ?)').run(ids.run, ids.task, bullet.view, bullet.section, bullet.position, bullet.text ?? 'x');
 };
 

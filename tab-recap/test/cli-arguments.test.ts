@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -13,7 +14,7 @@ function run(...args: string[]): { status: number | null; stdout: string; stderr
     const state = join(root, 'state');
     const ran = spawnSync(process.execPath, [entry, ...args], {
         encoding: 'utf8',
-        env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: config, TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' },
+        env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: config, TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
     });
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr, config, state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }
@@ -124,7 +125,7 @@ test('`autocompact`: three decisions print three rows newest first with share, v
             store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - age * 60_000, mode: 'shadow', share, tokens: 1, window: 2, gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'jev · jev-1.13.0', costUsd: cost, tookMs: 5, why: null });
         }
         store.close();
-        const env = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en' };
+        const env = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF };
         const ran = spawnSync(process.execPath, [entry, 'autocompact', '--all'], { encoding: 'utf8', env });
         assert.equal(ran.status, 0, ran.stderr);
         const rows = ran.stdout.split('\n').filter((line) => line.includes('w1:t1'));

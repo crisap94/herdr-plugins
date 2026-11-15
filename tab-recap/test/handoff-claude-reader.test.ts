@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HANDOFF_OBSERVATIONS } from '#src/recap/application/handoff-limits.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';

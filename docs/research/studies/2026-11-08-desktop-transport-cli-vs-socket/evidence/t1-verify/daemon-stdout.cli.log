@@ -1,0 +1,7 @@
+2026-11-08T16:13:18.619Z daemon 2045720 up, state in ~/.cache/hcs/t1-state/cli
+2026-11-08T16:13:18.648Z autocompact t5: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:13:18.650Z autocompact t6: ? % → skip no-context (the context share is not known yet)
+2026-11-08T16:14:18.629Z perf window=60s status-tracked=0 status-full=0 locate=2 git-dir-event=0 status-coalesced=0 failed=0 cpu=96ms cpu-share=0% rss=123MiB
+2026-11-08T16:14:51.295Z recap tb1: written in 0.0 s (turn-ended)
+2026-11-08T16:14:52.018Z stopping: closing every column
+2026-11-08T16:14:52.018Z stopping: closed 0 columns

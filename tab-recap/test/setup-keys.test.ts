@@ -2,9 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
+import { requestRewrites } from '#src/recap/application/setup-changes.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { memoryStore, seed } from '#test/db/support.ts';
+import { oneTask } from '#test/support.ts';
 
 const ESC = String.fromCodePoint(0x1b);
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: Effect[] } {
@@ -47,7 +52,7 @@ test('model: edits the model of the harness in force; with auto that is the firs
     const edited = typed(start(), ['l', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
     assert.equal(edited.draft.models.codex, 'gpt-6');
     assert.deepEqual([...changes(edited)], [['TAB_RECAP_MODEL_CODEX', 'gpt-6']]);
-    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['hermes', 'codex']);
+    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['opencode', 'codex']);
     assert.equal(modelTarget(auto.draft, auto.available), 'codex');
     const none = withAvailable(initial({ ...draft, backend: 'auto' }, {}), []);
     assert.equal(typed(none, ['l', '\r']).state.note, 'no-agent');
@@ -72,12 +77,13 @@ test('interface language: auto · en · es; recap language: ui · en · es · fr
 
 test('a row an environment variable overrides is read-only and says which variable', () => {
     const locks = locksOf({ TAB_RECAP_WORDS: '300', TAB_RECAP_MODEL_CODEX: 'x', TAB_RECAP_LOCALE: 'es', TAB_RECAP_BACKEND: '' });
-    assert.deepEqual(locks, { model: 'TAB_RECAP_MODEL_CODEX', locale: 'TAB_RECAP_LOCALE' }, 'the retired TAB_RECAP_WORDS locks nothing');
+    assert.deepEqual(locks, { model: 'TAB_RECAP_MODEL_CODEX' }, 'the retired TAB_RECAP_WORDS locks nothing, and the language keys never lock: the settings file wins over the environment for them');
     const locked = typed(start(locks), ['l', '\r']).state;
     assert.equal(locked.editing, null);
     assert.equal(locked.note, 'locked');
-    const forced = { ...start(locks), draft: { ...draft, locale: 'en' as const, models: { ...draft.models, codex: 'other' } } };
+    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: 'other' } } };
     assert.equal(changes(forced).size, 0, 'a locked row is never written');
+assert.deepEqual(locksOf({ TAB_RECAP_LOCALE: 'es', TAB_RECAP_RECAP_LANG: 'es' }), {});
 });
 
 test('t starts one test with the draft; a second t while it runs does nothing; the result comes back', () => {
@@ -249,7 +255,7 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;
     assert.deepEqual([...changes(at)], [['TAB_RECAP_AUTOCOMPACT_AT', '60']]);
     assert.equal(typed(at, ['\r', '\u0015', '9', '9', '\r']).state.draft.autocompactAt, '10', 'out of range is the default');
-    const by = typed(start(), [...down(16),'\r', ...Array.from({ length: 7 }, () => 'j'), '\r']).state;
+    const by = typed(start(), [...down(16),'\r', ...Array.from({ length: 6 }, () => 'j'), '\r']).state;
     assert.deepEqual([...changes(by)], [['TAB_RECAP_AUTOCOMPACT_BY', 'jev']]);
     const model = typed(start(), [...down(16),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
@@ -261,4 +267,18 @@ test('the key and the endpoint of the TypeSafe API are never a row or a config e
     const everything = typed(start(), ['\r', ...down(2), '\r']).state;
     const keys = [...changes({ ...everything, draft: { ...everything.draft, autocompact: 'on', decide: { by: 'jev', model: 'm', effort: 'high' } } }).keys()];
     assert.ok(keys.every((key) => !/JEV|TYPESAFE/u.test(key)), keys.join(','));
+});
+
+test('a saved language change asks a rewrite of the tab it was opened from and of every tab that has a recap', () => {
+    const store = memoryStore();
+    for (const [tab, pane] of [['w1:t1', 'w1:p1'], ['w1:t2', 'w1:p2'], ['w1:t3', 'w1:p3']] as const) {
+        store.views.writeTab({ tab, column: null, at: 1, lanes: [{ pane, agent: 'claude', status: 'idle', title: null, cwd: null }] });
+    }
+    for (const tab of ['w1:t1', 'w1:t2']) {
+        seed(store, { ...blankRecap(tab), tasks: oneTask('## Goal\n- ship', { goal: 'ship', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1 });
+    }
+    assert.deepEqual(requestRewrites(tabId('w1:t9'), store), [tabId('w1:t9'), tabId('w1:t1'), tabId('w1:t2')], 'the opener first, then every tab with a recap; w1:t3 has none');
+    assert.deepEqual(store.requests.takeRequests(), [tabId('w1:t9'), tabId('w1:t1'), tabId('w1:t2')]);
+    assert.deepEqual(requestRewrites(null, store), [tabId('w1:t1'), tabId('w1:t2')], 'opened from no tab');
+    assert.deepEqual(requestRewrites(tabId('w1:t2'), store), [tabId('w1:t2'), tabId('w1:t1')], 'the opener is asked once');
 });

@@ -1,0 +1,9 @@
+[
+  {
+    "class": "wire",
+    "file": "src/wire/value.ts",
+    "symbol": "echo",
+    "field": "other",
+    "reason": "probe: a wire exception for a parameter the function does not have excepts nothing"
+  }
+]

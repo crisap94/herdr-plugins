@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 
 /**
  * One numbered step of the schema. Append-only: a released migration is never edited, a fix is a new number.
@@ -8,5 +8,5 @@ import type { DatabaseSync } from 'node:sqlite';
 export interface Migration {
     readonly version: number;
     readonly name: string;
-    readonly up: string | readonly string[] | ((db: DatabaseSync) => void);
+    readonly up: string | readonly string[] | ((db: Database) => void);
 }

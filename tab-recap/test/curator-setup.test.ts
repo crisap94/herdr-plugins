@@ -4,10 +4,15 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
+import { curatorFor } from '#src/daemon/backends.ts';
+import type { Job } from '#src/recap/domain/job.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
+import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', hermes: '', custom: '' };
+const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const raw = { locale: undefined, recapLanguage: undefined };
 const draft = draftFrom({ backend: 'codex', models }, raw);
 const given = (key: string): string | undefined => ({ TAB_RECAP_CURATE_BY: ' Codex ', TAB_RECAP_CURATE_MODEL: ' gpt-6-luna ', TAB_RECAP_CURATE_EFFORT: 'HIGH' })[key];
@@ -21,6 +26,49 @@ test('the curator job: as the recap writer, no model of its own and medium effor
     assert.deepEqual(curateJobOf(given), { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
     assert.deepEqual(curateJobOf((key) => (key.endsWith('_MODEL') ? undefined : 'nonsense')), { by: 'recap', model: '', effort: 'medium' }, 'unknown values are the defaults');
     assert.equal(curateJobOf((key) => (key === 'TAB_RECAP_CURATE_BY' ? 'off' : undefined)).by, 'off');
+});
+
+const timed = (value: string): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_TIMEOUT_MS' ? value : undefined));
+
+test('the curator time limit: TAB_RECAP_CURATE_TIMEOUT_MS sets a positive whole number of milliseconds; anything else leaves the key out', () => {
+    assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
+    assert.deepEqual(timed('90000'), { ...CURATE_DEFAULT, timeoutMs: 90000 });
+    for (const value of ['0', '-5', 'abc', '1.5', '']) {
+        assert.equal('timeoutMs' in timed(value), false, value);
+    }
+});
+
+const CURATOR_KEYS = ['TAB_RECAP_BACKEND', 'TAB_RECAP_CLAUDE_POLICY_ACK', 'TAB_RECAP_CURATE_TIMEOUT_MS'];
+
+async function curatorLimit(limit: string | undefined): Promise<unknown> {
+    const { loadConfig } = await import('#src/daemon/config.ts');
+    const was = CURATOR_KEYS.map((key) => process.env[key]);
+    try {
+        Object.assign(process.env, { TAB_RECAP_BACKEND: 'claude', TAB_RECAP_CLAUDE_POLICY_ACK: 'on' });
+        if (limit === undefined) {
+            delete process.env['TAB_RECAP_CURATE_TIMEOUT_MS'];
+        } else {
+            process.env['TAB_RECAP_CURATE_TIMEOUT_MS'] = limit;
+        }
+        const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
+        await curatorFor(loadConfig(), ['claude'], 'work', runtime)?.write('document');
+        const request = runtime.calls[0]?.request;
+        return request === undefined ? undefined : { has: 'timeoutMs' in request, value: request.timeoutMs };
+    } finally {
+        for (const [at, key] of CURATOR_KEYS.entries()) {
+            const before = was[at];
+            if (before === undefined) {
+                delete process.env[key];
+            } else {
+                process.env[key] = before;
+            }
+        }
+    }
+}
+
+test('the curator call gets the time limit when TAB_RECAP_CURATE_TIMEOUT_MS sets one, and no limit of its own when it does not', async () => {
+    assert.deepEqual(await curatorLimit('90000'), { has: true, value: 90000 });
+    assert.deepEqual(await curatorLimit(undefined), { has: false, value: undefined });
 });
 
 test('the curator row is the last, a job row: each part is edited and saved under its variable', () => {
@@ -75,4 +123,46 @@ test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFOR
             }
         });
     }
+});
+
+const answerOf = (value: string | undefined): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_ANSWER' ? value : undefined));
+
+test('the curator answer: TAB_RECAP_CURATE_ANSWER set to schema (trimmed, any case) asks for a schema answer; any other value, or none, keeps the text route', () => {
+    assert.deepEqual(answerOf(' Schema '), { ...CURATE_DEFAULT, answer: 'schema' });
+    for (const value of ['text', 'json', '', undefined]) {
+        assert.equal('answer' in answerOf(value), false, String(value));
+    }
+    assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
+});
+
+function recordingHarness(structured: StructuredSupport | undefined): { readonly harness: Harness; readonly calls: HarnessCall[] } {
+    const calls: HarnessCall[] = [];
+    const ran: Ran = { kind: 'ran', text: 'ok', costUsd: 0 };
+    const harness: Harness = {
+        id: 'fake',
+        label: () => 'fake',
+        limit: null,
+        ...(structured === undefined ? {} : { structured }),
+        run: (call) => {
+            calls.push(call);
+            return Promise.resolve(ran);
+        },
+    };
+    return { harness, calls };
+}
+
+const settings: HarnessSettings = { model: 'm', effort: 'low' };
+
+test('the curator asks for a schema answer only when it was asked for and the harness supports schema, in the mode it was given', async () => {
+    const schema = recordingHarness('schema');
+    await new HarnessCurator(schema.harness, settings, 'schema').write('document', 'reconcile');
+    assert.deepEqual(schema.calls[0]?.answer, { kind: 'schema', schema: 'reconcile' });
+    const unsupported = recordingHarness(undefined);
+    await new HarnessCurator(unsupported.harness, settings, 'schema').write('document');
+    assert.equal(unsupported.calls.length, 1);
+    assert.equal('answer' in (unsupported.calls[0] ?? {}), false);
+    const text = recordingHarness('schema');
+    await new HarnessCurator(text.harness, settings, 'text').write('document');
+    assert.equal(text.calls.length, 1);
+    assert.equal('answer' in (text.calls[0] ?? {}), false);
 });

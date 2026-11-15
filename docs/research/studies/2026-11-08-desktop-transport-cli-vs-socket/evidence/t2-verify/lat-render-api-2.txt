@@ -1,0 +1,10 @@
+idle 0.913 api
+working 0.984 api
+idle 1.968 api
+working 0.969 api
+idle 0.973 api
+working 0.979 api
+idle 0.981 api
+working 0.967 api
+idle 0.970 api
+working 1.959 api

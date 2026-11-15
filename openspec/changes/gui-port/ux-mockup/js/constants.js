@@ -1,0 +1,27 @@
+window.TR={views:{},roles:{}};
+TR.C={
+  HINT:75,
+  CTX_WINDOW:'200k',
+  NOTE_MAX:280,
+  BIN_COUNT:32,
+  HOURS:48,
+  START:Date.UTC(2026,10,5,14,20),
+  STATUS_ORDER:['blocked','done','working','idle'],
+  STATUS_GROUP:{blocked:'Needs you',done:'Done, unseen',working:'Working',idle:'Idle'},
+  STATUS_PILL:{blocked:'Needs you',done:'Done',working:'Working',idle:'Idle'},
+  SECTIONS:['needs','decisions','done','progress'],
+  SECTION_LABEL:{needs:'Needs',decisions:'Decisions',done:'Done',progress:'Progress'},
+  SECTION_COLOR:{needs:'var(--blocked)',decisions:'var(--violet)',done:'var(--done)',progress:'var(--working)'},
+  BREAK_LABEL:{chapter:'Chapter',compaction:'Compaction',session:'New session'},
+  BREAK_ICON:{chapter:'bookmark',compaction:'compress',session:'play'},
+  STEPS:['Briefing','Compacting','Restoring','Compacted'],
+  STEP_SECS:[2,31,8,1],
+  STEP_MS:1100,
+  TOAST_MS:4200,
+  REFRESH_MS:1100,
+  VIEWS:[['brief','Brief'],['story','Story'],['timeline','Timeline'],['session','Session']],
+  SCENES:[['fleet','Fleet'],['brief','Brief'],['timeline','Timeline'],['compact','Compact']],
+  KEYS:[['j','k','move'],['Enter','','open'],['/','','search'],['1-4','','views'],['c','','compact'],['r','','refresh'],['Esc','','back']],
+  MONTHS:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  DAYS:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+};

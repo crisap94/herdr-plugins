@@ -1,0 +1,9 @@
+List live terminals
+
+Usage: hc ls [OPTIONS]
+
+Options:
+      --all          Include finished terminals
+      --json         JSON output even in a terminal
+      --label <K=V>  Only terminals carrying all of these labels (repeatable)
+  -h, --help         Print help

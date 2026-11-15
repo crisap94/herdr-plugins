@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
+import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
     const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(' ');
@@ -22,6 +24,68 @@ test('objectIn: the answer may be fenced or wrapped in a sentence — the JSON i
     assert.deepEqual(objectIn('Here you go: {"ops":[{"op":"close","id":"f1","why":"done"}]} Hope it helps!'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
     assert.equal(objectIn('I could not do that'), undefined);
     assert.throws(() => objectIn('{"ops": [}'));
+});
+
+test('objectIn: the first complete object is read when text after it holds a brace or a second object', () => {
+    assert.deepEqual(objectIn('{"ops":[]}\nNote: I left {f2} alone.'), { ops: [] });
+    assert.deepEqual(objectIn('Here: {"ops":[{"op":"close","id":"f1","why":"done"}]}\n{"ops":[{"op":"close","id":"f9","why":"x"}]}'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
+    assert.deepEqual(objectIn('{"a":1} }'), { a: 1 });
+    assert.deepEqual(objectIn('{"a":1} {"b":'), { a: 1 });
+});
+
+test('answerTextOf: a whole JSON answer is kept; a JSON object wrapped in text is read as its first object; anything else is kept as it is', () => {
+    const cases: readonly (readonly [string, string])[] = [
+        ['{"ops":[]}', '{"ops":[]}'],
+        ['[{"a":1}]', '[{"a":1}]'],
+        ['not json', 'not json'],
+        ['{"ops": [}', '{"ops": [}'],
+        ['Sure: {"ops":[{"op":"close","id":"f1"}]} hope it helps', '{"ops":[{"op":"close","id":"f1"}]}'],
+        ['{"a":1} and {"b":2}', '{"a":1}'],
+        ['', ''],
+        ['x [1,2] y', 'x [1,2] y'],
+    ];
+    for (const [input, expected] of cases) {
+        const read = parseText(input);
+        if (read.kind !== 'ok') {
+            assert.fail(input);
+        }
+        assert.equal(answerTextOf(read.value), expected, input);
+    }
+});
+
+test('objectIn: braces inside JSON strings and escaped quotes do not end the object', () => {
+    assert.deepEqual(objectIn('{"why":"closes } and { braces","n":{"m":1}} then }'), { why: 'closes } and { braces', n: { m: 1 } });
+    assert.deepEqual(objectIn('{"why":"say \\"}\\" now"} trailing }'), { why: 'say "}" now' });
+    assert.deepEqual(objectIn('{"path":"C:\\\\dir\\\\"} }'), { path: 'C:\\dir\\' });
+});
+
+const objectInBefore = (text: string): unknown => {
+    const from = text.indexOf('{');
+    const to = text.lastIndexOf('}');
+    return from >= 0 && to > from ? JSON.parse(text.slice(from, to + 1)) : undefined;
+};
+
+test('objectIn: every text read today reads to the same value', () => {
+    for (const text of [
+        '{"ops":[]}',
+        '```json\n{"ops":[]}\n```',
+        'Here you go: {"ops":[{"op":"close","id":"f1","why":"done"}]} Hope it helps!',
+        '{"verdicts":[{"item":"t1/now/0","check":"I1","pass":true,"critique":""}],"keyfacts":["a {b}"],"coverage":[{"keyfact":0,"item":null}]}',
+        '[{"a":1}]',
+        '{"a":"\\\\"}',
+        '  {"nested":{"deep":{"deeper":[{"x":"}"}]}}}  ',
+        'I could not do that',
+        '} only {',
+        '{ never closed',
+    ]) {
+        assert.deepEqual(objectIn(text), objectInBefore(text), text);
+    }
+});
+
+test('objectIn: a broken first object with no readable slice still throws', () => {
+    assert.throws(() => objectIn('{"ops": [} and more }'));
+    assert.throws(() => objectIn("{'a': 1}"));
+    assert.equal(objectIn('} {'), undefined);
 });
 
 test('renderer: golden output in English with empty sections as —', () => {
@@ -49,18 +113,21 @@ test('headline: what needs the operator first, else what is happening now, else 
 
 const opsOf = (text: string): number => (objectIn(text) as { ops: unknown[] }).ops.length;
 
-test('the operations contract survives every summarizer\'s way of handing the answer back', async () => {
-    const { resultOf } = await import('#src/adapters/claude-harness.ts');
-    const { opencodeOutput } = await import('#src/adapters/opencode-harness.ts');
-    const { unfenced } = await import('#src/adapters/recap-prompt.ts');
+test('the operations contract survives every harness\'s way of handing the answer back', async () => {
+    const { unfenced } = await import('#src/adapters/job/prompts/recap-prompt.ts');
+    const { LibraryHarness } = await import('#src/adapters/harness/library.ts');
+    const { RecapWriter } = await import('#src/adapters/job/writer.ts');
+    const { requestOf } = await import('#test/support.ts');
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'now', text: 'running CI' }, { op: 'close', id: 'f2', why: 'done' }] });
     const fenced = `\`\`\`json\n${answer}\n\`\`\``;
-    const claude = resultOf(JSON.stringify({ type: 'result', result: fenced, total_cost_usd: 0.01 }));
-    assert.ok(claude !== null);
-    assert.equal(opsOf(unfenced(claude.text)), 2);
-    const half = Math.floor(answer.length / 2);
-    const events = [answer.slice(0, half), answer.slice(half)].map((text) => JSON.stringify({ type: 'text', sessionID: 's', part: { text } })).join('\n');
-    assert.equal(opsOf(unfenced(opencodeOutput(events).text)), 2);
+    for (const id of ['claude', 'codex', 'opencode'] as const) {
+        for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
+            const runtime = fakeRuntime({ scripts: { [id]: [fakeOutput({ text: raw })] } });
+            const written = await new RecapWriter(new LibraryHarness(runtime, id, 1000, undefined, true), { model: '', effort: 'default' }).write(requestOf());
+            assert.ok(written.kind === 'written', id);
+            assert.equal(opsOf(written.text), 2, id);
+        }
+    }
     for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
         assert.equal(opsOf(unfenced(raw)), 2);
     }

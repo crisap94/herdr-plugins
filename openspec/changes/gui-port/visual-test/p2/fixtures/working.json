@@ -1,0 +1,162 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "working",
+ "at": 1794047400000,
+ "recapAt": 1794047040000,
+ "writing": "resting",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p1",
+   "agent": "claude",
+   "status": "working",
+   "title": "api orchestrator",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Add the cart total rounding fix and run the tests",
+   "branch": "feat/cart",
+   "contextPercent": 55,
+   "since": 1794046680000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 110000,
+    "window": 200000,
+    "share": 55,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": {
+    "branch": "feat/cart",
+    "ahead": 1,
+    "changed": 4
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/cart"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "name": "Cart totals",
+   "sections": {
+    "goal": "Cart totals match the server within one cent",
+    "now": [
+     "Running the cart test suite after the rounding change"
+    ],
+    "needs": [],
+    "done": [],
+    "decisions": [
+     "Round at the line level, not the total"
+    ],
+    "next": [
+     "Open the merge request once the tests pass"
+    ],
+    "links": [],
+    "rules": []
+   },
+   "markdown": "## Goal\nCart totals match the server within one cent\n\n## Now\n- Running the cart test suite after the rounding change\n\n## Needs",
+   "facts": [
+    {
+     "id": "g1",
+     "section": "goal",
+     "text": "Cart totals match the server within one cent",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "n1",
+     "section": "now",
+     "text": "Running the cart test suite after the rounding change",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "d1",
+     "section": "decisions",
+     "text": "Round at the line level, not the total",
+     "spans": null,
+     "why": "The server rounds per line",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794043800000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "x1",
+     "section": "next",
+     "text": "Open the merge request once the tests pass",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    }
+   ],
+   "regions": {
+    "goal": [
+     "g1"
+    ],
+    "now": [
+     "n1"
+    ],
+    "needs": [],
+    "decisions": [
+     "d1"
+    ],
+    "next": [
+     "x1"
+    ],
+    "rules": [],
+    "links": []
+   },
+   "timeline": [],
+   "story": null,
+   "curating": "no",
+   "needsWaitedMs": []
+  }
+ ],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": "claude",
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [],
+ "claudeRecaps": [],
+ "groups": [],
+ "breaks": [],
+ "session": null,
+ "cuts": []
+}

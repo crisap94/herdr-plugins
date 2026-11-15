@@ -1,0 +1,15 @@
+id: recap-no-drizzle-transaction
+language: typescript
+severity: error
+message: >-
+  Drizzle's own `.transaction(...)` is not used: `writeTx` (src/adapters/db/connection.ts) is the only transaction
+  primitive, and it is `BEGIN IMMEDIATE` with a rollback on throw.
+note: >-
+  Wrap the writes in `writeTx(db, () => ...)`. Inside one already, it joins it.
+files:
+  - "**/src/**"
+  - "**/probes/recap-no-drizzle-transaction/**"
+ignores:
+  - "**/src/adapters/db/connection.ts"
+rule:
+  pattern: $DB.transaction($$$ARGS)

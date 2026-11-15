@@ -228,6 +228,22 @@ test('a reconciliation that drops the last lane of a tab closes it and publishes
     assert.ok(outcome.intents.some((intent) => intent.kind === 'publish' && intent.tab === 'w1:t1'));
 });
 
+const seenIn = (lanes: readonly SeenLane[], listed: readonly string[]): Observation =>
+    ({ kind: 'reconciled', seen: { lanes, columns: [], panes: lanes.map((l) => l.paneId), widths: new Map(), tabs: listed.map((tab) => tabId(tab)) } });
+
+test('a tab gone from herdr\'s tab list is named once, after its lanes close; a tab still listed is not', () => {
+    const outcome = observedAfter([seenIn([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')], ['w1:t1', 'w1:t2'])], seenIn([], ['w1:t2']));
+    assert.deepEqual(kinds(outcome.intents), ['lane-closed', 'lane-closed', 'tab-gone', 'publish', 'publish']);
+    assert.deepEqual(outcome.intents.filter((intent) => intent.kind === 'tab-gone'), [{ kind: 'tab-gone', tab: tabId('w1:t1'), at: instant(1000) }]);
+    const again = observe(outcome.board, seenIn([], ['w1:t2']), instant(2000), DEFAULT_POLICY);
+    assert.deepEqual(kinds(again.intents).filter((kind) => kind === 'tab-gone'), [], 'a gone tab is named once');
+});
+
+test('a restored lane whose tab is missing from the first tab list names that tab gone', () => {
+    const outcome = observedAfter([restored('w1:p1', 'w1:t1', 'claude', 0)], seenIn([], []));
+    assert.deepEqual(outcome.intents.filter((intent) => intent.kind === 'tab-gone').map((intent) => intent.tab), ['w1:t1']);
+});
+
 test('an agent kind change in a surviving pane closes the old incarnation and starts a new one', () => {
     const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], { kind: 'detected', lane: lane('w1:p1', 'w1:t1', 'idle', 'codex') });
     assert.deepEqual(closures(outcome.intents).map((gone) => [gone.agent, gone.since, gone.closedAt]), [['claude', 0, 1000]]);

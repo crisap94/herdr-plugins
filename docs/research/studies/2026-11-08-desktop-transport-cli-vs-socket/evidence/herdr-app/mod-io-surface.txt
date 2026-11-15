@@ -1,0 +1,12 @@
+herdr.d.ts I/O functions (~/.config/herdr-app/herdr.d.ts)
+exec(command,args,{cwd,on}) L13  run program, 30s, 8MiB, returns after exit (no streaming)
+hc(args) L16                    run hc (herdr-core) CLI, same limits
+readTextFile(path,{on}) L25     UTF-8 up to 1MiB
+writeTextFile(path,text,expected) L28  compare-and-swap write
+watchFolder(path) L414          promise resolves with batch of changed paths; loopable = persistent file-watch
+nextCommand() L402              awaits key commands for this mod
+run(name,args) L79              runs app command (same as keys.json)
+spaces()/agents()/panes()/terminals()/focused()/layout() snapshot getters
+shared/setShared                cross-mod state (shared.json)
+AGENTS.md L35: no Node APIs, no setTimeout; L996-998: fetch unrestricted, fs/promises (read in home, write under ~/.config/herdr-app), localStorage
+No WebSocket/EventSource/socket function found (grep in herdr.d.ts and AGENTS.md).

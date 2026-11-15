@@ -1,8 +1,8 @@
 // The README's screenshots, step two: render.ts's HTML pages become PNGs with Playwright's chromium.
 // Not part of the gates (it needs a browser): run it when a view changes, and commit the PNGs.
 //
-//   npm install --no-save playwright-core && npx playwright-core install chromium   # once
-//   node docs/screens/shoot.mjs
+//   bun add --no-save playwright-core && bunx playwright-core install chromium   # once
+//   bun docs/screens/shoot.mjs
 //
 // Env: CHROMIUM=<path to a chromium binary> to use one that is already on the machine.
 import { execFileSync } from 'node:child_process';
@@ -15,7 +15,7 @@ const here = import.meta.dirname;
 const pages = mkdtempSync(join(tmpdir(), 'tab-recap-screens-'));
 
 try {
-    execFileSync(process.execPath, ['--no-warnings', join(here, 'render.ts'), pages], { stdio: 'inherit' });
+    execFileSync(process.execPath, [join(here, 'render.ts'), pages], { stdio: 'inherit' });
     const { chromium } = await import('playwright-core');
     const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
     const context = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 1000, height: 800 } });

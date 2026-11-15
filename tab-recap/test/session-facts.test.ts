@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
-import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import assert from 'node:assert/strict';
 import { EditCache, EditCounts, countEdits } from '#src/recap/application/edit-counts.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';

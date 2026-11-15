@@ -1,18 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC } from '#src/adapters/rubric.ts';
-import { HarnessCurator } from '#src/adapters/harness-curator.ts';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
-import { ARGV_BYTES } from '#src/adapters/recap-prompt.ts';
-import { HermesHarness } from '#src/adapters/hermes-harness.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
+import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { inputOf } from '#src/recap/application/recap-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
+import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
+import { storyRepair } from '#src/recap/application/job-kit/story-repair.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { timelineOf } from '#src/recap/render/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
@@ -25,14 +26,15 @@ import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 
 const T1 = { tab: 'w1:t1', key: 't1' };
 
-function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger } = {}): { curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
+function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger; readonly repair?: RepairMode } = {}):{ curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
     const ledger = over.ledger ?? new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue] = [[] as string[], [] as string[], { now: NOW }, [...answers]];
     const writer: Curators = { backend: 'fake/test', write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
-    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => clock.now, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, log: (line) => { logs.push(line); } };
+    const mode = over.repair;
+    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => clock.now, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
     const curate = new Curate(deps);
     return { curate, ledger, stories, store, logs, calls, clock };
 }
@@ -122,12 +124,149 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
     assert.deepEqual(garbage.logs, ['curator w1:t1 t1: refused — the answer is not JSON', 'curator w1:t1 t1: no paragraph in the answer; the old one stays']);
 });
 
+test('a story answer with text around its JSON object is read as that object', async () => {
+    const { curate, ledger, stories, logs } = setup([{ kind: 'curated', text: 'Here it is: {"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"One line."} Thanks.' }]);
+    await curate.run('w1:t1');
+    assert.equal(ledger.allOf(T1).find((each) => each.id === 'b')?.closedWhy, 'merged');
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'One line.');
+    assert.equal(logs.filter((line) => line.includes('refused')).length, 0);
+});
+
+test('a story answer that is not JSON is refused and nothing is stored', async () => {
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: 'not json' }]);
+    await curate.run('w1:t1');
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not JSON'));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
+test('a story answer that is a JSON array is refused and nothing is stored', async () => {
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: '[{"a":1}]' }]);
+    await curate.run('w1:t1');
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not an object'));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
 const settings = { model: '', effort: 'medium' } as const;
 
-test('the curator is a job on a harness: its instructions follow the document, and a document too long for an argument is refused', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+test('the curator is a job on a harness: its instructions follow the document', async () => {
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const written = await new HarnessCurator(echo, settings).write('<curator_input version="1"/>');
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
-    const refused = await new HarnessCurator(new HermesHarness(process.cwd(), 1), settings).write('x'.repeat(ARGV_BYTES));
-    assert.ok(isUnknown(refused) && refused.why.why === 'unreadable');
+});
+
+const MERGE_F9 = { op: 'close', id: 'f9', why: 'merged', into: 'f2' };
+const MERGE_F1 = { op: 'close', id: 'f1', why: 'merged', into: 'f2' };
+const F9_REFUSAL = 'curator w1:t1 t1: refused — f9 is not an open fact (or is already merged)';
+
+test('with repair off, a refused story answer gets no second call and is stored as it was', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' })]);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(F9_REFUSAL));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'First.');
+});
+
+test('with repair once, a clean merge and a paragraph get no repair call', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1], story: 'Good.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Good.');
+});
+
+test('with repair once, a refused merge is sent back once with the first answer, and the repaired answer is stored', async () => {
+    const first = JSON.stringify({ ops: [MERGE_F9], story: 'First.' });
+    const { curate, calls, logs, stories } = setup([{ kind: 'curated', text: first }, answer({ ops: [MERGE_F1], story: 'Fixed.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.startsWith(calls[0] ?? ''), 'the repair call carries the same document first');
+    assert.ok(calls[1]?.includes(`<previous-answer>\n${first}\n</previous-answer>`));
+    assert.ok(calls[1]?.includes('- f9 is not an open fact (or is already merged)'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 1 refused'));
+    assert.equal(logs.filter((line) => line.includes('refused —')).length, 0, 'the repaired answer has nothing refused');
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Fixed.');
+});
+
+test('with repair once, an answer with no paragraph is sent back once, and a repair that gives none keeps the first answer', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1] })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.includes('- no paragraph'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 0 refused'));
+    assert.ok(logs.some((line) => line.includes('no paragraph in the answer; the old one stays')));
+    assert.equal(stories.read('w1:t1', 't1'), null);
+});
+
+test('with repair once, a repair that is not JSON is not stored: the first answer is kept', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' }), { kind: 'curated', text: 'not json' }], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes(F9_REFUSAL));
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'First.');
+});
+
+function words(count: number): string {
+    return Array.from({ length: count }, (_, at) => `w${at}`).join(' ');
+}
+
+const TOO_LONG_121 = 'curator w1:t1 t1: refused — the paragraph is too long: 121 words, at most 120';
+
+function oldStory(stories: MemoryStories): void {
+    stories.keep({ task: T1, at: NOW - 100 * 60_000, language: 'en' }, { story: 'Old.', merges: [] });
+}
+
+test('a paragraph of 121 words is refused, logged with its count, and the merge still applies with no repair', async () => {
+    const { curate, calls, logs, stories, ledger } = setup([answer({ ops: [MERGE_F1], story: words(121) })]);
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(TOO_LONG_121));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+    assert.equal(ledger.allOf(T1).find((each) => each.id === 'a')?.closedWhy, 'merged');
+});
+
+test('with repair once, a too-long paragraph is sent back once, and the short repair is stored', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1], story: words(121) }), answer({ ops: [], story: 'Short.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.includes('- the paragraph is too long: 121 words, at most 120'));
+    assert.ok(!calls[1]?.includes('- no paragraph'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 1 refused'));
+    assert.equal(logs.filter((line) => line.includes('refused —')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Short.');
+});
+
+test('with repair once, a repair still too long is stored as none: the old paragraph stays, with no third call', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [], story: words(121) }), answer({ ops: [], story: words(130) })], { repair: 'once' });
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the paragraph is too long: 130 words, at most 120'));
+    assert.ok(logs.some((line) => line.includes('no paragraph in the answer; the old one stays')));
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+});
+
+test('with repair off, a too-long paragraph gets no second call and the old paragraph stays', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [], story: words(121) })], { repair: 'off' });
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(TOO_LONG_121));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+});
+
+test('the repair document names a too-long paragraph by its count and does not say no paragraph; a missing paragraph still does', () => {
+    const doc = parseText('<doc/>');
+    const said = parseText('{}');
+    const docText = doc.kind === 'ok' ? doc.value : assert.fail('the document parses');
+    const saidText = said.kind === 'ok' ? said.value : assert.fail('the answer parses');
+    const tooLong = storyRepair(docText, saidText, { merges: [], story: null, refused: ['the paragraph is too long: 121 words, at most 120'] });
+    assert.ok(tooLong.includes('- the paragraph is too long: 121 words, at most 120'));
+    assert.ok(!tooLong.includes('- no paragraph'));
+    const missing = storyRepair(docText, saidText, { merges: [], story: null, refused: ['f9 is not an open fact (or is already merged)'] });
+    assert.ok(missing.includes('- f9 is not an open fact (or is already merged)'));
+    assert.ok(missing.includes('- no paragraph'));
 });

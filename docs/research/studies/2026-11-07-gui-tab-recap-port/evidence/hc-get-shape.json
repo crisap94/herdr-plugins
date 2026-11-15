@@ -1,0 +1,49 @@
+{
+ "keys": [
+  "address",
+  "argv",
+  "cols",
+  "created_ms",
+  "cwd",
+  "die_with_parent",
+  "exit_code",
+  "finished_ms",
+  "foreground",
+  "identity",
+  "keep",
+  "labels",
+  "name",
+  "notify",
+  "parent",
+  "pid",
+  "reason",
+  "reported",
+  "rm",
+  "rows",
+  "screen",
+  "signal",
+  "state",
+  "status",
+  "status_ms",
+  "template",
+  "title",
+  "turn"
+ ],
+ "labels": [
+  "herdr.seen",
+  "herdr.space",
+  "herdr.tab",
+  "where"
+ ],
+ "status_keys": [
+  "app",
+  "msg",
+  "state"
+ ],
+ "foreground_keys": [
+  "argv",
+  "cwd",
+  "name",
+  "pid"
+ ]
+}

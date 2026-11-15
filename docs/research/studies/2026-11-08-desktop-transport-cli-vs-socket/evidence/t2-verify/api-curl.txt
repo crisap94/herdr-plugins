@@ -1,0 +1,22 @@
+## api.json mode
+600 ~/.cache/hcs/t2-state/fx/gui/api.json
+## listener
+LISTEN 0      511        127.0.0.1:35013      0.0.0.0:*
+## health
+{"ok":true,"version":1,"seq":30,"pid":3206590} [200 0.000722s]
+## index
+{"version":1,"tabs":[{"tab":"tb668d9fb0de9b1520279f459dded4d7c4","name":"tb668d9fb0de9b1520279f459dded4d7c4","status":"blocked","at":1794161506183,"recapAt":null,"writing":"resting","headline":"user@host:~","needs":0,"waitingSince":null,"contextPercent":null,"hintPercent":40,"laneCount":2,"lanes":[{"terminal":"t1j","agent":"fakeagent","status":"blocked","name":"user@host:~","
+## tab
+{"version":2,"tab":"tb668d9fb0de9b1520279f459dded4d7c4","name":"tb668d9fb0de9b1520279f459dded4d7c4","status":"blocked","at":1794161506183,"recapAt":null,"writing":"resting","error":null,"lanes":[{"pane":"t1j","agent":"fakeagent","status":"blocked","title":"user@host:~","cwd":"~
+## no token
+{"error":"unauthorized"} [401]
+## bad host
+{"error":"bad-host"} [403]
+## events since=0
+{"seq":30,"reset":false,"events":[{"seq":1,"topic":"tab","tab":"tb20eb1a60941f4742efccbb85531c334d","at":1794161501153},{"seq":2,"topic":"index","tab":null,"at":1794161501153},{"seq":3,"topic":"tab","tab":"tb2d0b7f78d1c9ca6f9483720c2e4b63b7","at":1794161501155},{"seq":4,"topic":"index","tab":null,"a
+## timeout (no change, wait=2)
+since=30
+{"seq":30,"reset":false,"events":[]} [200 2.001369s]
+## wake on a status change
+## reset (since far behind / ahead)
+{"seq":30,"reset":true,"events":[]} [200 0.000754s]

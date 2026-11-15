@@ -1,0 +1,70 @@
+Shape only: the live terminal listing was removed (project names, paths, titles).
+The capture showed the snapshot reply and heartbeats every 15 s (seq 15 after the core restart).
+
+{
+ "reply": {
+  "id": "int",
+  "jsonrpc": "str",
+  "result": {
+   "channel": "NoneType",
+   "seq": "int",
+   "terminals": [
+    {
+     "address": "str",
+     "argv": [
+      "str"
+     ],
+     "cols": "int",
+     "created_ms": "int",
+     "cwd": "str",
+     "die_with_parent": "bool",
+     "exit_code": "NoneType",
+     "finished_ms": "int",
+     "identity": "str",
+     "keep": "bool",
+     "labels": {
+      "herdr.seen": "str",
+      "herdr.space": "str",
+      "herdr.tab": "str",
+      "where": "str"
+     },
+     "name": "NoneType",
+     "notify": "bool",
+     "parent": "NoneType",
+     "pid": "int",
+     "reason": "str",
+     "reported": "bool",
+     "rm": "bool",
+     "rows": "int",
+     "screen": "str",
+     "signal": "int",
+     "state": "str",
+     "status": "NoneType",
+     "status_ms": "NoneType",
+     "template": "NoneType",
+     "title": "str",
+     "turn": "int"
+    }
+   ]
+  }
+ },
+ "events": [
+  {
+   "t": "int",
+   "m": {
+    "jsonrpc": "str",
+    "method": "str",
+    "params": {
+     "seq": "int"
+    }
+   }
+  }
+ ]
+}
+
+lines mentioning heartbeat or seq in the raw capture:
+   "seq": 15,
+    "method": "heartbeat",
+     "seq": 15
+    "method": "heartbeat",
+     "seq": 15

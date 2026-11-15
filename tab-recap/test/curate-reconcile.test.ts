@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC } from '#src/adapters/rubric.ts';
-import { CustomHarness } from '#src/adapters/custom-harness.ts';
-import { HarnessCurator } from '#src/adapters/harness-curator.ts';
+import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
+import { CustomHarness } from '#src/adapters/harness/custom.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
@@ -11,6 +11,7 @@ import { causeOf } from './fakes/cause.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { reconcileInput } from '#src/recap/application/curator-input.ts';
 import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
+import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
@@ -42,16 +43,17 @@ interface Rig {
     readonly clock: { now: number };
 }
 
-function setup(answers: readonly Curated[], over: { every?: number; tail?: readonly Entry[] } = {}): Rig {
+function setup(answers: readonly Curated[], over: { every?: number; tail?: readonly Entry[]; repair?: RepairMode } = {}): Rig {
     const ledger = new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue]: [string[], Rig['calls'], { now: number }, Curated[]] = [[], [], { now: NOW }, [...answers]];
     const writer: Curators = { backend: 'fake/test', write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
+    const mode = over.repair;
     const curate = new Curate({
         records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): number => clock.now, zone: (): string => 'UTC', language: (): string => 'en', rubric: RUBRIC.items,
-        tail: (): Promise<readonly Entry[]> => Promise.resolve(over.tail ?? TAIL), every: (): number => over.every ?? RECONCILE_EVERY, log: (line): void => { logs.push(line); },
+        tail: (): Promise<readonly Entry[]> => Promise.resolve(over.tail ?? TAIL), every: (): number => over.every ?? RECONCILE_EVERY, ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line): void => { logs.push(line); },
     });
     return { curate, ledger, calls, logs, clock };
 }
@@ -72,6 +74,13 @@ test('a stale question is closed as answered, on the quote of the operator\'s re
     assert.match(first.document, /<curator_input version="1" mode="reconcile">/);
     assert.ok(first.document.includes('<tail') && first.document.includes('Ship from release/2.1, not main.') && !first.document.includes('Wrote migration 007'), 'open facts and the tail; no closed fact');
     assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('a reconcile answer wrapped in a sentence is read: the stale question is closed as answered, as when the answer is bare JSON', async () => {
+    const { curate, ledger, logs } = setup([{ kind: 'curated', text: `Here you go: ${JSON.stringify({ ops: [ANSWERED] })} Done.` }]);
+    await curate.run('w1:t1', 'turns');
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+    assert.ok(!logs.some((line) => /reconcile refused/.test(line)), logs.join('\n'));
 });
 
 test('an update with a quote changes the fact; a merge needs no quote; each passes the writer\'s gates', async () => {
@@ -169,10 +178,73 @@ dtdTest('the reconcile document is valid against the DTD, holds only the open fa
 });
 
 test('the curator harness reconciles with its own instructions, and tells the story with the old ones', async () => {
-    const echo = new CustomHarness('node -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const curator = new HarnessCurator(echo, { model: '', effort: 'medium' });
     const reconciled = await curator.write('<curator_input version="1" mode="reconcile"/>', 'reconcile');
     assert.ok(reconciled.kind === 'curated' && reconciled.text.includes('Never add a fact.') && reconciled.text.includes('is NOT wrong') && !reconciled.text.includes('at most 120 words'));
     const told = await curator.write('<curator_input version="1"/>');
     assert.ok(told.kind === 'curated' && told.text.includes('at most 120 words') && !told.text.includes('Never add a fact.'));
+});
+
+test('an update of an unknown id is refused and logged, nothing is changed', async () => {
+    const { curate, ledger, logs } = setup([said({ ops: [
+        { op: 'update', id: 'f9', text: 'Invented change', why: 'one file', evidence: 'The migration tests pass now' },
+    ] })]);
+    await curate.run('w1:t1', 'turns');
+    assert.equal(ledger.allOf(T1).length, facts.length);
+    assert.equal(ledger.openOf(T1).length, 4);
+    assert.deepEqual(logs.filter((line) => line.includes('refused')).map((line) => line.replace(/^.*refused — /, '')), ['f9 is not an open fact (or is already changed)']);
+});
+
+const FIRST_UNKNOWN = { op: 'close', id: 'f9', why: 'done', evidence: 'The migration tests pass now' };
+
+test('with no repair, a refused reconcile answer is not repaired: one call, the kept close is applied', async () => {
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] })]);
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 1);
+    assert.ok(!logs.some((line) => /repair/.test(line)), logs.join('\n'));
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('with repair once and a clean answer, there is one call and no repair', async () => {
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED] })], { repair: 'once' });
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 1);
+    assert.ok(!logs.some((line) => /repair/.test(line)), logs.join('\n'));
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('with repair once and no repair given, the first answer kept ops are applied and the gap is logged', async () => {
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] })], { repair: 'once' });
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes('curator w1:t1 t1: reconcile repair — 1 refused'), logs.join('\n'));
+    assert.ok(logs.some((line) => line.startsWith('curator w1:t1 t1: fake/test gave no repair (')), logs.join('\n'));
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('with repair once and a repair that is not JSON, the first answer kept ops are applied', async () => {
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] }), { kind: 'curated', text: 'sorry, no' }], { repair: 'once' });
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes('curator w1:t1 t1: reconcile repair refused — the answer is not JSON'), logs.join('\n'));
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('with repair once, the repair document lists the refused operation, and a fixed repair is applied', async () => {
+    const { curate, ledger, calls } = setup([said({ ops: [FIRST_UNKNOWN] }), said({ ops: [ANSWERED] })], { repair: 'once' });
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 2);
+    const [, repair] = calls;
+    assert.ok(repair?.document.includes(`\n\n<previous-answer>\n${JSON.stringify({ ops: [FIRST_UNKNOWN] })}\n</previous-answer>\n\n<refused>\n- f9 is not an open fact (or is already changed)\n</refused>\n\nYour previous answer, in <previous-answer>, had refused operations`), repair?.document);
+    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
+});
+
+test('with repair once, a repair refused again logs its refusal and applies its kept ops, not the first answer kept ops', async () => {
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] }), said({ ops: [FIRST_UNKNOWN, { op: 'close', id: 'f4', why: 'wrong', evidence: 'The migration tests pass now' }] })], { repair: 'once' });
+    await curate.run('w1:t1', 'turns');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes('curator w1:t1 t1: reconcile refused — f9 is not an open fact (or is already changed)'), logs.join('\n'));
+    assert.deepEqual(stateOf(ledger, 'm'), ['closed', 'wrong', 'Running tests of the migration']);
+    assert.deepEqual(stateOf(ledger, 'q'), ['open', null, 'Which branch should the release ship from?']);
 });

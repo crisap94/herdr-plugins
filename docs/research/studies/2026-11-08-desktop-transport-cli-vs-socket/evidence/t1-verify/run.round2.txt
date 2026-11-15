@@ -1,0 +1,55 @@
+2026-11-08T16:43:42.594Z start agent a1 on tb1: {"address":"t1","agent":"bash","cwd":"~","name":"a1","state":"live","turn":0} 
+2026-11-08T16:43:43.400Z daemon pid 2377057 (no keepalive preload) core pid 2374483
+2026-11-08T16:43:43.704Z index ready after 303 ms: [["tb1","working"]]
+2026-11-08T16:43:43.704Z rss at start 124848 kB
+2026-11-08T16:43:43.704Z --- check 2: add then close an agent terminal
+2026-11-08T16:43:43.709Z start agent a2 on tb2: {"address":"t2","agent":"bash","cwd":"~","name":"a2","state":"live","turn":0} 
+2026-11-08T16:43:43.729Z a2 row working after 20 ms
+2026-11-08T16:43:51.755Z a2 row gone after null ms
+2026-11-08T16:43:53.257Z check 2: 'blind at subscribe'/'subscription ended' lines = 0
+2026-11-08T16:43:53.257Z --- check 3: idle
+2026-11-08T16:45:23.260Z check 3: idle 90s hc spawns by daemon = 0; since daemon start = 0
+2026-11-08T16:45:23.260Z --- check 1: core restarts
+2026-11-08T16:45:23.303Z [restart 1] hc server restart returned after 39 ms (core 2374483 -> 2392182) {"core":{"id":"917a935fb117b8855368c32b4ffdddb8","name":"<host>"},"finished
+2026-11-08T16:45:23.308Z start agent rr1 on trr1: {"address":"t3","agent":"bash","cwd":"~","name":"rr1","state":"live","turn":0} 
+2026-11-08T16:45:23.850Z [restart 1] daemon alive=true; new agent row working: 504 ms after agent start, 509 ms after core up, 550 ms after restart began; status change to blocked: 20 ms; daemon sockets 2
+2026-11-08T16:45:25.393Z [restart 2] hc server restart returned after 37 ms (core 2392182 -> 2392586) {"core":{"id":"917a935fb117b8855368c32b4ffdddb8","name":"<host>"},"finished
+2026-11-08T16:45:25.397Z start agent rr2 on trr2: {"address":"t4","agent":"bash","cwd":"~","name":"rr2","state":"live","turn":0} 
+2026-11-08T16:45:25.937Z [restart 2] daemon alive=true; new agent row working: 503 ms after agent start, 507 ms after core up, 546 ms after restart began; status change to blocked: 20 ms; daemon sockets 1
+2026-11-08T16:45:27.482Z [restart 3] hc server restart returned after 39 ms (core 2392586 -> 2393190) {"core":{"id":"917a935fb117b8855368c32b4ffdddb8","name":"<host>"},"finished
+2026-11-08T16:45:27.486Z start agent rr3 on trr3: {"address":"t5","agent":"bash","cwd":"~","name":"rr3","state":"live","turn":0} 
+2026-11-08T16:45:28.028Z [restart 3] daemon alive=true; new agent row working: 505 ms after agent start, 509 ms after core up, 551 ms after restart began; status change to blocked: 20 ms; daemon sockets 1
+2026-11-08T16:45:29.551Z [hardkill 1] core 2393190 killed -9, gone after 19 ms
+2026-11-08T16:45:30.268Z [hardkill 1] hc server start returned after 13 ms (core 2394119)
+2026-11-08T16:45:30.273Z start agent rh1 on trh1: {"address":"t6","agent":"bash","cwd":"~","name":"rh1","state":"live","turn":0} 
+2026-11-08T16:45:30.614Z [hardkill 1] daemon alive=true; new agent row working: 262 ms after agent start, 268 ms after core up, 1004 ms after restart began; status change to blocked: 61 ms; daemon sockets 1
+2026-11-08T16:45:32.136Z [hardkill 2] core 2394119 killed -9, gone after 20 ms
+2026-11-08T16:45:32.852Z [hardkill 2] hc server start returned after 13 ms (core 2395283)
+2026-11-08T16:45:32.856Z start agent rh2 on trh2: {"address":"t7","agent":"bash","cwd":"~","name":"rh2","state":"live","turn":0} 
+2026-11-08T16:45:34.222Z [hardkill 2] daemon alive=true; new agent row working: 1290 ms after agent start, 1294 ms after core up, 2029 ms after restart began; status change to blocked: 60 ms; daemon sockets 2
+2026-11-08T16:45:35.745Z [hardkill 3] core 2395283 killed -9, gone after 20 ms
+2026-11-08T16:45:36.460Z [hardkill 3] hc server start returned after 13 ms (core 2396825)
+2026-11-08T16:45:36.465Z start agent rh3 on trh3: {"address":"t8","agent":"bash","cwd":"~","name":"rh3","state":"live","turn":0} 
+2026-11-08T16:45:37.311Z [hardkill 3] daemon alive=true; new agent row working: 786 ms after agent start, 790 ms after core up, 1525 ms after restart began; status change to blocked: 40 ms; daemon sockets 1
+2026-11-08T16:45:38.811Z check 2 again after all restarts: bad lines = 0 (restart-time reconnect lines are expected to be different text)
+2026-11-08T16:45:38.811Z --- check 4: soak
+2026-11-08T16:45:38.828Z soak 300s start: rss 130648 kB; sockets 1
+2026-11-08T16:46:08.836Z   t+30s rss 130684 kB
+2026-11-08T16:46:38.840Z   t+60s rss 130684 kB
+2026-11-08T16:47:08.843Z   t+90s rss 130708 kB
+2026-11-08T16:47:38.844Z   t+120s rss 118756 kB
+2026-11-08T16:48:08.849Z   t+150s rss 119708 kB
+2026-11-08T16:48:38.852Z   t+180s rss 119904 kB
+2026-11-08T16:49:08.853Z   t+210s rss 118784 kB
+2026-11-08T16:49:38.859Z   t+240s rss 119056 kB
+2026-11-08T16:50:08.863Z   t+270s rss 119812 kB
+2026-11-08T16:50:38.865Z   t+300s rss 119832 kB
+2026-11-08T16:50:38.865Z soak end: rss 119832 kB (delta -10816 kB, min 118756, max 130708); rss at daemon start 124848 kB
+2026-11-08T16:50:38.882Z   ss: u_str ESTAB 0 0 * 309198974 * 309191259 users:(("MainThread",pid=2377057,fd=25))
+2026-11-08T16:50:38.882Z   ss: u_str ESTAB 0 0 * 309198978 * 309191267 users:(("MainThread",pid=2377057,fd=26))
+2026-11-08T16:50:38.904Z daemon children: none
+2026-11-08T16:50:38.904Z total hc spawns by daemon over whole run: 0
+2026-11-08T16:50:38.904Z --- check 5: SIGTERM
+2026-11-08T16:50:38.921Z DAEMON EXITED code=0 signal=null
+2026-11-08T16:50:38.940Z check 5: exit code=0 signal=null; process gone after 19 ms (19 ms); leftover sockets of pid: 0
+2026-11-08T16:50:38.979Z core stopped (was 2396825); alive now: true

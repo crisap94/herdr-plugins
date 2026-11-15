@@ -3,7 +3,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
-import { instructions, message } from '#src/adapters/recap-prompt.ts';
+import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';

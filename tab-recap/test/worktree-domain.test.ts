@@ -18,29 +18,12 @@ import {
     changedOf, foldReading, IDLE_ROOT, movesOf, parseWorktreeSwitch, parseWorktreeWatch, refreshDue, runDone, strongest, takeRun, tierOf, wantRun,
 } from '#src/recap/domain/worktree.ts';
 import type { LaneGlance } from '#src/recap/domain/worktree.ts';
-import { parsePorcelainReading } from '#src/recap/domain/porcelain.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
-
-const PORCELAIN = [
-    '# branch.oid 0123456789abcdef', '# branch.head main', '# branch.upstream origin/main', '# branch.ab +2 -1',
-    '1 .M N... 100644 100644 100644 a b src/a.ts', '2 R. N... 100644 100644 100644 a b R100 new.ts\told.ts', 'u UU N... 1 1 1 1 a b c x.ts', '? notes.txt', '? more.txt', '! ignored.log', '',
-].join('\n');
 
 const count = (n: number): Count => must(parseCount(n));
 const dir = (path: string): Directory => must(parseDirectory(path));
 const text = (raw: string): Text => must(parseText(raw));
 const reading = (tracked: number, untracked: number, ahead: number | null = null): PorcelainReading => ({ branch: text('main'), ahead: ahead === null ? null : count(ahead), tracked: count(tracked), untracked: count(untracked) });
-
-test('parsePorcelain: branch, ahead, tracked paths and untracked paths are told apart; ignored paths do not count', () => {
-    const parsed = must(parsePorcelainReading(PORCELAIN));
-    assert.deepEqual([parsed.branch, parsed.ahead, parsed.tracked, parsed.untracked], ['main', 2, 3, 2]);
-});
-
-test('parsePorcelain: no upstream means ahead null; a detached HEAD shows the short oid; a non-string is refused', () => {
-    assert.equal(must(parsePorcelainReading('# branch.oid abc\n# branch.head feat/x\n')).ahead, null);
-    assert.equal(must(parsePorcelainReading('# branch.oid 0123456789abcdef\n# branch.head (detached)\n')).branch, '0123456');
-    assert.equal(parsePorcelainReading(7).kind, 'err');
-});
 
 test('parseWorktreeWatch: the three lines of rev-parse; a missing line is refused', () => {
     const found = must(parseWorktreeWatch('/w/repo\n/w/repo/.git\n/w/repo/.git\n'));

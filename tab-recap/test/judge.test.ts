@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { READBACK_QUESTIONS } from '#src/adapters/judge-instructions.ts';
-import { RUBRIC_TEXT } from '#src/adapters/rubric.ts';
+import { READBACK_QUESTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
+import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { judgeRun, judgeRuns } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
 import type { Judge, JudgeTask, Said } from '#src/ports/judge.ts';

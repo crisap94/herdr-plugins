@@ -1,0 +1,39 @@
+{
+    "name": "judge-agreement",
+    "dataset": "dataset.jsonl",
+    "items": 24,
+    "addedItems": 192,
+    "repetitions": 3,
+    "input": {
+        "shape": "{ request: RecapRequest, items: RunItem[], state: RunItem[] }",
+        "writerInput": "tab-recap/src/recap/application/writer-context.ts#writerContext(input.request)",
+        "builder": "tab-recap/src/recap/application/judge-context.ts#scoringDocument({ rubric: RUBRIC_TEXT, input: writerContext(input.request), items: input.items, state: input.state })",
+        "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC_TEXT",
+        "system": "tab-recap/src/adapters/job/prompts/judge-instructions.ts#judgeInstructions('score', new Map())",
+        "user": "the scoring document",
+        "fences": "tab-recap/src/adapters/job/prompts/recap-prompt.ts#unfenced(text)",
+        "parser": "tab-recap/src/recap/application/judge-answer.ts#parseScore(unfenced(text), new Map(items key to section), new Map(state key to section))",
+        "anchors": "empty map"
+    },
+    "shipped": { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },
+    "configs": [
+        { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },
+        { "name": "claude-haiku-medium", "backend": "claude", "model": "claude-haiku-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-medium", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" },
+        { "name": "claude-sonnet-high", "backend": "claude", "model": "claude-sonnet-5-5", "effort": "high" },
+        { "name": "codex-luna-low", "backend": "codex", "model": "gpt-6-luna", "effort": "low" },
+        { "name": "codex-sol-medium", "backend": "codex", "model": "gpt-6.1-sol", "effort": "medium" },
+        { "name": "codex-terra-medium", "backend": "codex", "model": "gpt-6.1-terra", "effort": "medium" }
+    ],
+    "dropOrder": ["claude-sonnet-high", "codex-luna-low"],
+    "checks": ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "S"],
+    "codeCriteria": ["J1", "J2", "F_I1", "F_I2", "F_I3", "F_I4", "F_I5", "F_I6", "F_I7", "F_S", "P_I1", "P_I2", "P_I3", "P_I4", "P_I5", "P_I6", "P_I7", "P_S"],
+    "reportedOnly": ["J3", "J4_true_fail_rate", "J4_true_pass_rate", "J4_kappa"],
+    "judgeCriteria": [],
+    "gate": { "minFails": 20, "minPasses": 20, "kappa": 0.6, "wilsonLowerBound": 0.7 },
+    "plants": { "I1": 20, "I2": 20, "I3": 20, "I4": 20, "I5": 20, "I6": 20, "I7": 20, "S": 20, "clean": 12, "clean-reworded": 20 },
+    "sectionCheckPlants": { "S-done": 3, "S-needs": 3, "S-next": 3, "S-now": 3, "S-decisions": 2, "S-goal": 2, "S-rules": 2, "S-links": 2 },
+    "sizes": { "small": 6, "medium": 12, "large": 6 },
+    "partB": { "built": false, "answers": 300, "judgeCalls": 400, "criteria": ["WJ1", "WJ2", "WJ3", "WJ4", "SJ1", "SJ2", "SJ3", "RJ1", "BJ1", "BJ2", "BJ3", "BJ4", "BJ5"], "judge": { "backend": "claude", "model": "claude-sonnet-5-5", "effort": "medium" } },
+    "audit": "The expected answers were written by a model and audited by nobody yet."
+}

@@ -11,10 +11,11 @@
 | Package imports | `#src/*` and `#test/*` in `package.json` `imports` | `package.json` |
 | Import rules today | six ast-grep rules, each a `string_fragment` inside `import_statement` (so they also see `import type`): `recap-domain-pure`, `recap-domain-pure-gates`, `recap-layers-no-io`, `recap-protocol-self-contained`, `recap-protocol-exchanges-self-contained`, `recap-transport-boundary` | `rules/*.yml` |
 | Released migrations | 20 files frozen byte for byte at `tab-recap-v2.4.0` by `ci/check-migrations.sh`; 11 of the 22 files in `src/adapters/db/schema/` carry primitive helper signatures such as `(column: string): string` | `ci/check-migrations.sh` |
-| Order of magnitude | a single-line `grep` over `src/` finds about 1 100 primitive parameters, 500 primitive returns, 360 primitive containers and 107 `as` assertions; a throwaway compiler walk (TypeScript 6.0.3, this `tsconfig.json`, any primitive or literal type, so an upper bound) found about 1 570 annotated and 740 inferred callback parameters (the latter in 195 files) and 1 680 primitive returns, in 18 s cold | 2026-10-11, grep and review |
+| Findings, exact | 5 588 findings in 422 files of `src/`: 1 916 `parameter`, 1 239 `return`, 906 `container`, 1 401 `property`, 126 `assertion`, 0 `legacy`. Per key of `ci/lanes.json` (parameter / return / container / property / assertion = total): B1 143 / 39 / 66 / 261 / 6 = 515; B2 175 / 205 / 59 / 139 / 33 = 611; B3 353 / 202 / 205 / 285 / 7 = 1 052; B4 334 / 272 / 67 / 144 / 3 = 820; B5 152 / 89 / 121 / 62 / 25 = 449; B6 277 / 92 / 118 / 64 / 10 = 561; B7 104 / 46 / 27 / 17 / 1 = 195; B8 50 / 40 / 48 / 76 / 8 = 222; ENG 230 / 190 / 147 / 312 / 30 = 909; STO 14 / 6 / 2 / 6 / 0 = 28; VIEW 84 / 58 / 46 / 35 / 3 = 226; lead 0. Each key's sum equals its file in `ci/domain-types-baseline/` | `bun bin/check-domain-types.ts --json`, `counts` summed per category and per key, 2026-11-13, after the carve-out of lanes `ENG`, `STO` and `VIEW` |
+| Gate run times | the check over the tree with the baselines 3.4 s; the cruise of `src` and `bin` 0.8 s, and `ci/gate-graph.sh` (the cruise, every fixture and the module-count probe) 8.0 s; `ci/gate-domain-types.sh` (the check's probes) 12.5 s. Together the check, `ci/gate-graph.sh` and `ci/gate-domain-types.sh` add 23.9 s to `ci/lint.sh` (31 s in all), under 60 s, so the check stays in `ci/lint.sh` and has no CI job of its own | bash `time`, median of three warm runs, 16 cores, Bun 1.4.4, 2026-11-13 |
 | Graph measured | dependency-cruiser 18.5 with `tsPreCompilationDeps: true` resolves `#src/*`; 482 modules, 2 269 dependencies, zero cycles, zero orphans; about 1 s | review of 2026-10-11 |
 
-None of the counts is exact. Task 3.6 records the exact counts from the check, per category, and both run times.
+The rows "Findings, exact" and "Gate run times" are measured (task 3.7); the other rows are estimates of the review of 2026-10-11. Task 5.3 brings the table to the final state.
 
 ## Decisions
 
@@ -115,7 +116,7 @@ counts, as it does for the ast-grep rules it replaces), is the one source for im
 - `src/recap/application/`, `src/recap/render/` and `src/i18n/` import no `node:` module except `node:util`, and nothing from
   `src/adapters/`, `src/transport/`, `src/daemon/`, `src/column/` or `src/setup/`;
 - `src/protocol/` imports only its own files; `src/protocol/exchanges/` imports its own folder and one level up;
-- only `src/adapters/herdr-fleet.ts` and `src/transport/` import `src/transport/`;
+- only `src/adapters/herdr/fleet.ts` and `src/transport/` import `src/transport/`;
 - only the files of D3's list import `brand.ts`;
 - no cycle; no orphan (dependency-cruiser's orphan rule, with no list of entry points: the daemon, column, compact and setup
   `main.ts` files are loaded by URL from `src/host/launch.mjs`, which the graph cannot see, so an entry-point reachability rule would
@@ -150,6 +151,9 @@ compiling against the legacy export until their own lane moves them. Legacy find
 the `legacy` category; a lane's verify line excludes only that category. Phase C deletes every `legacy.ts` once no caller remains.
 The old throwing constructors of `src/recap/domain/ids.ts` take this path in lane B2.
 
+An engine file is never changed by a lane. Its debt leaves with it. The package keeps the same rule with its own `legacy.ts` files
+and its own baseline. The files of lanes `STO` and `VIEW` follow the same rule.
+
 ### D8. Ownership is a checked map
 
 Phase A writes `ci/lanes.json`, which assigns every file of `src/` and `test/` to exactly one lane. A test file goes to the lane
@@ -157,6 +161,9 @@ of the module it is named after (`test/<name>.test.ts` follows `src/**/<name>.ts
 module it imports, in the order B2, B1, B3, B4, B5, B6, B7, B8. `test/fakes/` and `test/fixtures/` belong to the lead. A test
 fails when a file is missing from the map or listed twice, and each lane's CI job fails when its merge request edits a file the
 map gives to another lane. Another lane's test that needs a change goes through that lane or the lead.
+
+Lane `ENG` is assigned by manifest, not by folder. Tests named after an engine file follow it. Lanes `STO` and `VIEW` are assigned
+the same way, by the two file lists in `ci/lanes-generate.ts`. The three keys come last in the import order above.
 
 ## Phases and order
 
@@ -166,6 +173,8 @@ map gives to another lane. Another lane's test that needs a change goes through 
 - **Phase B** (lanes): B1 (protocol, ports) and B2 (domain) start at once. B3 to B8 may start at the same time, because D7 keeps the
   old exports compiling; each moves to the new B1 and B2 exports as they land.
 - **Phase C** (the lead): remove every `legacy.ts`, move `recap-one-brand-cast` into `rules/`, delete the baseline folder, final counts.
+- The change is archived when the plugin is clean. The package's remaining findings are tracked by its own baseline (roadmap step
+  ENG-7), not by this change.
 
 The three in-flight `lane-handoff*` changes: slice 1 lands before Phase A merges, and Phase A's baselines are generated on the merge
 result; slices 2 and 3 are written after Phase A and follow the gates (their new files start at zero).
@@ -181,14 +190,17 @@ resolves inside the fixture, not against the repository.
 
 | Lane | Folders | Files |
 | --- | --- | --- |
-| B1 protocol and ports | `src/protocol/`, `src/ports/` | 13 + 51 |
-| B2 domain | `src/recap/domain/` (gates included) | 72 |
-| B3 application | `src/recap/application/` | 94 |
-| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 16 + 7 + 4 |
-| B5 database | `src/adapters/db/` | 67 |
-| B6 other adapters | `src/adapters/` except `db/` | 78 |
-| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 16 + 4 + 1 + 1 + 1 |
+| B1 protocol and ports | `src/protocol/`, `src/ports/` | 14 + 50 |
+| B2 domain | `src/recap/domain/` (gates included) | 69 |
+| B3 application | `src/recap/application/` | 105 |
+| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 10 + 6 + 5 |
+| B5 database | `src/adapters/db/` | 89 |
+| B6 other adapters | `src/adapters/` except `db/` | 118 |
+| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 25 + 2 + 2 + 2 + 0 |
 | B8 experiments | `src/experiment/` | 17 |
+| ENG engine | the files of `ci/engine-files.json` key `engine`: typed in `packages/session-ledger` | 89 |
+| STO store mechanism | `src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`, `src/adapters/db/schema/migration.ts`: typed in `packages/session-ledger-sqlite` | 6 |
+| VIEW view | the 12 `src/recap/render/` files listed in `ci/lanes-generate.ts`: typed in `packages/recap-view` | 12 |
 
 A lane edits only the `src/` files and the `test/` files that `ci/lanes.json` gives it, plus its own `legacy.ts`, baseline file and
 exception file. New shared vocabulary goes through the lead.

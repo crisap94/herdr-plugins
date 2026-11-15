@@ -2,12 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { latestVersion } from '#src/adapters/db/migrate.ts';
 import { databasePath } from '#src/adapters/db/database.ts';
 import { openState } from '#src/daemon/state.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
-import { scratchDir } from './support.ts';
+import { openFixture, scratchDir } from './support.ts';
 import { everyShape, put, sections } from './import/support.ts';
 
 const recorder = (): { notifier: Notifier; told: string[]; lines: string[] } => {
@@ -59,7 +58,7 @@ test('a database newer than this plugin: the daemon says which backup to restore
     const locale = process.env['TAB_RECAP_LOCALE'];
     process.env['TAB_RECAP_LOCALE'] = 'en';
     try {
-        const db = new DatabaseSync(databasePath(dir));
+        const db = openFixture(databasePath(dir));
         db.exec(`PRAGMA user_version = ${latestVersion() + 1}`);
         db.close();
         const { notifier, told } = recorder();

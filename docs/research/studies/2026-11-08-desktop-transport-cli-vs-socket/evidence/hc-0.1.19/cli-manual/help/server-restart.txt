@@ -1,0 +1,7 @@
+Restart the core (e.g. after an update); programs keep running
+
+Usage: hc server restart [OPTIONS]
+
+Options:
+      --json  JSON output even in a terminal
+  -h, --help  Print help

@@ -1,0 +1,1425 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "working",
+ "at": 1794047400000,
+ "recapAt": 1794046860000,
+ "writing": "writing",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p1",
+   "agent": "claude",
+   "status": "working",
+   "title": "cart orchestrator",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Run the property tests and summarise what changed in the rounding",
+   "branch": "feat/cart",
+   "contextPercent": 62,
+   "since": 1794046920000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 124000,
+    "window": 200000,
+    "share": 62,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [
+    {
+     "mark": "!",
+     "label": "Branch is behind main by two commits",
+     "at": 1794046680000,
+     "details": [
+      "rebase before review"
+     ],
+     "kind": "git"
+    }
+   ],
+   "git": {
+    "branch": "feat/cart",
+    "ahead": 3,
+    "changed": 9
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/cart"
+   }
+  },
+  {
+   "pane": "w1:p2",
+   "agent": "claude",
+   "status": "blocked",
+   "title": "checkout worker",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Replay the failed sandbox charges once the key is set",
+   "branch": "feat/retry",
+   "contextPercent": 33,
+   "since": 1794045000000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 66000,
+    "window": 200000,
+    "share": 33,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [
+    {
+     "mark": "?",
+     "label": "Waiting on the sandbox key",
+     "at": 1794045000000,
+     "details": [
+      "asked at 09:50"
+     ],
+     "kind": "alert"
+    }
+   ],
+   "git": {
+    "branch": "feat/retry",
+    "ahead": 1,
+    "changed": 4
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/retry"
+   }
+  },
+  {
+   "pane": "w1:p3",
+   "agent": "claude",
+   "status": "idle",
+   "title": "docs writer",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Document the coupon endpoint once the rule is merged",
+   "branch": "docs/cart",
+   "contextPercent": 18,
+   "since": 1794043200000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 36000,
+    "window": 200000,
+    "share": 18,
+    "source": "table"
+   },
+   "compaction": {
+    "hint": {
+     "percent": 75,
+     "window": 200000
+    },
+    "stage": null
+   },
+   "notes": [],
+   "git": null,
+   "web": null
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "name": "Cart totals",
+   "sections": {
+    "goal": "Cart totals match the server within one cent",
+    "now": [
+     "Running the cart property tests against the server fixtures"
+    ],
+    "needs": [],
+    "done": [
+     "Line rounding merged into the feature branch"
+    ],
+    "decisions": [
+     "Round at the line level, not the total",
+     "Coupons apply before tax",
+     "Drop the per-currency rounding table"
+    ],
+    "next": [],
+    "links": [
+     "Processor status page for the sandbox"
+    ],
+    "rules": []
+   },
+   "markdown": "## Goal\nCart totals match the server within one cent\n\n## Now\n- Running the cart property tests against the server fixtures\n\n## Needs",
+   "facts": [
+    {
+     "id": "f01",
+     "section": "goal",
+     "text": "Cart totals match the server within one cent",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794029400000,
+     "lastAt": 1794030000000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f02",
+     "section": "goal",
+     "text": "Coupons apply before tax and never below zero",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794030600000,
+     "lastAt": 1794031200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f03",
+     "section": "decisions",
+     "text": "Round at the line level, not the total MR 42",
+     "spans": [
+      {
+       "text": "Round at the line level, not the total ",
+       "url": null
+      },
+      {
+       "text": "MR 42",
+       "url": "https://gitlab.example.com/shop/shop-api/-/merge_requests/42"
+      }
+     ],
+     "why": "The server rounds per line, so totals drift if we round the sum",
+     "ref": "MR 42",
+     "agent": "claude",
+     "firstAt": 1794031800000,
+     "lastAt": 1794031920000,
+     "state": "closed",
+     "closedWhy": "answered",
+     "closedAt": 1794032400000
+    },
+    {
+     "id": "f04",
+     "section": "decisions",
+     "text": "Coupons apply before tax",
+     "spans": null,
+     "why": "Matches the receipt the customer sees",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794033000000,
+     "lastAt": 1794033120000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f05",
+     "section": "decisions",
+     "text": "Drop the per-currency rounding table",
+     "spans": null,
+     "why": "Two currencies in use, the table was dead code",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794034800000,
+     "lastAt": 1794034920000,
+     "state": "closed",
+     "closedWhy": "superseded",
+     "closedAt": 1794036600000
+    },
+    {
+     "id": "f06",
+     "section": "done",
+     "text": "Line rounding merged into the feature branch",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794036600000,
+     "lastAt": 1794036720000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794036840000
+    },
+    {
+     "id": "f07",
+     "section": "now",
+     "text": "Running the cart property tests against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794041400000,
+     "lastAt": 1794041700000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f11",
+     "section": "links",
+     "text": "Processor status page for the sandbox sandbox status",
+     "spans": [
+      {
+       "text": "Processor status page for the sandbox ",
+       "url": null
+      },
+      {
+       "text": "sandbox status",
+       "url": "https://status.example.com/sandbox"
+      }
+     ],
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794040800000,
+     "lastAt": 1794040800000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "e01",
+     "section": "done",
+     "text": "Step 01: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794004200000,
+     "lastAt": 1794004200000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794004200000
+    },
+    {
+     "id": "e02",
+     "section": "done",
+     "text": "Step 02: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794004740000,
+     "lastAt": 1794004740000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794004740000
+    },
+    {
+     "id": "e03",
+     "section": "done",
+     "text": "Step 03: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794005280000,
+     "lastAt": 1794005280000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794005280000
+    },
+    {
+     "id": "e04",
+     "section": "done",
+     "text": "Step 04: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794005820000,
+     "lastAt": 1794005820000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794005820000
+    },
+    {
+     "id": "e05",
+     "section": "done",
+     "text": "Step 05: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794006360000,
+     "lastAt": 1794006360000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794006360000
+    },
+    {
+     "id": "e06",
+     "section": "done",
+     "text": "Step 06: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794006900000,
+     "lastAt": 1794006900000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794006900000
+    },
+    {
+     "id": "e07",
+     "section": "done",
+     "text": "Step 07: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794007440000,
+     "lastAt": 1794007440000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794007440000
+    },
+    {
+     "id": "e08",
+     "section": "done",
+     "text": "Step 08: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794007980000,
+     "lastAt": 1794007980000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794007980000
+    },
+    {
+     "id": "e09",
+     "section": "done",
+     "text": "Step 09: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794008520000,
+     "lastAt": 1794008520000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794008520000
+    },
+    {
+     "id": "e10",
+     "section": "done",
+     "text": "Step 10: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794009060000,
+     "lastAt": 1794009060000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794009060000
+    },
+    {
+     "id": "e11",
+     "section": "done",
+     "text": "Step 11: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794009600000,
+     "lastAt": 1794009600000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794009600000
+    },
+    {
+     "id": "e12",
+     "section": "done",
+     "text": "Step 12: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794010140000,
+     "lastAt": 1794010140000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794010140000
+    },
+    {
+     "id": "e13",
+     "section": "done",
+     "text": "Step 13: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794011220000,
+     "lastAt": 1794011220000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794011220000
+    },
+    {
+     "id": "e14",
+     "section": "done",
+     "text": "Step 14: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794011760000,
+     "lastAt": 1794011760000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794011760000
+    },
+    {
+     "id": "e15",
+     "section": "done",
+     "text": "Step 15: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794012300000,
+     "lastAt": 1794012300000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794012300000
+    },
+    {
+     "id": "e16",
+     "section": "done",
+     "text": "Step 16: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794012840000,
+     "lastAt": 1794012840000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794012840000
+    },
+    {
+     "id": "e17",
+     "section": "done",
+     "text": "Step 17: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794013380000,
+     "lastAt": 1794013380000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794013380000
+    },
+    {
+     "id": "e18",
+     "section": "done",
+     "text": "Step 18: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794013920000,
+     "lastAt": 1794013920000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794013920000
+    },
+    {
+     "id": "e19",
+     "section": "done",
+     "text": "Step 19: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794014460000,
+     "lastAt": 1794014460000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794014460000
+    },
+    {
+     "id": "e20",
+     "section": "done",
+     "text": "Step 20: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794015000000,
+     "lastAt": 1794015000000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794015000000
+    },
+    {
+     "id": "e21",
+     "section": "done",
+     "text": "Step 21: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794015540000,
+     "lastAt": 1794015540000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794015540000
+    },
+    {
+     "id": "e22",
+     "section": "done",
+     "text": "Step 22: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794016080000,
+     "lastAt": 1794016080000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794016080000
+    },
+    {
+     "id": "e23",
+     "section": "done",
+     "text": "Step 23: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794016620000,
+     "lastAt": 1794016620000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794016620000
+    },
+    {
+     "id": "e24",
+     "section": "done",
+     "text": "Step 24: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794017160000,
+     "lastAt": 1794017160000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794017160000
+    },
+    {
+     "id": "e25",
+     "section": "done",
+     "text": "Step 25: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794017700000,
+     "lastAt": 1794017700000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794017700000
+    },
+    {
+     "id": "e26",
+     "section": "done",
+     "text": "Step 26: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794018240000,
+     "lastAt": 1794018240000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794018240000
+    },
+    {
+     "id": "e27",
+     "section": "done",
+     "text": "Step 27: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794019320000,
+     "lastAt": 1794019320000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794019320000
+    },
+    {
+     "id": "e28",
+     "section": "done",
+     "text": "Step 28: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794019860000,
+     "lastAt": 1794019860000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794019860000
+    },
+    {
+     "id": "e29",
+     "section": "done",
+     "text": "Step 29: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794020400000,
+     "lastAt": 1794020400000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794020400000
+    },
+    {
+     "id": "e30",
+     "section": "done",
+     "text": "Step 30: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794020940000,
+     "lastAt": 1794020940000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794020940000
+    },
+    {
+     "id": "e31",
+     "section": "done",
+     "text": "Step 31: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794021480000,
+     "lastAt": 1794021480000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794021480000
+    },
+    {
+     "id": "e32",
+     "section": "done",
+     "text": "Step 32: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794022020000,
+     "lastAt": 1794022020000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794022020000
+    },
+    {
+     "id": "e33",
+     "section": "done",
+     "text": "Step 33: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794022560000,
+     "lastAt": 1794022560000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794022560000
+    },
+    {
+     "id": "e34",
+     "section": "done",
+     "text": "Step 34: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794023100000,
+     "lastAt": 1794023100000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794023100000
+    },
+    {
+     "id": "e35",
+     "section": "done",
+     "text": "Step 35: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794023640000,
+     "lastAt": 1794023640000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794023640000
+    },
+    {
+     "id": "e36",
+     "section": "done",
+     "text": "Step 36: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794024180000,
+     "lastAt": 1794024180000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794024180000
+    },
+    {
+     "id": "e37",
+     "section": "done",
+     "text": "Step 37: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794024720000,
+     "lastAt": 1794024720000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794024720000
+    },
+    {
+     "id": "e38",
+     "section": "done",
+     "text": "Step 38: checked a cart rounding case against the server fixtures",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794025260000,
+     "lastAt": 1794025260000,
+     "state": "closed",
+     "closedWhy": "done",
+     "closedAt": 1794025260000
+    }
+   ],
+   "regions": {
+    "goal": [
+     "f01",
+     "f02"
+    ],
+    "now": [
+     "f07"
+    ],
+    "needs": [],
+    "decisions": [
+     "f03",
+     "f04",
+     "f05"
+    ],
+    "next": [],
+    "rules": [],
+    "links": [
+     "f11"
+    ]
+   },
+   "timeline": [
+    {
+     "kind": "fact",
+     "fact": "e01",
+     "at": 1794004200000,
+     "clock": "22:30",
+     "day": "2026-11-06",
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e02",
+     "at": 1794004740000,
+     "clock": "22:39",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e03",
+     "at": 1794005280000,
+     "clock": "22:48",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e04",
+     "at": 1794005820000,
+     "clock": "22:57",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e05",
+     "at": 1794006360000,
+     "clock": "23:06",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e06",
+     "at": 1794006900000,
+     "clock": "23:15",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e07",
+     "at": 1794007440000,
+     "clock": "23:24",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e08",
+     "at": 1794007980000,
+     "clock": "23:33",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e09",
+     "at": 1794008520000,
+     "clock": "23:42",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e10",
+     "at": 1794009060000,
+     "clock": "23:51",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e11",
+     "at": 1794009600000,
+     "clock": "00:00",
+     "day": "2026-11-07",
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e12",
+     "at": 1794010140000,
+     "clock": "00:09",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "break",
+     "at": 1794010680000,
+     "clock": "00:18",
+     "day": null,
+     "break": {
+      "kind": "compacted",
+      "at": 1794010680000,
+      "trigger": "auto",
+      "tokensBefore": 171000,
+      "tokensAfter": 42000,
+      "tookMs": 65000,
+      "text": "compacted 171k \u2192 42k \u00b7 1 min 5 s"
+     }
+    },
+    {
+     "kind": "fact",
+     "fact": "e13",
+     "at": 1794011220000,
+     "clock": "00:27",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e14",
+     "at": 1794011760000,
+     "clock": "00:36",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e15",
+     "at": 1794012300000,
+     "clock": "00:45",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e16",
+     "at": 1794012840000,
+     "clock": "00:54",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e17",
+     "at": 1794013380000,
+     "clock": "01:03",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e18",
+     "at": 1794013920000,
+     "clock": "01:12",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e19",
+     "at": 1794014460000,
+     "clock": "01:21",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e20",
+     "at": 1794015000000,
+     "clock": "01:30",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e21",
+     "at": 1794015540000,
+     "clock": "01:39",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e22",
+     "at": 1794016080000,
+     "clock": "01:48",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e23",
+     "at": 1794016620000,
+     "clock": "01:57",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e24",
+     "at": 1794017160000,
+     "clock": "02:06",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e25",
+     "at": 1794017700000,
+     "clock": "02:15",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e26",
+     "at": 1794018240000,
+     "clock": "02:24",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "break",
+     "at": 1794018780000,
+     "clock": "02:33",
+     "day": null,
+     "break": {
+      "kind": "switched",
+      "at": 1794018780000,
+      "trigger": null,
+      "tokensBefore": null,
+      "tokensAfter": null,
+      "tookMs": null,
+      "text": "new session"
+     }
+    },
+    {
+     "kind": "fact",
+     "fact": "e27",
+     "at": 1794019320000,
+     "clock": "02:42",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e28",
+     "at": 1794019860000,
+     "clock": "02:51",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e29",
+     "at": 1794020400000,
+     "clock": "03:00",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e30",
+     "at": 1794020940000,
+     "clock": "03:09",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e31",
+     "at": 1794021480000,
+     "clock": "03:18",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e32",
+     "at": 1794022020000,
+     "clock": "03:27",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e33",
+     "at": 1794022560000,
+     "clock": "03:36",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e34",
+     "at": 1794023100000,
+     "clock": "03:45",
+     "day": null,
+     "closed": "done"
+    },
+    {
+     "kind": "fact",
+     "fact": "e35",
+     "at": 1794023640000,
+     "clock": "03:54",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e36",
+     "at": 1794024180000,
+     "clock": "04:03",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e37",
+     "at": 1794024720000,
+     "clock": "04:12",
+     "day": null,
+     "closed": null
+    },
+    {
+     "kind": "fact",
+     "fact": "e38",
+     "at": 1794025260000,
+     "clock": "04:21",
+     "day": null,
+     "closed": null
+    }
+   ],
+   "story": {
+    "text": "The cart team moved totals to line rounding after the server mismatch, then added coupons before tax. The line rounding is merged; the coupon rule is in review with one open question on the receipt copy. MR 42",
+    "spans": [
+     {
+      "text": "The cart team moved totals to line rounding after the server mismatch, then added coupons before tax. The line rounding is merged; the coupon rule is in review with one open question on the receipt copy. ",
+      "url": null
+     },
+     {
+      "text": "MR 42",
+      "url": "https://gitlab.example.com/shop/shop-api/-/merge_requests/42"
+     }
+    ],
+    "at": 1794046500000
+   },
+   "curating": "no",
+   "needsWaitedMs": []
+  },
+  {
+   "id": "t2",
+   "name": "Checkout retries",
+   "sections": {
+    "goal": "",
+    "now": [],
+    "needs": [
+     "Need the staging sandbox key from the operator"
+    ],
+    "done": [],
+    "decisions": [
+     "Idempotency key is the order id plus the attempt number",
+     "Retry ceiling is five attempts with exponential backoff"
+    ],
+    "next": [],
+    "links": [],
+    "rules": [
+     "Never retry a charge without the idempotency key"
+    ]
+   },
+   "markdown": "## Goal\n\n\n## Now\n\n## Needs\n- Need the staging sandbox key from the operator",
+   "facts": [
+    {
+     "id": "f08",
+     "section": "needs",
+     "text": "Need the staging sandbox key from the operator",
+     "spans": null,
+     "why": "Replay of failed charges is blocked until the key is set",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794038400000,
+     "lastAt": 1794039000000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f09",
+     "section": "decisions",
+     "text": "Idempotency key is the order id plus the attempt number",
+     "spans": null,
+     "why": "Keeps replays safe when a charge times out",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794039600000,
+     "lastAt": 1794039660000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "f10",
+     "section": "decisions",
+     "text": "Retry ceiling is five attempts with exponential backoff",
+     "spans": null,
+     "why": "The processor throttles after six calls in a minute",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794040200000,
+     "lastAt": 1794040260000,
+     "state": "closed",
+     "closedWhy": "merged",
+     "closedAt": 1794043200000
+    },
+    {
+     "id": "f12",
+     "section": "rules",
+     "text": "Never retry a charge without the idempotency key",
+     "spans": null,
+     "why": "Double charges are the one failure we cannot undo",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794029700000,
+     "lastAt": 1794029700000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    }
+   ],
+   "regions": {
+    "goal": [],
+    "now": [],
+    "needs": [
+     "f08"
+    ],
+    "decisions": [
+     "f09",
+     "f10"
+    ],
+    "next": [],
+    "rules": [
+     "f12"
+    ],
+    "links": []
+   },
+   "timeline": [
+    {
+     "kind": "fact",
+     "fact": "f09",
+     "at": 1794037200000,
+     "clock": "07:40",
+     "day": "2026-11-07",
+     "closed": null
+    }
+   ],
+   "story": null,
+   "curating": "yes",
+   "needsWaitedMs": [
+    240000
+   ]
+  }
+ ],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": "claude",
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [
+  "Lane w1:p3 has a recap older than its last turn"
+ ],
+ "claudeRecaps": [
+  "Cart totals: the rounding moved to the line level and matches the server"
+ ],
+ "groups": [
+  {
+   "task": "Cart totals",
+   "lanes": [
+    "w1:p1",
+    "w1:p3"
+   ]
+  },
+  {
+   "task": "Checkout retries",
+   "lanes": [
+    "w1:p2"
+   ]
+  }
+ ],
+ "breaks": [
+  {
+   "kind": "compacted",
+   "at": 1794010680000,
+   "trigger": "auto",
+   "tokensBefore": 171000,
+   "tokensAfter": 42000,
+   "tookMs": 65000,
+   "text": "compacted 171k \u2192 42k \u00b7 1 min 5 s"
+  },
+  {
+   "kind": "switched",
+   "at": 1794018780000,
+   "trigger": null,
+   "tokensBefore": null,
+   "tokensAfter": null,
+   "tookMs": null,
+   "text": "new session"
+  }
+ ],
+ "session": {
+  "started": {
+   "at": 1794029400000,
+   "forMs": 18000000
+  },
+  "runs": {
+   "total": 14,
+   "byCause": [
+    {
+     "cause": "turn-ended",
+     "count": 9
+    },
+    {
+     "cause": "focused",
+     "count": 3
+    },
+    {
+     "cause": "requested",
+     "count": 2
+    }
+   ]
+  },
+  "compactions": {
+   "count": 2,
+   "byOrigin": {
+    "operator": 1,
+    "auto": 1
+   },
+   "measured": [
+    {
+     "before": 171000,
+     "after": 42000
+    },
+    {
+     "before": 168000,
+     "after": 39000
+    }
+   ]
+  },
+  "chapters": 2,
+  "agents": [
+   {
+    "label": "claude",
+    "share": 70,
+    "window": 200000
+   },
+   {
+    "label": "codex",
+    "share": 30,
+    "window": 200000
+   }
+  ],
+  "repo": {
+   "name": "shop-api",
+   "branch": "feat/cart"
+  },
+  "files": [
+   {
+    "path": "/work/shop/api/src/cart/totals.ts",
+    "count": 6
+   },
+   {
+    "path": "/work/shop/api/src/checkout/retry.ts",
+    "count": 4
+   }
+  ],
+  "autocompact": {
+   "decisions": 3,
+   "compacted": 2,
+   "waited": 1
+  }
+ },
+ "cuts": []
+}

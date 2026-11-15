@@ -1,0 +1,19 @@
+{
+ "keys": [
+  "address",
+  "agent",
+  "cwd",
+  "state",
+  "status",
+  "turn",
+  "where"
+ ],
+ "sample": {
+  "address": "t3",
+  "agent": "claude-code",
+  "status": "done",
+  "turn": 25,
+  "where": "space / 1",
+  "state": "live"
+ }
+}

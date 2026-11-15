@@ -1,20 +1,24 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
-import { daemonTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
-import { sessionOfForKind } from '#src/adapters/session-registry.ts';
+import { daemonTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
+import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { GitLaneRepo } from '#src/adapters/git-lane-repo.ts';
-import { HerdrFleet, readPaneSession } from '#src/adapters/herdr-fleet.ts';
-import { PathHarnesses } from '#src/adapters/path-harnesses.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
-import { SystemClock } from '#src/adapters/system-clock.ts';
+import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { frontendFor } from '#src/adapters/frontend.ts';
+import type { Frontend } from '#src/ports/frontend.ts';
+import type { Fleet } from '#src/ports/fleet.ts';
+import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
+import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
-import { LocalCatalogue } from '#src/adapters/model-catalogue.ts';
-import { contextWindows } from '#src/adapters/context-window.ts';
+import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
+import { contextWindows } from '#src/adapters/capability/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -31,13 +35,11 @@ import { Informer, type Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard, lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import { RecapJob } from '#src/recap/application/recap-job.ts';
-import type { Extension } from '#src/ports/extension.ts';
+import { createEngine } from '#src/recap/application/engine.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
-import { loadExtensions } from '#src/extensions/load.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
@@ -47,7 +49,6 @@ import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { wireCurate } from './curate.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
-import { upkeep } from './upkeep.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { bootObservations } from './restored-lanes.ts';
@@ -65,18 +66,17 @@ import { must } from '#src/protocol/result.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
+import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 
-const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
 
 const log = (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); };
 
 interface Wired {
     readonly informer: Informer;
-    readonly fleet: HerdrFleet;
+    readonly fleet: Fleet;
     readonly backends: Backends;
-    readonly extensions: readonly Extension[];
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
@@ -102,24 +102,27 @@ const switchOn = (setting: string): boolean => (setting === handoff.optIn ? hand
 
 function wantsScreen(agent: string): boolean { const { screenAgents } = loadConfig(); return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent); }
 
-function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
+function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
     const config = loadConfig();
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
-    const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log);
+    const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log, createRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
-    const recaps = new RecapJob({
-        transcripts,
-        records: store.records, ledger: store.ledger, clock, log, repos,
-        summarizer: (): Summarizer => backends.summarizer(),
-        language: (): string => loadConfig().recapLanguage,
-        keepInput: (): boolean => loadConfig().keepInputDays > 0,
-        pipeline: (): Pipeline => loadConfig().pipeline,
-        writerView: (): WriterView => loadConfig().writerView,
-        debounce: (): Debounce => loadConfig().recapDebounce,
-        enumerator: (): Enumerators | null => backends.enumerator(),
+    const recaps = createEngine({
+        source: { transcripts },
+        store: { records: store.records, ledger: store.ledger },
+        environment: { clock, log, repos },
+        models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
+        settings: {
+            language: (): string => loadConfig().recapLanguage,
+            keepInput: (): boolean => loadConfig().keepInputDays > 0,
+            pipeline: (): Pipeline => loadConfig().pipeline,
+            closeEvidence: (): CloseEvidence => loadConfig().writerCloseEvidence,
+            writerView: (): WriterView => loadConfig().writerView,
+            debounce: (): Debounce => loadConfig().recapDebounce,
+        },
         ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
     });
     const box: Box = { informer: null, autocompact: null };
@@ -127,7 +130,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
-    const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: (ms: number): Promise<void> => new Promise<void>((resolve) => { setTimeout(resolve, ms); }), now: (): number => Date.now() });
+    const hub = new SettleHub({ agents: fleet.agents(), listening: (): boolean => box.informer?.listening ?? false, pause: sleep, now: (): number => Date.now() });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadConfig().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: (): string => capabilityOf(switchOn), now: (): number => Date.now(), log, events });
@@ -150,7 +153,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;
-    const recent = new LaneRecent(transcripts, readPaneSession);
+    const recent = new LaneRecent(transcripts, session);
     const claims = new LaneClaims();
     box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims });
     const compaction = wireCompaction({
@@ -158,7 +161,7 @@ function wire(root: string, fleet: HerdrFleet, store: Store): Wired {
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    return { informer, fleet, backends, extensions: loadExtensions(configGetter(), undefined, { alerts: store.paneAlerts }), store, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
+    return { informer, fleet, backends, store, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
@@ -190,13 +193,13 @@ async function boot(root: string, pidfile: Pidfile): Promise<Wired | number> {
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const fleet = new HerdrFleet(root);
-    const opened = await openState(root, fleet, log);
+    const frontend = frontendFor(() => new HerdrFleet(root));
+    const opened = await openState(root, frontend.fleet, log);
     if (opened === null) {
         pidfile.release(process.pid);
         return 1;
     }
-    return wire(root, fleet, opened);
+    return wire(root, frontend, frontend.wrap(opened, log));
 }
 
 async function start(): Promise<number> {
@@ -206,7 +209,7 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, extensions, store, retention, sweep, events, handoffs, worktrees } = booted;
+    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees } = booted;
     let stopping = false;
     const stop = (): void => {
         if (stopping) {
@@ -244,7 +247,6 @@ async function start(): Promise<number> {
         worktrees.registry.tick(informer.current);
         worktrees.perf.tick();
         void backends.refresh();
-        void upkeep(extensions, log);
     }, RESYNC_MS).unref();
     await backends.refresh();
     log(`daemon ${process.pid} up, state in ${root}`);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readerKindOf, daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcript-registry.ts';
-import { SCREEN_READER_ID } from '#src/adapters/screen-transcripts.ts';
+import { readerKindOf, daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
+import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { Screens } from '#src/ports/screens.ts';
 
 test('exact lookup returns the reader for each registered kind', () => {
@@ -9,8 +9,8 @@ test('exact lookup returns the reader for each registered kind', () => {
     assert.equal(registry.exact('claude')?.agent, 'claude');
     assert.equal(registry.exact('codex')?.agent, 'codex');
     assert.equal(registry.exact('opencode')?.agent, 'opencode');
-    assert.equal(registry.exact('hermes'), undefined);
-    assert.equal(readerKindOf('hermes'), 'hermes');
+    assert.equal(registry.exact('gemini'), undefined);
+    assert.equal(readerKindOf('gemini'), null);
 });
 
 test('exact lookup never falls back and readerFor prefers an exact reader', () => {

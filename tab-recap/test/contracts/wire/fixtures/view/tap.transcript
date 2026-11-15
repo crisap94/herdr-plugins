@@ -1,0 +1,17 @@
+# WC 3.7: a tap in the column asks for the modal; in the modal a tap gives no intent.
+! open
+C {"t":"hello","protocol":1,"version":"9.9.9","role":"column","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"welcome","protocol":1,"version":"9.9.9","title":"tab-recap","texts":{"connecting":"Connecting to the recap daemon…","down":"The recap daemon is not running.","downHint":"It starts again with the next herdr session.","mismatch":"This pane and the recap daemon speak different protocols."}}
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","column t1 40x6 @0"]}
+! state connected
+C {"t":"tap","col":3,"row":2}
+! intent show-modal
+! close pane
+! open
+C {"t":"hello","protocol":1,"version":"9.9.9","role":"modal","tab":"t1","pane":null,"cols":40,"rows":6,"colour":false}
+D {"t":"welcome","protocol":1,"version":"9.9.9","title":"tab-recap","texts":{"connecting":"Connecting to the recap daemon…","down":"The recap daemon is not running.","downHint":"It starts again with the next herdr session.","mismatch":"This pane and the recap daemon speak different protocols."}}
+D {"t":"frame","lines":["t1 line 1","t1 line 2","t1 line 3","t1 line 4","t1 line 5","modal t1 40x6 @0"]}
+! state connected
+C {"t":"tap","col":3,"row":2}
+C {"t":"ping"}
+D {"t":"pong"}

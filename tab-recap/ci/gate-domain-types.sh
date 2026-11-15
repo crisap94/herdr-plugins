@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# The signature check bites: every bad probe exits 1 with a `not supported:` line matching its expect file,
-# every good probe exits 0. Exit: 0 clean · 1 a probe does not behave as its name says · 3 could not look.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
@@ -15,7 +13,7 @@ for probe in "$probes"/bad-*/; do
     if [ -x "$probe/run-probe.sh" ]; then
         out="$("$probe/run-probe.sh" 2>&1)"
     else
-        out="$(node bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
+        out="$(bun bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
     fi
     status=$?
     if [ "$status" -ne 1 ]; then
@@ -28,7 +26,7 @@ done
 
 for probe in "$probes"/good-*/; do
     name="$(basename "$probe")"
-    out="$(node bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
+    out="$(bun bin/check-domain-types.ts --project "$probe/tsconfig.json" 2>&1)"
     status=$?
     if [ "$status" -ne 0 ]; then
         echo "  FAIL  $name: exit $status, expected 0"; echo "$out" | sed 's/^/        /'; failures=$((failures + 1))

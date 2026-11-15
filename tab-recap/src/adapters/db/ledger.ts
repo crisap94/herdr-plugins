@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
@@ -9,11 +9,11 @@ import { guarded } from './rows.ts';
 import { idOf } from './typeid.ts';
 
 export class LedgerRepository implements Ledger {
-    private readonly db: DatabaseSync;
+    private readonly db: Database;
     private readonly rows: LedgerRows;
     private readonly history: LedgerHistory;
 
-    constructor(db: DatabaseSync) {
+    constructor(db: Database) {
         this.db = db;
         this.rows = new LedgerRows(db);
         this.history = new LedgerHistory(db);

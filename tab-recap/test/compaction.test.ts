@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';

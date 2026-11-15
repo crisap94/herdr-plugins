@@ -1,0 +1,38 @@
+[
+ {
+  "tab": "tb1",
+  "name": "tb1",
+  "status": "idle",
+  "writing": "resting",
+  "headline": "Wiring the form to the API",
+  "needs": 0,
+  "waitingSince": null,
+  "contextPercent": null,
+  "hintPercent": 40,
+  "laneCount": 1,
+  "lanes": [
+   {
+    "terminal": "t5",
+    "agent": "fakeagent",
+    "status": "idle",
+    "name": "t5",
+    "contextPercent": null,
+    "hint": "no",
+    "stage": null
+   }
+  ]
+ },
+ {
+  "tab": "tb2",
+  "name": "tb2",
+  "status": "idle",
+  "writing": "resting",
+  "headline": "",
+  "needs": 0,
+  "waitingSince": null,
+  "contextPercent": null,
+  "hintPercent": 40,
+  "laneCount": 0,
+  "lanes": []
+ }
+]

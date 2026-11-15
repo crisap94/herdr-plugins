@@ -8,6 +8,7 @@ import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 
 const PUBLISHED_KINDS: Readonly<Record<number, readonly string[]>> = {
     1: ['claude', 'codex', 'opencode', 'hermes'],
+    2: ['claude', 'codex', 'opencode'],
 };
 
 const VECTORS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'protocol', 'vectors');

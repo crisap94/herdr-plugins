@@ -1,0 +1,144 @@
+{
+ "version": 2,
+ "tab": "TABID",
+ "name": "shop-api",
+ "status": "working",
+ "at": 1794047400000,
+ "recapAt": 1794045000000,
+ "writing": "writing",
+ "error": null,
+ "lanes": [
+  {
+   "pane": "w1:p1",
+   "agent": "claude",
+   "status": "working",
+   "title": "api orchestrator",
+   "cwd": "/work/shop/api",
+   "lastPrompt": "Wire the coupon rule into the totals",
+   "branch": "feat/cart",
+   "contextPercent": 40,
+   "since": 1794047040000,
+   "heading": "api orchestrator",
+   "fromScreen": "no",
+   "context": {
+    "tokens": 80000,
+    "window": 200000,
+    "share": 40,
+    "source": "agent"
+   },
+   "compaction": {
+    "hint": null,
+    "stage": null
+   },
+   "notes": [],
+   "git": {
+    "branch": "feat/cart",
+    "ahead": 1,
+    "changed": 3
+   },
+   "web": {
+    "base": "https://gitlab.example.com/shop/shop-api",
+    "forge": "gitlab",
+    "branch": "feat/cart"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "name": "Cart totals",
+   "sections": {
+    "goal": "Coupons apply before tax and never below zero",
+    "now": [
+     "Wiring the coupon rule into the totals"
+    ],
+    "needs": [],
+    "done": [],
+    "decisions": [
+     "Coupons apply before tax"
+    ],
+    "next": [],
+    "links": [],
+    "rules": []
+   },
+   "markdown": "## Goal\nCoupons apply before tax and never below zero\n\n## Now\n- Wiring the coupon rule into the totals\n\n## Needs",
+   "facts": [
+    {
+     "id": "g1",
+     "section": "goal",
+     "text": "Coupons apply before tax and never below zero",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "n1",
+     "section": "now",
+     "text": "Wiring the coupon rule into the totals",
+     "spans": null,
+     "why": null,
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    },
+    {
+     "id": "d1",
+     "section": "decisions",
+     "text": "Coupons apply before tax",
+     "spans": null,
+     "why": "Matches the receipt the customer sees",
+     "ref": null,
+     "agent": "claude",
+     "firstAt": 1794042000000,
+     "lastAt": 1794046200000,
+     "state": "open",
+     "closedWhy": null,
+     "closedAt": null
+    }
+   ],
+   "regions": {
+    "goal": [
+     "g1"
+    ],
+    "now": [
+     "n1"
+    ],
+    "needs": [],
+    "decisions": [
+     "d1"
+    ],
+    "next": [],
+    "rules": [],
+    "links": []
+   },
+   "timeline": [],
+   "story": null,
+   "curating": "yes",
+   "needsWaitedMs": []
+  }
+ ],
+ "locale": "en",
+ "zone": "UTC",
+ "backend": "claude",
+ "versions": {
+  "plugin": "0.9.2",
+  "daemon": "0.9.2",
+  "stale": "no"
+ },
+ "warnings": [],
+ "claudeRecaps": [],
+ "groups": [],
+ "breaks": [],
+ "session": null,
+ "cuts": []
+}

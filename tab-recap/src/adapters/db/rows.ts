@@ -1,4 +1,4 @@
-import type { StatementSync } from 'node:sqlite';
+import type { Statement } from 'bun:sqlite';
 
 export type Row = Readonly<Record<string, unknown>>;
 
@@ -34,16 +34,16 @@ export function blob(row: Row, key: string): Uint8Array {
     if (!(value instanceof Uint8Array) || value.length !== 16) {
         throw new BadRow(`${key} is not an id`);
     }
-    return value;
+    return value.constructor === Uint8Array ? value : Uint8Array.from(value);
 }
 
 export const flag = (row: Row, key: string): boolean => whole(row, key) === 1;
 
 type Param = string | number | bigint | Uint8Array | null;
 
-export const all = (statement: StatementSync, ...params: readonly Param[]): readonly Row[] => statement.all(...params);
+export const all = (statement: Statement, ...params: readonly Param[]): readonly Row[] => statement.all(...params);
 
-export const one = (statement: StatementSync, ...params: readonly Param[]): Row | null => statement.get(...params) ?? null;
+export const one = (statement: Statement, ...params: readonly Param[]): Row | null => statement.get(...params) ?? null;
 
 export function guarded<T>(read: () => T, fallback: T): T {
     try {

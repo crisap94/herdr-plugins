@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { MEMORY } from '#src/adapters/db/connection.ts';
@@ -15,7 +15,7 @@ import { rid } from '../fakes/ask-ledger.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { scratchDir, shapeOf } from './support.ts';
 
-const unfinishedCompactionAsks = (db: DatabaseSync): readonly unknown[] => db.prepare("SELECT pane, answer FROM compaction WHERE origin = 'request' AND answer IS NOT NULL AND finished_at IS NULL").all().map((row) => ({ pane: row['pane'], answer: row['answer'] }));
+const unfinishedCompactionAsks = (db: Database): readonly unknown[] => db.prepare("SELECT pane, answer FROM compaction WHERE origin = 'request' AND answer IS NOT NULL AND finished_at IS NULL").all().map((row) => ({ pane: row['pane'], answer: row['answer'] }));
 
 test('migration 13 from a v12 database: an answer id on a compaction, asks remembered by (tool, id), an unfinished ask and a queued one read back; upgraded == fresh', () => {
     const dir = scratchDir('v12');

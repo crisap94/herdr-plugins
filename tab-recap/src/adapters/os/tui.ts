@@ -1,0 +1,11 @@
+export const ESC = String.fromCodePoint(0x1b);
+export const BEL = String.fromCodePoint(0x07);
+export const RESET_SGR = `${ESC}[0m`;
+export const TITLE_OSC = `${ESC}]2;`;
+export const SCREEN_ON = `${ESC}[?1049h${ESC}[?25l`;
+export const SCREEN_OFF = `${ESC}[?25h${ESC}[?1049l`;
+export const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
+export const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
+export const FRAME_HOME = `${ESC}[H`;
+export const LINE_END = `${ESC}[K`;
+export const FRAME_END = `${ESC}[J`;

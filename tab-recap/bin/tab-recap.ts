@@ -1,27 +1,28 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import type { Requests } from '#src/ports/requests.ts';
-import { HerdrFleet } from '#src/adapters/herdr-fleet.ts';
+import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { Pidfile } from '#src/adapters/pidfile.ts';
-import { boundKeys, herdrConfigPath } from '#src/adapters/host-check.ts';
-import { nodeHost } from '#src/host/node-host.mjs';
+import { Pidfile } from '#src/adapters/os/pidfile.ts';
+import { boundKeys, herdrConfigPath } from '#src/adapters/herdr/host-check.ts';
+import { bunHost } from '#src/host/bun-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
-import { codeVersion } from '#src/adapters/plugin-version.ts';
-import { loadExtensions } from '#src/extensions/load.ts';
+import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, recapLanguageSource, stateDir } from '#src/daemon/config.ts';
 import { hasModel } from '#src/recap/domain/backend.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
 import { compactCommand } from './compact.ts';
+import { COMMAND_TABLE, listedWords, slottedCommand } from './command-table.ts';
 import { handoffCommand, productionWiring } from './handoff.ts';
 import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
@@ -108,16 +109,17 @@ function status(): number {
     const config = loadConfig();
     const t = m().cli;
     const running = pidfile.alive();
-    const host = nodeHost();
+    const host = bunHost();
     const support = supportOf(host);
     console.log([
         t.statusVersion(codeVersion()),
-        t.statusNode(host.execPath, host.nodeVersion),
+        t.statusRuntime(host.execPath, host.bunVersion),
         ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
         t.statusKeys(boundKeys(), herdrConfigPath()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
-        t.statusExtensions([...loadExtensions(configGetter()).map((extension) => extension.id), STORED_NOTES_ID].join(', ')),
+        `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
+        t.statusExtensions(STORED_NOTES_ID),
         `${t.statusState} ${stateDir()}`,
         `${t.statusConfig} ${join(configDir(), 'config.env')}`,
     ].join('\n'));
@@ -126,7 +128,7 @@ function status(): number {
 
 async function configure(): Promise<number> {
     const tab = currentTab();
-    await new Promise((resolve) => { setTimeout(resolve, Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0); });
+    await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
     const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
@@ -234,24 +236,25 @@ const HELP_FLAGS = new Set(['--help', '-h']);
 
 const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
+const RAW = new Set<string | undefined>([EVAL, AUTOCOMPACT, ...Object.keys(COMMAND_TABLE)]);
 
-const usage = (): string => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT].join('|'));
+const usage = async (): Promise<string> => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT, ...(await listedWords(configGetter()))].join('|'));
 const argv = process.argv.slice(2);
-const parsed = argv[0] === EVAL || argv[0] === AUTOCOMPACT ? { positionals: [argv[0]], note: undefined, handoff: null } : parseArguments(argv);
+const parsed = RAW.has(argv[0]) ? { positionals: [argv[0] ?? ''], note: undefined, handoff: null } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];
 const noteArg = 'positionals' in parsed ? parsed.note : undefined;
 const handoffArgs = 'positionals' in parsed ? parsed.handoff : null;
 
 function commandOf(word: string | undefined): ((arg: string | undefined) => number | Promise<number>) | undefined {
     const own: Readonly<Record<string, () => number | Promise<number>>> = { [EVAL]: () => evalCommand(argv.slice(1)), [AUTOCOMPACT]: () => autocompactCommand(argv.slice(1)) };
-    return word === undefined ? undefined : own[word] ?? commands[word];
+    return word === undefined ? undefined : own[word] ?? commands[word] ?? slottedCommand(word, argv.slice(1));
 }
 const command = commandOf(name);
-if (name !== EVAL && name !== AUTOCOMPACT && argv.some((word) => HELP_FLAGS.has(word))) {
-    console.log(usage());
+if (!RAW.has(name) && argv.some((word) => HELP_FLAGS.has(word))) {
+    console.log(await usage());
     process.exitCode = OK;
 } else if ('problem' in parsed || command === undefined) {
-    console.error(`tab-recap: 2 — ${'problem' in parsed ? `${parsed.problem}\n` : ''}${usage()}`);
+    console.error(`tab-recap: 2 — ${'problem' in parsed ? `${parsed.problem}\n` : ''}${await usage()}`);
     process.exitCode = USAGE;
 } else {
     try {

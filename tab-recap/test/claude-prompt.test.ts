@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promptBodyOf } from '#src/adapters/claude-prompt.ts';
-import { ClaudeTranscripts } from '#src/adapters/claude-transcripts.ts';
+import { unwrapPastedContent } from '@stateforge-labs/harness-adapters/claude';
+import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import type { Located } from '#src/ports/transcripts.ts';
 import { laneWith } from './fakes/handoff-delivery.ts';
 
@@ -20,40 +20,35 @@ function sourceOf(located: Located): string {
 }
 
 test('a stored multi-line paste comes back as the text that was sent', () => {
-    assert.equal(promptBodyOf(wrapped(BODY)), BODY);
+    assert.equal(unwrapPastedContent(wrapped(BODY)), BODY);
 });
 
 test('the id is any token and the closing tag may repeat it or not', () => {
-    assert.equal(promptBodyOf(wrapped('one line', 'x9')), 'one line');
-    assert.equal(promptBodyOf(`\n\n<pasted_content id="q">\none line\n</pasted_content>\n`), 'one line');
+    assert.equal(unwrapPastedContent(wrapped('one line', 'x9')), 'one line');
+    assert.equal(unwrapPastedContent(`\n\n<pasted_content id="q">\none line\n</pasted_content>\n`), 'one line');
 });
 
 test('a paste whose body ends with a line feed keeps that line feed', () => {
-    assert.equal(promptBodyOf(wrapped('ends here\n')), 'ends here\n');
+    assert.equal(unwrapPastedContent(wrapped('ends here\n')), 'ends here\n');
 });
 
 test('an unwrapped single-line prompt is returned unchanged', () => {
-    assert.equal(promptBodyOf('just a question?'), 'just a question?');
+    assert.equal(unwrapPastedContent('just a question?'), 'just a question?');
 });
 
 test('text that only contains the tags in the middle is not unwrapped', () => {
     const text = `Look at this:${wrapped(BODY)}and tell me.`;
-    assert.equal(promptBodyOf(text), text);
+    assert.equal(unwrapPastedContent(text), text);
 });
 
 test('text with words before a wrapper that ends the text is not unwrapped', () => {
     const text = `Look at this:${wrapped(BODY)}`;
-    assert.equal(promptBodyOf(text), text);
+    assert.equal(unwrapPastedContent(text), text);
 });
 
 test('text with trailing words after the closing tag is not unwrapped', () => {
     const text = `${wrapped(BODY)}and one more thing`;
-    assert.equal(promptBodyOf(text), text);
-});
-
-test('a value that is not text is no prompt', () => {
-    assert.equal(promptBodyOf(undefined), '');
-    assert.equal(promptBodyOf(42), '');
+    assert.equal(unwrapPastedContent(text), text);
 });
 
 test('the Claude reader returns the inner text of a wrapped multi-line prompt', async () => {

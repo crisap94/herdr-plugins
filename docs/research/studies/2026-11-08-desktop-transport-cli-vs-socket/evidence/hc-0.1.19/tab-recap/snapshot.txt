@@ -1,0 +1,2 @@
+The raw snapshot of the live fleet was removed from the evidence: it carries project names, paths and terminal titles.
+Result recorded in consolidated.md: HcFleet.snapshot() on hc 0.1.19 returned the same lanes as hc ls (the parsers still accept the 0.1.19 output).

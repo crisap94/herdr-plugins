@@ -5,9 +5,9 @@ import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
-import { compactionPlans } from '#src/adapters/compaction-plan-registry.ts';
-import { HerdrAgents } from '#src/adapters/herdr-agents.ts';
-import type { Wire } from '#src/adapters/herdr-agents.ts';
+import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
+import type { Wire } from '#src/adapters/herdr/agents.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';

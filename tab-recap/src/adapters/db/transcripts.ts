@@ -1,8 +1,15 @@
-import type { DatabaseSync, StatementSync } from 'node:sqlite';
-import type { Row } from './rows.ts';
+import type { Database } from 'bun:sqlite';
+import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import { blob, one, whole } from './rows.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { transcript } from './drizzle/index.ts';
+import { ormOf, type Orm } from './orm.ts';
+import { BadRow } from './rows.ts';
 import { ids } from './uuid7.ts';
+
+const PLACEHOLDER_AGENT = 'unknown';
+const NO_SOURCE = '';
+const NO_ROW = 'transcript write returned no row';
 
 export interface Moved {
     readonly id: Uint8Array;
@@ -12,39 +19,71 @@ export interface Moved {
     readonly replaces: Uint8Array | null;
 }
 
-export class TranscriptRows {
-    private readonly detach: StatementSync;
-    private readonly was: StatementSync;
-    private readonly priorStatement: StatementSync;
-    private readonly upsert: StatementSync;
-    private readonly ofPaneStatement: StatementSync;
-    private readonly placeholder: StatementSync;
+function plainId(bytes: Uint8Array): Uint8Array {
+    return new Uint8Array(bytes);
+}
 
-    constructor(db: DatabaseSync) {
-        this.detach = db.prepare('UPDATE transcript SET attached = 0 WHERE tab_id = ?');
-        this.was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?');
-        this.priorStatement = db.prepare("SELECT id FROM transcript WHERE tab_id = ? AND pane = ? AND source <> '' ORDER BY first_seen DESC, id DESC LIMIT 1");
-        this.upsert = db.prepare(`INSERT INTO transcript (id, tab_id, pane, agent, source, attached, position, cursor, tail, title, last_prompt, claude_note, first_seen)
-          VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT (tab_id, pane, source) DO UPDATE SET agent = excluded.agent, attached = 1, position = excluded.position, cursor = excluded.cursor,
-            tail = excluded.tail, title = excluded.title, last_prompt = excluded.last_prompt, claude_note = excluded.claude_note
-          RETURNING id`);
-        this.ofPaneStatement = db.prepare('SELECT id FROM transcript WHERE tab_id = ? AND pane = ? ORDER BY attached DESC, id DESC LIMIT 1');
-        this.placeholder = db.prepare("INSERT INTO transcript (id, tab_id, pane, agent, source, attached, cursor, first_seen) VALUES (?, ?, ?, 'unknown', '', 0, 0, ?) RETURNING id");
+interface IdRow {
+    readonly id: Uint8Array;
+}
+
+function idOf(row: IdRow | undefined): Uint8Array {
+    if (row === undefined) {
+        throw new BadRow(NO_ROW);
+    }
+    return plainId(row.id);
+}
+
+export class TranscriptRows {
+    private readonly orm: Orm;
+
+    constructor(db: Database) {
+        this.orm = ormOf(db);
     }
 
     attach(tab: string, lanes: readonly LaneCursor[], at: number): readonly Moved[] {
-        this.detach.run(tab);
+        const tabKey = tabId(tab);
+        this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tabKey)).run();
         return lanes.map((lane, position) => {
-            const was = one(this.was, tab, lane.pane, lane.transcript);
-            const prior = was === null && lane.transcript !== '' ? one(this.priorStatement, tab, lane.pane) : null;
-            const saved = this.upsert.get(ids.next(), tab, lane.pane, lane.agent, lane.transcript, position, lane.cursor, lane.tail, lane.title, lane.lastPrompt, lane.claudeRecap, at) as Row;
-            return { id: blob(saved, 'id'), pane: lane.pane, from: was === null ? lane.cursor : whole(was, 'cursor'), to: lane.cursor, replaces: prior === null ? null : blob(prior, 'id') };
+            const pane = paneId(lane.pane);
+            const was = this.orm.select({ cursor: transcript.cursor }).from(transcript)
+                .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, pane), eq(transcript.source, lane.transcript))).get() ?? null;
+            const prior = was === null && lane.transcript !== NO_SOURCE
+                ? this.orm.select({ id: transcript.id }).from(transcript)
+                    .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, pane), ne(transcript.source, NO_SOURCE)))
+                    .orderBy(desc(transcript.firstSeen), desc(transcript.id)).limit(1).get() ?? null
+                : null;
+            const saved = this.orm.insert(transcript)
+                .values({ id: ids.next(), tabId: tabKey, pane, agent: lane.agent, source: lane.transcript, attached: 1, position, cursor: lane.cursor, tail: lane.tail, title: lane.title, lastPrompt: lane.lastPrompt, claudeNote: lane.claudeRecap, firstSeen: at })
+                .onConflictDoUpdate({
+                    target: [transcript.tabId, transcript.pane, transcript.source],
+                    set: {
+                        agent: sql`excluded.agent`,
+                        attached: 1,
+                        position: sql`excluded.position`,
+                        cursor: sql`excluded.cursor`,
+                        tail: sql`excluded.tail`,
+                        title: sql`excluded.title`,
+                        lastPrompt: sql`excluded.last_prompt`,
+                        claudeNote: sql`excluded.claude_note`,
+                    },
+                })
+                .returning({ id: transcript.id }).get();
+            return { id: idOf(saved), pane: lane.pane, from: was === null ? lane.cursor : was.cursor, to: lane.cursor, replaces: prior === null ? null : plainId(prior.id) };
         });
     }
 
     ofPane(tab: string, pane: string, at: number): Uint8Array {
-        const found = one(this.ofPaneStatement, tab, pane);
-        return blob(found ?? (this.placeholder.get(ids.next(), tab, pane, at) as Row), 'id');
+        const tabKey = tabId(tab);
+        const paneKey = paneId(pane);
+        const found = this.orm.select({ id: transcript.id }).from(transcript)
+            .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, paneKey)))
+            .orderBy(desc(transcript.attached), desc(transcript.id)).limit(1).get();
+        if (found !== undefined) {
+            return plainId(found.id);
+        }
+        return idOf(this.orm.insert(transcript)
+            .values({ id: ids.next(), tabId: tabKey, pane: paneKey, agent: PLACEHOLDER_AGENT, source: NO_SOURCE, attached: 0, position: 0, cursor: 0, firstSeen: at })
+            .returning({ id: transcript.id }).get());
     }
 }

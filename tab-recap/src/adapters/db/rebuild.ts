@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { Database } from 'bun:sqlite';
 
 export interface Rebuild {
     readonly table: string;
@@ -7,7 +7,7 @@ export interface Rebuild {
     readonly after?: readonly string[];
 }
 
-export function rebuildTable(db: DatabaseSync, step: Rebuild): void {
+export function rebuildTable(db: Pick<Database, 'exec'>, step: Rebuild): void {
     db.exec(step.create);
     db.exec(step.copy);
     db.exec(`DROP TABLE ${step.table}`);

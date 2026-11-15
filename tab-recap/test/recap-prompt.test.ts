@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ARGV_BYTES, argvPrompt, fitBytes, prompt } from '#src/adapters/recap-prompt.ts';
+import { ARGV_BYTES, argvPrompt, fitBytes, prompt } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { requestOf } from '#test/support.ts';
 

@@ -2,13 +2,22 @@ import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
-import type { SetupNote } from '#src/recap/domain/setup-note.ts';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 
 export type Locale = 'en' | 'es';
 
 export type AgoUnit = 's' | 'min' | 'h' | 'd';
+
+export type LanguageSource = 'settings' | 'environment' | 'system';
+
+export type LanguageSourceName = 'settings file' | 'environment variable' | 'system language' | 'archivo de ajustes' | 'variable de entorno' | 'idioma del sistema';
+
+export interface LanguageSourceNames {
+    readonly settings: LanguageSourceName;
+    readonly environment: LanguageSourceName;
+    readonly system: LanguageSourceName;
+}
 
 export interface Messages {
     readonly locale: Locale;
@@ -40,7 +49,6 @@ export interface Messages {
         readonly loading: string;
         readonly auto: (order: string) => string;
         readonly custom: string;
-        readonly harnessNotes: Readonly<Record<SetupNote, string>>;
         readonly legend: { readonly current: string; readonly available: string; readonly missing: string };
         readonly locked: (name: string) => string;
         readonly modelDefault: (model: string) => string;
@@ -166,11 +174,13 @@ export interface Messages {
         readonly usageBackend: (choices: string) => string;
         readonly usage: (commands: string) => string;
         readonly statusVersion: (code: string | null) => string;
-        readonly statusNode: (path: string, version: string) => string;
+        readonly statusRuntime: (path: string, version: string) => string;
         readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;
         readonly statusKeys: (bindings: readonly { readonly key: string; readonly action: string }[], configPath: string) => string;
         readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
         readonly statusBackend: (what: string) => string;
+        readonly statusLanguage: 'language' | 'idioma  ';
+        readonly statusSources: LanguageSourceNames;
         readonly statusExtensions: (ids: string) => string;
         readonly statusState: string;
         readonly statusConfig: string;

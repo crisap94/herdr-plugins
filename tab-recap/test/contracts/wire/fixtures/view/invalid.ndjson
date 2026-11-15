@@ -1,0 +1,23 @@
+{"side":"client","line":"not json","why":"json"}
+{"side":"client","line":"","why":"json"}
+{"side":"client","line":"[1,2]","why":"shape"}
+{"side":"client","line":"null","why":"shape"}
+{"side":"client","line":"{\"x\":1}","why":"shape"}
+{"side":"client","line":"{\"t\":5}","why":"shape"}
+{"side":"client","line":"{\"t\":\"hello\",\"protocol\":1,\"role\":\"column\",\"tab\":\"t1\",\"pane\":null,\"cols\":80,\"rows\":24,\"colour\":true}","why":"field"}
+{"side":"client","line":"{\"t\":\"hello\",\"protocol\":1,\"version\":\"9.9.9\",\"role\":\"side\",\"tab\":\"t1\",\"pane\":null,\"cols\":80,\"rows\":24,\"colour\":true}","why":"field"}
+{"side":"client","line":"{\"t\":\"hello\",\"protocol\":1,\"version\":\"9.9.9\",\"role\":\"column\",\"tab\":\"t1\",\"pane\":null,\"cols\":\"80\",\"rows\":24,\"colour\":true}","why":"field"}
+{"side":"client","line":"{\"t\":\"hello\",\"protocol\":1,\"version\":\"9.9.9\",\"role\":\"column\",\"tab\":\"t1\",\"pane\":7,\"cols\":80,\"rows\":24,\"colour\":true}","why":"field"}
+{"side":"client","line":"{\"t\":\"hello\",\"protocol\":1,\"version\":\"9.9.9\",\"role\":\"column\",\"tab\":\"t1\",\"pane\":null,\"cols\":80,\"rows\":24,\"colour\":\"yes\"}","why":"field"}
+{"side":"client","line":"{\"t\":\"resize\",\"cols\":80,\"rows\":1.5}","why":"field"}
+{"side":"client","line":"{\"t\":\"key\",\"key\":5}","why":"field"}
+{"side":"client","line":"{\"t\":\"tap\",\"row\":4}","why":"field"}
+{"side":"client","line":"{\"t\":\"intent\",\"intent\":\"quit\"}","why":"field"}
+{"side":"daemon","line":"not json","why":"json"}
+{"side":"daemon","line":"\"welcome\"","why":"shape"}
+{"side":"daemon","line":"{\"t\":\"welcome\",\"protocol\":\"1\",\"version\":\"9.9.9\",\"title\":\"tab-recap\",\"texts\":{\"connecting\":\"a\",\"down\":\"b\",\"downHint\":\"c\",\"mismatch\":\"d\"}}","why":"field"}
+{"side":"daemon","line":"{\"t\":\"welcome\",\"protocol\":1,\"version\":\"9.9.9\",\"title\":\"tab-recap\",\"texts\":{\"connecting\":\"a\",\"down\":\"b\",\"downHint\":\"c\"}}","why":"field"}
+{"side":"daemon","line":"{\"t\":\"frame\",\"lines\":[1]}","why":"field"}
+{"side":"daemon","line":"{\"t\":\"frame\",\"lines\":\"a\"}","why":"field"}
+{"side":"daemon","line":"{\"t\":\"bye\",\"why\":\"later\",\"protocol\":1,\"version\":\"9.9.9\"}","why":"field"}
+{"side":"daemon","line":"{\"t\":\"bye\",\"why\":\"shutdown\",\"version\":\"9.9.9\"}","why":"field"}
