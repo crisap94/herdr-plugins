@@ -20,10 +20,12 @@ export type Done = { readonly kind: 'done' } | Unknown;
 
 export type ClosedAll = { readonly kind: 'closed'; readonly closed: number; readonly failed: number } | Unknown;
 
+export type ResizeDirection = 'left' | 'right' | 'up' | 'down';
+
 export interface Columns {
     layout(tab: TabId): Promise<LayoutResult>;
     open(tab: TabId, target: string, shape: Shape): Promise<OpenResult>;
-    resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done>;
+    resize(pane: PaneId, direction: ResizeDirection, amount: number): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
     closeEvery(): Promise<ClosedAll>;
 }

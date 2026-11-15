@@ -18,7 +18,17 @@ export type ExchangeEntry = { readonly name: string; readonly version: number };
 
 export type Capability = { readonly exchanges: readonly ExchangeEntry[]; readonly kinds: number | null };
 
-type Entry = { readonly kind: 'exchange'; readonly entry: ExchangeEntry } | { readonly kind: 'kinds'; readonly version: number };
+export interface ExchangeItem {
+    readonly kind: 'exchange';
+    readonly entry: ExchangeEntry;
+}
+
+export interface KindsItem {
+    readonly kind: 'kinds';
+    readonly version: number;
+}
+
+type Entry = ExchangeItem | KindsItem;
 
 const entryOf = (item: string): Entry | null => {
     const kinds = KINDS_ITEM.exec(item);

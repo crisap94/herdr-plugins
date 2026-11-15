@@ -1,8 +1,13 @@
 import type { Unknown } from './unknowable.ts';
 
+export interface NoulCriteria {
+    readonly true: string | object;
+    readonly false: string | object;
+}
+
 export interface Noul {
     readonly instructions: string | object;
-    readonly criteria: { readonly true: string | object; readonly false: string | object };
+    readonly criteria: NoulCriteria;
 }
 
 export interface Decided {

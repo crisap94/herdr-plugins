@@ -52,6 +52,11 @@ export interface HandoffResponder {
     takeHandoffs(): readonly HandoffRequestRow[];
 }
 
+export interface AnswerRow {
+    readonly pane: string;
+    readonly answer: string;
+}
+
 export interface Requests extends HandoffRequester, HandoffResponder {
     request(tab: string): void;
     requestVisibility(request: VisibilityRequest): void;
@@ -61,7 +66,7 @@ export interface Requests extends HandoffRequester, HandoffResponder {
     takeVisibility(): readonly VisibilityRequest[];
     takeCompactions(): readonly CompactRequest[];
     takeCurations(): readonly TabId[];
-    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[];
+    takeAnswered(): readonly AnswerRow[];
 }
 
 export interface CompactionQueue {

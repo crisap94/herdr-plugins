@@ -11,7 +11,7 @@
   },
   "src/adapters/db/autocompact-records.ts": {
     "parameter": 20,
-    "return": 15,
+    "return": 12,
     "container": 15,
     "property": 2,
     "assertion": 5

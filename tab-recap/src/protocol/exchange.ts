@@ -71,7 +71,12 @@ export function answerValue(exchange: Exchange, id: string, stage: string): Resu
 
 export const badIdValue = (rawId: string): TokenValue => answerText(rawId.slice(0, LIMITS.idMax), failureStage('bad-id')) as TokenValue;
 
-export const splitAnswer = (raw: string): { readonly id: string; readonly stage: string } | null => {
+export interface AnswerSplit {
+    readonly id: string;
+    readonly stage: string;
+}
+
+export const splitAnswer = (raw: string): AnswerSplit | null => {
     const cut = raw.indexOf(ANSWER_SEPARATOR);
     return cut < 0 ? null : { id: raw.slice(0, cut), stage: raw.slice(cut + ANSWER_SEPARATOR.length) };
 };
