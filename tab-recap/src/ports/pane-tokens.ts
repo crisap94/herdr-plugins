@@ -1,7 +1,9 @@
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from './unknowable.ts';
 
-export type PaneTokensResult = { readonly kind: 'tokens'; readonly tokens: Readonly<Record<string, string>> } | Unknown;
+export type PaneTokensResult = { readonly kind: 'tokens'; readonly tokens: ReadonlyMap<Text, Text> } | Unknown;
 
 export interface PaneTokens {
-    read(pane: string): Promise<PaneTokensResult>;
+    read(pane: PaneId): Promise<PaneTokensResult>;
 }

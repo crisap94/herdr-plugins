@@ -188,7 +188,7 @@
     "return": 1
   },
   "src/recap/application/handoff-pipeline.ts": {
-    "container": 2
+    "container": 1
   },
   "src/recap/application/handoff-print.ts": {
     "parameter": 1,
@@ -359,7 +359,6 @@
   },
   "src/recap/application/worksite-section.ts": {
     "return": 1,
-    "container": 1,
     "property": 1
   }
 }

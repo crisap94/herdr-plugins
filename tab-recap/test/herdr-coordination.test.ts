@@ -1,15 +1,16 @@
 import { test } from 'node:test';
+import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { awaitingOf, notesOf } from '#src/recap/domain/coordination.ts';
 import { leaseBlocked, LEASE } from '#src/recap/domain/typing-lease.ts';
 import { eventValue, seqOf, VALUE_MAX } from '#src/recap/domain/event-token.ts';
 
 test('awaiting: the first non-empty `awaiting` or `awaiting-<tool>` names what the pane waits for; an empty one or a look-alike is not a wait', () => {
-    assert.equal(awaitingOf({ 'awaiting-coordinator': 'reviewer' }), 'reviewer');
-    assert.equal(awaitingOf({ awaiting: 'the build' }), 'the build');
-    assert.equal(awaitingOf({ 'awaiting-b': 'second', 'awaiting-a': 'first' }), 'first', 'the first by name');
-    assert.equal(awaitingOf({ 'awaiting-coordinator': '' }), null);
-    assert.equal(awaitingOf({ 'awaiting-': 'x', awaitingly: 'x', 'tab-recap-api': '1' }), null);
+    assert.equal(awaitingOf(tokenEntries({ 'awaiting-coordinator': 'reviewer' })), 'reviewer');
+    assert.equal(awaitingOf(tokenEntries({ awaiting: 'the build' })), 'the build');
+    assert.equal(awaitingOf(tokenEntries({ 'awaiting-b': 'second', 'awaiting-a': 'first' })), 'first', 'the first by name');
+    assert.equal(awaitingOf(tokenEntries({ 'awaiting-coordinator': '' })), null);
+    assert.equal(awaitingOf(tokenEntries({ 'awaiting-': 'x', awaitingly: 'x', 'tab-recap-api': '1' })), null);
 });
 
 test('notes: `note-<tool>` is labelled with the tool, a bare `note` with `note`; empty and foreign tokens are not notes', () => {
@@ -20,12 +21,12 @@ test('notes: `note-<tool>` is labelled with the tool, a bare `note` with `note`;
 });
 
 test('the typing lease: an earlier live lease of another tool holds tab-recap back; a later one does not; the same stamp goes to the smaller name', () => {
-    assert.equal(leaseBlocked({ 'typing-coordinator': '100' }, 200), true);
-    assert.equal(leaseBlocked({ 'typing-coordinator': '300' }, 200), false, 'a later lease: the other tool waits for us');
-    assert.equal(leaseBlocked({ 'typing-aaa': '200' }, 200), true, 'same stamp, smaller name');
-    assert.equal(leaseBlocked({ 'typing-zzz': '200' }, 200), false, 'same stamp, larger name');
-    assert.equal(leaseBlocked({ [LEASE]: '100' }, 200), false, 'our own lease is never a block');
-    assert.equal(leaseBlocked({ 'typing-coordinator': 'soon' }, 200), false, 'an unreadable stamp blocks nothing');
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': '100' }), 200), true);
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': '300' }), 200), false, 'a later lease: the other tool waits for us');
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-aaa': '200' }), 200), true, 'same stamp, smaller name');
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-zzz': '200' }), 200), false, 'same stamp, larger name');
+    assert.equal(leaseBlocked(tokenEntries({ [LEASE]: '100' }), 200), false, 'our own lease is never a block');
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': 'soon' }), 200), false, 'an unreadable stamp blocks nothing');
 });
 
 test('an event value is `<seq>:<kind>[:<detail>]`, cut to 80 characters; the sequence starts at the daemon start in base 36 and rises by one', () => {
@@ -43,7 +44,7 @@ test('notes are plain text: escapes, line breaks and tabs become spaces, runs of
 });
 
 test('an empty or non-positive foreign lease is no lease', () => {
-    assert.equal(leaseBlocked({ 'typing-coordinator': '' }, 200), false);
-    assert.equal(leaseBlocked({ 'typing-coordinator': '0' }, 200), false);
-    assert.equal(leaseBlocked({ 'typing-coordinator': '-5' }, 200), false);
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': '' }), 200), false);
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': '0' }), 200), false);
+    assert.equal(leaseBlocked(tokenEntries({ 'typing-coordinator': '-5' }), 200), false);
 });

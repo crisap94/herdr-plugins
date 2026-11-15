@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { HANDOFF_OBSERVATIONS } from '#src/recap/application/handoff-limits.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
@@ -38,7 +39,7 @@ test('an earlier live lease of another tool returns typing-lease-busy without pa
     const tokens: LaneTokens = {
         report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
-    const panes: PaneTokens = { read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: herdr.read(pane) }) };
+    const panes: PaneTokens = { read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: tokenEntries(herdr.read(pane)) }) };
     const leasePauses: number[] = [];
     const lease = new TypingLease({ tokens, panes, now: (): number => clock.at, pause: async (ms: number): Promise<void> => { leasePauses.push(ms); clock.at += ms; }, log: (): void => undefined });
     herdr.report(PANE, 'coordinator', { 'typing-coordinator': '500' }, LEASE_TTL_MS);

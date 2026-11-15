@@ -139,7 +139,7 @@ test('the parts a desktop app lacks answer plainly; typing stays unreachable', a
         assert.deepEqual(await fleet.closeEvery(), { kind: 'closed', closed: 0, failed: 0 });
         assert.deepEqual(await fleet.close(), { kind: 'done' });
         assert.equal((await fleet.notify()).kind, 'unknown');
-        assert.deepEqual(await fleet.read(), { kind: 'tokens', tokens: {} });
+        assert.deepEqual(await fleet.read(), { kind: 'tokens', tokens: new Map() });
         const agents = fleet.agents();
         for (const done of [await agents.prompt(), await agents.typeLine(), await agents.askNote()]) {
             assert.ok(done.kind === 'unknown' && done.why.why === 'unreachable');

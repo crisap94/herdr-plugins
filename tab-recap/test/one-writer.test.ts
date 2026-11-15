@@ -34,7 +34,7 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
     events.lane('w1:p1', 'recap-written', 'turn-ended');
     const answers = new CompactRequests({ enabled: (): boolean => true, board: (): Board => board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens: paneWrites, now: (): number => 1000, log: (): void => undefined });
     answers.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: {} }) };
+    const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: new Map() }) };
     const lease = new TypingLease({ tokens: paneWrites, panes, now: (): number => 5, pause: async (): Promise<void> => undefined, log: (): void => undefined });
     await lease.acquire('w1:p1', 0);
     await lease.release('w1:p1');

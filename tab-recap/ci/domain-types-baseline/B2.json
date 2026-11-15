@@ -58,7 +58,7 @@
   "src/recap/domain/coordination.ts": {
     "parameter": 1,
     "return": 2,
-    "container": 4,
+    "container": 2,
     "property": 2
   },
   "src/recap/domain/curation.ts": {
@@ -191,8 +191,7 @@
   },
   "src/recap/domain/typing-lease.ts": {
     "parameter": 1,
-    "return": 1,
-    "container": 1
+    "return": 1
   },
   "src/recap/domain/visibility.ts": {
     "return": 2,

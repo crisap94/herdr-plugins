@@ -107,10 +107,6 @@
   "src/ports/notifier.ts": {
     "parameter": 2
   },
-  "src/ports/pane-tokens.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/ports/process-control.ts": {
     "parameter": 3,
     "container": 1,

@@ -1,6 +1,7 @@
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
 export const RETRY_MS = 1000;
@@ -29,7 +30,7 @@ export class TypingLease {
         if (isUnknown(wrote)) {
             return 'unavailable';
         }
-        const read = await this.deps.panes.read(pane);
+        const read = await this.deps.panes.read(paneId(pane));
         if (isUnknown(read)) {
             await this.release(pane);
             return 'unavailable';

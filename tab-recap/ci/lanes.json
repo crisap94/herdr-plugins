@@ -1065,6 +1065,7 @@
       "test/fakes/run-history.ts",
       "test/fakes/silent-closures.ts",
       "test/fakes/tab-views-memory.ts",
+      "test/fakes/token-entries.ts",
       "test/fakes/token-map.ts",
       "test/fakes/transcript-registry.ts",
       "test/fakes/typed-line.ts",

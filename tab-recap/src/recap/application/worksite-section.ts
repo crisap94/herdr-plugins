@@ -1,3 +1,4 @@
+import type { Text } from '#src/recap/domain/text.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
@@ -11,7 +12,7 @@ import { HANDOFF_PATHS_SHOWN } from './handoff-limits.ts';
 export interface WorksiteInput {
     readonly directory: string | null;
     readonly cursor: LaneCursor | null;
-    readonly tokens: Readonly<Record<string, string>> | null;
+    readonly tokens: ReadonlyMap<Text, Text> | null;
 }
 
 export interface WorksiteDeps {
