@@ -14,16 +14,20 @@ export const QUOTA: Quota = { high: 120, boundary: 60, random: 60 };
 export const SEED = 42;
 export const MINIMUM_LIMIT = 40;
 
+export interface PickedCandidate { readonly id: string; readonly stratum: Stratum }
+
+export interface StratumCount { readonly asked: number; readonly got: number }
+
 export interface Sampled {
-    readonly picked: readonly { readonly id: string; readonly stratum: Stratum }[];
-    readonly counts: Readonly<Record<Stratum, { readonly asked: number; readonly got: number }>>;
+    readonly picked: readonly PickedCandidate[];
+    readonly counts: Readonly<Record<Stratum, StratumCount>>;
 }
 
 export function stratify(candidates: readonly Candidate[], quota: Quota = QUOTA, seed = SEED): Sampled {
     const random = seeded(seed);
     const taken = new Set<string>();
     const picked: { id: string; stratum: Stratum }[] = [];
-    const counts = {} as Record<Stratum, { asked: number; got: number }>;
+    const counts = {} as Record<Stratum, StratumCount>;
     const rules: readonly [Stratum, (candidate: Candidate) => boolean][] = [
         ['boundary', (c) => c.beforeBoundary],
         ['high', (c) => c.share !== null && c.share >= MINIMUM_LIMIT],

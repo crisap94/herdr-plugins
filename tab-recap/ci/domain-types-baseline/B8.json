@@ -2,14 +2,9 @@
   "src/experiment/coverage.ts": {
     "container": 1
   },
-  "src/experiment/cross-check.ts": {
-    "parameter": 1,
-    "return": 1
-  },
   "src/experiment/hindsight.ts": {
     "parameter": 2,
     "return": 1,
-    "container": 1,
     "property": 3
   },
   "src/experiment/kappa-report.ts": {
@@ -20,12 +15,11 @@
   "src/experiment/label-prompt.ts": {
     "parameter": 6,
     "return": 3,
-    "container": 10,
+    "container": 8,
     "property": 2,
     "assertion": 3
   },
   "src/experiment/outcomes.ts": {
-    "parameter": 1,
     "container": 2,
     "property": 14,
     "assertion": 1
@@ -43,11 +37,11 @@
   },
   "src/experiment/report-code.ts": {
     "parameter": 1,
-    "return": 2,
+    "return": 1,
     "property": 4
   },
   "src/experiment/report-metrics.ts": {
-    "parameter": 7,
+    "parameter": 6,
     "return": 11,
     "container": 13,
     "property": 21
@@ -79,13 +73,11 @@
   "src/experiment/stratify.ts": {
     "parameter": 1,
     "return": 3,
-    "container": 2,
     "property": 9,
     "assertion": 1
   },
   "src/experiment/verbatim.ts": {
     "parameter": 6,
-    "return": 1,
     "container": 2
   }
 }
