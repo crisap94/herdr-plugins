@@ -1,7 +1,7 @@
 {
   "src/adapters/db/ask-ledger.ts": {
-    "parameter": 9,
-    "return": 3,
+    "parameter": 7,
+    "return": 2,
     "container": 2
   },
   "src/adapters/db/autocompact-briefs.ts": {

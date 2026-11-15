@@ -41,7 +41,7 @@
   },
   "src/recap/domain/compact-request.ts": {
     "parameter": 5,
-    "return": 5,
+    "return": 4,
     "container": 1
   },
   "src/recap/domain/compaction-plan.ts": {
@@ -188,8 +188,7 @@
     "return": 2
   },
   "src/recap/domain/token-registry.ts": {
-    "parameter": 1,
-    "return": 2
+    "parameter": 1
   },
   "src/recap/domain/typing-lease.ts": {
     "parameter": 1,

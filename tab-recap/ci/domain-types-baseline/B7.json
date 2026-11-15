@@ -42,7 +42,7 @@
   },
   "src/daemon/handoff.ts": {
     "parameter": 11,
-    "return": 5,
+    "return": 4,
     "container": 2
   },
   "src/daemon/harness-makers.ts": {

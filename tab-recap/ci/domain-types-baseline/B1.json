@@ -5,9 +5,9 @@
     "property": 3
   },
   "src/ports/ask-ledger.ts": {
-    "parameter": 5,
+    "parameter": 3,
     "return": 1,
-    "property": 17
+    "property": 6
   },
   "src/ports/autocompact-briefs.ts": {
     "parameter": 4,
@@ -165,53 +165,48 @@
     "container": 2
   },
   "src/protocol/capability.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 7,
-    "container": 1,
     "property": 4,
     "assertion": 1
   },
   "src/protocol/codec.ts": {
     "parameter": 5,
     "return": 1,
-    "container": 7,
-    "property": 10
+    "container": 6,
+    "property": 9
   },
   "src/protocol/exchange.ts": {
-    "parameter": 10,
-    "return": 5,
-    "container": 10,
-    "property": 7,
+    "parameter": 9,
+    "return": 4,
+    "container": 6,
+    "property": 5,
     "assertion": 1
   },
   "src/protocol/owners.ts": {
-    "container": 2
+    "container": 1
   },
   "src/protocol/primitives.ts": {
-    "parameter": 12,
-    "container": 6,
+    "parameter": 11,
     "property": 1,
     "assertion": 3
   },
   "src/protocol/registry.ts": {
     "parameter": 1,
     "return": 3,
-    "container": 5,
+    "container": 2,
     "property": 1
   },
   "src/protocol/requester.ts": {
-    "parameter": 5,
+    "parameter": 2,
     "container": 2,
     "property": 2,
     "assertion": 1
   },
   "src/protocol/responder.ts": {
-    "parameter": 8,
+    "parameter": 4,
     "return": 2,
     "container": 2,
-    "property": 5
-  },
-  "src/protocol/tokens.ts": {
-    "property": 2
+    "property": 1
   }
 }

@@ -42,7 +42,7 @@ module.exports = {
       name: 'protocol-self-contained',
       severity: 'error',
       from: { path: '^src/protocol/(?!exchanges/)' },
-      to: { pathNot: '^src/protocol/' },
+      to: { pathNot: ['^src/protocol/', brandFile] },
     },
     {
       name: 'protocol-exchanges-self-contained',

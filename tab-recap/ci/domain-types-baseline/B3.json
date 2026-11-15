@@ -37,10 +37,10 @@
     "parameter": 3
   },
   "src/recap/application/compact-requests.ts": {
-    "parameter": 14,
+    "parameter": 10,
     "return": 3,
     "container": 2,
-    "property": 4
+    "property": 2
   },
   "src/recap/application/compact-start.ts": {
     "parameter": 7,
