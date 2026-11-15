@@ -198,7 +198,7 @@ Cannot show:
 
 The fresh set is `dataset-fresh.jsonl`: 24 invented items, built by `build-dataset.ts --fresh` from `dataset-source/fresh.ts` with the seed `fresh-1/2026-11-14`. Sizes: small 8, medium 12, large 4. Traps: 24 refused, 25 kept. A refused trap is refused by the plugin's parser or a gate; a kept trap is let through whole. Run it with `run.ts --fresh --label fresh-<name>`.
 
-The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-7 does not start.
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner delegated the check of a sample of 6 (`fresh-sample.md`) to Claude on 2026-11-15; Claude Opus checked them, items found wrong were fixed and re-reviewed by Sonnet, and the record is `fresh-sample-check.md`. EVAL-7 starts only when every item there reads ok.
 
 | id | plants | traps (kind: expect) | size |
 | --- | --- | --- | --- |

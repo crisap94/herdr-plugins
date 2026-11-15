@@ -109,6 +109,8 @@ S11 is approximate, and the plan's "no name or number outside the allowed set" c
 
 S7 for a verbatim copy is an upper bound on merge recall: a copy is the easiest duplicate there is.
 
+S7, S8 and S10 read the facts joined by a verbatim pair as one fact. A merge or a listed pair that touches any copy touches them all, and a merge between two copies is the verbatim pair itself. In a chain-bait item, where a reworded fact duplicates a fact that has a verbatim copy, both right answers pass: the reworded fact and one copy merged into the other copy, either way round. A chain, closing into a fact that the same answer closes, is still refused by `curationOf` and counts against S6, and the refused merge is not an accepted merge for S7 to S10.
+
 S10 can also fail a defensible merge: two filler facts that a reader would call the same. `check-dataset.ts` proves that no two open facts share their text outside the planted pairs, not that no reader would merge any other pair. An item that every configuration fails on S10 is first a suspect item.
 
 ### Judge
@@ -205,7 +207,7 @@ Build and check:
 - `cd evals && bun curator-story/check-dataset.ts curator-story/dataset-fresh.jsonl` runs the checks of section 7 plus the fresh checks: traps, the long-pressure, thin-ledger and json-in-fact plants, the guard against real names, hosts and paths, the overlap with `dataset.jsonl`, and the `fresh` counts. Its last line is `fresh ok: ...`.
 - `cd evals && bun curator-story/run.ts --fresh --label fresh-<name>` runs it. The label must start with `fresh-`, so fresh answers never land in an existing run folder, and `--smoke` is refused.
 
-The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-7 does not start, and a configuration that fails an item is first a suspect item, as section 6 says of the first set.
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner delegated the check of a sample of 6 (`fresh-sample.md`) to Claude on 2026-11-15; Claude Opus checked them, items found wrong were fixed and re-reviewed by Sonnet, and the record is `fresh-sample-check.md`. EVAL-7 starts only when every item there reads ok, and a configuration that fails an item is first a suspect item, as section 6 says of the first set.
 
 | id | plants | traps (kind: expect) | size |
 |---|---|---|---|

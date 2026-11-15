@@ -217,4 +217,4 @@ Owner sample (`fresh-sample.md`): `writer-fresh-05`, `writer-fresh-06`, `writer-
 | writer-fresh-23 | small | close-bait-hidden | 1 | 1 |
 | writer-fresh-24 | medium | close-bait-intent, quotable-close | 1 | 0 |
 
-The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-8 does not start.
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner delegated the check of a sample of 6 (`fresh-sample.md`) to Claude on 2026-11-15; Claude Opus checked them, items found wrong were fixed and re-reviewed by Sonnet, and the record is `fresh-sample-check.md`. EVAL-8 starts only when every item there reads ok.

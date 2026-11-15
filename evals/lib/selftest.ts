@@ -68,7 +68,18 @@ check('a reconcile answer of {"ops":[]} is readable today', !unparsedOf('curator
 check('a reconcile answer that is not JSON is unparsed today', unparsedOf('curator-reconcile', 'not json', 'today'));
 check('a story answer that is not JSON is unparsed today', unparsedOf('curator-story', 'not json', 'today'));
 check('a story answer that is an array is unparsed today', unparsedOf('curator-story', '[1]', 'today'));
-check('a reconcile answer that is an array is not unparsed today', !unparsedOf('curator-reconcile', '[1]', 'today'));
+const chainItem = loadStoryItems(new URL('../curator-story/dataset-fresh.jsonl', import.meta.url)).find((item) => item.id === 'fcs-14-chain-closed-large');
+const chainMarks = (ops: readonly (readonly [string, string])[]): Record<string, unknown> => {
+    if (chainItem === undefined) return {};
+    const graded = gradeStory(chainItem, JSON.stringify({ ops: ops.map(([id, into]) => ({ op: 'close', id, why: 'merged', into })), story: 'The work goes on.' }));
+    return graded.parsed ? graded.marks : {};
+};
+const chainPasses = (marks: Record<string, unknown>): boolean => marks['S6'] === true && marks['S7'] === true && marks['S8'] === true && marks['S10'] === true;
+check('a chain-bait story answer merging the reworded fact and the copy into f35 passes S6 S7 S8 S10', chainPasses(chainMarks([['f29', 'f35'], ['f51', 'f35']])));
+check('a chain-bait story answer merging the reworded fact and the copy into f51 passes S6 S7 S8 S10', chainPasses(chainMarks([['f29', 'f51'], ['f35', 'f51']])));
+check('a chain-bait story answer that keeps the reworded fact fails S8', ((marks) => marks['S6'] === true && marks['S8'] === false && marks['S10'] === true)(chainMarks([['f35', 'f29'], ['f51', 'f29']])));
+check('a chain-bait story answer that closes a merge target is refused and misses S7', [chainMarks([['f29', 'f35'], ['f35', 'f51']]), chainMarks([['f51', 'f35'], ['f35', 'f29']])].every((marks) => marks['S6'] === false && marks['S7'] === false));
+check('a reconcile answer that is an array is not unparsed today',!unparsedOf('curator-reconcile', '[1]', 'today'));
 check('a reconcile answer wrapped in prose is unparsed today', unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'today'));
 check('a reconcile answer wrapped in prose is not unparsed by the P0 reader', !unparsedOf('curator-reconcile', 'Sure: {"ops":[]} ok', 'p0'));
 check('a reconcile answer that is not JSON is unparsed by the P0 reader', unparsedOf('curator-reconcile', 'not json', 'p0'));

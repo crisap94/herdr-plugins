@@ -2,7 +2,7 @@
 
 reviewer: claude-sonnet (Sonnet key review)
 date: 2026-11-15
-sha256 a3f15c161d95e47bb3490cd34fa000afe14b6eb9ce702064fe2ee41181dbdf2d
+sha256 96e6e90d2b08c1518ea551df7fd59664f385445958e80f575334d5c0e2a1a5c9
 
 | id | verdict | note |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ sha256 a3f15c161d95e47bb3490cd34fa000afe14b6eb9ce702064fe2ee41181dbdf2d
 | writer-fresh-03 | ok | |
 | writer-fresh-04 | ok | |
 | writer-fresh-05 | ok | |
-| writer-fresh-06 | ok | |
+| writer-fresh-06 | ok | k1 reworded 2026-11-15 (no file name); re-reviewed by Sonnet |
 | writer-fresh-07 | ok | |
 | writer-fresh-08 | ok | |
 | writer-fresh-09 | ok | |
