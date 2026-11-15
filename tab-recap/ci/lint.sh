@@ -69,9 +69,9 @@ echo "migrations (a released one runs unchanged, its types may move; a new one i
 bash gates/migrations/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"
 
 echo "the released-migration rule bites (a type-only change passes; a changed statement, a new runtime import and a deletion fail):"
-bash gates/migrations/migration-runtime-bite.sh && echo "  ok    released migrations" || fail "the released-migration rule let a runtime change through, or refused a type-only change"
+bash ../packages/session-ledger-sqlite/test/gates/migration-runtime-bite.sh && echo "  ok    released migrations" || fail "the released-migration rule let a runtime change through, or refused a type-only change"
 echo "the migration numbering bites (the next number and a run of them pass; a gap, a repeat and a duplicate fail):"
-bash gates/migrations/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
+bash ../packages/session-ledger-sqlite/test/gates/migration-number-bite.sh && echo "  ok    migration numbering" || fail "the numbering rule accepted a number it must reject, or rejected one it must accept"
 
 echo "the branch guard bites (an allowed change passes; a stray file and a foreign history fail):"
 bash ../ci/guard-bite.sh && echo "  ok    branch-guard" || fail "the branch guard accepted a change it must reject, or rejected one it must accept"
