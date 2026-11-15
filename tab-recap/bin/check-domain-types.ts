@@ -241,6 +241,7 @@ const checkMembers = (scan: Scan, holder: Holder): void => {
 };
 
 const PACKAGE_BRAND_FILE = 'node_modules/@stateforge-labs/herdr-sdk/dist/core/kernel.d.ts';
+const LEDGER_BRAND_FILE = 'packages/session-ledger/src/contract/kernel.ts';
 
 const markersOf = (checker: ts.TypeChecker, brands: readonly ts.SourceFile[]): ReadonlySet<ts.Symbol> => {
     const declarations = brands.flatMap((brand) => brand.statements.filter(ts.isVariableStatement)).flatMap((statement) => statement.declarationList.declarations);
@@ -261,7 +262,7 @@ const check = (configPath: string): Result<Report, string> => {
     if (sources.length === 0) {
         return err(`no file under src/ in ${configPath}`);
     }
-    const brands = program.getSourceFiles().filter((file) => relative(root, file.fileName) === BRAND_FILE || file.fileName.endsWith(`/${PACKAGE_BRAND_FILE}`));
+    const brands = program.getSourceFiles().filter((file) => relative(root, file.fileName) === BRAND_FILE || file.fileName.endsWith(`/${PACKAGE_BRAND_FILE}`) || file.fileName.endsWith(`/${LEDGER_BRAND_FILE}`));
     const scan: Scan = { checker, root, markers: markersOf(checker, brands), findings: [], declared: new Set(), queue: [] };
     sources.forEach((file) => scanFile(scan, file));
     for (let holder = scan.queue.pop(); holder !== undefined; holder = scan.queue.pop()) {
