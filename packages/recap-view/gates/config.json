@@ -6,11 +6,12 @@
   "probes": "rules/gate-probes",
   "exceptions": "gates/domain-types-exceptions.json",
   "baseline": "gates/domain-types-baseline.json",
-  "brandFile": null,
+  "brandFile": "src/kernel.ts",
   "brandImporters": null,
   "migrations": null,
   "biteSeedDir": "gates",
   "context": "../../tab-recap/CONTEXT.md",
+  "vocabularyAllow": "gates/vocabulary-allow.tsv",
   "builtins": ["node:util"],
   "declaredAhead": ["@stateforge-labs/session-ledger"]
 }
