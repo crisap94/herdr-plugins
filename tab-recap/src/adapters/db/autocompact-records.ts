@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { BadRow, blob, guarded, maybeText, maybeWhole, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
@@ -122,7 +122,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         if (key !== null && target !== null) writeTx(this.db, () => { this.attachTo(key, target); });
     }
 
-    linkLatest(tab: string, pane: string, compactionId: string): LinkedDecision | null {
+    linkLatest(tab: TabId, pane: PaneId, compactionId: string): LinkedDecision | null {
         const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', compactionId)];
@@ -152,12 +152,12 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         }
     }
 
-    lastDecisionAt(tab: string, pane: string): number | null {
+    lastDecisionAt(tab: TabId, pane: PaneId): number | null {
         return guarded(() => maybeWhole(this.orm.select({ at: sql<number | null>`MAX(${autocompactDecision.at})` }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)))).get() ?? { at: null }, 'at'), null);
     }
 
-    lastDecision(tab: string, pane: string): LastDecision | null {
+    lastDecision(tab: TabId, pane: PaneId): LastDecision | null {
         return guarded((): LastDecision | null => {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
                 .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane))))
@@ -166,7 +166,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         }, null);
     }
 
-    unlinkedCompactSince(tab: string, pane: string, at: number): boolean {
+    unlinkedCompactSince(tab: TabId, pane: PaneId, at: number): boolean {
         return guarded(() => this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)),
             eq(autocompactDecision.mode, ON), eq(autocompactDecision.verdict, COMPACT), eq(autocompactDecision.requested, 1), isNull(autocompactDecision.compactionId), gte(autocompactDecision.at, at)))
             .limit(1).get() !== undefined, false);

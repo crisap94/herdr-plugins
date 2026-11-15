@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { en } from '#src/i18n/en.ts';
 import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
@@ -192,7 +193,7 @@ test('still missing after the rewrite: nothing is typed, the record is skipped w
     assert.deepEqual([record?.stage, record?.why, record?.origin], ['skipped', 'coverage', 'auto']);
     const [row] = world.store.autocompact.newest(1);
     assert.deepEqual([row?.verdict, row?.gate, row?.compactionId], ['wait', 'coverage', record?.id]);
-    assert.equal(world.store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), NOW - 1000);
+    assert.equal(world.store.autocompact.lastDecisionAt(tabId('w1:t1'), paneId('w1:p1')), NOW - 1000);
 });
 
 test('a decider that cannot be reached leaves the brief unchecked: no rewrite, no typing, a coverage wait', async () => {
