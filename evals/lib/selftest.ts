@@ -19,6 +19,10 @@ import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/c
 import { storyCounters, storyRound } from '../curator-story/arm.ts';
 import { built as storyBuilt, loadItems as loadStoryItems, prompt as storyPrompt, type StoryItem } from '../curator-story/prompt.ts';
 import { CODE_CRITERIA as STORY_CRITERIA, grade as gradeStory } from '../curator-story/scoring.ts';
+import { closeEvidenceFlag, writerArmMarkdown, writerCounters, writerLine } from '../writer/arm.ts';
+import { loadItems as loadWriterItems, prompt as writerPrompt, type WriterItem } from '../writer/prompt.ts';
+import { CODE_CRITERIA as WRITER_CRITERIA, grade as gradeWriter, outcomeOf, stubAnswer as writerStub } from '../writer/scoring.ts';
+import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
 
 const failures: string[] = [];
 
@@ -251,6 +255,10 @@ async function reconcileArm(root: string): Promise<void> {
     check('the arm CLI prints the EVAL-7 line for a real off run and a real once run', printed.status === 0 && printed.stdout.trim() === line);
     const reversed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-once', '--c', 'cli-off'], { encoding: 'utf8' });
     check('the arm CLI refuses real runs given the wrong way round', reversed.status !== 0);
+    const cliOther = runDir(root, 'curator-reconcile', 'cli-other');
+    writeFileSync(join(cliOther, 'summary.json'), JSON.stringify({ ...onceSummary, arm: { mode: 'once', configs: [{ ...cCounters, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-off', '--c', 'cli-other'], { encoding: 'utf8' });
+    check('the arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
 }
 
 const STORY_FIXED = JSON.stringify({ ops: [], story: 'The work goes on.' });
@@ -322,6 +330,109 @@ async function storyArm(root: string): Promise<void> {
 }
 
 // One arm root with a reconcile pair and a story pair under the same labels, read back by the arm CLI.
+// The close-evidence arm of writer: X is the first item with an anchorless done or wrong close in its reference.
+const writerItems = loadWriterItems(join(import.meta.dirname, '..', 'writer', 'dataset.jsonl'));
+const closeIdOf = (item: WriterItem): string | null => {
+    for (const close of item.expected.must_close) {
+        const op = item.expected.reference_ops.find((each) => each.op === 'close' && each.id === close.id);
+        if (close.why.some((why) => /done|wrong/.test(why)) && op !== undefined && (op.anchor === undefined || op.anchor === null)) return close.id;
+    }
+    return null;
+};
+const writerX = writerItems.find((item) => closeIdOf(item) !== null) as WriterItem;
+const writerXId = closeIdOf(writerX) as string;
+const writerXEntry = writerX.expected.must_close.find((close) => close.id === writerXId) as { readonly id: string; readonly span: string };
+
+function writerSpec(items: readonly WriterItem[], mode: CloseEvidence | null): EvalSpec {
+    return {
+        name: 'writer',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: WRITER_CRITERIA,
+        judge: null,
+        prompt: (item) => writerPrompt(item as WriterItem, mode ?? undefined),
+        grade: (item, text) => gradeWriter(item as WriterItem, text, mode ?? undefined),
+        stub: (item) => writerStub(item as WriterItem),
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function writerRun(root: string, label: string, items: readonly WriterItem[], fake: Adapter, mode: CloseEvidence | null): Promise<string> {
+    const run = await runEval(writerSpec(items, mode), ['--root', root, '--label', label, '--reps', '1'], { ...quiet, adapters: { claude: fake, codex: fake } });
+    return run.dir;
+}
+
+async function writerArm(root: string): Promise<void> {
+    const flag = (argv: string[]) => thrown(() => closeEvidenceFlag(argv));
+    check('the close-evidence flag reads on', closeEvidenceFlag(['--close-evidence', 'on']) === 'on');
+    check('the close-evidence flag refuses yes', flag(['--close-evidence', 'yes']) === '--close-evidence must be off or on');
+    check('the close-evidence flag is null when absent', closeEvidenceFlag([]) === null);
+
+    check('the writer prompt with off equals the default prompt', writerItems.every((item) => JSON.stringify(writerPrompt(item, 'off')) === JSON.stringify(writerPrompt(item))));
+    const onSystem = writerPrompt(writerX, 'on').system;
+    const anchorLine = 'A close with why "done" or "wrong" carries an "anchor" too';
+    check('the writer prompt with on adds the anchor line once and drops the never line', onSystem.split(anchorLine).length === 2 && !onSystem.includes('A close never does.'));
+    check('the writer prompt with on keeps the user document', writerPrompt(writerX, 'on').user === writerPrompt(writerX).user);
+    check('the writer grade with off equals the default grade', writerItems.every((item) => JSON.stringify(gradeWriter(item, writerStub(item), 'off')) === JSON.stringify(gradeWriter(item, writerStub(item)))));
+
+    const onOutcome = outcomeOf(writerX, writerStub(writerX), 'on');
+    const g13 = onOutcome.refused.filter((finding) => finding.gate === 'G13').length;
+    const anchorless = (JSON.parse(writerStub(writerX)) as { ops: { op: string; id?: string; why?: string | null; anchor?: string | null }[] }).ops
+        .filter((op) => op.op === 'close' && (op.why === 'done' || op.why === 'wrong') && (op.anchor ?? '') === '')
+        .map((op) => op.id);
+    const refusedIds = onOutcome.refused.map((finding) => (onOutcome.given[finding.at] as { id?: string }).id);
+    check('the on outcome refuses each anchorless done or wrong close with one G13 finding and keeps no such close', anchorless.length >= 1 && g13 === anchorless.length && [...refusedIds].sort().join() === [...anchorless].sort().join() && onOutcome.refused.every((finding) => finding.gate === 'G13') && !onOutcome.kept.some((op) => op.op === 'close' && op.id === writerXId));
+
+    const stubOps = JSON.parse(writerStub(writerX)) as { ops: { op: string; id?: string; anchor?: string | null }[] };
+    const anchored = { ops: stubOps.ops.map((op) => (op.op === 'close' && op.id === writerXId ? { ...op, anchor: writerXEntry.span } : op)) };
+    const anchoredText = JSON.stringify(anchored);
+    const anchoredOn = outcomeOf(writerX, anchoredText, 'on');
+    check('an anchored close is kept with on and gets no G13 finding', !anchoredOn.refused.some((finding) => finding.gate === 'G13') && anchoredOn.kept.some((op) => op.op === 'close' && op.id === writerXId));
+
+    const first = outcomeOf(writerX, writerStub(writerX));
+    const second = outcomeOf(writerX, writerStub(writerX), 'on');
+    const third = outcomeOf(writerX, writerStub(writerX));
+    check('the outcome cache keeps the off and on answers apart', !first.refused.some((f) => f.gate === 'G13') && second.refused.some((f) => f.gate === 'G13') && !third.refused.some((f) => f.gate === 'G13'));
+
+    const offFake = answering(stubCalled(writerStub(writerX)));
+    const onFake = answering(stubCalled(writerStub(writerX)));
+    const offDir = await writerRun(root, 'arm-off', [writerX], offFake.adapter, 'off');
+    const onDir = await writerRun(root, 'arm-on', [writerX], onFake.adapter, 'on');
+    check('the on run sends the on system of the prompt', onFake.calls[0]?.system === onSystem);
+
+    const offRows = readJsonl<Answer>(join(offDir, 'answers.jsonl'));
+    const onRows = readJsonl<Answer>(join(onDir, 'answers.jsonl'));
+    const offCounts = writerCounters([writerX], offRows, [ARM_CONFIG.name], 'off')[0];
+    const onCounts = writerCounters([writerX], onRows, [ARM_CONFIG.name], 'on')[0];
+    if (offCounts === undefined || onCounts === undefined) throw new Error('the writer counters need one row per arm');
+    const c = offCounts.correct_closes_kept;
+    check('the writer counters give off with no g13 and on with the refusals', offCounts.wrongful_closes === 0 && offCounts.g13_refusals === 0 && onCounts.g13_refusals === g13 && onCounts.correct_closes_kept === c - g13 && onCounts.wrongful_closes === 0);
+    const line = `${ARM_CONFIG.name} off wrongful 0 correct ${c} g13 0 on wrongful 0 correct ${c - g13} g13 ${g13}`;
+    check('the writer line prints the EVAL-8 line', writerLine(offCounts, onCounts) === line);
+
+    const onBlock = { mode: 'on', configs: [onCounts] };
+    writeArm(onDir, onBlock, writerArmMarkdown(onBlock));
+    const onSummary = JSON.parse(readFileSync(join(onDir, 'summary.json'), 'utf8')) as { arm?: { mode: string } };
+    const onReport = readFileSync(join(onDir, 'report.md'), 'utf8');
+    const correctionLine = '- The correction round is not run: a close refused by G13 stays refused here, while the daemon would ask once more.';
+    check('writeArm adds the on arm block at the end of report.md with its correction-round line', onSummary.arm?.mode === 'on' && onReport.endsWith(writerArmMarkdown(onBlock)) && onReport.includes('## writer: arm close evidence on (reported only)') && onReport.includes(correctionLine));
+    const offBlock = { mode: 'off', configs: [offCounts] };
+    writeArm(offDir, offBlock, writerArmMarkdown(offBlock));
+
+    const cliArgs = [join(import.meta.dirname, '..', 'writer', 'arm.ts'), '--root', root];
+    const good = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-off', '--on', 'arm-on'], { encoding: 'utf8' });
+    check('the writer arm CLI prints the EVAL-8 line', good.status === 0 && good.stdout.trim() === line);
+    const swapped = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-on', '--on', 'arm-off'], { encoding: 'utf8' });
+    check('the writer arm CLI refuses swapped labels', swapped.status !== 0);
+    const otherDir = runDir(root, 'writer', 'arm-other');
+    writeFileSync(join(otherDir, 'summary.json'), JSON.stringify({ ...onSummary, arm: { mode: 'on', configs: [{ ...onCounts, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-off', '--on', 'arm-other'], { encoding: 'utf8' });
+    check('the writer arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
+
+    check('an on run refuses a folder that holds off answers', thrown(() => guardMode(offDir, '--close-evidence', 'on')) === 'this run holds answers of another arm');
+}
+
 async function pairArm(root: string): Promise<void> {
     const pairRoot = join(root, 'pair');
     const rec = loadItems(join(import.meta.dirname, '..', 'curator-reconcile', 'dataset.jsonl')).find((each) => each.id === 'rec-01-stale-easy-done');
@@ -473,6 +584,7 @@ try {
     await reconcileArm(root);
     await storyArm(root);
     await pairArm(root);
+    await writerArm(root);
 } finally {
     rmSync(root, { recursive: true, force: true });
 }

@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs
 import { join } from 'node:path';
 import { parseOptions, validate } from '../lib/cli.ts';
 import { STATE_ROOT } from '../lib/env.ts';
+import { guardMode, writeArm } from '../lib/arm.ts';
 import { judgeAll } from '../lib/judge.ts';
 import { LADDER, ladder } from '../lib/ladder.ts';
 import { resultsCsv, writeJson, writeText } from '../lib/output.ts';
@@ -12,6 +13,8 @@ import { stubJudge } from '../lib/stub.ts';
 import { criteriaOf, scoreAll, summarize, type Scored } from '../lib/summary.ts';
 import type { Answer, Config, EvalSpec, Item, Judged, Mark, RunSummary } from '../lib/types.ts';
 import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
+import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
+import { closeEvidenceFlag, writerArmMarkdown, writerCounters } from './arm.ts';
 import { JUDGE_CRITERIA, JUDGE_IDS } from './judge-criteria.ts';
 import { loadItems, prompt, type Expected, type WriterItem } from './prompt.ts';
 import { CODE_CRITERIA, extras, extrasMarkdown, grade, judgeApplies, stubAnswer, view } from './scoring.ts';
@@ -68,19 +71,31 @@ export const spec: EvalSpec<RecapRequest, Expected> = {
     },
 };
 
-const judgeSpec: EvalSpec<RecapRequest, Expected> = {
-    ...spec,
-    grade: (item, text) => {
-        const graded = grade(item as WriterItem, text);
-        const on = judgeApplies(item as WriterItem, text);
-        return graded.parsed && on !== null && Object.values(on).some(Boolean) ? graded : { ...graded, parsed: false };
-    },
-};
+// The spec of one close-evidence arm: the prompt, the grade and the judge view carry the setting.
+function armed(mode: CloseEvidence): EvalSpec<RecapRequest, Expected> {
+    return {
+        ...spec,
+        prompt: (item) => prompt(item as WriterItem, mode),
+        grade: (item, text) => grade(item as WriterItem, text, mode),
+        judge: { criteria: JUDGE_CRITERIA, view: (item, text) => view(item as WriterItem, text, mode) },
+    };
+}
 
-function masked(scored: Scored, byId: ReadonlyMap<string, WriterItem>): Scored {
+function judgeSpecOf(used: EvalSpec<RecapRequest, Expected>, mode: CloseEvidence | null): EvalSpec<RecapRequest, Expected> {
+    return {
+        ...used,
+        grade: (item, text) => {
+            const graded = grade(item as WriterItem, text, mode ?? undefined);
+            const on = judgeApplies(item as WriterItem, text, mode ?? undefined);
+            return graded.parsed && on !== null && Object.values(on).some(Boolean) ? graded : { ...graded, parsed: false };
+        },
+    };
+}
+
+function masked(scored: Scored, byId: ReadonlyMap<string, WriterItem>, mode: CloseEvidence | null): Scored {
     const item = byId.get(scored.answer.id);
     if (item === undefined || scored.answer.text === null) return scored;
-    const on = judgeApplies(item, scored.answer.text);
+    const on = judgeApplies(item, scored.answer.text, mode ?? undefined);
     const marks: Record<string, Mark> = { ...scored.marks };
     for (const id of JUDGE_IDS) {
         if (on === null) marks[id] = id === 'WJ1' && !item.expected.quiet ? false : null;
@@ -89,10 +104,12 @@ function masked(scored: Scored, byId: ReadonlyMap<string, WriterItem>): Scored {
     return { ...scored, marks };
 }
 
-async function runWriter(argv: readonly string[]): Promise<{ readonly dir: string; readonly summary: RunSummary; readonly answers: readonly Answer[]; readonly chosen: readonly WriterItem[] }> {
-    validate(spec);
-    const parsed = parseOptions(spec, argv, {});
-    const dir = runDir(parsed.root, spec.name, parsed.label);
+async function runWriter(argv: readonly string[], mode: CloseEvidence | null): Promise<{ readonly dir: string; readonly summary: RunSummary; readonly answers: readonly Answer[]; readonly chosen: readonly WriterItem[] }> {
+    const used = mode === null ? spec : armed(mode);
+    validate(used);
+    const parsed = parseOptions(used, argv, {});
+    const dir = runDir(parsed.root, used.name, parsed.label);
+    guardMode(dir, '--close-evidence', mode);
     const options: RunOptions = {
         ...parsed,
         log: (line: string) => {
@@ -100,23 +117,23 @@ async function runWriter(argv: readonly string[]): Promise<{ readonly dir: strin
             parsed.log(line);
         },
     };
-    const chosen = selectedItems(spec, options) as readonly WriterItem[];
-    const picked = selectedConfigs(spec, options);
-    const promptSha = writePrompt(spec, chosen as readonly Item<RecapRequest, Expected>[], dir);
-    if (!options.reportOnly) await runJobs(spec, options, dir);
+    const chosen = selectedItems(used, options) as readonly WriterItem[];
+    const picked = selectedConfigs(used, options);
+    const promptSha = writePrompt(used, chosen as readonly Item<RecapRequest, Expected>[], dir);
+    if (!options.reportOnly) await runJobs(used, options, dir);
     const itemIds = new Set(chosen.map((item) => item.id));
     const configNames = new Set(picked.map((config) => config.name));
     const answers = [...lastByKey(readJsonl<Answer>(join(dir, 'answers.jsonl'))).values()].filter((answer) => itemIds.has(answer.id) && configNames.has(answer.config) && answer.repetition <= options.repetitions);
     const judgeAdapter = options.stub ? stubJudge(JUDGE_IDS) : (options.judgeAdapter ?? options.adapters.claude);
-    if (!options.reportOnly) await judgeAll(judgeSpec, options, dir, answers, judgeAdapter);
+    if (!options.reportOnly) await judgeAll(judgeSpecOf(used, mode), options, dir, answers, judgeAdapter);
     const judgedRows = [...lastByKey(readJsonl<Judged>(join(dir, 'judge.jsonl'))).values()];
     const judged = new Map(judgedRows.map((row) => [row.key, row]));
     const byId = new Map(chosen.map((item) => [item.id, item]));
-    const scored = scoreAll(spec, answers, judged).map((each) => masked(each, byId));
-    const criteria = criteriaOf(spec, options.judgeCheck).map((criterion) => criterion.id);
+    const scored = scoreAll(used, answers, judged).map((each) => masked(each, byId, mode));
+    const criteria = criteriaOf(used, options.judgeCheck).map((criterion) => criterion.id);
     writeText(join(dir, 'results.csv'), resultsCsv(scored, criteria));
     const keys = new Set(answers.map((answer) => answer.key));
-    const summary = summarize({ spec, label: options.label, stub: options.stub, configs: picked, items: chosen.length, repetitions: options.repetitions, scored, judged: judgedRows.filter((row) => keys.has(row.key)), judgeCheck: options.judgeCheck, datasetSha: sha256(JSON.stringify(chosen)), promptSha });
+    const summary = summarize({ spec: used, label: options.label, stub: options.stub, configs: picked, items: chosen.length, repetitions: options.repetitions, scored, judged: judgedRows.filter((row) => keys.has(row.key)), judgeCheck: options.judgeCheck, datasetSha: sha256(JSON.stringify(chosen)), promptSha });
     writeJson(join(dir, 'summary.json'), summary);
     writeText(join(dir, 'report.md'), report(summary));
     options.log(`wrote ${join(dir, 'report.md')}`);
@@ -151,10 +168,17 @@ export function argvOf(raw: readonly string[]): string[] {
 }
 
 try {
-    const { dir, summary, answers, chosen } = await runWriter(argvOf(process.argv.slice(2)));
-    const found = extras(chosen, answers, summary.configs.map((config) => config.name), summary.audit);
+    const argv = argvOf(process.argv.slice(2));
+    const mode = closeEvidenceFlag(argv);
+    const { dir, summary, answers, chosen } = await runWriter(argv, mode);
+    const names = summary.configs.map((config) => config.name);
+    const found = extras(chosen, answers, names, summary.audit, mode ?? undefined);
     writeFileSync(join(dir, 'extras.json'), `${JSON.stringify(found, null, 2)}\n`);
     appendFileSync(join(dir, 'report.md'), extrasMarkdown(found));
+    if (mode !== null) {
+        const block = { mode, configs: writerCounters(chosen, answers, names, mode) };
+        writeArm(dir, block, writerArmMarkdown(block));
+    }
     console.log(dir);
     process.exit(0);
 } catch (error) {

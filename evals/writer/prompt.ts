@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { instructions } from '../../tab-recap/src/adapters/job/prompts/recap-instructions.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
+import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface KeyFact {
@@ -36,8 +37,10 @@ export type WriterItem = Item<RecapRequest, Expected>;
 
 export const documentOf = (item: WriterItem): string => writerContext(item.input, TRANSCRIPT_BUDGET);
 
-export function prompt(item: WriterItem): Prompt {
-    return { system: instructions(item.input), user: documentOf(item) };
+// With a close-evidence setting, the system is the one the daemon sends for it; without, it is unchanged.
+export function prompt(item: WriterItem, closeEvidence?: CloseEvidence): Prompt {
+    const system = closeEvidence === undefined ? instructions(item.input) : instructions({ ...item.input, closeEvidence });
+    return { system, user: documentOf(item) };
 }
 
 export function transcriptOf(item: WriterItem): string {
