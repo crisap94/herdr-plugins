@@ -3,7 +3,11 @@ import { agentTextOf } from './hindsight.ts';
 import type { Hindsight } from './hindsight.ts';
 import { verbatimLabel } from './verbatim.ts';
 
-export function crossCheck(point: { readonly state: AutocompactState; readonly hindsight: Hindsight }): 0 | 1 {
+interface CrossCheckPoint { readonly state: AutocompactState; readonly hindsight: Hindsight }
+
+type CrossCheckLabel = 0 | 1;
+
+export function crossCheck(point: CrossCheckPoint): CrossCheckLabel {
     const recent = point.state.recent_turns.map((turn) => turn.text).join('\n');
     const own = [point.state.goal ?? '', ...point.state.open_work.map((item) => item.text)].join('\n');
     return verbatimLabel(recent, own, agentTextOf(point.hindsight));

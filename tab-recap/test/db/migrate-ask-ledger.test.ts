@@ -11,6 +11,7 @@ import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { scratchDir, shapeOf } from './support.ts';
+import { rid } from '../fakes/ask-ledger.ts';
 
 test('migration 15 from a v14 database: every compact_ask row is a settled compact ask, none is unfinished; upgraded == fresh', () => {
     const dir = scratchDir('v14');
@@ -31,7 +32,7 @@ test('migration 15 from a v14 database: every compact_ask row is a settled compa
         assert.equal(db.prepare("SELECT name FROM sqlite_schema WHERE name = 'compact_ask'").get(), null, 'compact_ask is gone');
         const store = storeOver(db);
         assert.deepEqual(store.asks.unfinished(), [], 'no copied row is interrupted');
-        assert.equal(store.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), 'r7'), true, 'a seen id stays seen');
+        assert.equal(store.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), rid('r7')), true, 'a seen id stays seen');
         assert.deepEqual(shapeOf(db), shapeOf(openDatabase(MEMORY).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
         db.close();

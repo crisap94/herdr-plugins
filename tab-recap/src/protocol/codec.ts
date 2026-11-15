@@ -3,11 +3,32 @@ import type { Result } from './result.ts';
 import { LIMITS, WORD_SHAPES, checkedText, refuse, requestId, tokenValue } from './primitives.ts';
 import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
 
-export type FieldSpec =
-    | { readonly kind: 'id'; readonly grammar: IdGrammar }
-    | { readonly kind: 'word'; readonly name: string; readonly optional: boolean; readonly shape?: WordShape }
-    | { readonly kind: 'flag'; readonly name: string; readonly text: string }
-    | { readonly kind: 'rest'; readonly name: string; readonly optional: boolean; readonly maxChars: number | null };
+export interface IdSpec {
+    readonly kind: 'id';
+    readonly grammar: IdGrammar;
+}
+
+export interface WordSpec {
+    readonly kind: 'word';
+    readonly name: string;
+    readonly optional: boolean;
+    readonly shape?: WordShape;
+}
+
+export interface FlagSpec {
+    readonly kind: 'flag';
+    readonly name: string;
+    readonly text: string;
+}
+
+export interface RestSpec {
+    readonly kind: 'rest';
+    readonly name: string;
+    readonly optional: boolean;
+    readonly maxChars: number | null;
+}
+
+export type FieldSpec = IdSpec | WordSpec | FlagSpec | RestSpec;
 
 type Field = Exclude<FieldSpec, { readonly kind: 'id' }>;
 type RestField = Extract<Field, { readonly kind: 'rest' }>;

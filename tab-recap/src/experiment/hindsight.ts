@@ -3,9 +3,11 @@ import type { Entry } from '#src/ports/transcripts.ts';
 export const HINDSIGHT_ENTRIES = 6;
 export const HINDSIGHT_CHARS = 8_000;
 
+export interface FollowingEntry { readonly role: Entry['role']; readonly kind?: string; readonly text: string }
+
 export interface Hindsight {
     readonly next_prompt: string | null;
-    readonly following: readonly { readonly role: Entry['role']; readonly kind?: string; readonly text: string }[];
+    readonly following: readonly FollowingEntry[];
 }
 
 export function hindsightOf(entries: readonly Entry[], count = HINDSIGHT_ENTRIES, chars = HINDSIGHT_CHARS): Hindsight {

@@ -4,6 +4,7 @@ import type { Database } from 'bun:sqlite';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import { cursor, memoryStore, must } from './support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 
@@ -143,7 +144,7 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
     store.records.recordRun(run({ at: T0 + 3 * MIN, marks: [{ pane: 'w1:p1', at: T0 + 2 * MIN, cursor: 200 }] }));
     assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: 3000, tookMs: 16_000 }]);
-    assert.equal(store.boundaries.lastBreakAt('w1:t1', 'w1:p1'), T0 + 2 * MIN);
-    assert.equal(store.boundaries.lastBreakAt('w1:t1', 'w1:p2'), null);
+    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p1'), T0 + 2 * MIN);
+    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p2'), null);
     assert.deepEqual([memoryStore().boundaries.breaksOf('w9:t9'), memoryStore().boundaries.chapterCount('w9:t9')], [[], 0]);
 });

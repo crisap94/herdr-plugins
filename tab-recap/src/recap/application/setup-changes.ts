@@ -52,7 +52,9 @@ export function locksOf(env: Readonly<Record<string, string | undefined>>): Lock
 
 type Entry = readonly [FieldId, string, string];
 
-const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: string }): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
+type JobSettings = Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: string };
+
+const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: JobSettings): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
 
 
 function entriesOf(draft: Draft): readonly Entry[] {

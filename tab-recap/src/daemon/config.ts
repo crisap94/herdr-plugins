@@ -46,6 +46,12 @@ import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 export type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 
+interface CompactionSettings {
+    readonly target: CompactTarget;
+    readonly hint: number | null;
+    readonly window: number | null;
+}
+
 export interface Config {
     readonly backend: BackendChoice;
     readonly models: Readonly<Record<BackendId, string>>;
@@ -60,7 +66,7 @@ export interface Config {
     readonly sizing: Sizing;
     readonly policy: Policy;
     readonly screenAgents: readonly string[];
-    readonly compaction: { readonly target: CompactTarget; readonly hint: number | null; readonly window: number | null };
+    readonly compaction: CompactionSettings;
     readonly brief: Job;
     readonly judge: Job;
     readonly keepInputDays: number;

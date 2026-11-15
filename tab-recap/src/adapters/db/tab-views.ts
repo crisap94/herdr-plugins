@@ -105,7 +105,7 @@ export class TabViewsRepository implements TabViews, LiveLanes {
     }
 
     readTab(tab: string): TabView | null {
-        return guarded(() => {
+        return guarded((): TabView | null => {
             const row = this.orm.select({ column_pane: tabTable.columnPane, view_at: tabTable.viewAt, daemon_version: tabTable.daemonVersion }).from(tabTable)
                 .where(and(eq(tabTable.id, tabId(tab)), isNotNull(tabTable.viewAt))).get();
             return row === undefined ? null : { tab, column: maybeText(row, 'column_pane'), lanes: this.orm.select(LANE_VIEW).from(laneTable).where(eq(laneTable.tabId, tabId(tab))).orderBy(asc(laneTable.position)).all().map(laneOf), at: whole(row, 'view_at'), daemonVersion: maybeText(row, 'daemon_version') };

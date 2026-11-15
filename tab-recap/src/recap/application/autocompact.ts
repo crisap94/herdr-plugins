@@ -50,11 +50,13 @@ interface BackoffFacts {
     readonly lastBreakAt: Instant | null;
 }
 
+interface ContextsOf { of(pane: string): ContextUse | null; }
+
 export interface AutocompactDeps {
     policy(): AutocompactPolicy;
     tuning?(): AutocompactTuning;
     decider(): Decider | null;
-    readonly contexts: { of(pane: string): ContextUse | null };
+    readonly contexts: ContextsOf;
     inFlight(lane: Lane): Promise<Observed>;
     awaiting?(pane: string): Promise<Waiting>;
     readonly events?: LaneEvents;

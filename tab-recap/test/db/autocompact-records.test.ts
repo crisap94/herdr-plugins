@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Decision } from '#src/ports/autocompact-records.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
@@ -49,31 +50,31 @@ test('link points a decision at its compaction; a deleted compaction leaves the 
 
 test('lastDecisionAt: the newest decision of the lane, of any verdict; null when there is none', () => {
     const store = seeded();
-    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), null);
+    assert.equal(store.autocompact.lastDecisionAt(tabId('w1:t1'), paneId('w1:p1')), null);
     store.autocompact.record(decision({ at: 100, verdict: 'wait' }));
     store.autocompact.record(decision({ at: 300, verdict: 'unknown' }));
     store.autocompact.record(decision({ at: 400, verdict: 'compact' }));
     store.autocompact.record(decision({ at: 500, verdict: 'wait', pane: 'w1:p2' }));
-    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p1'), 400);
-    assert.equal(store.autocompact.lastDecisionAt('w1:t1', 'w1:p2'), 500);
+    assert.equal(store.autocompact.lastDecisionAt(tabId('w1:t1'), paneId('w1:p1')), 400);
+    assert.equal(store.autocompact.lastDecisionAt(tabId('w1:t1'), paneId('w1:p2')), 500);
 });
 
 test('unlinkedCompactSince: a requested on-mode compact of the lane, not yet begun, at or after the instant; a shadow one, a record-only one, a linked one or an old one does not count', () => {
     const store = seeded();
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false);
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 0), false);
     store.autocompact.markRequested(store.autocompact.record(decision({ at: 100, mode: 'shadow' })));
     store.autocompact.markRequested(store.autocompact.record(decision({ at: 200, mode: 'on', verdict: 'wait' })));
     store.autocompact.record(decision({ at: 250, mode: 'on' }));
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 0), false, 'not requested');
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 0), false, 'not requested');
     const old = store.autocompact.record(decision({ at: 150, mode: 'on' }));
     store.autocompact.markRequested(old);
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), false, 'older than the instant');
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 151), false, 'older than the instant');
     store.autocompact.markRequested(store.autocompact.record(decision({ at: 300, mode: 'on' })));
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), true);
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p2', 0), false, 'another lane');
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 151), true);
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p2'), 0), false, 'another lane');
     store.autocompact.link(old, store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' }));
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 151), true, 'the newer one is still unlinked');
-    assert.equal(store.autocompact.unlinkedCompactSince('w1:t1', 'w1:p1', 301), false);
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 151), true, 'the newer one is still unlinked');
+    assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), 301), false);
 });
 
 test('countsFor: decisions, those that led to a compaction, those that waited; costSince sums the money from an instant', () => {
@@ -102,8 +103,8 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     const newer = store.autocompact.record(decision({ at: 200 }));
     store.autocompact.record(decision({ at: 300, verdict: 'wait' }));
     const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
-    assert.deepEqual(store.autocompact.linkLatest('w1:t1', 'w1:p1', cmp), { id: newer, gate: 'ask' });
-    assert.equal(store.autocompact.linkLatest('w1:t1', 'w1:p2', cmp), null);
+    assert.deepEqual(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), cmp), { id: newer, gate: 'ask' });
+    assert.equal(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p2'), cmp), null);
     store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: 12, coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     const row = store.autocompact.newest(5).find((each) => each.id === newer);
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);

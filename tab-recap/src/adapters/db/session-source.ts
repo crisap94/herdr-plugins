@@ -8,6 +8,12 @@ import { chapter, compaction, run, tab as tabs } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
 
+interface CompactionRecord {
+    readonly tokensBefore: number | null;
+    readonly tokensAfter: number | null;
+    readonly origin: Origin;
+}
+
 export class SessionSourceRepository implements SessionSource {
     private readonly orm: Orm;
 
@@ -20,17 +26,17 @@ export class SessionSourceRepository implements SessionSource {
     }
 
     runsByCause(tab: string): Readonly<Record<string, number>> {
-        return guarded(() => Object.fromEntries(this.orm.select({ cause: run.cause, n: count() }).from(run)
+        return guarded((): Readonly<Record<string, number>> => Object.fromEntries(this.orm.select({ cause: run.cause, n: count() }).from(run)
             .innerJoin(chapter, eq(chapter.id, run.chapterId))
             .where(eq(chapter.tabId, tabId(tab)))
             .groupBy(run.cause).all()
             .map((row) => [row.cause, row.n])), {});
     }
 
-    compactions(tab: string): readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin }[] {
-        return guarded(() => this.orm.select({ tokensBefore: compaction.tokensBefore, tokensAfter: compaction.tokensAfter, origin: compaction.origin }).from(compaction)
+    compactions(tab: string): readonly CompactionRecord[] {
+        return guarded((): readonly CompactionRecord[] => this.orm.select({ tokensBefore: compaction.tokensBefore, tokensAfter: compaction.tokensAfter, origin: compaction.origin }).from(compaction)
             .where(and(eq(compaction.tabId, tabId(tab)), eq(compaction.stage, 'compacted')))
             .orderBy(asc(compaction.startedAt), asc(compaction.id)).all()
-            .map((row) => ({ tokensBefore: row.tokensBefore, tokensAfter: row.tokensAfter, origin: originOf(row.origin) })), []);
+            .map((row): CompactionRecord => ({ tokensBefore: row.tokensBefore, tokensAfter: row.tokensAfter, origin: originOf(row.origin) })), []);
     }
 }

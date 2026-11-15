@@ -11,7 +11,7 @@ const keyOf = (exchange: ExchangeName, requester: Requester, id: string): string
 export class MemoryAskLedger implements AskLedger {
     private readonly rows = new Map<string, Ask>();
 
-    seen(exchange: ExchangeName, requester: Requester, id: string): boolean {
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean {
         return this.rows.has(keyOf(exchange, requester, id));
     }
 

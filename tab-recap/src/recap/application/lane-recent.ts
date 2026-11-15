@@ -8,6 +8,11 @@ const TAIL_BYTES = 256 * 1024;
 
 export type CurrentSession = (pane: string) => Promise<string | null | Unknown>;
 
+interface RecentTail {
+    readonly entries: readonly Entry[];
+    readonly marks: readonly Mark[];
+}
+
 export class LaneRecent {
     private readonly transcripts: TranscriptRegistry;
     private readonly session: CurrentSession;
@@ -22,7 +27,7 @@ export class LaneRecent {
         return typeof current === 'string' ? { ...lane, session: sessionId(current) } : lane;
     }
 
-    private async tail(lane: Lane): Promise<{ readonly entries: readonly Entry[]; readonly marks: readonly Mark[] }> {
+    private async tail(lane: Lane): Promise<RecentTail> {
         const agent = String(lane.agent);
         const reader = this.transcripts.readerFor(agent);
         const current = await this.now(lane);

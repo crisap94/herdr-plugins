@@ -27,7 +27,23 @@ function sectionsOf(value: unknown): RecapSections | null {
     return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: strings(fields['now']), needs: strings(fields['needs']), done: strings(fields['done']), decisions: strings(fields['decisions']), next: strings(fields['next']), links: strings(fields['links']), rules: [] };
 }
 
-function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown; readonly markdown?: unknown; readonly lanes?: unknown }): readonly RecapTask[] {
+interface StoredTasks {
+    readonly tasks?: unknown;
+    readonly sections?: unknown;
+    readonly markdown?: unknown;
+    readonly lanes?: unknown;
+}
+
+interface StoredLaneFields {
+    cwd?: unknown;
+    lastPrompt?: unknown;
+}
+
+interface StoredCursorFields {
+    tail?: unknown;
+}
+
+function tasksOf(stored: StoredTasks): readonly RecapTask[] {
     if (Array.isArray(stored.tasks)) {
         return stored.tasks.map((task: Readonly<Record<string, unknown>>, at: number) => ({
             id: typeof task['id'] === 'string' && task['id'] !== '' ? task['id'] : `t${at + 1}`,
@@ -42,14 +58,14 @@ function tasksOf(stored: { readonly tasks?: unknown; readonly sections?: unknown
     return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
 }
 
-function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web' | 'context'> & { cwd?: unknown; lastPrompt?: unknown }): TabLane {
+function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web' | 'context'> & StoredLaneFields): TabLane {
     return {
         pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title,
         cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null, web: null, context: null,
     };
 }
 
-function cursorOf(cursor: Omit<LaneCursor, 'tail'> & { tail?: unknown }): LaneCursor {
+function cursorOf(cursor: Omit<LaneCursor, 'tail'> & StoredCursorFields): LaneCursor {
     return { ...cursor, tail: typeof cursor.tail === 'string' ? cursor.tail : null };
 }
 

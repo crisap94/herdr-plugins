@@ -1,5 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
 import { AutocompactRecordsRepository } from '#src/adapters/db/autocompact-records.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
@@ -85,8 +86,8 @@ describe('parity: autocompact records', () => {
         try {
             made.db.exec(SEED_DECISIONS);
             const repo = new AutocompactRecordsRepository(made.db);
-            assert.equal(repo.lastDecisionAt('t1', 'p1'), 4);
-            assert.equal(repo.lastDecisionAt('t1', 'p9'), null);
+            assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p1')), 4);
+            assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p9')), null);
             assert.deepEqual(repo.countsFor('t1'), { decisions: 3, compacted: 0, waited: 1 });
             assert.equal(repo.costSince(0), 1.25);
         } finally {
@@ -122,7 +123,7 @@ describe('parity: autocompact records', () => {
 
     test('lastDecision returns the newest decision of one pane', () => {
         withParity(exec(SEED_DECISIONS), (parity) => {
-            const produced = new AutocompactRecordsRepository(parity.raw).lastDecision('t1', 'p1');
+            const produced = new AutocompactRecordsRepository(parity.raw).lastDecision(tabId('t1'), paneId('p1'));
             assert.deepEqual(produced, { at: 4, tokens: 600000, mode: 'on', verdict: 'wait', gate: 'ask' });
         });
     });

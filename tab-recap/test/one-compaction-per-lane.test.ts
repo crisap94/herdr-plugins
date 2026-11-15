@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { world } from './autocompact-world.ts';
 import { memoryStore } from './db/support.ts';
 
@@ -46,9 +47,9 @@ test('a compaction request still queued for the lane (not yet taken) makes the l
 test('the queue answers for a lane: a request for its pane, or one for the tab with no pane (the focused one); taking it clears it', () => {
     const store = memoryStore();
     store.requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' });
-    assert.deepEqual([store.requests.compactQueued('w1:t1', 'w1:p1'), store.requests.compactQueued('w1:t1', 'w1:p2')], [true, false]);
+    assert.deepEqual([store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2'))], [true, false]);
     store.requests.takeCompactions();
-    assert.equal(store.requests.compactQueued('w1:t1', 'w1:p1'), false, 'taken: no longer queued');
+    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), false, 'taken: no longer queued');
     store.requests.requestCompact({ tab: 'w1:t1', pane: null, note: null });
-    assert.equal(store.requests.compactQueued('w1:t1', 'w1:p2'), true, 'no pane: the focused lane, which may be this one');
+    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2')), true, 'no pane: the focused lane, which may be this one');
 });

@@ -5,6 +5,15 @@ import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 
 const DAY_MS = 86_400_000;
 
+interface RetentionParts {
+    readonly inputs: RunInputs;
+    readonly briefs: AutocompactBriefs;
+    readonly clock: Clock;
+    readonly days: () => number;
+    readonly briefRetention: () => BriefRetention;
+    readonly log: (line: string) => void;
+}
+
 export class InputRetention {
     private readonly inputs: RunInputs;
     private readonly briefs: AutocompactBriefs;
@@ -14,7 +23,7 @@ export class InputRetention {
     private readonly log: (line: string) => void;
     private last: number | null = null;
 
-    constructor(parts: { readonly inputs: RunInputs; readonly briefs: AutocompactBriefs; readonly clock: Clock; readonly days: () => number; readonly briefRetention: () => BriefRetention; readonly log: (line: string) => void }) {
+    constructor(parts: RetentionParts) {
         this.inputs = parts.inputs;
         this.briefs = parts.briefs;
         this.clock = parts.clock;

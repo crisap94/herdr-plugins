@@ -18,14 +18,16 @@ export interface EventDeps {
 }
 
 type Target = 'pane' | 'workspace';
+type DaemonKind = 'daemon-started' | 'daemon-stopping';
 interface Counter { readonly base: number; n: number; at: number }
+interface Carried { readonly target: Target; readonly id: string }
 const KEEP_MS = 3_600_000;
 
 export class EventStream implements LaneEvents {
     private readonly deps: EventDeps;
     private readonly counts = new Map<string, Counter>();
     private readonly used = new Set<string>();
-    private readonly carrying = new Map<string, { readonly target: Target; readonly id: string }>();
+    private readonly carrying = new Map<string, Carried>();
     private wasOn = false;
 
     constructor(deps: EventDeps) {
@@ -40,7 +42,7 @@ export class EventStream implements LaneEvents {
         this.emit('workspace', workspace, kind, detail);
     }
 
-    async daemon(kind: 'daemon-started' | 'daemon-stopping', version: string): Promise<void> {
+    async daemon(kind: DaemonKind, version: string): Promise<void> {
         if (!this.deps.enabled()) {
             return;
         }
@@ -117,7 +119,9 @@ export class EventStream implements LaneEvents {
 
 const keyOf = (target: Target, id: string): string => `${target}:${id}`;
 
-export function recapWritten(events: LaneEvents, lanes: readonly { readonly pane: string }[], cause: string | undefined): void {
+interface PaneRef { readonly pane: string }
+
+export function recapWritten(events: LaneEvents, lanes: readonly PaneRef[], cause: string | undefined): void {
     if (cause === undefined || cause === 'imported') {
         return;
     }

@@ -25,7 +25,11 @@ export type RunResult =
     }
     | { readonly kind: 'not-judged'; readonly run: StoredRun; readonly why: string; readonly costUsd: number };
 
-export async function readBack(deps: JudgeDeps, parts: { readonly items: readonly RunItem[]; readonly input: string; readonly keyfacts: readonly string[] }): Promise<{ readonly grades: readonly Grade[] | null; readonly note: string | null; readonly costUsd: number }> {
+interface ReadBackParts { readonly items: readonly RunItem[]; readonly input: string; readonly keyfacts: readonly string[] }
+
+interface ReadBackResult { readonly grades: readonly Grade[] | null; readonly note: string | null; readonly costUsd: number }
+
+export async function readBack(deps: JudgeDeps, parts: ReadBackParts): Promise<ReadBackResult> {
     const asked = await deps.judge.ask('readback', readbackDocument(parts.items));
     if (isUnknown(asked)) {
         return { grades: null, note: `read-back: ${saying(asked.why)}`, costUsd: 0 };

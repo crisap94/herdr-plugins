@@ -23,7 +23,7 @@ export class StoriesRepository implements Stories {
     }
 
     read(tab: string, task: string): Story | null {
-        return guarded(() => {
+        return guarded((): Story | null => {
             const row = this.orm.select({ text: tasks.storyText, at: tasks.storyAt }).from(tasks)
                 .where(and(eq(tasks.tabId, tabId(tab)), eq(tasks.key, task))).get();
             const text = row?.text ?? null;

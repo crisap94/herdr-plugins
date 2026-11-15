@@ -73,11 +73,15 @@ export type TestState =
     | { readonly kind: 'ok'; readonly seconds: number; readonly costUsd: number }
     | { readonly kind: 'failed'; readonly why: string };
 
-export type Editing =
-    | { readonly kind: 'text'; readonly buffer: string }
-    | { readonly kind: 'choice'; readonly at: number };
+interface TextEdit { readonly kind: 'text'; readonly buffer: string }
 
-export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'no-agent' | { readonly failed: string };
+interface ChoiceEdit { readonly kind: 'choice'; readonly at: number }
+
+export type Editing = TextEdit | ChoiceEdit;
+
+interface FailedNote { readonly failed: string }
+
+export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'no-agent' | FailedNote;
 
 export interface Setup {
     readonly draft: Draft;
@@ -102,7 +106,37 @@ export interface Stepped {
     readonly effects: readonly Effect[];
 }
 
-export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: { readonly locale: string | undefined; readonly recapLanguage: string | undefined; readonly screenAgents?: string | undefined; readonly gitNote?: string | undefined; readonly telemetryTags?: string | undefined; readonly effort?: string | undefined; readonly compactTarget?: string | undefined; readonly compactHint?: string | undefined; readonly contextWindow?: string | undefined; readonly compactBy?: string | undefined; readonly compactModel?: string | undefined; readonly compactEffort?: string | undefined; readonly judgeBy?: string | undefined; readonly judgeModel?: string | undefined; readonly judgeEffort?: string | undefined; readonly curateBy?: string | undefined; readonly curateModel?: string | undefined; readonly curateEffort?: string | undefined; readonly autocompact?: string | undefined; readonly autocompactAt?: string | undefined; readonly autocompactStyle?: string | undefined; readonly autocompactMissed?: string | undefined; readonly decideBy?: string | undefined; readonly decideModel?: string | undefined; readonly decideEffort?: string | undefined; readonly herdrEvents?: string | undefined; readonly compactNote?: string | undefined }): Draft {
+interface RawSettings {
+    readonly locale: string | undefined;
+    readonly recapLanguage: string | undefined;
+    readonly screenAgents?: string | undefined;
+    readonly gitNote?: string | undefined;
+    readonly telemetryTags?: string | undefined;
+    readonly effort?: string | undefined;
+    readonly compactTarget?: string | undefined;
+    readonly compactHint?: string | undefined;
+    readonly contextWindow?: string | undefined;
+    readonly compactBy?: string | undefined;
+    readonly compactModel?: string | undefined;
+    readonly compactEffort?: string | undefined;
+    readonly judgeBy?: string | undefined;
+    readonly judgeModel?: string | undefined;
+    readonly judgeEffort?: string | undefined;
+    readonly curateBy?: string | undefined;
+    readonly curateModel?: string | undefined;
+    readonly curateEffort?: string | undefined;
+    readonly autocompact?: string | undefined;
+    readonly autocompactAt?: string | undefined;
+    readonly autocompactStyle?: string | undefined;
+    readonly autocompactMissed?: string | undefined;
+    readonly decideBy?: string | undefined;
+    readonly decideModel?: string | undefined;
+    readonly decideEffort?: string | undefined;
+    readonly herdrEvents?: string | undefined;
+    readonly compactNote?: string | undefined;
+}
+
+export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: RawSettings): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
     const telemetryTags = telemetryTagsOf(raw.telemetryTags);

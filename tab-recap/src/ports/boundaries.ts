@@ -1,4 +1,5 @@
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 
 export interface Break {
     readonly kind: BoundaryKind;
@@ -12,5 +13,5 @@ export interface Break {
 export interface Boundaries {
     breaksOf(tab: string): readonly Break[];
     chapterCount(tab: string): number;
-    lastBreakAt(tab: string, pane: string): number | null;
+    lastBreakAt(tab: TabId, pane: string): number | null;
 }

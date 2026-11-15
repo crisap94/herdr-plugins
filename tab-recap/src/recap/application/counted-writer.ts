@@ -1,7 +1,11 @@
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 
-export function countedWriter(made: Summarizer, calls: { writer: number }): Summarizer {
+interface WriterCalls {
+    writer: number;
+}
+
+export function countedWriter(made: Summarizer, calls: WriterCalls): Summarizer {
     return {
         backend: made.backend,
         contract: made.contract,

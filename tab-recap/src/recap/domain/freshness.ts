@@ -6,7 +6,9 @@ export type RefreshStatus = (typeof REFRESH_STATUSES)[number];
 
 export type LastRunCause = RunCause | 'imported';
 
-export function refreshStatusOf(waited: 'done' | 'timeout', error: string | null): RefreshStatus {
+export type WaitResult = 'done' | 'timeout';
+
+export function refreshStatusOf(waited: WaitResult, error: string | null): RefreshStatus {
     if (waited === 'timeout') {
         return 'timed-out';
     }
@@ -22,8 +24,13 @@ export function newerPromptsOf(count: number | null): NewerPrompts {
     return count > 0 ? { kind: 'at-least', count } : { kind: 'none' };
 }
 
+interface LastRun {
+    readonly at: number;
+    readonly cause: LastRunCause;
+}
+
 export interface Freshness {
-    readonly lastRun: { readonly at: number; readonly cause: LastRunCause };
+    readonly lastRun: LastRun;
     readonly status: LaneStatus;
     readonly newerPrompts: NewerPrompts;
     readonly refresh: RefreshStatus;

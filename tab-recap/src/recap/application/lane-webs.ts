@@ -1,14 +1,10 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
+import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 
 const REMEMBERED = 200;
 
 const keyOf = (web: LaneWeb | null | undefined): string => (web === null || web === undefined ? '' : `${web.base} ${web.forge} ${web.branch ?? ''}`);
-
-function webOf(found: RepoResult | null): LaneWeb | null {
-    return found?.kind === 'repo' && found.web !== null ? { ...found.web, branch: found.branch } : null;
-}
 
 export class LaneWebs {
     private readonly repos: LaneRepo;
@@ -27,7 +23,7 @@ export class LaneWebs {
         if (found?.kind === 'unknown') {
             return false;
         }
-        const web = webOf(found);
+        const web: LaneWeb | null = found?.kind === 'repo' && found.web !== null ? { ...found.web, branch: found.branch } : null;
         const pane = String(lane.pane);
         if (keyOf(this.known.get(pane)) === keyOf(web)) {
             return false;

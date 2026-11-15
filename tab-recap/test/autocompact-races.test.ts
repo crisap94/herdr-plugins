@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { AutocompactSweep } from '#src/daemon/autocompact-sweep.ts';
 import type { Considers } from '#src/daemon/autocompact-sweep.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -57,7 +58,7 @@ test('a begun, linked, unfinished automatic compaction of lane 1 holds lane 2: b
     w.share = 85;
     await w.service.consider(at('w1:p1'));
     const begun = w.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW, origin: 'auto' });
-    w.store.autocompact.linkLatest('w1:t1', 'w1:p1', begun);
+    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), begun);
     await w.service.consider(at('w1:p2'));
     assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
 });

@@ -27,10 +27,15 @@ interface Held {
     readonly at: number;
 }
 
+interface Failing {
+    readonly count: number;
+    readonly until: number;
+}
+
 export class LaneTokenPublisher {
     private readonly deps: LaneTokenDeps;
     private readonly written = new Map<string, Held>();
-    private readonly failing = new Map<string, { readonly count: number; readonly until: number }>();
+    private readonly failing = new Map<string, Failing>();
     private lastTick = Number.NEGATIVE_INFINITY;
 
     constructor(deps: LaneTokenDeps) {

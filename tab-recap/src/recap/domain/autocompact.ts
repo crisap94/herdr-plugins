@@ -175,7 +175,12 @@ function backoffGate(input: GateInput): Gate | null {
     return null;
 }
 
-export function gateOf(input: GateInput): { readonly gate: Gate; readonly recordOnly: boolean } {
+interface GateDecision {
+    readonly gate: Gate;
+    readonly recordOnly: boolean;
+}
+
+export function gateOf(input: GateInput): GateDecision {
     const recordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind);
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {

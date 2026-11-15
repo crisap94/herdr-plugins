@@ -29,18 +29,31 @@ import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 import { refreshedWithin } from './refresh-status.ts';
 import { loadConfig, messagesOf } from './config.ts';
 
-export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null {
-    return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
+interface CoverageCheck {
+    check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage>;
 }
 
-export function wireCompaction(parts: {
+interface CompactionWebs {
+    of(pane: string): LaneWeb | null;
+}
+
+interface CompactionAnswers {
+    answer(id: string, pane: string, stage: string): void;
+}
+
+interface CompactionTyping {
+    acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>;
+    release(pane: string): Promise<void>;
+}
+
+interface CompactionParts {
     readonly fleet: Fleet;
     readonly records: RecapRecords;
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;
     readonly ledger: Ledger;
     readonly boundaries: Boundaries;
-    readonly webs: { of(pane: string): LaneWeb | null };
+    readonly webs: CompactionWebs;
     readonly recaps: Pick<Engine, 'refresh'>;
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
@@ -48,13 +61,19 @@ export function wireCompaction(parts: {
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
     readonly checkedBriefs: AutocompactBriefs;
-    readonly answers: { answer(id: string, pane: string, stage: string): void };
+    readonly answers: CompactionAnswers;
     readonly asks: AskLedger;
-    readonly typing: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
+    readonly typing: CompactionTyping;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
     log(line: string): void;
-}): Compaction {
+}
+
+export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): CoverageCheck | null {
+    return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
+}
+
+export function wireCompaction(parts: CompactionParts): Compaction {
     const { fleet, informer, recaps } = parts;
     const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: string): void => { parts.log(line); } });
     return new Compaction({

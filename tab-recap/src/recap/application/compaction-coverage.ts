@@ -93,7 +93,12 @@ const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;
 
 const oneLine = (text: string): string => text.replace(/\s+/gu, ' ').trim();
 
-export function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): { readonly text: string; readonly indexes: readonly number[] } {
+interface AppendedBrief {
+    readonly text: string;
+    readonly indexes: readonly number[];
+}
+
+export function appendedBrief(text: string, facts: Extract<Checked['outcome'], { readonly kind: 'missed' }>['facts'], checkedFacts: readonly CheckedFact[]): AppendedBrief {
     const ordered = [...facts].toSorted((a, b) => APPEND_ORDER.indexOf(a.section as (typeof APPEND_ORDER)[number]) - APPEND_ORDER.indexOf(b.section as (typeof APPEND_ORDER)[number]));
     const items = ordered.map((fact) => `${fact.section}: ${oneLine(fact.text)}${fact.section === 'decisions' && fact.why !== null ? ` — ${oneLine(fact.why)}` : ''}`);
     const lead = /[.?!]$/u.test(text) ? '' : '.';

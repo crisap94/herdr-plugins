@@ -2,12 +2,19 @@ import { percent } from '#src/recap/application/eval-report.ts';
 import type { ChapterResult, Comparison, Side } from '#src/recap/application/compare-imported.ts';
 import type { Style } from './wrap.ts';
 
+interface Tally {
+    readonly passed: number;
+    readonly total: number;
+}
+
+type ComparedChapter = ChapterResult & { kind: 'compared' };
+
 const when = (at: number): string => new Date(at).toISOString().slice(0, 16).replace('T', ' ');
-const figure = (part: { readonly passed: number; readonly total: number }): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
+const figure = (part: Tally): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
 const back = (side: Pick<Side, 'readback'>): string => (side.readback === null ? 'n/a' : `${side.readback.filter((grade) => grade.pass).length}/6`);
 const row = (cells: readonly string[], widths: readonly number[]): string => cells.map((cell, at) => (at === 0 ? cell.padEnd(widths[at] ?? 0) : cell.padStart(widths[at] ?? 0))).join('  ').trimEnd();
 
-function chapterCells(result: ChapterResult & { kind: 'compared' }): readonly string[] {
+function chapterCells(result: ComparedChapter): readonly string[] {
     return [`chapter ${result.n} (${when(result.at)}, ${result.keyfacts} key facts)`, figure(result.imported.coverage), figure(result.replay.coverage), figure(result.imported.filler), figure(result.replay.filler), back(result.imported), back(result.replay)];
 }
 

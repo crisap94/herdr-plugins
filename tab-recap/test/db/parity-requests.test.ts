@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
 import { RequestsRepository } from '#src/adapters/db/requests.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { expectSameEffect } from './parity.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
@@ -75,9 +76,9 @@ describe('parity: requests', () => {
     test('compactQueued matches a pane-specific and a pane-less compact request', () => {
         expectSameEffect({ seed: exec(SEED), raw: () => undefined, builder: (db) => {
             const repo = new RequestsRepository(db, NOW);
-            assert.equal(repo.compactQueued('t1', 'p1'), true);
-            assert.equal(repo.compactQueued('t1', 'p9'), false);
-            assert.equal(repo.compactQueued('t2', 'p9'), true);
+            assert.equal(repo.compactQueued(tabId('t1'), paneId('p1')), true);
+            assert.equal(repo.compactQueued(tabId('t1'), paneId('p9')), false);
+            assert.equal(repo.compactQueued(tabId('t2'), paneId('p9')), true);
         }, dump });
     });
 });

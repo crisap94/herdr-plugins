@@ -41,6 +41,19 @@ interface Tried {
     readonly verdict: Verdict | null;
 }
 
+interface OnceAttempt {
+    readonly tried: Tried;
+    readonly retry: Retry;
+}
+
+interface Ended {
+    readonly verdict: Verdict;
+    readonly retry: Retry;
+    readonly began: Instant;
+}
+
+type Unsent = Exclude<Prompted, { kind: 'sent' }>;
+
 export class Sender {
     private readonly deps: CompactionDeps;
 
@@ -62,7 +75,7 @@ export class Sender {
     private async attempt(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<Tried> {
         const since = this.now();
         const pane = lane.pane;
-        const sent = await this.typed(pane, async () => {
+        const sent = await this.typed(pane, async (): Promise<Prompted> => {
             for (const line of plan.lines) {
                 const typed = await this.deps.agents.typeLine(pane, line, { enterDelay: plan.enterDelay });
                 if (typed.kind !== 'sent') {
@@ -104,7 +117,7 @@ export class Sender {
         }
     }
 
-    private async refused(lane: Lane, trail: Trail, sent: Exclude<Prompted, { kind: 'sent' }>): Promise<void> {
+    private async refused(lane: Lane, trail: Trail, sent: Unsent): Promise<void> {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
         trail.end('failed', { why }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
@@ -127,7 +140,7 @@ export class Sender {
         }
     }
 
-    private async conclude(lane: Lane, trail: Trail, ended: { readonly verdict: Verdict; readonly retry: Retry; readonly began: Instant }): Promise<void> {
+    private async conclude(lane: Lane, trail: Trail, ended: Ended): Promise<void> {
         const { verdict, retry } = ended;
         const retried = retry === 'retried';
         const { compaction } = this.deps.messages();
@@ -137,7 +150,7 @@ export class Sender {
         await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }))));
     }
 
-    private async attemptedOnce(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<{ readonly tried: Tried; readonly retry: Retry }> {
+    private async attemptedOnce(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<OnceAttempt> {
         const first = await this.attempt(lane, plan, trail, placement);
         const retry = plan.retryOnSelfFailure && first.verdict?.outcome === 'failed';
         if (!retry) {

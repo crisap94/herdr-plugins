@@ -1,28 +1,44 @@
+interface HandoffRowOf<Outcome, Reason, Storable, Exit, Message> {
+    readonly outcome: Outcome;
+    readonly reason: Reason;
+    readonly storable: Storable;
+    readonly exit: Exit;
+    readonly message: Message;
+}
+
+const outcomeRow = <const Outcome, const Reason, const Storable, const Exit, const Message>(
+    outcome: Outcome,
+    reason: Reason,
+    storable: Storable,
+    exit: Exit,
+    message: Message,
+): HandoffRowOf<Outcome, Reason, Storable, Exit, Message> => ({ outcome, reason, storable, exit, message });
+
 export const HANDOFF_OUTCOME_ROWS = [
-    { outcome: 'delivered', reason: null, storable: true, exit: 0, message: 'delivered' },
-    { outcome: 'printed', reason: null, storable: false, exit: 0, message: null },
-    { outcome: 'refused', reason: 'source-unavailable', storable: true, exit: 1, message: 'refused.sourceUnavailable' },
-    { outcome: 'refused', reason: 'task-ambiguous', storable: true, exit: 1, message: 'refused.taskAmbiguous' },
-    { outcome: 'refused', reason: 'source-equals-target', storable: true, exit: 1, message: 'refused.sourceEqualsTarget' },
-    { outcome: 'refused', reason: 'not-a-lane', storable: true, exit: 1, message: 'refused.notALane' },
-    { outcome: 'refused', reason: 'status-not-ready', storable: true, exit: 1, message: 'refused.statusNotReady' },
-    { outcome: 'refused', reason: 'in-flight', storable: true, exit: 1, message: 'refused.inFlight' },
-    { outcome: 'refused', reason: 'lane-busy', storable: true, exit: 1, message: 'refused.laneBusy' },
-    { outcome: 'refused', reason: 'typing-lease-busy', storable: true, exit: 1, message: 'refused.typingLeaseBusy' },
-    { outcome: 'refused', reason: 'content-empty', storable: true, exit: 1, message: 'refused.contentEmpty' },
-    { outcome: 'refused', reason: 'ledger-empty', storable: true, exit: 1, message: 'refused.ledgerEmpty' },
-    { outcome: 'refused', reason: 'too-large', storable: true, exit: 1, message: 'refused.tooLarge' },
-    { outcome: 'refused', reason: 'daemon-not-running', storable: false, exit: 1, message: 'refused.daemonNotRunning' },
-    { outcome: 'refused', reason: 'daemon-outdated', storable: false, exit: 1, message: 'refused.daemonOutdated' },
-    { outcome: 'unsupported', reason: 'no-plan', storable: true, exit: 1, message: 'unsupported.noPlan' },
-    { outcome: 'failed', reason: 'transport', storable: true, exit: 1, message: 'failed.transport' },
-    { outcome: 'failed', reason: 'unconfirmed', storable: true, exit: 1, message: 'failed.unconfirmed' },
-    { outcome: 'failed', reason: 'internal-error', storable: true, exit: 1, message: 'failed.internalError' },
-    { outcome: 'failed', reason: 'source-unreadable', storable: true, exit: 1, message: 'failed.sourceUnreadable' },
-    { outcome: 'failed', reason: 'expired', storable: true, exit: 1, message: 'failed.expired' },
-    { outcome: 'failed', reason: 'interrupted', storable: true, exit: 1, message: 'failed.interrupted' },
-    { outcome: 'failed', reason: 'not-answered-withdrawn', storable: false, exit: 1, message: 'failed.notAnswered' },
-    { outcome: 'failed', reason: 'not-answered-taken', storable: false, exit: 1, message: 'failed.notAnsweredMayDeliver' },
+    outcomeRow('delivered', null, true, 0, 'delivered'),
+    outcomeRow('printed', null, false, 0, null),
+    outcomeRow('refused', 'source-unavailable', true, 1, 'refused.sourceUnavailable'),
+    outcomeRow('refused', 'task-ambiguous', true, 1, 'refused.taskAmbiguous'),
+    outcomeRow('refused', 'source-equals-target', true, 1, 'refused.sourceEqualsTarget'),
+    outcomeRow('refused', 'not-a-lane', true, 1, 'refused.notALane'),
+    outcomeRow('refused', 'status-not-ready', true, 1, 'refused.statusNotReady'),
+    outcomeRow('refused', 'in-flight', true, 1, 'refused.inFlight'),
+    outcomeRow('refused', 'lane-busy', true, 1, 'refused.laneBusy'),
+    outcomeRow('refused', 'typing-lease-busy', true, 1, 'refused.typingLeaseBusy'),
+    outcomeRow('refused', 'content-empty', true, 1, 'refused.contentEmpty'),
+    outcomeRow('refused', 'ledger-empty', true, 1, 'refused.ledgerEmpty'),
+    outcomeRow('refused', 'too-large', true, 1, 'refused.tooLarge'),
+    outcomeRow('refused', 'daemon-not-running', false, 1, 'refused.daemonNotRunning'),
+    outcomeRow('refused', 'daemon-outdated', false, 1, 'refused.daemonOutdated'),
+    outcomeRow('unsupported', 'no-plan', true, 1, 'unsupported.noPlan'),
+    outcomeRow('failed', 'transport', true, 1, 'failed.transport'),
+    outcomeRow('failed', 'unconfirmed', true, 1, 'failed.unconfirmed'),
+    outcomeRow('failed', 'internal-error', true, 1, 'failed.internalError'),
+    outcomeRow('failed', 'source-unreadable', true, 1, 'failed.sourceUnreadable'),
+    outcomeRow('failed', 'expired', true, 1, 'failed.expired'),
+    outcomeRow('failed', 'interrupted', true, 1, 'failed.interrupted'),
+    outcomeRow('failed', 'not-answered-withdrawn', false, 1, 'failed.notAnswered'),
+    outcomeRow('failed', 'not-answered-taken', false, 1, 'failed.notAnsweredMayDeliver'),
 ] as const;
 
 export const USAGE_EXIT = 2;
@@ -33,9 +49,18 @@ export type HandoffReason = Exclude<HandoffOutcomeRow['reason'], null>;
 export type HandoffMessageKey = Exclude<HandoffOutcomeRow['message'], null>;
 export type HandoffExitCode = HandoffOutcomeRow['exit'];
 
+interface ReasonedOutcome<Kind, Reason> {
+    readonly kind: Kind;
+    readonly reason: Reason;
+}
+
+interface PlainOutcome<Kind> {
+    readonly kind: Kind;
+}
+
 type OutcomeOfRow<Row extends HandoffOutcomeRow> = Row extends { readonly reason: infer Reason extends string }
-    ? { readonly kind: Row['outcome']; readonly reason: Reason }
-    : { readonly kind: Row['outcome'] };
+    ? ReasonedOutcome<Row['outcome'], Reason>
+    : PlainOutcome<Row['outcome']>;
 
 export type HandoffOutcome = OutcomeOfRow<HandoffOutcomeRow>;
 export type StoredHandoffOutcome = OutcomeOfRow<Extract<HandoffOutcomeRow, { readonly storable: true }>>;

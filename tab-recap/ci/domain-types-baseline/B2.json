@@ -1,7 +1,7 @@
 {
   "src/recap/domain/ask-outcome.ts": {
     "parameter": 1,
-    "return": 3
+    "return": 1
   },
   "src/recap/domain/autocompact-style.ts": {
     "parameter": 7,
@@ -17,7 +17,7 @@
   },
   "src/recap/domain/autocompact.ts": {
     "parameter": 21,
-    "return": 9,
+    "return": 8,
     "container": 4,
     "property": 19,
     "assertion": 2
@@ -41,7 +41,7 @@
   },
   "src/recap/domain/compact-request.ts": {
     "parameter": 5,
-    "return": 5,
+    "return": 4,
     "container": 1
   },
   "src/recap/domain/compaction-plan.ts": {
@@ -78,7 +78,7 @@
   },
   "src/recap/domain/fold.ts": {
     "parameter": 4,
-    "return": 4,
+    "return": 3,
     "container": 3,
     "property": 9,
     "assertion": 8
@@ -88,8 +88,8 @@
     "container": 1
   },
   "src/recap/domain/freshness.ts": {
-    "parameter": 3,
-    "property": 3
+    "parameter": 2,
+    "property": 2
   },
   "src/recap/domain/handoff-content.ts": {
     "parameter": 2,
@@ -97,8 +97,8 @@
     "property": 4
   },
   "src/recap/domain/handoff-outcome.ts": {
-    "parameter": 55,
-    "return": 116,
+    "parameter": 7,
+    "return": 1,
     "assertion": 1
   },
   "src/recap/domain/handoff-plan.ts": {
@@ -159,7 +159,7 @@
   },
   "src/recap/domain/policy.ts": {
     "parameter": 3,
-    "return": 8,
+    "return": 7,
     "container": 4,
     "property": 3
   },
@@ -169,9 +169,9 @@
   },
   "src/recap/domain/session-facts.ts": {
     "parameter": 1,
-    "return": 3,
-    "container": 13,
-    "property": 41
+    "return": 1,
+    "container": 4,
+    "property": 29
   },
   "src/recap/domain/session-identity.ts": {
     "parameter": 1
@@ -188,8 +188,7 @@
     "return": 2
   },
   "src/recap/domain/token-registry.ts": {
-    "parameter": 1,
-    "return": 2
+    "parameter": 1
   },
   "src/recap/domain/typing-lease.ts": {
     "parameter": 1,
@@ -202,6 +201,6 @@
   },
   "src/recap/domain/worksite.ts": {
     "container": 2,
-    "property": 11
+    "property": 8
   }
 }

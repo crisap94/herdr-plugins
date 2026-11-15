@@ -194,11 +194,22 @@ export class HandoffRunner {
     }
 }
 
-export function pollHandoffs(parts: { readonly runner: Pick<HandoffRunner, 'take'>; readonly requests: Pick<Requests, 'takeHandoffs'>; readonly log: (line: string) => void }): void {
+interface HandoffPollParts {
+    readonly runner: Pick<HandoffRunner, 'take'>;
+    readonly requests: Pick<Requests, 'takeHandoffs'>;
+    readonly log: (line: string) => void;
+}
+
+interface HandoffPruneParts {
+    readonly answers: Pick<HandoffAnswers, 'prune'>;
+    readonly now: () => number;
+}
+
+export function pollHandoffs(parts: HandoffPollParts): void {
     parts.runner.take(parts.requests.takeHandoffs()).catch((error: unknown) => { parts.log(`handoff poll: ${failureCauseOf(error)}`); });
 }
 
-export function pruneHandoffAnswers(parts: { readonly answers: Pick<HandoffAnswers, 'prune'>; readonly now: () => number }): void {
+export function pruneHandoffAnswers(parts: HandoffPruneParts): void {
     parts.answers.prune(parts.now() - HANDOFF_ANSWER_TTL_MS);
 }
 

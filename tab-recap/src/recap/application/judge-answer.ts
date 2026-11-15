@@ -23,7 +23,12 @@ export interface Grade {
 
 export type Parsed<T> = { readonly kind: 'ok'; readonly value: T } | { readonly kind: 'unusable'; readonly why: string };
 
-const unusable = (why: string): { readonly kind: 'unusable'; readonly why: string } => ({ kind: 'unusable', why });
+interface UnusableParse {
+    readonly kind: 'unusable';
+    readonly why: string;
+}
+
+const unusable = (why: string): UnusableParse => ({ kind: 'unusable', why });
 
 type Fields = Readonly<Record<string, unknown>>;
 

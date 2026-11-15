@@ -1,9 +1,11 @@
 import { jaccard, wordsOf } from './stats.ts';
 
+export interface BoundaryEvent { readonly kind: 'boundary'; readonly pos: number; readonly at: number | null; readonly trigger: string | null; readonly pre: number | null; readonly post: number | null }
+
 export type Event =
     | { readonly kind: 'tool'; readonly reads: readonly string[] }
     | { readonly kind: 'prompt'; readonly text: string }
-    | { readonly kind: 'boundary'; readonly pos: number; readonly at: number | null; readonly trigger: string | null; readonly pre: number | null; readonly post: number | null };
+    | BoundaryEvent;
 
 export interface Outcome {
     readonly pos: number;
@@ -23,7 +25,7 @@ export const RESTATED_AT = 0.5;
 
 const toolsOf = (events: readonly Event[]): readonly (readonly string[])[] => events.flatMap((event) => (event.kind === 'tool' ? [event.reads] : []));
 
-export function outcomeOf(boundary: Extract<Event, { kind: 'boundary' }>, before: readonly Event[], after: readonly Event[]): Outcome {
+export function outcomeOf(boundary: BoundaryEvent, before: readonly Event[], after: readonly Event[]): Outcome {
     const [earlier, later] = [toolsOf(before).slice(-CALLS_BEFORE), toolsOf(after).slice(0, CALLS_AFTER)];
     const seen = new Set(earlier.flat());
     const again = new Set(later.flat().filter((path) => seen.has(path)));
@@ -36,7 +38,7 @@ export function outcomeOf(boundary: Extract<Event, { kind: 'boundary' }>, before
 export function outcomesOf(events: readonly Event[]): readonly Outcome[] {
     const marks = events.flatMap((event, index) => (event.kind === 'boundary' ? [index] : []));
     return marks.map((index, n) => {
-        const boundary = events[index] as Extract<Event, { kind: 'boundary' }>;
+        const boundary = events[index] as BoundaryEvent;
         return outcomeOf(boundary, events.slice(0, index), events.slice(index + 1, marks[n + 1] ?? events.length));
     });
 }

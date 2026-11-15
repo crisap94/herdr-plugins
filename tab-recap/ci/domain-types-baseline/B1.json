@@ -1,13 +1,13 @@
 {
   "src/ports/agents.ts": {
-    "parameter": 6,
+    "parameter": 5,
     "container": 1,
     "property": 3
   },
   "src/ports/ask-ledger.ts": {
-    "parameter": 5,
+    "parameter": 2,
     "return": 1,
-    "property": 17
+    "property": 4
   },
   "src/ports/autocompact-briefs.ts": {
     "parameter": 4,
@@ -15,13 +15,13 @@
     "container": 1
   },
   "src/ports/autocompact-records.ts": {
-    "parameter": 19,
+    "parameter": 11,
     "return": 5,
-    "container": 7,
-    "property": 42
+    "container": 6,
+    "property": 39
   },
   "src/ports/boundaries.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
     "property": 4
   },
@@ -29,7 +29,7 @@
     "parameter": 2
   },
   "src/ports/columns.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "property": 5
   },
   "src/ports/compaction-briefs.ts": {
@@ -53,7 +53,7 @@
   "src/ports/decider.ts": {
     "parameter": 1,
     "container": 3,
-    "property": 12
+    "property": 11
   },
   "src/ports/extension.ts": {
     "return": 1,
@@ -93,7 +93,7 @@
     "property": 6
   },
   "src/ports/lane-settling.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "property": 1
   },
   "src/ports/lane-tokens.ts": {
@@ -117,19 +117,17 @@
     "property": 8
   },
   "src/ports/requests.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 2,
-    "container": 1,
     "property": 12
   },
   "src/ports/retention.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "property": 5
   },
   "src/ports/run-inputs.ts": {
     "parameter": 4,
     "return": 2,
-    "container": 1,
     "property": 17
   },
   "src/ports/screens.ts": {
@@ -142,7 +140,7 @@
   "src/ports/session-source.ts": {
     "parameter": 3,
     "return": 1,
-    "container": 3,
+    "container": 2,
     "property": 2
   },
   "src/ports/tab-views.ts": {
@@ -165,53 +163,48 @@
     "container": 2
   },
   "src/protocol/capability.ts": {
-    "parameter": 5,
-    "return": 7,
-    "container": 1,
+    "parameter": 4,
+    "return": 5,
     "property": 4,
     "assertion": 1
   },
   "src/protocol/codec.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 1,
-    "container": 7,
-    "property": 10
+    "container": 6,
+    "property": 9
   },
   "src/protocol/exchange.ts": {
-    "parameter": 10,
-    "return": 5,
-    "container": 10,
-    "property": 7,
+    "parameter": 9,
+    "return": 3,
+    "container": 6,
+    "property": 5,
     "assertion": 1
   },
   "src/protocol/owners.ts": {
-    "container": 2
+    "container": 1
   },
   "src/protocol/primitives.ts": {
-    "parameter": 12,
-    "container": 6,
+    "parameter": 11,
     "property": 1,
     "assertion": 3
   },
   "src/protocol/registry.ts": {
     "parameter": 1,
     "return": 3,
-    "container": 5,
+    "container": 2,
     "property": 1
   },
   "src/protocol/requester.ts": {
-    "parameter": 5,
+    "parameter": 2,
     "container": 2,
     "property": 2,
     "assertion": 1
   },
   "src/protocol/responder.ts": {
-    "parameter": 8,
+    "parameter": 4,
     "return": 2,
     "container": 2,
-    "property": 5
-  },
-  "src/protocol/tokens.ts": {
-    "property": 2
+    "property": 1
   }
 }

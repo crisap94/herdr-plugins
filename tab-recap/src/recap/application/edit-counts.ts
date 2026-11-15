@@ -15,7 +15,7 @@ export function countEdits(paths: readonly string[]): readonly FileCount[] {
     for (const path of paths) {
         counts.set(path, (counts.get(path) ?? 0) + 1);
     }
-    return [...counts].map(([path, count]) => ({ path, count })).toSorted((a, b) => b.count - a.count || a.path.localeCompare(b.path));
+    return [...counts].map(([path, count]): FileCount => ({ path, count })).toSorted((a, b) => b.count - a.count || a.path.localeCompare(b.path));
 }
 
 export class EditCounts {

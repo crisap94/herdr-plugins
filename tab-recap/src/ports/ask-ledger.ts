@@ -39,7 +39,7 @@ export interface AskIdentity {
 }
 
 export interface AskLedger {
-    seen(exchange: ExchangeName, requester: Requester, id: string): boolean;
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean;
     record(ask: NewAsk): void;
     attach(match: AskKey, ref: string): void;
     withdraw(identity: AskIdentity): void;

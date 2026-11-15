@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Decision, Skip } from '#src/ports/autocompact-records.ts';
 import { memoryStore } from './support.ts';
 
@@ -31,10 +32,10 @@ test('a forgotten tab takes its skips', () => {
 test('lastDecision: the lane\'s newest decision with its tokens and mode; null when there is none', () => {
     const store = memoryStore();
     store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
-    assert.equal(store.autocompact.lastDecision('w1:t1', 'w1:p1'), null);
+    assert.equal(store.autocompact.lastDecision(tabId('w1:t1'), paneId('w1:p1')), null);
     store.autocompact.record(decision({ at: 100, tokens: 1, mode: 'shadow' }));
     store.autocompact.record(decision({ at: 400, tokens: 120_000, mode: 'on', verdict: 'wait' }));
-    assert.deepEqual(store.autocompact.lastDecision('w1:t1', 'w1:p1'), { at: 400, tokens: 120_000, mode: 'on', verdict: 'wait', gate: 'ask' });
+    assert.deepEqual(store.autocompact.lastDecision(tabId('w1:t1'), paneId('w1:p1')), { at: 400, tokens: 120_000, mode: 'on', verdict: 'wait', gate: 'ask' });
 });
 
 test('unlinkedCompactAny: an on-mode compact of any lane, not yet begun, at or after the instant', () => {

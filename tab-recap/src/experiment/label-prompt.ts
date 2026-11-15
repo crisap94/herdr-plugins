@@ -38,7 +38,11 @@ export function labelsOf(reply: string, ids: readonly string[]): Readonly<Record
     return found;
 }
 
-export function coverageLabelsOf(reply: string, facts: readonly { readonly n: number; readonly reason: boolean }[]): Readonly<Record<string, { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }>> | null {
+interface CoverageFact { readonly n: number; readonly reason: boolean }
+
+interface CoverageLabel { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }
+
+export function coverageLabelsOf(reply: string, facts: readonly CoverageFact[]): Readonly<Record<string, CoverageLabel>> | null {
     const parsed = jsonOf(reply);
     if (parsed === null) return null;
     const found: Record<string, { keeps: 0 | 1; reason?: 0 | 1 }> = {};

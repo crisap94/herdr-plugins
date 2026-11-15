@@ -1,10 +1,26 @@
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
 export type DecisionVerdict = 'compact' | 'wait' | 'undecided' | 'unknown';
 export type { SkipGate };
-export type StoredCoverageOutcome = { readonly kind: 'passed' } | { readonly kind: 'missed'; readonly count: number } | { readonly kind: 'unchecked'; readonly reason: UncheckedReason };
+export interface PassedCoverage {
+    readonly kind: 'passed';
+}
+export interface MissedCoverage {
+    readonly kind: 'missed';
+    readonly count: number;
+}
+export interface UncheckedCoverage {
+    readonly kind: 'unchecked';
+    readonly reason: UncheckedReason;
+}
+export type StoredCoverageOutcome = PassedCoverage | MissedCoverage | UncheckedCoverage;
+export interface PaneKey {
+    readonly tab: string;
+    readonly pane: string;
+}
 export interface LinkedDecision {
     readonly id: string;
     readonly gate: DecisionGate;
@@ -78,14 +94,14 @@ export interface CoverageAmendment {
 export interface AutocompactRecords {
     record(decision: Decision): string;
     link(id: string, compactionId: string): void;
-    linkLatest(tab: string, pane: string, compactionId: string): LinkedDecision | null;
+    linkLatest(tab: TabId, pane: PaneId, compactionId: string): LinkedDecision | null;
     amend(id: string, update: CoverageAmendment): void;
-    lastDecisionAt(tab: string, pane: string): number | null;
-    lastDecision(tab: string, pane: string): LastDecision | null;
+    lastDecisionAt(tab: TabId, pane: PaneId): number | null;
+    lastDecision(tab: TabId, pane: PaneId): LastDecision | null;
     markRequested(id: string): void;
-    unlinkedCompactSince(tab: string, pane: string, at: number): boolean;
+    unlinkedCompactSince(tab: TabId, pane: PaneId, at: number): boolean;
     unlinkedCompactAny(at: number): boolean;
-    pruneSkips(keep: readonly { readonly tab: string; readonly pane: string }[]): void;
+    pruneSkips(keep: readonly PaneKey[]): void;
     skip(skip: Skip): void;
     skips(): readonly Skip[];
     newest(limit: number, tab?: string): readonly StoredDecision[];

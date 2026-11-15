@@ -1,5 +1,6 @@
 import { err, ok } from './result.ts';
 import type { Result } from './result.ts';
+import type { Brand } from '../recap/domain/brand.ts';
 
 export const LIMITS = {
     valueMax: 80,
@@ -10,8 +11,6 @@ export const LIMITS = {
     exchangeMax: 16,
     versionMax: 99,
 } as const;
-
-export type Brand<Carrier, Name extends string> = Carrier & { readonly __brand: Name };
 
 export type TokenName = Brand<string, 'TokenName'>;
 export type TokenValue = Brand<string, 'TokenValue'>;

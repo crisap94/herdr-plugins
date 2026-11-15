@@ -11,7 +11,7 @@ export interface Removed {
 
 export interface Retention {
     expired(cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[];
-    remove(tab: string): Removed;
+    remove(tab: TabId): Removed;
 }
 
 export type Retirement = 'retired' | 'nothing';

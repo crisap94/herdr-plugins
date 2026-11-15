@@ -30,7 +30,13 @@ export const EVAL_USAGE = 'USAGE: tab-recap eval [--sample <n>] [--tab <id>] [--
 
 export const DEFAULT_SAMPLE = 20;
 
-function whole(raw: string | undefined, name: string): { readonly value: number | null; readonly bad: string | null } {
+interface WholeNumber { readonly value: number | null; readonly bad: string | null }
+
+interface MergedTurns { readonly mergeTurns?: number }
+
+interface OptionCounts { readonly label: number | null; readonly sample: number | null; readonly since: number | null }
+
+function whole(raw: string | undefined, name: string): WholeNumber {
     const value = Number(raw);
     if (raw === undefined) {
         return { value: null, bad: null };
@@ -53,7 +59,7 @@ function valuesOf(argv: readonly string[]): ReturnType<typeof parseArgs>['values
 
 const textOf = (values: ReturnType<typeof parseArgs>['values'], name: string): string | undefined => (typeof values[name] === 'string' ? values[name] : undefined);
 
-function mergeTurnsOf(values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode']): { readonly mergeTurns?: number } {
+function mergeTurnsOf(values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode']): MergedTurns {
     return mode === 'replay' ? { mergeTurns: Number(textOf(values, 'merge-turns') ?? 1) } : {};
 }
 
@@ -67,7 +73,7 @@ function modeOf(values: ReturnType<typeof parseArgs>['values'], label: number | 
     return { mode: modes[0] ?? 'sample' };
 }
 
-const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode'], counts: { readonly label: number | null; readonly sample: number | null; readonly since: number | null }): EvalOptions =>
+const optionsOf = (values: ReturnType<typeof parseArgs>['values'], mode: EvalOptions['mode'], counts: OptionCounts): EvalOptions =>
     ({
         mode, count: counts.label ?? counts.sample ?? DEFAULT_SAMPLE, tab: textOf(values, 'tab') ?? null, since: counts.since, json: values['json'] === true,
         replay: textOf(values, 'replay') ?? null, kind: textOf(values, 'kind') ?? null, compareImported: textOf(values, 'compare-imported') ?? null,

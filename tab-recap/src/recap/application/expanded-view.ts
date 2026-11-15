@@ -27,7 +27,17 @@ export interface ExpandedDeps {
 
 export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs' | 'breaks'>;
 
-export const newestChange = (facts: readonly Fact[]): number | null =>
+interface TaskRef {
+    readonly id: string;
+    readonly name: string;
+}
+
+interface FoundTask {
+    readonly task: ExpandedTask;
+    readonly asks: boolean;
+}
+
+export const newestChange =(facts: readonly Fact[]): number | null =>
     facts.length === 0 ? null : Math.max(...facts.map((fact) => Math.max(fact.lastAt, fact.closedAt ?? 0)));
 
 const clipped = (label: string | null): string | null => (label === null || label.length <= LABEL_CHARS ? label : `${label.slice(0, LABEL_CHARS - 1)}…`);
@@ -40,7 +50,7 @@ export class ExpandedModel {
         this.deps = deps;
     }
 
-    private taskOf(tab: string, task: { readonly id: string; readonly name: string }, now: number): { readonly task: ExpandedTask; readonly asks: boolean } {
+    private taskOf(tab: string, task: TaskRef, now: number): FoundTask {
         const facts = this.deps.ledger.allOf({ tab, key: task.id });
         const story = this.deps.stories.read(tab, task.id);
         const change = newestChange(facts);

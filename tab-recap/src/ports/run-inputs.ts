@@ -28,10 +28,15 @@ export interface RunQuery {
     readonly withInput: boolean;
 }
 
+export interface GateCount {
+    readonly at: number;
+    readonly stats: GateStats;
+}
+
 export interface RunInputs {
     runs(query: RunQuery): readonly StoredRun[];
     document(run: string): string | null;
     itemsOf(run: string, mode: ItemsMode): readonly RunItem[];
-    gateCounts(since: number | null): readonly { readonly at: number; readonly stats: GateStats }[];
+    gateCounts(since: number | null): readonly GateCount[];
     prune(before: number): number;
 }

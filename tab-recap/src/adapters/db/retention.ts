@@ -38,7 +38,7 @@ export class RetentionRepository implements Retention, TabRetirement {
             .filter((tab) => !kept.has(tab));
     }
 
-    remove(tab: string): Removed {
+    remove(tab: TabId): Removed {
         const id = tabId(tab);
         return writeTx(this.db, () => {
             const removed = this.sizeOf(id);

@@ -72,7 +72,7 @@ the database row mappers, the transcript readers, the command-line argument read
 in one exception file per lane (`ci/domain-types-exceptions/<lane>.json`). The check fails on an entry that no finding hits.
 Three classes exist, and nothing else:
 
-1. a Node or third-party callback that forces a primitive, converted at once in the adapter that receives it;
+1. a Node or third-party callback, or a signature declared by a frozen lane (ENG, STO, VIEW) that a B lane implements, that forces a primitive; converted at once where it is received; the entry goes stale and is removed when that lane leaves the plugin;
 2. the released migrations, frozen by `ci/check-migrations.sh`: the list names each released migration file, derived from the
    latest `tab-recap-v*` tag the same way that script derives it, and a new migration must comply;
 3. `src/recap/domain/brand.ts`, whose one brand function takes the primitive carrier by necessity.
@@ -115,7 +115,7 @@ counts, as it does for the ast-grep rules it replaces), is the one source for im
   file of its parent folder;
 - `src/recap/application/`, `src/recap/render/` and `src/i18n/` import no `node:` module except `node:util`, and nothing from
   `src/adapters/`, `src/transport/`, `src/daemon/`, `src/column/` or `src/setup/`;
-- `src/protocol/` imports only its own files; `src/protocol/exchanges/` imports its own folder and one level up;
+- `src/protocol/` imports only its own files and `src/recap/domain/brand.ts` (the type `Brand`, D-6a); `src/protocol/exchanges/` imports its own folder and one level up;
 - only `src/adapters/herdr/fleet.ts` and `src/transport/` import `src/transport/`;
 - only the files of D3's list import `brand.ts`;
 - no cycle; no orphan (dependency-cruiser's orphan rule, with no list of entry points: the daemon, column, compact and setup

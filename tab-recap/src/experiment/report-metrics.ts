@@ -74,7 +74,9 @@ export function policyMetrics(rep: readonly Answer[], labels: Labels, keep: (key
     return { precision: compact.length === 0 ? Number.NaN : hits / compact.length, recall: safe.length === 0 ? Number.NaN : hits / safe.length, compact: compact.length, safe: safe.length, hits, n: keys.length };
 }
 
-export function coverageAuc(reps: Reps, labels: Labels, question: 'brief_keeps_fact' | 'brief_keeps_reason'): number {
+type BriefQuestion = 'brief_keeps_fact' | 'brief_keeps_reason';
+
+export function coverageAuc(reps: Reps, labels: Labels, question: BriefQuestion): number {
     return mean(reps.map((rep) => auc(scoredOf(rep, question, labels))).filter((v) => !Number.isNaN(v)));
 }
 

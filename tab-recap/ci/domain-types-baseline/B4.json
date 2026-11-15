@@ -1,36 +1,33 @@
 {
   "src/column/compact.ts": {
-    "parameter": 4,
-    "return": 1
+    "parameter": 3
   },
   "src/column/expanded-modal.ts": {
     "parameter": 3,
     "container": 2
   },
   "src/column/main.ts": {
-    "parameter": 7,
+    "parameter": 5,
     "return": 2,
     "container": 3
   },
   "src/i18n/en.ts": {
-    "parameter": 89,
-    "return": 67,
-    "container": 1
+    "parameter": 88,
+    "return": 67
   },
   "src/i18n/es.ts": {
-    "parameter": 89,
-    "return": 67,
-    "container": 1
+    "parameter": 88,
+    "return": 67
   },
   "src/i18n/index.ts": {
     "parameter": 3,
     "return": 3
   },
   "src/i18n/messages.ts": {
-    "parameter": 91,
+    "parameter": 89,
     "return": 68,
-    "container": 12,
-    "property": 133
+    "container": 11,
+    "property": 104
   },
   "src/i18n/relative.ts": {
     "parameter": 3,
@@ -42,16 +39,16 @@
     "container": 1
   },
   "src/recap/render/compare.ts": {
-    "parameter": 6,
+    "parameter": 2,
     "return": 4,
     "container": 4,
     "property": 2
   },
   "src/recap/render/eval.ts": {
-    "parameter": 9,
+    "parameter": 6,
     "return": 8,
     "container": 7,
-    "property": 6
+    "property": 2
   },
   "src/recap/render/freshness.ts": {
     "return": 2,

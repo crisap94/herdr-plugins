@@ -1,7 +1,7 @@
 import { gunzipSync, gzipSync } from 'node:zlib';
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
-import type { ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
+import type { GateCount, ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { run as runs, runInput } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -88,9 +88,9 @@ export class RunInputsRepository implements RunInputs {
           ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`).map((row) => itemOf(row, ''))), []);
     }
 
-    gateCounts(since: number | null): readonly { readonly at: number; readonly stats: GateStats }[] {
+    gateCounts(since: number | null): readonly GateCount[] {
         return guarded(() => this.orm.select({ at: runs.at, gate_stats: runs.gateStats }).from(runs)
-            .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? 0))).orderBy(desc(runs.id)).all().flatMap((row) => {
+            .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? 0))).orderBy(desc(runs.id)).all().flatMap((row): GateCount[] => {
                 const stats = statsOf(row.gate_stats);
                 return stats === null ? [] : [{ at: row.at, stats }];
             }), []);

@@ -17,7 +17,7 @@
     "parameter": 1
   },
   "src/recap/application/autocompact-listing.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "container": 1,
     "property": 2
   },
@@ -25,7 +25,7 @@
     "parameter": 7,
     "return": 2,
     "container": 2,
-    "property": 8
+    "property": 7
   },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
@@ -37,10 +37,10 @@
     "parameter": 3
   },
   "src/recap/application/compact-requests.ts": {
-    "parameter": 14,
+    "parameter": 10,
     "return": 3,
     "container": 2,
-    "property": 4
+    "property": 2
   },
   "src/recap/application/compact-start.ts": {
     "parameter": 7,
@@ -61,22 +61,21 @@
   },
   "src/recap/application/compaction-coverage.ts": {
     "parameter": 3,
-    "return": 4,
+    "return": 3,
     "container": 5,
     "property": 11,
     "assertion": 2
   },
   "src/recap/application/compaction-deps.ts": {
     "parameter": 15,
-    "return": 6,
-    "container": 1,
-    "property": 3
+    "return": 5,
+    "container": 1
   },
   "src/recap/application/compaction-input.ts": {
     "property": 8
   },
   "src/recap/application/compaction-lanes.ts": {
-    "return": 2,
+    "return": 1,
     "property": 2
   },
   "src/recap/application/compaction-message.ts": {
@@ -84,8 +83,6 @@
     "property": 1
   },
   "src/recap/application/compaction-send.ts": {
-    "parameter": 2,
-    "container": 3,
     "property": 1
   },
   "src/recap/application/compaction-trail.ts": {
@@ -93,19 +90,18 @@
     "property": 1
   },
   "src/recap/application/compaction.ts": {
-    "parameter": 9,
+    "parameter": 7,
     "return": 4,
     "container": 1,
-    "property": 2
+    "property": 1
   },
   "src/recap/application/compare-imported.ts": {
-    "parameter": 15,
-    "return": 4,
-    "container": 4,
-    "property": 19
+    "parameter": 4,
+    "return": 2,
+    "container": 1,
+    "property": 15
   },
   "src/recap/application/counted-writer.ts": {
-    "parameter": 1,
     "property": 1
   },
   "src/recap/application/coverage-verdict.ts": {
@@ -113,14 +109,14 @@
     "return": 3
   },
   "src/recap/application/curate.ts": {
-    "parameter": 10,
+    "parameter": 7,
     "return": 1,
     "container": 6,
-    "property": 4
+    "property": 2
   },
   "src/recap/application/decode.ts": {
     "parameter": 4,
-    "return": 20,
+    "return": 2,
     "container": 19,
     "property": 4,
     "assertion": 1
@@ -134,28 +130,28 @@
     "container": 3
   },
   "src/recap/application/edit-counts.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 1,
     "container": 2,
     "property": 2
   },
   "src/recap/application/eval-label.ts": {
-    "parameter": 13,
+    "parameter": 11,
     "return": 2,
     "container": 5,
     "property": 4
   },
   "src/recap/application/eval-options.ts": {
-    "parameter": 16,
-    "return": 9,
+    "parameter": 15,
+    "return": 7,
     "container": 2,
     "property": 18
   },
   "src/recap/application/eval-report.ts": {
     "parameter": 6,
     "return": 5,
-    "container": 2,
-    "property": 18
+    "container": 1,
+    "property": 16
   },
   "src/recap/application/eval-run.ts": {
     "parameter": 7,
@@ -166,12 +162,11 @@
   "src/recap/application/eval-stats.ts": {
     "parameter": 4,
     "return": 4,
-    "container": 1,
     "property": 12
   },
   "src/recap/application/expanded-view.ts": {
-    "parameter": 7,
-    "return": 3,
+    "parameter": 6,
+    "return": 2,
     "property": 3
   },
   "src/recap/application/freshness-block.ts": {
@@ -181,8 +176,7 @@
   "src/recap/application/handoff-confirmation.ts": {
     "parameter": 5,
     "return": 1,
-    "container": 1,
-    "property": 6
+    "property": 5
   },
   "src/recap/application/handoff-content.ts": {
     "parameter": 3,
@@ -191,8 +185,7 @@
   },
   "src/recap/application/handoff-flow.ts": {
     "parameter": 4,
-    "return": 1,
-    "container": 48
+    "return": 1
   },
   "src/recap/application/handoff-pipeline.ts": {
     "container": 2
@@ -200,8 +193,7 @@
   "src/recap/application/handoff-print.ts": {
     "parameter": 1,
     "return": 1,
-    "container": 1,
-    "property": 1
+    "container": 1
   },
   "src/recap/application/handoff-render.ts": {
     "property": 7
@@ -215,7 +207,7 @@
     "parameter": 6
   },
   "src/recap/application/handoff-source.ts": {
-    "return": 6,
+    "return": 1,
     "property": 2
   },
   "src/recap/application/handoff-target.ts": {
@@ -231,7 +223,7 @@
     "property": 9
   },
   "src/recap/application/input-retention.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "return": 3,
     "property": 1
   },
@@ -243,26 +235,25 @@
   },
   "src/recap/application/judge-answer.ts": {
     "parameter": 13,
-    "return": 3,
+    "return": 2,
     "container": 19,
     "property": 9,
     "assertion": 1
   },
   "src/recap/application/judge-context.ts": {
-    "parameter": 3,
     "return": 7,
     "container": 4,
     "property": 4
   },
   "src/recap/application/judge-coverage.ts": {
     "container": 3,
-    "property": 3
+    "property": 2
   },
   "src/recap/application/judge.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
-    "container": 2,
-    "property": 10
+    "container": 1,
+    "property": 9
   },
   "src/recap/application/lane-claims.ts": {
     "parameter": 7,
@@ -273,30 +264,29 @@
   "src/recap/application/lane-contexts.ts": {
     "parameter": 1,
     "return": 3,
-    "container": 3
+    "container": 2
   },
   "src/recap/application/lane-events.ts": {
-    "parameter": 21,
+    "parameter": 20,
     "return": 3,
-    "container": 5,
+    "container": 3,
     "property": 7
   },
   "src/recap/application/lane-facts.ts": {
-    "parameter": 1,
-    "property": 1
+    "parameter": 1
   },
   "src/recap/application/lane-recent.ts": {
     "parameter": 1,
-    "container": 2
+    "container": 1
   },
   "src/recap/application/lane-tokens.ts": {
     "parameter": 8,
     "return": 3,
-    "container": 7,
+    "container": 6,
     "property": 4
   },
   "src/recap/application/lane-webs.ts": {
-    "parameter": 3,
+    "parameter": 1,
     "return": 1,
     "container": 2
   },
@@ -311,7 +301,7 @@
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
     "container": 1,
-    "property": 4
+    "property": 3
   },
   "src/recap/application/replay-report.ts": {
     "parameter": 5,
@@ -332,20 +322,20 @@
     "return": 3
   },
   "src/recap/application/settle-hub.ts": {
-    "parameter": 12,
+    "parameter": 11,
     "return": 2,
-    "container": 3,
+    "container": 2,
     "property": 3
   },
   "src/recap/application/setup-changes.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "return": 1,
     "container": 7,
     "property": 1
   },
   "src/recap/application/setup-fields.ts": {
     "parameter": 13,
-    "return": 41,
+    "return": 13,
     "property": 1
   },
   "src/recap/application/setup-keys.ts": {
@@ -354,10 +344,10 @@
     "container": 1
   },
   "src/recap/application/setup-state.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 4,
     "container": 7,
-    "property": 46,
+    "property": 43,
     "assertion": 2
   },
   "src/recap/application/transcript-tail.ts": {
