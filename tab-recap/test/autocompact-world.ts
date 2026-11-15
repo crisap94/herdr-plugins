@@ -1,3 +1,5 @@
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -52,4 +54,4 @@ function awaitingOf(state: { awaiting: string | null; lateAwaiting: string | nul
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value };
 }
 
-export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(20);
+export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(must(parseCount(20)));

@@ -22,7 +22,7 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "return": 2,
     "container": 2,
     "property": 7
@@ -55,9 +55,7 @@
     "property": 2
   },
   "src/recap/application/compaction-briefing.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 1
+    "return": 1
   },
   "src/recap/application/compaction-coverage.ts": {
     "parameter": 3,

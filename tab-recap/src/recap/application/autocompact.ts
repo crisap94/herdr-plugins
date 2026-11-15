@@ -16,7 +16,7 @@ import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -257,7 +257,7 @@ export class Autocompact {
         if (asksForCompaction(found.mode, judged.verdict, effect) === 'asks') this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
-    private request(tab: TabId, pane: PaneId, id: string, note: ContinuationNote | null): void {
+    private request(tab: TabId, pane: PaneId, id: DecisionId, note: ContinuationNote | null): void {
         this.asked.set(pane, instant(this.deps.now()));
         this.deps.requests.requestCompact({ tab, pane, note, origin: 'auto' });
         this.deps.decisions.markRequested(id);

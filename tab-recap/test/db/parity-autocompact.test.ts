@@ -1,3 +1,6 @@
+import { parseCompactionId, parseDecisionId, parseTabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -50,8 +53,8 @@ describe('parity: autocompact records', () => {
             builder: (db) => {
                 const repo = new AutocompactRecordsRepository(db);
                 const decision = typeIdOf('decision', keyOf(1));
-                repo.markRequested(decision);
-                repo.link(decision, typeIdOf('compaction', keyOf(9)));
+                repo.markRequested(must(parseDecisionId(decision)));
+                repo.link(must(parseDecisionId(decision)), must(parseCompactionId(typeIdOf('compaction', keyOf(9)))));
             },
             dump: dumpBoth,
         });
@@ -88,8 +91,8 @@ describe('parity: autocompact records', () => {
             const repo = new AutocompactRecordsRepository(made.db);
             assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p1')), 4);
             assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p9')), null);
-            assert.deepEqual(repo.countsFor('t1'), { decisions: 3, compacted: 0, waited: 1 });
-            assert.equal(repo.costSince(0), 1.25);
+            assert.deepEqual(repo.countsFor(must(parseTabId('t1'))), { decisions: 3, compacted: 0, waited: 1 });
+            assert.equal(repo.costSince(instant(0)), 1.25);
         } finally {
             made.db.close();
         }
@@ -102,7 +105,7 @@ describe('parity: autocompact records', () => {
                 db.prepare(AMEND_SQL).run('{"a":1}', 'missed', null, 0, 42, 250000, 1, 1, 'new', 'new', 'new', keyOf(1));
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).amend(typeIdOf('decision', keyOf(1)), { coverage: { a: 1 }, outcome: { kind: 'missed', facts: [] }, coverageMs: 42, coverageCostUsd: 0.25, why: 'new', block: true });
+                new AutocompactRecordsRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: { a: 1 }, outcome: { kind: 'missed', facts: [] }, coverageMs: 42, coverageCostUsd: 0.25, why: 'new', block: true });
             },
             dump: dumpCoverage,
         });
@@ -115,7 +118,7 @@ describe('parity: autocompact records', () => {
                 db.prepare(AMEND_SQL).run(null, 'unchecked', 'no-brief', null, 0, null, 0, 0, null, null, null, keyOf(1));
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).amend(typeIdOf('decision', keyOf(1)), { coverage: null, outcome: { kind: 'unchecked', reason: 'no-brief' }, coverageMs: 0, coverageCostUsd: null, why: null, block: false });
+                new AutocompactRecordsRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: null, outcome: { kind: 'unchecked', reason: 'no-brief' }, coverageMs: 0, coverageCostUsd: null, why: null, block: false });
             },
             dump: dumpCoverage,
         });

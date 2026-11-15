@@ -1,3 +1,5 @@
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
@@ -73,7 +75,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
     });
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
     await service.consider(lane);
-    return store.autocompact.newest(1)[0]?.verdict;
+    return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
 }
 
 test('the daemon wiring hands the configured style to the service: a close of 0.65 is compact under eager and undecided under balanced', async () => {
@@ -96,7 +98,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });
         await service.consider(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
-        return store.autocompact.newest(1)[0]?.verdict;
+        return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
     };
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }), 'wait');
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager', TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.44' }), 'compact');

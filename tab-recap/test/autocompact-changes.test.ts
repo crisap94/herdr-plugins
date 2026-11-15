@@ -1,3 +1,5 @@
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -44,7 +46,7 @@ test('busy across lanes: two lanes over the ceiling in on make one request; the 
     await w.service.consider(laneAt('w1:p2'));
     assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
     const first = w.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW, origin: 'auto' });
-    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), first);
+    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(first)));
     w.store.compactions.finish(first, { stage: 'compacted', at: NOW + 1000 });
     w.clock.at += 60_000;
     await w.service.consider(laneAt('w1:p2'));

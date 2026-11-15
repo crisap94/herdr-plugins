@@ -1,3 +1,5 @@
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { covered } from '#src/recap/application/brief-coverage.ts';
@@ -98,7 +100,7 @@ test('the gates: the ceiling of eager (65 %) gives compact with no model call, a
     const eager = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' });
     eager.share = 70;
     await eager.service.consider(lane());
-    assert.deepEqual([eager.asked.length, eager.store.autocompact.newest(1)[0]?.gate], [0, 'ceiling']);
+    assert.deepEqual([eager.asked.length, eager.store.autocompact.newest(must(parseCount(1)))[0]?.gate], [0, 'ceiling']);
     const balanced = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'balanced' });
     balanced.share = 70;
     await balanced.service.consider(lane());

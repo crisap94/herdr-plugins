@@ -1,3 +1,5 @@
+import { must as mustParsed } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
@@ -53,7 +55,7 @@ test('off decides nothing; a lane that is working, or an unknown context, is not
     await off.service.consider(lane());
     const working = world();
     await working.service.consider(lane('claude', 'working'));
-    assert.deepEqual([off.asked.length, off.store.autocompact.newest(5).length, working.asked.length, working.store.autocompact.newest(5).length], [0, 0, 0, 0]);
+    assert.deepEqual([off.asked.length, off.store.autocompact.newest(mustParsed(parseCount(5))).length, working.asked.length, working.store.autocompact.newest(mustParsed(parseCount(5))).length], [0, 0, 0, 0]);
 });
 
 test('below the minimum (8 %): no model, no decision; the lane keeps one skip, logged once', async () => {
@@ -84,7 +86,7 @@ test('over the ceiling (81 %): compact with gate ceiling and no decider call; in
     const shadow = world({ mode: 'shadow' });
     shadow.share = 90;
     await shadow.service.consider(lane());
-    assert.deepEqual([shadow.requests.length, shadow.store.autocompact.newest(1)[0]?.gate], [0, 'ceiling']);
+    assert.deepEqual([shadow.requests.length, shadow.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.gate], [0, 'ceiling']);
 });
 
 test('cooldown: a wait four minutes ago stops the next consideration before any model; after ten minutes it asks again', async () => {
@@ -150,7 +152,7 @@ test('a wait: not safe means wait, an undecided answer is recorded as undecided,
     const vague = world();
     vague.decide = (): DecidedResult => (decidedOf({ ...SAFE, needs_verbatim: 0.48 }));
     await vague.service.consider(lane());
-    assert.deepEqual([rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, vague.store.autocompact.newest(1)[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'wait', 'undecided', 0]);
+    assert.deepEqual([rows(w)[0]?.verdict, rows(w)[0]?.askedVerdict, vague.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.verdict, w.requests.length + vague.requests.length], ['wait', 'wait', 'undecided', 0]);
 });
 
 test('a kind outside the list is decided and recorded but never requested', async () => {

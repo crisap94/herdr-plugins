@@ -10,6 +10,8 @@ import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import type { FileCount } from './edit-counts.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
@@ -77,7 +79,7 @@ export class ExpandedModel {
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
             chapters: this.deps.boundaries.chapterCount(tab),
-            ...(this.deps.autocompact === undefined ? {} : { autocompact: this.deps.autocompact.countsFor(tab) }),
+            ...(this.deps.autocompact === undefined ? {} : { autocompact: this.deps.autocompact.countsFor(must(parseTabId(tab))) }),
         });
         return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web), breaks: this.deps.boundaries.breaksOf(tab) };
     }

@@ -1,3 +1,4 @@
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -41,12 +42,12 @@ test('lastDecision: the lane\'s newest decision with its tokens and mode; null w
 test('unlinkedCompactAny: an on-mode compact of any lane, not yet begun, at or after the instant', () => {
     const store = memoryStore();
     store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
-    assert.equal(store.autocompact.unlinkedCompactAny(0), false);
+    assert.equal(store.autocompact.unlinkedCompactAny(instant(0)), false);
     store.autocompact.markRequested(store.autocompact.record(decision({ mode: 'shadow', at: 100 })));
-    assert.equal(store.autocompact.unlinkedCompactAny(0), false, 'a shadow compact is never requested');
+    assert.equal(store.autocompact.unlinkedCompactAny(instant(0)), false, 'a shadow compact is never requested');
     store.autocompact.record(decision({ pane: 'w1:p2', at: 200 }));
-    assert.equal(store.autocompact.unlinkedCompactAny(150), false, 'a record-only one (not requested) does not hold the other lanes');
+    assert.equal(store.autocompact.unlinkedCompactAny(instant(150)), false, 'a record-only one (not requested) does not hold the other lanes');
     store.autocompact.markRequested(store.autocompact.record(decision({ pane: 'w1:p3', at: 200 })));
-    assert.equal(store.autocompact.unlinkedCompactAny(150), true);
-    assert.equal(store.autocompact.unlinkedCompactAny(250), false, 'older than the instant');
+    assert.equal(store.autocompact.unlinkedCompactAny(instant(150)), true);
+    assert.equal(store.autocompact.unlinkedCompactAny(instant(250)), false, 'older than the instant');
 });

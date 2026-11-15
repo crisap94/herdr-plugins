@@ -1,5 +1,8 @@
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
@@ -92,19 +95,19 @@ export interface CoverageAmendment {
 }
 
 export interface AutocompactRecords {
-    record(decision: Decision): string;
-    link(id: string, compactionId: string): void;
-    linkLatest(tab: TabId, pane: PaneId, compactionId: string): LinkedDecision | null;
-    amend(id: string, update: CoverageAmendment): void;
-    lastDecisionAt(tab: TabId, pane: PaneId): number | null;
+    record(decision: Decision): DecisionId;
+    link(id: DecisionId, compactionId: CompactionId): void;
+    linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null;
+    amend(id: DecisionId, update: CoverageAmendment): void;
+    lastDecisionAt(tab: TabId, pane: PaneId): Instant | null;
     lastDecision(tab: TabId, pane: PaneId): LastDecision | null;
-    markRequested(id: string): void;
-    unlinkedCompactSince(tab: TabId, pane: PaneId, at: number): boolean;
-    unlinkedCompactAny(at: number): boolean;
+    markRequested(id: DecisionId): void;
+    unlinkedCompactSince(tab: TabId, pane: PaneId, at: Instant): boolean;
+    unlinkedCompactAny(at: Instant): boolean;
     pruneSkips(keep: readonly PaneKey[]): void;
     skip(skip: Skip): void;
     skips(): readonly Skip[];
-    newest(limit: number, tab?: string): readonly StoredDecision[];
-    countsFor(tab: string): DecisionCounts;
-    costSince(at: number): number;
+    newest(limit: Count, tab?: TabId): readonly StoredDecision[];
+    countsFor(tab: TabId): DecisionCounts;
+    costSince(at: Instant): Usd;
 }

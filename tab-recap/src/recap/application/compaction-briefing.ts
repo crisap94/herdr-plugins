@@ -5,7 +5,8 @@ import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { parseDecisionId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
 import { isSection } from '#src/recap/domain/fact.ts';
 import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
@@ -22,7 +23,7 @@ export type Trigger = 'auto' | 'operator';
 
 export interface Link {
     readonly trigger: Trigger;
-    readonly decision: string | null;
+    readonly decision: DecisionId | null;
     readonly flow: CoverageFlow;
 }
 
@@ -83,7 +84,7 @@ export class Briefing {
         return { kind: 'checked', checked: saved };
     }
 
-    private rememberCoverage(decision: string | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
+    private rememberCoverage(decision: DecisionId | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
         const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
         const appended = flow.appends && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
@@ -92,9 +93,9 @@ export class Briefing {
         return appended === null ? checked : { ...checked, brief: { ...checked.brief, text: appended.text } };
     }
 
-    linkedDecision(trigger: Trigger, tab: TabId, pane: PaneId, id: string): Link {
+    linkedDecision(trigger: Trigger, tab: TabId, pane: PaneId, id: CompactionId): Link {
         const linked = trigger === 'auto' ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
-        return { trigger, decision: linked?.id ?? null, flow: this.flowOf(linked?.gate) };
+        return { trigger, decision: linked === null ? null : must(parseDecisionId(linked.id)), flow: this.flowOf(linked?.gate) };
     }
 
     private flowOf(gate: LinkedDecision['gate'] | undefined): CoverageFlow {
