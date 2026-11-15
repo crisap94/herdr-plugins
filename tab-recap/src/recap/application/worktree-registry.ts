@@ -1,11 +1,14 @@
 import type { Clock } from '#src/ports/clock.ts';
 import type { PerfSink } from '#src/ports/perf-sink.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
 import type { GitDirWatch, GitDirWatcher, StatusRead, WorktreeLocator, WorktreeProbe, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { isHidden } from '#src/recap/domain/visibility.ts';
 import { foldReading, IDLE_ROOT, movesOf, refreshDue, runDone, takeRun, tierOf, wantRun } from '#src/recap/domain/worktree.ts';
 import type { LaneGlance, RootRun, StatusTier, StatusTrigger, WorktreeStatus, WorktreeSwitch, WorktreeWatch } from '#src/recap/domain/worktree.ts';
@@ -30,7 +33,7 @@ interface Open {
     fullAt: Instant;
 }
 
-const THREW: StatusRead = unknown({ why: 'unreadable', detail: 'the status read threw' });
+const THREW: StatusRead = unknown({ why: 'unreadable', detail: causeOf(must(parseText('the status read threw'))) });
 
 export class WorktreeRegistry {
     private readonly deps: WorktreeRegistryDeps;

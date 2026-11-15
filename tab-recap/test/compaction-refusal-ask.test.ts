@@ -15,6 +15,7 @@ import type { Agents, AgentState } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { toolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
@@ -93,7 +94,7 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
 const REFUSALS: readonly (readonly [string, AgentState, string])[] = [
     ['a busy agent is refused failed-busy', { kind: 'agent', agent: 'claude', status: 'working' }, 'failed-busy'],
     ['a blocked agent is refused failed-skipped', { kind: 'agent', agent: 'claude', status: 'blocked' }, 'failed-skipped'],
-    ['an agent whose state cannot be read is refused failed-error, never a slug of the reason', unknown({ why: 'unreadable', detail: 'agent cannot compact right now' }), 'failed-error'],
+    ['an agent whose state cannot be read is refused failed-error, never a slug of the reason', unknown({ why: 'unreadable', detail: causeOf('agent cannot compact right now') }), 'failed-error'],
 ];
 
 for (const [name, state, expected] of REFUSALS) {

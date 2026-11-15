@@ -1,10 +1,12 @@
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
+import { parseText, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 export type NeedRefusal = 'unknown-need' | 'not-a-need' | 'not-open';
@@ -52,9 +54,9 @@ export class AnsweredByHand {
             const applied = this.deps.stories.keep({ task: fact.task, at: this.deps.now(), language: fact.language }, { story: null, merges: [close] });
             const turned = applied.refused[0];
             if (turned === undefined) { return { kind: 'answered', id }; }
-            return turned.reason === 'closed' ? refused('not-open') : unknown({ why: 'failed', code: 1, detail: `the ledger refused the close: ${turned.reason}` });
+            return turned.reason === 'closed' ? refused('not-open') : unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(`the ledger refused the close: ${turned.reason}`))) });
         } catch (failure) {
-            return unknown({ why: 'unreadable', detail: failure instanceof Error ? failure.message : String(failure) });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText(failure instanceof Error ? failure.message : String(failure)))) });
         }
     }
 }

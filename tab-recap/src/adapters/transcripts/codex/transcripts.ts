@@ -3,6 +3,9 @@ import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { arr, obj, parse, readJsonl, str, tailLines, tailOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
 import { CODEX_IN_FLIGHT_INITIAL_BYTES, CODEX_IN_FLIGHT_MAX_BYTES, codexInFlight } from './in-flight.ts';
@@ -74,7 +77,7 @@ export class CodexTranscripts implements Transcripts {
             }
             return Promise.resolve(answer);
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -90,7 +93,7 @@ export class CodexTranscripts implements Transcripts {
         try {
             return Promise.resolve({ kind: 'prompt', text: extractCodex(tailLines(source, budget)).lastPrompt });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -98,7 +101,7 @@ export class CodexTranscripts implements Transcripts {
         try {
             return Promise.resolve({ kind: 'observed', observed: codexObserved(tailLines(source, budget)) });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -107,7 +110,7 @@ export class CodexTranscripts implements Transcripts {
             const { lines, position, grew } = readJsonl(source, was, budget);
             return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 }

@@ -4,6 +4,7 @@ import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts
 import { EVENT_TOKEN, VALUE_MAX } from '#src/recap/domain/event-token.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
@@ -24,14 +25,14 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
     const tokens: LaneTokens = {
         report: async (pane, values): Promise<Done> => {
             rig.panes.push({ target: pane, value: values[EVENT_TOKEN] ?? null });
-            return rig.failing ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'done' };
+            return rig.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
         },
     };
     const ws: WorkspaceTokens = {
         reportWorkspace: async (workspace, values): Promise<Done> => {
             await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
             rig.spaces.push({ target: workspace, value: values[EVENT_TOKEN] ?? null });
-            return rig.failing ? unknown({ why: 'unreachable', detail: 'fake' }) : { kind: 'done' };
+            return rig.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
         },
         workspaces: async (): Promise<WorkspacesResult> => ({ kind: 'workspaces', ids: workspaces }),
     };
@@ -154,7 +155,7 @@ test('a workspace that cannot be listed is logged, and nothing is written for it
     const logged: string[] = [];
     const ws: WorkspaceTokens = {
         reportWorkspace: async (): Promise<Done> => ({ kind: 'done' }),
-        workspaces: async (): Promise<WorkspacesResult> => unknown({ why: 'unreachable', detail: 'fake' }),
+        workspaces: async (): Promise<WorkspacesResult> => unknown({ why: 'unreachable', detail: causeOf('fake') }),
     };
     const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): boolean => true, startedAt: 1, log: (line: string): void => { logged.push(line); } });
     await stream.daemon('daemon-started', '2.2.1');

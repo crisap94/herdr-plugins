@@ -11,6 +11,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const SCREEN = [
     '● I fixed the parser and the tests pass now.',
@@ -66,7 +67,7 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
 test('ScreenTranscripts: an unreadable pane is the reader\'s Unknown, and a screen of only chrome is not growth', async () => {
     const screens = new FakeScreens();
     const reader = new ScreenTranscripts(screens, () => true);
-    screens.next = { kind: 'unknown', why: { why: 'unreachable', detail: 'gone' } };
+    screens.next = { kind: 'unknown', why: { why: 'unreachable', detail: causeOf('gone') } };
     assert.equal((await reader.read('screen:w1:p3', UNREAD, 100)).kind, 'unknown');
     screens.next = { kind: 'screen', text: '────\n❯ \n', revision: 1, truncated: false };
     const empty = await reader.read('screen:w1:p3', UNREAD, 100) as Chunk;

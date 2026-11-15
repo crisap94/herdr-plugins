@@ -1,6 +1,7 @@
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -43,12 +44,32 @@ export interface ClosedFound extends FoundFacts {
 
 export type FoundSource = LiveFound | ClosedFound;
 
-export type SourceResolution =
-    | FoundSource
+export type UnfoundSource =
     | { readonly kind: 'unlisted' }
     | { readonly kind: 'source-unavailable' }
     | { readonly kind: 'task-ambiguous' }
     | { readonly kind: 'unknown'; readonly why: string };
+
+export type SourceResolution = FoundSource | UnfoundSource;
+
+export type UnfoundOutcome = Extract<HandoffOutcome, { readonly kind: 'refused' | 'failed' }>;
+
+export function unfoundOutcome(found: UnfoundSource): UnfoundOutcome {
+    switch (found.kind) {
+        case 'unlisted':
+            return { kind: 'refused', reason: 'ledger-empty' };
+        case 'task-ambiguous':
+            return { kind: 'refused', reason: 'task-ambiguous' };
+        case 'source-unavailable':
+            return { kind: 'refused', reason: 'source-unavailable' };
+        case 'unknown':
+            return { kind: 'failed', reason: 'source-unreadable' };
+        default: {
+            const exhaustive: never = found;
+            return exhaustive;
+        }
+    }
+}
 
 export interface SourceInputs {
     readonly live: { readonly request: SourceRequest; readonly deps: SourceDeps };
@@ -91,7 +112,7 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps): SourceResolut
         case 'found':
             return { kind: 'found', source: 'closed', identity, task: resolution.task, facts: resolution.facts, view: resolution.view };
         case 'unknown':
-            return { kind: 'unknown', why: saying(resolution.why) };
+            return { kind: 'unknown', why: resolution.why.why === 'unreadable' ? resolution.why.detail : saying(resolution.why) };
         default:
             return { kind: 'source-unavailable' };
     }

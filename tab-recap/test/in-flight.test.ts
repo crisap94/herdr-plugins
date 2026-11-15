@@ -8,6 +8,7 @@ import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import type { Located, InFlightResult } from '#src/ports/transcripts.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 
 const claude = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' });
@@ -48,7 +49,7 @@ test('a codex lane locates by its working directory, and a missing rollout is no
 });
 
 test('a transcript that cannot be read is unknown, never not-started', async () => {
-    const reader = fakeReader('claude', unknown({ why: 'unreadable', detail: '/projects' }), { kind: 'in-flight', count: 9, background: [] });
+    const reader = fakeReader('claude', unknown({ why: 'unreadable', detail: causeOf('/projects') }), { kind: 'in-flight', count: 9, background: [] });
     assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'unknown', why: 'unreadable: /projects' });
 });
 
@@ -58,7 +59,7 @@ test('a located transcript reports its count of unfinished work', async () => {
 });
 
 test('a read that fails is unknown', async () => {
-    const reader = fakeReader('claude', { kind: 'located', source: '/t/sess-1.jsonl' }, unknown({ why: 'unreadable', detail: 'tail' }));
+    const reader = fakeReader('claude', { kind: 'located', source: '/t/sess-1.jsonl' }, unknown({ why: 'unreadable', detail: causeOf('tail') }));
     assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'unknown', why: 'unreadable: tail' });
 });
 

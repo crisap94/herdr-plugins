@@ -13,6 +13,8 @@ import type { ScreenResult } from '#src/ports/screens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_SCREEN } from '../desktop/constants.ts';
 import { HcCoreAgents } from './agents.ts';
 import type { HcSeenResult } from './agents.ts';
@@ -105,7 +107,7 @@ export class HcCoreFleet implements Fleet {
 
     subscribe(): Promise<StreamResult> {
         if (this.life === 'shut') {
-            return Promise.resolve(unknown({ why: 'unreachable', detail: HC_SHUT }));
+            return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(must(parseText(HC_SHUT))) }));
         }
         const queue = new AsyncQueue<Frame>();
         const events = new CoreEvents(this.eventsTiming === undefined ? { path: this.path } : { path: this.path, timing: this.eventsTiming });
@@ -130,7 +132,7 @@ export class HcCoreFleet implements Fleet {
     }
 
     open(): Promise<OpenResult> {
-        return Promise.resolve(unknown({ why: 'unreachable', detail: HC_NO_COLUMN }));
+        return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(must(parseText(HC_NO_COLUMN))) }));
     }
 
     resize(): Promise<Done> {
@@ -156,7 +158,7 @@ export class HcCoreFleet implements Fleet {
         }
         const screen = parseHcScreen(answer.value);
         if (screen.kind === 'err') {
-            return unknown({ why: 'unreadable', detail: HC_ODD_SCREEN });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText(HC_ODD_SCREEN))) });
         }
         const trimmed = lastLines(screen.value.text, must(parseCoreCount(lines)));
         this.screens = must(parseCount(this.screens + 1));
@@ -180,7 +182,7 @@ export class HcCoreFleet implements Fleet {
     }
 
     notify(): Promise<Notified> {
-        return Promise.resolve(unknown({ why: 'unreachable', detail: HC_NO_NOTICE }));
+        return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(must(parseText(HC_NO_NOTICE))) }));
     }
 
     agents(): HcCoreAgents {

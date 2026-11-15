@@ -1,13 +1,15 @@
 import { findRoot, Errors } from 'isomorphic-git';
 import type { FsClient } from 'isomorphic-git';
 import { resolve } from 'node:path';
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorktreeLookup } from '#src/ports/worktree-status.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
@@ -22,11 +24,11 @@ export interface Handle {
 }
 
 export function unreadable(failure: ParseFailure): Unknown {
-    return unknown({ why: 'unreadable', detail: failure.kind });
+    return unknown({ why: 'unreadable', detail: causeOf(must(parseText(failure.kind))) });
 }
 
 export function notARepository(): Unknown {
-    return unknown({ why: 'failed', code: NOT_A_REPOSITORY, detail: NOT_A_REPOSITORY_DETAIL });
+    return unknown({ why: 'failed', code: NOT_A_REPOSITORY, detail: causeOf(must(parseText(NOT_A_REPOSITORY_DETAIL))) });
 }
 
 export async function withinBudget<T>(budget: Duration, work: (deadline: Instant) => Promise<T>): Promise<T | Unknown> {
@@ -42,7 +44,7 @@ export async function withinBudget<T>(budget: Duration, work: (deadline: Instant
             return timedOut;
         }
         const detail = error instanceof Error ? error.message : NO_DETAIL;
-        return unknown({ why: 'unreadable', detail: detail.slice(0, DETAIL_MAX) });
+        return unknown({ why: 'unreadable', detail: causeOf(must(parseText(detail.slice(0, DETAIL_MAX)))) });
     } finally {
         clearTimeout(timer);
     }

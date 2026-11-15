@@ -1,4 +1,5 @@
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './cause.ts';
 import type { LastCommitResult, UncommittedResult, WorksiteReader } from '#src/ports/worksite-reader.ts';
 
 interface Worksite {
@@ -19,7 +20,7 @@ export class MemoryWorksite implements WorksiteReader {
             return Promise.resolve(unknown({ why: 'not-found', what: 'directory' }));
         }
         const { commit } = site;
-        return Promise.resolve(commit === null ? unknown({ why: 'failed', code: 128, detail: 'no commits yet' }) : { kind: 'commit', ...commit });
+        return Promise.resolve(commit === null ? unknown({ why: 'failed', code: 128, detail: causeOf('no commits yet') }) : { kind: 'commit', ...commit });
     }
 
     uncommitted(directory: string): Promise<UncommittedResult> {

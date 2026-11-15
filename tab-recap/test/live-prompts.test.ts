@@ -23,6 +23,7 @@ import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const lane = (pane: string, agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` });
 
@@ -49,7 +50,7 @@ test('LivePrompts: the newest prompt of a lane, true only when it changed; a bou
 });
 
 test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps what it had', async () => {
-    const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'kept' }, '/t/w1:p2': unknown({ why: 'unreadable', detail: 'x' }) });
+    const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'kept' }, '/t/w1:p2': unknown({ why: 'unreadable', detail: causeOf('x') }) });
     const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
     assert.equal(await prompts.refresh(laneFrom({ paneId: 'w9:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })), false, 'cannot locate');

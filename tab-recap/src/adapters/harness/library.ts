@@ -2,9 +2,12 @@ import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/ha
 import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
 import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { scrubbedFrom } from '../os/process/control.ts';
 import { LIBRARY_HARNESS } from './library-constants.ts';
@@ -27,7 +30,7 @@ function failedOf(failure: RunFailure): Ran {
         return unknown({ why: 'timeout', after: duration(failure.timeoutMs) });
     }
     const code = failure.kind === LIBRARY_HARNESS.exitKind && failure.code !== null ? failure.code : LIBRARY_HARNESS.failedCode;
-    return unknown({ why: 'failed', code, detail: `${failure.kind}: ${failure.message}`.slice(0, LIBRARY_HARNESS.detailLimit) });
+    return unknown({ why: 'failed', code, detail: causeOf(must(parseText(`${failure.kind}: ${failure.message}`.slice(0, LIBRARY_HARNESS.detailLimit)))) });
 }
 
 function ranOf(output: RunOutput): Ran {
@@ -59,10 +62,10 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
 
     private refusalOf(call: HarnessCall): Refusal {
         if (this.runtime.policyNotice(this.id, LIBRARY_HARNESS.loginStore) !== null && !this.claudeAck) {
-            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: LIBRARY_HARNESS.ackMessage });
+            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText(LIBRARY_HARNESS.ackMessage))) });
         }
         if (call.answer?.kind === 'schema') {
-            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: 'structured output is not available in this harness library' });
+            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText('structured output is not available in this harness library'))) });
         }
         return null;
     }

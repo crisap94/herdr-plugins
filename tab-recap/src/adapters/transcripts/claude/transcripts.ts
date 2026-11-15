@@ -4,6 +4,9 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { readJsonl, tailLines, tailOf } from '../jsonl.ts';
 import { claudeObserved } from './context.ts';
 import { extractClaude } from './rows.ts';
@@ -54,7 +57,7 @@ export class ClaudeTranscripts implements Transcripts {
             const found = extractClaude(tailLines(source, budget));
             return Promise.resolve({ kind: 'prompt', text: found.entries.findLast((entry) => entry.role === 'user')?.text ?? found.lastPrompt });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -62,7 +65,7 @@ export class ClaudeTranscripts implements Transcripts {
         try {
             return Promise.resolve({ kind: 'observed', observed: claudeObserved(tailLines(source, budget)) });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -85,7 +88,7 @@ export class ClaudeTranscripts implements Transcripts {
             else this.unknownAt.delete(source);
             return Promise.resolve(answer);
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 
@@ -94,7 +97,7 @@ export class ClaudeTranscripts implements Transcripts {
             const { lines, position, grew } = readJsonl(source, was, budget);
             return Promise.resolve({ kind: 'chunk', ...extractClaude(lines), position, grew });
         } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: error instanceof Error ? error.message : String(error) }));
+            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
     }
 }

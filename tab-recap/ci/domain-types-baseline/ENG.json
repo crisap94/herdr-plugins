@@ -56,7 +56,7 @@
   "src/ports/unknowable.ts": {
     "parameter": 1,
     "return": 1,
-    "property": 6
+    "property": 3
   },
   "src/recap/application/anchor-source.ts": {
     "return": 1
@@ -226,8 +226,7 @@
     "property": 11
   },
   "src/recap/domain/failure-cause.ts": {
-    "parameter": 1,
-    "assertion": 1
+    "parameter": 1
   },
   "src/recap/domain/gates/duplicate.ts": {
     "return": 1

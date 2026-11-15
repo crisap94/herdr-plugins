@@ -811,3 +811,13 @@ taken, so nothing is typed for an ask already answered. A row the command wrote 
 
 - **WHEN** the mapping test runs over the outcome table
 - **THEN** every storable outcome and reason SHALL map to one stage that fits in 80 characters with a 16-character id
+
+### Requirement: A printed closed source that cannot be read logs its cause only
+
+When `--print` cannot read a closed source, it SHALL write one line to standard error that names the cause as `Name` or `Name: CODE`, and SHALL NOT write the error message, a path or any text of the handoff.
+
+#### Scenario: An unreadable closed source is logged by cause
+
+- **WHEN** `--print --from-closed` runs and the read-only store throws an error named `SqliteError` with code `SQLITE_BUSY`
+- **THEN** standard error SHALL carry the line `tab-recap: handoff print: source unreadable (SqliteError: SQLITE_BUSY)`
+- **AND** the CLI SHALL exit 1 with the `failed.sourceUnreadable` message key

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
@@ -11,7 +12,7 @@ import { FakePanes } from './fakes/herdr-panes.ts';
 function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens; panes: PaneTokens } {
     const herdr = new FakePanes(() => clock.at);
     const tokens: LaneTokens = {
-        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: 'fake' })),
+        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
     const panes: PaneTokens = {
         read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: herdr.read(pane) }),
@@ -70,8 +71,8 @@ test('after typing, tab-recap clears its lease', async () => {
 test('herdr cannot take or read tokens: the lease is unavailable at once, typing goes on without it, and one line says so per outage', async () => {
     const clock = { at: 1000 };
     const logged: string[] = [];
-    const broken: LaneTokens = { report: async (): Promise<Done> => unknown({ why: 'unreachable', detail: 'no pane.report_metadata' }) };
-    const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => unknown({ why: 'unreachable', detail: 'no pane.get' }) };
+    const broken: LaneTokens = { report: async (): Promise<Done> => unknown({ why: 'unreachable', detail: causeOf('no pane.report_metadata') }) };
+    const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => unknown({ why: 'unreachable', detail: causeOf('no pane.get') }) };
     const lease = new TypingLease({ tokens: broken, panes, now: (): number => clock.at, pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (line: string): void => { logged.push(line); } });
     assert.equal(await lease.acquire('w1:p1'), 'unavailable');
     assert.equal(await lease.acquire('w1:p1'), 'unavailable');

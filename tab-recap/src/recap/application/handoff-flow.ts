@@ -9,7 +9,7 @@ import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
-import { isLaneOfTab, resolveSource } from './handoff-source.ts';
+import { isLaneOfTab, resolveSource, unfoundOutcome } from './handoff-source.ts';
 import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
@@ -139,23 +139,13 @@ export class HandoffFlow {
 
     private async rendered(request: HandoffRequestRow, refresh: RefreshStatus): Promise<HandoffRenderResult | HandoffOutcome> {
         const found = this.sourceOf(request);
-        switch (found.kind) {
-            case 'found':
-                return this.renderOf(request, found, refresh);
-            case 'unlisted':
-                return { kind: 'refused', reason: 'ledger-empty' };
-            case 'task-ambiguous':
-                return { kind: 'refused', reason: 'task-ambiguous' };
-            case 'source-unavailable':
-                return { kind: 'refused', reason: 'source-unavailable' };
-            case 'unknown':
-                this.deps.log(`handoff ${request.id}: source unreadable (${found.why})`);
-                return { kind: 'failed', reason: 'source-unreadable' };
-            default: {
-                const exhaustive: never = found;
-                return exhaustive;
-            }
+        if (found.kind === 'found') {
+            return this.renderOf(request, found, refresh);
         }
+        if (found.kind === 'unknown') {
+            this.deps.log(`handoff ${request.id}: source unreadable (${found.why})`);
+        }
+        return unfoundOutcome(found);
     }
 
     private sourceOf(request: HandoffRequestRow): SourceResolution {

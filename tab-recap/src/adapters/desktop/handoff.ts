@@ -20,5 +20,6 @@ export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPr
         target: fleet.agents(),
         closedDays: loadConfig().closedLaneDays,
         now: Date.now,
+        log: (): void => undefined,
     });
 }

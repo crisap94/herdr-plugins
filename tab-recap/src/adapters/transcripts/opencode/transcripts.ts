@@ -7,6 +7,9 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { opencodeObserved } from './context.ts';
 import { partsOf } from './parts.ts';
 import { opencodeInFlight } from './in-flight.ts';
@@ -85,7 +88,7 @@ export class OpencodeTranscripts implements Transcripts {
     private withStore<T>(use: (store: OpenCodeStore) => T): T | Unknown {
         const store = openOpencodeStore(this.database);
         if (store === null) {
-            return unknown({ why: 'unreadable', detail: this.database });
+            return unknown({ why: 'unreadable', detail: causeOf(must(parseText(this.database))) });
         }
         try {
             return use(store);

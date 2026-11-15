@@ -4,6 +4,9 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { REPO_TTL_MS, TIMEOUT_MS } from './constants.ts';
 import { handleOf, openRepo, unreadable, withinBudget } from './reach.ts';
 import { branchOf, originWebOf } from './reach-history.ts';
@@ -56,6 +59,6 @@ export class GitLaneRepo implements LaneRepo {
 
     private async look(cwd: string): Promise<RepoResult> {
         const directory = parseDirectory(cwd);
-        return directory.kind === 'ok' ? repoAt(directory.value) : unknown({ why: 'unreadable', detail: directory.error.kind });
+        return directory.kind === 'ok' ? repoAt(directory.value) : unknown({ why: 'unreadable', detail: causeOf(must(parseText(directory.error.kind))) });
     }
 }

@@ -2,6 +2,7 @@ import { must } from '#src/protocol/result.ts';
 import type { HandoffPrinter, PrintResult } from '#src/ports/handoff-print.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffReason } from '#src/recap/domain/handoff-outcome.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -24,7 +25,7 @@ function readOf(printed: PrintResult): HandoffRead {
         case 'refused':
             return { kind: 'refused', reason: printed.reason };
         default:
-            return unknown({ why: 'failed', code: 1, detail: printed.reason });
+            return unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(printed.reason))) });
     }
 }
 
@@ -33,6 +34,6 @@ export async function handoffMessageOf(deps: HandoffMessageDeps, tab: TabId, fro
     try {
         return readOf(await deps.printer.renderForPrint({ from, to, note: null, closed: null }));
     } catch (failure) {
-        return unknown({ why: 'unreadable', detail: failure instanceof Error ? failure.message : String(failure) });
+        return unknown({ why: 'unreadable', detail: causeOf(must(parseText(failure instanceof Error ? failure.message : String(failure)))) });
     }
 }

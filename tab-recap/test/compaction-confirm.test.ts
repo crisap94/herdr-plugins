@@ -10,6 +10,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Mark, Transcripts } from '#src/ports/transcripts.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const SINCE = Date.parse('2026-10-10T02:21:48Z');
 const compactedAt = (at: number): Mark => ({ kind: 'compacted', at, tokensBefore: 54_709, tokensAfter: 4_460, tookMs: 4_000 });
@@ -49,7 +50,7 @@ test('a resumed agent: its lane holds the session it had, herdr reports the new 
 
 test('herdr cannot say the session: the lane as the board holds it is read, as before', async () => {
     const files = new Map([['/projects/x/S-old.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve(unknown({ why: 'unreachable', detail: 'pane.get' })));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('pane.get') })));
     const lane = laneFrom({ paneId: 'w28:p1', tabId: 'w28:t1', workspaceId: 'w28', agent: 'claude', session: 'S-old' });
     assert.equal(await confirm(recent, lane), 'compacted');
 });

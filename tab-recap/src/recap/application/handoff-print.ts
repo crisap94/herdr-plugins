@@ -19,7 +19,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { renderHandoff } from './handoff-pipeline.ts';
 import type { HandoffLane } from './handoff-render.ts';
-import { resolveSource } from './handoff-source.ts';
+import { resolveSource, unfoundOutcome } from './handoff-source.ts';
 import type { ClosedFound, SourceLane, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
@@ -41,6 +41,7 @@ export interface PrintDeps {
     readonly target: { status(pane: string): Promise<AgentState> };
     readonly closedDays: ClosedLaneDays;
     readonly now: () => number;
+    readonly log: (line: Text) => void;
 }
 
 const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintResult => ({ kind: 'refused', reason });
@@ -107,22 +108,13 @@ export class PrintedHandoffs implements HandoffPrinter {
     }
 
     private async outcome(store: PrintStore, request: PrintRequest, found: SourceResolution, live: Live | null): Promise<PrintResult> {
-        switch (found.kind) {
-            case 'found':
-                return this.viewed(store, request, found.source === 'closed' ? this.closedView(found) : this.liveView(store, request, found.facts, live));
-            case 'unlisted':
-                return refusedWith('ledger-empty');
-            case 'task-ambiguous':
-                return refusedWith('task-ambiguous');
-            case 'source-unavailable':
-                return refusedWith('source-unavailable');
-            case 'unknown':
-                return { kind: 'failed', reason: 'source-unreadable' };
-            default: {
-                const exhaustive: never = found;
-                return exhaustive;
-            }
+        if (found.kind === 'found') {
+            return this.viewed(store, request, found.source === 'closed' ? this.closedView(found) : this.liveView(store, request, found.facts, live));
         }
+        if (found.kind === 'unknown') {
+            this.deps.log(must(parseText(`handoff print: source unreadable (${found.why})`)));
+        }
+        return unfoundOutcome(found);
     }
 
     private liveView(store: PrintStore, request: PrintRequest, facts: readonly Fact[], live: Live | null): View | null {

@@ -4,6 +4,7 @@ import { bootObservations, restoredObservation } from '#src/daemon/restored-lane
 import type { LiveLanesRead, LiveLanes } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const fakeStore = (read: LiveLanesRead): LiveLanes => ({ liveLanes: (): LiveLanesRead => read });
 
@@ -20,7 +21,7 @@ test('no persisted lane still reaches the fold, so the first snapshot knows the 
 
 test('a persisted lane list that cannot be read is logged without its content and pushes nothing', () => {
     const logged: string[] = [];
-    const observed = restoredObservation(fakeStore({ kind: 'unknown', why: { why: 'unreadable', detail: 'SELECT the secret' } }), (line: string) => { logged.push(line); });
+    const observed = restoredObservation(fakeStore({ kind: 'unknown', why: { why: 'unreadable', detail: causeOf('SELECT the secret') } }), (line: string) => { logged.push(line); });
     assert.equal(observed, null);
     assert.deepEqual(logged, ['restored lanes: the persisted lanes could not be read (unreadable)']);
 });
@@ -29,5 +30,5 @@ test('the boot pushes the hidden state first and the persisted lanes after it; a
     const hidden = { all: false, hidden: [], shown: [] };
     const lanes = [{ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(5), cwd: null }];
     assert.deepEqual(bootObservations(hidden, fakeStore({ kind: 'read', lanes }), () => undefined), [{ kind: 'hidden-restored', state: hidden }, { kind: 'restored', lanes }]);
-    assert.deepEqual(bootObservations(hidden, fakeStore({ kind: 'unknown', why: { why: 'unreadable', detail: 'x' } }), () => undefined), [{ kind: 'hidden-restored', state: hidden }]);
+    assert.deepEqual(bootObservations(hidden, fakeStore({ kind: 'unknown', why: { why: 'unreadable', detail: causeOf('x') } }), () => undefined), [{ kind: 'hidden-restored', state: hidden }]);
 });
