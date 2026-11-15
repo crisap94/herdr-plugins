@@ -1,0 +1,17 @@
+{
+  "name": "herdr-desktop-mods",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tab-recap/contract": {
+      "types": "./types/tab-recap-constants.d.ts",
+      "default": "./mods/tab-recap/constants.js"
+    }
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "bash gates/run.sh typecheck",
+    "test": "bash gates/run.sh test"
+  }
+}
