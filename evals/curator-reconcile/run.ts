@@ -4,6 +4,7 @@ import { runEval } from '../lib/cli.ts';
 import { STATE_ROOT } from '../lib/env.ts';
 import { LADDER, ladder } from '../lib/ladder.ts';
 import { armMarkdown, flagOf, guardMode, repairFlag, writeArm } from '../lib/arm.ts';
+import { datasetOf } from '../lib/fresh.ts';
 import { lastByKey, readJsonl, runDir } from '../lib/runner.ts';
 import type { Answer, Config, EvalSpec, Item } from '../lib/types.ts';
 import { reconcileCounters, reconcileRound } from './arm.ts';
@@ -19,6 +20,7 @@ interface ConfigFile {
     readonly dataset: string;
     readonly items: number;
     readonly repetitions: number;
+    readonly fresh: { readonly dataset: string; readonly items: number };
     readonly shipped: Config;
     readonly configs: readonly Config[];
     readonly codeCriteria: readonly string[];
@@ -28,12 +30,13 @@ interface ConfigFile {
 
 const here = import.meta.dirname;
 const file = JSON.parse(readFileSync(join(here, 'config.json'), 'utf8')) as ConfigFile;
-const items = loadItems(join(here, file.dataset));
+const source = datasetOf({ dataset: file.dataset, items: file.items }, file.fresh, process.argv.slice(2));
+const items = loadItems(join(here, source.dataset));
 const configs = ladder(file.shipped, LADDER);
 
 const same = (a: readonly string[], b: readonly string[]): boolean => JSON.stringify(a) === JSON.stringify(b);
 if (file.name !== NAME) throw new Error(`${NAME}: config.json names ${file.name}`);
-if (items.length !== file.items) throw new Error(`${NAME}: ${items.length} items in ${file.dataset}, config.json says ${file.items}`);
+if (items.length !== source.items) throw new Error(`${NAME}: ${items.length} items in ${source.dataset}, config.json says ${source.items}`);
 if (!same(configs.map((config) => config.name), file.configs.map((config) => config.name))) throw new Error(`${NAME}: the ladder differs from config.json configs`);
 if (!same(CODE_CRITERIA, file.codeCriteria)) throw new Error(`${NAME}: code criteria differ from config.json`);
 if (!same(JUDGE_CRITERIA.map((criterion) => criterion.id), file.judgeCriteria)) throw new Error(`${NAME}: judge criteria differ from config.json`);

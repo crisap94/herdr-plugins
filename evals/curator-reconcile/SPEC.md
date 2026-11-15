@@ -193,3 +193,36 @@ Cannot show:
 - What RJ1 says on answers with no operation. Such an answer passes without telling anything; read RJ1 next to the share of answers with no operation.
 - An independent grade of the `claude-sonnet-5-5` rungs on RJ1.
 - A best configuration beyond this set. Once a configuration is chosen on it, it is a development set.
+
+## 8 Fresh set (FRESH-1)
+
+The fresh set is `dataset-fresh.jsonl`: 24 invented items, built by `build-dataset.ts --fresh` from `dataset-source/fresh.ts` with the seed `fresh-1/2026-11-14`. Sizes: small 8, medium 12, large 4. Traps: 24 refused, 25 kept. A refused trap is refused by the plugin's parser or a gate; a kept trap is let through whole. Run it with `run.ts --fresh --label fresh-<name>`.
+
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-7 does not start.
+
+| id | plants | traps (kind: expect) | size |
+| --- | --- | --- | --- |
+| frec-01-answered-trap-ask-done | answered-trap, stale, lookalike | answered-trap: refused; lookalike: kept | small |
+| frec-02-answered-trap-update-retention | answered-trap, stale, update, lookalike | answered-trap: refused; lookalike: kept | small |
+| frec-03-answered-trap-now-leave | answered-trap, stale, lookalike | answered-trap: refused; lookalike: kept | medium |
+| frec-04-answered-trap-next-done | answered-trap, stale, compaction | answered-trap: refused; compaction: kept | medium |
+| frec-05-answered-trap-update-threshold | answered-trap, stale, update, lookalike | answered-trap: refused; lookalike: kept | medium |
+| frec-06-answered-trap-large | answered-trap, stale, lookalike | answered-trap: refused; lookalike: kept | large |
+| frec-07-long-evidence-staging-migration | long-evidence, stale, lookalike | long-evidence: refused; lookalike: kept | small |
+| frec-08-long-evidence-wrong-cause | long-evidence, stale, lookalike | long-evidence: refused; lookalike: kept | medium |
+| frec-09-long-evidence-superseded | long-evidence, stale, duplicate, lookalike | long-evidence: refused; lookalike: kept | medium |
+| frec-10-long-evidence-compaction | long-evidence, stale, compaction | long-evidence: refused; compaction: kept | medium |
+| frec-11-long-evidence-answered | long-evidence, stale, lookalike | long-evidence: refused; lookalike: kept | small |
+| frec-12-long-evidence-large | long-evidence, stale, lookalike | long-evidence: refused; lookalike: kept | large |
+| frec-13-add-bait-cert-expiry | add-bait, stale, lookalike | add-bait: refused; lookalike: kept | small |
+| frec-14-add-bait-quiet | add-bait, lookalike | add-bait: refused; lookalike: kept | small |
+| frec-15-add-bait-decision | add-bait, stale, lookalike | add-bait: refused; lookalike: kept | medium |
+| frec-16-add-bait-compaction | add-bait, stale, compaction | add-bait: refused; compaction: kept | medium |
+| frec-17-add-bait-duplicate | add-bait, duplicate, lookalike | add-bait: refused; lookalike: kept | medium |
+| frec-18-add-bait-large | add-bait, stale, lookalike | add-bait: refused; lookalike: kept | large |
+| frec-19-near-pair-environment | near-pair, answered-trap, stale | near-pair: kept; answered-trap: refused | small |
+| frec-20-near-pair-component | near-pair, add-bait, stale | near-pair: kept; add-bait: refused | medium |
+| frec-21-near-pair-year | near-pair, long-evidence, stale | near-pair: kept; long-evidence: refused | medium |
+| frec-22-near-pair-quiet | near-pair, add-bait | near-pair: kept; add-bait: refused | small |
+| frec-23-near-pair-compaction | near-pair, long-evidence, compaction, stale | near-pair: kept; long-evidence: refused; compaction: kept | medium |
+| frec-24-near-pair-large | near-pair, answered-trap, stale | near-pair: kept; answered-trap: refused | large |
