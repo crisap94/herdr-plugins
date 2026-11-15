@@ -17,4 +17,6 @@ export type WriterView = { readonly kind: 'full' } | PrunedWriterView;
 
 export type Pipeline = 'one' | 'enumerate' | 'enumerate+gates' | 'full';
 
+export type CloseEvidence = 'off' | 'on';
+
 export type Debounce = { readonly kind: 'off' } | { readonly kind: 'window'; readonly window: Duration };

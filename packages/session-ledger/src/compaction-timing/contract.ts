@@ -13,6 +13,7 @@ import type {
     Text,
     Unknown,
 } from './engine-port.ts';
+import type { AgentKind, Count, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
 
 export type { Awaiting, BackgroundItem, ContextUse, WindowSource } from './engine-port.ts';
 
@@ -83,73 +84,78 @@ export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
 export type Verdict = 'compact' | 'wait' | 'undecided' | 'unknown';
 export interface LinkedDecision {
-    readonly id: string;
+    readonly id: DecisionId;
     readonly gate: DecisionGate;
 }
 
 export interface Skip {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly gate: SkipGate;
     readonly share: number | null;
     readonly detail: string | null;
 }
 
 export interface LastDecision {
-    readonly at: number;
-    readonly tokens: number;
+    readonly at: Instant;
+    readonly tokens: Count;
     readonly mode: DecisionMode;
     readonly verdict: Verdict;
     readonly gate: DecisionGate;
 }
 
 export interface Decision {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: number;
-    readonly tokens: number;
-    readonly window: number;
+    readonly tokens: Count;
+    readonly window: Count;
     readonly gate: DecisionGate;
     readonly verdict: Verdict;
     readonly askedVerdict: Verdict | null;
     readonly answers: Readonly<Record<string, number>>;
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly decider: string | null;
-    readonly costUsd: number;
-    readonly tookMs: number | null;
+    readonly costUsd: Usd;
+    readonly tookMs: Duration | null;
     readonly why: string | null;
     readonly laneStatus: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
-    readonly coverageMs: number | null;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration | null;
+    readonly coverageCostUsd: Usd | null;
 }
 
 export interface CoverageAmendment {
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly outcome: CoverageOutcome;
-    readonly coverageMs: number;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration;
+    readonly coverageCostUsd: Usd | null;
     readonly why: string | null;
     readonly block: boolean;
 }
 
+export interface QuestionCriteria {
+    readonly true: Text;
+    readonly false: Text;
+}
+
 export interface Question {
-    readonly instructions: string | object;
-    readonly criteria: { readonly true: string | object; readonly false: string | object };
+    readonly instructions: Text;
+    readonly criteria: QuestionCriteria;
 }
 
 export interface Decided {
     readonly kind: 'decided';
-    readonly answers: Readonly<Record<string, number>>;
-    readonly tokens: number;
-    readonly costUsd: number;
-    readonly tookMs: number;
-    readonly model: string;
+    readonly answers: ReadonlyMap<Text, Probability>;
+    readonly tokens: Count;
+    readonly costUsd: Usd;
+    readonly tookMs: Milliseconds;
+    readonly model: Text;
 }
 
 export interface Turn {

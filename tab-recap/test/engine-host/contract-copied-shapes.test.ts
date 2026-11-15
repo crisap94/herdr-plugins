@@ -17,6 +17,7 @@ const NAME_MAP: Readonly<Record<string, string>> = {
     AutocompactStyle: 'DecisionStyle',
     AutocompactState: 'DeciderState',
     Noul: 'Question',
+    NoulCriteria: 'QuestionCriteria',
 };
 
 interface Row {

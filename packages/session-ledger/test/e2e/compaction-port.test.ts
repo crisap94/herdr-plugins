@@ -64,6 +64,7 @@ const DECLARED = [
     'Policy',
     'PolicySettings',
     'Question',
+    'QuestionCriteria',
     'RecapReadiness',
     'RegisteredKind',
     'SafePointEvent',

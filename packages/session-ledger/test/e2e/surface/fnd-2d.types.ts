@@ -41,6 +41,7 @@ import type {
     Policy,
     PolicySettings,
     Question,
+    QuestionCriteria,
     RecapReadiness,
     RegisteredKind,
     SafePointEvent,
@@ -64,7 +65,7 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 export type ClosureNames = [ContextUse, WindowSource, Awaiting, BackgroundItem];
 export type WrittenNames = [Candidate, PolicySettings, CompactionAsk, Consideration, SafePointEvent, SafePointWatch, SafePointPorts, Decider, SessionSignals, CompactionActivity, RecapReadiness, DecisionLog, Sweep];
-export type CopiedNames = [WatchMode, SkipGate, DecisionGate, Verdict, Effect, Policy, Tuning, Skip, Decision, Decided, Question, CeilingPolicy, Backoff, MissedFacts, Thresholds, DecisionStyle, CoverageOutcome, LastDecision, LinkedDecision, CoverageAmendment, GateInput, DeciderState, ContinuationNote, NoteLimit];
+export type CopiedNames = [WatchMode, SkipGate, DecisionGate, Verdict, Effect, Policy, Tuning, Skip, Decision, Decided, Question, CeilingPolicy, Backoff, MissedFacts, Thresholds, DecisionStyle, CoverageOutcome, LastDecision, LinkedDecision, CoverageAmendment, GateInput, DeciderState, ContinuationNote, NoteLimit, QuestionCriteria];
 export type CopiedClosureNames = [Milliseconds, UncheckedReason, CheckedFact, DecisionMode, LaneStatusAtDecision, RegisteredKind, Turn, OpenWorkItem];
 
 export type ContextUseIsDeclaredOnce = Holds<Same<ContextUse, RootContextUse>>;
@@ -79,7 +80,7 @@ export type SkipGatesAreSeven = Holds<Same<SkipGate, 'below-minimum' | 'busy' | 
 export type RegisteredKindsAreThree = Holds<Same<RegisteredKind, 'claude' | 'codex' | 'opencode'>>;
 export type PolicyKeepsMainKinds = Holds<Same<Policy['kinds'], readonly string[]>>;
 export type PolicyShadowKindsAreRegistered = Holds<Same<Policy['shadowKinds'], readonly RegisteredKind[]>>;
-export type SkipKeepsMainFieldNames = Holds<Same<Pick<Skip, 'tab' | 'pane' | 'agent'>, { readonly tab: string; readonly pane: string; readonly agent: string }>>;
+export type SkipKeepsMainFieldNames = Holds<Same<keyof Pick<Skip, 'tab' | 'pane' | 'agent'>, 'tab' | 'pane' | 'agent'>>;
 export type DecisionKeepsLaneStatus = Holds<Same<Decision['laneStatus'], LaneStatusAtDecision | null>>;
 export type GateInputHoldsAFlight = Holds<Same<GateInput['flight'], Flight | null>>;
 export type InFlightIsObserved = Holds<Same<Awaited<ReturnType<SessionSignals['inFlight']>>, Observed>>;

@@ -10,13 +10,6 @@
     "class": "contract",
     "file": "src/compaction-timing/contract.ts",
     "symbol": "<anonymous>",
-    "field": "false",
-    "reason": "EC 2.5, copied shape: false of the inline object of Noul keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "<anonymous>",
     "field": "key",
     "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: key of the inline object of SafePointEvent and DecisionLog in SafePointEvent and DecisionLog keeps the plain type of that text; ENG-5 types it"
   },
@@ -40,13 +33,6 @@
     "symbol": "<anonymous>",
     "field": "share",
     "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: share of the inline object of SafePointEvent in SafePointEvent keeps the plain type of that text; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "<anonymous>",
-    "field": "true",
-    "reason": "EC 2.5, copied shape: true of the inline object of Noul keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
   },
   {
     "class": "contract",
@@ -409,15 +395,22 @@
     "class": "contract",
     "file": "src/compaction-timing/contract.ts",
     "symbol": "Question",
-    "field": "criteria",
-    "reason": "EC 2.5, copied shape: criteria of Question keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+    "field": "instructions",
+    "reason": "EC 2.5, copied shape: instructions of Question keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
   },
   {
     "class": "contract",
     "file": "src/compaction-timing/contract.ts",
-    "symbol": "Question",
-    "field": "instructions",
-    "reason": "EC 2.5, copied shape: instructions of Question keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+    "symbol": "QuestionCriteria",
+    "field": "true",
+    "reason": "EC 2.5, copied shape: true of QuestionCriteria keeps the plain type of NoulCriteria in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "QuestionCriteria",
+    "field": "false",
+    "reason": "EC 2.5, copied shape: false of QuestionCriteria keeps the plain type of NoulCriteria in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
   },
   {
     "class": "contract",
@@ -845,6 +838,13 @@
     "symbol": "CloseOp",
     "field": "id",
     "reason": "EC 2.2, copied shape: id of CloseOp keeps the plain type of CloseOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "CloseOp",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of CloseOp keeps the plain type of CloseOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
   },
   {
     "class": "contract",

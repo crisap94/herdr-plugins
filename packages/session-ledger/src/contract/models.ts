@@ -1,7 +1,7 @@
 import type { Unknown } from './kernel.ts';
 import type { ClosedWhy, Operation, Section } from './facts.ts';
 import type { AgentNote, Entry } from './session.ts';
-import type { HiddenCounts } from './settings.ts';
+import type { CloseEvidence, HiddenCounts } from './settings.ts';
 
 export interface InputAgent extends LaneHint {
     readonly id: string;
@@ -93,6 +93,7 @@ export interface RecapRequest {
     readonly previousLanguage: string;
     readonly correction?: string;
     readonly retry?: Correction;
+    readonly closeEvidence?: CloseEvidence;
 }
 
 export type Written = { readonly kind: 'written'; readonly text: string; readonly costUsd: number } | Unknown;

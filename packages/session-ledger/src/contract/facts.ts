@@ -1,4 +1,4 @@
-import type { Brand } from './kernel.ts';
+import type { Brand, Text } from './kernel.ts';
 
 export interface HistoryFact {
     readonly section: string;
@@ -64,6 +64,7 @@ export interface CloseOp {
     readonly op: 'close';
     readonly id: string;
     readonly why: ClosedWhy | null;
+    readonly anchor?: Text;
 }
 
 export type Operation = AddOp | UpdateOp | CloseOp;

@@ -6,5 +6,6 @@
   { "export": "PrunedWriterView", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
   { "export": "WriterView", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
   { "export": "Pipeline", "origin": "tab-recap/src/recap/domain/pipeline.ts", "originConst": "PIPELINES" },
+  { "export": "CloseEvidence", "origin": "tab-recap/src/recap/domain/pipeline.ts" },
   { "export": "Debounce", "origin": "tab-recap/src/recap/domain/debounce.ts" }
 ]

@@ -7,6 +7,7 @@ import type {
     BackgroundTool,
     CallKind,
     Chunk,
+    CloseEvidence,
     ContextUse,
     Correction,
     Curated,
@@ -58,7 +59,7 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 export type SessionNames = [CallKind, Entry, AgentNote, Mark, Chunk, Located, RunningCount, FlightReason, AwaitedNames, BackgroundTool, BackgroundLabel, BackgroundItem, Foreground, Awaiting, Observed, Flight, WindowSource, ContextUse];
 export type ModelNames = [InputAgent, LaneHint, TaskGroup, InputNote, InputTranscript, InputFact, InputLedger, InputCandidate, RecapInput, RefusedOperation, Correction, RecapRequest, Written, JobContract, Writer, Enumerated, Enumerator, Curated, Curator, CuratorMode];
-export type SettingNames = [PositiveCount, KeepNewest, NextHours, HiddenCounts, PrunedWriterView, WriterView, Pipeline, Debounce];
+export type SettingNames = [PositiveCount, KeepNewest, NextHours, HiddenCounts, PrunedWriterView, WriterView, Pipeline, Debounce, CloseEvidence];
 export type EnvironmentNames = [Forge, WebBase, RepoResult];
 
 export type LocatedMayBeUnknown = Holds<Unknown extends Located ? true : false>;

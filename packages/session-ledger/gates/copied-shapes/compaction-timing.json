@@ -23,6 +23,7 @@
   { "export": "LastDecision", "origin": "tab-recap/src/ports/autocompact-records.ts" },
   { "export": "Decision", "origin": "tab-recap/src/ports/autocompact-records.ts" },
   { "export": "CoverageAmendment", "origin": "tab-recap/src/ports/autocompact-records.ts" },
+  { "export": "QuestionCriteria", "origin": "tab-recap/src/ports/decider.ts", "originName": "NoulCriteria" },
   { "export": "Question", "origin": "tab-recap/src/ports/decider.ts", "originName": "Noul" },
   { "export": "Decided", "origin": "tab-recap/src/ports/decider.ts" },
   { "export": "Turn", "origin": "tab-recap/src/recap/application/autocompact-state.ts" },
