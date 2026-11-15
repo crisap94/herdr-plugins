@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stubCalled } from './stub.ts';
-import type { Adapter, Answer, Backend, Call, Called, Config, EvalSpec, Item } from './types.ts';
+import type { Adapter, Answer, Backend, Call, Called, Config, EvalSpec, Item, Prompt } from './types.ts';
 
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const DEFAULT_TIMEOUT_MS = 300000;
@@ -26,8 +26,26 @@ export interface RunOptions {
     readonly judgeAdapter: Adapter | null;
     readonly judgeCheck: Readonly<Record<string, boolean>>;
     readonly reportOnly: boolean;
+    readonly round?: (item: Item, ask: Asker) => Promise<Rounded>;
     readonly log: (line: string) => void;
 }
+
+export type Asker = (prompt: Prompt) => Promise<Called>;
+
+export interface ArmRecord {
+    readonly mode: string;
+    readonly repair_calls: number;
+    readonly repair_input_tokens: number;
+    readonly repair_output_tokens: number;
+    readonly applied_ops: number;
+}
+
+export interface Rounded {
+    readonly called: Called;
+    readonly arm: ArmRecord;
+}
+
+export type ArmedAnswer = Answer & { readonly arm?: ArmRecord };
 
 function realOrSelf(path: string): string {
     let current = resolve(path);
@@ -159,6 +177,26 @@ export function writePrompt<I, E>(spec: EvalSpec<I, E>, items: readonly Item<I, 
     return digest;
 }
 
+export function joinedCalled(calls: readonly Called[], text: string | null): Called {
+    const first = calls[0];
+    if (first === undefined) return { ...stubCalled(''), text: null, failure_kind: 'config', failure_detail: 'the plugin made no call', models: [], cost_basis: null };
+    const sum = (pick: (call: Called) => number): number => calls.reduce((total, call) => total + pick(call), 0);
+    const costs = calls.map((call) => call.cost_usd);
+    return {
+        ...first,
+        text,
+        input_tokens: sum((call) => call.input_tokens),
+        cache_read_tokens: sum((call) => call.cache_read_tokens),
+        cache_write_tokens: sum((call) => call.cache_write_tokens),
+        output_tokens: sum((call) => call.output_tokens),
+        reasoning_tokens: sum((call) => call.reasoning_tokens),
+        latency_ms: sum((call) => call.latency_ms),
+        cost_usd: costs.some((cost) => cost === null) ? null : costs.reduce<number>((total, cost) => total + (cost ?? 0), 0),
+        models: [...new Set(calls.flatMap((call) => call.models))],
+        anomalies: calls.flatMap((call) => call.anomalies),
+    };
+}
+
 export async function runJobs<I, E>(spec: EvalSpec<I, E>, options: RunOptions, dir: string): Promise<{ readonly made: number; readonly capped: boolean }> {
     const file = join(dir, 'answers.jsonl');
     const rows = readJsonl<Answer>(file);
@@ -187,10 +225,17 @@ export async function runJobs<I, E>(spec: EvalSpec<I, E>, options: RunOptions, d
             const prompt = spec.prompt(job.item);
             const call: Call = { system: prompt.system, user: prompt.user, model: job.config.model, effort: job.config.effort, timeoutMs: job.config.timeoutMs ?? DEFAULT_TIMEOUT_MS };
             const ask: Adapter = options.stub ? async () => stubCalled(spec.stub(job.item, job.config, job.repetition)) : options.adapters[backend];
-            const { called, attempts } = await callWithBackoff(ask, call, options.stub ? [] : options.backoffMs, pause, options.log);
+            let used = 0;
+            const asker: Asker = async (sent) => {
+                const done = await callWithBackoff(ask, { ...call, system: sent.system, user: sent.user }, options.stub ? [] : options.backoffMs, pause, options.log);
+                used += done.attempts;
+                return done.called;
+            };
+            const rounded = options.round === undefined ? undefined : await options.round(job.item, asker);
+            const { called, attempts } = rounded === undefined ? await callWithBackoff(ask, call, options.stub ? [] : options.backoffMs, pause, options.log) : { called: rounded.called, attempts: used };
             calls += attempts - 1;
             made += 1;
-            const answer: Answer = { ...called, key: keyOf(job.item.id, job.config.name, job.repetition), id: job.item.id, config: job.config.name, repetition: job.repetition, backend, model: job.config.model, effort: job.config.effort, attempts, at: new Date().toISOString() };
+            const answer: ArmedAnswer = { ...called, key: keyOf(job.item.id, job.config.name, job.repetition), id: job.item.id, config: job.config.name, repetition: job.repetition, backend, model: job.config.model, effort: job.config.effort, attempts, at: new Date().toISOString(), ...(rounded === undefined ? {} : { arm: rounded.arm }) };
             appendJsonl(file, answer);
             if (called.failure_kind !== null) options.log(`${answer.key}: ${called.failure_kind} ${called.failure_detail ?? ''}`);
         });

@@ -1,6 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { armLine, armMarkdown, type ArmCounters, flagOf, guardMode, repairFlag, writeArm } from './arm.ts';
 import { runEval } from './cli.ts';
 import { readJsonl, REPO, runDir } from './runner.ts';
 import { parseJson, quoted, unparsed } from './scoring.ts';
@@ -18,6 +20,15 @@ function check(name: string, ok: boolean): void {
 }
 
 const near = (actual: number, expected: number): boolean => Math.abs(actual - expected) < 0.0005;
+
+function thrown(action: () => unknown): string | null {
+    try {
+        action();
+        return null;
+    } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+    }
+}
 
 check('wilson 0/10 is 0.000-0.278', near(wilson(0, 10).low, 0) && near(wilson(0, 10).high, 0.2775));
 check('wilson 5/10 is 0.237-0.763', near(wilson(5, 10).low, 0.2366) && near(wilson(5, 10).high, 0.7634));
@@ -165,6 +176,54 @@ try {
     const leaks = seen.filter((call) => TOY_CONFIGS.some((config) => `${call.system}\n${call.user}`.includes(config.name) || `${call.system}\n${call.user}`.includes(config.model)));
     check('the judge never sees a configuration name or model', seen.length > 0 && leaks.length === 0);
     check('the judge is called on claude-sonnet-5-5 with a schema', seen.every((call) => call.model === 'claude-sonnet-5-5' && call.schema !== undefined));
+    const plain = await runEval(toy, ['--stub', '--root', root, '--label', 'plain'], quiet);
+    const plainRows = readJsonl<Answer & { arm?: unknown }>(join(plain.dir, 'answers.jsonl'));
+    const plainSummary = JSON.parse(readFileSync(join(plain.dir, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    check('a default run records rows with no arm and one attempt', plainRows.length === 36 && plainRows.every((row) => !('arm' in row) && row.attempts === 1));
+    check('a default run writes a summary with no arm', !('arm' in plainSummary));
+
+    check('the repair flag reads once, trimmed and lower-cased', repairFlag(['--repair', ' ONCE ']) === 'once');
+    check('the repair flag reads off, and no flag reads null', repairFlag(['--repair', 'off']) === 'off' && repairFlag([]) === null);
+    check('the repair flag refuses any other value', thrown(() => repairFlag(['--repair', 'on'])) === '--repair must be off or once');
+    check('a flag with no value is refused', thrown(() => flagOf(['--repair', '--stub'], '--repair')) === '--repair needs a value');
+
+    const guardOff = runDir(root, 'selftest', 'guard-off');
+    guardMode(guardOff, '--repair', 'off');
+    check('once over a folder that holds an off arm is refused', thrown(() => guardMode(guardOff, '--repair', 'once')) === 'this run holds answers of another arm');
+    check('a default run over a folder that holds an arm is refused', thrown(() => guardMode(guardOff, '--repair', null)) === 'this run was made with --repair off: pass the same flag');
+    const guardRows = runDir(root, 'selftest', 'guard-rows');
+    writeFileSync(join(guardRows, 'answers.jsonl'), '{}\n');
+    check('once over answers with no arm.json is refused', thrown(() => guardMode(guardRows, '--repair', 'once')) === 'this run holds answers of another arm');
+    const guardPlain = runDir(root, 'selftest', 'guard-plain');
+    check('a default run over a plain folder passes', thrown(() => guardMode(guardPlain, '--repair', null)) === null);
+
+    const countersA: ArmCounters = { config: 'claude-x', wrongful_closes: 0, applied_ops: 0, unparsed: 0, refused_ops: 1, repair_calls: 0, repair_input_tokens: 0, repair_output_tokens: 0, tokens_measured: true };
+    const countersC: ArmCounters = { config: 'claude-x', wrongful_closes: 0, applied_ops: 2, unparsed: 0, refused_ops: 0, repair_calls: 1, repair_input_tokens: 100, repair_output_tokens: 25, tokens_measured: true };
+    const armedLine = 'curator-reconcile claude-x A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied 2 unparsed 0 refused 0 repair calls 1 tokens 100/25';
+    check('the arm line reads both arms and the repair tokens', armLine('curator-reconcile', countersA, countersC) === armedLine);
+    check('the arm line ends unmeasured when the repair tokens were not measured', armLine('curator-reconcile', countersA, { ...countersC, tokens_measured: false }).endsWith('repair calls 1 tokens unmeasured'));
+    const markdown = armMarkdown('curator-reconcile', { mode: 'once', configs: [{ ...countersC, tokens_measured: false }] });
+    check('the arm table has the heading and an unmeasured cell', markdown.includes('## curator-reconcile: arm repair once (reported only)') && markdown.includes('| claude-x | 0 | 2 | 0 | 0 | 1 | unmeasured |'));
+
+    const handOnce = runDir(root, 'curator-reconcile', 'hand-once');
+    writeFileSync(join(handOnce, 'summary.json'), JSON.stringify({ eval: 'curator-reconcile', items: 1, repetitions: 1, dataset_sha256: 'd' }));
+    writeFileSync(join(handOnce, 'report.md'), '# report\n');
+    const onceBlock = { mode: 'once', configs: [countersC] };
+    writeArm(handOnce, onceBlock, armMarkdown('curator-reconcile', onceBlock));
+    const handSummary = JSON.parse(readFileSync(join(handOnce, 'summary.json'), 'utf8')) as Record<string, unknown>;
+    check('writeArm adds the arm block and keeps every other key', JSON.stringify(handSummary) === JSON.stringify({ eval: 'curator-reconcile', items: 1, repetitions: 1, dataset_sha256: 'd', arm: onceBlock }));
+    const handReport = readFileSync(join(handOnce, 'report.md'), 'utf8');
+    check('writeArm appends the arm section to report.md', handReport.startsWith('# report\n') && handReport.includes('## curator-reconcile: arm repair once (reported only)'));
+
+    const runA = runDir(root, 'curator-reconcile', 'ra');
+    writeFileSync(join(runA, 'summary.json'), JSON.stringify({ items: 1, repetitions: 1, dataset_sha256: 'd', arm: { mode: 'off', configs: [countersA] } }));
+    const runC = runDir(root, 'curator-reconcile', 'rc');
+    writeFileSync(join(runC, 'summary.json'), JSON.stringify({ items: 1, repetitions: 1, dataset_sha256: 'd', arm: { mode: 'once', configs: [countersC] } }));
+    const cliArgs = [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', root];
+    const good = spawnSync(process.execPath, [...cliArgs, '--a', 'ra', '--c', 'rc'], { encoding: 'utf8' });
+    check('the arm CLI prints the EVAL-7 line for two hand-made runs', good.status === 0 && good.stdout.trim() === armedLine);
+    const swapped = spawnSync(process.execPath, [...cliArgs, '--a', 'rc', '--c', 'ra'], { encoding: 'utf8' });
+    check('the arm CLI refuses a run A that is not arm off', swapped.status !== 0 && swapped.stderr.includes('run rc is not arm off'));
 } finally {
     rmSync(root, { recursive: true, force: true });
 }
