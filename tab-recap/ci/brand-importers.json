@@ -1,4 +1,6 @@
 [
+  "src/daemon/engine-wire.ts",
+  "src/daemon/slots.ts",
   "src/protocol/primitives.ts",
   "src/recap/domain/autocompact.ts",
   "src/recap/domain/backend.ts",

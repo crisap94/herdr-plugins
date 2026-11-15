@@ -807,6 +807,7 @@
       "src/daemon/curate.ts",
       "src/daemon/deciders.ts",
       "src/daemon/dispatch-parts.ts",
+      "src/daemon/engine-wire.ts",
       "src/daemon/handoff-exchange-wiring.ts",
       "src/daemon/handoff.ts",
       "src/daemon/harness-makers.ts",

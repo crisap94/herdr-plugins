@@ -3,7 +3,6 @@ import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { daemonTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
@@ -13,10 +12,6 @@ import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
-import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
-import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
 import { contextWindows } from '#src/adapters/capability/context-window.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
@@ -32,10 +27,16 @@ import { dispatchFor, type Box } from './dispatch-parts.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import { laneTurns } from './lane-turns.ts';
 import { Informer, type Blindness } from '#src/recap/application/informer.ts';
-import { emptyBoard, lanesOf, type Board } from '#src/recap/domain/board.ts';
+import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import { createEngine } from '#src/recap/application/engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
+import { wireEngine } from './engine-wire.ts';
+import type { Engine, LedgerEvent } from '@stateforge-labs/session-ledger';
+import type { Clock } from '#src/ports/clock.ts';
+import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { SLOT_TABLE } from './slot-table.ts';
+import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { AUTO_ORDER, Backends } from './backends.ts';
 import { bounded } from './bounded.ts';
 import { shutDown } from './shutdown.ts';
@@ -45,7 +46,6 @@ import { wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { configGetter, loadConfig, messagesOf, stateDir } from './config.ts';
-import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { wireCurate } from './curate.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -55,7 +55,7 @@ import { bootObservations } from './restored-lanes.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
-import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
+import { EventStream } from '#src/recap/application/lane-events.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
@@ -72,6 +72,8 @@ import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_M
 
 
 const log = (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); };
+const statusTaps = taps<StatusEvent>(log);
+const ledgerTaps = taps<LedgerEvent>(log);
 
 interface Wired {
     readonly informer: Informer;
@@ -87,11 +89,12 @@ interface Wired {
     readonly events: EventStream;
     readonly handoffs: HandoffRunner;
     readonly worktrees: Worktrees;
-}
-
-function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: (line: string) => void): void {
-    curate.afterRun(event).catch((error: unknown) => { say(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`); });
-    recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
+    readonly engine: Engine;
+    readonly recaps: TabRecaps;
+    readonly transcripts: TranscriptRegistry;
+    readonly clock: Clock;
+    readonly statuses: (listener: (event: StatusEvent) => void) => () => void;
+    readonly ledger: (listener: (event: LedgerEvent) => void) => () => void;
 }
 
 const herdrEventsOn = (): boolean => loadConfig().herdrEvents === 'on';
@@ -103,30 +106,15 @@ const switchOn = (setting: string): boolean => (setting === handoff.optIn ? hand
 function wantsScreen(agent: string): boolean { const { screenAgents } = loadConfig(); return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent); }
 
 function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
-    const config = loadConfig();
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnesses(AUTO_ORDER) }, fleet, log, createRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
-    const recaps = createEngine({
-        source: { transcripts },
-        store: { records: store.records, ledger: store.ledger },
-        environment: { clock, log, repos },
-        models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
-        settings: {
-            language: (): string => loadConfig().recapLanguage,
-            keepInput: (): boolean => loadConfig().keepInputDays > 0,
-            pipeline: (): Pipeline => loadConfig().pipeline,
-            closeEvidence: (): CloseEvidence => loadConfig().writerCloseEvidence,
-            writerView: (): WriterView => loadConfig().writerView,
-            debounce: (): Debounce => loadConfig().recapDebounce,
-        },
-        ran: (event): void => { ranRun(curate, events, () => box.informer?.current ?? emptyBoard(), event, log); },
-    });
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
+    const { engine, recaps } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: (): number => Date.now(), log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
@@ -136,7 +124,8 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: (): string => capabilityOf(switchOn), now: (): number => Date.now(), log, events });
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
-    const informer = new Informer(fleet, clock, config.policy, {
+    const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now(), statused: statusTaps.emit });
+    const informer = new Informer(fleet, clock, loadConfig().policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
                 if (await bounded(dispatch.send(intent), INTENT_MS) === 'timeout') {
@@ -148,7 +137,7 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
         onBeat: (): void => { worktrees.registry.beat(board()); },
-        onStatus: laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: () => Date.now() }),
+        onStatus: turns,
         onPaneTokens: (pane, tokens): void => { worktrees.feed.update(paneId(pane), notesOf(tokens)); answers.onPaneTokens(pane, tokens); exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]))); },
         sessionIdentity: sessionOfForKind,
     });
@@ -161,8 +150,10 @@ function wire(root: string, { fleet, session }: Frontend, store: Store): Wired {
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: (): number => Date.now(), pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: (): number => loadConfig().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
+
+function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
 
 function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
     const { store, informer, compaction, curate, laneTokens, answers, events, handoffs } = wired;
@@ -209,17 +200,17 @@ async function start(): Promise<number> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees } = booted;
+    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees, engine, recaps, transcripts, clock, statuses, ledger } = booted;
     let stopping = false;
+    let slots: Slots | null = null;
     const stop = (): void => {
         if (stopping) {
             return;
         }
         stopping = true;
-        void bounded(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), EVENT_STOP_MS).then(() => shutDown(fleet, informer, log)).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void bounded(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), EVENT_STOP_MS).then(() => shutDown(fleet, informer, log)).then(() => bounded(slots?.stop() ?? Promise.resolve(), EVENT_STOP_MS)).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
-    process.on('SIGTERM', stop);
-    process.on('SIGINT', stop);
+    process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = answerRestart({
         exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
         enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
@@ -228,7 +219,7 @@ async function start(): Promise<number> {
     });
     if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }
     bootObservations(store.visibility.readHidden(), store.views, log).forEach((observation) => { informer.push(observation); });
-    setInterval(() => { poll(pidfile, booted); }, REQUEST_POLL_MS).unref();
+    setInterval(() => { poll(pidfile, booted); slots?.poll(); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
     setInterval(() => {
         ticks += 1;
@@ -246,9 +237,11 @@ async function start(): Promise<number> {
         retention.tick();
         worktrees.registry.tick(informer.current);
         worktrees.perf.tick();
+        slots?.tick();
         void backends.refresh();
     }, RESYNC_MS).unref();
     await backends.refresh();
+    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
     log(`daemon ${process.pid} up, state in ${root}`);
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
