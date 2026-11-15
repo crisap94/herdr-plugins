@@ -175,3 +175,4 @@ The CLI SHALL accept `handoff (--from <pane> | --from-closed <pane> --tab <tab-i
 
 - **WHEN** the operator invokes `handoff --list-closed --tab <tab-id>`
 - **THEN** the CLI SHALL list the retained closed lanes of that tab without requiring `--from` or `--to`
+

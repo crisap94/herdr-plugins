@@ -14,4 +14,4 @@ Paths are under `tab-recap/`. One merge request carries all groups.
 
 ## 3. Archive
 
-- [ ] 3.1 Archive the change in its own merge request, after the checks pass.
+- [x] 3.1 Archive the change in this merge request, after the checks pass.

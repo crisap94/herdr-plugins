@@ -13,3 +13,7 @@ The merged handoff work left four small gaps: a repeated closed-source option wa
 ## Out of scope
 
 Producers that still pass runtime text (transport errors, subprocess output) keep their wording under `causeOf`; moving them to `failureCauseOf` changes what the operator sees and is tracked separately.
+
+## Changelog label
+
+`changelog::fixed`

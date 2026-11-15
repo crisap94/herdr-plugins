@@ -811,3 +811,4 @@ taken, so nothing is typed for an ask already answered. A row the command wrote 
 
 - **WHEN** the mapping test runs over the outcome table
 - **THEN** every storable outcome and reason SHALL map to one stage that fits in 80 characters with a 16-character id
+
