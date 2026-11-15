@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { InputFact, RecapInput } from '../../tab-recap/src/ports/recap-input.ts';
 import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
 import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
@@ -6,12 +8,18 @@ import { localTime } from '../../tab-recap/src/recap/application/local-time.ts';
 import { writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
 import { jaccard } from '../../tab-recap/src/recap/domain/gates/jaccard.ts';
 import { SCENARIOS } from './dataset-scenarios.ts';
+import { FRESH_DECISIONS, FRESH_PROJECTS, FRESH_SCENARIOS } from './dataset-fresh-scenarios.ts';
+import type { FreshScenario } from './dataset-fresh-scenarios.ts';
+import { FRESH_ITEMS, FRESH_SEED, sampleOf } from '../lib/fresh.ts';
 import type { Planted, Scenario, SectionName } from './dataset-scenarios.ts';
 import { ANCHOR_LEADS, DECISIONS, DONE, MIX, NEEDS, NEXT, PROJECTS, RULES } from './dataset-vocabulary.ts';
 import type { Project } from './dataset-vocabulary.ts';
 
 const MINUTE = 60_000;
 const G2_ALIKE = 0.6;
+// --fresh: the fresh set (FRESH-1). Without it every output is byte for byte today's.
+const FRESH = process.argv.includes('--fresh');
+const FRESH_BASE = Number.parseInt(createHash('sha256').update(FRESH_SEED).digest('hex').slice(0, 8), 16);
 
 interface Draft {
     readonly key: string | null;
@@ -70,7 +78,7 @@ function wordingOf(section: SectionName, project: Project, rand: () => number): 
     const thing = pick(project.things, rand);
     if (section === 'links') return { text: linkOf(project, rand), why: null };
     if (section === 'decisions') {
-        const [text, why] = pick(DECISIONS, rand);
+        const [text, why] = pick(FRESH ? FRESH_DECISIONS : DECISIONS, rand);
         return { text: text.replace('{t}', thing), why };
     }
     const pool = section === 'next' ? NEXT : section === 'needs' ? NEEDS : section === 'rules' ? RULES : DONE;
@@ -82,8 +90,8 @@ function closedOf(section: SectionName, rand: () => number): InputFact['closed']
     return section === 'needs' ? 'answered' : section === 'next' ? 'done' : section === 'done' ? 'superseded' : null;
 }
 
-function fillerOf(scenario: Scenario, count: number, now: number, rand: () => number): Draft[] {
-    const project = PROJECTS[scenario.project] as Project;
+function fillerOf(scenario: Scenario, count: number, now: number, rand: () => number, projects: Readonly<Record<string, Project>>): Draft[] {
+    const project = projects[scenario.project] as Project;
     const used = new Set<string>();
     const drafts: Draft[] = [];
     let guard = 0;
@@ -126,11 +134,11 @@ function turnOf(entries: readonly Entry[], span: string, id: string): { index: n
 }
 
 function build(scenario: Scenario, position: number): unknown {
-    const rand = mulberry(7919 * (position + 1));
+    const rand = mulberry(FRESH ? FRESH_BASE + position : 7919 * (position + 1));
     const zone = scenario.zone ?? 'UTC';
     const now = Date.UTC(2026, 10, 3 + (position % 10), 8 + (position % 9), 10 + ((position * 7) % 45), 0);
     const planted = scenario.planted.map((each) => plantedOf(scenario, each, now, rand));
-    const filler = scenario.fillerFree === true ? [] : fillerOf(scenario, scenario.facts - planted.length, now, rand);
+    const filler = scenario.fillerFree === true ? [] : fillerOf(scenario, scenario.facts - planted.length, now, rand, FRESH ? FRESH_PROJECTS : PROJECTS);
     const drafts = [...filler, ...planted].toSorted((a, b) => a.first - b.first);
     const facts: InputFact[] = drafts.map((draft, index) => ({
         id: `f${index + 1}`, section: draft.section, text: draft.text, state: draft.closed === null ? 'open' : 'closed', first: draft.first, last: draft.last,
@@ -171,7 +179,9 @@ function build(scenario: Scenario, position: number): unknown {
         ...keyFacts.map((fact) => (fact.via_update_of === null
             ? { op: 'add', section: fact.section, text: fact.text, why: fact.why, ref: null, at: fact.at, agent: 'a1', anchor: fact.span }
             : { op: 'update', id: fact.via_update_of, text: fact.text, why: fact.why, anchor: fact.span })),
-        ...mustClose.filter((each) => !updated.has(each.id)).map((each) => ({ op: 'close', id: each.id, why: each.why[0] })),
+        ...mustClose.filter((each) => !updated.has(each.id)).map((each) => (FRESH
+            ? { op: 'close', id: each.id, why: each.why[0], anchor: each.span }
+            : { op: 'close', id: each.id, why: each.why[0] })),
     ];
     const expected = {
         quiet: scenario.key.length === 0,
@@ -188,9 +198,69 @@ function build(scenario: Scenario, position: number): unknown {
         reference_complete: scenario.rewriteTo === undefined,
     };
     const meta = { project: scenario.project, size: scenario.size, ledger_facts: facts.length, open_facts: open.length, entries: entries.length, document_bytes: Buffer.byteLength(writerContext(request)) };
-    return { id: scenario.id, plants: scenario.plants, tags: [`size:${scenario.size}`, `project:${scenario.project}`, ...scenario.tags], meta, input: request, expected };
+    const row = { id: scenario.id, plants: scenario.plants, tags: [`size:${scenario.size}`, `project:${scenario.project}`, ...scenario.tags], meta, input: request, expected };
+    if (!FRESH) return row;
+    const traps = (scenario as FreshScenario).traps.map((trap) => ({ ...trap, ops: trap.ops.map((op) => ({ ...op, id: idOf(op.id) })) }));
+    return { ...row, fresh: { seed: FRESH_SEED, traps } };
 }
 
-const lines = SCENARIOS.map((scenario, position) => JSON.stringify(build(scenario, position)));
-writeFileSync(new URL('./dataset.jsonl', import.meta.url), `${lines.join('\n')}\n`);
-process.stdout.write(`${lines.length} items, ${Buffer.byteLength(lines.join('\n'))} bytes\n`);
+const FRESH_PRIMARIES = ['close-bait-intent', 'close-bait-partial', 'close-bait-other', 'close-bait-retracted', 'close-bait-hidden', 'quotable-close'];
+
+interface SampleRow {
+    readonly id: string;
+    readonly plants: readonly string[];
+    readonly meta: { readonly project: string; readonly size: string; readonly ledger_facts: number; readonly open_facts: number };
+    readonly input: RecapRequest;
+    readonly expected: {
+        readonly quiet: boolean;
+        readonly key_facts: readonly { readonly k: string; readonly section: string; readonly text: string; readonly why: string | null; readonly via_update_of: string | null }[];
+        readonly must_close: readonly { readonly id: string; readonly why: readonly string[]; readonly span: string }[];
+        readonly must_stay: readonly string[];
+        readonly not_established: readonly { readonly claim: string; readonly reason: string }[];
+    };
+    readonly fresh: { readonly traps: readonly { readonly kind: string; readonly ops: readonly { readonly id: string; readonly why: string; readonly anchor: string }[]; readonly expect: string; readonly g13_refuses: boolean }[] };
+}
+
+function sampleMarkdown(rows: readonly SampleRow[], ids: readonly string[]): string {
+    const parts: string[] = [`# Fresh sample: writer (seed ${FRESH_SEED})`, ''];
+    for (const row of rows.filter((each) => ids.includes(each.id))) {
+        const facts = row.input.input.ledgers.flatMap((ledger) => ledger.facts);
+        const named = new Set<string>([
+            ...row.expected.must_close.map((each) => each.id),
+            ...row.expected.must_stay,
+            ...row.fresh.traps.flatMap((trap) => trap.ops.map((op) => op.id)),
+            ...row.expected.key_facts.flatMap((fact) => (fact.via_update_of === null ? [] : [fact.via_update_of])),
+        ]);
+        const entries = row.input.input.transcripts.flatMap((lane) => lane.entries);
+        parts.push(`## ${row.id}`, '', `Plants: ${row.plants.join(', ')}. Size: ${row.meta.size}. Project: ${row.meta.project}.`,
+            `Ledger: ${row.meta.ledger_facts} facts, ${row.meta.open_facts} open. Turns: ${entries.length}.`, '', 'Facts the key names:');
+        for (const fact of facts.filter((each) => named.has(each.id))) parts.push(`- ${fact.id} [${fact.section}, ${fact.state}] ${fact.text}`);
+        parts.push('', 'Answer key:');
+        if (row.expected.quiet) parts.push('- quiet: no key fact, the answer adds nothing');
+        for (const fact of row.expected.key_facts) parts.push(`- ${fact.k}: add [${fact.section}] ${fact.text}${fact.why === null ? '' : ` (why: ${fact.why})`}${fact.via_update_of === null ? '' : ` as an update of ${fact.via_update_of}`}`);
+        for (const close of row.expected.must_close) parts.push(`- close ${close.id} as ${close.why.join(' or ')}, on the span "${close.span}"`);
+        for (const id of row.expected.must_stay) parts.push(`- ${id} stays open`);
+        parts.push('', 'Traps (a wrongful close the writer must not make):');
+        for (const trap of row.fresh.traps) for (const op of trap.ops) parts.push(`- ${trap.kind}: close ${op.id} as ${op.why}, anchor "${op.anchor}"; expect ${trap.expect}; closeEvidenceGate refuses: ${trap.g13_refuses}`);
+        parts.push('', 'Not established by the turns:');
+        for (const each of row.expected.not_established) parts.push(`- ${each.claim}: ${each.reason}`);
+        parts.push('', 'Turns:');
+        for (const entry of entries) parts.push(`- ${entry.role}${entry.what === undefined ? '' : ` (${entry.what})`}: ${entry.text}`);
+        parts.push('', 'owner: ', '');
+    }
+    return parts.join('\n');
+}
+
+const scenarios: readonly Scenario[] = FRESH ? FRESH_SCENARIOS : SCENARIOS;
+if (FRESH && scenarios.length !== FRESH_ITEMS) throw new Error(`the fresh set has ${scenarios.length} items, FRESH_ITEMS is ${FRESH_ITEMS}`);
+const lines = scenarios.map((scenario, position) => JSON.stringify(build(scenario, position)));
+if (FRESH) {
+    const path = fileURLToPath(new URL('./dataset-fresh.jsonl', import.meta.url));
+    writeFileSync(path, `${lines.join('\n')}\n`);
+    const sampled = lines.map((line) => JSON.parse(line) as SampleRow);
+    writeFileSync(fileURLToPath(new URL('./fresh-sample.md', import.meta.url)), `${sampleMarkdown(sampled, sampleOf(sampled, FRESH_PRIMARIES))}\n`);
+    process.stdout.write(`${lines.length} fresh items -> ${path}\n`);
+} else {
+    writeFileSync(new URL('./dataset.jsonl', import.meta.url), `${lines.join('\n')}\n`);
+    process.stdout.write(`${lines.length} items, ${Buffer.byteLength(lines.join('\n'))} bytes\n`);
+}

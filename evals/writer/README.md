@@ -21,6 +21,8 @@ Run from the `evals/` folder of the repository.
 - Typecheck: `node_modules/.bin/tsc -p writer/tsconfig.json` (prints nothing, exits 0).
 - Stub run, no model called: `bun writer/run.ts --stub` (432 stub answers and 342 stub judge calls; every code criterion passes; the stub judge fails about one criterion in four on purpose; writes `~/.local/state/tab-recap-evals/suite/writer/runs/stub/`).
 - Smoke run, 12 real writer calls and at most 12 judge calls: `bun writer/run.ts --smoke` (label `smoke`, one repetition, calls drawn by the seed across both backends; measures seconds, tokens and cost per call before the full run).
+- Build the fresh set (24 items, `dataset-fresh.jsonl`, `fresh-sample.md`): `bun writer/build-dataset.ts --fresh`.
+- Fresh run: `bun writer/run.ts --fresh --label fresh-<name>` (the label must start with `fresh-`; `--smoke` is refused).
 - Full run: `bun writer/run.ts --label <label>` (24 items x 6 configurations x 3 repetitions = 432 writer calls, at most 432 judge calls, at most 4 at a time per backend).
 - Resume a run: `bun writer/run.ts --resume <label>` (same as `--label <label> --retry-failed`; refuses a label with no earlier answers). Rerunning with `--label <label>` also resumes, without re-making failed calls.
 - Rescore without calls: `bun writer/run.ts --label <label> --report-only`.
