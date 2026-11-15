@@ -43,6 +43,20 @@ export function languageMark(story: string, language: string): Mark {
 
 export const joins = (merge: Merge, first: string, second: string): boolean => (merge.id === first && merge.into === second) || (merge.id === second && merge.into === first);
 
+export function copyClasses(pairs: StoryItem['expected']['merge_pairs']): (id: string) => string {
+    const parent = new Map<string, string>();
+    const root = (id: string): string => {
+        const up = parent.get(id);
+        return up === undefined || up === id ? id : root(up);
+    };
+    for (const pair of pairs) {
+        if (pair.kind !== 'verbatim') continue;
+        const [first, second] = [root(pair.ids[0]), root(pair.ids[1])];
+        if (first !== second) parent.set(second, first);
+    }
+    return root;
+}
+
 export const outsideTokens = (item: StoryItem, story: string): string[] => outsideOf({ names: item.expected.names_and_numbers, times: item.expected.times, facts: item.input.facts.length }, story);
 
 export function grade(item: StoryItem, text: string): Graded {
@@ -52,8 +66,11 @@ export function grade(item: StoryItem, text: string): Graded {
     const { merges } = curation;
     const pairs = item.expected.merge_pairs;
     const nearPairs = item.expected.no_merge;
+    const classOf = copyClasses(pairs);
+    const links = (merge: Merge, first: string, second: string): boolean => joins({ id: classOf(merge.id), into: classOf(merge.into) }, classOf(first), classOf(second));
     const merged = (first: string, second: string): boolean => merges.some((merge) => joins(merge, first, second));
-    const rewordedMerged = pairs.filter((pair) => pair.kind === 'reworded' && merged(pair.ids[0], pair.ids[1]));
+    const pairMerged = (first: string, second: string): boolean => merges.some((merge) => links(merge, first, second));
+    const rewordedMerged = pairs.filter((pair) => pair.kind === 'reworded' && pairMerged(pair.ids[0], pair.ids[1]));
     const marks: Record<string, Mark> = {
         S1: true,
         S2: story !== null,
@@ -61,10 +78,10 @@ export function grade(item: StoryItem, text: string): Graded {
         S4: story === null ? null : !breaksProse(story),
         S5: story === null ? null : languageMark(story, item.input.language),
         S6: curation.refused.length === 0,
-        S7: pairs.length === 0 ? null : pairs.every((pair) => merged(pair.ids[0], pair.ids[1])),
-        S8: rewordedMerged.length === 0 ? null : rewordedMerged.every((pair) => !merges.some((merge) => merge.id === pair.keep && joins(merge, pair.ids[0], pair.ids[1]))),
+        S7: pairs.length === 0 ? null : pairs.every((pair) => pairMerged(pair.ids[0], pair.ids[1])),
+        S8: rewordedMerged.length === 0 ? null : rewordedMerged.every((pair) => !merges.some((merge) => pair.keep !== null && classOf(merge.id) === classOf(pair.keep) && links(merge, pair.ids[0], pair.ids[1]))),
         S9: nearPairs.length === 0 ? null : !nearPairs.some(([first, second]) => merged(first, second)),
-        S10: merges.every((merge) => pairs.some((pair) => joins(merge, pair.ids[0], pair.ids[1]))),
+        S10: merges.every((merge) => pairs.some((pair) => links(merge, pair.ids[0], pair.ids[1]))),
         S11: story === null ? null : outsideTokens(item, story).length === 0,
     };
     return { parsed: true, marks };

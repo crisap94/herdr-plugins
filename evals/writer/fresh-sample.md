@@ -44,7 +44,7 @@ Facts the key names:
 - f22 [next, open] Recalculate October payslips with the new Sunday rate
 
 Answer key:
-- k1: add [done] Tests in `OvertimeTest` updated for north and coast calendars; mountain and island pending
+- k1: add [done] Payroll tests updated for the north and coast calendars; mountain and island pending
 - close f21 as done, on the span "The Sunday overtime multiplier is 2.0 now in `app/payroll/Overtime.kt`"
 - f11 stays open
 - f22 stays open
