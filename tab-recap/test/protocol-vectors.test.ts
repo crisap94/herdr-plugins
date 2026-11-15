@@ -12,7 +12,7 @@ import { observe } from '../src/protocol/requester.ts';
 import { answer, take } from '../src/protocol/responder.ts';
 import type { SeenCheck } from '../src/protocol/responder.ts';
 import type { ParsedValue } from '../src/protocol/codec.ts';
-import { parseIdText, parseWireText } from '../src/protocol/primitives.ts';
+import { parseIdText, parseTokenValue } from '../src/protocol/primitives.ts';
 import type { Refusal, RequestId, TokenValue } from '../src/protocol/primitives.ts';
 import type { Result } from '../src/protocol/result.ts';
 import { must } from '../src/protocol/result.ts';
@@ -120,7 +120,7 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: request values parse as published`, () => {
         for (const item of vector.requests) {
-            assert.deepEqual(parsedOf(parseRequest(exchange, must(parseWireText(item.raw)))), item.expect, JSON.stringify(item.raw));
+            assert.deepEqual(parsedOf(parseRequest(exchange, must(parseTokenValue(item.raw)))), item.expect, JSON.stringify(item.raw));
         }
     });
 

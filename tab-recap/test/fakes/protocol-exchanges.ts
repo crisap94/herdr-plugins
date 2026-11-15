@@ -3,7 +3,7 @@ import type { Registry } from '#src/protocol/registry.ts';
 import { defineExchange, parseRequest } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseRequestPrefix, parseTimingMs, parseTimingName, parseTokenName, parseToolName, parseWireText } from '#src/protocol/primitives.ts';
+import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseRequestPrefix, parseTimingMs, parseTimingName, parseTokenName, parseToolName, parseTokenValue } from '#src/protocol/primitives.ts';
 import type { TokenName, ToolName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
@@ -19,7 +19,7 @@ export const nameOf = (raw: string): TokenName => unwrap(parseTokenName(raw));
 
 export const toolOf = (raw: string): ToolName => unwrap(parseToolName(raw));
 
-export const parsedOf = (exchange: Exchange, raw: string): ParsedValue => unwrap(parseRequest(exchange, unwrap(parseWireText(raw))));
+export const parsedOf = (exchange: Exchange, raw: string): ParsedValue => unwrap(parseRequest(exchange, unwrap(parseTokenValue(raw))));
 
 export const compactLike: Exchange = defineExchange({
     name: unwrap(parseExchangeName('compact')),

@@ -1,7 +1,8 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
+import { parseIdText } from './primitives.ts';
 import type { Refusal, RequestId, ToolName } from './primitives.ts';
-import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf } from './exchange.ts';
+import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf, wireTokenValue } from './exchange.ts';
 import type { Exchange, Terminal } from './exchange.ts';
 import type { ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
@@ -52,11 +53,12 @@ export function observe(exchange: Exchange, tokens: TokenMap, id: RequestId): Re
     if (raw === undefined || raw === '') {
         return ok({ kind: 'not-seen' });
     }
-    const answer = splitAnswer(raw);
+    const token = wireTokenValue(raw);
+    const answer = token.kind === 'ok' ? splitAnswer(token.value) : null;
     if (answer === null) {
         return ok({ kind: 'unreadable' });
     }
-    return ok(answer.id === id ? stageObservation(exchange, answer.stage) : { kind: 'foreign-id', id: answer.id });
+    return ok(answer.id === parseIdText(id) ? stageObservation(exchange, answer.stage) : { kind: 'foreign-id', id: answer.id });
 }
 
 export function request(exchange: Exchange, tool: ToolName, value: ParsedValue): Result<readonly TokenWrite[], Refusal> {

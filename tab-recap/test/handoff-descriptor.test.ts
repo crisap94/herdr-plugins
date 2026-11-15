@@ -4,7 +4,7 @@ import { capabilityValue } from '#src/protocol/capability.ts';
 import { terminalStage, terminalsOf, parseRequest } from '#src/protocol/exchange.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
-import { parseExchangeVersion, parseTimingName, parseWireText, LIMITS } from '#src/protocol/primitives.ts';
+import { parseExchangeVersion, parseTimingName, parseTokenValue, LIMITS } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_DEADLINE_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
@@ -19,9 +19,9 @@ test('the request name is at most 32 characters and the longest answer fits 80 w
 });
 
 test('the target is the workspace and pane parts, and refresh is read only as the literal last field', () => {
-    assert.deepEqual(must(parseRequest(handoff, must(parseWireText('h1:w2:p7:refresh')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: true });
-    assert.deepEqual(must(parseRequest(handoff, must(parseWireText('h1:w2:p7')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: null });
-    assert.equal(parseRequest(handoff, must(parseWireText('h1:w2:refresh'))).kind, 'err');
+    assert.deepEqual(must(parseRequest(handoff, must(parseTokenValue('h1:w2:p7:refresh')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: true });
+    assert.deepEqual(must(parseRequest(handoff, must(parseTokenValue('h1:w2:p7')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: null });
+    assert.equal(parseRequest(handoff, must(parseTokenValue('h1:w2:refresh'))).kind, 'err');
 });
 
 test('the handoff capability is listed only when its setting is on', () => {
