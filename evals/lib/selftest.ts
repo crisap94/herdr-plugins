@@ -255,6 +255,10 @@ async function reconcileArm(root: string): Promise<void> {
     check('the arm CLI prints the EVAL-7 line for a real off run and a real once run', printed.status === 0 && printed.stdout.trim() === line);
     const reversed = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-once', '--c', 'cli-off'], { encoding: 'utf8' });
     check('the arm CLI refuses real runs given the wrong way round', reversed.status !== 0);
+    const cliOther = runDir(root, 'curator-reconcile', 'cli-other');
+    writeFileSync(join(cliOther, 'summary.json'), JSON.stringify({ ...onceSummary, arm: { mode: 'once', configs: [{ ...cCounters, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--a', 'cli-off', '--c', 'cli-other'], { encoding: 'utf8' });
+    check('the arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
 }
 
 const STORY_FIXED = JSON.stringify({ ops: [], story: 'The work goes on.' });
@@ -401,6 +405,7 @@ async function writerArm(root: string): Promise<void> {
     const onRows = readJsonl<Answer>(join(onDir, 'answers.jsonl'));
     const offCounts = writerCounters([writerX], offRows, [ARM_CONFIG.name], 'off')[0];
     const onCounts = writerCounters([writerX], onRows, [ARM_CONFIG.name], 'on')[0];
+    if (offCounts === undefined || onCounts === undefined) throw new Error('the writer counters need one row per arm');
     const c = offCounts.correct_closes_kept;
     check('the writer counters give off with no g13 and on with the refusals', offCounts.wrongful_closes === 0 && offCounts.g13_refusals === 0 && onCounts.g13_refusals === g13 && onCounts.correct_closes_kept === c - g13 && onCounts.wrongful_closes === 0);
     const line = `${ARM_CONFIG.name} off wrongful 0 correct ${c} g13 0 on wrongful 0 correct ${c - g13} g13 ${g13}`;
@@ -420,6 +425,10 @@ async function writerArm(root: string): Promise<void> {
     check('the writer arm CLI prints the EVAL-8 line', good.status === 0 && good.stdout.trim() === line);
     const swapped = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-on', '--on', 'arm-off'], { encoding: 'utf8' });
     check('the writer arm CLI refuses swapped labels', swapped.status !== 0);
+    const otherDir = runDir(root, 'writer', 'arm-other');
+    writeFileSync(join(otherDir, 'summary.json'), JSON.stringify({ ...onSummary, arm: { mode: 'on', configs: [{ ...onCounts, config: 'other' }] } }));
+    const mismatched = spawnSync(process.execPath, [...cliArgs, '--off', 'arm-off', '--on', 'arm-other'], { encoding: 'utf8' });
+    check('the writer arm CLI refuses runs whose configurations differ', mismatched.status !== 0 && mismatched.stderr.includes('the two runs differ in configurations'));
 
     check('an on run refuses a folder that holds off answers', thrown(() => guardMode(offDir, '--close-evidence', 'on')) === 'this run holds answers of another arm');
 }

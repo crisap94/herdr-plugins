@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseCloseEvidence, type CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
-import { flagOf } from '../lib/arm.ts';
+import { flagOf, pairedConfigs } from '../lib/arm.ts';
 import type { Answer } from '../lib/types.ts';
 import type { WriterItem } from './prompt.ts';
 import { outcomeOf } from './scoring.ts';
@@ -91,10 +91,7 @@ export function main(argv: readonly string[]): void {
     if (armOff?.mode !== 'off') throw new Error(`run ${requiredFlag(argv, '--off')} is not arm off`);
     if (armOn?.mode !== 'on') throw new Error(`run ${requiredFlag(argv, '--on')} is not arm on`);
     if (off.items !== on.items || off.repetitions !== on.repetitions || off.dataset_sha256 !== on.dataset_sha256) throw new Error('the two runs differ in items, repetitions or dataset');
-    for (const counters of armOff.configs) {
-        const other = armOn.configs.find((each) => each.config === counters.config);
-        if (other !== undefined) console.log(writerLine(counters, other));
-    }
+    for (const [counters, other] of pairedConfigs(armOff.configs, armOn.configs, 'writer')) console.log(writerLine(counters, other));
 }
 
 if (import.meta.main) main(process.argv.slice(2));

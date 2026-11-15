@@ -112,6 +112,12 @@ function summaryOf(root: string, evalName: string, label: string): ArmSummary | 
     return JSON.parse(readFileSync(file, 'utf8')) as ArmSummary;
 }
 
+export function pairedConfigs<T extends { readonly config: string }>(first: readonly T[], second: readonly T[], what: string): Array<readonly [T, T]> {
+    const names = (configs: readonly T[]): string => configs.map((each) => each.config).sort().join(', ');
+    if (names(first) !== names(second)) throw new Error(`${what}: the two runs differ in configurations: ${names(first)} against ${names(second)}`);
+    return first.map((each) => [each, second.find((other) => other.config === each.config) as T] as const);
+}
+
 export function main(argv: readonly string[]): void {
     const root = requiredFlag(argv, '--root');
     const labelA = requiredFlag(argv, '--a');
@@ -123,11 +129,7 @@ export function main(argv: readonly string[]): void {
         if (a.arm?.mode !== 'off') throw new Error(`${evalName}: run ${labelA} is not arm off`);
         if (c.arm?.mode !== 'once') throw new Error(`${evalName}: run ${labelC} is not arm once`);
         if (a.items !== c.items || a.repetitions !== c.repetitions || a.dataset_sha256 !== c.dataset_sha256) throw new Error(`${evalName}: A and C differ in items, repetitions or dataset`);
-        const cConfigs = c.arm.configs as readonly ArmCounters[];
-        for (const counters of a.arm.configs as readonly ArmCounters[]) {
-            const other = cConfigs.find((each) => each.config === counters.config);
-            if (other !== undefined) console.log(armLine(evalName, counters, other));
-        }
+        for (const [counters, other] of pairedConfigs(a.arm.configs as readonly ArmCounters[], c.arm.configs as readonly ArmCounters[], evalName)) console.log(armLine(evalName, counters, other));
     }
 }
 
