@@ -11,6 +11,8 @@ const REMEMBERED = 200;
 
 const keyOf = (use: ContextUse | null | undefined): string => (use === null || use === undefined ? '' : `${use.tokens} ${use.window} ${use.source}`);
 
+type ObservedOutcome = ObservedResult | null;
+
 export class LaneContexts {
     private readonly transcripts: TranscriptRegistry;
     private readonly windows: ContextWindows;
@@ -27,7 +29,7 @@ export class LaneContexts {
         return this.known.get(pane) ?? null;
     }
 
-    private async observedIn(lane: Lane): Promise<ObservedResult | null> {
+    private async observedIn(lane: Lane): Promise<ObservedOutcome> {
         const agent = String(lane.agent);
         const reader = this.transcripts.readerFor(agent);
         const located = reader === undefined ? null : await reader.locate(lane);

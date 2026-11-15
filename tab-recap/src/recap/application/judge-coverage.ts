@@ -8,11 +8,16 @@ export interface Share {
 
 export type Row = Pick<Verdict, 'item' | 'check' | 'pass' | 'critique'>;
 
+interface AddedShares {
+    readonly coverage: Share;
+    readonly filler: Share;
+}
+
 export interface Measured {
     readonly rows: readonly Row[];
     readonly coverage: Share;
     readonly filler: Share;
-    readonly added: { readonly coverage: Share; readonly filler: Share };
+    readonly added: AddedShares;
 }
 
 export interface Carrying {

@@ -18,10 +18,15 @@ interface Waiter {
     resolve(settled: Settled): void;
 }
 
+interface Heard {
+    readonly status: string;
+    readonly at: number;
+}
+
 export class SettleHub implements LaneSettling {
     private readonly deps: SettleHubDeps;
     private readonly waiters = new Map<string, Set<Waiter>>();
-    private readonly last = new Map<string, { readonly status: string; readonly at: number }>();
+    private readonly last = new Map<string, Heard>();
 
     constructor(deps: SettleHubDeps) {
         this.deps = deps;

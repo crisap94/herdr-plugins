@@ -5,8 +5,12 @@ import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 
+interface ContextsOf {
+    of(pane: string): ContextUse | null;
+}
+
 export interface FactsDeps {
-    readonly contexts: { of(pane: string): ContextUse | null };
+    readonly contexts: ContextsOf;
     readonly records: Pick<RecapRecords, 'readRecap'>;
     readonly ledger: Pick<Ledger, 'openOf'>;
 }

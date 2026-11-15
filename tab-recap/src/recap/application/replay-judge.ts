@@ -10,9 +10,14 @@ import { reportOf } from './eval-report.ts';
 import { judgeRuns } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
 
+interface JudgeStore {
+    readonly inputs: RunInputs;
+    readonly verdicts: Verdicts;
+}
+
 export interface JudgedReplay {
     readonly judge: Judge;
-    readonly store: { readonly inputs: RunInputs; readonly verdicts: Verdicts };
+    readonly store: JudgeStore;
     readonly rubric: string;
     readonly label: string;
     readonly imported: readonly ImportedChapter[] | null;
