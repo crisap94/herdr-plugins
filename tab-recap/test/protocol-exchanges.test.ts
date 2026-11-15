@@ -41,5 +41,5 @@ test('a new exchange reaches the owner table through its descriptor alone', () =
     const ticket = defineExchange({ ...handoffLike, name: must(parseExchangeName('ticket')), requestPrefix: must(parseRequestPrefix('ticket-req-')) });
     const owners = ownerTable(must(buildRegistry([...EXCHANGES, ticket], [CAPABILITY_TOKEN])));
     assert.ok(owners.writable.some((name) => name === 'tab-recap-ticket'));
-    assert.ok(owners.readPrefixes.includes('ticket-req-'));
+    assert.ok(owners.readPrefixes.includes(must(parseRequestPrefix('ticket-req-'))));
 });

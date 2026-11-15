@@ -153,16 +153,10 @@
     "container": 2
   },
   "src/protocol/capability.ts": {
-    "parameter": 2,
-    "return": 5,
-    "property": 4,
-    "assertion": 1
+    "return": 3
   },
   "src/protocol/exchange.ts": {
     "parameter": 4
-  },
-  "src/protocol/owners.ts": {
-    "container": 1
   },
   "src/protocol/primitives.ts": {
     "parameter": 1
