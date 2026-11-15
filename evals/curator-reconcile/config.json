@@ -48,5 +48,13 @@
     "sizes": { "small": 7, "medium": 12, "large": 5 },
     "noOperationExpected": 11,
     "calls": { "job": 504, "judgeAtMost": 504 },
+    "fresh": {
+        "dataset": "dataset-fresh.jsonl",
+        "items": 24,
+        "seed": "fresh-1/2026-11-14",
+        "plants": { "answered-trap": 8, "stale": 21, "lookalike": 15, "update": 2, "compaction": 4, "long-evidence": 8, "duplicate": 2, "add-bait": 8, "near-pair": 6 },
+        "sizes": { "small": 8, "medium": 12, "large": 4 },
+        "traps": { "refused": 24, "kept": 25 }
+    },
     "audit": "The expected answers were written by a model and audited by nobody yet."
 }

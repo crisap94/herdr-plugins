@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
 import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
@@ -9,6 +10,32 @@ import { LEDGER_GATES } from '../../tab-recap/src/recap/domain/gates/ledger-gate
 import type { Operation } from '../../tab-recap/src/recap/domain/ops.ts';
 import { quotedIn } from '../../tab-recap/src/recap/domain/quote.ts';
 import { EVIDENCE_CHARS, reconciliationOf } from '../../tab-recap/src/recap/domain/reconciliation.ts';
+import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
+
+// A trap of the fresh set: one wrong answer the item tempts (see dataset-source/fresh.ts). Ids are document ids.
+interface TrapOp {
+    readonly op: 'close' | 'add';
+    readonly id?: string;
+    readonly why?: string;
+    readonly evidence?: string;
+    readonly into?: string;
+    readonly section?: string;
+    readonly text?: string;
+}
+
+interface Trap {
+    readonly kind: string;
+    readonly expect: 'refused' | 'kept';
+    readonly ops: readonly TrapOp[];
+}
+
+interface FreshConfig {
+    readonly items: number;
+    readonly seed: string;
+    readonly plants: Readonly<Record<string, number>>;
+    readonly sizes: Readonly<Record<string, number>>;
+    readonly traps: { readonly refused: number; readonly kept: number };
+}
 
 interface Spanned {
     readonly id: string;
@@ -33,13 +60,26 @@ interface Row {
     readonly tags: readonly string[];
     readonly input: { readonly name: string; readonly language: string; readonly clock: { readonly now: number; readonly zone: string }; readonly open: readonly Fact[]; readonly tail: readonly Entry[] };
     readonly expected: Expected;
+    readonly fresh?: { readonly seed: string; readonly traps: readonly Trap[] };
 }
 
-const PLANTS = ['stale', 'lookalike', 'compaction', 'update', 'duplicate', 'easy'];
+const PLANTS = ['stale', 'lookalike', 'compaction', 'update', 'duplicate', 'easy', 'answered-trap', 'long-evidence', 'add-bait', 'near-pair'];
 const SIZES = ['small', 'medium', 'large'];
-const file = new URL('./dataset.jsonl', import.meta.url);
-const rows = readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as Row);
+const path = process.argv[2];
+const file = path === undefined ? new URL('./dataset.jsonl', import.meta.url) : resolve(path);
+const parseRows = (text: string): Row[] => text.split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as Row);
+const rows = parseRows(readFileSync(file, 'utf8'));
+// The fresh set is the file named dataset-fresh.jsonl. Its rows must all carry the fresh key, and no other file may.
+const fresh = (typeof file === 'string' ? file : file.pathname).endsWith('/dataset-fresh.jsonl');
+const tagged = rows.filter((row) => row.fresh !== undefined).length;
+const freshConfig: FreshConfig | null = fresh ? (JSON.parse(readFileSync(new URL('./config.json', import.meta.url), 'utf8')) as { fresh: FreshConfig }).fresh : null;
+const textsOf = (row: Row): string[] => [...row.input.open.flatMap((fact) => [fact.text, fact.why, fact.ref]), ...row.input.tail.map((entry) => entry.text)].filter((text): text is string => typeof text === 'string');
+const baseRows = fresh ? parseRows(readFileSync(new URL('./dataset.jsonl', import.meta.url), 'utf8')) : [];
+const baseTexts = baseRows.flatMap(textsOf);
+const baseNames = baseRows.map((row) => row.input.name);
 const problems: string[] = [];
+if (fresh && tagged !== rows.length) problems.push(`fresh: ${rows.length - tagged} of ${rows.length} rows have no fresh key`);
+if (!fresh && tagged > 0) problems.push(`${tagged} rows carry a fresh key, but the file is not dataset-fresh.jsonl`);
 const seen = new Set<string>();
 const factIds = new Set<string>();
 const table: string[] = [];
@@ -129,10 +169,54 @@ for (const row of rows) {
     const bad = gatedOf(trap);
     if (bad.kept !== trap.ops.length) fail('a close quoting the summary is refused by the plugin already, so the plant shows nothing');
 
+    if (fresh) {
+        const traps = row.fresh?.traps ?? [];
+        const own = (id: string | undefined): string => expected.must_close.find((one) => one.id === id)?.evidence ?? '';
+        if (row.fresh?.seed !== FRESH_SEED) fail('the seed is not the fresh seed');
+        for (const reason of guardOf(text)) fail(`guard: ${reason}`);
+        const shared = overlapOf(textsOf(row), baseTexts);
+        if (shared.length > 0) fail(`overlap with today's set: ${(shared[0] ?? '').slice(0, 60)}`);
+        for (const name of baseNames) if (text.includes(name)) fail(`overlap: the project name ${name} of today's set`);
+        if (!traps.some((one) => one.expect === 'refused')) fail('no refused trap');
+        if (!traps.some((one) => one.expect === 'kept') && expected.lookalikes.length === 0) fail('no kept trap and no lookalike');
+        traps.forEach((one, at) => {
+            const verdict = gatedOf({ ops: one.ops });
+            const refusedNow = verdict.refused.length > 0 || verdict.gates > 0;
+            if (one.expect === 'refused' && !refusedNow) fail(`trap ${at} (${one.kind}) is kept, expected refused`);
+            if (one.expect === 'kept' && (refusedNow || verdict.kept !== one.ops.length)) fail(`trap ${at} (${one.kind}) is refused, expected kept`);
+            if (one.kind === 'answered-trap' && !one.ops.every((op) => op.op === 'close' && op.why === 'answered' && op.id !== undefined && built.facts.get(op.id)?.section !== 'needs')) fail(`trap ${at}: answered-trap is not an answered close of a fact outside needs`);
+            if (one.kind === 'long-evidence' && !one.ops.every((op) => op.op === 'close' && (op.evidence ?? '').length > EVIDENCE_CHARS && inReal(op.evidence ?? '') && own(op.id).length > 0 && (op.evidence ?? '').includes(own(op.id)))) fail(`trap ${at}: long-evidence quote is not longer than ${EVIDENCE_CHARS}, real, or holding the expected evidence`);
+            if (one.kind === 'add-bait' && !one.ops.some((op) => op.op === 'add')) fail(`trap ${at}: add-bait has no add`);
+            if (one.kind === 'near-pair' && !one.ops.every((op) => op.op === 'close' && op.why === 'merged' && op.id !== undefined && op.into !== undefined && expected.must_stay_open.includes(op.id) && expected.must_stay_open.includes(op.into))) fail(`trap ${at}: near-pair is not a merged close of one open fact into another`);
+        });
+    }
+
     const omitted = /<tail[^>]* omitted="(\d+)"/u.exec(built.document)?.[1] ?? '0';
     const shownTurns = (built.tail.match(/<turn /gu) ?? []).length;
     table.push([row.id.padEnd(40), String(ids.length).padStart(3), String(row.input.tail.length).padStart(4), String(shownTurns).padStart(4), omitted.padStart(4), String(built.tail.length).padStart(6), String(built.document.length).padStart(6), row.plants.join(',')].join(' '));
     if (built.tail.length > TAIL_CHARS + 3 * row.input.tail.length + 1) fail('the built tail is over the budget');
+}
+
+const allTraps = rows.flatMap((row) => row.fresh?.traps ?? []);
+const refusedTraps = allTraps.filter((one) => one.expect === 'refused').length;
+const keptTraps = allTraps.length - refusedTraps;
+if (freshConfig !== null) {
+    const wanted: Record<string, number> = { ...freshConfig.plants, ...freshConfig.sizes };
+    const at = (name: string): number => counts.get(name) ?? 0;
+    if (rows.length !== FRESH_ITEMS || rows.length !== freshConfig.items) problems.push(`fresh: ${rows.length} items, config says ${freshConfig.items}, the set is ${FRESH_ITEMS}`);
+    for (const [name, value] of Object.entries(wanted)) if (at(name) !== value) problems.push(`fresh: ${name} is on ${at(name)} items, config says ${value}`);
+    for (const [name, value] of counts) if (wanted[name] === undefined) problems.push(`fresh: ${name} (${value} items) is not in config`);
+    if (at('stale') < 16) problems.push(`fresh: stale is on ${at('stale')} items, at least 16 needed`);
+    if (at('lookalike') < 8) problems.push(`fresh: lookalike is on ${at('lookalike')} items, at least 8 needed`);
+    if (at('compaction') !== 4) problems.push(`fresh: compaction is on ${at('compaction')} items, 4 needed`);
+    if (at('update') !== 2) problems.push(`fresh: update is on ${at('update')} items, 2 needed`);
+    if (at('duplicate') !== 2) problems.push(`fresh: duplicate is on ${at('duplicate')} items, 2 needed`);
+    for (const name of ['answered-trap', 'long-evidence', 'add-bait', 'near-pair']) if (at(name) < 6) problems.push(`fresh: ${name} is on ${at(name)} items, at least 6 needed`);
+    if (rows.filter((row) => row.tags.includes('no-op-expected')).length > 4) problems.push('fresh: more than 4 no-op-expected items');
+    if (at('small') !== 8 || at('medium') !== 12 || at('large') !== 4) problems.push(`fresh: sizes are small ${at('small')} medium ${at('medium')} large ${at('large')}, 8/12/4 needed`);
+    if (refusedTraps !== freshConfig.traps.refused || keptTraps !== freshConfig.traps.kept) problems.push(`fresh: traps refused ${refusedTraps} kept ${keptTraps}, config says ${freshConfig.traps.refused} and ${freshConfig.traps.kept}`);
+    const sample = readFileSync(new URL('./fresh-sample.md', import.meta.url), 'utf8');
+    for (const reason of guardOf(sample)) problems.push(`fresh-sample.md: guard: ${reason}`);
 }
 
 console.log(`${'id'.padEnd(40)} fct tail turn omit tailch  docch plants`);
@@ -144,3 +228,4 @@ if (problems.length > 0) {
     process.exit(1);
 }
 console.log('ok: every item parses, builds through reconcileInput, and its expected answer passes the parser and the ledger gates');
+if (freshConfig !== null) console.log(`fresh ok: ${rows.length} items, traps refused ${refusedTraps} kept ${keptTraps}, overlap 0, guard 0`);

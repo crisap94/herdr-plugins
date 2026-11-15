@@ -18,6 +18,9 @@ Code grades R1 to R8. The judge (`claude-sonnet-5-5` through the Claude Agent SD
 Run from the `evals/` folder of the repository.
 
 - Check the dataset: `bun curator-reconcile/check-dataset.ts` (ends with `ok: every item parses, ...`).
+- Build the fresh set (24 invented items, seeded; writes `dataset-fresh.jsonl` and `fresh-sample.md`): `bun curator-reconcile/build-dataset.ts --fresh`.
+- Check the fresh set (ends with `fresh ok: ...`): `bun curator-reconcile/check-dataset.ts curator-reconcile/dataset-fresh.jsonl`.
+- Run the fresh set (only with a `fresh-` label; never `--smoke`): `bun curator-reconcile/run.ts --fresh --label fresh-<name>`.
 - Typecheck: `node_modules/.bin/tsc -p curator-reconcile/tsconfig.json` (prints nothing, exits 0).
 - Stub run, no model called: `bun curator-reconcile/run.ts --stub` (432 stub answers and 432 stub judge verdicts; every code criterion passes; writes `~/.local/state/tab-recap-evals/suite/curator-reconcile/runs/stub/`).
 - Smoke run: `bun curator-reconcile/run.ts --smoke` (label `smoke`, one repetition, at most 12 job calls drawn by the seed across both backends, then at most 12 judge calls; measures seconds, tokens and cost per call before the full run).
