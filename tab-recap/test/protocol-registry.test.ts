@@ -4,7 +4,8 @@ import { answerToken, answerValue, defineExchange, parseRequest, requestName, se
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import type { RegistryRefusal } from '#src/protocol/registry.ts';
-import { parseExchangeName, parseExchangeVersion, parseRequestId, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseFieldName, parseRequestId, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 import type { RequestId, TokenName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
@@ -100,7 +101,7 @@ test('a refusing exchange refuses a value longer than 80 characters instead of t
 
 test('a request is parsed and serialized by its exchange descriptor', () => {
     const exchange = probe('probe', {
-        request: [{ kind: 'id', grammar: 'token-safe' }, { kind: 'word', name: 'tool', optional: false }],
+        request: [{ kind: 'id', grammar: 'token-safe' }, { kind: 'word', name: must(parseFieldName('tool')), presence: 'required' }],
     });
     const parsed = parseRequest(exchange, 'r_7:coordinator');
     assert.deepEqual(parsed, { kind: 'ok', value: { id: brand(parseRequestId('r_7', 'token-safe')), tool: 'coordinator' } });

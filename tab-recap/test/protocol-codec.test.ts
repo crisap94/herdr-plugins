@@ -2,15 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseValue, serializeValue } from '#src/protocol/codec.ts';
 import type { FieldSpec, ParsedValue } from '#src/protocol/codec.ts';
-import { parseRequestId } from '#src/protocol/primitives.ts';
+import { parseFieldName, parseFlagText, parseRequestId } from '#src/protocol/primitives.ts';
 import type { IdGrammar, RequestId, TokenValue } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 
 const ID_LEGACY: FieldSpec = { kind: 'id', grammar: 'legacy-length' };
 const ID_SAFE: FieldSpec = { kind: 'id', grammar: 'token-safe' };
-const NOTE: FieldSpec = { kind: 'rest', name: 'note', optional: true, maxChars: null };
-const TOOL: FieldSpec = { kind: 'word', name: 'tool', optional: false };
-const URGENT: FieldSpec = { kind: 'flag', name: 'urgent', text: 'urgent' };
-const PHASE: FieldSpec = { kind: 'word', name: 'phase', optional: true };
+const NOTE: FieldSpec = { kind: 'rest', name: must(parseFieldName('note')), presence: 'optional', maxChars: null };
+const TOOL: FieldSpec = { kind: 'word', name: must(parseFieldName('tool')), presence: 'required' };
+const URGENT: FieldSpec = { kind: 'flag', name: must(parseFieldName('urgent')), text: must(parseFlagText('urgent')) };
+const PHASE: FieldSpec = { kind: 'word', name: must(parseFieldName('phase')), presence: 'optional' };
 
 const idOf = (raw: string, grammar: IdGrammar): RequestId => {
     const id = parseRequestId(raw, grammar);

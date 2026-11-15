@@ -159,10 +159,9 @@
     "assertion": 1
   },
   "src/protocol/codec.ts": {
-    "parameter": 4,
-    "return": 1,
+    "parameter": 3,
     "container": 6,
-    "property": 9
+    "property": 2
   },
   "src/protocol/exchange.ts": {
     "parameter": 9,
@@ -175,8 +174,7 @@
     "container": 1
   },
   "src/protocol/primitives.ts": {
-    "parameter": 1,
-    "property": 1
+    "parameter": 1
   },
   "src/protocol/registry.ts": {
     "parameter": 1,

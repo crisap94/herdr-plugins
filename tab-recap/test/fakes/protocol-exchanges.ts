@@ -3,7 +3,7 @@ import type { Registry } from '#src/protocol/registry.ts';
 import { defineExchange, parseRequest } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { parseExchangeName, parseExchangeVersion, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseTokenName, parseToolName } from '#src/protocol/primitives.ts';
 import type { TokenName, ToolName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
@@ -27,7 +27,7 @@ export const compactLike: Exchange = defineExchange({
     requestPrefix: 'compact-req-',
     request: [
         { kind: 'id', grammar: 'legacy-length' },
-        { kind: 'rest', name: 'note', optional: true, maxChars: null },
+        { kind: 'rest', name: unwrap(parseFieldName('note')), presence: 'optional', maxChars: null },
     ],
     answerStages: ['queued', 'running', 'done'],
     failureReasons: ['bad-id', 'interrupted', 'error'],
@@ -43,8 +43,8 @@ export const handoffLike: Exchange = defineExchange({
     requestPrefix: 'handoff-req-',
     request: [
         { kind: 'id', grammar: 'token-safe' },
-        { kind: 'word', name: 'target', optional: false },
-        { kind: 'flag', name: 'urgent', text: 'urgent' },
+        { kind: 'word', name: unwrap(parseFieldName('target')), presence: 'required' },
+        { kind: 'flag', name: unwrap(parseFieldName('urgent')), text: unwrap(parseFlagText('urgent')) },
     ],
     answerStages: ['queued', 'running', 'done'],
     failureReasons: ['bad-id', 'interrupted', 'error'],

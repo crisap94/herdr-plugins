@@ -1,6 +1,6 @@
 import { COMPACT_FAILURES } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
-import { parseExchangeName, parseExchangeVersion } from '../primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseFieldName } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'done' } as const;
@@ -21,7 +21,7 @@ export const compact = {
     requestPrefix: 'compact-req-',
     request: [
         { kind: 'id', grammar: 'legacy-length' },
-        { kind: 'rest', name: 'note', optional: true, maxChars: null },
+        { kind: 'rest', name: must(parseFieldName('note')), presence: 'optional', maxChars: null },
     ],
     answerStages: Object.values(COMPACT_STAGES),
     failureReasons: Object.values(COMPACT_FAILURES),

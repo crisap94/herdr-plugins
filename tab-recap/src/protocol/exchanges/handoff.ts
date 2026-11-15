@@ -1,6 +1,6 @@
 import { HANDOFF_FAILURES, HANDOFF_REFUSALS, HANDOFF_UNSUPPORTED } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
-import { parseExchangeName, parseExchangeVersion } from '../primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const HANDOFF_STAGES = { queued: 'queued', running: 'running', delivered: 'delivered' } as const;
@@ -20,9 +20,9 @@ export const handoff = {
     requestPrefix: 'handoff-req-',
     request: [
         { kind: 'id', grammar: 'token-safe' },
-        { kind: 'word', name: 'workspace', optional: false, shape: 'pane-part' },
-        { kind: 'word', name: 'pane', optional: false, shape: 'pane-part' },
-        { kind: 'flag', name: 'refresh', text: 'refresh' },
+        { kind: 'word', name: must(parseFieldName('workspace')), presence: 'required', shape: 'pane-part' },
+        { kind: 'word', name: must(parseFieldName('pane')), presence: 'required', shape: 'pane-part' },
+        { kind: 'flag', name: must(parseFieldName('refresh')), text: must(parseFlagText('refresh')) },
     ],
     answerStages: Object.values(HANDOFF_STAGES),
     refusalReasons: HANDOFF_REFUSALS,

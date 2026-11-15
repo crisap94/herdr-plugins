@@ -1,7 +1,7 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, WORD_SHAPES, parseWord, refuse, parseRequestId, parseTokenValue } from './primitives.ts';
-import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
+import { LIMITS, WORD_SHAPES, parseWord, refuse, parseRequestId, parseIdText, parseTokenValue } from './primitives.ts';
+import type { CharLimit, FieldName, FlagText, IdGrammar, IdText, Presence, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
 
 export interface IdSpec {
     readonly kind: 'id';
@@ -10,22 +10,22 @@ export interface IdSpec {
 
 export interface WordSpec {
     readonly kind: 'word';
-    readonly name: string;
-    readonly optional: boolean;
+    readonly name: FieldName;
+    readonly presence: Presence;
     readonly shape?: WordShape;
 }
 
 export interface FlagSpec {
     readonly kind: 'flag';
-    readonly name: string;
-    readonly text: string;
+    readonly name: FieldName;
+    readonly text: FlagText;
 }
 
 export interface RestSpec {
     readonly kind: 'rest';
-    readonly name: string;
-    readonly optional: boolean;
-    readonly maxChars: number | null;
+    readonly name: FieldName;
+    readonly presence: Presence;
+    readonly maxChars: CharLimit | null;
 }
 
 export type FieldSpec = IdSpec | WordSpec | FlagSpec | RestSpec;
@@ -67,7 +67,7 @@ function pieceOf(field: Field, value: ParsedValue): Result<string | null, Refusa
     }
     const text = value[field.name] ?? null;
     if (text === null) {
-        return field.optional ? ok(null) : refuse('bad-grammar', field.name);
+        return field.presence === 'optional' ? ok(null) : refuse('bad-grammar', field.name);
     }
     if (typeof text !== 'string') {
         return refuse('bad-grammar', field.name);
@@ -114,7 +114,7 @@ function readField(field: Field, segments: readonly string[], at: number): Resul
         return ok({ value: present, at: present ? at + 1 : at });
     }
     if (segment === undefined) {
-        return field.optional ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
+        return field.presence === 'optional' ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
     }
     if (field.kind === 'word') {
         const word = parseWord(segment, LIMITS.valueMax, shapeOf(field.shape));
@@ -129,17 +129,12 @@ export function idGrammarOf(specs: readonly FieldSpec[]): Result<IdGrammar, Refu
     return layout.kind === 'err' ? layout : ok(layout.value.grammar);
 }
 
-export const idTextOf = (raw: string): string => {
-    const cut = raw.indexOf(':');
-    return cut < 0 ? raw : raw.slice(0, cut);
-};
-
 export function parseValue(specs: readonly FieldSpec[], raw: string): Result<ParsedValue, Refusal> {
     const layout = layoutOf(specs);
     if (layout.kind === 'err') {
         return layout;
     }
-    const idText = idTextOf(raw);
+    const idText: IdText = parseIdText(raw);
     const id = parseRequestId(idText, layout.value.grammar);
     if (id.kind === 'err') {
         return id;
