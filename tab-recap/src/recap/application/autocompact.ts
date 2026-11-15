@@ -50,7 +50,7 @@ interface BackoffFacts {
     readonly lastBreakAt: Instant | null;
 }
 
-interface ContextsOf { of(pane: string): ContextUse | null; }
+interface ContextsOf { of(pane: PaneId): ContextUse | null; }
 
 export interface AutocompactDeps {
     policy(): AutocompactPolicy;
@@ -58,7 +58,7 @@ export interface AutocompactDeps {
     decider(): Decider | null;
     readonly contexts: ContextsOf;
     inFlight(lane: Lane): Promise<Observed>;
-    awaiting?(pane: string): Promise<Waiting>;
+    awaiting?(pane: PaneId): Promise<Waiting>;
     readonly events?: LaneEvents;
     recent(lane: Lane): Promise<readonly Entry[]>;
     readonly ledger: Pick<Ledger, 'historyOf'>;
@@ -69,9 +69,9 @@ export interface AutocompactDeps {
     readonly requests: Pick<Requests, 'requestCompact'>;
     readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
-    hasRecap(tab: string): boolean;
+    hasRecap(tab: TabId): boolean;
     refresh: RecapRefresh;
-    lanes(tab: string): readonly Lane[];
+    lanes(tab: TabId): readonly Lane[];
     now(): number;
     log(line: string): void;
 }

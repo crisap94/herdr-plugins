@@ -32,7 +32,7 @@ const printabilityOf = (key: string): Printability => {
     return printable ? 'printable' : 'control';
 };
 
-export function noteOf(typed: string): Text | null {
+export function noteOf(typed: Text): Text | null {
     const note = typed.replace(/\s+/g, ' ').trim();
     if (note === '') {
         return null;

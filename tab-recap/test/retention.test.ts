@@ -12,8 +12,8 @@ test('TAB_RECAP_KEEP_DAYS: whole days, 0 = for ever, anything else is 30', () =>
 });
 
 test('the cutoff is that many days before now; none when nothing expires', () => {
-    assert.equal(cutoffOf(10 * 86_400_000, 3), 7 * 86_400_000);
-    assert.equal(cutoffOf(10 * 86_400_000, 0), null);
+    assert.equal(cutoffOf(instant(10 * 86_400_000), 3), 7 * 86_400_000);
+    assert.equal(cutoffOf(instant(10 * 86_400_000), 0), null);
 });
 
 test('TAB_RECAP_CLOSED_LANE_DAYS: whole days of up to nine digits, 0 = record nothing, anything else is 14', () => {

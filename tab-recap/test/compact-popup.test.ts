@@ -7,6 +7,8 @@ import { EMPTY_NOTE, noteOf, step } from '#src/recap/application/compact-keys.ts
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { compactFooter, compactView } from '#src/recap/render/compact.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -31,13 +33,13 @@ test('a note: printable keys, Backspace, Ctrl-U, pasted text on one line, trimme
     assert.deepEqual(type(['k', 'e', 'e', 'p', ' ', 'x', 'y', '\u007f', '\r']).effect, { kind: 'send', note: 'keep x' });
     assert.equal(type(['a', 'b', '\u0015']).state.note, '');
     assert.equal(type(['line one\nline two\r\n']).state.note, 'line one line two ');
-    assert.equal(noteOf('  line one\n  line two  '), 'line one line two');
+    assert.equal(noteOf(must(parseText('  line one\n  line two  '))), 'line one line two');
     assert.equal(Array.from(type(['x'.repeat(NOTE_LIMIT + 50)]).state.note).length, NOTE_LIMIT);
     assert.equal(type([`${ESC}[A`]).state.note, '', 'an arrow key is not text');
 });
 
 test('the popup names the agent and shows the note with a cursor, in both languages; the footer fits', () => {
-    assert.deepEqual(compactView({ note: noteOf('keep x') ?? EMPTY_NOTE.note }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
+    assert.deepEqual(compactView({ note: noteOf(must(parseText('keep x'))) ?? EMPTY_NOTE.note }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
     assert.match(compactView(EMPTY_NOTE, es, 'codex', 40, plain).join('\n'), /Compactar codex[\s\S]*¿Algo que deba conservar\?/);
     for (const m of [en, es]) {
         assert.ok(visibleLength(compactFooter(m, 40, plain)) <= 40);

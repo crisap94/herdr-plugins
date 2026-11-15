@@ -9,6 +9,7 @@ import type { Exchange } from '#src/protocol/exchange.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
 import { answer } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import { ANSWER_TTL_MS } from '#src/recap/domain/compact-request.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 
@@ -34,7 +35,7 @@ export function purgeAnsweredCompactions(requests: Pick<Requests, 'takeAnswered'
     return requests.takeAnswered().length;
 }
 
-async function sendAnswer(deps: RestartDeps, pane: string, write: TokenWrite): Promise<void> {
+async function sendAnswer(deps: RestartDeps, pane: PaneId, write: TokenWrite): Promise<void> {
     const done = await deps.tokens.report(pane, { [write.name]: write.value }, ANSWER_TTL_MS);
     if (isUnknown(done)) {
         deps.log(`ask on ${pane}: not answered (${saying(done.why)})`);

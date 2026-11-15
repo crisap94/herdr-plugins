@@ -513,7 +513,7 @@ test('released when the compaction is done: a second request on the same pane co
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
     assert.equal(world.typed.length, 2, 'the second request types its own /compact');
-    assert.equal(world.claims.has('w1:p1'), false);
+    assert.equal(world.claims.has(paneId('w1:p1')), false);
 });
 
 test('released when the compaction fails (typing blocked): the next request on the pane is attempted, not held back', async () => {
@@ -522,7 +522,7 @@ test('released when the compaction fails (typing blocked): the next request on t
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
     assert.equal(world.typed.length, 2, 'both attempts were made');
-    assert.equal(world.claims.has('w1:p1'), false);
+    assert.equal(world.claims.has(paneId('w1:p1')), false);
 });
 
 test('released when the agent is refused (working): once it is idle, the next request compacts', async () => {
@@ -530,7 +530,7 @@ test('released when the agent is refused (working): once it is idle, the next re
     const world = fleet(statuses);
     const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
-    assert.equal(world.claims.has('w1:p1'), false, 'the refusal frees the pane');
+    assert.equal(world.claims.has(paneId('w1:p1')), false, 'the refusal frees the pane');
     statuses['w1:p1'] = 'idle';
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
     assert.equal(world.typed.length, 1, 'the second request compacts');
@@ -541,7 +541,7 @@ test('released when the flow throws (refresh rejects): the pane is free, and the
     world.refreshFails = true;
     const compaction = flow(world, 'focused', 'w1:p1', null, [[compacted]]);
     await assert.rejects(compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r0' }), /refresh failed/);
-    assert.equal(world.claims.has('w1:p1'), false, 'a thrown flow frees the pane');
+    assert.equal(world.claims.has(paneId('w1:p1')), false, 'a thrown flow frees the pane');
     assert.deepEqual(world.answered, ['r0 w1:p1 failed-error']);
     world.refreshFails = false;
     await compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
@@ -558,7 +558,7 @@ test('a flow that throws answers the joined requests too, and frees the pane', a
     ]);
     assert.deepEqual(outcomes.map((each) => each.status), ['rejected', 'fulfilled']);
     assert.deepEqual(world.answered, ['r1 w1:p1 queued', 'r1 w1:p1 failed-error']);
-    assert.equal(world.claims.has('w1:p1'), false);
+    assert.equal(world.claims.has(paneId('w1:p1')), false);
 });
 
 test('a joined request with a note is told its note is not used; an automatic request that joins is not announced', async () => {

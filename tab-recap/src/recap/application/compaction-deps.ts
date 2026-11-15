@@ -17,17 +17,20 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { Duration } from '#src/recap/domain/time.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 
-interface BriefPort { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> }
+interface BriefPort { enabled(): boolean; job(): string | null; write(document: Text, own: string, correction?: Text): Promise<Written> }
 
 interface CoveragePort { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> }
 
-interface TypingPort { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> }
+interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
 
-interface LaneWebs { of(pane: string): LaneWeb | null }
+interface LaneWebs { of(pane: PaneId): LaneWeb | null }
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
@@ -51,7 +54,7 @@ export interface CompactionDeps {
     readonly claims: LaneClaims;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
-    pause(ms: number): Promise<void>;
+    pause(ms: Duration): Promise<void>;
     now(): number;
     readonly webs: LaneWebs;
     lanes(tab: string): readonly Lane[];

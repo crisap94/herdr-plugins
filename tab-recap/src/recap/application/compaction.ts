@@ -157,7 +157,7 @@ export class Compaction {
         return id;
     }
 
-    private ended(request: CompactRequest, pane: string, id: string, end: CompactionEnd, reason: CompactFailure | null): void {
+    private ended(request: CompactRequest, pane: PaneId, id: string, end: CompactionEnd, reason: CompactFailure | null): void {
         this.answer(request, pane, finalAnswerOf(end.stage, reason));
         if (end.why === LANE_CLOSED) return;
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
