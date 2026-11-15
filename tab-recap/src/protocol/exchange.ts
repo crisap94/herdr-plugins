@@ -1,6 +1,6 @@
 import type { Result } from './result.ts';
 import { LIMITS, parseTokenName, parseTokenValue } from './primitives.ts';
-import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName } from './primitives.ts';
+import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
@@ -81,7 +81,7 @@ export const splitAnswer = (raw: string): AnswerSplit | null => {
     return cut < 0 ? null : { id: raw.slice(0, cut), stage: raw.slice(cut + ANSWER_SEPARATOR.length) };
 };
 
-export const parseRequest = (exchange: Exchange, raw: string): Result<ParsedValue, Refusal> => parseValue(exchange.request, raw);
+export const parseRequest = (exchange: Exchange, raw: WireText): Result<ParsedValue, Refusal> => parseValue(exchange.request, raw);
 
 export const serializeRequest = (exchange: Exchange, value: ParsedValue): Result<TokenValue, Refusal> =>
     serializeValue(exchange.request, value);

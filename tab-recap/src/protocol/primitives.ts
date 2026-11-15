@@ -26,6 +26,11 @@ export type FieldName = Brand<string, 'FieldName'>;
 export type FlagText = Brand<string, 'FlagText'>;
 export type CharLimit = Brand<number, 'CharLimit'>;
 export type IdText = Brand<string, 'IdText'>;
+export type WireText = Brand<string, 'WireText'>;
+export type FieldText = Brand<string, 'FieldText'>;
+export type FlagValue = true;
+export type FieldValue = FieldText | FlagValue | null;
+export type SegmentIndex = Brand<number, 'SegmentIndex'>;
 export type Presence = 'optional' | 'required';
 
 type Candidate = Brand<string, 'Candidate'>;
@@ -122,6 +127,24 @@ export function parseCharLimit(raw: unknown): Result<CharLimit, RefusalReason> {
         ? ok(brand<number, 'CharLimit'>(raw))
         : err<RefusalReason>('bad-grammar');
 }
+
+export function parseWireText(raw: unknown): Result<WireText, RefusalReason> {
+    return typeof raw === 'string' ? ok(brand<string, 'WireText'>(raw)) : err<RefusalReason>('bad-grammar');
+}
+
+export function parseFieldText(raw: unknown): Result<FieldText, RefusalReason> {
+    return typeof raw === 'string' ? ok(brand<string, 'FieldText'>(raw)) : err<RefusalReason>('bad-grammar');
+}
+
+export const parseFlagFieldText = (flag: FlagText): FieldText => brand<string, 'FieldText'>(flag);
+
+export const parseRestText = (segments: readonly FieldText[]): FieldText => brand<string, 'FieldText'>(segments.join(':'));
+
+export const parseSegmentStart = (): SegmentIndex => brand<number, 'SegmentIndex'>(0);
+
+export const parseNextSegment = (at: SegmentIndex): SegmentIndex => brand<number, 'SegmentIndex'>(at + 1);
+
+export const parseSegmentEnd = (segments: readonly FieldText[]): SegmentIndex => brand<number, 'SegmentIndex'>(segments.length);
 
 export function parseIdText(raw: string): IdText {
     const cut = raw.indexOf(':');

@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseValue, serializeValue } from '#src/protocol/codec.ts';
 import type { FieldSpec, ParsedValue } from '#src/protocol/codec.ts';
-import { parseFieldName, parseFlagText, parseRequestId } from '#src/protocol/primitives.ts';
-import type { IdGrammar, RequestId, TokenValue } from '#src/protocol/primitives.ts';
+import { parseFieldName, parseFieldText, parseFlagText, parseRequestId, parseWireText } from '#src/protocol/primitives.ts';
+import type { FieldText, FlagValue, IdGrammar, RequestId, TokenValue, WireText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
 const ID_LEGACY: FieldSpec = { kind: 'id', grammar: 'legacy-length' };
@@ -12,6 +12,10 @@ const NOTE: FieldSpec = { kind: 'rest', name: must(parseFieldName('note')), pres
 const TOOL: FieldSpec = { kind: 'word', name: must(parseFieldName('tool')), presence: 'required' };
 const URGENT: FieldSpec = { kind: 'flag', name: must(parseFieldName('urgent')), text: must(parseFlagText('urgent')) };
 const PHASE: FieldSpec = { kind: 'word', name: must(parseFieldName('phase')), presence: 'optional' };
+
+const textOf = (raw: string): FieldText => must(parseFieldText(raw));
+
+const wireOf = (raw: string): WireText => must(parseWireText(raw));
 
 const idOf = (raw: string, grammar: IdGrammar): RequestId => {
     const id = parseRequestId(raw, grammar);
@@ -43,46 +47,46 @@ function generator(seed: number): <T>(items: readonly T[]) => T {
 test('an id with a note round-trips, and a rest keeps its colons', () => {
     const specs = [ID_LEGACY, NOTE];
     assert.equal(valueOf(serializeValue(specs, { id: idOf('r.7', 'legacy-length'), note: null })), 'r.7');
-    assert.equal(valueOf(serializeValue(specs, { id: idOf('r.7', 'legacy-length'), note: '' })), 'r.7:');
-    const withColons: ParsedValue = { id: idOf('r.7', 'legacy-length'), note: 'a:b:c' };
+    assert.equal(valueOf(serializeValue(specs, { id: idOf('r.7', 'legacy-length'), note: textOf('') })), 'r.7:');
+    const withColons: ParsedValue = { id: idOf('r.7', 'legacy-length'), note: textOf('a:b:c') };
     const wire = valueOf(serializeValue(specs, withColons));
     assert.equal(wire, 'r.7:a:b:c');
-    assert.deepEqual(parseValue(specs, wire), { kind: 'ok', value: withColons });
+    assert.deepEqual(parseValue(specs, wireOf(wire)), { kind: 'ok', value: withColons });
 });
 
 test('an id, a word and a flag round-trip in order, with absent fields at the end', () => {
     const specs = [ID_SAFE, TOOL, URGENT, PHASE];
-    const full: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: 'probe', urgent: true, phase: 'late' };
+    const full: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: textOf('probe'), urgent: true, phase: textOf('late') };
     const wire = valueOf(serializeValue(specs, full));
     assert.equal(wire, 'r_7:probe:urgent:late');
-    assert.deepEqual(parseValue(specs, wire), { kind: 'ok', value: full });
-    const short: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: 'probe', urgent: false, phase: null };
+    assert.deepEqual(parseValue(specs, wireOf(wire)), { kind: 'ok', value: full });
+    const short: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: textOf('probe'), urgent: null, phase: null };
     assert.equal(valueOf(serializeValue(specs, short)), 'r_7:probe');
-    assert.deepEqual(parseValue(specs, 'r_7:probe'), { kind: 'ok', value: short });
+    assert.deepEqual(parseValue(specs, wireOf('r_7:probe')), { kind: 'ok', value: short });
 });
 
 test('an id alone round-trips', () => {
     const specs = [ID_SAFE];
     const only: ParsedValue = { id: idOf('r_7', 'token-safe') };
     assert.equal(valueOf(serializeValue(specs, only)), 'r_7');
-    assert.deepEqual(parseValue(specs, 'r_7'), { kind: 'ok', value: { id: only.id } });
+    assert.deepEqual(parseValue(specs, wireOf('r_7')), { kind: 'ok', value: { id: only.id } });
 });
 
 test('a serialized value of 80 characters is accepted and one of 81 is refused', () => {
     const specs = [ID_LEGACY, NOTE];
     const id = idOf('r.7', 'legacy-length');
-    assert.equal(serializeValue(specs, { id, note: 'x'.repeat(76) }).kind, 'ok');
-    assert.deepEqual(serializeValue(specs, { id, note: 'x'.repeat(77) }), { kind: 'err', error: { reason: 'too-long', subject: 'TokenValue' } });
+    assert.equal(serializeValue(specs, { id, note: textOf('x'.repeat(76)) }).kind, 'ok');
+    assert.deepEqual(serializeValue(specs, { id, note: textOf('x'.repeat(77)) }), { kind: 'err', error: { reason: 'too-long', subject: 'TokenValue' } });
 });
 
 test('an absent field followed by a present one is refused, never written ambiguously', () => {
     const specs = [ID_SAFE, TOOL, URGENT, PHASE];
     const id = idOf('r_7', 'token-safe');
-    assert.deepEqual(serializeValue(specs, { id, tool: 'probe', urgent: false, phase: 'late' }), {
+    assert.deepEqual(serializeValue(specs, { id, tool: textOf('probe'), urgent: null, phase: textOf('late') }), {
         kind: 'err',
         error: { reason: 'bad-grammar', subject: 'phase' },
     });
-    assert.deepEqual(serializeValue(specs, { id, tool: null, urgent: false, phase: null }), {
+    assert.deepEqual(serializeValue(specs, { id, tool: null, urgent: null, phase: null }), {
         kind: 'err',
         error: { reason: 'bad-grammar', subject: 'tool' },
     });
@@ -93,15 +97,16 @@ test('a generated set of values round-trips, and both accepted and refused value
     const pick = generator(7);
     const ids = ['r_7', 'a1', 'Z-9', 'q'].map((raw) => idOf(raw, 'token-safe'));
     const words = ['probe', 'b-2', 'c_3'];
-    const phrases = ['', 'x', 'a:b', 'two:colons:here', 'y'.repeat(40), 'z'.repeat(70)];
+    const phrases = ['', 'x', 'a:b', 'two:colons:here', 'y'.repeat(40), 'z'.repeat(70)].map(textOf);
+    const wordTexts = words.map(textOf);
     let accepted = 0;
     let refused = 0;
     for (let round = 0; round < 800; round += 1) {
         const value: ParsedValue = {
             id: pick(ids),
-            tool: pick([null, ...words]),
-            urgent: pick([true, false]),
-            phase: pick([null, ...words]),
+            tool: pick([null, ...wordTexts]),
+            urgent: pick<FlagValue | null>([true, null]),
+            phase: pick([null, ...wordTexts]),
             note: pick([null, ...phrases]),
         };
         const wire = serializeValue(specs, value);
@@ -110,7 +115,7 @@ test('a generated set of values round-trips, and both accepted and refused value
             continue;
         }
         accepted += 1;
-        assert.deepEqual(parseValue(specs, wire.value), { kind: 'ok', value }, wire.value);
+        assert.deepEqual(parseValue(specs, wireOf(wire.value)), { kind: 'ok', value }, wire.value);
     }
     assert.ok(accepted >= 100, 'the generator produced too few accepted values');
     assert.ok(refused > 0, 'the generator never reached a refusal');

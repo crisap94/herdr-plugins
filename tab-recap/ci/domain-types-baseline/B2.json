@@ -41,8 +41,7 @@
   },
   "src/recap/domain/compact-request.ts": {
     "parameter": 4,
-    "return": 4,
-    "container": 1
+    "return": 4
   },
   "src/recap/domain/compaction-plan.ts": {
     "parameter": 5,

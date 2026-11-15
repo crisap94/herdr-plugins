@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { observe, request, withdraw } from '#src/protocol/requester.ts';
 import type { AnswerState } from '#src/protocol/requester.ts';
-import { parseRequestId } from '#src/protocol/primitives.ts';
+import { parseFieldText, parseRequestId } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
 import { compactLike, handoffLike, nameOf, parsedOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
 
@@ -48,7 +49,7 @@ test('a compact request keeps its legacy note as the rest of the value', () => {
 });
 
 test('a request that breaks its field grammar is refused and writes nothing', () => {
-    const value = { ...parsedOf(handoffLike, 'r1:beta'), target: 'two words' };
+    const value = { ...parsedOf(handoffLike, 'r1:beta'), target: must(parseFieldText('two words')) };
     assert.deepEqual(request(handoffLike, toolOf('alpha'), value), {
         kind: 'err',
         error: { reason: 'bad-characters', subject: 'target' },
