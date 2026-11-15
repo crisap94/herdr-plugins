@@ -17,7 +17,7 @@
     "parameter": 1
   },
   "src/recap/application/autocompact-listing.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "container": 1,
     "property": 2
   },
@@ -93,7 +93,7 @@
     "parameter": 7,
     "return": 4,
     "container": 1,
-    "property": 2
+    "property": 1
   },
   "src/recap/application/compare-imported.ts": {
     "parameter": 4,

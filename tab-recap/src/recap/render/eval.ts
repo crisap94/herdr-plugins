@@ -17,12 +17,17 @@ function nameOf(check: string): string {
     return NAMES[check] ?? (check.startsWith('S-') ? `${check.slice(2)} section` : '');
 }
 
+interface Tally {
+    readonly passed: number;
+    readonly total: number;
+}
+
 const when = (at: number): string => new Date(at).toISOString().slice(0, 16).replace('T', ' ');
 const short = (id: string): string => `${id.slice(0, 4)}…${id.slice(-6)}`;
 const row = (cells: readonly string[], widths: readonly number[]): string => cells.map((cell, at) => cell.padEnd(widths[at] ?? 0)).join('  ').trimEnd();
 
-const figure = (part: { readonly passed: number; readonly total: number }): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
-const share = (label: string, part: { readonly passed: number; readonly total: number }, added: { readonly passed: number; readonly total: number }): string => `${label} ${figure(part)} [added ${figure(added)}]`;
+const figure = (part: Tally): string => (part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`);
+const share = (label: string, part: Tally, added: Tally): string => `${label} ${figure(part)} [added ${figure(added)}]`;
 
 function runLine(line: RunLine, style: Style): string {
     const head = `${short(line.run.id)}  ${line.run.tab}  ${when(line.run.at)}`;

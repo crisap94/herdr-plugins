@@ -43,7 +43,7 @@
     "property": 6
   },
   "src/recap/render/timeline-breaks.ts": {
-    "parameter": 7,
+    "parameter": 3,
     "return": 4
   },
   "src/recap/render/timeline.ts": {
