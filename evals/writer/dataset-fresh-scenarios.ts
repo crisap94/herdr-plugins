@@ -289,7 +289,7 @@ export const FRESH_SCENARIOS: readonly FreshScenario[] = [
             { a: 'The Sunday overtime multiplier is 2.0 now in `app/payroll/Overtime.kt`, and the 18 overtime tests pass. I updated the tests for the north and coast calendars; the mountain and island calendars still use the old expected amounts. I am starting the recalculation of the October payslips now.', m: 26 },
         ],
         key: [
-            { section: 'done', text: 'Tests in `OvertimeTest` updated for north and coast calendars; mountain and island pending', span: 'I updated the tests for the north and coast calendars' },
+            { section: 'done', text: 'Payroll tests updated for the north and coast calendars; mountain and island pending', span: 'I updated the tests for the north and coast calendars' },
         ],
         close: [{ fact: 'mult', why: ['done'], update: false, span: 'The Sunday overtime multiplier is 2.0 now in `app/payroll/Overtime.kt`' }],
         stay: ['goal', 'backpay', 'tests'],
