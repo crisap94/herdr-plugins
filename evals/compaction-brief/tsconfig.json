@@ -1,0 +1,4 @@
+{
+  "extends": "../lib/tsconfig.json",
+  "include": ["checks.ts", "prompt.ts", "judge-criteria.ts", "scoring.ts", "run.ts"]
+}
