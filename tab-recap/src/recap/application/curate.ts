@@ -17,6 +17,12 @@ export type { CurateWhy, RunEvent };
 
 export const CURATE_GAP_MS = 5 * 60_000;
 
+interface NamedTask { readonly id: string; readonly name: string }
+
+interface RecapTask extends NamedTask { readonly lanes: readonly string[] }
+
+interface CurateScope { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }
+
 export interface CurateDeps extends ReconcilingDeps {
     readonly records: RecapRecords;
 }
@@ -49,7 +55,7 @@ export class Curate {
         }
     }
 
-    private async one(tab: string, task: { readonly id: string; readonly name: string; readonly lanes: readonly string[] }, how: { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }): Promise<boolean> {
+    private async one(tab: string, task: RecapTask, how: CurateScope): Promise<boolean> {
         try {
             const reconciled = await this.reconciling.task(tab, task, how.lanes, how.why);
             if (how.why === 'open') {
@@ -68,7 +74,7 @@ export class Curate {
         return change !== null && (storyAt === null || storyAt < change) && !this.running.has(key) && (last === undefined || now - last >= CURATE_GAP_MS);
     }
 
-    private async curate(tab: string, task: { readonly id: string; readonly name: string }): Promise<void> {
+    private async curate(tab: string, task: NamedTask): Promise<void> {
         const { deps } = this;
         const [key, now] = [`${tab}\u0000${task.id}`, deps.clock()];
         const facts = deps.ledger.allOf({ tab, key: task.id });

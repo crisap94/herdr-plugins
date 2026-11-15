@@ -18,6 +18,8 @@ export interface Failure {
     readonly critique: string;
 }
 
+interface CheckVerdict { readonly check: string; readonly pass: boolean }
+
 export type RunLine =
     | {
         readonly kind: 'judged'; readonly run: StoredRun; readonly coverage: Share; readonly filler: Share; readonly added: Measured['added']; readonly stateSize: number
@@ -55,7 +57,7 @@ export const rankOf = (check: string): number => {
 
 export const percent = (part: number, whole: number): number => (whole === 0 ? 0 : Math.round((100 * part) / whole));
 
-function ratesOf(verdicts: readonly { readonly check: string; readonly pass: boolean }[]): readonly Rate[] {
+function ratesOf(verdicts: readonly CheckVerdict[]): readonly Rate[] {
     const found = new Map<string, { passed: number; total: number }>();
     for (const verdict of verdicts) {
         const rate = found.get(verdict.check) ?? { passed: 0, total: 0 };

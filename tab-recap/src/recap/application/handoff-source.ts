@@ -84,7 +84,7 @@ export function isLaneOfTab(lanes: readonly SourceLane[], source: SourceRequest)
     return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab);
 }
 
-const liveResolver: SourceResolver<'live'> = (source, deps) => {
+const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution => {
     if (!isLaneOfTab(deps.lanes, source)) {
         return { kind: 'source-unavailable' };
     }

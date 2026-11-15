@@ -45,6 +45,10 @@ interface Start {
     readonly writer: string | null;
 }
 
+interface TypedAt { readonly lane: Lane; readonly tab: TabId; readonly request: CompactRequest; readonly trail: Trail }
+
+interface CoverageStop { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }
+
 export class Compaction {
     private readonly deps: CompactionDeps;
     private readonly sender: Sender;
@@ -194,7 +198,7 @@ export class Compaction {
         await this.typed({ lane, tab, request, trail }, material, verified.checked.brief);
     }
 
-    private async typed(at: { readonly lane: Lane; readonly tab: TabId; readonly request: CompactRequest; readonly trail: Trail }, material: Material, brief: Briefed): Promise<void> {
+    private async typed(at: TypedAt, material: Material, brief: Briefed): Promise<void> {
         const { lane, tab, request, trail } = at;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
         if (!this.briefing.listed(lane)) {
@@ -214,7 +218,7 @@ export class Compaction {
         return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(brief, request.note) : brief;
     }
 
-    private async stoppedByCoverage(parts: { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }): Promise<boolean> {
+    private async stoppedByCoverage(parts: CoverageStop): Promise<boolean> {
         const { lane, checked, flow, trail, said, messages } = parts;
         if (!blockedByCoverage(checked, flow)) return false;
         trail.end('skipped', { why: 'coverage' });

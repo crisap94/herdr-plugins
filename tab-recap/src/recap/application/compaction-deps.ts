@@ -21,6 +21,14 @@ import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 
+interface BriefPort { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> }
+
+interface CoveragePort { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> }
+
+interface TypingPort { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> }
+
+interface LaneWebs { of(pane: string): LaneWeb | null }
+
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
     readonly agents: Agents;
@@ -30,22 +38,22 @@ export interface CompactionDeps {
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
     readonly compactions: Records;
     readonly settling: LaneSettling;
-    readonly brief: { enabled(): boolean; job(): string | null; write(document: string, own: string, correction?: string): Promise<Written> };
-    coverage(): { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> } | null;
+    readonly brief: BriefPort;
+    coverage(): CoveragePort | null;
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
     readonly checkedBriefs?: AutocompactBriefs;
     ceilingOverride?(): boolean;
     missedFacts?(): MissedFacts;
     answer?(id: string, pane: string, stage: string): void;
     readonly asks?: Pick<AskLedger, 'attach'>;
-    readonly typing?: { acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: string): Promise<void> };
+    readonly typing?: TypingPort;
     readonly events?: LaneEvents;
     readonly claims: LaneClaims;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: number): Promise<void>;
     now(): number;
-    readonly webs: { of(pane: string): LaneWeb | null };
+    readonly webs: LaneWebs;
     lanes(tab: string): readonly Lane[];
     listsPane(pane: string): boolean;
     focused(tab: string): Promise<string | null>;
