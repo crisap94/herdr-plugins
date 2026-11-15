@@ -41,7 +41,7 @@ export function languageMark(story: string, language: string): Mark {
     return language === 'es' ? es > en : en > es;
 }
 
-const joins = (merge: Merge, first: string, second: string): boolean => (merge.id === first && merge.into === second) || (merge.id === second && merge.into === first);
+export const joins = (merge: Merge, first: string, second: string): boolean => (merge.id === first && merge.into === second) || (merge.id === second && merge.into === first);
 
 export const outsideTokens = (item: StoryItem, story: string): string[] => outsideOf({ names: item.expected.names_and_numbers, times: item.expected.times, facts: item.input.facts.length }, story);
 

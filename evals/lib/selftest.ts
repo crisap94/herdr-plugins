@@ -15,6 +15,10 @@ import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job
 import { reconcileCounters, reconcileRound } from '../curator-reconcile/arm.ts';
 import { builtOf, loadItems, prompt as reconcilePrompt, type ReconcileItem, SYSTEM } from '../curator-reconcile/prompt.ts';
 import { checkedOf, CODE_CRITERIA, grade as gradeReconcile, stubAnswer } from '../curator-reconcile/scoring.ts';
+import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-instructions.ts';
+import { storyCounters, storyRound } from '../curator-story/arm.ts';
+import { built as storyBuilt, loadItems as loadStoryItems, prompt as storyPrompt, type StoryItem } from '../curator-story/prompt.ts';
+import { CODE_CRITERIA as STORY_CRITERIA, grade as gradeStory } from '../curator-story/scoring.ts';
 
 const failures: string[] = [];
 
@@ -249,6 +253,106 @@ async function reconcileArm(root: string): Promise<void> {
     check('the arm CLI refuses real runs given the wrong way round', reversed.status !== 0);
 }
 
+const STORY_FIXED = JSON.stringify({ ops: [], story: 'The work goes on.' });
+const STORY_BAD_MERGE = JSON.stringify({ ops: [{ op: 'close', id: 'f999', why: 'merged', into: 'f1' }], story: 'The work goes on.' });
+const STORY_NO_PARAGRAPH = '{"ops":[]}';
+
+// Answers `first` to the first call and `repair` to the repair call, the one that carries the previous answer.
+function firstThen(first: string, repair: Called): Fake {
+    const calls: Call[] = [];
+    const adapter: Adapter = async (call) => {
+        calls.push(call);
+        return call.user.includes('<previous-answer>') ? repair : stubCalled(first);
+    };
+    return { adapter, calls };
+}
+
+function storySpec(items: readonly StoryItem[]): EvalSpec {
+    return {
+        name: 'curator-story',
+        items,
+        configs: [ARM_CONFIG],
+        repetitions: 1,
+        codeCriteria: STORY_CRITERIA,
+        judge: null,
+        prompt: (item) => storyPrompt(item as StoryItem),
+        grade: (item, text) => gradeStory(item as StoryItem, text),
+        stub: () => STORY_FIXED,
+        notes: { can: [], cannot: [] },
+    };
+}
+
+async function storyArmRun(root: string, label: string, items: readonly StoryItem[], fake: Adapter, mode: 'off' | 'once'): Promise<string> {
+    const run = await runEval(storySpec(items), ['--root', root, '--label', label, '--reps', '1'], { ...quiet, adapters: { claude: fake, codex: fake }, round: storyRound(mode) });
+    return run.dir;
+}
+
+// The repair arm of curator-story, driven through the plugin's own storyAnswerOf with fake adapters.
+async function storyArm(root: string): Promise<void> {
+    const item = loadStoryItems().find((each) => each.id === 'cs-07-verbatim-waiting-medium');
+    if (item === undefined) throw new Error('the story arm checks need cs-07-verbatim-waiting-medium');
+
+    const once = firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED));
+    const onceDir = await storyArmRun(root, 'story-once', [item], once.adapter, 'once');
+    const onceRow = rowsOf(onceDir)[0];
+    check('a story once run makes a repair call and keeps the repaired answer', once.calls.length === 2 && onceRow?.arm?.repair_calls === 1 && onceRow.text === STORY_FIXED);
+    const second = once.calls[1];
+    check('the story repair call carries the curator instructions, the config model and the previous answer', second?.system === CURATOR_INSTRUCTIONS && second.model === ARM_CONFIG.model && second.user.includes('<previous-answer>') && second.user.includes(STORY_BAD_MERGE));
+
+    const off = firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED));
+    const offDir = await storyArmRun(root, 'story-off', [item], off.adapter, 'off');
+    const offRow = rowsOf(offDir)[0];
+    check('a story off run makes one call and keeps the first answer', off.calls.length === 1 && offRow?.arm?.repair_calls === 0 && offRow.text === STORY_BAD_MERGE);
+    const document = storyBuilt(item).document;
+    check('both story arms send the eval prompt byte for byte on the first call', [once, off].every((fake) => fake.calls[0]?.system === CURATOR_INSTRUCTIONS && fake.calls[0].user === document) && storyPrompt(item).user === document);
+
+    const clean = answering(stubCalled(STORY_FIXED));
+    const cleanDir = await storyArmRun(root, 'story-clean', [item], clean.adapter, 'once');
+    check('a clean story first answer makes one call and no repair', clean.calls.length === 1 && rowsOf(cleanDir)[0]?.arm?.repair_calls === 0);
+
+    const noParagraph = firstThen(STORY_NO_PARAGRAPH, stubCalled('not json'));
+    const noParagraphDir = await storyArmRun(root, 'story-no-paragraph', [item], noParagraph.adapter, 'once');
+    const noParagraphRow = rowsOf(noParagraphDir)[0];
+    check('a story repair that is not JSON leaves the first answer in place', noParagraph.calls.length === 2 && noParagraphRow?.arm?.repair_calls === 1 && noParagraphRow.text === STORY_NO_PARAGRAPH);
+
+    const storyA = storyCounters([item], rowsOf(offDir), [ARM_CONFIG.name], 'off')[0];
+    const storyC = storyCounters([item], rowsOf(onceDir), [ARM_CONFIG.name], 'once')[0];
+    const line = `curator-story ${ARM_CONFIG.name} A wrongful 0 applied 0 unparsed 0 refused 1 C wrongful 0 applied 0 unparsed 0 refused 0 repair calls 1 tokens 100/${Math.ceil(STORY_FIXED.length / 4)}`;
+    check('the story counters of an off run and a once run make the EVAL-7 story line', storyA !== undefined && storyC !== undefined && armLine('curator-story', storyA, storyC) === line);
+}
+
+// One arm root with a reconcile pair and a story pair under the same labels, read back by the arm CLI.
+async function pairArm(root: string): Promise<void> {
+    const pairRoot = join(root, 'pair');
+    const rec = loadItems(join(import.meta.dirname, '..', 'curator-reconcile', 'dataset.jsonl')).find((each) => each.id === 'rec-01-stale-easy-done');
+    const story = loadStoryItems().find((each) => each.id === 'cs-07-verbatim-waiting-medium');
+    if (rec === undefined || story === undefined) throw new Error('the pair checks need rec-01-stale-easy-done and cs-07-verbatim-waiting-medium');
+
+    const recClean = stubAnswer(rec);
+    const recOffDir = await armRun(pairRoot, 'armA', [rec], badThen(stubCalled(recClean)).adapter, 'off');
+    const recOnceDir = await armRun(pairRoot, 'armC', [rec], badThen(stubCalled(recClean)).adapter, 'once');
+    const recA = reconcileCounters([rec], rowsOf(recOffDir), [ARM_CONFIG.name], 'off')[0];
+    const recC = reconcileCounters([rec], rowsOf(recOnceDir), [ARM_CONFIG.name], 'once')[0];
+    const recOffBlock = { mode: 'off', configs: reconcileCounters([rec], rowsOf(recOffDir), [ARM_CONFIG.name], 'off') };
+    writeArm(recOffDir, recOffBlock, armMarkdown('curator-reconcile', recOffBlock));
+    const recOnceBlock = { mode: 'once', configs: reconcileCounters([rec], rowsOf(recOnceDir), [ARM_CONFIG.name], 'once') };
+    writeArm(recOnceDir, recOnceBlock, armMarkdown('curator-reconcile', recOnceBlock));
+
+    const storyOffDir = await storyArmRun(pairRoot, 'armA', [story], firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED)).adapter, 'off');
+    const storyOnceDir = await storyArmRun(pairRoot, 'armC', [story], firstThen(STORY_BAD_MERGE, stubCalled(STORY_FIXED)).adapter, 'once');
+    const storyA = storyCounters([story], rowsOf(storyOffDir), [ARM_CONFIG.name], 'off')[0];
+    const storyC = storyCounters([story], rowsOf(storyOnceDir), [ARM_CONFIG.name], 'once')[0];
+    const storyOffBlock = { mode: 'off', configs: storyCounters([story], rowsOf(storyOffDir), [ARM_CONFIG.name], 'off') };
+    writeArm(storyOffDir, storyOffBlock, armMarkdown('curator-story', storyOffBlock));
+    const storyOnceBlock = { mode: 'once', configs: storyCounters([story], rowsOf(storyOnceDir), [ARM_CONFIG.name], 'once') };
+    writeArm(storyOnceDir, storyOnceBlock, armMarkdown('curator-story', storyOnceBlock));
+
+    if (recA === undefined || recC === undefined || storyA === undefined || storyC === undefined) throw new Error('the pair checks need one counter row per eval');
+    const expected = [armLine('curator-reconcile', recA, recC), armLine('curator-story', storyA, storyC)].join('\n');
+    const printed = spawnSync(process.execPath, [join(REPO, 'evals', 'lib', 'arm.ts'), '--root', pairRoot, '--a', 'armA', '--c', 'armC'], { encoding: 'utf8' });
+    check('the arm CLI prints the reconcile line, then the story line, for one pair of labels', printed.status === 0 && printed.stdout.trim() === expected && printed.stdout.trim().split('\n').length === 2);
+}
+
 try {
     let refused = false;
     try {
@@ -367,6 +471,8 @@ try {
     const swapped = spawnSync(process.execPath, [...cliArgs, '--a', 'rc', '--c', 'ra'], { encoding: 'utf8' });
     check('the arm CLI refuses a run A that is not arm off', swapped.status !== 0 && swapped.stderr.includes('run rc is not arm off'));
     await reconcileArm(root);
+    await storyArm(root);
+    await pairArm(root);
 } finally {
     rmSync(root, { recursive: true, force: true });
 }

@@ -5,12 +5,14 @@ import { judgeAll } from '../lib/judge.ts';
 import { ladder } from '../lib/ladder.ts';
 import { resultsCsv, writeJson, writeText } from '../lib/output.ts';
 import { report } from '../lib/report.ts';
+import { armMarkdown, guardMode, repairFlag, writeArm } from '../lib/arm.ts';
 import { lastByKey, readJsonl, runDir, runJobs, selectedConfigs, selectedItems, sha256, writePrompt } from '../lib/runner.ts';
 import type { RunOptions } from '../lib/runner.ts';
 import { stubJudge } from '../lib/stub.ts';
 import { AUDIT, criteriaOf, scoreAll, summarize } from '../lib/summary.ts';
 import type { Scored } from '../lib/summary.ts';
 import type { Answer, Config, EvalSpec, Judged } from '../lib/types.ts';
+import { storyCounters, storyRound } from './arm.ts';
 import { JUDGE_CRITERIA, judgeView } from './judge-criteria.ts';
 import { loadItems, prompt } from './prompt.ts';
 import type { Expected, Input, StoryItem } from './prompt.ts';
@@ -119,11 +121,13 @@ export function argvOf(argv: readonly string[]): { readonly argv: readonly strin
 
 export async function run(input: readonly string[]): Promise<string> {
     const { argv, smoke, resume } = argvOf(input);
+    const mode = repairFlag(argv);
     const chosen: EvalSpec<Input, Expected> = smoke ? { ...spec, items: ITEMS.filter((item) => SMOKE_IDS.includes(item.id)) } : spec;
     validate(chosen);
-    const parsed = parseOptions(chosen, argv, {});
+    const parsed = parseOptions(chosen, argv, mode === null ? {} : { round: storyRound(mode) });
     if (resume && !existsSync(join(parsed.root, chosen.name, 'runs', parsed.label, 'answers.jsonl'))) throw new Error(`nothing to resume: no answers.jsonl in the run ${parsed.label}`);
     const dir = runDir(parsed.root, chosen.name, parsed.label);
+    guardMode(dir, '--repair', mode);
     const options: RunOptions = {
         ...parsed,
         log: (line: string) => {
@@ -148,6 +152,10 @@ export async function run(input: readonly string[]): Promise<string> {
     writeJson(join(dir, 'summary.json'), summary);
     writeText(join(dir, 'report.md'), report(summary));
     writeText(join(dir, 's11-tokens.md'), tokenReport(items, answers));
+    if (mode !== null) {
+        const block = { mode, configs: storyCounters(items, answers, configs.map((config) => config.name), mode) };
+        writeArm(dir, block, armMarkdown(chosen.name, block));
+    }
     options.log(`wrote ${join(dir, 'report.md')}`);
     return dir;
 }
