@@ -5,6 +5,7 @@ import { Trail } from '#src/recap/application/compaction-trail.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: 'keep the schema' }, brief: null };
@@ -25,7 +26,7 @@ test('opencode: its own /compact is confirmed on the second look, then restored;
     assert.deepEqual(command.lineBehavior, { enterDelay: duration(300) });
     assert.deepEqual(restore.promptBehavior, { acceptsStall: true });
     assert.deepEqual(world.pauses, [300, 300, 300, 1000]);
-    assert.equal(world.claims.has('w1:p4'), false, 'the pane is released');
+    assert.equal(world.claims.has(paneId('w1:p4')), false, 'the pane is released');
     assert.match(world.toasts.at(-1) ?? '', /opencode compacted/);
 });
 

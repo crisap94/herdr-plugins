@@ -1,5 +1,6 @@
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { ClaimKind } from '#src/recap/domain/lane-claim.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 
 type Held = { readonly kind: 'compaction'; readonly joined: CompactRequest[] } | { readonly kind: 'handoff' };
 
@@ -30,7 +31,7 @@ export class LaneClaims {
         return true;
     }
 
-    has(pane: string): boolean {
+    has(pane: PaneId): boolean {
         return this.held.has(pane);
     }
 

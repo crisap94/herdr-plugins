@@ -7,7 +7,7 @@
     "property": 2
   },
   "src/daemon/autocompact.ts": {
-    "parameter": 7,
+    "parameter": 5,
     "return": 2
   },
   "src/daemon/backends.ts": {

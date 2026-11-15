@@ -1,6 +1,6 @@
 {
   "src/recap/application/ask-restart.ts": {
-    "parameter": 2,
+    "parameter": 1,
     "return": 4,
     "property": 1
   },
@@ -22,7 +22,7 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 7,
+    "parameter": 3,
     "return": 2,
     "container": 2,
     "property": 7
@@ -34,7 +34,7 @@
     "property": 7
   },
   "src/recap/application/compact-keys.ts": {
-    "parameter": 3
+    "parameter": 2
   },
   "src/recap/application/compact-requests.ts": {
     "parameter": 10,
@@ -67,7 +67,7 @@
     "assertion": 2
   },
   "src/recap/application/compaction-deps.ts": {
-    "parameter": 15,
+    "parameter": 9,
     "return": 5,
     "container": 1
   },
@@ -90,7 +90,7 @@
     "property": 1
   },
   "src/recap/application/compaction.ts": {
-    "parameter": 7,
+    "parameter": 6,
     "return": 4,
     "container": 1,
     "property": 1
@@ -256,7 +256,7 @@
     "property": 9
   },
   "src/recap/application/lane-claims.ts": {
-    "parameter": 7,
+    "parameter": 6,
     "return": 3,
     "container": 1,
     "property": 1

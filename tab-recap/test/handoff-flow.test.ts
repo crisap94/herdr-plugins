@@ -144,7 +144,7 @@ test('a compaction that takes the target during the refresh makes the claim refu
     assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.includes('send'), false);
     assert.equal(h.claims.kindOf(String(TARGET)), 'compaction');
-    assert.equal(h.claims.has(String(SOURCE)), false);
+    assert.equal(h.claims.has(SOURCE), false);
 });
 
 test('a target that becomes working during the refresh is refused status-not-ready and nothing is typed', async () => {
@@ -222,7 +222,7 @@ test('a run abandoned before it claims its lanes types nothing, claims nothing a
     mark.abandon();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });
     assert.deepEqual(h.sent, []);
-    assert.equal(h.claims.has(String(row.pane)), false);
+    assert.equal(h.claims.has(row.pane), false);
 });
 
 test('a run abandoned while it waits for the settle hold keeps its claims for the abandoner and never types', async () => {
@@ -231,5 +231,5 @@ test('a run abandoned while it waits for the settle hold keeps its claims for th
     const row = request();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });
     assert.deepEqual(h.sent, []);
-    assert.equal(h.claims.has(String(row.pane)), true);
+    assert.equal(h.claims.has(row.pane), true);
 });

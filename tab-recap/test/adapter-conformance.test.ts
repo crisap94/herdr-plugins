@@ -449,7 +449,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
         const h = handoffHarness({ targetAgent: kind, targetStatus: 'working' });
         assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
         assert.deepEqual(h.calls, []);
-        assert.equal(h.claims.has(String(TARGET)), false);
+        assert.equal(h.claims.has(TARGET), false);
     });
 
     test(`${kind} handoff: a compaction already holding the target starts no refresh`, async () => {

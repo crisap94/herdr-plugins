@@ -12,11 +12,11 @@ test('a pane is claimed once: a second claim fails, a join is kept for the answe
     const claims = new LaneClaims();
     assert.equal(claims.claim('w1:p1', 'compaction'), true);
     assert.equal(claims.claim('w1:p1', 'compaction'), false, 'the running compaction holds it');
-    assert.equal(claims.has('w1:p1'), true);
+    assert.equal(claims.has(paneId('w1:p1')), true);
     claims.join('w1:p1', { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' });
     assert.deepEqual(claims.joinedOf('w1:p1').map((request) => request.answer), ['r1']);
     claims.release('w1:p1');
-    assert.deepEqual([claims.has('w1:p1'), claims.joinedOf('w1:p1').length], [false, 0]);
+    assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf('w1:p1').length], [false, 0]);
     assert.equal(claims.claim('w1:p1', 'compaction'), true, 'a later request may start one');
 });
 
