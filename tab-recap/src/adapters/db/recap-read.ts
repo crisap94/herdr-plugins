@@ -14,6 +14,12 @@ import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
 
+interface LatestRun {
+    readonly run: Uint8Array | null;
+    readonly at: number | null;
+    readonly language: string;
+}
+
 const cursorOf = (row: Row): LaneCursor => ({
     pane: text(row, 'pane'), agent: text(row, 'agent'), transcript: text(row, 'source'), cursor: whole(row, 'cursor'),
     tail: maybeText(row, 'tail'), title: maybeText(row, 'title'), lastPrompt: maybeText(row, 'last_prompt'), claudeRecap: maybeText(row, 'claude_note'),
@@ -55,7 +61,7 @@ export class RecapReader {
         });
     }
 
-    private facts(tab: TabId): { readonly run: Uint8Array | null; readonly at: number | null; readonly language: string } {
+    private facts(tab: TabId): LatestRun {
         const good = this.orm.select({ id: runs.id, at: runs.at, language: runs.language }).from(runs)
             .innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id)).innerJoin(chapters, eq(chapters.id, runs.chapterId))
             .where(and(eq(lastGoodRun.tabId, tab), gte(chapters.n, retiredFloor(tab)))).get();

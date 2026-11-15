@@ -36,7 +36,7 @@ export class HandoffAnswersRepository implements HandoffAnswers {
 
     handoffAnswer(id: HandoffId): HandoffAnswerRow | null {
         const key = handoffBytesOf(id);
-        return guarded(() => {
+        return guarded((): HandoffAnswerRow | null => {
             const row = key === null ? null : this.orm.select({ at: handoffAnswer.at, outcome: handoffAnswer.outcome, reason: handoffAnswer.reason }).from(handoffAnswer).where(eq(handoffAnswer.id, key)).get() ?? null;
             const stored = row === null ? null : storedOutcomeOf(text(row, 'outcome'), maybeText(row, 'reason'));
             return row === null || stored === null ? null : { kind: stored.kind, reason: 'reason' in stored ? stored.reason : null, id, at: whole(row, 'at') };

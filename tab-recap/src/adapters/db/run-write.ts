@@ -17,6 +17,11 @@ export interface StoredTask extends TaskShape {
     readonly legacy?: string;
 }
 
+interface PlacedTask {
+    readonly task: StoredTask;
+    readonly position: number;
+}
+
 export class RunRows {
     private readonly transcripts: TranscriptRows;
     private readonly inputs: RunInputRows;
@@ -56,7 +61,7 @@ export class RunRows {
         }
     }
 
-    private writeTask(run: Uint8Array, facts: RunFacts, task: { readonly task: StoredTask; readonly position: number }): void {
+    private writeTask(run: Uint8Array, facts: RunFacts, task: PlacedTask): void {
         this.orm.insert(tasks).values({ id: ids.next(), tabId: tabId(facts.tab), key: task.task.id }).onConflictDoNothing().run();
         const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, tabId(facts.tab)), eq(tasks.key, task.task.id))).get() ?? {};
         const id = blob(known, 'id');

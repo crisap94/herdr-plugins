@@ -44,7 +44,7 @@
   },
   "src/adapters/db/handoff-answers.ts": {
     "parameter": 1,
-    "return": 3
+    "return": 2
   },
   "src/adapters/db/import/equivalence.ts": {
     "parameter": 2,
@@ -113,7 +113,7 @@
   },
   "src/adapters/db/recap-read.ts": {
     "parameter": 3,
-    "return": 2,
+    "return": 1,
     "container": 9,
     "property": 2
   },
@@ -139,12 +139,11 @@
   "src/adapters/db/run-inputs.ts": {
     "parameter": 8,
     "return": 4,
-    "container": 8,
-    "property": 1,
+    "container": 6,
     "assertion": 1
   },
   "src/adapters/db/run-write.ts": {
-    "parameter": 6,
+    "parameter": 5,
     "return": 1,
     "property": 2
   },
@@ -169,7 +168,6 @@
   },
   "src/adapters/db/stories.ts": {
     "parameter": 3,
-    "return": 1,
     "property": 1,
     "assertion": 1
   },
@@ -178,7 +176,7 @@
   },
   "src/adapters/db/tab-views.ts": {
     "parameter": 3,
-    "return": 3,
+    "return": 2,
     "container": 9
   },
   "src/adapters/db/transcripts.ts": {
@@ -194,6 +192,6 @@
   },
   "src/adapters/db/verdicts.ts": {
     "parameter": 2,
-    "container": 3
+    "container": 2
   }
 }

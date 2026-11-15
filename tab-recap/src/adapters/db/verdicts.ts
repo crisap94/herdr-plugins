@@ -65,7 +65,7 @@ export class VerdictsRepository implements Verdicts {
     }
 
     pairs(): readonly Pair[] {
-        return guarded(() => this.orm.all<Row>(PAIRS).map((row) => ({ check: text(row, 'check_id'), judge: flag(row, 'judge_pass'), operator: flag(row, 'operator_pass') })), []);
+        return guarded(() => this.orm.all<Row>(PAIRS).map((row): Pair => ({ check: text(row, 'check_id'), judge: flag(row, 'judge_pass'), operator: flag(row, 'operator_pass') })), []);
     }
 
     disagreements(): readonly Disagreement[] {
