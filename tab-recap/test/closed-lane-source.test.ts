@@ -121,7 +121,7 @@ test('the closed registry entry answers found, source-unavailable or unknown', (
     assert.deepEqual({ task: found.task, facts: found.facts, identity: found.identity }, { task: T1, facts: [F_OPEN, F_LATER_AS_OPEN, F_EDGE], identity: IDENTITY });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(rowOf(NOW - 14 * DAY - 1))), { kind: 'source-unavailable' });
     assert.deepEqual(resolveSource('closed', IDENTITY, depsOf({ kind: 'absent' })), { kind: 'source-unavailable' });
-    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: causeOf('locked') }))), { kind: 'unknown', why: 'unreadable: locked' });
+    assert.deepEqual(resolveSource('closed', IDENTITY, depsOf(unknown({ why: 'unreadable', detail: causeOf('locked') }))), { kind: 'unknown', why: 'locked' });
 });
 
 test('a closure past the window is expired, and once the sweep has pruned it the same identity is never-seen', () => {

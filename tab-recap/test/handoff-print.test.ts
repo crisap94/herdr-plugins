@@ -11,7 +11,9 @@ import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts'
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
 import { MemoryLedger } from './fakes/memory-ledger.ts';
 import { recapOf, task } from './fakes/handoff-flow-harness.ts';
@@ -21,6 +23,12 @@ const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
 const UNREACHABLE: AgentState = unknown({ why: 'unreachable', detail: causeOf('no herdr') });
 const VIEW: TabView = { tab: 'w1:t1', column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW };
+const CLOSED_AT = instant(NOW - 1000);
+const CLOSED_ROW: ClosedLaneRead = {
+    kind: 'row',
+    record: { tab: tabId('w1:t1'), pane: FROM, agent: agentKind('claude'), closedAt: CLOSED_AT, cwd: null, association: { task: { tab: tabId('w1:t1'), key: 't1' }, name: null } },
+};
+const locked = (): Error => Object.assign(new Error('/home/coder/secret/db.sqlite is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' });
 
 interface Spy {
     opened: number;
@@ -32,6 +40,7 @@ interface World {
     readonly lastRun?: LastRun | null;
     readonly target?: AgentState;
     readonly unreadable?: boolean;
+    readonly closedUnreadable?: boolean;
 }
 
 function printerWith(spy: Spy, world: World = {}, logged: string[] = []): PrintedHandoffs {
@@ -39,7 +48,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = []): Printe
     const records: Pick<PrintStore['records'], 'readRecap' | 'lastRunOf'> = {
         readRecap: (): TabRecap => {
             if (world.unreadable === true) {
-                throw Object.assign(new Error('/home/coder/secret/db.sqlite is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' });
+                throw locked();
             }
             return { ...recapOf(task('t1', ['w1:p1'])), lanes: [CURSOR] };
         },
@@ -51,7 +60,16 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = []): Printe
             ledger: new MemoryLedger().seed(...FACTS),
             records,
             views: { tabOf: () => (world.tab === undefined ? 'w1:t1' : world.tab), readTab: () => VIEW },
-            closures: { resolve: (): ClosedLaneRead => ({ kind: 'absent' }), listOf: (): ClosedLaneList => ({ kind: 'listed', records: [] }), runAt: (): LastRun | null => null },
+            closures: {
+                resolve: (): ClosedLaneRead => (world.closedUnreadable === true ? CLOSED_ROW : { kind: 'absent' }),
+                listOf: (): ClosedLaneList => ({ kind: 'listed', records: [] }),
+                runAt: (): LastRun | null => {
+                    if (world.closedUnreadable === true) {
+                        throw locked();
+                    }
+                    return null;
+                },
+            },
             close: (): void => { spy.closed += 1; },
         };
     };
@@ -109,6 +127,15 @@ test('print of a source that cannot be read fails source-unreadable and logs the
     const spy: Spy = { opened: 0, closed: 0 };
     const logged: string[] = [];
     assert.deepEqual(await printerWith(spy, { unreadable: true }, logged).renderForPrint(request()), { kind: 'failed', reason: 'source-unreadable' });
+    assert.deepEqual(logged, ['handoff print: source unreadable (SqliteError: SQLITE_BUSY)']);
+    assert.deepEqual([spy.opened, spy.closed], [1, 1]);
+});
+
+test('print of a closed source whose store cannot be read fails source-unreadable and logs the cause code only', async () => {
+    const spy: Spy = { opened: 0, closed: 0 };
+    const logged: string[] = [];
+    const closed: ClosedLaneIdentity = { tab: tabId('w1:t1'), pane: FROM, closedAt: CLOSED_AT };
+    assert.deepEqual(await printerWith(spy, { closedUnreadable: true }, logged).renderForPrint(request({ closed })), { kind: 'failed', reason: 'source-unreadable' });
     assert.deepEqual(logged, ['handoff print: source unreadable (SqliteError: SQLITE_BUSY)']);
     assert.deepEqual([spy.opened, spy.closed], [1, 1]);
 });

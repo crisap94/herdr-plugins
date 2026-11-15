@@ -112,7 +112,7 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps): SourceResolut
         case 'found':
             return { kind: 'found', source: 'closed', identity, task: resolution.task, facts: resolution.facts, view: resolution.view };
         case 'unknown':
-            return { kind: 'unknown', why: saying(resolution.why) };
+            return { kind: 'unknown', why: resolution.why.why === 'unreadable' ? resolution.why.detail : saying(resolution.why) };
         default:
             return { kind: 'source-unavailable' };
     }
