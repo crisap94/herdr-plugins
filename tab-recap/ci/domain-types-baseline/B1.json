@@ -7,7 +7,7 @@
   "src/ports/ask-ledger.ts": {
     "parameter": 3,
     "return": 1,
-    "property": 6
+    "property": 4
   },
   "src/ports/autocompact-briefs.ts": {
     "parameter": 4,

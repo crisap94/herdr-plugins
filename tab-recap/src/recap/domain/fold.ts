@@ -145,7 +145,9 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
     return recapsOf(after, tabs, 'turn-ended');
 }
 
-function columnsAfter(board: Board, seen: Reconciliation): { readonly columns: ReadonlyMap<TabId, Placement>; readonly extras: readonly SeenColumn[] } {
+interface ColumnsAfter { readonly columns: ReadonlyMap<TabId, Placement>; readonly extras: readonly SeenColumn[] }
+
+function columnsAfter(board: Board, seen: Reconciliation): ColumnsAfter {
     const alive = new Set(seen.panes);
     const agents = new Set(seen.lanes.map((lane) => lane.paneId));
     const columns = new Map([...board.columns].filter(([, placed]) => !agents.has(placed.pane) && (alive.has(placed.pane) || newerThan(placed, seen))));

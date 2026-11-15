@@ -76,7 +76,13 @@ export function lingering(board: Board, pane: PaneId, now: Instant, policy: Poli
     return since !== undefined && elapsed(since, now) < policy.closeGrace;
 }
 
-function retried(board: Board, tab: TabId, now: Instant, policy: Policy): { board: Board; again: boolean; intents: readonly Intent[] } {
+interface RetryStep {
+    readonly board: Board;
+    readonly again: boolean;
+    readonly intents: readonly Intent[];
+}
+
+function retried(board: Board, tab: TabId, now: Instant, policy: Policy): RetryStep {
     if (isGivenUp(board, tab, now)) {
         return { board, again: false, intents: [] };
     }

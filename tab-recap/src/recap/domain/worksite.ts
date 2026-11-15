@@ -3,11 +3,26 @@ export interface EditedFile {
     readonly edits: number;
 }
 
+interface RepositoryFacts {
+    readonly root: string;
+    readonly branch: string | null;
+}
+
+interface CommitFacts {
+    readonly hash: string;
+    readonly subject: string;
+}
+
+interface UncommittedFacts {
+    readonly count: number;
+    readonly paths: readonly string[];
+}
+
 export interface WorksiteFacts {
     readonly directory: string;
-    readonly repository: { readonly root: string; readonly branch: string | null } | null;
-    readonly lastCommit: { readonly hash: string; readonly subject: string } | null;
-    readonly uncommitted: { readonly count: number; readonly paths: readonly string[] } | null;
+    readonly repository: RepositoryFacts | null;
+    readonly lastCommit: CommitFacts | null;
+    readonly uncommitted: UncommittedFacts | null;
     readonly edited: readonly EditedFile[];
     readonly tokens: readonly string[];
 }

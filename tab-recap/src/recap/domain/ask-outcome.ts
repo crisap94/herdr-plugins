@@ -7,7 +7,16 @@ const FAILURE_REASONS = EXCHANGES.flatMap((exchange) => exchange.failureReasons)
 
 export type FailureReason = (typeof FAILURE_REASONS)[number];
 
-export type AskOutcome = { readonly kind: (typeof PLAIN_OUTCOMES)[number] } | { readonly kind: 'failed'; readonly reason: FailureReason };
+interface PlainAskOutcome {
+    readonly kind: (typeof PLAIN_OUTCOMES)[number];
+}
+
+interface FailedAskOutcome {
+    readonly kind: 'failed';
+    readonly reason: FailureReason;
+}
+
+export type AskOutcome = PlainAskOutcome | FailedAskOutcome;
 
 export const outcomeText = (outcome: AskOutcome): string => (outcome.kind === 'failed' ? failureStage(outcome.reason) : outcome.kind);
 

@@ -5,27 +5,97 @@ import type { ContextUse } from './compaction.ts';
 export const RUN_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
 export type RunCause = (typeof RUN_CAUSES)[number];
 
+interface CompactionInput {
+    readonly tokensBefore: number | null;
+    readonly tokensAfter: number | null;
+    readonly origin: Origin;
+}
+
+interface LaneInput {
+    readonly agent: string;
+    readonly label: string | null;
+    readonly context: ContextUse | null;
+}
+
+interface WebInput {
+    readonly base: string;
+    readonly branch: string | null;
+}
+
+interface FileEdit {
+    readonly path: string;
+    readonly count: number;
+}
+
+interface AutocompactCounts {
+    readonly decisions: number;
+    readonly compacted: number;
+    readonly waited: number;
+}
+
 export interface SessionInputs {
     readonly firstSeen: number | null;
     readonly now: number;
     readonly runs: Readonly<Record<string, number>>;
-    readonly compactions: readonly { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin }[];
-    readonly lanes: readonly { readonly agent: string; readonly label: string | null; readonly context: ContextUse | null }[];
-    readonly webs: readonly ({ readonly base: string; readonly branch: string | null } | null)[];
-    readonly edits: readonly { readonly path: string; readonly count: number }[];
+    readonly compactions: readonly CompactionInput[];
+    readonly lanes: readonly LaneInput[];
+    readonly webs: readonly (WebInput | null)[];
+    readonly edits: readonly FileEdit[];
     readonly chapters?: number;
-    readonly autocompact?: { readonly decisions: number; readonly compacted: number; readonly waited: number };
+    readonly autocompact?: AutocompactCounts;
+}
+
+interface StartedFacts {
+    readonly at: number;
+    readonly forMs: number;
+}
+
+interface RunCauseCount {
+    readonly cause: RunCause;
+    readonly count: number;
+}
+
+interface RunFacts {
+    readonly total: number;
+    readonly byCause: readonly RunCauseCount[];
+}
+
+interface OriginCounts {
+    readonly operator: number;
+    readonly auto: number;
+}
+
+interface TokenSpan {
+    readonly before: number;
+    readonly after: number;
+}
+
+interface CompactionFacts {
+    readonly count: number;
+    readonly byOrigin: OriginCounts;
+    readonly measured: readonly TokenSpan[];
+}
+
+interface AgentFacts {
+    readonly label: string;
+    readonly share: number;
+    readonly window: number;
+}
+
+interface RepoFacts {
+    readonly name: string;
+    readonly branch: string | null;
 }
 
 export interface SessionFacts {
-    readonly started: { readonly at: number; readonly forMs: number } | null;
-    readonly runs: { readonly total: number; readonly byCause: readonly { readonly cause: RunCause; readonly count: number }[] } | null;
-    readonly compactions: { readonly count: number; readonly byOrigin: { readonly operator: number; readonly auto: number }; readonly measured: readonly { readonly before: number; readonly after: number }[] } | null;
-    readonly agents: readonly { readonly label: string; readonly share: number; readonly window: number }[];
-    readonly repo: { readonly name: string; readonly branch: string | null } | null;
-    readonly files: readonly { readonly path: string; readonly count: number }[];
+    readonly started: StartedFacts | null;
+    readonly runs: RunFacts | null;
+    readonly compactions: CompactionFacts | null;
+    readonly agents: readonly AgentFacts[];
+    readonly repo: RepoFacts | null;
+    readonly files: readonly FileEdit[];
     readonly chapters: number | null;
-    readonly autocompact: { readonly decisions: number; readonly compacted: number; readonly waited: number } | null;
+    readonly autocompact: AutocompactCounts | null;
 }
 
 export const FILES_SHOWN = 5;
