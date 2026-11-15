@@ -192,3 +192,44 @@ Cannot show:
 `check-dataset.ts` proves, per item: the line parses; item ids and fact ids are unique; `curatorInput` builds a document from it with `RUBRIC.items`; the facts are in `allOf` order with consistent times and closed fields, and every decision has a reason; every `merge_pairs` pair is two open facts of one section (a verbatim pair with equal text and reason, a reworded pair with different text and a `keep` inside the pair); every `no_merge` pair is two open facts with different text; no two open facts share their text outside the planted pairs; `waiting_on_operator.ids` are exactly the open `needs` facts; every `closed_ids` entry is a fact closed as wrong, superseded or answered and its `current` is open; every checked token of the ledger and every time of the document passes the S11 check, and an invented id, name, host, time and number fail it; `curationOf` accepts the expected merges without a refusal and refuses a merge of a closed fact; `config.json` states the same item, plant and size counts.
 
 Last run, 2026-11-13: 24 items, all checks passed. sha256 of `dataset.jsonl`: `ee9ba0c0cb15b8cdade360ae506dfaebc3a63619c70afb673e9faf2c98ff257d`.
+
+## 8 Fresh set (FRESH-1)
+
+The fresh set is a second set of 24 items, written by a model after the 24 above were fixed, so the shipped configuration did not see it during development. Its seed is `fresh-1/2026-11-14`; its counts are the `fresh` key of `config.json`. The items use only `.test` hosts and invented names, and none of them shares 40 characters or more of text with `dataset.jsonl`.
+
+A trap is a `close` merge op planted in an item. `expect: refused` means `curationOf` must refuse the op, `expect: kept` means it must accept the whole op list. The check in `check-dataset.ts` compares each trap with the parser.
+
+Build and check:
+
+- `cd evals && bun curator-story/build-dataset.ts --fresh` writes `dataset-fresh.jsonl` and `fresh-sample.md` (six items with their ledgers, for a hand read).
+- `cd evals && bun curator-story/check-dataset.ts curator-story/dataset-fresh.jsonl` runs the checks of section 7 plus the fresh checks: traps, the long-pressure, thin-ledger and json-in-fact plants, the guard against real names, hosts and paths, the overlap with `dataset.jsonl`, and the `fresh` counts. Its last line is `fresh ok: ...`.
+- `cd evals && bun curator-story/run.ts --fresh --label fresh-<name>` runs it. The label must start with `fresh-`, so fresh answers never land in an existing run folder, and `--smoke` is refused.
+
+The expected answers were written by Opus and reviewed by Sonnet (`fresh-key-review.md`, 24 ok). The owner checks a sample of 6 (`fresh-sample.md`) after the merge; until all six read `owner: ok`, EVAL-7 does not start, and a configuration that fails an item is first a suspect item, as section 6 says of the first set.
+
+| id | plants | traps (kind: expect) | size |
+|---|---|---|---|
+| fcs-01-closebait-near-small | close-bait, near-pair | close-bait: refused; near-pair: kept | small |
+| fcs-02-closebait-waiting-small | close-bait, waiting-on-operator | close-bait: refused | small |
+| fcs-03-closebait-verbatim-medium | close-bait, verbatim-copy | close-bait: refused; verbatim-copy: refused | medium |
+| fcs-04-closebait-closed-medium-es | close-bait, closed-tempting, language-es | close-bait: refused; closed-tempting: refused | medium |
+| fcs-05-closebait-near-waiting-large | close-bait, near-pair, waiting-on-operator | close-bait: refused; near-pair: kept | large |
+| fcs-06-closedmerge-json-small | closed-merge-bait, json-in-fact | closed-merge-bait: refused | small |
+| fcs-07-closedmerge-near-small | closed-merge-bait, near-pair | closed-merge-bait: refused; near-pair: kept | small |
+| fcs-08-closedmerge-closed-waiting-medium | closed-merge-bait, closed-tempting, waiting-on-operator | closed-merge-bait: refused; closed-tempting: refused | medium |
+| fcs-09-closedmerge-verbatim-medium | closed-merge-bait, verbatim-copy | closed-merge-bait: refused; verbatim-copy: refused | medium |
+| fcs-10-closedmerge-near-closed-large | closed-merge-bait, near-pair, closed-tempting | closed-merge-bait: refused; near-pair: kept; closed-tempting: refused | large |
+| fcs-11-chain-small | chain-bait, verbatim-copy | chain-bait: refused | small |
+| fcs-12-chain-waiting-medium | chain-bait, verbatim-copy, waiting-on-operator | chain-bait: refused; waiting-on-operator: refused | medium |
+| fcs-13-chain-near-medium | chain-bait, verbatim-copy, near-pair | chain-bait: refused; near-pair: kept | medium |
+| fcs-14-chain-closed-large | chain-bait, verbatim-copy, closed-tempting | chain-bait: refused; closed-tempting: refused | large |
+| fcs-15-longpressure-waiting-small | long-pressure, waiting-on-operator | waiting-on-operator: refused | small |
+| fcs-16-longpressure-near-medium | long-pressure, near-pair, verbatim-copy | verbatim-copy: refused; near-pair: kept | medium |
+| fcs-17-longpressure-closed-medium-es | long-pressure, closed-tempting, language-es | closed-tempting: refused | medium |
+| fcs-18-longpressure-waiting-json-medium | long-pressure, waiting-on-operator, json-in-fact | waiting-on-operator: refused | medium |
+| fcs-19-longpressure-closed-waiting-medium | long-pressure, closed-tempting, waiting-on-operator | closed-tempting: refused; waiting-on-operator: refused | medium |
+| fcs-20-longpressure-near-large | long-pressure, verbatim-copy, near-pair | verbatim-copy: refused; near-pair: kept | large |
+| fcs-21-thin-closed-small | thin-ledger, closed-tempting | closed-tempting: refused | small |
+| fcs-22-thin-closed-waiting-small | thin-ledger, closed-tempting, waiting-on-operator | closed-tempting: refused; waiting-on-operator: refused | small |
+| fcs-23-thin-closed-small | thin-ledger, closed-tempting | closed-tempting: refused | small |
+| fcs-24-thin-closed-medium | thin-ledger, closed-tempting | closed-tempting: refused | medium |
