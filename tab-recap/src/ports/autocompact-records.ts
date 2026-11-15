@@ -1,7 +1,7 @@
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import type { CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 
 export type DecisionMode = 'shadow' | 'on';
@@ -13,7 +13,7 @@ export interface PassedCoverage {
 }
 export interface MissedCoverage {
     readonly kind: 'missed';
-    readonly count: number;
+    readonly count: Count;
 }
 export interface UncheckedCoverage {
     readonly kind: 'unchecked';
@@ -21,75 +21,75 @@ export interface UncheckedCoverage {
 }
 export type StoredCoverageOutcome = PassedCoverage | MissedCoverage | UncheckedCoverage;
 export interface PaneKey {
-    readonly tab: string;
-    readonly pane: string;
+    readonly tab: TabId;
+    readonly pane: PaneId;
 }
 export interface LinkedDecision {
-    readonly id: string;
+    readonly id: DecisionId;
     readonly gate: DecisionGate;
 }
 
 export interface Skip {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly gate: SkipGate;
     readonly share: number | null;
     readonly detail: string | null;
 }
 
 export interface LastDecision {
-    readonly at: number;
-    readonly tokens: number;
+    readonly at: Instant;
+    readonly tokens: Count;
     readonly mode: DecisionMode;
     readonly verdict: DecisionVerdict;
     readonly gate: DecisionGate;
 }
 
 export interface Decision {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: number;
-    readonly tokens: number;
-    readonly window: number;
+    readonly tokens: Count;
+    readonly window: Count;
     readonly gate: DecisionGate;
     readonly verdict: DecisionVerdict;
     readonly askedVerdict: DecisionVerdict | null;
     readonly answers: Readonly<Record<string, number>>;
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly decider: string | null;
-    readonly costUsd: number;
-    readonly tookMs: number | null;
+    readonly costUsd: Usd;
+    readonly tookMs: Duration | null;
     readonly why: string | null;
     readonly laneStatus: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
-    readonly coverageMs: number | null;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration | null;
+    readonly coverageCostUsd: Usd | null;
 }
 
 export interface StoredDecision extends Omit<Decision, 'coverageOutcome' | 'coverageMs' | 'coverageCostUsd'> {
-    readonly id: string;
-    readonly compactionId: string | null;
+    readonly id: DecisionId;
+    readonly compactionId: CompactionId | null;
     readonly coverageOutcome: StoredCoverageOutcome | null;
-    readonly coverageMs: number | null;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration | null;
+    readonly coverageCostUsd: Usd | null;
 }
 
 export interface DecisionCounts {
-    readonly decisions: number;
-    readonly compacted: number;
-    readonly waited: number;
+    readonly decisions: Count;
+    readonly compacted: Count;
+    readonly waited: Count;
 }
 
 export interface CoverageAmendment {
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly outcome: CoverageOutcome;
-    readonly coverageMs: number;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration;
+    readonly coverageCostUsd: Usd | null;
     readonly why: string | null;
     readonly block: boolean;
 }

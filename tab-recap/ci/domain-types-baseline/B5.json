@@ -11,9 +11,8 @@
   },
   "src/adapters/db/autocompact-records.ts": {
     "parameter": 1,
-    "return": 7,
+    "return": 6,
     "container": 14,
-    "property": 2,
     "assertion": 5
   },
   "src/adapters/db/boundaries.ts": {

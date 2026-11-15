@@ -1,3 +1,8 @@
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -122,7 +127,7 @@ test('`autocompact`: three decisions print three rows newest first with share, v
         store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         const now = Date.now();
         for (const [age, verdict, share, cost] of [[3, 'compact', 71, 0.00003], [2, 'wait', 55, 0.00004], [1, 'unknown', 44, 0]] as const) {
-            store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: now - age * 60_000, mode: 'shadow', share, tokens: 1, window: 2, gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'jev · jev-1.13.0', costUsd: cost, tookMs: 5, why: null });
+            store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now - age * 60_000), mode: 'shadow', share, tokens: must(parseCount(1)), window: must(parseCount(2)), gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'jev · jev-1.13.0', costUsd: must(parseUsd(cost)), tookMs: duration(5), why: null });
         }
         store.close();
         const env = { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF };

@@ -1,3 +1,7 @@
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';
@@ -11,7 +15,7 @@ import { duration, instant } from '#src/recap/domain/time.ts';
 const monitor = backgroundItem(backgroundTool('Monitor'), backgroundLabel('open merge requests'));
 
 const coverageWait = (tokens: number): Decision => ({
-    tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 10 * 60_000, mode: 'on', share: 70, tokens, window: 1_000_000, gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: 0, tookMs: null, why: null,
+    tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: 70, tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
 });
 
 test('A full lane waits for two others', async () => {

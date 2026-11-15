@@ -1,12 +1,12 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
-import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, PaneKey, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
-import { paneId, parseDecisionId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { agentKind, paneId, parseCompactionId, parseDecisionId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { instant, parseDuration, type Instant } from '#src/recap/domain/time.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { BadRow, blob, guarded, maybeText, maybeWhole, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
@@ -20,17 +20,12 @@ const COMPACT = 'compact';
 const ON = 'on';
 const WAIT = 'wait';
 const COVERAGE_GATE = 'coverage';
-const NO_COUNTS: DecisionCounts = { decisions: 0, compacted: 0, waited: 0 };
+const NO_COUNTS: DecisionCounts = { decisions: must(parseCount(0)), compacted: must(parseCount(0)), waited: must(parseCount(0)) };
 const MICRO = 1e6;
 
 interface LatestDecision {
     readonly id: Uint8Array;
     readonly gate: DecisionGate;
-}
-
-interface KeptLane {
-    readonly tab: string;
-    readonly pane: string;
 }
 
 const NEWEST_COLUMNS = {
@@ -51,14 +46,14 @@ const numbers = (raw: string | null): Record<string, number> | null => {
 };
 
 function skipOf(row: Row): Skip {
-    return { tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'), gate: text(row, 'gate') as SkipGate, share: maybeWhole(row, 'share'), detail: maybeText(row, 'detail') };
+    return { tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), at: instant(whole(row, 'at')), gate: text(row, 'gate') as SkipGate, share: maybeWhole(row, 'share'), detail: maybeText(row, 'detail') };
 }
 
 function outcomeOf(row: Row): StoredCoverageOutcome | null {
     const outcome = maybeText(row, 'coverage_outcome');
     switch (outcome) {
         case 'passed': return { kind: 'passed' };
-        case 'missed': return { kind: 'missed', count: whole(row, 'coverage_missing') };
+        case 'missed': return { kind: 'missed', count: must(parseCount(whole(row, 'coverage_missing'))) };
         case 'unchecked': {
             const reason = maybeText(row, 'unchecked_reason');
             if (reason === 'no-decider' || reason === 'decider-cannot-answer' || reason === 'no-brief') return { kind: 'unchecked', reason };
@@ -69,9 +64,9 @@ function outcomeOf(row: Row): StoredCoverageOutcome | null {
     }
 }
 
-function costOf(row: Row): number | null {
+function costOf(row: Row): Usd | null {
     const cost = maybeWhole(row, 'coverage_cost_micro_usd');
-    return cost === null ? null : cost / MICRO;
+    return cost === null ? null : must(parseUsd(cost / MICRO));
 }
 
 function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['coverage']): number | null {
@@ -86,15 +81,15 @@ function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['covera
 export const laneStatusOf = (row: Row): LaneStatusAtDecision | null => laneStatusAtDecision(maybeText(row, 'lane_status'));
 
 function decisionOf(row: Row): StoredDecision {
-    const compaction = row['compaction_id'] === null ? null : typeIdOf('compaction', blob(row, 'compaction_id'));
+    const compaction = row['compaction_id'] === null ? null : must(parseCompactionId(typeIdOf('compaction', blob(row, 'compaction_id'))));
     return {
-        id: typeIdOf('decision', blob(row, 'id')), tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'),
-        mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: whole(row, 'tokens'), window: whole(row, 'window'),
+        id: must(parseDecisionId(typeIdOf('decision', blob(row, 'id')))), tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), at: instant(whole(row, 'at')),
+        mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: must(parseCount(whole(row, 'tokens'))), window: must(parseCount(whole(row, 'window'))),
         gate: text(row, 'gate') as DecisionGate, verdict: text(row, 'verdict') as DecisionVerdict,
         askedVerdict: maybeText(row, 'asked_verdict') as DecisionVerdict | null,
         answers: numbers(text(row, 'answers')) ?? {}, coverage: numbers(maybeText(row, 'coverage')), decider: maybeText(row, 'decider'),
-        costUsd: whole(row, 'cost_micro_usd') / MICRO, tookMs: maybeWhole(row, 'took_ms'), why: maybeText(row, 'why'),
-        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms'), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
+        costUsd: must(parseUsd(whole(row, 'cost_micro_usd') / MICRO)), tookMs: maybeWhole(row, 'took_ms') === null ? null : must(parseDuration(whole(row, 'took_ms'))), why: maybeText(row, 'why'),
+        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms') === null ? null : must(parseDuration(whole(row, 'coverage_ms'))), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
     };
 }
 
@@ -111,12 +106,12 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         const id = ids.next();
         writeTx(this.db, () => {
             this.orm.insert(autocompactDecision).values({
-                id, tabId: tabId(d.tab), pane: paneId(d.pane), agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
+                id, tabId: d.tab, pane: d.pane, agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
                 gate: d.gate, verdict: d.verdict, answers: JSON.stringify(d.answers), coverage: d.coverage === null ? null : JSON.stringify(d.coverage),
                 decider: d.decider ?? null, costMicroUsd: Math.round(d.costUsd * MICRO), tookMs: d.tookMs ?? null, why: d.why ?? null,
                 askedVerdict: d.askedVerdict ?? null, laneStatus: d.laneStatus ?? null, requested: 0,
             }).run();
-            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, tabId(d.tab)), eq(autocompactSkip.pane, paneId(d.pane)))).run();
+            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, d.tab), eq(autocompactSkip.pane, d.pane))).run();
         });
         return must(parseDecisionId(typeIdOf('decision', id)));
     }
@@ -132,7 +127,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', compactionId)];
         if (row === null || target === null) return null;
         writeTx(this.db, () => { this.attachTo(row.id, target); });
-        return { id: typeIdOf('decision', row.id), gate: row.gate };
+        return { id: must(parseDecisionId(typeIdOf('decision', row.id))), gate: row.gate };
     }
 
     amend(id: DecisionId, update: CoverageAmendment): void {
@@ -167,7 +162,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
                 .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane))))
                 .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null;
-            return row === null ? null : { at: row.at, tokens: row.tokens, mode: row.mode, verdict: row.verdict, gate: row.gate };
+            return row === null ? null : { at: instant(row.at), tokens: must(parseCount(row.tokens)), mode: row.mode, verdict: row.verdict, gate: row.gate };
         }, null);
     }
 
@@ -187,12 +182,12 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         if (key !== null) writeTx(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 
-    pruneSkips(keep: readonly KeptLane[]): void {
+    pruneSkips(keep: readonly PaneKey[]): void {
         const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
         writeTx(this.db, () => {
             for (const skip of this.skips()) {
                 if (!kept.has(`${skip.tab}\u0000${skip.pane}`)) {
-                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, tabId(skip.tab)), eq(autocompactSkip.pane, paneId(skip.pane)))).run();
+                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, skip.tab), eq(autocompactSkip.pane, skip.pane))).run();
                 }
             }
         });
@@ -201,7 +196,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     skip(skip: Skip): void {
         writeTx(this.db, () => {
             this.orm.insert(autocompactSkip).values({
-                tabId: tabId(skip.tab), pane: paneId(skip.pane), agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share ?? null, detail: skip.detail ?? null,
+                tabId: skip.tab, pane: skip.pane, agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share ?? null, detail: skip.detail ?? null,
             }).onConflictDoUpdate({
                 target: [autocompactSkip.tabId, autocompactSkip.pane],
                 set: { agent: sql`excluded.agent`, at: sql`excluded.at`, gate: sql`excluded.gate`, share: sql`excluded.share`, detail: sql`excluded.detail` },
@@ -228,7 +223,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
                 decisions: count(), compacted: count(autocompactDecision.compactionId),
                 waited: sql<number>`COALESCE(SUM(${autocompactDecision.verdict} <> ${COMPACT}), 0)`,
             }).from(autocompactDecision).where(eq(autocompactDecision.tabId, tabId(tab))).get() ?? NO_COUNTS;
-            return { decisions: row.decisions, compacted: row.compacted, waited: row.waited };
+            return { decisions: must(parseCount(row.decisions)), compacted: must(parseCount(row.compacted)), waited: must(parseCount(row.waited)) };
         }, NO_COUNTS);
     }
 

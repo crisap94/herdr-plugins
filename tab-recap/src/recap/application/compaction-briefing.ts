@@ -11,6 +11,7 @@ import { isSection } from '#src/recap/domain/fact.ts';
 import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
@@ -65,7 +66,7 @@ export class Briefing {
     async verified(lane: Lane, tab: TabId, material: Material, link: Link): Promise<Verified> {
         const { trigger, decision, flow } = link;
         const first = await this.briefOf(lane, tab, material);
-        if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: 0, coverageCostUsd: null, why: null } };
+        if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: duration(0), coverageCostUsd: null, why: null } };
         if (!this.listed(lane)) return { kind: 'closed', at: 'after-writer' };
         const stop: { at: ClosePoint | null } = { at: null };
         const rewrite = async (correction: Text): Promise<Briefed> => {

@@ -17,7 +17,7 @@
   "src/ports/autocompact-records.ts": {
     "return": 2,
     "container": 6,
-    "property": 39
+    "property": 10
   },
   "src/ports/boundaries.ts": {
     "parameter": 3,

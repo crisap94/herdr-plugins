@@ -1,9 +1,11 @@
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import type { Text } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { en } from '#src/i18n/en.ts';
 import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
@@ -103,7 +105,7 @@ const OK: Coverage = { ok: true, missing: [], missingFacts: [], answers: { keeps
 const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], missingFacts: [{ index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: null }, parts: ['text'] }], answers: { keeps_1: 0.2 }, unknown: null };
 
 function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
-    const id = world.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - 1000, mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: 1, window: 2, gate, verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'fake', costUsd: 0, tookMs: 1, why: null });
+    const id = world.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 1000), mode: 'on', share: gate === 'ceiling' ? 84 : 62, tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate, verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: 'fake', costUsd: mustParsed(parseUsd(0)), tookMs: duration(1), why: null });
     return id;
 }
 

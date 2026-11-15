@@ -1,3 +1,8 @@
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
@@ -18,7 +23,7 @@ function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 
 const answer = (closes: number, rest = 0.15): DecidedResult => (decidedOf({ closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest }));
 
 function decidedMinutesAgo(w: World, minutes: number, verdict: 'wait' | 'undecided' | 'compact', mode: DecisionMode = 'on'): void {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode, share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode, share: 12, tokens: must(parseCount(120_000)), window: must(parseCount(1_000_000)), gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
 }
 
 test('the decider\'s answers become the verdict under the style: a close of 0.65 compacts under eager and is undecided under balanced and gentle', async () => {
