@@ -11,6 +11,8 @@ import { inputOf } from '#src/recap/application/recap-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
 import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
+import { storyRepair } from '#src/recap/application/job-kit/story-repair.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { timelineOf } from '#src/recap/render/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
@@ -201,4 +203,69 @@ test('with repair once, a repair that is not JSON is not stored: the first answe
     assert.equal(calls.length, 2);
     assert.ok(logs.includes(F9_REFUSAL));
     assert.equal(stories.read('w1:t1', 't1')?.text, 'First.');
+});
+
+function words(count: number): string {
+    return Array.from({ length: count }, (_, at) => `w${at}`).join(' ');
+}
+
+const TOO_LONG_121 = 'curator w1:t1 t1: refused — the paragraph is too long: 121 words, at most 120';
+
+function oldStory(stories: MemoryStories): void {
+    stories.keep({ task: T1, at: NOW - 100 * 60_000, language: 'en' }, { story: 'Old.', merges: [] });
+}
+
+test('a paragraph of 121 words is refused, logged with its count, and the merge still applies with no repair', async () => {
+    const { curate, calls, logs, stories, ledger } = setup([answer({ ops: [MERGE_F1], story: words(121) })]);
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(TOO_LONG_121));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+    assert.equal(ledger.allOf(T1).find((each) => each.id === 'a')?.closedWhy, 'merged');
+});
+
+test('with repair once, a too-long paragraph is sent back once, and the short repair is stored', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F1], story: words(121) }), answer({ ops: [], story: 'Short.' })], { repair: 'once' });
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1]?.includes('- the paragraph is too long: 121 words, at most 120'));
+    assert.ok(!calls[1]?.includes('- no paragraph'));
+    assert.ok(logs.includes('curator w1:t1 t1: story repair — 1 refused'));
+    assert.equal(logs.filter((line) => line.includes('refused —')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Short.');
+});
+
+test('with repair once, a repair still too long is stored as none: the old paragraph stays, with no third call', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [], story: words(121) }), answer({ ops: [], story: words(130) })], { repair: 'once' });
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 2);
+    assert.ok(logs.includes('curator w1:t1 t1: refused — the paragraph is too long: 130 words, at most 120'));
+    assert.ok(logs.some((line) => line.includes('no paragraph in the answer; the old one stays')));
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+});
+
+test('with repair off, a too-long paragraph gets no second call and the old paragraph stays', async () => {
+    const { curate, calls, logs, stories } = setup([answer({ ops: [], story: words(121) })], { repair: 'off' });
+    oldStory(stories);
+    await curate.run('w1:t1');
+    assert.equal(calls.length, 1);
+    assert.ok(logs.includes(TOO_LONG_121));
+    assert.equal(logs.filter((line) => line.includes('story repair')).length, 0);
+    assert.equal(stories.read('w1:t1', 't1')?.text, 'Old.');
+});
+
+test('the repair document names a too-long paragraph by its count and does not say no paragraph; a missing paragraph still does', () => {
+    const doc = parseText('<doc/>');
+    const said = parseText('{}');
+    const docText = doc.kind === 'ok' ? doc.value : assert.fail('the document parses');
+    const saidText = said.kind === 'ok' ? said.value : assert.fail('the answer parses');
+    const tooLong = storyRepair(docText, saidText, { merges: [], story: null, refused: ['the paragraph is too long: 121 words, at most 120'] });
+    assert.ok(tooLong.includes('- the paragraph is too long: 121 words, at most 120'));
+    assert.ok(!tooLong.includes('- no paragraph'));
+    const missing = storyRepair(docText, saidText, { merges: [], story: null, refused: ['f9 is not an open fact (or is already merged)'] });
+    assert.ok(missing.includes('- f9 is not an open fact (or is already merged)'));
+    assert.ok(missing.includes('- no paragraph'));
 });
