@@ -97,8 +97,8 @@
     "property": 4
   },
   "src/recap/domain/handoff-outcome.ts": {
-    "parameter": 55,
-    "return": 116,
+    "parameter": 7,
+    "return": 1,
     "assertion": 1
   },
   "src/recap/domain/handoff-plan.ts": {
