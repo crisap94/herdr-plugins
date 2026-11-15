@@ -8,7 +8,9 @@ import type { Fact, FactId, RunId } from '../../tab-recap/src/recap/domain/fact.
 import type { Finding } from '../../tab-recap/src/recap/domain/gates/gate.ts';
 import { jaccard } from '../../tab-recap/src/recap/domain/gates/jaccard.ts';
 import { languageOfLine } from '../../tab-recap/src/recap/domain/gates/language.ts';
+import { closeEvidenceGate } from '../../tab-recap/src/recap/domain/gates/g13-close-evidence.ts';
 import { LEDGER_GATES } from '../../tab-recap/src/recap/domain/gates/ledger-gates.ts';
+import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
 import { apply, type Operation } from '../../tab-recap/src/recap/domain/ops.ts';
 import type { Answer, Graded, JudgeView, Mark } from '../lib/types.ts';
 import { transcriptOf, type WriterItem } from './prompt.ts';
@@ -54,8 +56,8 @@ export interface Outcome {
 
 const cache = new Map<string, Outcome>();
 
-export function outcomeOf(item: WriterItem, text: string): Outcome {
-    const key = `${item.id}\n${text}`;
+export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseEvidence): Outcome {
+    const key = `${item.id}\n${closeEvidence ?? ''}\n${text}`;
     const known = cache.get(key);
     if (known !== undefined) return known;
     const { resolving, ground } = groundOf(item.input);
@@ -66,7 +68,7 @@ export function outcomeOf(item: WriterItem, text: string): Outcome {
     } else {
         const now = item.input.input.tab.now;
         const given = forTask(answer.ops, TASK);
-        const judged = judge(LEDGER_GATES, given, ground, now);
+        const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, now);
         const out = new Set(judged.refused.map((finding) => finding.at));
         let made = 0;
         const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { tab: ground.tab, key: TASK }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
@@ -133,9 +135,9 @@ function passesOf(item: WriterItem, outcome: Outcome): Record<string, boolean> {
     return passes;
 }
 
-export function grade(item: WriterItem, text: string): Graded {
+export function grade(item: WriterItem, text: string, closeEvidence?: CloseEvidence): Graded {
     const on = applies(item);
-    const outcome = outcomeOf(item, text);
+    const outcome = outcomeOf(item, text, closeEvidence);
     const marks: Record<string, Mark> = {};
     if (outcome.kind !== 'ops') {
         for (const criterion of CODE_CRITERIA) marks[criterion] = on[criterion] === true ? false : null;
@@ -146,8 +148,8 @@ export function grade(item: WriterItem, text: string): Graded {
     return { parsed: true, marks };
 }
 
-export function judgeApplies(item: WriterItem, text: string): Record<string, boolean> | null {
-    const outcome = outcomeOf(item, text);
+export function judgeApplies(item: WriterItem, text: string, closeEvidence?: CloseEvidence): Record<string, boolean> | null {
+    const outcome = outcomeOf(item, text, closeEvidence);
     if (outcome.kind !== 'ops') return null;
     const edits = outcome.kept.some(isEdit);
     return { WJ1: !item.expected.quiet, WJ2: edits, WJ3: outcome.kept.some((op) => op.op === 'add'), WJ4: edits };
@@ -162,8 +164,8 @@ function opLine(outcome: Outcome, op: Operation): string {
     return `${head} | section: ${section} | text: ${op.text} | why: ${op.why ?? '-'} | anchor: ${op.anchor ?? '-'}`;
 }
 
-export function view(item: WriterItem, text: string): JudgeView {
-    const outcome = outcomeOf(item, text);
+export function view(item: WriterItem, text: string, closeEvidence?: CloseEvidence): JudgeView {
+    const outcome = outcomeOf(item, text, closeEvidence);
     const expected = item.expected;
     const shown = outcome.ground.shown;
     const named = [...new Set([...expected.already_in_ledger.map((each) => each.id), ...expected.must_close.map((each) => each.id), ...expected.must_stay, ...expected.key_facts.flatMap((fact) => (fact.via_update_of === null ? [] : [fact.via_update_of]))])];
@@ -207,21 +209,22 @@ export interface Extras {
     readonly rewrites: readonly { readonly config: string; readonly id: string; readonly repetition: number; readonly rewritten: number; readonly of: number }[];
 }
 
-export function extras(items: readonly WriterItem[], answers: readonly Answer[], configs: readonly string[], audit: string): Extras {
+export function extras(items: readonly WriterItem[], answers: readonly Answer[], configs: readonly string[], audit: string, closeEvidence?: CloseEvidence): Extras {
     const byId = new Map(items.map((item) => [item.id, item]));
     const refusals: Record<string, Record<string, number>> = {};
     const problems: Record<string, number> = {};
     const unparsed: { config: string; id: string; repetition: number; kind: string; why: string }[] = [];
     const rewrites: { config: string; id: string; repetition: number; rewritten: number; of: number }[] = [];
+    const gates = closeEvidence === 'on' ? [...GATE_IDS, 'G13'] : GATE_IDS;
     for (const config of configs) {
-        refusals[config] = Object.fromEntries(GATE_IDS.map((gate) => [gate, 0]));
+        refusals[config] = Object.fromEntries(gates.map((gate) => [gate, 0]));
         problems[config] = 0;
     }
     for (const answer of answers) {
         const item = byId.get(answer.id);
         const counts = refusals[answer.config];
         if (item === undefined || counts === undefined || answer.text === null) continue;
-        const outcome = outcomeOf(item, answer.text);
+        const outcome = outcomeOf(item, answer.text, closeEvidence);
         if (outcome.kind !== 'ops') {
             unparsed.push({ config: answer.config, id: answer.id, repetition: answer.repetition, kind: outcome.kind, why: outcome.why });
             continue;
