@@ -101,7 +101,6 @@
     "assertion": 1
   },
   "src/adapters/db/ledger.ts": {
-    "parameter": 4,
     "container": 2
   },
   "src/adapters/db/operator-anchors.ts": {
@@ -118,7 +117,7 @@
     "property": 2
   },
   "src/adapters/db/recap-records.ts": {
-    "parameter": 6,
+    "parameter": 1,
     "assertion": 2
   },
   "src/adapters/db/requests.ts": {
@@ -167,7 +166,6 @@
     "property": 2
   },
   "src/adapters/db/stories.ts": {
-    "parameter": 3,
     "property": 1,
     "assertion": 1
   },

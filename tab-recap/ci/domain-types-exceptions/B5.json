@@ -53,5 +53,89 @@
     "class": "migration",
     "file": "src/adapters/db/schema/017-handoff.ts",
     "reason": "released in tab-recap-v2.5.0 or earlier and frozen by ci/check-migrations.sh"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/ledger.ts",
+    "function": "recentlyClosed",
+    "parameter": "sinceMs",
+    "reason": "callback: signature of Ledger.recentlyClosed in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/ledger.ts",
+    "function": "keysOf",
+    "parameter": "tab",
+    "reason": "callback: signature of Ledger.keysOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/ledger.ts",
+    "function": "historyOf",
+    "parameter": "pane",
+    "reason": "callback: signature of Ledger.historyOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/ledger.ts",
+    "function": "historyOf",
+    "parameter": "tab",
+    "reason": "callback: signature of Ledger.historyOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/recap-records.ts",
+    "function": "readRecap",
+    "parameter": "tab",
+    "reason": "callback: signature of RecapRecords.readRecap in src/ports/recap-records.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/recap-records.ts",
+    "function": "lastRunOf",
+    "parameter": "tab",
+    "reason": "callback: signature of RecapRecords.lastRunOf in src/ports/recap-records.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/recap-records.ts",
+    "function": "beginRun",
+    "parameter": "at",
+    "reason": "callback: signature of RecapRecords.beginRun in src/ports/recap-records.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/recap-records.ts",
+    "function": "beginRun",
+    "parameter": "backend",
+    "reason": "callback: signature of RecapRecords.beginRun in src/ports/recap-records.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/recap-records.ts",
+    "function": "beginRun",
+    "parameter": "tab",
+    "reason": "callback: signature of RecapRecords.beginRun in src/ports/recap-records.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/stories.ts",
+    "function": "read",
+    "parameter": "tab",
+    "reason": "callback: signature of Stories.read in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/stories.ts",
+    "function": "read",
+    "parameter": "task",
+    "reason": "callback: signature of Stories.read in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/db/stories.ts",
+    "function": "keep",
+    "parameter": "change",
+    "reason": "callback: signature of Stories.keep in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
   }
 ]
