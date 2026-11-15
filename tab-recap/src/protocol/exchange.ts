@@ -1,25 +1,27 @@
 import type { Result } from './result.ts';
 import { LIMITS, parseTokenName, parseTokenValue } from './primitives.ts';
-import type { ExchangeName, ExchangeVersion, Refusal, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
+import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
 
 export { INTERRUPTED_REASON } from './reasons.ts';
 
+export type Timing = Readonly<Record<TimingName, TimingMs>>;
+
 export type Exchange = {
     readonly name: ExchangeName;
     readonly version: ExchangeVersion;
-    readonly requestPrefix: string;
+    readonly requestPrefix: RequestPrefix;
     readonly request: readonly FieldSpec[];
-    readonly answerStages: readonly string[];
+    readonly answerStages: readonly AnswerStage[];
     readonly failureReasons: readonly ReasonWord[];
     readonly refusalReasons?: readonly ReasonWord[];
     readonly unsupportedReasons?: readonly ReasonWord[];
-    readonly events: readonly string[];
-    readonly optIn: string | null;
-    readonly timing: Readonly<Record<string, number>>;
-    readonly truncatesAnswer: boolean;
+    readonly events: readonly EventName[];
+    readonly optIn: OptIn | null;
+    readonly timing: Timing;
+    readonly answerFit: AnswerFit;
 };
 
 export const ANSWER_PREFIX = 'tab-recap-';
@@ -66,7 +68,7 @@ const answerText = (id: string, stage: string): string => `${id}${ANSWER_SEPARAT
 
 export function answerValue(exchange: Exchange, id: string, stage: string): Result<TokenValue, Refusal> {
     const text = answerText(id, stage);
-    return parseTokenValue(exchange.truncatesAnswer ? text.slice(0, LIMITS.valueMax) : text);
+    return parseTokenValue(exchange.answerFit === 'truncate' ? text.slice(0, LIMITS.valueMax) : text);
 }
 
 export const badIdValue = (rawId: string): TokenValue => answerText(rawId.slice(0, LIMITS.idMax), failureStage('bad-id')) as TokenValue;

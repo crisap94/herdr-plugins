@@ -4,7 +4,7 @@ import { capabilityValue } from '#src/protocol/capability.ts';
 import { terminalStage, terminalsOf, parseRequest } from '#src/protocol/exchange.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
-import { parseExchangeVersion, parseWireText, LIMITS } from '#src/protocol/primitives.ts';
+import { parseExchangeVersion, parseTimingName, parseWireText, LIMITS } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_DEADLINE_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
@@ -35,7 +35,7 @@ test('tab-recap names nine per pane: the lane tokens, the event, the lease, the 
 });
 
 test('the published deadline is the handoff deadline: the take age bound plus the longest flow', () => {
-    assert.equal(handoff.timing['deadline-ms'], HANDOFF_DEADLINE_MS);
+    assert.equal(handoff.timing[must(parseTimingName('deadline-ms'))], HANDOFF_DEADLINE_MS);
     assert.equal(HANDOFF_DEADLINE_MS, HANDOFF_TAKE_MAX_AGE_MS + HANDOFF_FLOW_MAX_MS);
 });
 

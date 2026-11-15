@@ -42,7 +42,7 @@ function checkExchange(exchange: Exchange): Result<TokenName, RegistryRefusal> {
     if (answer.kind === 'err' || exchange.requestPrefix.length + LIMITS.toolMax > LIMITS.nameMax) {
         return refusal('name-too-long', exchange.name);
     }
-    if (!exchange.truncatesAnswer && LIMITS.idMax + 1 + longestAnswer(exchange) > LIMITS.valueMax) {
+    if (exchange.answerFit === 'whole' && LIMITS.idMax + 1 + longestAnswer(exchange) > LIMITS.valueMax) {
         return refusal('value-too-long', exchange.name);
     }
     return ok(answer.value);

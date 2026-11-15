@@ -4,9 +4,9 @@ import { answerToken, answerValue, defineExchange, parseRequest, requestName, se
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import type { RegistryRefusal } from '#src/protocol/registry.ts';
-import { parseExchangeName, parseExchangeVersion, parseFieldName, parseRequestId, parseTokenName, parseWireText, parseToolName } from '#src/protocol/primitives.ts';
+import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseRequestId, parseRequestPrefix, parseTokenName, parseWireText, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import type { RequestId, TokenName } from '#src/protocol/primitives.ts';
+import type { AnswerStage, RequestId, RequestPrefix, TokenName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
 
@@ -17,17 +17,21 @@ const brand = <T, E>(result: Result<T, E>): T => {
     return result.value;
 };
 
+const prefixed = (raw: string): RequestPrefix => brand(parseRequestPrefix(raw));
+
+const stage = (raw: string): AnswerStage => brand(parseAnswerStage(raw));
+
 const probe = (raw: string, over: Partial<Exchange> = {}): Exchange => defineExchange({
     name: brand(parseExchangeName(raw)),
     version: brand(parseExchangeVersion(1)),
-    requestPrefix: 'probe-req-',
+    requestPrefix: prefixed('probe-req-'),
     request: [{ kind: 'id', grammar: 'token-safe' }],
-    answerStages: ['queued', 'running', 'done'],
+    answerStages: ['queued', 'running', 'done'].map(stage),
     failureReasons: ['bad-id', 'interrupted'],
     events: [],
     optIn: null,
     timing: {},
-    truncatesAnswer: false,
+    answerFit: 'whole',
     ...over,
 });
 
@@ -41,12 +45,12 @@ const refused = (result: Result<unknown, RegistryRefusal>): RegistryRefusal => {
 };
 
 test('a registry of distinct exchanges lists the fixed names and one answer token per exchange', () => {
-    const built = brand(buildRegistry([probe('probe'), probe('other-x', { requestPrefix: 'other-req-' })], names(['status'])));
+    const built = brand(buildRegistry([probe('probe'), probe('other-x', { requestPrefix: prefixed('other-req-') })], names(['status'])));
     assert.deepEqual(built.ownNames, ['status', 'tab-recap-probe', 'tab-recap-other-x']);
 });
 
 test('two exchanges sharing a name are refused', () => {
-    const result = buildRegistry([probe('probe'), probe('probe', { requestPrefix: 'other-req-' })], []);
+    const result = buildRegistry([probe('probe'), probe('probe', { requestPrefix: prefixed('other-req-') })], []);
     assert.deepEqual(refused(result), { reason: 'duplicate-name', detail: 'probe' });
 });
 
@@ -56,9 +60,9 @@ test('two exchanges sharing a request prefix are refused', () => {
 });
 
 test('a request prefix that lets a 20-character tool name pass 32 characters is refused, 12 is accepted', () => {
-    const tooLong = buildRegistry([probe('probe', { requestPrefix: 'probe-req-xyz' })], []);
+    const tooLong = buildRegistry([probe('probe', { requestPrefix: prefixed('probe-req-xyz') })], []);
     assert.deepEqual(refused(tooLong), { reason: 'name-too-long', detail: 'probe' });
-    assert.equal(buildRegistry([probe('probe', { requestPrefix: 'compact-req-' })], []).kind, 'ok');
+    assert.equal(buildRegistry([probe('probe', { requestPrefix: prefixed('compact-req-') })], []).kind, 'ok');
 });
 
 test('an exchange that does not declare the restart reason interrupted is refused: a restart answers every exchange with it', () => {
@@ -67,16 +71,16 @@ test('an exchange that does not declare the restart reason interrupted is refuse
 });
 
 test('a derived answer longer than 80 characters is refused, unless the exchange truncates it', () => {
-    const longStage = { answerStages: ['x'.repeat(64)] };
+    const longStage = { answerStages: [stage('x'.repeat(64))] };
     assert.deepEqual(refused(buildRegistry([probe('probe', longStage)], [])), { reason: 'value-too-long', detail: 'probe' });
-    assert.equal(buildRegistry([probe('probe', { answerStages: ['x'.repeat(63)] })], []).kind, 'ok');
-    assert.equal(buildRegistry([probe('probe', { ...longStage, truncatesAnswer: true })], []).kind, 'ok');
+    assert.equal(buildRegistry([probe('probe', { answerStages: [stage('x'.repeat(63))] })], []).kind, 'ok');
+    assert.equal(buildRegistry([probe('probe', { ...longStage, answerFit: 'truncate' })], []).kind, 'ok');
 });
 
 test('a registry whose own names exceed ten per pane is refused, and ten is accepted', () => {
     const fixed = names(Array.from({ length: 9 }, (_, at) => `fixed-${at}`));
     assert.equal(buildRegistry([probe('probe')], fixed).kind, 'ok');
-    const result = buildRegistry([probe('probe'), probe('other-x', { requestPrefix: 'other-req-' })], fixed);
+    const result = buildRegistry([probe('probe'), probe('other-x', { requestPrefix: prefixed('other-req-') })], fixed);
     assert.deepEqual(refused(result), { reason: 'too-many-own-names', detail: '11 names, at most 10 per pane' });
 });
 
@@ -87,10 +91,10 @@ test('the answer token and request names derive from the exchange', () => {
 });
 
 test('a truncating exchange answers exactly as the compaction answer did', () => {
-    const exchange = probe('compact', { request: [{ kind: 'id', grammar: 'legacy-length' }], truncatesAnswer: true });
+    const exchange = probe('compact', { request: [{ kind: 'id', grammar: 'legacy-length' }], answerFit: 'truncate' });
     const id: RequestId = brand(parseRequestId('r.7', 'legacy-length'));
-    const stage = 'failed-' + 'z'.repeat(90);
-    assert.equal(brand(answerValue(exchange, id, stage)), brand(answerValue(compact, 'r.7', stage)));
+    const failed = 'failed-' + 'z'.repeat(90);
+    assert.equal(brand(answerValue(exchange, id, failed)), brand(answerValue(compact, 'r.7', failed)));
 });
 
 test('a refusing exchange refuses a value longer than 80 characters instead of truncating it', () => {
@@ -111,6 +115,6 @@ test('a request is parsed and serialized by its exchange descriptor', () => {
 });
 
 test('a request prefix that is a prefix of another exchange\'s prefix is refused, so the longest-match rule is never needed', () => {
-    const result = buildRegistry([probe('probe'), probe('other-x', { requestPrefix: 'probe-req-deep-' })], []);
+    const result = buildRegistry([probe('probe'), probe('other-x', { requestPrefix: prefixed('probe-req-deep-') })], []);
     assert.deepEqual(refused(result), { reason: 'prefix-overlap', detail: 'probe-req-' });
 });

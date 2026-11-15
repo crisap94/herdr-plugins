@@ -133,7 +133,7 @@
     "assertion": 1
   },
   "src/recap/domain/lane-tokens.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 3,
     "container": 8,
     "property": 4

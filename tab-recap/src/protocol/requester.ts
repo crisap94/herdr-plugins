@@ -40,7 +40,7 @@ function stageObservation(exchange: Exchange, stage: string): AnswerState {
     if (terminal !== undefined) {
         return observedTerminal(terminal);
     }
-    return exchange.answerStages.includes(stage) && isLiveStage(stage) ? { kind: stage } : { kind: 'unreadable' };
+    return exchange.answerStages.some((known) => known === stage) && isLiveStage(stage) ? { kind: stage } : { kind: 'unreadable' };
 }
 
 export function observe(exchange: Exchange, tokens: TokenMap, id: RequestId): Result<AnswerState, Refusal> {

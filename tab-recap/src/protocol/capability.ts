@@ -1,7 +1,7 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
 import { refuse, parseTokenValue } from './primitives.ts';
-import type { ExchangeVersion, Refusal, TokenName, TokenValue } from './primitives.ts';
+import type { ExchangeVersion, OptIn, Refusal, TokenName, TokenValue } from './primitives.ts';
 import type { Exchange } from './exchange.ts';
 
 export const CAPABILITY_TOKEN = 'tab-recap-x' as TokenName;
@@ -41,9 +41,9 @@ const entryOf = (item: string): Entry | null => {
 
 const unofferable = (exchange: Exchange): boolean => !EXCHANGE_NAME.test(exchange.name) || exchange.name === KINDS;
 
-const enabled = (isOn: (setting: string) => boolean) => (exchange: Exchange): boolean => exchange.optIn === null || isOn(exchange.optIn);
+const enabled = (isOn: (setting: OptIn) => boolean) => (exchange: Exchange): boolean => exchange.optIn === null || isOn(exchange.optIn);
 
-export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: string) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
+export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: OptIn) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
     const offending = exchanges.find(unofferable);
     if (offending !== undefined) {
         return refuse('bad-grammar', offending.name);

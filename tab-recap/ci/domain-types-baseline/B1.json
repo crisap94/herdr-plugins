@@ -153,7 +153,7 @@
     "container": 2
   },
   "src/protocol/capability.ts": {
-    "parameter": 4,
+    "parameter": 2,
     "return": 5,
     "property": 4,
     "assertion": 1
@@ -161,8 +161,7 @@
   "src/protocol/exchange.ts": {
     "parameter": 8,
     "return": 3,
-    "container": 4,
-    "property": 5,
+    "property": 2,
     "assertion": 1
   },
   "src/protocol/owners.ts": {

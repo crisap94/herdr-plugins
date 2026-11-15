@@ -31,6 +31,13 @@ export type FieldText = Brand<string, 'FieldText'>;
 export type FlagValue = true;
 export type FieldValue = FieldText | FlagValue | null;
 export type SegmentIndex = Brand<number, 'SegmentIndex'>;
+export type RequestPrefix = Brand<string, 'RequestPrefix'>;
+export type AnswerStage = Brand<string, 'AnswerStage'>;
+export type EventName = Brand<string, 'EventName'>;
+export type OptIn = Brand<string, 'OptIn'>;
+export type TimingName = Brand<string, 'TimingName'>;
+export type TimingMs = Brand<number, 'TimingMs'>;
+export type AnswerFit = 'truncate' | 'whole';
 export type Presence = 'optional' | 'required';
 
 type Candidate = Brand<string, 'Candidate'>;
@@ -149,6 +156,35 @@ export const parseSegmentEnd = (segments: readonly FieldText[]): SegmentIndex =>
 export function parseIdText(raw: string): IdText {
     const cut = raw.indexOf(':');
     return brand<string, 'IdText'>(cut < 0 ? raw : raw.slice(0, cut));
+}
+
+export function parseRequestPrefix(raw: unknown): Result<RequestPrefix, RefusalReason> {
+    const word = parseWord(raw, LIMITS.nameMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'RequestPrefix'>(word.value)) : word;
+}
+
+export function parseAnswerStage(raw: unknown): Result<AnswerStage, RefusalReason> {
+    const word = parseWord(raw, LIMITS.valueMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'AnswerStage'>(word.value)) : word;
+}
+
+export function parseEventName(raw: unknown): Result<EventName, RefusalReason> {
+    const word = parseWord(raw, LIMITS.nameMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'EventName'>(word.value)) : word;
+}
+
+export function parseOptIn(raw: unknown): Result<OptIn, RefusalReason> {
+    const word = parseWord(raw, LIMITS.nameMax, /^[A-Z][A-Z0-9_]*$/);
+    return word.kind === 'ok' ? ok(brand<string, 'OptIn'>(word.value)) : word;
+}
+
+export function parseTimingName(raw: unknown): Result<TimingName, RefusalReason> {
+    const word = parseWord(raw, LIMITS.nameMax, WORD_SHAPE);
+    return word.kind === 'ok' ? ok(brand<string, 'TimingName'>(word.value)) : word;
+}
+
+export function parseTimingMs(raw: unknown): Result<TimingMs, RefusalReason> {
+    return typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 ? ok(brand<number, 'TimingMs'>(raw)) : err<RefusalReason>('bad-grammar');
 }
 
 export const requestId = parseRequestId;

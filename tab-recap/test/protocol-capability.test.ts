@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CAPABILITY_TOKEN, capabilityValue, parseCapability } from '#src/protocol/capability.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
-import { parseExchangeName, parseExchangeVersion, parseTokenName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseOptIn, parseTokenName } from '#src/protocol/primitives.ts';
 import type { ExchangeVersion } from '#src/protocol/primitives.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { compactLike, handoffLike, nameOf, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
@@ -70,7 +70,7 @@ test('the owner table lists the registry own names and each exchange request pre
 });
 
 test('an exchange whose switch is off is not advertised, and is advertised once the switch is on', () => {
-    const switched: Exchange = { ...handoffLike, optIn: 'TAB_RECAP_HANDOFF' };
+    const switched: Exchange = { ...handoffLike, optIn: unwrap(parseOptIn('TAB_RECAP_HANDOFF')) };
     assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), () => false)), 'compact1,kinds1');
     assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), (setting) => setting === 'TAB_RECAP_HANDOFF')), 'compact1,handoff1,kinds1');
 });
