@@ -224,7 +224,7 @@ Facts about a term that a reader needs and that no name or test states.
 
 ## Hooks
 
-Terms of the hook endpoint under `src/adapters/hooks/`. Only a merge request on a `track/HOOK-…` branch adds to this section.
+Terms of the hook endpoint under `src/adapters/hooks/`. **Hook endpoint**: the unix socket `hooks.sock` in the state directory that serves the hook receiver; only the `hooks` slot starts it, so while the slot is off there is no socket file. **Hook receiver**: the answer to one hook call, given the followed lane, the one on the board whose session is the call's session. **Turn end**: the moment a `working` lane takes a status that ends its turn, kept for the status window so a hook can tell it apart. Only a merge request on a `track/HOOK-…` branch adds to this section.
 
 ## Relay pane
 
