@@ -16,8 +16,8 @@
     "assertion": 2
   },
   "src/recap/domain/autocompact.ts": {
-    "parameter": 17,
-    "return": 3,
+    "parameter": 3,
+    "return": 2,
     "container": 4,
     "property": 13
   },

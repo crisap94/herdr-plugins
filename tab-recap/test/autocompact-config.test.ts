@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/job/decider.ts';
 import { JevDecider } from '#src/adapters/job/jev-decider.ts';
-import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, parseMissedFacts, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
+import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, jevOf, parseAutocompactCeiling, parseAutocompactKinds, parseAutocompactMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds, policyOf } from '#src/recap/domain/autocompact.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -23,38 +24,40 @@ test('the missed facts key: append or wait, any other value or a non-text value 
     assert.equal(policyOf(config({ TAB_RECAP_AUTOCOMPACT_MISSED_FACTS: 'wait' })).missedFacts, 'wait');
 });
 
+const percent = (value: number): AutocompactPercent => brand<number, 'AutocompactPercent'>(value);
+
 test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude only', () => {
     assert.deepEqual(policyOf(config({})), { mode: 'shadow', minimum: 10, ceiling: 80, cooldownMs: 600_000, kinds: ['claude'], shadowKinds: [], ceilingPolicy: 'overrides-check', coverageBackoff: { kind: 'off' }, missedFacts: 'append' });
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {
-    assert.deepEqual([' ON ', 'Off', 'shadow', 'yes', '', undefined].map(modeOf), ['on', 'off', 'shadow', 'shadow', 'shadow', 'shadow']);
+    assert.deepEqual([' ON ', 'Off', 'shadow', 'yes', '', undefined].map(parseAutocompactMode), ['on', 'off', 'shadow', 'shadow', 'shadow', 'shadow']);
 });
 
 test('the minimum is 10–95 (a % is allowed); outside it, or not a whole number, is 10', () => {
-    assert.deepEqual(['10', '95', '55%', ' 70 '].map(minimumOf), [10, 95, 55, 70]);
-    assert.deepEqual(['9', '96', '0', '-5', '40.5', 'x', '', undefined].map(minimumOf), Array.from({ length: 8 }, () => 10));
+    assert.deepEqual(['10', '95', '55%', ' 70 '].map((raw) => parseAutocompactPercent(raw, MINIMUM_DEFAULT)), [10, 95, 55, 70]);
+    assert.deepEqual(['9', '96', '0', '-5', '40.5', 'x', '', undefined].map((raw) => parseAutocompactPercent(raw, MINIMUM_DEFAULT)), Array.from({ length: 8 }, () => 10));
 });
 
 test('the ceiling is above the minimum: 80 by default; one that is not becomes minimum + 10, at most 95', () => {
-    assert.deepEqual([ceilingOf(undefined, 40), ceilingOf('90', 40), ceilingOf('x', 40)], [80, 90, 80]);
-    assert.deepEqual([ceilingOf('40', 40), ceilingOf('30', 40), ceilingOf(undefined, 85), ceilingOf('85', 90), ceilingOf('95', 95)], [50, 50, 95, 95, 95]);
+    assert.deepEqual([parseAutocompactCeiling(undefined, percent(40)), parseAutocompactCeiling('90', percent(40)), parseAutocompactCeiling('x', percent(40))], [80, 90, 80]);
+    assert.deepEqual([parseAutocompactCeiling('40', percent(40)), parseAutocompactCeiling('30', percent(40)), parseAutocompactCeiling(undefined, percent(85)), parseAutocompactCeiling('85', percent(90)), parseAutocompactCeiling('95', percent(95))], [50, 50, 95, 95, 95]);
     assert.equal(policyOf(config({ TAB_RECAP_AUTOCOMPACT_AT: '60', TAB_RECAP_AUTOCOMPACT_CEILING: '50' })).ceiling, 70);
 });
 
 test('the cooldown is a whole number of milliseconds (0 allowed); nonsense is ten minutes', () => {
-    assert.deepEqual(['0', '1000', ' 5 '].map(cooldownOf), [0, 1000, 5]);
-    assert.deepEqual(['-1', '1.5', 'soon', '', undefined].map(cooldownOf), Array.from({ length: 5 }, () => 600_000));
+    assert.deepEqual(['0', '1000', ' 5 '].map((raw) => parseCooldownMs(raw, 'balanced')), [0, 1000, 5]);
+    assert.deepEqual(['-1', '1.5', 'soon', '', undefined].map((raw) => parseCooldownMs(raw, 'balanced')), Array.from({ length: 5 }, () => 600_000));
 });
 
 test('the kinds are a comma list, lower-cased and de-duplicated; empty is claude', () => {
-    assert.deepEqual(kindsOf(' Claude, codex ,,claude'), ['claude', 'codex']);
-    assert.deepEqual([kindsOf(''), kindsOf(' , '), kindsOf(undefined)], [['claude'], ['claude'], ['claude']]);
+    assert.deepEqual(parseAutocompactKinds(' Claude, codex ,,claude'), ['claude', 'codex']);
+    assert.deepEqual([parseAutocompactKinds(''), parseAutocompactKinds(' , '), parseAutocompactKinds(undefined)], [['claude'], ['claude'], ['claude']]);
 });
 
 test('shadow kinds parse registered transcript readers and default to none', () => {
-    assert.deepEqual(shadowKindsOf(' Codex, opencode, codex, hermes, gemini, '), ['codex', 'opencode']);
-    assert.deepEqual(shadowKindsOf(undefined), []);
+    assert.deepEqual(parseShadowKinds(' Codex, opencode, codex, hermes, gemini, '), ['codex', 'opencode']);
+    assert.deepEqual(parseShadowKinds(undefined), []);
     assert.deepEqual(policyOf(config({ TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS: 'codex,opencode' })).shadowKinds, ['codex', 'opencode']);
 });
 
@@ -130,7 +133,7 @@ test('the loaded configuration carries the policy, the job and the Jev settings'
 
 test('the brief coverage decider: auto (the default), jev or decider; anything else is auto', () => {
     assert.equal(COVERAGE_BY_DEFAULT, 'auto');
-    assert.deepEqual([' JEV ', 'Decider', 'auto', 'nonsense', '', undefined].map(coverageByOf), ['jev', 'decider', 'auto', 'auto', 'auto', 'auto']);
+    assert.deepEqual([' JEV ', 'Decider', 'auto', 'nonsense', '', undefined].map(parseCoverageBy), ['jev', 'decider', 'auto', 'auto', 'auto', 'auto']);
     assert.equal(loadConfig().coverage, 'auto');
 });
 

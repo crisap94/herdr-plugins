@@ -1,4 +1,5 @@
-import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import { STYLE_DEFAULT, STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import type { AutocompactStyle } from './autocompact-style.ts';
 import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
 import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
 import { brand, type Brand } from './brand.ts';
@@ -22,7 +23,9 @@ export interface CheckedFact {
     readonly why: Text | null;
 }
 
-const isTextOrNull = (value: unknown): value is string | null => value === null || typeof value === 'string';
+export type TextOrNull = string | null;
+
+const isTextOrNull = (value: unknown): value is TextOrNull => value === null || typeof value === 'string';
 
 export function parseCheckedFact(raw: unknown): CheckedFact | null {
     if (typeof raw !== 'object' || raw === null || !('section' in raw) || !('text' in raw) || !('why' in raw)) return null;
@@ -85,47 +88,57 @@ export const KINDS_DEFAULT = autocompactDefaultKinds(REGISTERED_KINDS);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 
-const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
-
-export const modeOf = (raw: string | undefined): AutocompactMode => MODES.find((mode) => mode === word(raw)) ?? 'shadow';
+export function parseAutocompactMode(raw: unknown): AutocompactMode {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return MODES.find((mode) => mode === text) ?? 'shadow';
+}
 
 export function parseAutocompactPercent(raw: unknown, fallback: number): AutocompactPercent {
-    const text = typeof raw === 'number' ? String(raw) : word(typeof raw === 'string' ? raw : undefined);
+    const words = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    const text = typeof raw === 'number' ? String(raw) : words;
     const percent = Number(text.replace(/%$/, ''));
     return brand<number, 'AutocompactPercent'>(text !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : fallback);
 }
 
-export const minimumOf = (raw: unknown): AutocompactPercent => parseAutocompactPercent(raw, MINIMUM_DEFAULT);
+export type AutocompactCeiling = AutocompactPercent;
 
-export function ceilingOf(raw: unknown, minimum: number, fallback: number = CEILING_DEFAULT): AutocompactPercent {
-    const ceiling = parseAutocompactPercent(raw, fallback);
+export function parseAutocompactCeiling(raw: unknown, minimum: AutocompactPercent, style: AutocompactStyle = STYLE_DEFAULT): AutocompactCeiling {
+    const ceiling = parseAutocompactPercent(raw, STYLE_NUMBERS[style].ceiling);
     return ceiling > minimum ? ceiling : parseAutocompactPercent(Math.min(MINIMUM_MAX, minimum + 10), MINIMUM_MIN);
 }
 
-export const cooldownOf = (raw: unknown): Milliseconds => parseCooldown(raw, COOLDOWN_DEFAULT_MS);
+export type CooldownMs = Milliseconds;
 
-export function parseCooldown(raw: unknown, fallback: number): Milliseconds {
-    const text = typeof raw === 'string' ? word(raw) : '';
+export function parseCooldownMs(raw: unknown, style: AutocompactStyle): CooldownMs {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const ms = Number(text);
-    return brand<number, 'Milliseconds'>(text !== '' && Number.isInteger(ms) && ms >= 0 ? ms : fallback);
+    return brand<number, 'Milliseconds'>(text !== '' && Number.isInteger(ms) && ms >= 0 ? ms : STYLE_NUMBERS[style].cooldownMs);
 }
 
-export function kindsOf(raw: string | undefined): readonly string[] {
-    const kinds = [...new Set(word(raw).split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
+export type AutocompactKinds = readonly string[];
+
+export function parseAutocompactKinds(raw: unknown): AutocompactKinds {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    const kinds = [...new Set(text.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
     return kinds.length === 0 ? KINDS_DEFAULT : kinds;
 }
 
-export function shadowKindsOf(raw: string | undefined): readonly RegisteredKind[] {
-    const kinds = (raw ?? '').split(',').map((kind) => registeredKindOf(word(kind))).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
+export type ShadowKinds = readonly RegisteredKind[];
+
+export function parseShadowKinds(raw: unknown): ShadowKinds {
+    const text = typeof raw === 'string' ? raw : '';
+    const kinds = text.split(',').map((kind) => registeredKindOf(kind.trim().toLowerCase())).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
     return [...new Set(kinds)];
 }
 
-export function policyOf(get: (key: string) => string | undefined): AutocompactPolicy {
-    const numbers = STYLE_NUMBERS[styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'))];
-    const minimum = minimumOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
+export type AutocompactSetting = 'TAB_RECAP_AUTOCOMPACT' | 'TAB_RECAP_AUTOCOMPACT_AT' | 'TAB_RECAP_AUTOCOMPACT_CEILING' | 'TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS' | 'TAB_RECAP_AUTOCOMPACT_KINDS' | 'TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS' | 'TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS' | 'TAB_RECAP_AUTOCOMPACT_MISSED_FACTS' | 'TAB_RECAP_AUTOCOMPACT_STYLE';
+
+export function policyOf(get: (key: AutocompactSetting) => string | undefined): AutocompactPolicy {
+    const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
+    const minimum = parseAutocompactPercent(get('TAB_RECAP_AUTOCOMPACT_AT'), MINIMUM_DEFAULT);
     return {
-        mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
-        cooldownMs: parseCooldown(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: shadowKindsOf(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
+        mode: parseAutocompactMode(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: parseAutocompactCeiling(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, style),
+        cooldownMs: parseCooldownMs(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), style), kinds: parseAutocompactKinds(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: parseShadowKinds(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
         ceilingPolicy: parseCeilingPolicy(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: parseBackoff(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
         missedFacts: parseMissedFacts(get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS')),
     };
@@ -137,7 +150,10 @@ export const COVERAGE_BY_DEFAULT: CoverageBy = 'auto';
 
 const COVERAGE_BY: readonly CoverageBy[] = ['auto', 'jev', 'decider'];
 
-export const coverageByOf = (raw: string | undefined): CoverageBy => COVERAGE_BY.find((by) => by === word(raw)) ?? COVERAGE_BY_DEFAULT;
+export function parseCoverageBy(raw: unknown): CoverageBy {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return COVERAGE_BY.find((by) => by === text) ?? COVERAGE_BY_DEFAULT;
+}
 
 export interface JevSettings {
     readonly url: string;

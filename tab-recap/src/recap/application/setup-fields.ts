@@ -1,5 +1,5 @@
 import { languageSetting } from '#src/i18n/index.ts';
-import { minimumOf } from '#src/recap/domain/autocompact.ts';
+import { MINIMUM_DEFAULT, parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
@@ -48,7 +48,7 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed): Draft => ({ ...draft, compactTarget: targetSetting(typed) }) },
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed): Draft => ({ ...draft, compactHint: hintSetting(typed) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed): Draft => ({ ...draft, contextWindow: windowSetting(typed) }) },
-    autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed): Draft => ({ ...draft, autocompactAt: String(minimumOf(typed)) }) },
+    autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed): Draft => ({ ...draft, autocompactAt: String(parseAutocompactPercent(typed, MINIMUM_DEFAULT)) }) },
     decideModel: { read: (draft) => draft.decide.model, keep: (draft, typed): Draft => ({ ...draft, decide: { ...draft.decide, model: typed.trim() } }) },
     compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed): Draft => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
     judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed): Draft => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },
