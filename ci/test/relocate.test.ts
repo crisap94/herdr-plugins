@@ -216,3 +216,67 @@ describe('relocate codemod', () => {
         expect(git('diff', '--cached', '--name-only')).toBe('');
     });
 });
+
+describe('relocate stub rows', () => {
+    const STUB_TREE: Readonly<Record<string, string>> = {
+        'app/package.json': '{\n  "name": "app",\n  "imports": {\n    "#src/*": "./src/*"\n  }\n}\n',
+        'app/src/engine/fact.ts': 'export const fact = 1;\n',
+        'app/src/alias.ts': "import { fact } from '#src/engine/fact.ts';\nexport const alias = fact;\n",
+        'app/src/near.ts': "import { fact } from './engine/fact.ts';\nexport const near = fact;\n",
+    };
+    const STUB_LINE = "export * from '@lab/ledger/unstable/engine/fact.ts';";
+    const STUB_MAP = `path\tapp/src/engine/fact.ts\tledger/src/engine/fact.ts\nstub\tapp/src/engine/fact.ts\t${STUB_LINE}\n`;
+    const STUBBED_TREE: Readonly<Record<string, string>> = {
+        'app/package.json': STUB_TREE['app/package.json'] ?? '',
+        'app/src/alias.ts': STUB_TREE['app/src/alias.ts'] ?? '',
+        'app/src/engine/fact.ts': `${STUB_LINE}\n`,
+        'app/src/near.ts': "import { fact } from '../../ledger/src/engine/fact.ts';\nexport const near = fact;\n",
+        'ledger/src/engine/fact.ts': 'export const fact = 1;\n',
+    };
+    let stubMap = '';
+
+    beforeAll(() => {
+        git('checkout', '-q', '--orphan', 'stubs');
+        git('rm', '-rq', '--cached', '.');
+        git('clean', '-qfdx');
+        plant(STUB_TREE);
+        git('add', '-A');
+        git('commit', '-q', '-m', 'stub fixture');
+        stubMap = join(scratch, 'stub.tsv');
+        writeFileSync(stubMap, STUB_MAP);
+    });
+
+    test('--check counts one pending stub next to its move and the relative importer', () => {
+        const result = relocate(stubMap, '--check');
+        expect(result.stdout).toBe(['path app/src/engine/fact.ts ledger/src/engine/fact.ts: 1', `stub app/src/engine/fact.ts ${STUB_LINE}: 1`, 'relative: 1', '3 pending', ''].join('\n'));
+        expect(result.status).toBe(1);
+        expect(git('status', '--porcelain')).toBe('');
+    });
+
+    test('--write moves the file, leaves the stub at the old path and keeps the #src importer as it was', () => {
+        const result = relocate(stubMap, '--write');
+        expect(result.status).toBe(0);
+        expect(result.stdout.endsWith('3 written\n')).toBe(true);
+        expect(tree()).toEqual(STUBBED_TREE);
+        expect(git('status', '--porcelain', '--untracked-files=all').split('\n').filter((line) => line.startsWith('??'))).toEqual([]);
+    });
+
+    test('a second --write keeps the stub in place and --check prints 0 pending', () => {
+        git('commit', '-q', '-m', 'stubbed');
+        expect(relocate(stubMap, '--write').stdout.endsWith('0 written\n')).toBe(true);
+        expect(git('status', '--porcelain')).toBe('');
+        expect(tree()).toEqual(STUBBED_TREE);
+        const check = relocate(stubMap, '--check');
+        expect(check.stdout.endsWith('0 pending\n')).toBe(true);
+        expect(check.status).toBe(0);
+    });
+
+    test('a stub for a file the map does not move away exits 3 and writes nothing', () => {
+        const lone = join(scratch, 'lone-stub.tsv');
+        writeFileSync(lone, `stub\tapp/src/near.ts\t${STUB_LINE}\n`);
+        const result = relocate(lone, '--write');
+        expect(result.status).toBe(3);
+        expect(result.stderr).toContain('relocate: 3 — NOT COVERED: app/src/near.ts is not moved away, so no stub can take its place');
+        expect(git('status', '--porcelain')).toBe('');
+    });
+});

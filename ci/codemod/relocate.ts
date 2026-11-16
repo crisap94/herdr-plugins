@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { posix, resolve, sep } from 'node:path';
 
-type Kind = 'drop' | 'path' | 'specifier' | 'text';
+type Kind = 'drop' | 'path' | 'specifier' | 'text' | 'stub';
 
 type Row = {
     readonly kind: Kind;
@@ -18,11 +18,12 @@ type Plan = {
     readonly drops: readonly string[];
     readonly moves: ReadonlyMap<string, string>;
     readonly edits: ReadonlyMap<string, string>;
+    readonly stubs: ReadonlyMap<string, string>;
     readonly counts: ReadonlyMap<Row | 'relative', number>;
 };
 
-const ORDER: readonly Kind[] = ['drop', 'path', 'specifier', 'text'];
-const FIELDS: Readonly<Record<Kind, readonly number[]>> = { drop: [2], path: [3], specifier: [3], text: [3, 4] };
+const ORDER: readonly Kind[] = ['drop', 'path', 'specifier', 'text', 'stub'];
+const FIELDS: Readonly<Record<Kind, readonly number[]>> = { drop: [2], path: [3], specifier: [3], text: [3, 4], stub: [3] };
 const CODE = /\.(?:ts|tsx|mts|cts|js|mjs|cjs)$/u;
 const MANIFEST = /(?:^|\/)(?:tsconfig[^/]*\.json|package\.json)$/u;
 const SPECIFIER = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)(['"])([^'"\n]+)\2/gu;
@@ -49,13 +50,13 @@ function isKind(word: string): word is Kind {
 function problemOf(kind: Kind, count: number, from: string, to: string): string | null {
     if (!FIELDS[kind].includes(count)) return `${kind} takes ${FIELDS[kind].join(' or ')} tab-separated fields`;
     if (from === '' || (kind !== 'text' && kind !== 'drop' && to === '')) return 'empty field';
-    const loops = kind === 'text' ? to.includes(from) : kind !== 'drop' && under(to, from);
+    const loops = kind === 'text' ? to.includes(from) : (kind === 'path' || kind === 'specifier') && under(to, from);
     return loops ? 'the new value contains the old one, so a second run would change it again' : null;
 }
 
 function rowOf(fields: readonly string[], line: number, where: string): Row {
     const [kind = '', from = '', to = '', glob] = fields;
-    if (!isKind(kind)) return notCovered(`${where}:${line}: unknown row kind "${kind}" (drop, path, specifier, text)`);
+    if (!isKind(kind)) return notCovered(`${where}:${line}: unknown row kind "${kind}" (drop, path, specifier, text, stub)`);
     const problem = problemOf(kind, fields.length, from, to);
     if (problem !== null) return notCovered(`${where}:${line}: ${problem}`);
     return { kind, line, from, to, glob: glob ?? null };
@@ -244,7 +245,9 @@ function planOf(root: string, rows: readonly Row[], tracked: readonly string[]):
     for (const row of rows.filter((candidate) => candidate.kind === 'drop')) counts.set(row, drops.filter((file) => under(file, row.from)).length);
     const live = tracked.filter((file) => !drops.includes(file));
     const mapPath = mapperOf(rows);
-    const moves = new Map(live.filter((file) => mapPath(file) !== file).map((file) => [file, mapPath(file)]));
+    const stubRows = rows.filter((row) => row.kind === 'stub');
+    const stubbed = (file: string): boolean => stubRows.some((row) => row.from === file && textOf(root, file) === `${row.to}\n`);
+    const moves = new Map(live.filter((file) => mapPath(file) !== file && !stubbed(file)).map((file) => [file, mapPath(file)]));
     const outside = [...moves.values()].find((target) => !resolve(root, target).startsWith(`${resolve(root)}${sep}`));
     if (outside !== undefined) return notCovered(`${outside} is outside the repository`);
     const linked = [...moves.values()].find((target) => throughLink(root, target));
@@ -254,7 +257,19 @@ function planOf(root: string, rows: readonly Row[], tracked: readonly string[]):
     if (clash !== undefined) return notCovered(`${clash} already exists`);
     const finals = new Map(live.map((file) => [moves.get(file) ?? file, file]));
     if (finals.size !== live.length) return notCovered('two files would land on the same path');
-    return { drops, moves, edits: editsOf(root, rows, finals, counts), counts };
+    return { drops, moves, edits: editsOf(root, rows, finals, counts), stubs: stubsOf(root, stubRows, moves, finals, counts), counts };
+}
+
+function stubsOf(root: string, rows: readonly Row[], moves: ReadonlyMap<string, string>, finals: ReadonlyMap<string, string>, counts: Map<Row | 'relative', number>): Map<string, string> {
+    const stubs = new Map<string, string>();
+    for (const row of rows) {
+        const content = `${row.to}\n`;
+        const done = finals.get(row.from) === row.from && textOf(root, row.from) === content;
+        if (!done && (!moves.has(row.from) || finals.has(row.from) || stubs.has(row.from))) return notCovered(`${row.from} is not moved away, so no stub can take its place`);
+        if (!done) stubs.set(row.from, content);
+        counts.set(row, done ? 0 : 1);
+    }
+    return stubs;
 }
 
 function write(root: string, plan: Plan): void {
@@ -265,6 +280,8 @@ function write(root: string, plan: Plan): void {
     }
     for (const [file, content] of plan.edits) writeFileSync(resolve(root, file), content);
     if (plan.edits.size > 0) git(root, ['add', '--', ...plan.edits.keys()]);
+    for (const [file, content] of plan.stubs) writeFileSync(resolve(root, file), content);
+    if (plan.stubs.size > 0) git(root, ['add', '--', ...plan.stubs.keys()]);
 }
 
 function report(rows: readonly Row[], plan: Plan): number {

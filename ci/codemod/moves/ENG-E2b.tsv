@@ -1,0 +1,196 @@
+path	tab-recap/src/i18n/sections.ts	packages/session-ledger/src/i18n/sections.ts
+path	tab-recap/src/ports/capability-reasons.ts	packages/session-ledger/src/ports/capability-reasons.ts
+path	tab-recap/src/ports/clock.ts	packages/session-ledger/src/ports/clock.ts
+path	tab-recap/src/ports/curators.ts	packages/session-ledger/src/ports/curators.ts
+path	tab-recap/src/ports/enumerators.ts	packages/session-ledger/src/ports/enumerators.ts
+path	tab-recap/src/ports/lane-repo.ts	packages/session-ledger/src/ports/lane-repo.ts
+path	tab-recap/src/ports/ledger.ts	packages/session-ledger/src/ports/ledger.ts
+path	tab-recap/src/ports/recap-input.ts	packages/session-ledger/src/ports/recap-input.ts
+path	tab-recap/src/ports/recap-records.ts	packages/session-ledger/src/ports/recap-records.ts
+path	tab-recap/src/ports/stories.ts	packages/session-ledger/src/ports/stories.ts
+path	tab-recap/src/ports/summarizer.ts	packages/session-ledger/src/ports/summarizer.ts
+path	tab-recap/src/ports/transcript-registry.ts	packages/session-ledger/src/ports/transcript-registry.ts
+path	tab-recap/src/ports/transcript-source.ts	packages/session-ledger/src/ports/transcript-source.ts
+path	tab-recap/src/ports/transcripts.ts	packages/session-ledger/src/ports/transcripts.ts
+path	tab-recap/src/ports/unknowable.ts	packages/session-ledger/src/ports/unknowable.ts
+path	tab-recap/src/protocol/result.ts	packages/session-ledger/src/protocol/result.ts
+path	tab-recap/src/recap/application/anchor-source.ts	packages/session-ledger/src/recap/application/anchor-source.ts
+path	tab-recap/src/recap/application/ask-back.ts	packages/session-ledger/src/recap/application/ask-back.ts
+path	tab-recap/src/recap/application/boundaries.ts	packages/session-ledger/src/recap/application/boundaries.ts
+path	tab-recap/src/recap/application/chunking.ts	packages/session-ledger/src/recap/application/chunking.ts
+path	tab-recap/src/recap/application/correction-input.ts	packages/session-ledger/src/recap/application/correction-input.ts
+path	tab-recap/src/recap/application/curator-input.ts	packages/session-ledger/src/recap/application/curator-input.ts
+path	tab-recap/src/recap/application/engine.ts	packages/session-ledger/src/recap/application/engine.ts
+path	tab-recap/src/recap/application/enumerate-answer.ts	packages/session-ledger/src/recap/application/enumerate-answer.ts
+path	tab-recap/src/recap/application/enumerate-input.ts	packages/session-ledger/src/recap/application/enumerate-input.ts
+path	tab-recap/src/recap/application/enumerate.ts	packages/session-ledger/src/recap/application/enumerate.ts
+path	tab-recap/src/recap/application/extract-ground.ts	packages/session-ledger/src/recap/application/extract-ground.ts
+path	tab-recap/src/recap/application/extract-job.ts	packages/session-ledger/src/recap/application/extract-job.ts
+path	tab-recap/src/recap/application/extract-pipeline.ts	packages/session-ledger/src/recap/application/extract-pipeline.ts
+path	tab-recap/src/recap/application/hidden-codec.ts	packages/session-ledger/src/recap/application/hidden-codec.ts
+path	tab-recap/src/recap/application/job-kit/batch.ts	packages/session-ledger/src/recap/application/job-kit/batch.ts
+path	tab-recap/src/recap/application/job-kit/repair.ts	packages/session-ledger/src/recap/application/job-kit/repair.ts
+path	tab-recap/src/recap/application/job-kit/stage.ts	packages/session-ledger/src/recap/application/job-kit/stage.ts
+path	tab-recap/src/recap/application/job-kit/writer-tools.ts	packages/session-ledger/src/recap/application/job-kit/writer-tools.ts
+path	tab-recap/src/recap/application/lane-hints.ts	packages/session-ledger/src/recap/application/lane-hints.ts
+path	tab-recap/src/recap/application/ledger-input.ts	packages/session-ledger/src/recap/application/ledger-input.ts
+path	tab-recap/src/recap/application/ledger-reconcile.ts	packages/session-ledger/src/recap/application/ledger-reconcile.ts
+path	tab-recap/src/recap/application/local-time.ts	packages/session-ledger/src/recap/application/local-time.ts
+path	tab-recap/src/recap/application/ops-answer.ts	packages/session-ledger/src/recap/application/ops-answer.ts
+path	tab-recap/src/recap/application/ops-gating.ts	packages/session-ledger/src/recap/application/ops-gating.ts
+path	tab-recap/src/recap/application/recap-input.ts	packages/session-ledger/src/recap/application/recap-input.ts
+path	tab-recap/src/recap/application/recap-job.ts	packages/session-ledger/src/recap/application/recap-job.ts
+path	tab-recap/src/recap/application/recap-shape.ts	packages/session-ledger/src/recap/application/recap-shape.ts
+path	tab-recap/src/recap/application/reconcile.ts	packages/session-ledger/src/recap/application/reconcile.ts
+path	tab-recap/src/recap/application/triggers.ts	packages/session-ledger/src/recap/application/triggers.ts
+path	tab-recap/src/recap/application/writer-candidates.ts	packages/session-ledger/src/recap/application/writer-candidates.ts
+path	tab-recap/src/recap/application/writer-clip.ts	packages/session-ledger/src/recap/application/writer-clip.ts
+path	tab-recap/src/recap/application/writer-context.ts	packages/session-ledger/src/recap/application/writer-context.ts
+path	tab-recap/src/recap/application/writer-transcript.ts	packages/session-ledger/src/recap/application/writer-transcript.ts
+path	tab-recap/src/recap/application/xml.ts	packages/session-ledger/src/recap/application/xml.ts
+path	tab-recap/src/recap/domain/backend.ts	packages/session-ledger/src/recap/domain/backend.ts
+path	tab-recap/src/recap/domain/boundary.ts	packages/session-ledger/src/recap/domain/boundary.ts
+path	tab-recap/src/recap/domain/brand.ts	packages/session-ledger/src/recap/domain/brand.ts
+path	tab-recap/src/recap/domain/compaction.ts	packages/session-ledger/src/recap/domain/compaction.ts
+path	tab-recap/src/recap/domain/debounce.ts	packages/session-ledger/src/recap/domain/debounce.ts
+path	tab-recap/src/recap/domain/directory.ts	packages/session-ledger/src/recap/domain/directory.ts
+path	tab-recap/src/recap/domain/fact.ts	packages/session-ledger/src/recap/domain/fact.ts
+path	tab-recap/src/recap/domain/failure-cause.ts	packages/session-ledger/src/recap/domain/failure-cause.ts
+path	tab-recap/src/recap/domain/gates/duplicate.ts	packages/session-ledger/src/recap/domain/gates/duplicate.ts
+path	tab-recap/src/recap/domain/gates/g10-close-why.ts	packages/session-ledger/src/recap/domain/gates/g10-close-why.ts
+path	tab-recap/src/recap/domain/gates/g11-anchor.ts	packages/session-ledger/src/recap/domain/gates/g11-anchor.ts
+path	tab-recap/src/recap/domain/gates/g12-answered.ts	packages/session-ledger/src/recap/domain/gates/g12-answered.ts
+path	tab-recap/src/recap/domain/gates/g13-close-evidence.ts	packages/session-ledger/src/recap/domain/gates/g13-close-evidence.ts
+path	tab-recap/src/recap/domain/gates/g2-ledger-duplicate.ts	packages/session-ledger/src/recap/domain/gates/g2-ledger-duplicate.ts
+path	tab-recap/src/recap/domain/gates/g6-unknown-id.ts	packages/session-ledger/src/recap/domain/gates/g6-unknown-id.ts
+path	tab-recap/src/recap/domain/gates/gate.ts	packages/session-ledger/src/recap/domain/gates/gate.ts
+path	tab-recap/src/recap/domain/gates/gatekeeper.ts	packages/session-ledger/src/recap/domain/gates/gatekeeper.ts
+path	tab-recap/src/recap/domain/gates/index.ts	packages/session-ledger/src/recap/domain/gates/index.ts
+path	tab-recap/src/recap/domain/gates/item-gate.ts	packages/session-ledger/src/recap/domain/gates/item-gate.ts
+path	tab-recap/src/recap/domain/gates/item-gates.ts	packages/session-ledger/src/recap/domain/gates/item-gates.ts
+path	tab-recap/src/recap/domain/gates/jaccard.ts	packages/session-ledger/src/recap/domain/gates/jaccard.ts
+path	tab-recap/src/recap/domain/gates/language.ts	packages/session-ledger/src/recap/domain/gates/language.ts
+path	tab-recap/src/recap/domain/gates/ledger-gates.ts	packages/session-ledger/src/recap/domain/gates/ledger-gates.ts
+path	tab-recap/src/recap/domain/gates/link.ts	packages/session-ledger/src/recap/domain/gates/link.ts
+path	tab-recap/src/recap/domain/gates/narrator.ts	packages/session-ledger/src/recap/domain/gates/narrator.ts
+path	tab-recap/src/recap/domain/gates/pronoun.ts	packages/session-ledger/src/recap/domain/gates/pronoun.ts
+path	tab-recap/src/recap/domain/gates/specific.ts	packages/session-ledger/src/recap/domain/gates/specific.ts
+path	tab-recap/src/recap/domain/gates/why.ts	packages/session-ledger/src/recap/domain/gates/why.ts
+path	tab-recap/src/recap/domain/gates/words.ts	packages/session-ledger/src/recap/domain/gates/words.ts
+path	tab-recap/src/recap/domain/grouping.ts	packages/session-ledger/src/recap/domain/grouping.ts
+path	tab-recap/src/recap/domain/in-flight.ts	packages/session-ledger/src/recap/domain/in-flight.ts
+path	tab-recap/src/recap/domain/ops.ts	packages/session-ledger/src/recap/domain/ops.ts
+path	tab-recap/src/recap/domain/parse-failure.ts	packages/session-ledger/src/recap/domain/parse-failure.ts
+path	tab-recap/src/recap/domain/pipeline.ts	packages/session-ledger/src/recap/domain/pipeline.ts
+path	tab-recap/src/recap/domain/questions.ts	packages/session-ledger/src/recap/domain/questions.ts
+path	tab-recap/src/recap/domain/quote.ts	packages/session-ledger/src/recap/domain/quote.ts
+path	tab-recap/src/recap/domain/recap-cause.ts	packages/session-ledger/src/recap/domain/recap-cause.ts
+path	tab-recap/src/recap/domain/reconciliation.ts	packages/session-ledger/src/recap/domain/reconciliation.ts
+path	tab-recap/src/recap/domain/registered-kinds.ts	packages/session-ledger/src/recap/domain/registered-kinds.ts
+path	tab-recap/src/recap/domain/shape.ts	packages/session-ledger/src/recap/domain/shape.ts
+path	tab-recap/src/recap/domain/tasks.ts	packages/session-ledger/src/recap/domain/tasks.ts
+path	tab-recap/src/recap/domain/text.ts	packages/session-ledger/src/recap/domain/text.ts
+path	tab-recap/src/recap/domain/time.ts	packages/session-ledger/src/recap/domain/time.ts
+path	tab-recap/src/recap/domain/writer-view.ts	packages/session-ledger/src/recap/domain/writer-view.ts
+text	#src/recap/domain/ids.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/engine.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/engine.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/boundaries.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/lane-hints.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/recap-input.ts
+text	#src/recap/domain/ids.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/recap-job.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/recap/application/recap-job.ts
+text	#src/recap/domain/lane.ts	#src/recap/domain/lane-shape.ts	packages/session-ledger/src/ports/transcripts.ts
+stub	tab-recap/src/i18n/sections.ts	export * from '@stateforge-labs/session-ledger/unstable/i18n/sections.ts';
+stub	tab-recap/src/ports/capability-reasons.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/capability-reasons.ts';
+stub	tab-recap/src/ports/clock.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/clock.ts';
+stub	tab-recap/src/ports/curators.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/curators.ts';
+stub	tab-recap/src/ports/enumerators.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/enumerators.ts';
+stub	tab-recap/src/ports/lane-repo.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
+stub	tab-recap/src/ports/ledger.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/ledger.ts';
+stub	tab-recap/src/ports/recap-input.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
+stub	tab-recap/src/ports/recap-records.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
+stub	tab-recap/src/ports/stories.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/stories.ts';
+stub	tab-recap/src/ports/summarizer.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
+stub	tab-recap/src/ports/transcript-registry.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/transcript-registry.ts';
+stub	tab-recap/src/ports/transcript-source.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
+stub	tab-recap/src/ports/transcripts.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+stub	tab-recap/src/ports/unknowable.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+stub	tab-recap/src/protocol/result.ts	export * from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+stub	tab-recap/src/recap/application/anchor-source.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/anchor-source.ts';
+stub	tab-recap/src/recap/application/ask-back.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/ask-back.ts';
+stub	tab-recap/src/recap/application/boundaries.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/boundaries.ts';
+stub	tab-recap/src/recap/application/chunking.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/chunking.ts';
+stub	tab-recap/src/recap/application/correction-input.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/correction-input.ts';
+stub	tab-recap/src/recap/application/curator-input.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/curator-input.ts';
+stub	tab-recap/src/recap/application/engine.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
+stub	tab-recap/src/recap/application/enumerate-answer.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-answer.ts';
+stub	tab-recap/src/recap/application/enumerate-input.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-input.ts';
+stub	tab-recap/src/recap/application/enumerate.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
+stub	tab-recap/src/recap/application/extract-ground.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/extract-ground.ts';
+stub	tab-recap/src/recap/application/extract-job.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/extract-job.ts';
+stub	tab-recap/src/recap/application/extract-pipeline.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/extract-pipeline.ts';
+stub	tab-recap/src/recap/application/hidden-codec.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/hidden-codec.ts';
+stub	tab-recap/src/recap/application/job-kit/batch.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/batch.ts';
+stub	tab-recap/src/recap/application/job-kit/repair.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/repair.ts';
+stub	tab-recap/src/recap/application/job-kit/stage.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
+stub	tab-recap/src/recap/application/job-kit/writer-tools.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/writer-tools.ts';
+stub	tab-recap/src/recap/application/lane-hints.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/lane-hints.ts';
+stub	tab-recap/src/recap/application/ledger-input.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+stub	tab-recap/src/recap/application/ledger-reconcile.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
+stub	tab-recap/src/recap/application/local-time.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
+stub	tab-recap/src/recap/application/ops-answer.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
+stub	tab-recap/src/recap/application/ops-gating.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/ops-gating.ts';
+stub	tab-recap/src/recap/application/recap-input.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/recap-input.ts';
+stub	tab-recap/src/recap/application/recap-job.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/recap-job.ts';
+stub	tab-recap/src/recap/application/recap-shape.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
+stub	tab-recap/src/recap/application/reconcile.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/reconcile.ts';
+stub	tab-recap/src/recap/application/triggers.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/triggers.ts';
+stub	tab-recap/src/recap/application/writer-candidates.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/writer-candidates.ts';
+stub	tab-recap/src/recap/application/writer-clip.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/writer-clip.ts';
+stub	tab-recap/src/recap/application/writer-context.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/writer-context.ts';
+stub	tab-recap/src/recap/application/writer-transcript.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
+stub	tab-recap/src/recap/application/xml.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
+stub	tab-recap/src/recap/domain/backend.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
+stub	tab-recap/src/recap/domain/boundary.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/boundary.ts';
+stub	tab-recap/src/recap/domain/brand.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+stub	tab-recap/src/recap/domain/compaction.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+stub	tab-recap/src/recap/domain/debounce.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/debounce.ts';
+stub	tab-recap/src/recap/domain/directory.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+stub	tab-recap/src/recap/domain/fact.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+stub	tab-recap/src/recap/domain/failure-cause.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts';
+stub	tab-recap/src/recap/domain/gates/duplicate.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/duplicate.ts';
+stub	tab-recap/src/recap/domain/gates/g10-close-why.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g10-close-why.ts';
+stub	tab-recap/src/recap/domain/gates/g11-anchor.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g11-anchor.ts';
+stub	tab-recap/src/recap/domain/gates/g12-answered.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g12-answered.ts';
+stub	tab-recap/src/recap/domain/gates/g13-close-evidence.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g13-close-evidence.ts';
+stub	tab-recap/src/recap/domain/gates/g2-ledger-duplicate.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g2-ledger-duplicate.ts';
+stub	tab-recap/src/recap/domain/gates/g6-unknown-id.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g6-unknown-id.ts';
+stub	tab-recap/src/recap/domain/gates/gate.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/gate.ts';
+stub	tab-recap/src/recap/domain/gates/gatekeeper.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/gatekeeper.ts';
+stub	tab-recap/src/recap/domain/gates/index.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
+stub	tab-recap/src/recap/domain/gates/item-gate.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/item-gate.ts';
+stub	tab-recap/src/recap/domain/gates/item-gates.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/item-gates.ts';
+stub	tab-recap/src/recap/domain/gates/jaccard.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/jaccard.ts';
+stub	tab-recap/src/recap/domain/gates/language.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/language.ts';
+stub	tab-recap/src/recap/domain/gates/ledger-gates.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/ledger-gates.ts';
+stub	tab-recap/src/recap/domain/gates/link.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/link.ts';
+stub	tab-recap/src/recap/domain/gates/narrator.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/narrator.ts';
+stub	tab-recap/src/recap/domain/gates/pronoun.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/pronoun.ts';
+stub	tab-recap/src/recap/domain/gates/specific.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/specific.ts';
+stub	tab-recap/src/recap/domain/gates/why.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/why.ts';
+stub	tab-recap/src/recap/domain/gates/words.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
+stub	tab-recap/src/recap/domain/grouping.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/grouping.ts';
+stub	tab-recap/src/recap/domain/in-flight.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
+stub	tab-recap/src/recap/domain/ops.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+stub	tab-recap/src/recap/domain/parse-failure.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+stub	tab-recap/src/recap/domain/pipeline.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/pipeline.ts';
+stub	tab-recap/src/recap/domain/questions.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/questions.ts';
+stub	tab-recap/src/recap/domain/quote.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/quote.ts';
+stub	tab-recap/src/recap/domain/recap-cause.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
+stub	tab-recap/src/recap/domain/reconciliation.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/reconciliation.ts';
+stub	tab-recap/src/recap/domain/registered-kinds.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+stub	tab-recap/src/recap/domain/shape.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
+stub	tab-recap/src/recap/domain/tasks.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/tasks.ts';
+stub	tab-recap/src/recap/domain/text.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+stub	tab-recap/src/recap/domain/time.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+stub	tab-recap/src/recap/domain/writer-view.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
