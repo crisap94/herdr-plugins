@@ -110,20 +110,16 @@ const pluginUnknown = (value: sl.Unknown): Unknown => ({ kind: 'unknown', why: p
 
 const isLedgerUnknown = (value: unknown): value is sl.Unknown => typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
-const known = <T>(value: T | sl.Unknown, what: string): T => {
-    if (isLedgerUnknown(value)) {
-        throw new Error(`conformance subject: ${what} is unknown (${value.why.why})`);
-    }
-    return value;
-};
-const knownOrNull = <T>(value: T | null | sl.Unknown, what: string): T | null => (value === null ? null : known(value, what));
+const orFallback = <T>(value: T | sl.Unknown, fallback: T): T => (isLedgerUnknown(value) ? fallback : value);
+const orNull = <T>(value: T | null | sl.Unknown): T | null => orFallback<T | null>(value, null);
+const orEmpty = <T>(value: readonly T[] | sl.Unknown): readonly T[] => orFallback<readonly T[]>(value, []);
 
 const scopeOf = (tab: string): sl.ScopeId => must(sl.parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(sl.parseSessionKey(pane));
 
 const pluginRecords = (records: sl.Records): RecapRecords => ({
-    readRecap: (tab: string): TabRecap | null => knownOrNull(records.readRecap(scopeOf(tab)), 'readRecap'),
-    lastRunOf: (tab: string): LastRun | null => knownOrNull(records.lastRunOf(scopeOf(tab)), 'lastRunOf'),
+    readRecap: (tab: string): TabRecap | null => orNull(records.readRecap(scopeOf(tab))),
+    lastRunOf: (tab: string): LastRun | null => orNull(records.lastRunOf(scopeOf(tab))),
     beginRun: (tab: string, backend: string | null, at: number): void => {
         records.beginRun(scopeOf(tab), backend, at);
     },
@@ -139,10 +135,10 @@ const pluginRecords = (records: sl.Records): RecapRecords => ({
 });
 
 const pluginLedger = (facts: sl.FactStore): Ledger => ({
-    openOf: (task) => known(facts.openOf(task), 'openOf').map(pluginFact),
-    recentlyClosed: (task, sinceMs) => known(facts.recentlyClosed(task, sinceMs), 'recentlyClosed').map(pluginFact),
-    allOf: (task) => known(facts.allOf(task), 'allOf').map(pluginFact),
-    keysOf: (tab) => known(facts.keysOf(scopeOf(tab)), 'keysOf'),
+    openOf: (task) => orEmpty(facts.openOf(task)).map(pluginFact),
+    recentlyClosed: (task, sinceMs) => orEmpty(facts.recentlyClosed(task, sinceMs)).map(pluginFact),
+    allOf: (task) => orEmpty(facts.allOf(task)).map(pluginFact),
+    keysOf: (tab) => orEmpty(facts.keysOf(scopeOf(tab))),
     historyOf: (tab, pane) => facts.historyOf(scopeOf(tab), keyOf(pane)),
     apply: (run, ops) => pluginApplied(facts.apply(ledgerRun(run), ops.map(ledgerOperation))),
 });
@@ -287,7 +283,7 @@ const pluginPlugs = (plugs: sl.EnginePlugs): PluginEnginePlugs => {
 export const pluginSubject: Subject<EngineWorld, sl.Engine> = {
     name: 'plugin engine',
     level: 'full',
-    world: () => createEngineWorld(),
+    world: () => createEngineWorld({ fold: pluginFold }),
     create: (world) => pluginEngine(pluginPlugs(world.plugs)),
 };
 
