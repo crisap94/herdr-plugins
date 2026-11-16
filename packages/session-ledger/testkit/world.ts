@@ -4,7 +4,10 @@ import {
     UNREAD,
     type Chunk,
     type Clock,
+    type Debounce,
+    type Position,
     type EnginePlugs,
+    type FollowedSession,
     type HarnessKind,
     type Ids,
     type Instant,
@@ -39,6 +42,7 @@ export interface WorldOptions {
     readonly writer?: Behaviour<WrittenAnswer>;
     readonly locate?: Behaviour<LocatedAnswer>;
     readonly read?: Behaviour<Chunk>;
+    readonly debounce?: Debounce;
 }
 
 export interface EngineWorld {
@@ -49,7 +53,22 @@ export interface EngineWorld {
     lines(): readonly string[];
     events(): readonly LedgerEvent[];
     release(): void;
+    located(): readonly FollowedSession[];
+    reads(): readonly string[];
+    positions(): readonly Position[];
+    settle(): Promise<void>;
+    setLocate(next: (session: FollowedSession) => Behaviour<LocatedAnswer>): void;
+    setDebounce(next: Debounce): void;
+    setRead(next: Behaviour<Chunk>): void;
+    setWriter(next: Behaviour<WrittenAnswer>): void;
 }
+
+const SETTLE_ROUNDS = 20;
+
+const DEFAULT_READ: Behaviour<Chunk> = {
+    kind: 'answer',
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+};
 
 type Run = <T>(behaviour: Behaviour<T>) => Promise<T | Unknown>;
 
@@ -108,11 +127,24 @@ const idsOf = (): Ids => {
     };
 };
 
-const sessionsOf = (run: Run, locate: Behaviour<LocatedAnswer>, read: Behaviour<Chunk>): SessionSource => {
+interface Probes {
+    readonly located: FollowedSession[];
+    readonly reads: string[];
+    readonly positions: Position[];
+}
+
+const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Behaviour<LocatedAnswer>, readOf: () => Behaviour<Chunk>, probes: Probes): SessionSource => {
     const readerFor = (harness: HarnessKind): SessionReader => ({
         harness,
-        locate: () => run(locate),
-        read: () => run(read),
+        locate: (session: FollowedSession) => {
+            probes.located.push(session);
+            return run(locateOf(session));
+        },
+        read: (source: string, was: Position) => {
+            probes.reads.push(source);
+            probes.positions.push(was);
+            return run(readOf());
+        },
     });
     return {
         readerFor,
@@ -120,13 +152,14 @@ const sessionsOf = (run: Run, locate: Behaviour<LocatedAnswer>, read: Behaviour<
     };
 };
 
-const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behaviour: Behaviour<WrittenAnswer> | undefined): Writer => ({
+const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behaviour: () => Behaviour<WrittenAnswer> | undefined): Writer => ({
     backend: 'scripted',
     contract: 'free-text',
     write: (request: RecapRequest) => {
         requests.push(request);
-        if (behaviour !== undefined) {
-            return run(behaviour);
+        const scripted = behaviour();
+        if (scripted !== undefined) {
+            return run(scripted);
         }
         return run({ kind: 'answer', value: { kind: 'written', text: store.markdown(), costUsd: 0 } });
     },
@@ -136,7 +169,50 @@ const workplaces: Workplaces = {
     repoOf: () => Promise.resolve<RepoResult>({ kind: 'no-repo' }),
 };
 
+interface Script {
+    debounce: Debounce;
+    chunk: Behaviour<Chunk>;
+    written: Behaviour<WrittenAnswer> | undefined;
+    locate: (session: FollowedSession) => Behaviour<LocatedAnswer>;
+}
+
+const scriptOf = (options: WorldOptions): Script => {
+    const scripted = options.locate;
+    return {
+        debounce: options.debounce ?? { kind: 'off' },
+        chunk: options.read ?? DEFAULT_READ,
+        written: options.writer,
+        locate: (session: FollowedSession) => scripted ?? { kind: 'answer', value: { kind: 'located', source: session.key } },
+    };
+};
+
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter'>;
+
+const controlsOf = (script: Script): Controls => ({
+    setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
+        script.locate = next;
+    },
+    setDebounce: (next: Debounce) => {
+        script.debounce = next;
+    },
+    setRead: (next: Behaviour<Chunk>) => {
+        script.chunk = next;
+    },
+    setWriter: (next: Behaviour<WrittenAnswer>) => {
+        script.written = next;
+    },
+});
+
+const settleWorld = async (): Promise<void> => {
+    for (let round = 0; round < SETTLE_ROUNDS; round += 1) {
+        await new Promise<void>((resolve) => {
+            setTimeout(resolve, 0);
+        });
+    }
+};
+
 export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
+    const script = scriptOf(options);
     const gate = gateOf();
     const run = runnerOf(gate.opened);
     const store = createMemoryStore();
@@ -144,16 +220,12 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const lines: string[] = [];
     const emitted: LedgerEvent[] = [];
     const requests: RecapRequest[] = [];
-    const locate: Behaviour<LocatedAnswer> = options.locate ?? { kind: 'answer', value: { kind: 'located', source: 'scripted' } };
-    const read: Behaviour<Chunk> = options.read ?? {
-        kind: 'answer',
-        value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: false },
-    };
+    const probes: Probes = { located: [], reads: [], positions: [] };
 
     const plugs: EnginePlugs = {
-        source: { sessions: sessionsOf(run, locate, read) },
+        source: { sessions: sessionsOf(run, (session) => script.locate(session), () => script.chunk, probes) },
         store: { records: store.records, facts: store.facts },
-        models: { writer: () => writerOf(run, store, requests, options.writer) },
+        models: { writer: () => writerOf(run, store, requests, () => script.written) },
         environment: {
             clock,
             ids: idsOf(),
@@ -165,6 +237,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
         settings: {
             language: () => 'en',
             writerView: () => ({ kind: 'full' }),
+            debounce: () => script.debounce,
         },
         on: (event: LedgerEvent) => {
             emitted.push(event);
@@ -181,5 +254,10 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
         release: () => {
             gate.open();
         },
+        located: () => [...probes.located],
+        reads: () => [...probes.reads],
+        positions: () => [...probes.positions],
+        ...controlsOf(script),
+        settle: settleWorld,
     };
 }

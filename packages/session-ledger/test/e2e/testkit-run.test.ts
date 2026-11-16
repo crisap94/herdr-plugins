@@ -82,8 +82,15 @@ const bodyOf = (registered: readonly Registered[], name: string): (() => Promise
     return found.body;
 };
 
-test('the registry exports hold the engine groups not yet written and the REC and FCT store cases', () => {
-    assert.deepEqual(engineCases, []);
+test('the registry exports hold the FOL, TRN and STA engine cases and the REC and FCT store cases', () => {
+    assert.deepEqual(
+        engineCases.map((kase) => kase.id),
+        [
+            'FOL-1', 'FOL-2', 'FOL-3', 'FOL-4', 'FOL-5', 'FOL-6', 'FOL-7', 'FOL-8', 'FOL-9', 'FOL-10',
+            'TRN-1', 'TRN-2', 'TRN-3', 'TRN-4', 'TRN-5', 'TRN-6', 'TRN-7', 'TRN-8',
+            'STA-1', 'STA-2', 'STA-3', 'STA-4', 'STA-5', 'STA-6', 'STA-7', 'STA-8', 'STA-9', 'STA-10',
+        ],
+    );
     assert.deepEqual(
         storeCases.map((kase) => kase.id),
         [

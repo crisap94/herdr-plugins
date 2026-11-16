@@ -5,6 +5,8 @@ import {
     createEngineWorld,
     createFakeEngine,
     createMemoryStore,
+    directory,
+    duration,
     engineCases,
     factOf,
     followed,
@@ -35,6 +37,16 @@ const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {
 };
 
 const taskA = { tab: 'tab-1', key: 'a' };
+
+test('a directory is the path it was given', () => {
+    assert.equal(String(directory('/work')), '/work');
+});
+
+test('a duration is the whole milliseconds it was given, and a negative or fractional one is refused', () => {
+    assert.equal(Number(duration(2500)), 2500);
+    assert.throws(() => duration(-1), /duration/);
+    assert.throws(() => duration(1.5), /duration/);
+});
 
 test('the fake engine keeps its follow set and answers followedBy from it', () => {
     const engine = createFakeEngine();

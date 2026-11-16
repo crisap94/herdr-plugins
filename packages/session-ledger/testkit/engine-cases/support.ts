@@ -1,0 +1,36 @@
+import { UNREAD, type Chunk, type ScopeId } from '@stateforge-labs/session-ledger';
+import type { Behaviour, WrittenAnswer } from '../world.ts';
+import type { EngineWorld } from '../world.ts';
+
+export const panesOf = (world: EngineWorld, tab: ScopeId): readonly string[] => {
+    const recap = world.store.records.readRecap(tab);
+    if (recap === null || 'kind' in recap) {
+        return [];
+    }
+    return recap.lanes.map((lane) => lane.pane);
+};
+
+export const causeOf = (world: EngineWorld, tab: ScopeId): string | null => {
+    const last = world.store.records.lastRunOf(tab);
+    if (last === null || 'kind' in last) {
+        return null;
+    }
+    return last.cause;
+};
+
+export const spoken = (text: string): Behaviour<Chunk> => ({
+    kind: 'answer',
+    value: { kind: 'chunk', entries: [{ role: 'user', text }], title: null, lastPrompt: text, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+});
+
+export const countOf = (world: EngineWorld, call: string): number => world.store.calls().filter((item) => item === call).length;
+
+export const NO_OPS: Behaviour<WrittenAnswer> = { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 } };
+
+export const cursorsOf = (world: EngineWorld, tab: ScopeId): readonly { readonly pane: string; readonly transcript: string; readonly cursor: number }[] => {
+    const recap = world.store.records.readRecap(tab);
+    if (recap === null || 'kind' in recap) {
+        return [];
+    }
+    return recap.lanes.map((lane) => ({ pane: lane.pane, transcript: lane.transcript, cursor: lane.cursor }));
+};
