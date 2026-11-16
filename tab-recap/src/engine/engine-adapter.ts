@@ -23,8 +23,8 @@ const isRestore = (text: Text): text is Text & RestoreText => text.length >= 0;
 export const scopeOf = (tab: TabId): ScopeId | null => (isScope(tab) ? tab : null);
 export const keyOf = (pane: PaneId): SessionKey | null => (isKey(pane) ? pane : null);
 const harnessOf = (agent: AgentKind): HarnessKind | null => (isHarness(agent) ? agent : null);
-const ledgerSessionOf = (session: SessionId): LedgerSessionId | null => (isLedgerSession(session) ? session : null);
-const ledgerDirectoryOf = (cwd: Directory): LedgerDirectory | null => (isLedgerDirectory(cwd) ? cwd : null);
+export const ledgerSessionOf = (session: SessionId): LedgerSessionId | null => (isLedgerSession(session) ? session : null);
+export const ledgerDirectoryOf = (cwd: Directory): LedgerDirectory | null => (isLedgerDirectory(cwd) ? cwd : null);
 
 const tabOf = (scope: ScopeId): TabId | null => {
     const read = parseTabId(scope);
