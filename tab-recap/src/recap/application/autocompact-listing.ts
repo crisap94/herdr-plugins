@@ -1,11 +1,11 @@
 import { parseArgs } from 'node:util';
 import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
-import { milliseconds, type AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { must, type Result } from '#src/protocol/result.ts';
-import { parseInstant, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
+import { parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 
@@ -74,8 +74,8 @@ export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, 
         settings.ceilingOverride(policy.ceilingPolicy === 'overrides-check'),
         settings.coverageBackoff(policy.coverageBackoff.kind === 'off' ? 'off' : everyOf(policy.coverageBackoff.ms)),
         settings.missedFacts(policy.missedFacts),
-        `cooldown ${everyOf(milliseconds(policy.cooldownMs))}`,
-        `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(milliseconds(tuning.recheckIdleMs))}`,
+        `cooldown ${everyOf(policy.cooldownMs)}`,
+        `re-check ${tuning.recheckIdleMs === null ? 'never' : everyOf(must(parseMilliseconds(tuning.recheckIdleMs)))}`,
     ].join(' · ')));
 }
 

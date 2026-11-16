@@ -9,7 +9,7 @@ import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
-import { briefRetentionOf, coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import { parseBriefRetention, coverageByOf, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
@@ -224,7 +224,7 @@ export function loadConfig(): Config {
         brief: compactJobOf(get),
         judge: judgeJobOf(get),
         keepInputDays: keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
-        keepBrief: briefRetentionOf(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
+        keepBrief: parseBriefRetention(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
         curator: curateJobOf(get), curatorRepair: repairModeOr(parseRepairMode(get('TAB_RECAP_CURATOR_REPAIR'))),
         autocompact: policyOf(get),
         tuning: tuningOf(get),

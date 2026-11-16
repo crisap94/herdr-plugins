@@ -10,7 +10,7 @@ import { covered } from '#src/recap/application/brief-coverage.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { backoffOf, briefRetentionOf, ceilingPolicyOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import { parseBackoff, parseBriefRetention, parseCeilingPolicy, policyOf } from '#src/recap/domain/autocompact.ts';
 import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
@@ -70,12 +70,12 @@ test('coverage settings default to ceiling override on, backoff off and fourteen
     const policy = policyOf(env({}));
     assert.equal(policy.ceilingPolicy, 'overrides-check');
     assert.deepEqual(policy.coverageBackoff, { kind: 'off' });
-    assert.deepEqual(backoffOf('30000'), { kind: 'off' });
-    assert.deepEqual(backoffOf('1800000'), { kind: 'window', ms: 1_800_000 });
-    assert.deepEqual(backoffOf('86400001'), { kind: 'off' });
-    assert.deepEqual(briefRetentionOf(undefined), { kind: 'days', value: 14 });
-    assert.deepEqual(briefRetentionOf('0'), { kind: 'none' });
-    assert.deepEqual(briefRetentionOf('61'), { kind: 'days', value: 14 });
+    assert.deepEqual(parseBackoff('30000'), { kind: 'off' });
+    assert.deepEqual(parseBackoff('1800000'), { kind: 'window', ms: 1_800_000 });
+    assert.deepEqual(parseBackoff('86400001'), { kind: 'off' });
+    assert.deepEqual(parseBriefRetention(undefined), { kind: 'days', value: 14 });
+    assert.deepEqual(parseBriefRetention('0'), { kind: 'none' });
+    assert.deepEqual(parseBriefRetention('61'), { kind: 'days', value: 14 });
     assert.equal(policyOf(env({ TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK: 'off' })).ceilingPolicy, 'blocked-by-check');
 });
 
@@ -183,8 +183,8 @@ test('no answer sheet inside the band compacts: every answer at 0.5 is undecided
 });
 
 test('out-of-range coverage settings fall back to their defaults; in-range ones are read', () => {
-    assert.deepEqual([backoffOf('59999'), backoffOf('86400001'), backoffOf('abc'), backoffOf('-5')], [{ kind: 'off' }, { kind: 'off' }, { kind: 'off' }, { kind: 'off' }]);
-    assert.deepEqual(backoffOf('60000'), { kind: 'window', ms: 60_000 });
-    assert.deepEqual([briefRetentionOf('-1'), briefRetentionOf('x'), briefRetentionOf('61')], [{ kind: 'days', value: 14 }, { kind: 'days', value: 14 }, { kind: 'days', value: 14 }]);
-    assert.deepEqual([ceilingPolicyOf('maybe'), ceilingPolicyOf('off'), ceilingPolicyOf('ON')], ['overrides-check', 'blocked-by-check', 'overrides-check']);
+    assert.deepEqual([parseBackoff('59999'), parseBackoff('86400001'), parseBackoff('abc'), parseBackoff('-5')], [{ kind: 'off' }, { kind: 'off' }, { kind: 'off' }, { kind: 'off' }]);
+    assert.deepEqual(parseBackoff('60000'), { kind: 'window', ms: 60_000 });
+    assert.deepEqual([parseBriefRetention('-1'), parseBriefRetention('x'), parseBriefRetention('61')], [{ kind: 'days', value: 14 }, { kind: 'days', value: 14 }, { kind: 'days', value: 14 }]);
+    assert.deepEqual([parseCeilingPolicy('maybe'), parseCeilingPolicy('off'), parseCeilingPolicy('ON')], ['overrides-check', 'blocked-by-check', 'overrides-check']);
 });

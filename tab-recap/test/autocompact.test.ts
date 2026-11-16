@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -114,7 +115,7 @@ test('a compaction in progress, or one just requested, stops a second request', 
 });
 
 test('a request still waiting to begin after 70 s (no compaction record yet) stops the second idle: no second request, and no second decision', async () => {
-    const w = world({ cooldownMs: 0 });
+    const w = world({ cooldownMs: brand<number, 'Milliseconds'>(0) });
     await w.service.consider(lane());
     w.clock.at += 70_000;
     await w.service.consider(lane());
@@ -165,7 +166,7 @@ test('a kind outside the list is decided and recorded but never requested', asyn
 });
 
 test('three lanes in a row with the decider down: three unknown decisions and one log line about the outage; it logs again after an answer', async () => {
-    const w = world({ cooldownMs: 0 });
+    const w = world({ cooldownMs: brand<number, 'Milliseconds'>(0) });
     w.decide = (): DecidedResult => unknown({ why: 'timeout', after: 10_000 as never });
     for (let i = 0; i < 3; i += 1) {
         w.share = 62 + i;

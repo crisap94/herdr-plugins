@@ -7,8 +7,7 @@ import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import { parseDecisionId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
-import { isSection } from '#src/recap/domain/fact.ts';
-import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
+import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -86,7 +85,7 @@ export class Briefing {
     }
 
     private rememberCoverage(decision: DecisionId | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
-        const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
+        const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => { const parsed = parseCheckedFact(fact); return parsed === null ? [] : [parsed]; });
         const appended = flow.appends && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;

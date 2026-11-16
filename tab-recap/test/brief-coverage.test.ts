@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -305,7 +306,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
 });
 
 test('the appended block is one line whatever the facts hold: line breaks and runs of spaces collapse, and the order is kept', () => {
-    const checked = [{ section: 'decisions' as const, text: 'Keep\nSQLite\tfor\n\nreads', why: 'one\r\nfile' }, { section: 'goal' as const, text: 'Ship\n  it', why: null }];
+    const checked = [{ section: 'decisions' as const, text: brand<string, 'Text'>('Keep\nSQLite\tfor\n\nreads'), why: brand<string, 'Text'>('one\r\nfile') }, { section: 'goal' as const, text: brand<string, 'Text'>('Ship\n  it'), why: null }];
     const appended = appendedBrief('The brief', checked, checked);
     assert.equal(appended.text, 'The brief. Facts not carried into the brief (2 missed; 0 left out): (1) goal: Ship it; (2) decisions: Keep SQLite for reads — one file');
     assert.doesNotMatch(appended.text, /[\r\n]/u);

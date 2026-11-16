@@ -9,7 +9,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NOW, lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
-import { milliseconds } from '#src/recap/domain/autocompact.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const at = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
 const skipsOf = (w: World): unknown[] => w.store.autocompact.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
@@ -52,7 +52,7 @@ test('off records no skip and logs nothing', async () => {
 });
 
 test('coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth', async () => {
-    const w = world({ coverageBackoff: { kind: 'window', ms: milliseconds(30 * 60_000) } });
+    const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
     w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: 62, tokens: must(parseCount(620_000)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     w.byPane = { 'w1:p1': 62.05 };
     await w.service.consider(lane());
@@ -89,7 +89,7 @@ test('prune: the skips of lanes that are not idle or done are forgotten; with au
     assert.deepEqual(w.store.autocompact.skips(), [], 'off: every skip goes');
 });
 
-const BACKOFF = { kind: 'window', ms: milliseconds(30 * 60_000) } as const;
+const BACKOFF = { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } as const;
 const failedWait = (w: World, when: number, tokens: number, gate: 'coverage' | 'ask' = 'coverage'): void => {
     w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(when), mode: 'on', share: 62, tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate, verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
 };

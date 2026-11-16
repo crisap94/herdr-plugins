@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -84,7 +85,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     let clock = now;
     const lines: string[] = [];
     const days = { value: 14 };
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: 14 }), log: (line: string): void => { lines.push(line); } });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: brand<number, 'RetentionDays'>(14) }), log: (line: string): void => { lines.push(line); } });
     assert.equal(retention.tick(), 1);
     assert.deepEqual(store.inputs.runs(QUERY).map((r) => [r.at, r.hasInput]), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0, 'the checked brief is past its retention');

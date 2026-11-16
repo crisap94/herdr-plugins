@@ -9,7 +9,7 @@ import { lane, NOW, rows, world } from './autocompact-world.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import type { Decision } from '#src/ports/autocompact-records.ts';
 import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
-import { milliseconds } from '#src/recap/domain/autocompact.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 
 const monitor = backgroundItem(backgroundTool('Monitor'), backgroundLabel('open merge requests'));
@@ -70,7 +70,7 @@ test('Nothing to name', async () => {
 });
 
 test('the coverage backoff yields to the ceiling: a full lane with an awaited reply and a recent coverage failure is ceiling', async () => {
-    const w = world({ coverageBackoff: { kind: 'window', ms: milliseconds(30 * 60_000) } });
+    const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
     w.store.autocompact.record(coverageWait(800_000));
     w.awaiting = 'reviewer';
     w.byPane = { 'w1:p1': 85 };
@@ -79,7 +79,7 @@ test('the coverage backoff yields to the ceiling: a full lane with an awaited re
 });
 
 test('the coverage backoff holds a lane below the ceiling before the in-flight gate: coverage-backoff, not in-flight', async () => {
-    const w = world({ coverageBackoff: { kind: 'window', ms: milliseconds(30 * 60_000) } });
+    const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
     w.store.autocompact.record(coverageWait(700_000));
     w.awaiting = 'reviewer';
     w.byPane = { 'w1:p1': 75 };

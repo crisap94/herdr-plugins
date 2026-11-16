@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessDecider } from '#src/adapters/job/decider.ts';
 import { JevDecider } from '#src/adapters/job/jev-decider.ts';
-import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, missedFactsOf, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
+import { ceilingOf, coverageByOf, cooldownOf, COVERAGE_BY_DEFAULT, jevOf, kindsOf, parseMissedFacts, modeOf, policyOf, minimumOf, shadowKindsOf } from '#src/recap/domain/autocompact.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
@@ -19,7 +19,7 @@ const config = (values: Readonly<Record<string, string>>) => (key: string): stri
 const jevUrl = (value: string): string => jevOf(config({ TAB_RECAP_JEV_URL: value })).url;
 
 test('the missed facts key: append or wait, any other value or a non-text value is append', () => {
-    assert.deepEqual([missedFactsOf('append'), missedFactsOf('wait'), missedFactsOf(' WAIT '), missedFactsOf(undefined), missedFactsOf('maybe'), missedFactsOf(42), missedFactsOf(null)], ['append', 'wait', 'wait', 'append', 'append', 'append', 'append']);
+    assert.deepEqual([parseMissedFacts('append'), parseMissedFacts('wait'), parseMissedFacts(' WAIT '), parseMissedFacts(undefined), parseMissedFacts('maybe'), parseMissedFacts(42), parseMissedFacts(null)], ['append', 'wait', 'wait', 'append', 'append', 'append', 'append']);
     assert.equal(policyOf(config({ TAB_RECAP_AUTOCOMPACT_MISSED_FACTS: 'wait' })).missedFacts, 'wait');
 });
 

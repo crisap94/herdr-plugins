@@ -3,8 +3,7 @@ import { must } from '#src/protocol/result.ts';
 import { correctionOf, factsOf } from './brief-coverage.ts';
 import type { Coverage } from './brief-coverage.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
-import type { CheckedFact, CoverageOutcome } from '#src/recap/domain/autocompact.ts';
-import { isSection } from '#src/recap/domain/fact.ts';
+import { parseCheckedFact, type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
@@ -86,7 +85,7 @@ export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log'
     const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, flow });
     if (result.unknown !== null) return waiting({ brief, why: `brief not checked (${result.unknown})`, outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
     if (!result.ok) {
-        const missed = result.missingFacts.flatMap(({ fact }) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
+        const missed = result.missingFacts.flatMap(({ fact }) => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; });
         return waiting({ brief, why: `the brief still misses ${missed.length} fact(s)`, outcome: { kind: 'missed', facts: missed }, coverage: result.answers, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
     }
     return { brief, coverage: result.answers, outcome: { kind: 'passed' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result), why: null };

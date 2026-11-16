@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDecisionId, parseCompactionId, parseTabId, agentKind } from '#src/recap/domain/ids.ts';
@@ -110,7 +111,7 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
     assert.deepEqual(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), mustParsed(parseCompactionId(cmp))), { id: newer, gate: 'ask' });
     assert.equal(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p2'), mustParsed(parseCompactionId(cmp))), null);
-    store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: duration(12), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: brand<string, 'Text'>('fact'), why: null }] }, coverageMs: duration(12), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     const row = store.autocompact.newest(mustParsed(parseCount(5))).find((each) => each.id === newer);
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
     assert.equal(row?.askedVerdict, 'compact');
@@ -131,10 +132,10 @@ test('amend with no coverage (the decider could not answer, or none is set up) w
 test('amend joins a non-null why after the decision\'s own why, keeps the decision\'s why when the amend has none, and takes the amend when the decision has none', () => {
     const store = seeded();
     const blocked = store.autocompact.record(decision({ at: instant(600), why: 'the decider said wait: too early' }));
-    store.autocompact.amend(blocked, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    store.autocompact.amend(blocked, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: brand<string, 'Text'>('fact'), why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     assert.equal(store.autocompact.newest(mustParsed(parseCount(10))).find((each) => each.id === blocked)?.why, 'the decider said wait: too early; the brief still misses 1 fact(s)');
     const bare = store.autocompact.record(decision({ at: instant(650), why: null }));
-    store.autocompact.amend(bare, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
+    store.autocompact.amend(bare, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: brand<string, 'Text'>('fact'), why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
     assert.equal(store.autocompact.newest(mustParsed(parseCount(10))).find((each) => each.id === bare)?.why, 'the brief still misses 1 fact(s)');
     const passed = store.autocompact.record(decision({ at: instant(700), why: 'kept by the decider' }));
     store.autocompact.amend(passed, { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: duration(1), coverageCostUsd: null, why: null, block: false });
@@ -144,14 +145,14 @@ test('amend joins a non-null why after the decision\'s own why, keeps the decisi
 test('a ceiling decision that waited keeps the flight detail and gains the coverage reason', () => {
     const store = seeded();
     const id = store.autocompact.record(decision({ at: instant(800), gate: 'ceiling', why: 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running' }));
-    store.autocompact.amend(id, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: 'fact', why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: '1 fact missed; missed fact appended', block: false });
+    store.autocompact.amend(id, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: brand<string, 'Text'>('fact'), why: null }] }, coverageMs: duration(1), coverageCostUsd: null, why: '1 fact missed; missed fact appended', block: false });
     assert.equal(store.autocompact.newest(mustParsed(parseCount(10))).find((each) => each.id === id)?.why, 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running; 1 fact missed; missed fact appended');
 });
 
 test('a checked brief is stored with its exact checked fact wording and pruned by time', () => {
     const store = seeded();
     const id = store.autocompact.record(decision());
-    const checked = [{ section: 'needs' as const, text: 'keep the title', why: null }];
+    const checked = [{ section: 'needs' as const, text: brand<string, 'Text'>('keep the title'), why: null }];
     store.autocompactBriefs.put(id, 'brief body', [0], checked, 100);
     const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | null);
     assert.equal(row.briefed_at, 100);
@@ -175,7 +176,7 @@ test('the unchecked reason is set exactly when the outcome is unchecked', () => 
     const amend = (id: string, outcome: Parameters<typeof store.autocompact.amend>[1]['outcome']): void => store.autocompact.amend(mustParsed(parseDecisionId(id)), { coverage: {}, outcome, coverageMs: duration(1), coverageCostUsd: null, why: null, block: false });
     amend(unchecked, { kind: 'unchecked', reason: 'no-brief' });
     amend(passed, { kind: 'passed' });
-    amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: 'ship', why: null }] });
+    amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: brand<string, 'Text'>('ship'), why: null }] });
     const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', id))?.['reason'];
     assert.deepEqual([reasonOf(unchecked), reasonOf(passed), reasonOf(missed)], ['no-brief', null, null]);
 });
