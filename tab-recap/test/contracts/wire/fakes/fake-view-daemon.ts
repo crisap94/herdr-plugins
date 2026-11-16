@@ -1,4 +1,6 @@
+import { mkdirSync } from 'node:fs';
 import { createServer } from 'node:net';
+import { dirname } from 'node:path';
 import type { Socket } from 'node:net';
 import { decodeClient, encode } from '#src/wire/view/codec.ts';
 import type { ClientMessage, DaemonMessage } from '#src/wire/view/protocol.ts';
@@ -27,6 +29,7 @@ const pump = async (peer: Peer, received: ClientMessage[], script: DaemonScript)
 };
 
 export async function startFakeViewDaemon(socketPath: string, script?: DaemonScript): Promise<FakeViewDaemon> {
+    mkdirSync(dirname(socketPath), { recursive: true, mode: 0o700 });
     const received: ClientMessage[] = [];
     const peers: Peer[] = [];
     const answer = script ?? ((): readonly DaemonMessage[] => []);

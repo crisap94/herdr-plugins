@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import type { Server, Socket } from 'node:net';
-import { basename } from 'node:path';
+import { basename, dirname } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { LineSplitter, decodeClient, decodeDaemon } from '#src/wire/view/codec.ts';
 import { initialConn, step } from '#src/wire/view/connection.ts';
@@ -455,6 +455,7 @@ export async function playAsPane(t: Transcript, socketPath: string, clock: Clock
 }
 
 export async function playAsDaemon(t: Transcript, socketPath: string, clock: Clock): Promise<Mismatch[]> {
+    mkdirSync(dirname(socketPath), { recursive: true, mode: 0o700 });
     const server = createServer();
     const player = new DaemonPlayer(server, t.settings, clock);
     await new Promise<void>((resolve, reject) => {
