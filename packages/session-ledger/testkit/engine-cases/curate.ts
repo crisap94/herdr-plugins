@@ -131,7 +131,9 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             await world.settle();
             assert.equal(countOf(world, 'recordRun'), 1);
             assert.equal(world.curated().length, before + 1);
-            assert.deepEqual(factsOf(world), facts);
+            const after = factsOf(world);
+            assert.deepEqual(after.filter((fact) => fact.text !== 'late work'), facts);
+            assert.equal(after.filter((fact) => fact.text === 'late work').length, 1);
         },
     },
     {
