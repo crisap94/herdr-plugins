@@ -1,5 +1,5 @@
 [
-  { "export": "Milliseconds", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
+  { "export": "Milliseconds", "origin": "tab-recap/src/recap/domain/time.ts" },
   { "export": "CeilingPolicy", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
   { "export": "Backoff", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
   { "export": "MissedFacts", "origin": "tab-recap/src/recap/domain/autocompact.ts", "originConst": "MISSED_FACTS" },

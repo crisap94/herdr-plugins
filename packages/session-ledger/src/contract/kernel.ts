@@ -27,6 +27,7 @@ export type Text = Brand<string, 'Text'>;
 export type Count = Brand<number, 'Count'>;
 export type Usd = Brand<number, 'Usd'>;
 export type Probability = Brand<number, 'Probability'>;
+export type AutocompactPercent = Brand<number, 'AutocompactPercent'>;
 export type TabId = Brand<string, 'TabId'>;
 export type PaneId = Brand<string, 'PaneId'>;
 export type AgentKind = Brand<string, 'AgentKind'>;

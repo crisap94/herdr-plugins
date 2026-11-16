@@ -13,7 +13,7 @@ import type {
     Text,
     Unknown,
 } from './engine-port.ts';
-import type { AgentKind, Count, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
+import type { AgentKind, AutocompactPercent, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
 
 export type { Awaiting, BackgroundItem, ContextUse, WindowSource } from './engine-port.ts';
 
@@ -26,8 +26,8 @@ export type MissedFacts = 'append' | 'wait';
 export type UncheckedReason = 'no-decider' | 'decider-cannot-answer' | 'no-brief';
 export interface CheckedFact {
     readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
+    readonly text: Text;
+    readonly why: Text | null;
 }
 
 export type CoverageOutcome = { readonly kind: 'passed' } | { readonly kind: 'missed'; readonly facts: readonly CheckedFact[] } | { readonly kind: 'unchecked'; readonly reason: UncheckedReason };
@@ -36,9 +36,9 @@ export type WatchMode = 'off' | 'shadow' | 'on';
 
 export interface Policy {
     readonly mode: WatchMode;
-    readonly minimum: number;
-    readonly ceiling: number;
-    readonly cooldownMs: number;
+    readonly minimum: AutocompactPercent;
+    readonly ceiling: AutocompactPercent;
+    readonly cooldownMs: Milliseconds;
     readonly kinds: readonly string[];
     readonly shadowKinds: readonly RegisteredKind[];
     readonly ceilingPolicy: CeilingPolicy;
@@ -100,7 +100,7 @@ export interface Skip {
 
 export interface LastDecision {
     readonly at: Instant;
-    readonly tokens: Count;
+    readonly tokens: number;
     readonly mode: DecisionMode;
     readonly verdict: Verdict;
     readonly gate: DecisionGate;
@@ -113,8 +113,8 @@ export interface Decision {
     readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: number;
-    readonly tokens: Count;
-    readonly window: Count;
+    readonly tokens: number;
+    readonly window: number;
     readonly gate: DecisionGate;
     readonly verdict: Verdict;
     readonly askedVerdict: Verdict | null;
@@ -152,9 +152,9 @@ export interface Question {
 export interface Decided {
     readonly kind: 'decided';
     readonly answers: ReadonlyMap<Text, Probability>;
-    readonly tokens: Count;
+    readonly tokens: number;
     readonly costUsd: Usd;
-    readonly tookMs: Milliseconds;
+    readonly tookMs: Duration;
     readonly model: Text;
 }
 
