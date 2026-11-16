@@ -59,4 +59,6 @@ test('the parsers reject non-integers, non-numbers and non-strings', () => {
     assert.deepEqual(parseHeight('x'), { kind: 'err', error: 'not-a-whole-number' });
     assert.deepEqual(parseLine(3), { kind: 'err', error: 'not-a-string' });
     assert.deepEqual(parseLine('x'), { kind: 'ok', value: 'x' });
+    assert.deepEqual(parseLine('one\ntwo'), { kind: 'err', error: 'has-a-line-break' });
+    assert.deepEqual(parseLine('one\rtwo'), { kind: 'err', error: 'has-a-line-break' });
 });

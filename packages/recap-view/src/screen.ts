@@ -4,19 +4,20 @@ export type Line = Brand<string, 'Line'>;
 export type Frame = readonly Line[];
 export type Height = Brand<number, 'Height'>;
 export type Cursor = Brand<number, 'Cursor'>;
-export type ScreenFailure = 'not-a-string' | 'not-a-whole-number';
+export type ScreenFailure = 'not-a-string' | 'has-a-line-break' | 'not-a-whole-number';
 
 export interface Screen {
     readonly lines: Frame;
     readonly cursor: Cursor;
 }
 
-const isLine = (input: unknown): input is Line => typeof input === 'string';
+const isLine = (input: unknown): input is Line => typeof input === 'string' && !/[\r\n]/u.test(input);
 const isHeight = (input: unknown): input is Height => typeof input === 'number' && Number.isInteger(input);
 const isCursor = (input: unknown): input is Cursor => typeof input === 'number' && Number.isInteger(input);
 
 export function parseLine(input: unknown): Result<Line, ScreenFailure> {
-    return isLine(input) ? { kind: 'ok', value: input } : { kind: 'err', error: 'not-a-string' };
+    if (typeof input !== 'string') return { kind: 'err', error: 'not-a-string' };
+    return isLine(input) ? { kind: 'ok', value: input } : { kind: 'err', error: 'has-a-line-break' };
 }
 
 export function parseHeight(input: unknown): Result<Height, ScreenFailure> {
