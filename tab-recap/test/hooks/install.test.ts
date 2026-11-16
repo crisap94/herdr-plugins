@@ -125,7 +125,7 @@ test('malformed settings JSON is refused and nothing is written', async () => {
 test('tab-recap hooks install exits 1 on malformed settings JSON and writes nothing', async () => {
     await inRoom((room) => {
         writeFileSync(room.settingsPath, '[1, 2');
-        const done = cli(room, ['install']);
+        const done = cli(room, ['install', '--harness', 'claude']);
         assert.equal(done.status, 1, done.stderr);
         assert.equal(read(room.settingsPath), '[1, 2');
         assert.equal(existsSync(hookShimPath(room.stateDir)), false);

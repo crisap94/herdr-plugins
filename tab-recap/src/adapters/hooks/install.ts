@@ -11,6 +11,7 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { HOOK_LIMITS, type HookHarness } from '#src/wire/hooks/contract.ts';
 import { hookShimPath, hooksSocketPath } from '#src/wire/paths.ts';
 import { claudeSettings } from './claude-settings.ts';
+import { codexSettings } from './codex-settings.ts';
 import { parseSettingsDocument, serializeSettings, type HarnessSettings, type SettingsDocument } from './settings.ts';
 
 export type RefusalReason = 'malformed' | 'curl-missing' | 'curl-old' | 'unwritable';
@@ -44,6 +45,7 @@ const PERMISSION_BITS = 0o777;
 
 const SETTINGS_OF: ReadonlyMap<HookHarness, () => HarnessSettings> = new Map<HookHarness, () => HarnessSettings>([
     ['claude', () => claudeSettings()],
+    ['codex', () => codexSettings()],
 ]);
 
 const refused = (why: RefusalReason, detail: Text): Refused => ({ kind: 'refused', why, detail });
