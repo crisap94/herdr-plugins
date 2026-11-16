@@ -1,10 +1,9 @@
 import { createInterface } from 'node:readline';
-import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { AUTO_ORDER, judgeFor } from '#src/daemon/backends.ts';
+import { AUTO_ORDER, availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { EVAL_USAGE, parseEval } from '#src/recap/application/eval-options.ts';
@@ -54,7 +53,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
         const runtime = createRuntime();
         return await runEval(parsed.options, {
             inputs: store.inputs, verdicts: store.verdicts, now: Date.now, rubric: RUBRIC_TEXT, style: styleFor(process.stdout),
-            judge: () => judgeFor(loadConfig(), available, join(stateDir(), 'summarizer'), runtime, anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
+            judge: () => judgeFor(loadConfig(), availableIn(available), summarizerWork(stateDir()), runtime, anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
             out: (line) => { console.log(line); },
             err: (line) => { console.error(line); },
             ask: (prompt) => operator.ask(prompt),

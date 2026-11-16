@@ -27,7 +27,7 @@ export type Retry = 'retried' | 'first-try';
 
 export interface Text {
     readonly material: Material;
-    readonly brief: string | null;
+    readonly brief: Prose | null;
 }
 
 export interface Placed {

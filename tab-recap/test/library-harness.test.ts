@@ -19,6 +19,8 @@ import { LIBRARY_IDS } from '#src/adapters/harness/library-constants.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
 import { summarizerFor } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
@@ -313,7 +315,7 @@ const emulatedBuiltins = [
 test('a run on a harness with an emulated cell is logged with the weak cells and nothing else', async () => {
     const lines: string[] = [];
     const runtime = scripted('opencode', { text: '## Goal\n- x', confinement: emulatedBuiltins, cost: { usd: 0.01, basis: 'billed' } });
-    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], '/work', runtime, (line) => { lines.push(line); });
+    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], must(parseDirectory('/work')), runtime, (line) => { lines.push(line); });
     const written = await writer.write(requestOf({ entries: ENTRIES }));
     assert.ok(!isUnknown(written));
     assert.deepEqual(lines, ['harness opencode: builtins emulated, mcp unmeasured']);

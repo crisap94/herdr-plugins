@@ -1,7 +1,10 @@
+import { must } from '#src/protocol/result.ts';
 import { fits } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { compareIds } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
@@ -31,7 +34,7 @@ interface Victim {
 
 const byteLength = (text: string): number => new TextEncoder().encode(text).byteLength;
 
-const countOf = (fit: HandoffFit, dropped: Dropped, id: HandoffGroupId): number => (fit.groups.find((group) => group.id === id)?.capped ?? 0) + (dropped[id] ?? 0);
+const countOf = (fit: HandoffFit, dropped: Dropped, id: HandoffGroupId): Count => must(parseCount((fit.groups.find((group) => group.id === id)?.capped ?? 0) + (dropped[id] ?? 0)));
 
 const omittedOf = (fit: HandoffFit, dropped: Dropped): OmittedCounts => ({
     done: countOf(fit, dropped, 'done'),
@@ -39,7 +42,7 @@ const omittedOf = (fit: HandoffFit, dropped: Dropped): OmittedCounts => ({
     closed: countOf(fit, dropped, 'closed'),
     now: countOf(fit, dropped, 'now'),
     next: countOf(fit, dropped, 'next'),
-    withheld: fit.withheld,
+    withheld: must(parseCount(fit.withheld)),
 });
 
 const olderThan = (a: HandoffEntry, b: HandoffEntry): boolean => (a.lastAt === b.lastAt ? compareIds(a.id, b.id) < 0 : a.lastAt < b.lastAt);

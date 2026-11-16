@@ -1,6 +1,8 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
 import { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameRows, withParity } from './parity.ts';
 
@@ -44,7 +46,7 @@ describe('parity: ledger rows', () => {
 
     test('recentlyClosed returns the facts closed since the cut-off like the old SELECT', () => {
         withParity(exec(SEED), (parity) => {
-            const produced = new LedgerRows(parity.raw).recentlyClosed(TASK, 5);
+            const produced = new LedgerRows(parity.raw).recentlyClosed(TASK, instant(5));
             expectSameRows(parity, { sql: CLOSED_SQL, params: ['t1', 'k1', 5] }, produced, (row) => factRow(row, TASK));
         });
     });
@@ -58,7 +60,7 @@ describe('parity: ledger rows', () => {
 
     test('keysOf returns the distinct task keys of one tab like the old SELECT', () => {
         withParity(exec(SEED), (parity) => {
-            const produced = new LedgerRows(parity.raw).keysOf('t1');
+            const produced = new LedgerRows(parity.raw).keysOf(tabId('t1'));
             expectSameRows(parity, { sql: KEYS_SQL, params: ['t1'] }, produced, (row) => row['key']);
         });
     });

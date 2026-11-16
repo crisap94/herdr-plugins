@@ -38,7 +38,7 @@
   },
   "src/adapters/db/database.ts": {
     "parameter": 4,
-    "return": 2,
+    "return": 1,
     "property": 1
   },
   "src/adapters/db/handoff-answers.ts": {
@@ -95,12 +95,8 @@
     "return": 1
   },
   "src/adapters/db/ledger-rows.ts": {
-    "parameter": 4,
-    "container": 3,
+    "container": 2,
     "assertion": 1
-  },
-  "src/adapters/db/ledger.ts": {
-    "container": 2
   },
   "src/adapters/db/operator-anchors.ts": {
     "parameter": 1,
@@ -116,7 +112,6 @@
     "property": 2
   },
   "src/adapters/db/recap-records.ts": {
-    "parameter": 1,
     "assertion": 2
   },
   "src/adapters/db/requests.ts": {
@@ -165,7 +160,6 @@
     "property": 2
   },
   "src/adapters/db/stories.ts": {
-    "property": 1,
     "assertion": 1
   },
   "src/adapters/db/tab-row.ts": {

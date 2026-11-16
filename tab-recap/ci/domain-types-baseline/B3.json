@@ -9,10 +9,6 @@
     "property": 1,
     "assertion": 1
   },
-  "src/recap/application/autocompact-gates.ts": {
-    "parameter": 1,
-    "property": 1
-  },
   "src/recap/application/autocompact-line.ts": {
     "parameter": 1
   },
@@ -22,10 +18,8 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 2,
-    "return": 2,
-    "container": 2,
-    "property": 6
+    "parameter": 1,
+    "return": 1
   },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
@@ -80,16 +74,13 @@
     "parameter": 1,
     "property": 1
   },
-  "src/recap/application/compaction-send.ts": {
-    "property": 1
-  },
   "src/recap/application/compaction-trail.ts": {
     "parameter": 1,
     "property": 1
   },
   "src/recap/application/compaction.ts": {
     "parameter": 6,
-    "return": 4,
+    "return": 3,
     "container": 1,
     "property": 1
   },
@@ -175,11 +166,6 @@
     "parameter": 5,
     "return": 1,
     "property": 5
-  },
-  "src/recap/application/handoff-content.ts": {
-    "parameter": 3,
-    "return": 4,
-    "property": 2
   },
   "src/recap/application/handoff-flow.ts": {
     "parameter": 4,
@@ -352,7 +338,7 @@
     "return": 1
   },
   "src/recap/application/typing-lease.ts": {
-    "parameter": 6,
+    "parameter": 5,
     "return": 1
   },
   "src/recap/application/worksite-section.ts": {

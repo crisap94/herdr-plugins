@@ -8,18 +8,11 @@
     "return": 3,
     "property": 2
   },
-  "src/recap/domain/autocompact-verdict.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 2,
-    "property": 4,
-    "assertion": 2
-  },
   "src/recap/domain/autocompact.ts": {
-    "parameter": 3,
+    "parameter": 1,
     "return": 2,
-    "container": 4,
-    "property": 13
+    "container": 1,
+    "property": 8
   },
   "src/recap/domain/backoff.ts": {
     "parameter": 1,
@@ -44,14 +37,7 @@
   },
   "src/recap/domain/compaction-plan.ts": {
     "parameter": 5,
-    "property": 3,
-    "assertion": 3
-  },
-  "src/recap/domain/continuation-note.ts": {
-    "parameter": 8,
-    "return": 6,
-    "container": 2,
-    "assertion": 2
+    "property": 3
   },
   "src/recap/domain/coordination.ts": {
     "parameter": 1,
@@ -186,10 +172,6 @@
   },
   "src/recap/domain/token-registry.ts": {
     "parameter": 1
-  },
-  "src/recap/domain/typing-lease.ts": {
-    "parameter": 1,
-    "return": 1
   },
   "src/recap/domain/visibility.ts": {
     "return": 2,

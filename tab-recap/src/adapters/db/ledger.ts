@@ -1,7 +1,10 @@
 import type { Database } from 'bun:sqlite';
 import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
+import type { TaskName } from '#src/recap/domain/task-name.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { LedgerHistory } from './ledger-history.ts';
 import { LedgerRows } from './ledger-rows.ts';
@@ -24,15 +27,15 @@ export class LedgerRepository implements Ledger {
     }
 
     recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[] {
-        return guarded(() => this.rows.recentlyClosed(task, sinceMs), []);
+        return guarded(() => this.rows.recentlyClosed(task, instant(sinceMs)), []);
     }
 
     allOf(task: TaskId): readonly Fact[] {
         return guarded(() => this.rows.allOf(task), []);
     }
 
-    keysOf(tab: string): readonly string[] {
-        return guarded(() => this.rows.keysOf(tab), []);
+    keysOf(tab: string): readonly TaskName[] {
+        return guarded(() => this.rows.keysOf(tabId(tab)), []);
     }
 
     historyOf(tab: string, pane: string): readonly HistoryFact[] {

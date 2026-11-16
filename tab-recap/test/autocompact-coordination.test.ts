@@ -1,5 +1,6 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
@@ -107,8 +108,8 @@ test('the wait answered, the lane goes through the remaining gates again', async
 });
 
 test('the in-flight count still applies when nothing awaits: the same detail as before', () => {
-    assert.equal(detailOf('in-flight', { now: instant(0), minimum: 10, cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: 'below-ceiling' }), '2 running');
-    assert.equal(detailOf('in-flight', { now: instant(0), minimum: 10, cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: 'below-ceiling' }), 'awaiting reviewer');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: 'below-ceiling' }), '2 running');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: 'below-ceiling' }), 'awaiting reviewer');
 });
 
 test('events: a skip is written when its gate changes, not on each sweep; a decision is written with its verdict and share', async () => {

@@ -18,12 +18,27 @@ import type { LogLine } from '#src/ports/harness.ts';
 import { coverageDeciderFor, deciderFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
-import { enumeratesJob, installableHarnessSentence, pick } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
+import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 import type { Config } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
+
+export type Available = readonly BackendId[];
+
+type Warning = 'unwarned' | 'warned';
+
+const isBackendId = (id: string): id is BackendId => BACKEND_IDS.some((known) => known === id);
+
+export const availableIn = (ids: readonly string[]): Available => ids.filter(isBackendId);
+
+export const summarizerWork = (root: string): Directory => must(parseDirectory(join(root, 'summarizer')));
+
+const line = (raw: string): Text => must(parseText(raw));
 
 export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
     if (isUnknown(fromPath)) {
@@ -42,27 +57,27 @@ class Nothing implements Summarizer {
     }
 }
 
-export function summarizerFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Summarizer {
+export function summarizerFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Summarizer {
     const id = pick(config.backend, available);
     return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort });
 }
 
-export function enumeratorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
+export function enumeratorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
     const id = pick(config.backend, available);
     return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator'), log), { model: config.models[id], effort: 'low' });
 }
 
-export function briefFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): CompactionBriefs | null {
+export function briefFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): CompactionBriefs | null {
     const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
-export function judgeFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
+export function judgeFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
     const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
 
-export function curatorFor(config: Config, available: readonly string[], work: string, runtime: HarnessRuntime, log?: LogLine): Curators | null {
+export function curatorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort, ...(placed.timeoutMs === undefined ? {} : { timeoutMs: placed.timeoutMs }) }, placed.answer ?? 'text');
 }
@@ -73,16 +88,16 @@ interface HarnessSources {
 }
 
 export class Backends {
-    private available: readonly string[] = [];
-    private warned = false;
-    private readonly work: string;
+    private available: Available = [];
+    private warning: Warning = 'unwarned';
+    private readonly work: Directory;
     private readonly runtime: HarnessRuntime;
     private readonly sources: HarnessSources;
     private readonly notifier: Notifier;
-    private readonly log: (line: string) => void;
+    private readonly log: LogLine;
 
-    constructor(root: string, sources: HarnessSources, notifier: Notifier, log: (line: string) => void, runtime: HarnessRuntime) {
-        this.work = join(root, 'summarizer');
+    constructor(root: string, sources: HarnessSources, notifier: Notifier, log: LogLine, runtime: HarnessRuntime) {
+        this.work = summarizerWork(root);
         this.runtime = runtime;
         this.sources = sources;
         this.notifier = notifier;
@@ -92,19 +107,19 @@ export class Backends {
     async refresh(): Promise<void> {
         const found = intersect(await this.sources.herdr.available(), await this.sources.path.available());
         if (isUnknown(found)) {
-            this.log(`harness lookup failed: ${saying(found.why)}`);
+            this.log(line(`harness lookup failed: ${saying(found.why)}`));
             return;
         }
-        this.available = found.ids;
+        this.available = availableIn(found.ids);
         await this.warnWhenNone();
     }
 
     private async warnWhenNone(): Promise<void> {
-        if (this.warned || loadConfig().backend !== 'auto' || pick('auto', this.available) !== null) {
+        if (this.warning === 'warned' || loadConfig().backend !== 'auto' || pick('auto', this.available) !== null) {
             return;
         }
-        this.warned = true;
-        this.log(`no backend: ${NONE}`);
+        this.warning = 'warned';
+        this.log(line(`no backend: ${NONE}`));
         await this.notifier.notify('Tab Recap', `No recap writer found — ${NONE}`);
     }
 

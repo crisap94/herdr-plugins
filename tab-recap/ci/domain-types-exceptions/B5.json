@@ -130,12 +130,5 @@
     "function": "read",
     "parameter": "task",
     "reason": "callback: signature of Stories.read in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/stories.ts",
-    "function": "keep",
-    "parameter": "change",
-    "reason": "callback: signature of Stories.keep in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
   }
 ]

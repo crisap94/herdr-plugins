@@ -9,10 +9,12 @@ import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
-import { gateOf, laneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate } from '#src/recap/domain/autocompact.ts';
+import { gateOf, parseLaneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate, type RecordOnly } from '#src/recap/domain/autocompact.ts';
 import { tuningOf, type AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -32,19 +34,19 @@ import type { LaneEvents } from './lane-events.ts';
 import { busyDetailOf, idleMsOf, policyForLane, reachOf } from './autocompact-shapes.ts';
 import type { Asking, CoverageHold, DeciderHealth, Marks, Stop } from './autocompact-shapes.ts';
 
-export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: string } | Unknown;
+export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: Text } | Unknown;
 
 interface Judgment {
     readonly gate: Gate;
-    readonly recordOnly: boolean;
+    readonly recordOnly: RecordOnly;
 }
 
 interface BackoffFacts {
     readonly policy: AutocompactPolicy;
     readonly last: LastDecision | null;
     readonly now: Instant;
-    readonly tokens: number;
-    readonly window: number;
+    readonly tokens: Count;
+    readonly window: Count;
     readonly lastBreakAt: Instant | null;
 }
 
@@ -63,24 +65,24 @@ export interface AutocompactDeps {
     readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
     readonly decisions: Pick<AutocompactRecords, 'record' | 'skip' | 'markRequested' | 'pruneSkips' | 'lastDecisionAt' | 'lastDecision' | 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
-    readonly startedAt: number;
+    readonly startedAt: Instant;
     readonly requests: Pick<Requests, 'requestCompact'>;
     readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
-    hasRecap(tab: TabId): boolean;
+    hasRecap(tab: TabId): 'recapped' | 'unrecapped';
     refresh: RecapRefresh;
     lanes(tab: TabId): readonly Lane[];
-    now(): number;
-    log(line: string): void;
+    now(): Instant;
+    log(line: Text): void;
 }
 
 const BALANCED = tuningOf(() => undefined);
 
 interface Judged {
     readonly verdict: DecisionVerdict;
-    readonly answers: Readonly<Record<string, number>>;
+    readonly answers: ReadonlyMap<Text, Probability>;
     readonly why: Text | null;
-    readonly decider: string | null;
+    readonly decider: Text | null;
     readonly costUsd: Usd;
     readonly tookMs: Duration | null;
 }
@@ -103,8 +105,8 @@ function coverageBackoffActive(input: BackoffFacts): CoverageHold {
 }
 
 const NO_COST = must(parseUsd(0));
-const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: NO_COST, tookMs: null };
-const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: NO_COST, tookMs: null };
+const CEILING: Judged = { verdict: 'compact', answers: new Map(), why: null, decider: null, costUsd: NO_COST, tookMs: null };
+const UNKNOWN: Judged = { verdict: 'unknown', answers: new Map(), why: null, decider: null, costUsd: NO_COST, tookMs: null };
 const NO_CONTEXT = must(parseText('the context share is not known yet'));
 
 const NOTHING: Flight = flightOf(NOTHING_IN_FLIGHT, NOT_AWAITING);
@@ -121,7 +123,7 @@ function decisionWhy(judged: Judged, flight: Flight, atCeiling: CeilingReach): T
 }
 
 function effectOf(judgment: Judgment): Effect {
-    return judgment.recordOnly ? 'record-only' : 'may-act';
+    return judgment.recordOnly;
 }
 
 function marksOf(deps: AutocompactDeps, tab: TabId, pane: PaneId): Marks {
@@ -161,7 +163,7 @@ export class Autocompact {
         try {
             await this.run(lane);
         } catch (error) {
-            this.deps.log(`autocompact ${pane}: ${error instanceof Error ? error.message : String(error)}`);
+            this.deps.log(must(parseText(`autocompact ${pane}: ${error instanceof Error ? error.message : String(error)}`)));
         } finally {
             this.considering.delete(pane);
         }
@@ -170,34 +172,34 @@ export class Autocompact {
     private async gated(lane: Lane, policy: AutocompactPolicy, use: ContextUse, tuning: AutocompactTuning): Promise<Stop> {
         const { deps } = this;
         const { tab, pane } = lane;
-        const now = instant(deps.now());
+        const now = deps.now();
         const busy = busyOf(deps, this.asked, tab, pane, now);
         const marks = marksOf(deps, tab, pane);
-        const same = unchangedOf(marks.last, instant(deps.startedAt), use.tokens, policy.mode) === 'same';
+        const same = unchangedOf(marks.last, deps.startedAt, must(parseCount(use.tokens)), policy.mode) === 'same';
         const recheck: Recheck = same ? recheckDue(idleMsOf(tuning), marks.last, now) : 'not-due';
         const reach = reachOf(use, policy);
         const facts = {
             kind: lane.agent, kinds: policy.kinds, shadowKinds: policy.shadowKinds, busy: busy.kind === 'busy', share: shareOf(use), minimum: policy.minimum, ceiling: policy.ceiling,
             now, lastBreakAt: marks.lastBreakAt, lastDecisionAt: marks.lastDecisionAt, cooldownMs: policy.cooldownMs,
             unchanged: same && recheck !== 'due',
-            coverageBackoff: coverageBackoffActive({ policy, last: marks.last, now, tokens: use.tokens, window: use.window, lastBreakAt: marks.lastBreakAt }) === 'backing-off',
+            coverageBackoff: coverageBackoffActive({ policy, last: marks.last, now, tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), lastBreakAt: marks.lastBreakAt }) === 'backing-off',
         };
         const context = { now, minimum: policy.minimum, cooldownMs: duration(policy.cooldownMs), lastBreakAt: marks.lastBreakAt, lastDecisionAt: marks.lastDecisionAt, busy: busyDetailOf(busy) };
         const cheap = gateOf({ ...facts, flight: null });
         if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { gate: cheap.gate, effect: effectOf(cheap), detail: detailOf(cheap.gate, { ...context, flight: null, atCeiling: 'below-ceiling' }), recheck, flight: NOTHING, atCeiling: reach };
         const flight = await this.flightOf(lane, pane, reach);
         const full = gateOf({ ...facts, flight });
-        if (recheck === 'due' && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(`autocompact ${pane}: unchanged → recheck`);
+        if (recheck === 'due' && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(must(parseText(`autocompact ${pane}: unchanged → recheck`)));
         return { gate: full.gate, effect: effectOf(full), detail: detailOf(full.gate, { ...context, flight, atCeiling: reach }), recheck, flight, atCeiling: reach };
     }
 
     private skip(lane: Lane, gate: SkipGate, share: number | null, detail: Text | null): void {
         const { pane } = lane;
-        this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: instant(this.deps.now()), gate, share, detail });
+        this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: this.deps.now(), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
         this.deps.events?.lane(pane, 'autocompact-skipped', gate);
-        this.deps.log(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`);
+        this.deps.log(must(parseText(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`)));
     }
 
     private async run(lane: Lane): Promise<void> {
@@ -210,11 +212,11 @@ export class Autocompact {
         if (use === null) { this.skip(lane, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
-        if (!deps.hasRecap(tab)) await deps.refresh(tab, deps.lanes(tab));
+        if (deps.hasRecap(tab) === 'unrecapped') await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
         const seen = await this.lateFlight(lane, use, flight, atCeiling);
         if (seen === null) return;
-        const again = busyOf(deps, this.asked, tab, pane, instant(deps.now()));
+        const again = busyOf(deps, this.asked, tab, pane, deps.now());
         if (again.kind === 'busy') {
             const paid = judged.costUsd > 0 ? `; decider ${moneyOf(judged.costUsd)} discarded` : '';
             this.skip(lane, 'busy', shareOf(use), must(parseText(`${again.detail}${paid}`)));
@@ -246,18 +248,18 @@ export class Autocompact {
         const { tab, pane } = lane;
         const { judged, effect, flight, atCeiling } = found;
         const made: Decision = {
-            tab, pane, agent: lane.agent, at: instant(deps.now()), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
-            answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: laneStatusAtDecision(lane.status),
+            tab, pane, agent: lane.agent, at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            answers: Object.fromEntries(judged.answers), coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: parseLaneStatusAtDecision(lane.status),
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);
         deps.events?.lane(pane, 'autocompact-decided', `${judged.verdict}-${shareOf(use)}`);
-        deps.log(lineOf(made, effect));
+        deps.log(must(parseText(lineOf(made, effect))));
         if (asksForCompaction(found.mode, judged.verdict, effect) === 'asks') this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
     private request(tab: TabId, pane: PaneId, id: DecisionId, note: ContinuationNote | null): void {
-        this.asked.set(pane, instant(this.deps.now()));
+        this.asked.set(pane, this.deps.now());
         this.deps.requests.requestCompact({ tab, pane, note, origin: 'auto' });
         this.deps.decisions.markRequested(id);
     }
@@ -268,12 +270,11 @@ export class Autocompact {
         const answered = decider === null ? null : await decider.ask(must(parseText(JSON.stringify(state))), QUESTIONS);
         if (answered === null || isUnknown(answered)) {
             const why = answered === null ? 'no decider is set up' : saying(answered.why);
-            if (this.outage === 'reachable') this.deps.log(`autocompact: the decider is unreachable (${why}); decisions are unknown until it answers`);
+            if (this.outage === 'reachable') this.deps.log(must(parseText(`autocompact: the decider is unreachable (${why}); decisions are unknown until it answers`)));
             this.outage = 'unreachable';
             return { ...UNKNOWN, why: must(parseText(why)), decider: decider?.label ?? null };
         }
         this.outage = 'reachable';
-        const answers = Object.fromEntries(answered.answers);
-        return { verdict: verdictOf(answers, tuning.verdict), answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
+        return { verdict: verdictOf(Object.fromEntries(answered.answers), tuning.verdict), answers: answered.answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
     }
 }

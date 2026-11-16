@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { NOW, SOURCE, TARGET, TAB, TARGET_TAB, T1, TEXT, SETTLE_MS, SOURCE_LISTED, bothFree, harness, recapOf, request, task } from './fakes/handoff-flow-harness.ts';
 import { fact } from './fakes/fact-at.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
@@ -40,7 +42,7 @@ test('a target that is not ready is refused and starts no refresh, reads nothing
 });
 
 test('a target with work in flight is refused in-flight before any refresh', async () => {
-    const h = harness({ awaiting: { kind: 'waiting', value: 'a question' } });
+    const h = harness({ awaiting: { kind: 'waiting', value: must(parseText('a question')) } });
     assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'in-flight' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
 });
@@ -162,7 +164,7 @@ test('a target that turns busy during the settle hold is refused status-not-read
 });
 
 test('a target that is in flight at the second observation is refused status-not-ready', async () => {
-    const h = harness({ onPause: (): void => { h.world.awaiting = { kind: 'waiting', value: 'a question' }; } });
+    const h = harness({ onPause: (): void => { h.world.awaiting = { kind: 'waiting', value: must(parseText('a question')) }; } });
     assert.deepEqual(await h.flow.run(request()), { kind: 'refused', reason: 'status-not-ready' });
     assert.equal(h.calls.includes('send'), false);
 });

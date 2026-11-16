@@ -1,7 +1,7 @@
 import type { BackendId } from './backend.ts';
-import { brand, type Brand } from './brand.ts';
+import { parseText, type Text } from './text.ts';
 
-export type ConfinementNoticeLine = Brand<string, 'ConfinementNoticeLine'>;
+export type ConfinementNoticeLine = Text;
 
 export type CostBasis = 'billed' | 'list' | 'unreported' | 'unavailable';
 
@@ -25,7 +25,11 @@ const weakCells = (cells: readonly ConfinementCell[]): readonly ConfinementCell[
 const unmeasuredCosts = (basis: CostBasis | undefined): readonly CostBasis[] => NOTICE.unmeasuredCosts.filter((weak) => weak === basis);
 
 export function parseConfinementNoticeLine(input: unknown): ConfinementNoticeLine | null {
-    return typeof input === 'string' && input.startsWith(NOTICE.prefix) ? brand<string, 'ConfinementNoticeLine'>(input) : null;
+    if (typeof input !== 'string' || !input.startsWith(NOTICE.prefix)) {
+        return null;
+    }
+    const parsed = parseText(input);
+    return parsed.kind === 'ok' ? parsed.value : null;
 }
 
 export function confinementNotice(id: BackendId, cells: readonly ConfinementCell[], basis: CostBasis | undefined): ConfinementNoticeLine | null {

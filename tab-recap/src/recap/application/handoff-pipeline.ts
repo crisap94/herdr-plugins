@@ -6,6 +6,9 @@ import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import { omittedTotal } from '#src/recap/render/handoff-markdown.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { buildHandoffContent } from './handoff-content.ts';
 import { closedFreshnessOf, freshnessOf } from './freshness-block.ts';
 import type { FreshnessDeps } from './freshness-block.ts';
@@ -23,7 +26,7 @@ export interface HandoffPipelineDeps {
     readonly tokens: PaneTokens;
 }
 
-const referenceOf = (input: HandoffRenderInput): HandoffReference => (input.handoff === null ? { kind: 'dry-run' } : { kind: 'handoff', id: input.handoff, at: input.at });
+const referenceOf = (input: HandoffRenderInput): HandoffReference => (input.handoff === null ? { kind: 'dry-run' } : { kind: 'handoff', id: input.handoff, at: instant(input.at) });
 
 async function tokensOf(tokens: PaneTokens, lane: HandoffLane): Promise<ReadonlyMap<Text, Text> | null> {
     const found = await tokens.read(lane.pane);
@@ -41,11 +44,11 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
         }
         const worksite = await worksiteOf(deps.worksite, { directory: lane.cwd, cursor, tokens: closed === undefined ? await tokensOf(deps.tokens, lane) : null });
         const body = buildHandoffContent({
-            at: input.at,
+            at: instant(input.at),
             task: { open: input.facts.filter((fact) => fact.state === 'open'), closed: input.facts.filter((fact) => fact.state === 'closed') },
             freshness: freshness.freshness,
             worksite,
-            note: input.note,
+            note: input.note === null ? null : must(parseText(input.note)),
         });
         if (body.kind === 'refused') {
             return { kind: 'refused', reason: body.reason };

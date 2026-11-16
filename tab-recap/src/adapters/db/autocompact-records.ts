@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, PaneKey, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
-import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
+import { parseLaneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import { agentKind, paneId, parseCompactionId, parseDecisionId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
@@ -78,7 +78,7 @@ function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['covera
     }
 }
 
-export const laneStatusOf = (row: Row): LaneStatusAtDecision | null => laneStatusAtDecision(maybeText(row, 'lane_status'));
+export const laneStatusOf = (row: Row): LaneStatusAtDecision | null => parseLaneStatusAtDecision(maybeText(row, 'lane_status'));
 
 function decisionOf(row: Row): StoredDecision {
     const compaction = row['compaction_id'] === null ? null : must(parseCompactionId(typeIdOf('compaction', blob(row, 'compaction_id'))));

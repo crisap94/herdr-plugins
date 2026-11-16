@@ -1,6 +1,10 @@
+import { must } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
@@ -9,9 +13,15 @@ export const HANDOFF_PREAMBLE = 'I am handing you work another agent was doing. 
 
 export const OMITTED_KINDS = ['done', 'links', 'closed', 'now', 'next', 'withheld'] as const;
 export type OmittedKind = (typeof OMITTED_KINDS)[number];
-export type OmittedCounts = Readonly<Record<OmittedKind, number>>;
+export type OmittedCounts = Readonly<Record<OmittedKind, Count>>;
 
-export type HandoffReference = { readonly kind: 'handoff'; readonly id: HandoffId; readonly at: number } | { readonly kind: 'dry-run' };
+export interface HandoffRef {
+    readonly kind: 'handoff';
+    readonly id: HandoffId;
+    readonly at: Instant;
+}
+
+export type HandoffReference = HandoffRef | { readonly kind: 'dry-run' };
 
 export interface HandoffParts {
     readonly reference: HandoffReference;
@@ -34,7 +44,7 @@ const HEADINGS: Readonly<Record<HandoffGroupId, string>> = {
     closed: 'Recently closed',
 };
 
-export const omittedTotal = (omitted: OmittedCounts): number => OMITTED_KINDS.reduce((sum, kind) => sum + omitted[kind], 0);
+export const omittedTotal = (omitted: OmittedCounts): Count => must(parseCount(OMITTED_KINDS.reduce((sum, kind) => sum + omitted[kind], 0)));
 
 const omittedLine = (omitted: OmittedCounts): string =>
     `${omittedTotal(omitted)} facts omitted (${OMITTED_KINDS.map((kind) => `${kind} ${omitted[kind]}`).join(', ')})`;
@@ -42,19 +52,19 @@ const omittedLine = (omitted: OmittedCounts): string =>
 const referenceLine = (reference: HandoffReference): string =>
     reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteText(reference.at)}-${reference.id.slice(-8)}`;
 
-const entryLines = (group: HandoffGroup, entry: HandoffEntry): readonly string[] => [
+const entryLines = (group: HandoffGroup, entry: HandoffEntry): string[] => [
     `- ${utcMinuteText(entry.lastAt)} ${entry.text}`,
     ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${entry.reason}`]),
 ];
 
-const groupLines = (group: HandoffGroup): readonly string[] =>
+const groupLines = (group: HandoffGroup): string[] =>
     group.entries.length === 0 ? [] : ['', `## ${HEADINGS[group.id]}`, ...group.entries.flatMap((entry) => entryLines(group, entry))];
 
-export function serializeHandoff(parts: HandoffParts): string {
+export function serializeHandoff(parts: HandoffParts): Text {
     const note = parts.note === null ? [] : ['', `Note: ${parts.note}`];
     const omitted = omittedTotal(parts.omitted) === 0 ? [] : ['', omittedLine(parts.omitted)];
     const worksite = parts.worksiteText === null ? [] : ['', parts.worksiteText];
-    return [
+    return must(parseText([
         HANDOFF_PREAMBLE,
         '',
         referenceLine(parts.reference),
@@ -65,5 +75,5 @@ export function serializeHandoff(parts: HandoffParts): string {
         ...parts.groups.flatMap(groupLines),
         ...omitted,
         ...worksite,
-    ].join('\n');
+    ].join('\n')));
 }

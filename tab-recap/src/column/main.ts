@@ -14,6 +14,11 @@ import { storedNotes } from '#src/extensions/stored-notes.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 import { expandedScreen } from './expanded-modal.ts';
 import { COMMAND_LAUNCHER } from './command.ts';
 import { compactFromColumn } from './compact.ts';
@@ -23,6 +28,11 @@ import { stripVTControlCharacters } from 'node:util';
 const TICK_MS = 1000;
 const LOCALE_MS = Number(process.env['TAB_RECAP_COLUMN_POLL_MS'] ?? '') || 3000;
 const GUTTER = 2;
+
+type Size = readonly [columns: Count, rows: Count];
+type Refresh = 'always' | 'if-changed';
+type Frame = Text;
+type Key = Text;
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
 function modeOf(env: NodeJS.ProcessEnv): Mode {
@@ -77,7 +87,7 @@ function rollWhenUpgraded(): void {
         } catch {
             rollFailed = true;
             enter();
-            draw(true);
+            draw('always');
         }
     }
     candidate = current;
@@ -90,42 +100,42 @@ function view(): ColumnView {
     return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, compactions: store?.compactions.shownFor(tab) ?? [], style };
 }
 
-function size(): [number, number] {
+function size(): Size {
     try {
         const [columns, rows] = process.stdout.getWindowSize();
-        return [columns, rows];
+        return [must(parseCount(columns)), must(parseCount(rows))];
     } catch {
-        return [process.stdout.columns || 40, process.stdout.rows || 24];
+        return [must(parseCount(process.stdout.columns || 40)), must(parseCount(process.stdout.rows || 24))];
     }
 }
 
-function frameOf(lines: readonly string[]): string {
-    return lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n');
+function frameOf(lines: readonly Text[]): Frame {
+    return must(parseText(lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')));
 }
 
-function paint(frame: string, force: boolean): void {
-    if (force || frame !== lastFrame) {
+function paint(frame: Frame, force: Refresh): void {
+    if (force === 'always' || frame !== lastFrame) {
         lastFrame = frame;
         process.stdout.write(`${TITLE_OSC}${title}${BEL}${FRAME_HOME}${frame}${FRAME_END}`);
     }
 }
 
-function draw(force = false): void {
+function draw(force: Refresh = 'if-changed'): void {
     const [columns, rows0] = size();
     const width = Math.max(10, columns - GUTTER);
     if (mode === 'bar') {
-        paint(frameOf(presentBar(view(), width)), force);
+        paint(frameOf(presentBar(view(), width).map((line) => must(parseText(line)))), force);
         return;
     }
     const rows = Math.max(3, rows0);
-    const lines = expandedLines === null ? present(view(), width, markdown) : expandedLines(view(), width);
+    const lines = (expandedLines === null ? present(view(), width, markdown) : expandedLines(view(), width)).map((line) => must(parseText(line)));
     const room = rows - 1;
     scroll = Math.max(0, Math.min(scroll, lines.length - room));
     const shown = lines.slice(scroll, scroll + room);
     while (shown.length < room) {
-        shown.push('');
+        shown.push(must(parseText('')));
     }
-    shown.push(footer(width, mode, messagesFor(localeNow()), style));
+    shown.push(must(parseText(footer(width, mode, messagesFor(localeNow()), style))));
     paint(frameOf(shown), force);
 }
 
@@ -156,7 +166,7 @@ function openSettings(): void {
     }
 }
 
-function isTap(input: string): boolean {
+function isTap(input: Key): boolean {
     const at = input.indexOf(`${ESC}[<`);
     if (at < 0 || !input.endsWith('M')) {
         return false;
@@ -193,11 +203,12 @@ function enter(): void {
 enter();
 process.on('exit', restore);
 process.on('SIGTERM', () => { process.exit(0); });
-process.stdout.on('resize', () => { draw(true); });
+process.stdout.on('resize', () => { draw('always'); });
 if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', (key: string) => {
+    process.stdin.on('data', (data) => {
+        const key: Key = must(parseText(data));
         if (key === '\u0003' || (mode === 'modal' && (key === 'q' || key === ESC))) {
             process.exit(0);
         }
@@ -209,5 +220,5 @@ if (process.stdin.isTTY) {
         draw();
     });
 }
-draw(true);
+draw('always');
 setInterval(() => { draw(); }, TICK_MS);

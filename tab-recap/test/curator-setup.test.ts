@@ -5,6 +5,8 @@ import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { curatorFor } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Job } from '#src/recap/domain/job.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
@@ -51,7 +53,7 @@ async function curatorLimit(limit: string | undefined): Promise<unknown> {
             process.env['TAB_RECAP_CURATE_TIMEOUT_MS'] = limit;
         }
         const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
-        await curatorFor(loadConfig(), ['claude'], 'work', runtime)?.write('document');
+        await curatorFor(loadConfig(), ['claude'], must(parseDirectory('work')), runtime)?.write('document');
         const request = runtime.calls[0]?.request;
         return request === undefined ? undefined : { has: 'timeoutMs' in request, value: request.timeoutMs };
     } finally {

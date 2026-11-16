@@ -8,7 +8,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { LANE_STATUSES, laneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
+import { LANE_STATUSES, parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { CLOSE_POINTS } from '#src/recap/domain/lane-closed.ts';
@@ -27,9 +27,9 @@ test('the board lists a pane until the fold has applied its closed intent', () =
 });
 
 test('the lane status at a decision is idle, done or working, and nothing else', () => {
-    assert.deepEqual(LANE_STATUSES.map((status) => laneStatusAtDecision(status)), ['idle', 'done', 'working']);
+    assert.deepEqual(LANE_STATUSES.map((status) => parseLaneStatusAtDecision(status)), ['idle', 'done', 'working']);
     for (const other of ['blocked', 'unknown', 'Idle', '', null, undefined]) {
-        assert.equal(laneStatusAtDecision(other), null, String(other));
+        assert.equal(parseLaneStatusAtDecision(other), null, String(other));
     }
 });
 
