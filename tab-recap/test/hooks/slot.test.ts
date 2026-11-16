@@ -8,7 +8,7 @@ import { parseRoot, parseSwitch, startSlots, type Line, type SlotContext, type S
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
-const SOCKET = 'hooks.sock';
+const SOCKET = join('hooks', 'hooks.sock');
 
 interface Fake {
     readonly root: string;

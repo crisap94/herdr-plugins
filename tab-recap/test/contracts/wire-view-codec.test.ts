@@ -183,8 +183,8 @@ test('the default texts are four non-empty English lines', () => {
     assert.ok(Object.values(DEFAULT_TEXTS).every((text) => text.length > 0));
 });
 
-test('the socket and shim paths sit in the state directory', () => {
+test('the socket and shim paths sit in the state directory, the hook socket in its own owner-only folder', () => {
     assert.equal(viewSocketPath('/state'), '/state/view.sock');
-    assert.equal(hooksSocketPath('/state'), '/state/hooks.sock');
+    assert.equal(hooksSocketPath('/state'), '/state/hooks/hooks.sock');
     assert.equal(hookShimPath('/state'), '/state/hook.sh');
 });

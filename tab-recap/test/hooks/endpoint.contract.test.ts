@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { RestoreText } from '@stateforge-labs/session-ledger';
-import { existsSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -170,6 +170,42 @@ test('a socket path over SOCKET_PATH_MAX is refused with one log line and no soc
         assert.equal(endpoint, null);
         assert.equal(logged.length, 1);
         assert.equal(existsSync(socketPath), false);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('the endpoint makes the socket directory owner-only before it listens, so no other user can reach the socket', async () => {
+    const dir = scratchDir();
+    const shared = join(dir, 'hooks');
+    mkdirSync(shared);
+    chmodSync(shared, 0o755);
+    const socketPath = must(parseFsPath(join(shared, 'hooks.sock')));
+    try {
+        const endpoint = await startHookEndpoint({ socketPath, receiver: receiverFor(null), log: () => {} });
+        assert.ok(endpoint !== null);
+        try {
+            assert.equal(statSync(shared).mode & 0o777, 0o700);
+        } finally {
+            await endpoint.stop();
+        }
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('the endpoint creates a missing socket directory owner-only', async () => {
+    const dir = scratchDir();
+    const socketPath = must(parseFsPath(join(dir, 'hooks', 'hooks.sock')));
+    try {
+        const endpoint = await startHookEndpoint({ socketPath, receiver: receiverFor(null), log: () => {} });
+        assert.ok(endpoint !== null);
+        try {
+            assert.equal(statSync(join(dir, 'hooks')).mode & 0o777, 0o700);
+            assert.equal(existsSync(socketPath), true);
+        } finally {
+            await endpoint.stop();
+        }
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

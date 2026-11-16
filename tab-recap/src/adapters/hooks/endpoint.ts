@@ -1,4 +1,5 @@
-import { chmod, stat, unlink } from 'node:fs/promises';
+import { chmod, mkdir, stat, unlink } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { Pipeline, adapters } from '@stateforge-labs/harness-hooks';
 import type { HandleOptions } from '@stateforge-labs/harness-hooks';
 import { AdmissionMode, createHookHandler, serveBun } from '@stateforge-labs/harness-hooks/endpoint';
@@ -20,10 +21,15 @@ export interface HookEndpoint {
 
 type ErrorReport = NonNullable<HandleOptions['onError']>;
 
+const OWNER_ONLY_DIRECTORY = 0o700;
+
 const errorReport = (write: (line: Line) => void): ErrorReport => (message) => write(parseLine(`hook endpoint: ${message}`));
 
 export async function startHookEndpoint(options: HookEndpointOptions): Promise<HookEndpoint | null> {
     const { socketPath, receiver, log } = options;
+    const directory = dirname(socketPath);
+    await mkdir(directory, { recursive: true, mode: OWNER_ONLY_DIRECTORY });
+    await chmod(directory, OWNER_ONLY_DIRECTORY);
     const claim = await claimSocket(socketPath);
     if (claim.kind === 'too-long') {
         log(parseLine(`hook endpoint not started: socket path too long (${claim.bytes} bytes)`));
