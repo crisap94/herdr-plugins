@@ -1,7 +1,7 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
 import { parseIdText, parseRequestId, parseToolName } from './primitives.ts';
-import type { ExchangeName, Refusal, RequestId, TokenValue, ToolName } from './primitives.ts';
+import type { ExchangeName, IdText, Refusal, RequestId, TokenValue, ToolName } from './primitives.ts';
 import { answerToken, answerValue, badIdValue, parseRequest, wireTokenValue } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
 import { idGrammarOf } from './codec.ts';
@@ -13,7 +13,7 @@ export type SeenCheck = (exchange: ExchangeName, tool: ToolName, id: RequestId) 
 
 export type Taken = { readonly exchange: Exchange; readonly tool: ToolName; readonly id: RequestId; readonly value: ParsedValue };
 
-export type Refused = { readonly exchange: Exchange; readonly tool: ToolName; readonly rawId: string; readonly answer: TokenValue };
+export type Refused = { readonly exchange: Exchange; readonly tool: ToolName; readonly rawId: IdText; readonly answer: TokenValue };
 
 export type Taking = { readonly taken: readonly Taken[]; readonly refused: readonly Refused[] };
 
@@ -21,13 +21,10 @@ type Read = { readonly kind: 'taken'; readonly taken: Taken } | { readonly kind:
 
 const NONE: Read = { kind: 'none' };
 
-const exchangeOf = (registry: Registry, name: string): Exchange | undefined =>
-    registry.exchanges
-        .filter((exchange) => name.startsWith(exchange.requestPrefix))
-        .toSorted((a, b) => b.requestPrefix.length - a.requestPrefix.length)[0];
-
 function readOne(registry: Registry, seen: SeenCheck, name: string, raw: string): Read {
-    const exchange = exchangeOf(registry, name);
+    const exchange: Exchange | undefined = registry.exchanges
+        .filter((candidate) => name.startsWith(candidate.requestPrefix))
+        .toSorted((a, b) => b.requestPrefix.length - a.requestPrefix.length)[0];
     if (exchange === undefined || raw === '') {
         return NONE;
     }

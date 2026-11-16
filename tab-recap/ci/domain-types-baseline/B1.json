@@ -162,9 +162,8 @@
     "parameter": 1
   },
   "src/protocol/responder.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
-    "container": 1,
-    "property": 1
+    "container": 1
   }
 }
