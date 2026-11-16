@@ -11,7 +11,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { coloured, plain, type Style } from '#src/recap/render/wrap.ts';
-import { claimSocket } from '#src/wire/socket-claim.ts';
+import { claimOwnedSocket } from '#src/daemon/view/socket-folder.ts';
 import { LineSplitter, decodeClient, encode } from '#src/wire/view/codec.ts';
 import type { Ignored, Malformed } from '#src/wire/view/codec.ts';
 import { intentOf } from '#src/wire/view/keys.ts';
@@ -244,7 +244,7 @@ const stopAll = async (hub: Hub, server: Server, path: SocketPath, bound: Stats,
 };
 
 export async function startViewServer(options: ViewServerOptions): Promise<ViewServer | null> {
-    const claim = await claimSocket(options.socketPath);
+    const claim = await claimOwnedSocket(options.socketPath);
     if (claim.kind !== 'free') {
         options.log(parseLine(`view socket not free: ${claim.kind}`));
         return null;

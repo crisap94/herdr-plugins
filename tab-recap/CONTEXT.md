@@ -228,7 +228,7 @@ Terms of the hook endpoint under `src/adapters/hooks/`. **Hook endpoint**: the u
 
 ## Relay pane
 
-Terms of the relay pane under `src/pane/` and of the view server under `src/daemon/view/`. **View slot**: the `view` slot under `src/daemon/slots/view.ts`, which starts the view server on the view socket and stops it on shutdown; while the slot is off there is no socket file. Only a merge request on a `track/PANE-…` branch adds to this section.
+Terms of the relay pane under `src/pane/` and of the view server under `src/daemon/view/`. **View slot**: the `view` slot under `src/daemon/slots/view.ts`, which starts the view server on the view socket `view/view.sock`, inside a folder only its owner can open, and stops it on shutdown; while the slot is off there is no socket file. Only a merge request on a `track/PANE-…` branch adds to this section.
 
 ## Engine host
 

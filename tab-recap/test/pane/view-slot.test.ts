@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { openStore } from '#src/adapters/db/database.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import * as view from '#src/daemon/slots/view.ts';
@@ -82,7 +82,7 @@ const inbox = (socket: Socket): ((match: (message: DaemonMessage) => boolean) =>
     };
 };
 
-test('the view slot serves the view socket at mode 0600, answers a ping and says bye shutdown on stop', async () => {
+test('the view slot serves the view socket at mode 0600 in an owner-only folder, answers a ping and says bye shutdown on stop', async () => {
     const root = mkdtempSync(join(tmpdir(), 'view-slot-'));
     const store = storeOf();
     const logs: Line[] = [];
@@ -91,6 +91,7 @@ test('the view slot serves the view socket at mode 0600, answers a ping and says
             const running = await view.slot.start(contextOf(parseRoot(root), store, logs));
             const path = viewSocketPath(root);
             assert.equal(statSync(path).mode & 0o777, 0o600);
+            assert.equal(statSync(dirname(path)).mode & 0o777, 0o700);
             const client = createConnection(path);
             await once(client, 'connect');
             const next = inbox(client);
@@ -124,6 +125,25 @@ test('a second view slot on a root whose socket is taken starts nothing and logs
             await second.stop();
             await first.stop();
             assert.equal(existsSync(viewSocketPath(root)), false);
+        });
+    } finally {
+        store.close();
+        rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('the view slot makes an existing shared socket folder owner-only before it listens', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'view-slot-'));
+    const store = storeOf();
+    const logs: Line[] = [];
+    const folder = dirname(viewSocketPath(root));
+    mkdirSync(folder);
+    chmodSync(folder, 0o755);
+    try {
+        await withConfig(join(root, 'config'), async (): Promise<void> => {
+            const running = await view.slot.start(contextOf(parseRoot(root), store, logs));
+            assert.equal(statSync(folder).mode & 0o777, 0o700);
+            await running.stop();
         });
     } finally {
         store.close();

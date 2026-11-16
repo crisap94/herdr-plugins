@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 export const SOCKET_PATH_MAX = 107;
 
-export const viewSocketPath = (stateDir: string): string => join(stateDir, 'view.sock');
+export const viewSocketPath = (stateDir: string): string => join(stateDir, 'view', 'view.sock');
 
 export const hooksSocketPath = (stateDir: string): string => join(stateDir, 'hooks', 'hooks.sock');
 
