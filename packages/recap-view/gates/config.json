@@ -13,5 +13,5 @@
   "context": "../../tab-recap/CONTEXT.md",
   "vocabularyAllow": "gates/vocabulary-allow.tsv",
   "builtins": ["node:util"],
-  "declaredAhead": ["@stateforge-labs/session-ledger"]
+  "declaredAhead": []
 }
