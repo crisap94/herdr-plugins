@@ -718,6 +718,7 @@
       "src/adapters/job/jev-decider.ts",
       "src/adapters/job/jev-key.ts",
       "src/adapters/job/judge.ts",
+      "src/adapters/job/prompts/answer-schemas.ts",
       "src/adapters/job/prompts/brief-instructions.ts",
       "src/adapters/job/prompts/curator-instructions.ts",
       "src/adapters/job/prompts/curator-reconcile-instructions.ts",

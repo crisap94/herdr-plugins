@@ -1,5 +1,6 @@
 import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
-import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
+import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, JsonObject, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
+import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
 import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -25,6 +26,16 @@ const effortOf = (capabilities: Capabilities | null, effort: Effort): LibraryEff
 
 const cellOf = (cell: LibraryConfinementCell): ConfinementCell => ({ axis: cell.axis, state: cell.support.state });
 
+const structuredOf = (capabilities: Capabilities | null): StructuredSupport =>
+    capabilities !== null && isUsable(capabilities[CapabilityName.StructuredOutput][Engine.Cli]) ? 'schema' : 'none';
+
+interface StructuredOptions {
+    readonly outputSchema?: JsonObject;
+}
+
+const outputOf = (call: HarnessCall, structured: StructuredSupport): StructuredOptions =>
+    call.answer?.kind === 'schema' && structured === 'schema' ? { outputSchema: ANSWER_SCHEMAS[call.answer.schema] } : {};
+
 function failedOf(failure: RunFailure): Ran {
     if (failure.kind === LIBRARY_HARNESS.timeoutKind) {
         return unknown({ why: 'timeout', after: duration(failure.timeoutMs) });
@@ -34,13 +45,14 @@ function failedOf(failure: RunFailure): Ran {
 }
 
 function ranOf(output: RunOutput): Ran {
-    return { kind: 'ran', text: output.text, costUsd: output.cost.usd ?? 0, costBasis: output.cost.basis, confinement: output.confinement.map(cellOf) };
+    const text = output.output === undefined ? output.text : JSON.stringify(output.output);
+    return { kind: 'ran', text, costUsd: output.cost.usd ?? 0, costBasis: output.cost.basis, confinement: output.confinement.map(cellOf) };
 }
 
 export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
     readonly id: Id;
     readonly limit: number | null;
-    readonly structured: StructuredSupport = 'none';
+    readonly structured: StructuredSupport;
     private readonly runtime: HarnessRuntime;
     private readonly timeoutMs: number;
     private readonly jobTag: JobTag | undefined;
@@ -50,6 +62,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
         this.runtime = runtime;
         this.id = id;
         this.limit = runtime.promptLimit(id);
+        this.structured = structuredOf(runtime.capabilities(id));
         this.timeoutMs = timeoutMs;
         this.jobTag = jobTag;
         this.claudeAck = claudeAck;
@@ -64,7 +77,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
         if (this.runtime.policyNotice(this.id, LIBRARY_HARNESS.loginStore) !== null && !this.claudeAck) {
             return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText(LIBRARY_HARNESS.ackMessage))) });
         }
-        if (call.answer?.kind === 'schema') {
+        if (call.answer?.kind === 'schema' && this.structured !== 'schema') {
             return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText('structured output is not available in this harness library'))) });
         }
         return null;
@@ -88,7 +101,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
             timeoutMs: this.timeoutMs,
         });
         const timeout = settings.timeoutMs === undefined ? {} : { timeoutMs: settings.timeoutMs };
-        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(capabilities, settings.effort), ...(model === '' ? {} : { model }), ...timeout });
+        const result = await handle.run({ instructions: call.instructions, input: call.input, effort: effortOf(capabilities, settings.effort), ...(model === '' ? {} : { model }), ...timeout, ...outputOf(call, this.structured) });
         return result.ok ? ranOf(result.value) : failedOf(result.failure);
     }
 }
