@@ -99,7 +99,7 @@ async function entriesOf(reader: Transcripts, file: string, size: number): Promi
     return result.entries;
 }
 
-async function runWindows(engine: TabRecaps,lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
+async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
     for (; at.turn < windows.length; at.turn += 1) {
         at.now = endOf(windows[at.turn], at.now);
         await engine.refresh(tabId(label), [lane]);
