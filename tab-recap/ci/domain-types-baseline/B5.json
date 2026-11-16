@@ -95,12 +95,8 @@
     "return": 1
   },
   "src/adapters/db/ledger-rows.ts": {
-    "parameter": 4,
-    "container": 3,
+    "container": 2,
     "assertion": 1
-  },
-  "src/adapters/db/ledger.ts": {
-    "container": 2
   },
   "src/adapters/db/operator-anchors.ts": {
     "parameter": 1,
