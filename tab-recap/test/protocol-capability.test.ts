@@ -78,3 +78,9 @@ test('an exchange whose switch is off is not advertised, and is advertised once 
 test('an exchange with no switch is always advertised', () => {
     assert.equal(unwrap(capabilityValue([compactLike], version(1), () => false)), 'compact1,kinds1');
 });
+
+test('a capability past the token limit, with long names and high versions, parses as offered', () => {
+    const name = 'a-very-long-exchange-name';
+    const raw = `${name}120,${'b'.repeat(70)}3,kinds250`;
+    assert.deepEqual(parseCapability(raw), { kind: 'ok', value: { exchanges: [{ name, version: 120 }, { name: 'b'.repeat(70), version: 3 }], kinds: 250 } });
+});

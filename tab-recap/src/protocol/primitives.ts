@@ -28,7 +28,7 @@ export type CharLimit = Brand<number, 'CharLimit'>;
 export type IdText = Brand<string, 'IdText'>;
 export type WireText = Brand<string, 'WireText'>;
 export type FieldText = Brand<string, 'FieldText'>;
-export type FlagValue = true;
+export type FlagValue = boolean;
 export type FieldValue = FieldText | FlagValue | null;
 export type SegmentIndex = Brand<number, 'SegmentIndex'>;
 export type RequestPrefix = Brand<string, 'RequestPrefix'>;
@@ -39,6 +39,8 @@ export type TimingName = Brand<string, 'TimingName'>;
 export type TimingMs = Brand<number, 'TimingMs'>;
 export type RefusalDetail = Brand<string, 'RefusalDetail'>;
 export type CharCount = Brand<number, 'CharCount'>;
+export type OfferedName = Brand<string, 'OfferedName'>;
+export type OfferedVersion = Brand<number, 'OfferedVersion'>;
 export type AnswerFit = 'truncate' | 'whole';
 export type Presence = 'optional' | 'required';
 
@@ -158,6 +160,10 @@ export const parseSegmentEnd = (segments: readonly FieldText[]): SegmentIndex =>
 export const parseRefusalDetail = (raw: unknown): RefusalDetail => brand<string, 'RefusalDetail'>(String(raw));
 
 export const parseCharCount = (raw: unknown): CharCount => brand<number, 'CharCount'>(Number(raw));
+
+export const parseOfferedName = (raw: unknown): OfferedName => brand<string, 'OfferedName'>(String(raw));
+
+export const parseOfferedVersion = (raw: unknown): OfferedVersion => brand<number, 'OfferedVersion'>(Number(raw));
 
 export function parseIdText(raw: string): IdText {
     const cut = raw.indexOf(':');

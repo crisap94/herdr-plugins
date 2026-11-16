@@ -20,7 +20,7 @@ test('the request name is at most 32 characters and the longest answer fits 80 w
 
 test('the target is the workspace and pane parts, and refresh is read only as the literal last field', () => {
     assert.deepEqual(must(parseRequest(handoff, must(parseTokenValue('h1:w2:p7:refresh')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: true });
-    assert.deepEqual(must(parseRequest(handoff, must(parseTokenValue('h1:w2:p7')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: null });
+    assert.deepEqual(must(parseRequest(handoff, must(parseTokenValue('h1:w2:p7')))), { id: 'h1', workspace: 'w2', pane: 'p7', refresh: false });
     assert.equal(parseRequest(handoff, must(parseTokenValue('h1:w2:refresh'))).kind, 'err');
 });
 

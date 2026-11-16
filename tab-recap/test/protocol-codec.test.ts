@@ -60,7 +60,7 @@ test('an id, a word and a flag round-trip in order, with absent fields at the en
     const wire = valueOf(serializeValue(specs, full));
     assert.equal(wire, 'r_7:probe:urgent:late');
     assert.deepEqual(parseValue(specs, wireOf(wire)), { kind: 'ok', value: full });
-    const short: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: textOf('probe'), urgent: null, phase: null };
+    const short: ParsedValue = { id: idOf('r_7', 'token-safe'), tool: textOf('probe'), urgent: false, phase: null };
     assert.equal(valueOf(serializeValue(specs, short)), 'r_7:probe');
     assert.deepEqual(parseValue(specs, wireOf('r_7:probe')), { kind: 'ok', value: short });
 });
@@ -82,11 +82,11 @@ test('a serialized value of 80 characters is accepted and one of 81 is refused',
 test('an absent field followed by a present one is refused, never written ambiguously', () => {
     const specs = [ID_SAFE, TOOL, URGENT, PHASE];
     const id = idOf('r_7', 'token-safe');
-    assert.deepEqual(serializeValue(specs, { id, tool: textOf('probe'), urgent: null, phase: textOf('late') }), {
+    assert.deepEqual(serializeValue(specs, { id, tool: textOf('probe'), urgent: false, phase: textOf('late') }), {
         kind: 'err',
         error: { reason: 'bad-grammar', subject: 'phase' },
     });
-    assert.deepEqual(serializeValue(specs, { id, tool: null, urgent: null, phase: null }), {
+    assert.deepEqual(serializeValue(specs, { id, tool: null, urgent: false, phase: null }), {
         kind: 'err',
         error: { reason: 'bad-grammar', subject: 'tool' },
     });
@@ -105,7 +105,7 @@ test('a generated set of values round-trips, and both accepted and refused value
         const value: ParsedValue = {
             id: pick(ids),
             tool: pick([null, ...wordTexts]),
-            urgent: pick<FlagValue | null>([true, null]),
+            urgent: pick<FlagValue>([true, false]),
             phase: pick([null, ...wordTexts]),
             note: pick([null, ...phrases]),
         };

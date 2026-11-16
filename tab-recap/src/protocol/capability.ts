@@ -1,7 +1,7 @@
 import { ok, must } from './result.ts';
 import type { Result } from './result.ts';
-import { parseExchangeName, parseExchangeVersion, parseTokenName, parseTokenValue, refuse } from './primitives.ts';
-import type { ExchangeName, ExchangeVersion, OptIn, Refusal, TokenName, TokenValue } from './primitives.ts';
+import { parseOfferedName, parseOfferedVersion, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
+import type { ExchangeVersion, OfferedName, OfferedVersion, OptIn, Refusal, TokenName, TokenValue, WireText } from './primitives.ts';
 import type { Exchange } from './exchange.ts';
 
 export const CAPABILITY_TOKEN: TokenName = must(parseTokenName('tab-recap-x'));
@@ -14,9 +14,9 @@ const EXCHANGE_ITEM = /^([a-z](?:[a-z0-9-]*[a-z-])?)([1-9][0-9]*)$/;
 
 const KINDS_ITEM = /^kinds([1-9][0-9]*)$/;
 
-export type ExchangeEntry = { readonly name: ExchangeName; readonly version: ExchangeVersion };
+export type ExchangeEntry = { readonly name: OfferedName; readonly version: OfferedVersion };
 
-export type Capability = { readonly exchanges: readonly ExchangeEntry[]; readonly kinds: ExchangeVersion | null };
+export type Capability = { readonly exchanges: readonly ExchangeEntry[]; readonly kinds: OfferedVersion | null };
 
 export interface ExchangeItem {
     readonly kind: 'exchange';
@@ -25,7 +25,7 @@ export interface ExchangeItem {
 
 export interface KindsItem {
     readonly kind: 'kinds';
-    readonly version: ExchangeVersion;
+    readonly version: OfferedVersion;
 }
 
 type Entry = ExchangeItem | KindsItem;
@@ -34,19 +34,13 @@ type Offer = 'offered' | 'withheld';
 
 type Enablement = 'enabled' | 'disabled';
 
-const entryOf = (item: TokenValue): Entry | null => {
+const entryOf = (item: WireText): Entry | null => {
     const kinds = KINDS_ITEM.exec(item);
     if (kinds?.[1] !== undefined) {
-        const version = parseExchangeVersion(Number(kinds[1]));
-        return version.kind === 'ok' ? { kind: 'kinds', version: version.value } : null;
+        return { kind: 'kinds', version: parseOfferedVersion(kinds[1]) };
     }
     const [, name, digits] = EXCHANGE_ITEM.exec(item) ?? [];
-    if (name === undefined || digits === undefined) {
-        return null;
-    }
-    const exchangeName = parseExchangeName(name);
-    const version = parseExchangeVersion(Number(digits));
-    return exchangeName.kind === 'ok' && version.kind === 'ok' ? { kind: 'exchange', entry: { name: exchangeName.value, version: version.value } } : null;
+    return name === undefined || digits === undefined ? null : { kind: 'exchange', entry: { name: parseOfferedName(name), version: parseOfferedVersion(digits) } };
 };
 
 const offerOf = (exchange: Exchange): Offer => (EXCHANGE_NAME.test(exchange.name) && exchange.name !== KINDS ? 'offered' : 'withheld');
@@ -65,13 +59,13 @@ export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: Ex
 }
 
 export function parseCapability(raw: unknown): Result<Capability, Refusal> {
-    const text = parseTokenValue(raw);
+    const text = parseWireText(raw);
     if (text.kind === 'err') {
-        return text;
+        return refuse(text.error, 'capability');
     }
     const exchanges: ExchangeEntry[] = [];
-    const kinds: ExchangeVersion[] = [];
-    for (const item of text.value.split(',').map(parseTokenValue)) {
+    const kinds: OfferedVersion[] = [];
+    for (const item of text.value.split(',').map(parseWireText)) {
         const entry = item.kind === 'ok' ? entryOf(item.value) : null;
         if (entry === null) {
             return refuse('bad-grammar', 'capability');

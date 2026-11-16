@@ -113,7 +113,7 @@ function readField(field: Field, segments: readonly FieldText[], at: SegmentInde
     const segment = segments[at];
     if (field.kind === 'flag') {
         const present = segment === parseFlagFieldText(field.text);
-        return ok({ value: present ? true : null, at: present ? parseNextSegment(at) : at });
+        return ok({ value: present, at: present ? parseNextSegment(at) : at });
     }
     if (segment === undefined) {
         return field.presence === 'optional' ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
