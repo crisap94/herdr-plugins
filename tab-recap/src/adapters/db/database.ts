@@ -16,6 +16,8 @@ import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
 import { closeDatabase } from './connection.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { AutocompactRecordsRepository } from './autocompact-records.ts';
@@ -96,7 +98,7 @@ export function storeOver(db: Database, options: StoreOptions = {}): Store {
     };
 }
 
-export const databasePath = (stateDir: string): string => join(stateDir, 'tab-recap.db');
+export const databasePath = (stateDir: string): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
 
 export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
     const opened = openDatabase(path);
