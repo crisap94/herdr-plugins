@@ -1,4 +1,5 @@
-import { rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Socket } from 'node:net';
@@ -39,6 +40,7 @@ function answer(behaviour: FakeHookBehaviour, path: string, body: unknown, res: 
 }
 
 export async function startFakeHookEndpoint(socketPath: string, behaviour: FakeHookBehaviour): Promise<FakeHookEndpoint> {
+    mkdirSync(dirname(socketPath), { recursive: true, mode: 0o700 });
     rmSync(socketPath, { force: true });
     const requests: { path: string; body: unknown }[] = [];
     if (behaviour === 'absent') return { requests, stop: async () => {} };

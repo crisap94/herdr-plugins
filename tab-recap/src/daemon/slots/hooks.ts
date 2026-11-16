@@ -1,4 +1,6 @@
-import type { Mode, Running, SlotModule } from '../slots.ts';
+import type { Mode, SlotModule } from '../slots.ts';
 
 export const defaultOn: Mode = 'off';
-export const slot: SlotModule = { start: (): Running => ({ stop: (): void => {} }) };
+export const slot: SlotModule = {
+    start: (context) => import('#src/adapters/hooks/start.ts').then((mod) => mod.startHooks(context)),
+};
