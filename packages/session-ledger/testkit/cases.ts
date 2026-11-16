@@ -10,7 +10,10 @@ import { STA_CASES } from './engine-cases/session-started.ts';
 import { FBY_CASES } from './engine-cases/followed-by.ts';
 import { EVT_CASES } from './engine-cases/events.ts';
 import { CMP_CASES } from './engine-cases/compacted.ts';
+import { CUR_CASES } from './engine-cases/curate.ts';
+import { HIS_CASES } from './engine-cases/history.ts';
+import { REF_CASES } from './engine-cases/refresh.ts';
 
-export const engineCases: readonly Case<EngineWorld, Engine>[] = [...FOL_CASES, ...TRN_CASES, ...STA_CASES, ...FBY_CASES, ...EVT_CASES, ...CMP_CASES];
+export const engineCases: readonly Case<EngineWorld, Engine>[] = [...FOL_CASES, ...TRN_CASES, ...STA_CASES, ...FBY_CASES, ...EVT_CASES, ...CMP_CASES, ...CUR_CASES, ...HIS_CASES, ...REF_CASES];
 
 export const storeCases: readonly Case<null, StoreUnderTest>[] = [...RECORD_CASES, ...FACT_CASES];

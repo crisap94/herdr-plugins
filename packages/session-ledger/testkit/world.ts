@@ -1,6 +1,5 @@
 import {
     instant,
-    unknown as unknownOf,
     UNREAD,
     type Chunk,
     type Clock,
@@ -16,19 +15,15 @@ import {
     type RepoResult,
     type SessionReader,
     type SessionSource,
-    type Unknown,
-    type Unknowable,
     type Workplaces,
     type Writer,
 } from '@stateforge-labs/session-ledger';
 import { createMemoryStore, type MemoryStore } from './memory-store.ts';
+import { gateOf, runnerOf, type Behaviour, type Run } from './behaviour.ts';
+import { curatorOf, type CuratedAnswer } from './scripted-curator.ts';
 
-export type Settled<T> =
-    | { readonly kind: 'answer'; readonly value: T }
-    | { readonly kind: 'fail'; readonly why: Unknowable }
-    | { readonly kind: 'throw'; readonly message: string };
-
-export type Behaviour<T> = Settled<T> | { readonly kind: 'block'; readonly after: Settled<T> };
+export type { CuratedAnswer } from './scripted-curator.ts';
+export type { Behaviour, Settled } from './behaviour.ts';
 
 export interface ManualClock extends Clock {
     set(ms: number): void;
@@ -55,12 +50,14 @@ export interface EngineWorld {
     release(): void;
     located(): readonly FollowedSession[];
     reads(): readonly string[];
+    curated(): readonly string[];
     positions(): readonly Position[];
     settle(): Promise<void>;
     setLocate(next: (session: FollowedSession) => Behaviour<LocatedAnswer>): void;
     setDebounce(next: Debounce): void;
     setRead(next: Behaviour<Chunk>): void;
     setWriter(next: Behaviour<WrittenAnswer>): void;
+    setCurator(next: Behaviour<CuratedAnswer> | null): void;
     setOn(next: (event: LedgerEvent) => void): void;
     setRestoreBytes(bytes: number): void;
 }
@@ -71,43 +68,6 @@ const DEFAULT_READ: Behaviour<Chunk> = {
     kind: 'answer',
     value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
 };
-
-type Run = <T>(behaviour: Behaviour<T>) => Promise<T | Unknown>;
-
-interface Gate {
-    readonly opened: Promise<void>;
-    open(): void;
-}
-
-const gateOf = (): Gate => {
-    let release: (() => void) | null = null;
-    const opened = new Promise<void>((resolve) => {
-        release = resolve;
-    });
-    return {
-        opened,
-        open: () => release?.(),
-    };
-};
-
-const settle = <T>(settled: Settled<T>): Promise<T | Unknown> => {
-    if (settled.kind === 'answer') {
-        return Promise.resolve(settled.value);
-    }
-    if (settled.kind === 'fail') {
-        return Promise.resolve(unknownOf(settled.why));
-    }
-    return Promise.reject(new Error(settled.message));
-};
-
-const runnerOf =
-    (opened: Promise<void>): Run =>
-    (behaviour) => {
-        if (behaviour.kind === 'block') {
-            return opened.then(() => settle(behaviour.after));
-        }
-        return settle(behaviour);
-    };
 
 const clockOf = (): ManualClock => {
     let nowMs = 0;
@@ -133,6 +93,7 @@ interface Probes {
     readonly located: FollowedSession[];
     readonly reads: string[];
     readonly positions: Position[];
+    readonly curated: string[];
 }
 
 const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Behaviour<LocatedAnswer>, readOf: () => Behaviour<Chunk>, probes: Probes): SessionSource => {
@@ -175,6 +136,7 @@ interface Script {
     debounce: Debounce;
     chunk: Behaviour<Chunk>;
     written: Behaviour<WrittenAnswer> | undefined;
+    curator: Behaviour<CuratedAnswer> | null;
     locate: (session: FollowedSession) => Behaviour<LocatedAnswer>;
     on: (event: LedgerEvent) => void;
     restoreBytes: number;
@@ -186,13 +148,14 @@ const scriptOf = (options: WorldOptions): Script => {
         debounce: options.debounce ?? { kind: 'off' },
         chunk: options.read ?? DEFAULT_READ,
         written: options.writer,
+        curator: null,
         locate: (session: FollowedSession) => scripted ?? { kind: 'answer', value: { kind: 'located', source: session.key } },
         on: () => undefined,
         restoreBytes: Number.MAX_SAFE_INTEGER,
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter' | 'setOn' | 'setRestoreBytes'>;
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes'>;
 
 const controlsOf = (script: Script): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
@@ -206,6 +169,9 @@ const controlsOf = (script: Script): Controls => ({
     },
     setWriter: (next: Behaviour<WrittenAnswer>) => {
         script.written = next;
+    },
+    setCurator: (next: Behaviour<CuratedAnswer> | null) => {
+        script.curator = next;
     },
     setOn: (next: (event: LedgerEvent) => void) => {
         script.on = next;
@@ -232,12 +198,12 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const lines: string[] = [];
     const emitted: LedgerEvent[] = [];
     const requests: RecapRequest[] = [];
-    const probes: Probes = { located: [], reads: [], positions: [] };
+    const probes: Probes = { located: [], reads: [], positions: [], curated: [] };
 
     const plugs: EnginePlugs = {
         source: { sessions: sessionsOf(run, (session) => script.locate(session), () => script.chunk, probes) },
         store: { records: store.records, facts: store.facts },
-        models: { writer: () => writerOf(run, store, requests, () => script.written) },
+        models: { writer: () => writerOf(run, store, requests, () => script.written), curator: () => curatorOf(run, (document) => probes.curated.push(document), () => script.curator) },
         environment: {
             clock,
             ids: idsOf(),
@@ -271,6 +237,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
         located: () => [...probes.located],
         reads: () => [...probes.reads],
         positions: () => [...probes.positions],
+        curated: () => [...probes.curated],
         ...controlsOf(script),
         settle: settleWorld,
     };
