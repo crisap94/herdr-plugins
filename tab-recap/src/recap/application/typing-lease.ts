@@ -1,11 +1,12 @@
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
-export const RETRY_MS = 1000;
+export const RETRY_MS = must(parseMilliseconds(1000));
 
 export type Acquired = 'taken' | 'busy' | 'unavailable';
 
@@ -13,7 +14,7 @@ export interface TypingLeaseDeps {
     readonly tokens: LaneTokens;
     readonly panes: PaneTokens;
     readonly now: () => number;
-    readonly pause: (ms: number) => Promise<void>;
+    readonly pause: (ms: Milliseconds) => Promise<void>;
     readonly log: (line: string) => void;
 }
 
