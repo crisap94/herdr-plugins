@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const FROM = 'tab-recap/';
 const TO = 'packages/session-ledger/';
 const LANE_SHAPE = '#src/recap/domain/lane-shape.ts';
+const PACKAGE = '@stateforge-labs/session-ledger/unstable/';
 
 const REPOINTED: readonly (readonly [string, string])[] = [
     ['src/recap/application/engine.ts', '#src/recap/domain/ids.ts'],
@@ -23,10 +24,16 @@ export function engineOf(manifest: unknown): readonly string[] {
     return engine;
 }
 
+export function stubOf(file: string): string {
+    if (!file.startsWith('src/')) throw new Error(`${file} is not under src/, so the package exports no unstable path for it`);
+    return `export * from '${PACKAGE}${file.slice('src/'.length)}';`;
+}
+
 export function moveMap(engine: readonly string[]): string {
     const moves = engine.map((file) => `path\t${FROM}${file}\t${TO}${file}`);
     const repoints = REPOINTED.map(([file, from]) => `text\t${from}\t${LANE_SHAPE}\t${TO}${file}`);
-    return [...moves, ...repoints].map((line) => `${line}\n`).join('');
+    const stubs = engine.map((file) => `stub\t${FROM}${file}\t${stubOf(file)}`);
+    return [...moves, ...repoints, ...stubs].map((line) => `${line}\n`).join('');
 }
 
 export const MOVE_MAP_PATH = new URL('../../../ci/codemod/moves/ENG-E2b.tsv', import.meta.url);
