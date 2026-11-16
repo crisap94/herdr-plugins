@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { ENGINE_FILES_PATH, MOVE_MAP_PATH, engineOf, moveMap, stubOf } from './move-map.ts';
+import { ENGINE_FILES_PATH, MOVE_MAP_PATH, PLUGIN_ENGINE_BASELINE_PATH, baselineOf, engineOf, moveMap, packageRowsAbovePlugin, stubOf } from './move-map.ts';
 
 const FROM = 'tab-recap/';
 const TO = 'packages/session-ledger/';
@@ -75,4 +75,45 @@ test('no row targets a file outside the engine manifest, and every row is a path
 
 test('the committed map equals the generator output', () => {
     assert.equal(readFileSync(MOVE_MAP_PATH, 'utf8'), moveMap(engine));
+});
+
+const plugin = baselineOf(JSON.parse(readFileSync(PLUGIN_ENGINE_BASELINE_PATH, 'utf8')));
+
+test('the plugin engine baseline has one row per engine file it counts, and every row is a moved file', () => {
+    assert.equal(Object.keys(plugin).length, 79);
+    for (const file of Object.keys(plugin)) assert.ok(engine.includes(file), file);
+});
+
+test('the package rows may fall below the plugin rows, as the dry run measured, but never rise', () => {
+    const measured = {
+        ...plugin,
+        'src/ports/recap-records.ts': { ...plugin['src/ports/recap-records.ts'], property: 22 },
+        'src/recap/application/ledger-reconcile.ts': { ...plugin['src/recap/application/ledger-reconcile.ts'], container: 3 },
+        'src/recap/domain/lane-shape.ts': { property: 1 },
+    };
+    assert.equal(plugin['src/ports/recap-records.ts']?.['property'], 27);
+    assert.equal(plugin['src/recap/application/ledger-reconcile.ts']?.['container'], 8);
+    assert.deepEqual(packageRowsAbovePlugin(plugin, measured, ['src/recap/domain/lane-shape.ts']), []);
+    assert.deepEqual(packageRowsAbovePlugin(plugin, plugin, []), []);
+    assert.deepEqual(packageRowsAbovePlugin(plugin, {}, []), []);
+});
+
+test('a package row above its plugin row, a new category or an unlisted new file is a rise', () => {
+    const risen = {
+        ...plugin,
+        'src/ports/recap-records.ts': { ...plugin['src/ports/recap-records.ts'], property: 28, assertion: 1 },
+        'src/recap/domain/lane-shape.ts': { property: 1 },
+    };
+    assert.deepEqual(packageRowsAbovePlugin(plugin, risen, []), [
+        'src/ports/recap-records.ts assertion 0 -> 1',
+        'src/ports/recap-records.ts property 27 -> 28',
+        'src/recap/domain/lane-shape.ts property 0 -> 1',
+    ]);
+});
+
+test('a baseline that is not rows of whole counts is refused', () => {
+    assert.throws(() => baselineOf([]), /object of rows/u);
+    assert.throws(() => baselineOf({ 'src/a.ts': 3 }), /no category counts/u);
+    assert.throws(() => baselineOf({ 'src/a.ts': { property: -1 } }), /not a count/u);
+    assert.throws(() => baselineOf({ 'src/a.ts': { property: 1.5 } }), /not a count/u);
 });

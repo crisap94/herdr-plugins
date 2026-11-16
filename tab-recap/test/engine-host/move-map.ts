@@ -36,6 +36,42 @@ export function moveMap(engine: readonly string[]): string {
     return [...moves, ...repoints, ...stubs].map((line) => `${line}\n`).join('');
 }
 
+export type BaselineRows = Readonly<Record<string, Readonly<Record<string, number>>>>;
+
+function isRecord(value: unknown): value is object {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function rowOf(file: string, counts: unknown): Record<string, number> {
+    if (!isRecord(counts)) throw new Error(`${file} has no category counts`);
+    const row: Record<string, number> = {};
+    for (const [category, count] of Object.entries(counts)) {
+        if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) throw new Error(`${file} ${category} is not a count`);
+        row[category] = count;
+    }
+    return row;
+}
+
+export function baselineOf(json: unknown): BaselineRows {
+    if (!isRecord(json)) throw new Error('a domain-types baseline is an object of rows');
+    return Object.fromEntries(Object.entries(json).map(([file, counts]) => [file, rowOf(file, counts)]));
+}
+
+export function packageRowsAbovePlugin(plugin: BaselineRows, pkg: BaselineRows, added: readonly string[]): readonly string[] {
+    const rises: string[] = [];
+    for (const [file, counts] of Object.entries(pkg)) {
+        if (added.includes(file)) continue;
+        const before = plugin[file] ?? {};
+        for (const [category, count] of Object.entries(counts)) {
+            const was = before[category] ?? 0;
+            if (count > was) rises.push(`${file} ${category} ${was} -> ${count}`);
+        }
+    }
+    return rises.toSorted((left, right) => left.localeCompare(right));
+}
+
+export const PLUGIN_ENGINE_BASELINE_PATH = new URL('../../ci/domain-types-baseline/ENG.json', import.meta.url);
+
 export const MOVE_MAP_PATH = new URL('../../../ci/codemod/moves/ENG-E2b.tsv', import.meta.url);
 export const ENGINE_FILES_PATH = new URL('../../ci/engine-files.json', import.meta.url);
 
