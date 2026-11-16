@@ -11,13 +11,16 @@ import {
     type Records,
     type RecordedRun,
     type Refusal,
-    type RunId,
     type RunRef,
     type ScopeId,
     type SessionKey,
+    type SessionMark,
     type TaskId,
     type Unknown,
 } from '@stateforge-labs/session-ledger';
+import { factIdOf, runIdOf } from './facts.ts';
+
+export { factOf } from './facts.ts';
 
 export type ReadName = 'readRecap' | 'lastRunOf' | 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';
 
@@ -38,15 +41,19 @@ export interface StoreParts {
     readonly fold?: Fold;
 }
 
+export type StoredMark = Pick<SessionMark, 'at'>;
+
 export interface StoreUnderTest {
     readonly records: Records;
     readonly facts: FactStore;
+    marksOf(scope: ScopeId): readonly StoredMark[];
     failReads?(which: ReadName, times: number): void;
 }
 
 export interface MemoryStore {
     readonly records: Records;
     readonly facts: FactStore;
+    marksOf(scope: ScopeId): readonly StoredMark[];
     calls(): readonly StoreCall[];
     failReads(which: ReadName, times: number): void;
     seed(recap: Recap | null, facts: readonly Fact[]): void;
@@ -58,47 +65,12 @@ interface State {
     readonly failures: Map<ReadName, number>;
     readonly recaps: Map<string, Recap>;
     readonly lastRuns: Map<string, LastRun>;
+    readonly marks: Map<string, readonly StoredMark[]>;
     readonly fold: Fold | undefined;
     stored: readonly Fact[];
     minted: number;
     runs: number;
 }
-
-const isFactId = (text: string): text is FactId => typeof text === 'string';
-
-const isRunId = (text: string): text is RunId => typeof text === 'string';
-
-const factIdOf = (text: string): FactId => {
-    if (isFactId(text)) {
-        return text;
-    }
-    throw new Error('testkit: a fact id is a string');
-};
-
-const runIdOf = (text: string): RunId => {
-    if (isRunId(text)) {
-        return text;
-    }
-    throw new Error('testkit: a run id is a string');
-};
-
-export const factOf = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact => ({
-    id: factIdOf(id),
-    task: { tab: 'tab-1', key: 'a' },
-    section: 'now',
-    text: '',
-    why: null,
-    ref: null,
-    agent: null,
-    anchor: null,
-    firstAt: 0,
-    lastAt: 0,
-    state: 'open',
-    closedWhy: null,
-    closedAt: null,
-    language: 'en',
-    ...over,
-});
 
 const sameTask = (left: TaskId, right: TaskId): boolean => left.tab === right.tab && left.key === right.key;
 
@@ -176,6 +148,10 @@ const foldOps = (state: State, run: RecordedRun): { readonly facts: readonly Fac
     return { facts, tasks };
 };
 
+const keepMarks = (state: State, scope: string, marks: readonly SessionMark[] | undefined): void => {
+    state.marks.set(scope, [...(state.marks.get(scope) ?? []), ...(marks ?? []).map((mark) => ({ at: mark.at }))]);
+};
+
 const recordsOf = (state: State): Records => ({
     readRecap: (scope: ScopeId) => read(state, 'readRecap', () => state.recaps.get(scope) ?? null),
     lastRunOf: (scope: ScopeId) => read(state, 'lastRunOf', () => state.lastRuns.get(scope) ?? null),
@@ -199,14 +175,17 @@ const recordsOf = (state: State): Records => ({
             language: run.language,
         });
         state.lastRuns.set(run.tab, { at: run.at, cause: run.cause });
+        keepMarks(state, run.tab, run.marks);
     },
     failRun: (run) => {
         state.log.push('failRun');
         state.recaps.set(run.tab, { ...ensure(state, run.tab, run.at), lanes: run.lanes, running: false, backend: run.backend, error: run.error });
+        keepMarks(state, run.tab, run.marks);
     },
     advance: (move) => {
         state.log.push('advance');
         state.recaps.set(move.tab, { ...ensure(state, move.tab, move.at), lanes: move.lanes, error: move.error });
+        keepMarks(state, move.tab, move.marks);
     },
 });
 
@@ -246,6 +225,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         failures: new Map(),
         recaps: new Map(),
         lastRuns: new Map(),
+        marks: new Map(),
         fold: parts.fold,
         stored: parts.facts ?? [],
         minted: 0,
@@ -255,6 +235,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
     return {
         records: recordsOf(state),
         facts: factsOf(state),
+        marksOf: (scope: ScopeId) => [...(state.marks.get(scope) ?? [])],
         calls: () => [...state.log],
         failReads: (which: ReadName, times: number) => {
             state.failures.set(which, times);

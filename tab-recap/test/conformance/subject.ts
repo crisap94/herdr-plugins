@@ -304,7 +304,11 @@ export const sqliteStoreSubject: Subject<null, StoreUnderTest> = {
     world: () => null,
     create: () => {
         const store = memoryStore();
-        return { records: ledgerRecords(store.records), facts: ledgerFacts(store.ledger) };
+        return {
+            records: ledgerRecords(store.records),
+            facts: ledgerFacts(store.ledger),
+            marksOf: (scope) => store.boundaries.breaksOf(scope).filter((each) => each.kind === 'compacted').map((each) => ({ at: each.at })),
+        };
     },
 };
 

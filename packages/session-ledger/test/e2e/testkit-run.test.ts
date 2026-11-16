@@ -86,7 +86,7 @@ test('the registry exports hold the engine groups not yet written and the REC st
     assert.deepEqual(engineCases, []);
     assert.deepEqual(
         storeCases.map((kase) => kase.id),
-        ['REC-1', 'REC-2', 'REC-3', 'REC-4', 'REC-5', 'REC-6', 'REC-7', 'REC-8', 'REC-9', 'REC-10', 'REC-11', 'REC-12'],
+        ['REC-1', 'REC-2', 'REC-3', 'REC-4', 'REC-5', 'REC-6', 'REC-7', 'REC-8', 'REC-9', 'REC-10', 'REC-11', 'REC-12', 'REC-13'],
     );
 });
 

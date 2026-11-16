@@ -202,6 +202,21 @@ export const REC_12: Case<null, StoreUnderTest> = {
     },
 };
 
+export const REC_13: Case<null, StoreUnderTest> = {
+    id: 'REC-13',
+    group: 'REC',
+    title: 'recordRun with marks',
+    level: 'full',
+    needsFold: true,
+    async run(_world, store) {
+        store.records.recordRun(runOf({ at: 100, marks: [{ pane: 'p1', at: 90, cursor: 3 }] }));
+        const stored = store.marksOf(scope('tab-1'));
+        assert.deepEqual(stored, [{ at: 90 }]);
+        store.records.recordRun(runOf({ at: 200 }));
+        assert.deepEqual(store.marksOf(scope('tab-1')), stored);
+    },
+};
+
 export const RECORD_CASES: readonly Case<null, StoreUnderTest>[] = [
     REC_1,
     REC_2,
@@ -215,4 +230,5 @@ export const RECORD_CASES: readonly Case<null, StoreUnderTest>[] = [
     REC_10,
     REC_11,
     REC_12,
+    REC_13,
 ];
