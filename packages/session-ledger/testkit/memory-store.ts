@@ -22,6 +22,8 @@ import { factIdOf, runIdOf } from './facts.ts';
 
 export { factOf } from './facts.ts';
 
+const HISTORY_LIMIT = 300;
+
 export type ReadName = 'readRecap' | 'lastRunOf' | 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';
 
 export type StoreCall = ReadName | 'beginRun' | 'recordRun' | 'failRun' | 'advance' | 'historyOf' | 'apply';
@@ -190,17 +192,28 @@ const recordsOf = (state: State): Records => ({
 });
 
 const factsOf = (state: State): FactStore => ({
-    openOf: (task: TaskId) => read(state, 'openOf', () => state.stored.filter((fact) => fact.state === 'open' && sameTask(fact.task, task))),
+    openOf: (task: TaskId) =>
+        read(state, 'openOf', () =>
+            state.stored.filter((fact) => fact.state === 'open' && sameTask(fact.task, task)).toSorted((a, b) => b.lastAt - a.lastAt),
+        ),
     recentlyClosed: (task: TaskId, sinceMs: number) =>
         read(state, 'recentlyClosed', () =>
-            state.stored.filter((fact) => fact.state === 'closed' && sameTask(fact.task, task) && fact.closedAt !== null && fact.closedAt >= sinceMs),
+            state.stored
+                .filter((fact) => fact.state === 'closed' && sameTask(fact.task, task) && fact.closedAt !== null && fact.closedAt >= sinceMs)
+                .toSorted((a, b) => (a.closedAt ?? 0) - (b.closedAt ?? 0)),
         ),
-    allOf: (task: TaskId) => read(state, 'allOf', () => state.stored.filter((fact) => sameTask(fact.task, task))),
+    allOf: (task: TaskId) => read(state, 'allOf', () => state.stored.filter((fact) => sameTask(fact.task, task)).toSorted((a, b) => a.firstAt - b.firstAt)),
     keysOf: (scope: ScopeId) =>
-        read(state, 'keysOf', () => [...new Set(state.stored.filter((fact) => fact.task.tab === scope).map((fact) => fact.task.key))]),
+        read(state, 'keysOf', () =>
+            [...new Set(state.stored.filter((fact) => fact.task.tab === scope).map((fact) => fact.task.key))].toSorted(),
+        ),
     historyOf: (scope: ScopeId, key: SessionKey) => {
         state.log.push('historyOf');
-        return state.stored.filter((fact) => fact.task.tab === scope && fact.task.key === key).map(historyOf);
+        return state.stored
+            .filter((fact) => fact.task.tab === scope && fact.task.key === key)
+            .toSorted((a, b) => b.lastAt - a.lastAt)
+            .slice(0, HISTORY_LIMIT)
+            .map(historyOf);
     },
     apply: (run: RunRef, ops: readonly Operation[]) => {
         state.log.push('apply');

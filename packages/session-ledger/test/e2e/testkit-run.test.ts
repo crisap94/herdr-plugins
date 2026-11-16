@@ -82,11 +82,14 @@ const bodyOf = (registered: readonly Registered[], name: string): (() => Promise
     return found.body;
 };
 
-test('the registry exports hold the engine groups not yet written and the REC store cases', () => {
+test('the registry exports hold the engine groups not yet written and the REC and FCT store cases', () => {
     assert.deepEqual(engineCases, []);
     assert.deepEqual(
         storeCases.map((kase) => kase.id),
-        ['REC-1', 'REC-2', 'REC-3', 'REC-4', 'REC-5', 'REC-6', 'REC-7', 'REC-8', 'REC-9', 'REC-10', 'REC-11', 'REC-12', 'REC-13'],
+        [
+            'REC-1', 'REC-2', 'REC-3', 'REC-4', 'REC-5', 'REC-6', 'REC-7', 'REC-8', 'REC-9', 'REC-10', 'REC-11', 'REC-12', 'REC-13',
+            'FCT-1', 'FCT-2', 'FCT-3', 'FCT-4', 'FCT-5', 'FCT-6', 'FCT-7', 'FCT-8', 'FCT-9',
+        ],
     );
 });
 
