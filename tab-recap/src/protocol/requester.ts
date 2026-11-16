@@ -1,8 +1,8 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { parseIdText } from './primitives.ts';
-import type { AnswerStage, IdText, Refusal, RequestId, TokenName, TokenValue, ToolName } from './primitives.ts';
-import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf, wireTokenValue } from './exchange.ts';
+import { parseAnswerStage, parseIdText, parseWireText } from './primitives.ts';
+import type { AnswerStage, IdText, Refusal, RequestId, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
+import { answerToken, requestName, serializeRequest, splitAnswer, terminalStage, terminalsOf } from './exchange.ts';
 import type { Exchange, Terminal } from './exchange.ts';
 import type { ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
@@ -38,13 +38,17 @@ const observedTerminal = (terminal: Terminal): AnswerState => {
     return { kind: 'unsupported', reason: terminal.reason };
 };
 
-function stageObservation(exchange: Exchange, stage: AnswerStage): AnswerState {
-    const terminal = terminalsOf(exchange).find((each) => terminalStage(each) === String(stage));
+function stageObservation(exchange: Exchange, raw: WireText): AnswerState {
+    const terminal = terminalsOf(exchange).find((each) => terminalStage(each) === String(raw));
     if (terminal !== undefined) {
         return observedTerminal(terminal);
     }
-    const live = liveStageOf(stage);
-    return live !== undefined && exchange.answerStages.some((known) => known === stage) ? { kind: live } : { kind: 'unreadable' };
+    const stage = parseAnswerStage(raw);
+    if (stage.kind === 'err') {
+        return { kind: 'unreadable' };
+    }
+    const live = liveStageOf(stage.value);
+    return live !== undefined && exchange.answerStages.some((known) => known === stage.value) ? { kind: live } : { kind: 'unreadable' };
 }
 
 export function observe(exchange: Exchange, tokens: TokenSnapshot, id: RequestId): Result<AnswerState, Refusal> {
@@ -56,7 +60,7 @@ export function observe(exchange: Exchange, tokens: TokenSnapshot, id: RequestId
     if (raw === undefined || raw === '') {
         return ok({ kind: 'not-seen' });
     }
-    const token = wireTokenValue(raw);
+    const token = parseWireText(raw);
     const answer = token.kind === 'ok' ? splitAnswer(token.value) : null;
     if (answer === null) {
         return ok({ kind: 'unreadable' });

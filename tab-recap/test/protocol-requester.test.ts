@@ -39,6 +39,11 @@ test('an answer for another id is foreign, and names that id', () => {
     assert.deepEqual(observeOwn('b2:queued', 'r1'), { kind: 'foreign-id', id: 'b2' });
 });
 
+test('an answer for another id stays foreign even when its stage is not a stage word', () => {
+    assert.deepEqual(observeOwn('other:Bad Stage', 'r1'), { kind: 'foreign-id', id: 'other' });
+    assert.deepEqual(observeOwn('r1:Bad Stage', 'r1'), { kind: 'unreadable' });
+});
+
 test('a request writes its serialized value under the tool request name', () => {
     const writes = unwrap(request(handoffLike, toolOf('alpha'), parsedOf(handoffLike, 'r1:beta:urgent')));
     assert.deepEqual(writes, [{ name: 'handoff-req-alpha', value: 'r1:beta:urgent' }]);

@@ -90,3 +90,13 @@ test('a compact answer is truncated to 80 characters, as before the protocol', (
     const written = unwrap(answer(compactLike, unwrap(parseRequestId('r1', 'legacy-length')), 'x'.repeat(78)));
     assert.equal(written.value, `r1:${'x'.repeat(78)}`.slice(0, 80));
 });
+
+test('a request whose word runs past the value limit is refused, never cut to fit', () => {
+    assert.deepEqual(takeFrom({ 'handoff-req-alpha': `r1:${'b'.repeat(90)}` }), { taken: [], refused: [] });
+});
+
+test('a long note in a rest field without a limit is taken whole', () => {
+    const note = 'n'.repeat(120);
+    const result = takeFrom({ 'compact-req-alpha': `c1:${note}` });
+    assert.deepEqual(result.taken.map(({ value }) => value), [{ id: 'c1', note }]);
+});

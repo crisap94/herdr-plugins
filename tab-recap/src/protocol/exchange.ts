@@ -1,7 +1,7 @@
 import { must } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, parseAnswerStage, parseIdText, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
-import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, IdText, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName } from './primitives.ts';
+import { LIMITS, parseIdText, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
+import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, IdText, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
 import type { ReasonWord } from './reasons.ts';
@@ -61,8 +61,6 @@ export const terminalsOf = (exchange: Exchange): readonly Terminal[] => [
     ...(exchange.unsupportedReasons ?? []).map((reason): Terminal => ({ kind: 'unsupported', reason })),
 ];
 
-export const wireTokenValue = (raw: string): Result<TokenValue, Refusal> => parseTokenValue(raw.slice(0, LIMITS.valueMax));
-
 export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => parseTokenName(`${ANSWER_PREFIX}${exchange.name}`);
 
 export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => parseTokenName(`${exchange.requestPrefix}${tool}`);
@@ -82,19 +80,16 @@ export const badIdValue = (rawId: IdText): TokenValue => must(parseTokenValue(`$
 
 export interface AnswerSplit {
     readonly id: IdText;
-    readonly stage: AnswerStage;
+    readonly stage: WireText;
 }
 
-export const splitAnswer = (raw: TokenValue): AnswerSplit | null => {
+export const splitAnswer = (raw: WireText): AnswerSplit | null => {
     const cut = raw.indexOf(ANSWER_SEPARATOR);
-    if (cut < 0) {
-        return null;
-    }
-    const stage = parseAnswerStage(raw.slice(cut + ANSWER_SEPARATOR.length));
-    return stage.kind === 'ok' ? { id: parseIdText(raw.slice(0, cut)), stage: stage.value } : null;
+    const stage = parseWireText(raw.slice(cut + ANSWER_SEPARATOR.length));
+    return cut < 0 || stage.kind === 'err' ? null : { id: parseIdText(raw.slice(0, cut)), stage: stage.value };
 };
 
-export const parseRequest = (exchange: Exchange, raw: TokenValue): Result<ParsedValue, Refusal> => {
+export const parseRequest = (exchange: Exchange, raw: TokenValue | WireText): Result<ParsedValue, Refusal> => {
     const wire = parseWireText(raw);
     return wire.kind === 'ok' ? parseValue(exchange.request, wire.value) : refuse(wire.error, 'TokenValue');
 };

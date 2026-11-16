@@ -3,8 +3,8 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { HandoffQueue, HandoffRequester } from '#src/ports/requests.ts';
 import { idGrammarOf } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
-import { parseRequest, terminalStage, wireTokenValue } from '#src/protocol/exchange.ts';
-import { parseIdText, parseRequestId, parseToolName } from '#src/protocol/primitives.ts';
+import { parseRequest, terminalStage } from '#src/protocol/exchange.ts';
+import { parseIdText, parseRequestId, parseToolName, parseWireText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answer as answerOf, take } from '#src/protocol/responder.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
@@ -54,7 +54,7 @@ function unparsedOf(tokens: TokenEntries, asks: AskLedger): readonly Unparsed[] 
     return [...tokens].flatMap(([name, raw]): Unparsed[] => {
         const tool = name.startsWith(PREFIX) ? parseToolName(name.slice(PREFIX.length)) : null;
         const id = parseRequestId(parseIdText(raw), GRAMMAR);
-        const wire = wireTokenValue(raw);
+        const wire = parseWireText(raw);
         const parsed = wire.kind === 'ok' && parseRequest(handoff, wire.value).kind === 'ok';
         if (tool === null || tool.kind === 'err' || id.kind === 'err' || parsed || asks.seen(HANDOFF_EXCHANGE, tool.value, id.value)) {
             return [];

@@ -1,8 +1,8 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { parseIdText, parseRequestId, parseToolName } from './primitives.ts';
+import { parseIdText, parseRequestId, parseToolName, parseWireText } from './primitives.ts';
 import type { ExchangeName, IdText, Refusal, RequestId, TokenValue, ToolName } from './primitives.ts';
-import { answerToken, answerValue, badIdValue, parseRequest, wireTokenValue } from './exchange.ts';
+import { answerToken, answerValue, badIdValue, parseRequest } from './exchange.ts';
 import type { Exchange } from './exchange.ts';
 import { idGrammarOf } from './codec.ts';
 import type { ParsedValue } from './codec.ts';
@@ -37,7 +37,7 @@ function readOne(registry: Registry, seen: SeenCheck, name: string, raw: string)
     if (parseRequestId(rawId, grammar.value).kind === 'err') {
         return { kind: 'refused', refused: { exchange, tool: tool.value, rawId, answer: badIdValue(rawId) } };
     }
-    const wire = wireTokenValue(raw);
+    const wire = parseWireText(raw);
     if (wire.kind === 'err') {
         return NONE;
     }
