@@ -1,17 +1,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { createConnection } from 'node:net';
+import { performance } from 'node:perf_hooks';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseVersion, type Line } from '#src/daemon/slots.ts';
 import { startViewServer, parseSocketPath, type ViewServer } from '#src/daemon/view/server.ts';
 import type { Frame, FrameSource, Screen } from '#src/daemon/view/frames.ts';
+import { glowCache, type GlowSpawn } from '#src/daemon/view/glow-cache.ts';
 import { runIntent, type IntentParts, type IntentSink } from '#src/daemon/view/intents.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { DEFAULT_TEXTS } from '#src/wire/view/protocol.ts';
+import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
+import { DEFAULT_TEXTS, PROTOCOL } from '#src/wire/view/protocol.ts';
+import type { DaemonMessage } from '#src/wire/view/protocol.ts';
 import { fixtureClamp, fixtureRender } from '#test/contracts/wire/fakes/fixture-render.ts';
 import { fakeClock, playAsPane, readTranscript } from '#test/contracts/wire/fakes/transcript.ts';
 import type { Mismatch, Transcript } from '#test/contracts/wire/fakes/transcript.ts';
@@ -138,3 +143,78 @@ for (const name of NAMES) {
         assert.deepEqual(run.sunk, expected, `${name} intents reaching the sink`);
     });
 }
+
+test('view server answers a ping within 50 ms while a glow render is pending', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'vs-'));
+    const socketPath = join(dir, 'view.sock');
+    const spawned: Text[] = [];
+    const never: GlowSpawn = (_args, input) => {
+        spawned.push(input);
+        return new Promise<Text | null>(() => undefined);
+    };
+    const glow = glowCache(never);
+    const markdown: Text = must(parseText('## pending glow'));
+    const awaited: Text[][] = [];
+    const glowing: FrameSource = {
+        lines: (screen: Screen): Frame => {
+            const drawn = glow.render(markdown, screen.cols);
+            const awaiting: Text[] = drawn === null ? [markdown] : [];
+            awaited.push(awaiting);
+            return { lines: drawn ?? [must(parseText('rendering'))], scroll: must(parseCount(0)), awaiting };
+        },
+    };
+    const server = await startViewServer({
+        socketPath: parseSocketPath(socketPath),
+        frames: glowing,
+        intents: () => undefined,
+        texts: () => DEFAULT_TEXTS,
+        version: parseVersion('9.9.9'),
+        log: () => undefined,
+    });
+    if (server === null) {
+        throw new Error('the view socket was not bound');
+    }
+    const socket = createConnection(socketPath);
+    const splitter = new LineSplitter();
+    const waiting: ((message: DaemonMessage) => void)[] = [];
+    const received: DaemonMessage[] = [];
+    socket.on('data', (chunk: Buffer) => {
+        for (const line of splitter.push(chunk)) {
+            if (typeof line !== 'string') {
+                continue;
+            }
+            const message = decodeDaemon(line);
+            if ('kind' in message) {
+                continue;
+            }
+            const next = waiting.shift();
+            if (next === undefined) {
+                received.push(message);
+            } else {
+                next(message);
+            }
+        }
+    });
+    const nextMessage = (): Promise<DaemonMessage> => {
+        const ready = received.shift();
+        return ready === undefined ? new Promise((resolve) => { waiting.push(resolve); }) : Promise.resolve(ready);
+    };
+    try {
+        socket.write(encode({ t: 'hello', protocol: PROTOCOL, version: '9.9.9', role: 'column', tab: 't1', pane: null, cols: 40, rows: 6, colour: false }));
+        assert.equal((await nextMessage()).t, 'welcome');
+        assert.equal((await nextMessage()).t, 'frame');
+        assert.deepEqual(spawned, [markdown]);
+        assert.deepEqual(awaited.at(-1), [markdown]);
+        const sent = performance.now();
+        socket.write(encode({ t: 'ping' }));
+        const answer = await nextMessage();
+        const elapsed = performance.now() - sent;
+        assert.equal(answer.t, 'pong');
+        assert.ok(elapsed < 50, `pong took ${String(elapsed)} ms`);
+        assert.deepEqual(spawned, [markdown]);
+    } finally {
+        socket.destroy();
+        await server.stop('shutdown');
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
