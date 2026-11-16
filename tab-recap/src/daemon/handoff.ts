@@ -24,7 +24,7 @@ import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
-import type { Engine } from '#src/recap/application/engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
@@ -223,7 +223,7 @@ export interface HandoffWiring {
     readonly transcripts: TranscriptRegistry;
     readonly repos: LaneRepo;
     readonly claims: LaneClaims;
-    readonly recaps: Pick<Engine, 'refresh'>;
+    readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly board: () => Board;
     readonly mirror: HandoffMirror;
     readonly pause: (ms: number) => Promise<void>;

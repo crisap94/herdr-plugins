@@ -42,3 +42,10 @@ test('--project with no path is a could-not-look result, exit 3', () => {
     const result = run(['--project']);
     assert.equal(result.status, 3);
 });
+
+test('a session-ledger brand in a parameter and a return resolves to no finding', () => {
+    const result = run([...probe('good-session-ledger-brand'), '--json']);
+    assert.equal(result.status, 0);
+    const parsed: { readonly findings: readonly unknown[] } = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.findings, []);
+});

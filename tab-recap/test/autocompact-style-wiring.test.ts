@@ -15,7 +15,7 @@ import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import type { Engine } from '#src/recap/application/engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
@@ -66,7 +66,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         transcripts: registryWith({ [transcripts.agent]: transcripts }),
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,
-        recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<Engine, 'refresh'>,
+        recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh'>,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider,
         events: { lane: () => undefined, inWorkspace: () => undefined },
@@ -93,7 +93,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             config: () => configOf(keys), awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims: new LaneClaims(),
             transcripts: registryWith({ claude: inertTranscripts() }),
             contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
-            recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<Engine, 'refresh'>,
+            recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh'>,
             informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });

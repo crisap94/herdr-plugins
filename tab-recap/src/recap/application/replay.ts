@@ -15,8 +15,9 @@ import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { createEngine } from './engine.ts';
-import type { Engine, EngineModels, EngineSettings } from './engine.ts';
+import { pluginEngine } from '#src/engine/engine-adapter.ts';
+import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
+import type { EngineModels, EngineSettings } from './engine.ts';
 
 export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
@@ -82,14 +83,14 @@ function settingsOf(deps: ReplayDeps): EngineSettings {
     return { language: (): string => deps.language, ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), writerView: (): WriterView => deps.writerView };
 }
 
-function engineOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): Engine {
-    return createEngine({
+function engineOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): TabRecaps {
+    return tabRecaps(pluginEngine({
         source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
         store: { records: deps.records, ledger: deps.ledger },
         models: modelsOf(deps),
         environment: { clock: { now: (): Instant => instant(at.now) }, repos: deps.repos, log: deps.log },
         settings: settingsOf(deps),
-    });
+    }));
 }
 
 async function entriesOf(reader: Transcripts, file: string, size: number): Promise<readonly Entry[]> {
@@ -98,7 +99,7 @@ async function entriesOf(reader: Transcripts, file: string, size: number): Promi
     return result.entries;
 }
 
-async function runWindows(engine: Engine, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
+async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
     for (; at.turn < windows.length; at.turn += 1) {
         at.now = endOf(windows[at.turn], at.now);
         await engine.refresh(tabId(label), [lane]);

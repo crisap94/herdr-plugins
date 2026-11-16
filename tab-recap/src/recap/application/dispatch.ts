@@ -22,7 +22,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Engine } from './engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export type Sharing = 'on' | 'off';
@@ -31,7 +31,7 @@ export interface DispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
-    readonly recaps: Pick<Engine, 'turnEnded'>;
+    readonly recaps: Pick<TabRecaps, 'turnEnded'>;
     readonly prompts: LivePromptSource;
     readonly webs: LaneWebSource;
     readonly contexts?: LaneContextSource;

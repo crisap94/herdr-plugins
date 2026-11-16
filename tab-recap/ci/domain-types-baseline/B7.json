@@ -52,8 +52,8 @@
     "return": 1
   },
   "src/daemon/main.ts": {
-    "parameter": 10,
-    "return": 16,
+    "parameter": 8,
+    "return": 14,
     "container": 3
   },
   "src/daemon/refresh-status.ts": {

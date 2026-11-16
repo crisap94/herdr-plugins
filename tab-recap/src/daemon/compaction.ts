@@ -14,7 +14,7 @@ import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
-import type { Engine } from '#src/recap/application/engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
@@ -54,7 +54,7 @@ interface CompactionParts {
     readonly ledger: Ledger;
     readonly boundaries: Boundaries;
     readonly webs: CompactionWebs;
-    readonly recaps: Pick<Engine, 'refresh'>;
+    readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly informer: Informer;
     readonly briefs: () => CompactionBriefs | null;
     readonly recent: LaneRecent;

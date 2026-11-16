@@ -1,4 +1,4 @@
-import type { Engine } from '#src/recap/application/engine.ts';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
@@ -33,7 +33,7 @@ interface AutocompactParts {
     readonly transcripts: TranscriptRegistry;
     readonly contexts: LaneContexts;
     readonly recent: LaneRecent;
-    readonly recaps: Pick<Engine, 'refresh'>;
+    readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
