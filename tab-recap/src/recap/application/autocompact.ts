@@ -9,7 +9,7 @@ import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
-import { gateOf, parseLaneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate } from '#src/recap/domain/autocompact.ts';
+import { gateOf, parseLaneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate, type RecordOnly } from '#src/recap/domain/autocompact.ts';
 import { tuningOf, type AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
@@ -36,7 +36,7 @@ export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; r
 
 interface Judgment {
     readonly gate: Gate;
-    readonly recordOnly: boolean;
+    readonly recordOnly: RecordOnly;
 }
 
 interface BackoffFacts {
@@ -121,7 +121,7 @@ function decisionWhy(judged: Judged, flight: Flight, atCeiling: CeilingReach): T
 }
 
 function effectOf(judgment: Judgment): Effect {
-    return judgment.recordOnly ? 'record-only' : 'may-act';
+    return judgment.recordOnly;
 }
 
 function marksOf(deps: AutocompactDeps, tab: TabId, pane: PaneId): Marks {

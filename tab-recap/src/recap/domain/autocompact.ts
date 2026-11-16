@@ -6,7 +6,8 @@ import { brand, type Brand } from './brand.ts';
 import { isSection, type Section } from './fact.ts';
 import { holdsLane } from './in-flight.ts';
 import type { Flight } from './in-flight.ts';
-import type { Milliseconds } from './time.ts';
+import type { Instant, Milliseconds } from './time.ts';
+import { agentKind, type AgentKind } from './ids.ts';
 import type { Text } from './text.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
@@ -68,7 +69,7 @@ export interface AutocompactPolicy {
     readonly minimum: AutocompactPercent;
     readonly ceiling: AutocompactPercent;
     readonly cooldownMs: Milliseconds;
-    readonly kinds: readonly string[];
+    readonly kinds: AutocompactKinds;
     readonly shadowKinds: readonly RegisteredKind[];
     readonly ceilingPolicy: CeilingPolicy;
     readonly coverageBackoff: Backoff;
@@ -115,12 +116,13 @@ export function parseCooldownMs(raw: unknown, style: AutocompactStyle): Cooldown
     return brand<number, 'Milliseconds'>(text !== '' && Number.isInteger(ms) && ms >= 0 ? ms : STYLE_NUMBERS[style].cooldownMs);
 }
 
-export type AutocompactKinds = readonly string[];
+export type LaneKind = RegisteredKind | AgentKind;
+export type AutocompactKinds = readonly LaneKind[];
 
 export function parseAutocompactKinds(raw: unknown): AutocompactKinds {
     const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const kinds = [...new Set(text.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
-    return kinds.length === 0 ? KINDS_DEFAULT : kinds;
+    return kinds.length === 0 ? KINDS_DEFAULT : kinds.map((kind) => agentKind(kind));
 }
 
 export type ShadowKinds = readonly RegisteredKind[];
@@ -198,8 +200,8 @@ export type SkipGate = (typeof SKIP_GATES)[number];
 export type Gate = SkipGate | 'ceiling' | 'ask';
 
 export interface GateInput {
-    readonly kind: string;
-    readonly kinds: readonly string[];
+    readonly kind: LaneKind;
+    readonly kinds: AutocompactKinds;
     readonly shadowKinds: readonly RegisteredKind[];
     readonly busy: boolean;
     readonly flight: Flight | null;
@@ -208,7 +210,7 @@ export interface GateInput {
     readonly ceiling: number;
     readonly now: number;
     readonly lastBreakAt: number | null;
-    readonly lastDecisionAt: number | null;
+    readonly lastDecisionAt: Instant | null;
     readonly cooldownMs: number;
     readonly unchanged: boolean;
     readonly coverageBackoff?: boolean;
@@ -219,13 +221,15 @@ function backoffGate(input: GateInput): Gate | null {
     return null;
 }
 
+export type RecordOnly = 'record-only' | 'may-act';
+
 interface GateDecision {
     readonly gate: Gate;
-    readonly recordOnly: boolean;
+    readonly recordOnly: RecordOnly;
 }
 
 export function gateOf(input: GateInput): GateDecision {
-    const recordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind);
+    const recordOnly: RecordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind) ? 'record-only' : 'may-act';
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
         if (input.busy) return 'busy';

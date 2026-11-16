@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gateOf } from '#src/recap/domain/autocompact.ts';
 import type { GateInput } from '#src/recap/domain/autocompact.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 
@@ -12,7 +13,7 @@ const NOW = 10_000_000;
 const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: false, flight: null, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
 
 test('gates: below the minimum (31 % with minimum 40) stops before any model', () => {
-    assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-minimum', recordOnly: false });
+    assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-minimum', recordOnly: 'may-act' });
 });
 
 test('gates: a background job still running (or a reader that cannot tell) is in flight', () => {
@@ -32,11 +33,11 @@ test('gates: over the ceiling (81 %) with nothing in flight is the ceiling; at t
 });
 
 test('gates: within the cooldown since the last decision of any verdict (four minutes) or the last boundary; after it, ask', () => {
-    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 4 * 60_000 })).gate, 'cooldown');
-    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 4 * 60_000, share: 90 })).gate, 'cooldown', 'a compact decision starts the cooldown too');
+    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 4 * 60_000) })).gate, 'cooldown');
+    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 4 * 60_000), share: 90 })).gate, 'cooldown', 'a compact decision starts the cooldown too');
     assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000 })).gate, 'cooldown');
     assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000, share: 90 })).gate, 'cooldown', 'the ceiling waits for the cooldown too');
-    assert.equal(gateOf(lane({ lastDecisionAt: NOW - 600_000, lastBreakAt: NOW - 9 * 3_600_000 })).gate, 'ask');
+    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 600_000), lastBreakAt: NOW - 9 * 3_600_000 })).gate, 'ask');
 });
 
 test('gates: an in-flight count not read yet (null) is passed over; the lane is asked, or below the minimum and no read is needed', () => {
@@ -44,16 +45,16 @@ test('gates: an in-flight count not read yet (null) is passed over; the lane is 
     assert.equal(gateOf(lane({ flight: null, share: 81 })).gate, 'ceiling');
     assert.equal(gateOf(lane({ flight: null, share: 31 })).gate, 'below-minimum');
     assert.equal(gateOf(lane({ flight: null, busy: true })).gate, 'busy');
-    assert.equal(gateOf(lane({ flight: null, lastDecisionAt: NOW - 60_000 })).gate, 'cooldown');
+    assert.equal(gateOf(lane({ flight: null, lastDecisionAt: instant(NOW - 60_000) })).gate, 'cooldown');
 });
 
 test('gates: a kind outside the list is still gated and asked, but record-only', () => {
-    assert.deepEqual(gateOf(lane({ kind: 'codex' })), { gate: 'ask', recordOnly: true });
-    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'] })), { gate: 'ask', recordOnly: false });
+    assert.deepEqual(gateOf(lane({ kind: 'codex' })), { gate: 'ask', recordOnly: 'record-only' });
+    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'] })), { gate: 'ask', recordOnly: 'may-act' });
 });
 
 test('gates: an enabled shadow kind stays record-only', () => {
-    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'], shadowKinds: ['codex'] })), { gate: 'ask', recordOnly: true });
+    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'], shadowKinds: ['codex'] })), { gate: 'ask', recordOnly: 'record-only' });
 });
 
 const answers = (over: Readonly<Record<string, number>> = {}): Record<string, number> => ({ closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01, ...over });

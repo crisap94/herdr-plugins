@@ -18,8 +18,8 @@
   "src/recap/domain/autocompact.ts": {
     "parameter": 1,
     "return": 2,
-    "container": 4,
-    "property": 11
+    "container": 1,
+    "property": 8
   },
   "src/recap/domain/backoff.ts": {
     "parameter": 1,

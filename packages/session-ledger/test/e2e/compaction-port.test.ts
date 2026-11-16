@@ -34,6 +34,7 @@ const NINETEEN = [
 const CLOSURE = ['Awaiting', 'BackgroundItem', 'ContextUse', 'WindowSource'];
 
 const DECLARED = [
+    'AutocompactKinds',
     'Backoff',
     'Candidate',
     'CeilingPolicy',
@@ -54,6 +55,7 @@ const DECLARED = [
     'DecisionStyle',
     'Effect',
     'GateInput',
+    'LaneKind',
     'LaneStatusAtDecision',
     'LastDecision',
     'LinkedDecision',

@@ -9,6 +9,7 @@ import type {
 } from '@stateforge-labs/session-ledger';
 import type {
     Awaiting,
+    AutocompactKinds,
     Backoff,
     BackgroundItem,
     Candidate,
@@ -31,6 +32,7 @@ import type {
     DecisionStyle,
     Effect,
     GateInput,
+    LaneKind,
     LaneStatusAtDecision,
     LastDecision,
     LinkedDecision,
@@ -78,7 +80,8 @@ export type WatchModesAreThree = Holds<Same<WatchMode, 'off' | 'shadow' | 'on'>>
 export type ARecordedModeIsNotOff = Holds<Same<DecisionMode, Exclude<WatchMode, 'off'>>>;
 export type SkipGatesAreSeven = Holds<Same<SkipGate, 'below-minimum' | 'busy' | 'in-flight' | 'cooldown' | 'unchanged' | 'no-context' | 'coverage-backoff'>>;
 export type RegisteredKindsAreThree = Holds<Same<RegisteredKind, 'claude' | 'codex' | 'opencode'>>;
-export type PolicyKeepsMainKinds = Holds<Same<Policy['kinds'], readonly string[]>>;
+export type PolicyKindsAreLaneKinds = Holds<Same<Policy['kinds'], AutocompactKinds>>;
+export type GateInputKindIsALaneKind = Holds<Same<GateInput['kind'], LaneKind>>;
 export type PolicyShadowKindsAreRegistered = Holds<Same<Policy['shadowKinds'], readonly RegisteredKind[]>>;
 export type SkipKeepsMainFieldNames = Holds<Same<keyof Pick<Skip, 'tab' | 'pane' | 'agent'>, 'tab' | 'pane' | 'agent'>>;
 export type DecisionKeepsLaneStatus = Holds<Same<Decision['laneStatus'], LaneStatusAtDecision | null>>;

@@ -18,6 +18,8 @@ import type { AgentKind, AutocompactPercent, DecisionId, Duration, Instant, Pane
 export type { Awaiting, BackgroundItem, ContextUse, WindowSource } from './engine-port.ts';
 
 export type RegisteredKind = 'claude' | 'codex' | 'opencode';
+export type LaneKind = RegisteredKind | AgentKind;
+export type AutocompactKinds = readonly LaneKind[];
 
 export type Milliseconds = Brand<number, 'Milliseconds'>;
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
@@ -39,7 +41,7 @@ export interface Policy {
     readonly minimum: AutocompactPercent;
     readonly ceiling: AutocompactPercent;
     readonly cooldownMs: Milliseconds;
-    readonly kinds: readonly string[];
+    readonly kinds: AutocompactKinds;
     readonly shadowKinds: readonly RegisteredKind[];
     readonly ceilingPolicy: CeilingPolicy;
     readonly coverageBackoff: Backoff;
@@ -51,8 +53,8 @@ export type LaneStatusAtDecision = 'idle' | 'done' | 'working';
 export type SkipGate = 'below-minimum' | 'busy' | 'in-flight' | 'cooldown' | 'unchanged' | 'no-context' | 'coverage-backoff';
 
 export interface GateInput {
-    readonly kind: string;
-    readonly kinds: readonly string[];
+    readonly kind: LaneKind;
+    readonly kinds: AutocompactKinds;
     readonly shadowKinds: readonly RegisteredKind[];
     readonly busy: boolean;
     readonly flight: Flight | null;
@@ -61,7 +63,7 @@ export interface GateInput {
     readonly ceiling: number;
     readonly now: number;
     readonly lastBreakAt: number | null;
-    readonly lastDecisionAt: number | null;
+    readonly lastDecisionAt: Instant | null;
     readonly cooldownMs: number;
     readonly unchanged: boolean;
     readonly coverageBackoff?: boolean;
