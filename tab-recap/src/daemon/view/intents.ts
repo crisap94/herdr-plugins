@@ -1,8 +1,7 @@
 import { startCompact, type CompactStart } from '#src/recap/application/compact-start.ts';
-import type { Line } from '#src/daemon/slots.ts';
+import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { must } from '#src/protocol/result.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
@@ -45,17 +44,15 @@ export function launchEnv(launch: Launch): Env {
 }
 
 export function runIntent(parts: IntentParts): IntentSink {
-    const settle = (label: Label, pending: Promise<Done>): void => {
-        pending.then(
-            (done) => {
-                if (done.kind === 'unknown') {
-                    parts.log(brand<string, 'LogLine'>(`${label}: ${done.why.why}`));
-                }
-            },
-            (error: Error) => {
-                parts.log(brand<string, 'LogLine'>(`${label}: ${error.message}`));
-            },
-        );
+    const settle = async (label: Label, pending: Promise<Done>): Promise<void> => {
+        try {
+            const done = await pending;
+            if (done.kind === 'unknown') {
+                parts.log(parseLine(`${label}: ${done.why.why}`));
+            }
+        } catch (error: unknown) {
+            parts.log(parseLine(`${label}: ${parseMessage(error)}`));
+        }
     };
     return (action, connection) => {
         switch (action.kind) {
@@ -66,7 +63,7 @@ export function runIntent(parts: IntentParts): IntentSink {
                 parts.observe({ kind: 'visibility', target: { tab: connection.tab }, hidden: true });
                 return;
             case 'show-modal':
-                settle('show', parts.show(connection.tab));
+                void settle('show', parts.show(connection.tab));
                 return;
             case 'compact':
                 if (connection.role === 'modal') {
@@ -74,7 +71,7 @@ export function runIntent(parts: IntentParts): IntentSink {
                     connection.close();
                     return;
                 }
-                settle('compact', startCompact(connection.tab, null, undefined, parts.compactNote(), parts.compact));
+                void settle('compact', startCompact(connection.tab, null, undefined, parts.compactNote(), parts.compact));
                 return;
             case 'configure':
                 parts.launch({ kind: 'configure', tab: connection.tab, role: connection.role });
