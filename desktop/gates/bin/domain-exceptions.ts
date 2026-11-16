@@ -2,7 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { err, ok, type Result } from './result.ts';
-import type { Finding } from './domain-findings.ts';
+import type { Category, Finding } from './domain-findings.ts';
+
+const CONTRACT_FOLDERS: readonly string[] = ['src/contract/', 'src/compaction-timing/'];
+const CONTRACT_CATEGORIES: ReadonlySet<Category> = new Set<Category>(['property', 'container', 'parameter', 'return']);
 
 export interface Migrations {
     readonly dir: string;
@@ -11,7 +14,8 @@ export interface Migrations {
 
 export type Entry =
     | { readonly class: 'callback' | 'brand'; readonly file: string; readonly function: string; readonly parameter: string | null; readonly reason: string }
-    | { readonly class: 'migration'; readonly file: string; readonly reason: string };
+    | { readonly class: 'migration'; readonly file: string; readonly reason: string }
+    | { readonly class: 'contract'; readonly file: string; readonly symbol: string; readonly field: string; readonly reason: string };
 
 export interface Outcome {
     readonly findings: readonly Finding[];
@@ -27,6 +31,27 @@ const textField = (fields: Fields, key: string): Result<string, string> => {
     return typeof value === 'string' && value.length > 0 ? ok(value) : err(`"${key}" must be a non-empty string`);
 };
 
+const contractEntry = (fields: Fields, file: string, reason: string): Result<Entry, string> => {
+    const symbol = textField(fields, 'symbol');
+    const field = textField(fields, 'field');
+    if (symbol.kind === 'err' || field.kind === 'err') {
+        return err('"symbol" and "field" are required for a contract exception');
+    }
+    return ok({ class: 'contract', file, symbol: symbol.value, field: field.value, reason });
+};
+
+const functionEntry = (fields: Fields, kind: unknown, file: string, reason: string): Result<Entry, string> => {
+    if (kind !== 'callback' && kind !== 'brand') {
+        return err('"class" is callback, brand, migration or contract');
+    }
+    const owner = textField(fields, 'function');
+    const parameter = fields.parameter;
+    if (owner.kind === 'err' || (parameter !== null && typeof parameter !== 'string')) {
+        return err('"function" is required; "parameter" is a name, or null for a return');
+    }
+    return ok({ class: kind, file, function: owner.value, parameter, reason });
+};
+
 export const parseEntry = (input: unknown): Result<Entry, string> => {
     if (!isFields(input)) {
         return err('an exception is a JSON object');
@@ -36,19 +61,13 @@ export const parseEntry = (input: unknown): Result<Entry, string> => {
     if (file.kind === 'err' || reason.kind === 'err') {
         return err('"file" and "reason" are required');
     }
-    const kind = input.class;
-    if (kind === 'migration') {
+    if (input.class === 'migration') {
         return ok({ class: 'migration', file: file.value, reason: reason.value });
     }
-    if (kind !== 'callback' && kind !== 'brand') {
-        return err('"class" is callback, brand or migration');
+    if (input.class === 'contract') {
+        return contractEntry(input, file.value, reason.value);
     }
-    const owner = textField(input, 'function');
-    const parameter = input.parameter;
-    if (owner.kind === 'err' || (parameter !== null && typeof parameter !== 'string')) {
-        return err('"function" is required; "parameter" is a name, or null for a return');
-    }
-    return ok({ class: kind, file: file.value, function: owner.value, parameter, reason: reason.value });
+    return functionEntry(input, input.class, file.value, reason.value);
 };
 
 export const parseEntries = (input: unknown): Result<readonly Entry[], string> => {
@@ -110,16 +129,24 @@ export const releasedMigrations = (root: string, migrations: Migrations | null):
     }
 };
 
-const entryLabel = (entry: Entry): string =>
-    entry.class === 'migration' ? entry.file : `${entry.file} ${entry.function} ${entry.parameter ?? 'return'}`;
+const entryLabel = (entry: Entry): string => {
+    if (entry.class === 'contract') {
+        return `${entry.file} ${entry.symbol} ${entry.field}`;
+    }
+    return entry.class === 'migration' ? entry.file : `${entry.file} ${entry.function} ${entry.parameter ?? 'return'}`;
+};
 
-const matches = (entry: Entry, released: readonly string[], brandFile: string | null, finding: Finding): boolean => {
-    if (entry.file !== finding.file) {
-        return false;
-    }
-    if (entry.class === 'migration') {
-        return released.includes(entry.file);
-    }
+const inContract = (file: string): boolean => CONTRACT_FOLDERS.some((folder) => file.startsWith(folder));
+
+const fieldOf = (finding: Finding): string => finding.parameter ?? finding.site.replace(/^property /, '');
+
+const matchesContract = (entry: Extract<Entry, { readonly class: 'contract' }>, finding: Finding): boolean =>
+    inContract(entry.file) &&
+    CONTRACT_CATEGORIES.has(finding.category) &&
+    entry.symbol === finding.owner &&
+    entry.field === fieldOf(finding);
+
+const matchesFunction = (entry: Extract<Entry, { readonly class: 'callback' | 'brand' }>, brandFile: string | null, finding: Finding): boolean => {
     if (entry.class === 'brand' && entry.file !== brandFile) {
         return false;
     }
@@ -129,12 +156,25 @@ const matches = (entry: Entry, released: readonly string[], brandFile: string | 
         entry.parameter === finding.parameter;
 };
 
+const matches = (entry: Entry, released: readonly string[], brandFile: string | null, finding: Finding): boolean => {
+    if (entry.file !== finding.file) {
+        return false;
+    }
+    if (entry.class === 'migration') {
+        return released.includes(entry.file);
+    }
+    return entry.class === 'contract' ? matchesContract(entry, finding) : matchesFunction(entry, brandFile, finding);
+};
+
 const problemOf = (entry: Entry, released: readonly string[], brandFile: string | null, hits: number): string | undefined => {
     if (entry.class === 'migration' && !released.includes(entry.file)) {
         return 'names no released migration';
     }
     if (entry.class === 'brand' && entry.file !== brandFile) {
         return `is not in ${brandFile ?? 'the brand file: gates/config.json names none'}`;
+    }
+    if (entry.class === 'contract' && !inContract(entry.file)) {
+        return `is not under ${CONTRACT_FOLDERS.join(' or ')}`;
     }
     return hits === 0 ? 'matches no finding' : undefined;
 };
