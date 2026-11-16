@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { instant, type Fact, type RecapRequest, type Unknown } from '@stateforge-labs/session-ledger';
+import { instant, type Fact, type Operation, type RecapRequest, type RunId, type RunRef, type Unknown } from '@stateforge-labs/session-ledger';
 import {
     createEngineWorld,
     createFakeEngine,
@@ -16,6 +16,8 @@ import {
     session,
     type EngineWorld,
     type FakeEngine,
+    type Fold,
+    type StoreUnderTest,
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
 
@@ -142,6 +144,53 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     world.plugs.on?.(event);
     assert.deepEqual(world.lines(), ['line']);
     assert.deepEqual(world.events(), [event]);
+});
+
+const isRunId = (text: string): text is RunId => typeof text === 'string';
+
+const runOf = (minted: readonly string[]): RunRef => {
+    const id = 'run-1';
+    if (!isRunId(id)) {
+        throw new Error('a run id is a string');
+    }
+    let next = 0;
+    return {
+        id,
+        task: taskA,
+        at: 9,
+        language: 'en',
+        mint: () => {
+            const made = factOf(minted[next] ?? 'spare').id;
+            next += 1;
+            return made;
+        },
+    };
+};
+
+const appendFold: Fold = (before, ops, run) => {
+    const added = ops.flatMap((op) => (op.op === 'add' ? [factOf(run.mint(), { task: run.task, section: op.section, text: op.text, firstAt: run.at, lastAt: run.at })] : []));
+    const refused = ops.flatMap((op) => (op.op === 'add' ? [] : [{ op, reason: 'unknown-id' as const }]));
+    return { ledger: [...before, ...added], refused, changed: added };
+};
+
+const addOp = (text: string): Operation => ({ op: 'add', section: 'now', text, why: null, ref: null, at: null, agent: null });
+
+test('a memory store with a fold applies operations through it and keeps the folded ledger', () => {
+    const store = createMemoryStore({ fold: appendFold });
+    const under: StoreUnderTest = store;
+    const applied = under.facts.apply(runOf(['f1']), [addOp('first'), { op: 'close', id: 'missing', why: 'done' }]);
+    assert.deepEqual(applied.changed.map((fact) => fact.id), ['f1']);
+    assert.deepEqual(applied.refused.map((refusal) => refusal.reason), ['unknown-id']);
+    assert.deepEqual(listed(under.facts.openOf(taskA)).map((fact) => fact.text), ['first']);
+    assert.equal(store.markdown(), 'first');
+    assert.deepEqual(store.calls(), ['apply', 'openOf']);
+});
+
+test('a memory store without a fold changes nothing on apply', () => {
+    const store = createMemoryStore();
+    const applied = store.facts.apply(runOf(['f1']), [addOp('first')]);
+    assert.deepEqual(applied, { changed: [], refused: [] });
+    assert.deepEqual(listed(store.facts.openOf(taskA)), []);
 });
 
 const subject: Subject<EngineWorld, FakeEngine> = {

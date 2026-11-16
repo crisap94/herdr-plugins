@@ -5,8 +5,11 @@ import {
     type FactStore,
     type HistoryFact,
     type LastRun,
+    type Operation,
     type Recap,
     type Records,
+    type Refusal,
+    type RunRef,
     type ScopeId,
     type SessionKey,
     type TaskId,
@@ -17,10 +20,25 @@ export type ReadName = 'readRecap' | 'lastRunOf' | 'openOf' | 'recentlyClosed' |
 
 export type StoreCall = ReadName | 'beginRun' | 'recordRun' | 'failRun' | 'advance' | 'historyOf' | 'apply';
 
+export interface Folded {
+    readonly ledger: readonly Fact[];
+    readonly refused: readonly Refusal[];
+    readonly changed: readonly Fact[];
+}
+
+export type Fold = (before: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow: boolean) => Folded;
+
 export interface StoreParts {
     readonly recap?: Recap | null;
     readonly lastRun?: LastRun | null;
     readonly facts?: readonly Fact[];
+    readonly fold?: Fold;
+}
+
+export interface StoreUnderTest {
+    readonly records: Records;
+    readonly facts: FactStore;
+    failReads?(which: ReadName, times: number): void;
 }
 
 export interface MemoryStore {
@@ -86,26 +104,39 @@ const readerOf =
         return value();
     };
 
-const factStoreOf = (log: StoreCall[], read: Read, current: () => readonly Fact[]): FactStore => ({
-    openOf: (task: TaskId) => read('openOf', () => current().filter((fact) => fact.state === 'open' && sameTask(fact.task, task))),
-    recentlyClosed: (task: TaskId, sinceMs: number) =>
-        read('recentlyClosed', () =>
-            current().filter((fact) => fact.state === 'closed' && sameTask(fact.task, task) && fact.closedAt !== null && fact.closedAt >= sinceMs),
-        ),
-    allOf: (task: TaskId) => read('allOf', () => current().filter((fact) => sameTask(fact.task, task))),
-    keysOf: (scope: ScopeId) =>
-        read('keysOf', () => [...new Set(current().filter((fact) => fact.task.tab === scope).map((fact) => fact.task.key))]),
-    historyOf: (scope: ScopeId, key: SessionKey) => {
-        log.push('historyOf');
-        return current()
-            .filter((fact) => fact.task.tab === scope && fact.task.key === key)
-            .map(historyOf);
-    },
-    apply: () => {
-        log.push('apply');
-        return { changed: [], refused: [] };
-    },
-});
+interface Ledger {
+    current(): readonly Fact[];
+    replace(next: readonly Fact[]): void;
+}
+
+const factStoreOf = (log: StoreCall[], read: Read, ledger: Ledger, fold: Fold | undefined): FactStore => {
+    const current = (): readonly Fact[] => ledger.current();
+    return {
+        openOf: (task: TaskId) => read('openOf', () => current().filter((fact) => fact.state === 'open' && sameTask(fact.task, task))),
+        recentlyClosed: (task: TaskId, sinceMs: number) =>
+            read('recentlyClosed', () =>
+                current().filter((fact) => fact.state === 'closed' && sameTask(fact.task, task) && fact.closedAt !== null && fact.closedAt >= sinceMs),
+            ),
+        allOf: (task: TaskId) => read('allOf', () => current().filter((fact) => sameTask(fact.task, task))),
+        keysOf: (scope: ScopeId) =>
+            read('keysOf', () => [...new Set(current().filter((fact) => fact.task.tab === scope).map((fact) => fact.task.key))]),
+        historyOf: (scope: ScopeId, key: SessionKey) => {
+            log.push('historyOf');
+            return current()
+                .filter((fact) => fact.task.tab === scope && fact.task.key === key)
+                .map(historyOf);
+        },
+        apply: (run: RunRef, ops: readonly Operation[]) => {
+            log.push('apply');
+            if (fold === undefined) {
+                return { changed: [], refused: [] };
+            }
+            const folded = fold(current(), ops, run, false);
+            ledger.replace(folded.ledger);
+            return { changed: folded.changed, refused: folded.refused };
+        },
+    };
+};
 
 export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
     const log: StoreCall[] = [];
@@ -134,7 +165,17 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
 
     return {
         records,
-        facts: factStoreOf(log, read, () => stored),
+        facts: factStoreOf(
+            log,
+            read,
+            {
+                current: () => stored,
+                replace: (next: readonly Fact[]) => {
+                    stored = next;
+                },
+            },
+            parts.fold,
+        ),
         calls: () => [...log],
         failReads: (which: ReadName, times: number) => {
             failures.set(which, times);
