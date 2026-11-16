@@ -1,4 +1,4 @@
-import type { Fact, FactId, RunId } from '@stateforge-labs/session-ledger';
+import type { Fact, FactId, HistoryFact, Recap, RunId, TaskId } from '@stateforge-labs/session-ledger';
 
 const isFactId = (text: string): text is FactId => typeof text === 'string';
 
@@ -34,4 +34,21 @@ export const factOf = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact =
     closedAt: null,
     language: 'en',
     ...over,
+});
+
+export const sameTask = (left: TaskId, right: TaskId): boolean => left.tab === right.tab && left.key === right.key;
+
+export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firstAt, lastAt }: Fact): HistoryFact => ({
+    section,
+    text,
+    why,
+    state,
+    closedWhy,
+    closedAt,
+    firstAt,
+    lastAt,
+});
+
+export const emptyRecap = (tab: string): Recap => ({
+    tab, lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: '',
 });

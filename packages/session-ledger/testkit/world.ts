@@ -1,43 +1,32 @@
 import {
-    instant,
     UNREAD,
     type Chunk,
-    type Clock,
     type Debounce,
     type Position,
     type EnginePlugs,
     type FollowedSession,
     type HarnessKind,
-    type Ids,
-    type Instant,
     type LedgerEvent,
     type RecapRequest,
-    type RepoResult,
-    type SessionReader,
-    type SessionSource,
-    type Workplaces,
     type Writer,
 } from '@stateforge-labs/session-ledger';
-import { createMemoryStore, type MemoryStore } from './memory-store.ts';
+import { createMemoryStore, type Fold, type MemoryStore } from './memory-store.ts';
 import { gateOf, runnerOf, type Behaviour, type Run } from './behaviour.ts';
 import { curatorOf, type CuratedAnswer } from './scripted-curator.ts';
+import { clockOf, idsOf, sessionsOf, workplacesOf, type LocatedAnswer, type ManualClock, type Probes } from './world-ports.ts';
 
 export type { CuratedAnswer } from './scripted-curator.ts';
 export type { Behaviour, Settled } from './behaviour.ts';
-
-export interface ManualClock extends Clock {
-    set(ms: number): void;
-}
+export type { LocatedAnswer, ManualClock } from './world-ports.ts';
 
 export type WrittenAnswer = { readonly kind: 'written'; readonly text: string; readonly costUsd: number };
-
-export type LocatedAnswer = { readonly kind: 'located'; readonly source: string };
 
 export interface WorldOptions {
     readonly writer?: Behaviour<WrittenAnswer>;
     readonly locate?: Behaviour<LocatedAnswer>;
     readonly read?: Behaviour<Chunk>;
     readonly debounce?: Debounce;
+    readonly fold?: Fold;
 }
 
 export interface EngineWorld {
@@ -56,10 +45,17 @@ export interface EngineWorld {
     setLocate(next: (session: FollowedSession) => Behaviour<LocatedAnswer>): void;
     setDebounce(next: Debounce): void;
     setRead(next: Behaviour<Chunk>): void;
+    setReadBySource(next: (source: string) => Behaviour<Chunk>): void;
     setWriter(next: Behaviour<WrittenAnswer>): void;
     setCurator(next: Behaviour<CuratedAnswer> | null): void;
     setOn(next: (event: LedgerEvent) => void): void;
     setRestoreBytes(bytes: number): void;
+    setLanguage(next: string): void;
+    setNoReader(next: HarnessKind | null): void;
+    setKeepInput(next: () => boolean): void;
+    budgets(): readonly number[];
+    writerResolutions(): number;
+    repoCalls(): readonly string[];
 }
 
 const SETTLE_ROUNDS = 20;
@@ -67,52 +63,6 @@ const SETTLE_ROUNDS = 20;
 const DEFAULT_READ: Behaviour<Chunk> = {
     kind: 'answer',
     value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
-};
-
-const clockOf = (): ManualClock => {
-    let nowMs = 0;
-    return {
-        now: (): Instant => instant(nowMs),
-        set: (ms: number) => {
-            nowMs = ms;
-        },
-    };
-};
-
-const idsOf = (): Ids => {
-    let serial = 0;
-    return {
-        next: () => {
-            serial += 1;
-            return `id-${serial}`;
-        },
-    };
-};
-
-interface Probes {
-    readonly located: FollowedSession[];
-    readonly reads: string[];
-    readonly positions: Position[];
-    readonly curated: string[];
-}
-
-const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Behaviour<LocatedAnswer>, readOf: () => Behaviour<Chunk>, probes: Probes): SessionSource => {
-    const readerFor = (harness: HarnessKind): SessionReader => ({
-        harness,
-        locate: (session: FollowedSession) => {
-            probes.located.push(session);
-            return run(locateOf(session));
-        },
-        read: (source: string, was: Position) => {
-            probes.reads.push(source);
-            probes.positions.push(was);
-            return run(readOf());
-        },
-    });
-    return {
-        readerFor,
-        unavailableReason: (harness: HarnessKind) => `no scripted reader for ${harness}`,
-    };
 };
 
 const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behaviour: () => Behaviour<WrittenAnswer> | undefined): Writer => ({
@@ -128,34 +78,36 @@ const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behavi
     },
 });
 
-const workplaces: Workplaces = {
-    repoOf: () => Promise.resolve<RepoResult>({ kind: 'no-repo' }),
-};
-
 interface Script {
     debounce: Debounce;
-    chunk: Behaviour<Chunk>;
+    chunk: (source: string) => Behaviour<Chunk>;
     written: Behaviour<WrittenAnswer> | undefined;
     curator: Behaviour<CuratedAnswer> | null;
     locate: (session: FollowedSession) => Behaviour<LocatedAnswer>;
     on: (event: LedgerEvent) => void;
     restoreBytes: number;
+    language: string;
+    noReader: HarnessKind | null;
+    keepInput: () => boolean;
 }
 
 const scriptOf = (options: WorldOptions): Script => {
     const scripted = options.locate;
     return {
         debounce: options.debounce ?? { kind: 'off' },
-        chunk: options.read ?? DEFAULT_READ,
+        chunk: () => options.read ?? DEFAULT_READ,
         written: options.writer,
         curator: null,
         locate: (session: FollowedSession) => scripted ?? { kind: 'answer', value: { kind: 'located', source: session.key } },
         on: () => undefined,
         restoreBytes: Number.MAX_SAFE_INTEGER,
+        language: 'en',
+        noReader: null,
+        keepInput: () => true,
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes'>;
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setKeepInput'>;
 
 const controlsOf = (script: Script): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
@@ -165,6 +117,9 @@ const controlsOf = (script: Script): Controls => ({
         script.debounce = next;
     },
     setRead: (next: Behaviour<Chunk>) => {
+        script.chunk = (): Behaviour<Chunk> => next;
+    },
+    setReadBySource: (next: (source: string) => Behaviour<Chunk>) => {
         script.chunk = next;
     },
     setWriter: (next: Behaviour<WrittenAnswer>) => {
@@ -178,6 +133,15 @@ const controlsOf = (script: Script): Controls => ({
     },
     setRestoreBytes: (bytes: number) => {
         script.restoreBytes = bytes;
+    },
+    setLanguage: (next: string) => {
+        script.language = next;
+    },
+    setNoReader: (next: HarnessKind | null) => {
+        script.noReader = next;
+    },
+    setKeepInput: (next: () => boolean) => {
+        script.keepInput = next;
     },
 });
 
@@ -193,17 +157,18 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const script = scriptOf(options);
     const gate = gateOf();
     const run = runnerOf(gate.opened);
-    const store = createMemoryStore();
+    const store = createMemoryStore(options.fold === undefined ? {} : { fold: options.fold });
     const clock = clockOf();
     const lines: string[] = [];
     const emitted: LedgerEvent[] = [];
     const requests: RecapRequest[] = [];
-    const probes: Probes = { located: [], reads: [], positions: [], curated: [] };
+    const probes: Probes = { located: [], reads: [], positions: [], curated: [], budgets: [], writers: [], repos: [] };
+    const workplaces = workplacesOf(probes);
 
     const plugs: EnginePlugs = {
-        source: { sessions: sessionsOf(run, (session) => script.locate(session), () => script.chunk, probes) },
+        source: { sessions: sessionsOf(run, (session) => script.locate(session), (source) => script.chunk(source), probes, () => script.noReader) },
         store: { records: store.records, facts: store.facts },
-        models: { writer: () => writerOf(run, store, requests, () => script.written), curator: () => curatorOf(run, (document) => probes.curated.push(document), () => script.curator) },
+        models: { writer: () => { probes.writers.push(1); return writerOf(run, store, requests, () => script.written); }, curator: () => curatorOf(run, (document) => probes.curated.push(document), () => script.curator) },
         environment: {
             clock,
             ids: idsOf(),
@@ -213,10 +178,11 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
             },
         },
         settings: {
-            language: () => 'en',
+            language: () => script.language,
             writerView: () => ({ kind: 'full' }),
             debounce: () => script.debounce,
             restoreBytes: () => script.restoreBytes,
+            keepInput: () => script.keepInput(),
         },
         on: (event: LedgerEvent) => {
             emitted.push(event);
@@ -238,6 +204,9 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
         reads: () => [...probes.reads],
         positions: () => [...probes.positions],
         curated: () => [...probes.curated],
+        budgets: () => [...probes.budgets],
+        writerResolutions: () => probes.writers.length,
+        repoCalls: () => [...probes.repos],
         ...controlsOf(script),
         settle: settleWorld,
     };

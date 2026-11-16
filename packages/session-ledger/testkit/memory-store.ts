@@ -3,7 +3,6 @@ import {
     type Fact,
     type FactId,
     type FactStore,
-    type HistoryFact,
     type LastRun,
     type Operation,
     type Recap,
@@ -18,7 +17,7 @@ import {
     type TaskId,
     type Unknown,
 } from '@stateforge-labs/session-ledger';
-import { factIdOf, runIdOf } from './facts.ts';
+import { emptyRecap, factIdOf, historyOf, runIdOf, sameTask } from './facts.ts';
 
 export { factOf } from './facts.ts';
 
@@ -58,13 +57,17 @@ export interface MemoryStore {
     marksOf(scope: ScopeId): readonly StoredMark[];
     calls(): readonly StoreCall[];
     failReads(which: ReadName, times: number): void;
+    failRecords(times: number): void;
     seed(recap: Recap | null, facts: readonly Fact[]): void;
     markdown(): string;
+    recorded(): readonly RecordedRun[];
+    refusals(): readonly Refusal[];
 }
 
 interface State {
     readonly log: StoreCall[];
     readonly failures: Map<ReadName, number>;
+    recordFailures: number;
     readonly recaps: Map<string, Recap>;
     readonly lastRuns: Map<string, LastRun>;
     readonly marks: Map<string, readonly StoredMark[]>;
@@ -72,20 +75,9 @@ interface State {
     stored: readonly Fact[];
     minted: number;
     runs: number;
+    readonly recordedRuns: RecordedRun[];
+    readonly refused: Refusal[];
 }
-
-const sameTask = (left: TaskId, right: TaskId): boolean => left.tab === right.tab && left.key === right.key;
-
-const historyOf = ({ section, text, why, state, closedWhy, closedAt, firstAt, lastAt }: Fact): HistoryFact => ({
-    section,
-    text,
-    why,
-    state,
-    closedWhy,
-    closedAt,
-    firstAt,
-    lastAt,
-});
 
 const read = <T>(state: State, which: ReadName, value: () => T): T | Unknown => {
     state.log.push(which);
@@ -96,10 +88,6 @@ const read = <T>(state: State, which: ReadName, value: () => T): T | Unknown => 
     }
     return value();
 };
-
-const emptyRecap = (tab: string): Recap => ({
-    tab, lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: '',
-});
 
 const applyTo = (fold: Fold | undefined, before: readonly Fact[], run: RunRef, ops: readonly Operation[]): { readonly next: readonly Fact[]; readonly changed: readonly Fact[]; readonly refused: readonly Refusal[] } => {
     if (fold === undefined) {
@@ -135,7 +123,9 @@ const ensure = (state: State, scope: string, at: number | null): Recap => {
 const foldOps = (state: State, run: RecordedRun): { readonly facts: readonly Fact[]; readonly tasks: readonly RecapTask[] } => {
     let facts = state.stored;
     for (const taskOps of run.ops) {
-        facts = applyTo(state.fold, facts, refOf(state, { tab: run.tab, key: taskOps.task }, run.at, run.language), taskOps.ops).next;
+        const applied = applyTo(state.fold, facts, refOf(state, { tab: run.tab, key: taskOps.task }, run.at, run.language), taskOps.ops);
+        facts = applied.next;
+        state.refused.push(...applied.refused);
     }
     const tasks = run.tasks.map((task) => ({
         id: task.id,
@@ -163,6 +153,8 @@ const recordsOf = (state: State): Records => ({
     },
     recordRun: (run: RecordedRun) => {
         state.log.push('recordRun');
+        state.recordedRuns.push(run);
+        if (state.recordFailures > 0) { state.recordFailures -= 1; throw new Error('scripted recordRun failure'); }
         const folded = foldOps(state, run);
         state.stored = folded.facts;
         state.recaps.set(run.tab, {
@@ -219,6 +211,7 @@ const factsOf = (state: State): FactStore => ({
         state.log.push('apply');
         const applied = applyTo(state.fold, state.stored, run, ops);
         state.stored = applied.next;
+        state.refused.push(...applied.refused);
         return { changed: applied.changed, refused: applied.refused };
     },
 });
@@ -236,6 +229,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
     const state: State = {
         log: [],
         failures: new Map(),
+        recordFailures: 0,
         recaps: new Map(),
         lastRuns: new Map(),
         marks: new Map(),
@@ -243,6 +237,8 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         stored: parts.facts ?? [],
         minted: 0,
         runs: 0,
+        recordedRuns: [],
+        refused: [],
     };
     seedOf(state, parts);
     return {
@@ -253,12 +249,15 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         failReads: (which: ReadName, times: number) => {
             state.failures.set(which, times);
         },
+        failRecords: (times: number) => { state.recordFailures = times; },
         seed: (next: Recap | null, nextFacts: readonly Fact[]) => {
             if (next !== null) {
                 state.recaps.set(next.tab, next);
             }
             state.stored = nextFacts;
         },
+        recorded: () => [...state.recordedRuns],
+        refusals: () => [...state.refused],
         markdown: () =>
             state.stored
                 .filter((fact) => fact.state === 'open')
