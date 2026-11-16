@@ -64,9 +64,12 @@ test('sessionStarted rebinds the followed session to the one it names', () => {
     assert.deepEqual(engine.followedBy(harness('claude'), session('s2')), { scope: 'tab-1', key: 'a' });
 });
 
-test('compacted and restoreText return the scripted restore text', () => {
+test('compacted returns the scripted restore text for a followed key and the empty text otherwise', () => {
     const engine = createFakeEngine({ restore: restore('compacted text') });
+    assert.equal(engine.compacted(scope('tab-1'), key('a')), '');
+    engine.follow(scope('tab-1'), followed(key('a'), { session: session('s1') }));
     assert.equal(engine.compacted(scope('tab-1'), key('a')), 'compacted text');
+    assert.equal(engine.compacted(scope('tab-2'), key('a')), '');
     assert.equal(engine.restoreText(), 'compacted text');
 });
 

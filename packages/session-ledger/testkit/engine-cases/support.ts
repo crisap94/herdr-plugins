@@ -1,4 +1,4 @@
-import { UNREAD, type Chunk, type ScopeId } from '@stateforge-labs/session-ledger';
+import { UNREAD, type Chunk, type Entry, type ScopeId } from '@stateforge-labs/session-ledger';
 import type { Behaviour, WrittenAnswer } from '../world.ts';
 import type { EngineWorld } from '../world.ts';
 
@@ -34,3 +34,20 @@ export const cursorsOf = (world: EngineWorld, tab: ScopeId): readonly { readonly
     }
     return recap.lanes.map((lane) => ({ pane: lane.pane, transcript: lane.transcript, cursor: lane.cursor }));
 };
+
+export const chunkOf = (entries: readonly Entry[]): Behaviour<Chunk> => ({
+    kind: 'answer',
+    value: { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+});
+
+export const writtenOps = (ops: readonly object[]): Behaviour<WrittenAnswer> => ({
+    kind: 'answer',
+    value: { kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 },
+});
+
+export const addOf = (section: string, text: string): object => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
+
+export const blockedOps = (ops: readonly object[]): Behaviour<WrittenAnswer> => ({
+    kind: 'block',
+    after: { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 } },
+});

@@ -89,6 +89,9 @@ test('the registry exports hold the FOL, TRN and STA engine cases and the REC an
             'FOL-1', 'FOL-2', 'FOL-3', 'FOL-4', 'FOL-5', 'FOL-6', 'FOL-7', 'FOL-8', 'FOL-9', 'FOL-10',
             'TRN-1', 'TRN-2', 'TRN-3', 'TRN-4', 'TRN-5', 'TRN-6', 'TRN-7', 'TRN-8',
             'STA-1', 'STA-2', 'STA-3', 'STA-4', 'STA-5', 'STA-6', 'STA-7', 'STA-8', 'STA-9', 'STA-10',
+            'FBY-1', 'FBY-2', 'FBY-3', 'FBY-4', 'FBY-5', 'FBY-6', 'FBY-7', 'FBY-8', 'FBY-9',
+            'EVT-1', 'EVT-2', 'EVT-3', 'EVT-4', 'EVT-5', 'EVT-6', 'EVT-7', 'EVT-8', 'EVT-9', 'EVT-10',
+            'CMP-1', 'CMP-2', 'CMP-3', 'CMP-4', 'CMP-5', 'CMP-6', 'CMP-7', 'CMP-8', 'CMP-9', 'CMP-10',
         ],
     );
     assert.deepEqual(

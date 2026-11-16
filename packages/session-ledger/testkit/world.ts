@@ -61,6 +61,8 @@ export interface EngineWorld {
     setDebounce(next: Debounce): void;
     setRead(next: Behaviour<Chunk>): void;
     setWriter(next: Behaviour<WrittenAnswer>): void;
+    setOn(next: (event: LedgerEvent) => void): void;
+    setRestoreBytes(bytes: number): void;
 }
 
 const SETTLE_ROUNDS = 20;
@@ -174,6 +176,8 @@ interface Script {
     chunk: Behaviour<Chunk>;
     written: Behaviour<WrittenAnswer> | undefined;
     locate: (session: FollowedSession) => Behaviour<LocatedAnswer>;
+    on: (event: LedgerEvent) => void;
+    restoreBytes: number;
 }
 
 const scriptOf = (options: WorldOptions): Script => {
@@ -183,10 +187,12 @@ const scriptOf = (options: WorldOptions): Script => {
         chunk: options.read ?? DEFAULT_READ,
         written: options.writer,
         locate: (session: FollowedSession) => scripted ?? { kind: 'answer', value: { kind: 'located', source: session.key } },
+        on: () => undefined,
+        restoreBytes: Number.MAX_SAFE_INTEGER,
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter'>;
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setWriter' | 'setOn' | 'setRestoreBytes'>;
 
 const controlsOf = (script: Script): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
@@ -200,6 +206,12 @@ const controlsOf = (script: Script): Controls => ({
     },
     setWriter: (next: Behaviour<WrittenAnswer>) => {
         script.written = next;
+    },
+    setOn: (next: (event: LedgerEvent) => void) => {
+        script.on = next;
+    },
+    setRestoreBytes: (bytes: number) => {
+        script.restoreBytes = bytes;
     },
 });
 
@@ -238,9 +250,11 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
             language: () => 'en',
             writerView: () => ({ kind: 'full' }),
             debounce: () => script.debounce,
+            restoreBytes: () => script.restoreBytes,
         },
         on: (event: LedgerEvent) => {
             emitted.push(event);
+            script.on(event);
         },
     };
 
