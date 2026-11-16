@@ -1,4 +1,6 @@
 import { parseCount } from '#src/recap/domain/count.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
@@ -44,8 +46,8 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason('test')) : observedFrom(runningCount(state.inFlight), state.background, flightReason(`${state.inFlight} running`))); },
         recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(tab), pane) }, compactions: store.compactions, decisions: store.autocompact,
-        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => recap, refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); },
-        lanes: () => [lane()], now: () => clock.at, log: (line) => { logs.push(line); }, startedAt,
+        requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => (recap ? 'recapped' : 'unrecapped'), refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); },
+        lanes: () => [lane()], now: () => instant(clock.at), log: (line) => { logs.push(line); }, startedAt: instant(startedAt),
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },
         events: { lane: (pane, kind, detail) => { events.push(`${pane} ${kind}${detail === undefined || detail === null ? '' : ` ${detail}`}`); }, inWorkspace: () => undefined },
     };
@@ -57,7 +59,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
 function awaitingOf(state: { awaiting: string | null; lateAwaiting: string | null; awaitingReads: number; awaitingUnknown: boolean }): Waiting {
     if (state.awaitingUnknown) return unknown({ why: 'unreachable', detail: causeOf('pane.get') });
     const value = state.awaitingReads > 1 && state.lateAwaiting !== null ? state.lateAwaiting : state.awaiting;
-    return value === null ? { kind: 'clear' } : { kind: 'waiting', value };
+    return value === null ? { kind: 'clear' } : { kind: 'waiting', value: must(parseText(value)) };
 }
 
 export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(must(parseCount(20)));

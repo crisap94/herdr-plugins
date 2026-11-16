@@ -10,6 +10,8 @@ import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const SOURCE = paneId('w1:p9');
 const TARGET = paneId('w1:p1');
@@ -52,7 +54,7 @@ test('a working or blocked lane is status-not-ready and starts no transcript rea
 });
 
 test('a live awaiting token is in-flight and starts no transcript read', async () => {
-    const deps = depsOf([freshClaude], notStarted, { kind: 'waiting', value: 'approval' });
+    const deps = depsOf([freshClaude], notStarted, { kind: 'waiting', value: must(parseText('approval')) });
     assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'refused', reason: 'in-flight' });
     assert.equal(deps.reads(), 0);
 });

@@ -9,10 +9,6 @@
     "property": 1,
     "assertion": 1
   },
-  "src/recap/application/autocompact-gates.ts": {
-    "parameter": 1,
-    "property": 1
-  },
   "src/recap/application/autocompact-line.ts": {
     "parameter": 1
   },
@@ -22,10 +18,8 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 2,
-    "return": 2,
-    "container": 2,
-    "property": 5
+    "parameter": 1,
+    "return": 1
   },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,

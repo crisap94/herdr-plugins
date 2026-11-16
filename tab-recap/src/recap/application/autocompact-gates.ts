@@ -2,11 +2,12 @@ import type { AutocompactRecords, LastDecision } from '#src/ports/autocompact-re
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { CompactionQueue } from '#src/ports/requests.ts';
 import type { LaneClaims } from './lane-claims.ts';
-import type { AutocompactMode, Gate } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactMode, AutocompactPercent, Gate } from '#src/recap/domain/autocompact.ts';
 import { flightDetail } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { instant, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 
@@ -35,7 +36,7 @@ export function busyOf(reads: BusyReads, asked: ReadonlyMap<PaneId, Instant>, ta
     return other ? { kind: 'busy', detail: 'another lane' } : { kind: 'free' };
 }
 
-export function unchangedOf(last: LastDecision | null, startedAt: Instant, tokens: number, mode: AutocompactMode): Sameness {
+export function unchangedOf(last: LastDecision | null, startedAt: Instant, tokens: Count, mode: AutocompactMode): Sameness {
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode ? 'same' : 'changed';
 }
 
@@ -45,7 +46,7 @@ export const recheckDue = (interval: Milliseconds | null, last: LastDecision | n
 
 export interface DetailFacts {
     readonly now: Instant;
-    readonly minimum: number;
+    readonly minimum: AutocompactPercent;
     readonly cooldownMs: Duration;
     readonly lastBreakAt: Instant | null;
     readonly lastDecisionAt: Instant | null;
