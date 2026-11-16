@@ -69,7 +69,9 @@ export interface GateInput {
     readonly coverageBackoff?: boolean;
 }
 
-export interface Thresholds { readonly safe: number; readonly closes: number; readonly undecidedFrom: number; readonly undecidedTo: number }
+export type Threshold = Probability;
+
+export interface Thresholds { readonly safe: Threshold; readonly closes: Threshold; readonly undecidedFrom: Threshold; readonly undecidedTo: Threshold }
 
 export type DecisionStyle = 'gentle' | 'balanced' | 'eager';
 

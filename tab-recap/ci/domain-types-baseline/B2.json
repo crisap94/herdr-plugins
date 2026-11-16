@@ -8,13 +8,6 @@
     "return": 3,
     "property": 2
   },
-  "src/recap/domain/autocompact-verdict.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 2,
-    "property": 4,
-    "assertion": 2
-  },
   "src/recap/domain/autocompact.ts": {
     "parameter": 1,
     "return": 2,

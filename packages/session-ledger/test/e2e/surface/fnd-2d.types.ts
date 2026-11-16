@@ -53,6 +53,7 @@ import type {
     Skip,
     SkipGate,
     Sweep,
+    Threshold,
     Thresholds,
     Tuning,
     Turn,
@@ -67,7 +68,7 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 export type ClosureNames = [ContextUse, WindowSource, Awaiting, BackgroundItem];
 export type WrittenNames = [Candidate, PolicySettings, CompactionAsk, Consideration, SafePointEvent, SafePointWatch, SafePointPorts, Decider, SessionSignals, CompactionActivity, RecapReadiness, DecisionLog, Sweep];
-export type CopiedNames = [WatchMode, SkipGate, DecisionGate, Verdict, Effect, Policy, Tuning, Skip, Decision, Decided, Question, CeilingPolicy, Backoff, MissedFacts, Thresholds, DecisionStyle, CoverageOutcome, LastDecision, LinkedDecision, CoverageAmendment, GateInput, DeciderState, ContinuationNote, NoteLimit, QuestionCriteria];
+export type CopiedNames = [WatchMode, SkipGate, DecisionGate, Verdict, Effect, Policy, Tuning, Skip, Decision, Decided, Question, CeilingPolicy, Backoff, MissedFacts, Threshold, Thresholds, DecisionStyle, CoverageOutcome, LastDecision, LinkedDecision, CoverageAmendment, GateInput, DeciderState, ContinuationNote, NoteLimit, QuestionCriteria];
 export type CopiedClosureNames = [Milliseconds, UncheckedReason, CheckedFact, DecisionMode, LaneStatusAtDecision, RegisteredKind, Turn, OpenWorkItem];
 
 export type ContextUseIsDeclaredOnce = Holds<Same<ContextUse, RootContextUse>>;

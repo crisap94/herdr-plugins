@@ -76,6 +76,7 @@ const DECLARED = [
     'Skip',
     'SkipGate',
     'Sweep',
+    'Threshold',
     'Thresholds',
     'Tuning',
     'Turn',

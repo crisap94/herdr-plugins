@@ -13,6 +13,7 @@
   { "export": "LaneKind", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
   { "export": "AutocompactKinds", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
   { "export": "GateInput", "origin": "tab-recap/src/recap/domain/autocompact.ts" },
+  { "export": "Threshold", "origin": "tab-recap/src/recap/domain/autocompact-verdict.ts" },
   { "export": "Thresholds", "origin": "tab-recap/src/recap/domain/autocompact-verdict.ts" },
   { "export": "DecisionStyle", "origin": "tab-recap/src/recap/domain/autocompact-style.ts", "originConst": "STYLES" },
   { "export": "Tuning", "origin": "tab-recap/src/recap/domain/autocompact-style.ts", "originName": "AutocompactTuning" },
