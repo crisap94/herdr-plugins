@@ -155,9 +155,12 @@ export function parseCoverageBy(raw: unknown): CoverageBy {
     return COVERAGE_BY.find((by) => by === text) ?? COVERAGE_BY_DEFAULT;
 }
 
+export type JevUrl = Brand<string, 'JevUrl'>;
+export type JevModel = Brand<string, 'JevModel'>;
+
 export interface JevSettings {
-    readonly url: string;
-    readonly model: string;
+    readonly url: JevUrl;
+    readonly model: JevModel;
 }
 
 export const JEV_URL_DEFAULT = 'https://api.typesafe.ai/v1/systemone';
@@ -166,17 +169,27 @@ export const JEV_MODEL_DEFAULT = 'jev-1.13.0';
 const SECURE_URL = /^https:\/\/[^\s/]+\S*$/;
 const LOOPBACK_URL = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/\S*)?$/;
 
-export function jevOf(get: (key: string) => string | undefined): JevSettings {
-    const url = (get('TAB_RECAP_JEV_URL') ?? '').trim();
-    const model = (get('TAB_RECAP_JEV_MODEL') ?? '').trim();
+export type JevSetting = 'TAB_RECAP_JEV_URL' | 'TAB_RECAP_JEV_MODEL';
+
+export function parseJevUrl(raw: unknown): JevUrl {
+    const url = typeof raw === 'string' ? raw.trim() : '';
     const usable = SECURE_URL.test(url) || LOOPBACK_URL.test(url);
-    return { url: usable ? url : JEV_URL_DEFAULT, model: model === '' ? JEV_MODEL_DEFAULT : model };
+    return brand<string, 'JevUrl'>(usable ? url : JEV_URL_DEFAULT);
+}
+
+export function parseJevModel(raw: unknown): JevModel {
+    const model = typeof raw === 'string' ? raw.trim() : '';
+    return brand<string, 'JevModel'>(model === '' ? JEV_MODEL_DEFAULT : model);
+}
+
+export function jevOf(get: (key: JevSetting) => string | undefined): JevSettings {
+    return { url: parseJevUrl(get('TAB_RECAP_JEV_URL')), model: parseJevModel(get('TAB_RECAP_JEV_MODEL')) };
 }
 
 export const LANE_STATUSES = ['idle', 'done', 'working'] as const;
 export type LaneStatusAtDecision = (typeof LANE_STATUSES)[number];
 
-export function laneStatusAtDecision(raw: string | null | undefined): LaneStatusAtDecision | null {
+export function parseLaneStatusAtDecision(raw: unknown): LaneStatusAtDecision | null {
     return LANE_STATUSES.find((status) => status === raw) ?? null;
 }
 

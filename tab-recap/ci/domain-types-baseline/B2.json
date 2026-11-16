@@ -16,10 +16,10 @@
     "assertion": 2
   },
   "src/recap/domain/autocompact.ts": {
-    "parameter": 3,
+    "parameter": 1,
     "return": 2,
     "container": 4,
-    "property": 13
+    "property": 11
   },
   "src/recap/domain/backoff.ts": {
     "parameter": 1,
