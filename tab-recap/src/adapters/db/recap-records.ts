@@ -20,7 +20,7 @@ import { ids } from './uuid7.ts';
 
 type LastCause = RecapCause | 'imported';
 
-const causeOf = (raw: string): LastCause | null => (raw === 'imported' ? 'imported' : RECAP_CAUSES.find((cause) => cause === raw) ?? null);
+const isLastCause = (raw: unknown): raw is LastCause => raw === 'imported' || RECAP_CAUSES.some((cause) => cause === raw);
 
 export class RecapRecordsRepository implements RecapRecords {
     private readonly db: Database;
@@ -51,8 +51,7 @@ export class RecapRecordsRepository implements RecapRecords {
         return guarded((): LastRun | null => {
             const row = this.orm.select({ at: runs.at, cause: runs.cause }).from(runs).innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id))
                 .where(eq(lastGoodRun.tabId, tabId(tab))).get() ?? null;
-            const cause = row === null ? null : causeOf(row.cause);
-            return row === null || cause === null ? null : { at: row.at, cause };
+            return row === null || !isLastCause(row.cause) ? null : { at: row.at, cause: row.cause };
         }, null);
     }
 

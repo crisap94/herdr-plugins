@@ -11,6 +11,8 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { Operation, AddOp } from '#src/recap/domain/ops.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
+import { must as unwrap } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { newestChange, ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
@@ -89,7 +91,7 @@ test('the story and the merges land together: a ledger that fails leaves no stor
     writerRun(store, 10, [adding('a')]);
     const failing: Ledger = { ...store.ledger, openOf: () => [], recentlyClosed: () => [], allOf: () => [], keysOf: () => [], historyOf: () => [], apply: () => { throw new Error('disk full'); } };
     const stories = new StoriesRepository(store.db, failing);
-    assert.throws(() => stories.keep({ task: T1, at: 9, language: 'en' }, { story: 'never stored', merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
+    assert.throws(() => stories.keep({ task: T1, at: 9, language: 'en' }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
     assert.equal(stories.read('w1:t1', 't1'), null);
 });
 

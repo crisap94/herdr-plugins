@@ -7,6 +7,8 @@ import { RetentionRepository } from '#src/adapters/db/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { SessionSourceRepository } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { TranscriptRows } from '#src/adapters/db/transcripts.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
@@ -139,7 +141,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
             seed: seedAll,
             raw: (db) => { db.prepare(STORY_UPDATE).run('new story', 40, 't1', 'k1'); },
             builder: (db) => {
-                new StoriesRepository(db, ledger).keep({ task: { tab: 't1', key: 'k1' }, at: 40, language: 'en' }, { story: 'new story', merges: [] });
+                new StoriesRepository(db, ledger).keep({ task: { tab: 't1', key: 'k1' }, at: 40, language: 'en' }, { story: must(parseText('new story')), merges: [] });
             },
             dump: (db) => db.prepare(TASKS).all(),
         });

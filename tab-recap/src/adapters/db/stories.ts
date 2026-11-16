@@ -5,11 +5,14 @@ import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { CloseOp, UpdateOp } from '#src/recap/domain/ops.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
 import { chapter, run as runs, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
+
+export type CurationChange = { readonly story: Text | null; readonly merges: readonly CloseOp[]; readonly reconciled?: readonly (UpdateOp | CloseOp)[] };
 
 export class StoriesRepository implements Stories {
     private readonly db: Database;
@@ -32,7 +35,7 @@ export class StoriesRepository implements Stories {
         }, null);
     }
 
-    keep(run: CurationRun, change: { readonly story: string | null; readonly merges: readonly CloseOp[]; readonly reconciled?: readonly (UpdateOp | CloseOp)[] }): Applied {
+    keep(run: CurationRun, change: CurationChange): Applied {
         return writeTx(this.db, () => {
             const latest = this.orm.select({ id: runs.id }).from(runs)
                 .innerJoin(chapter, eq(chapter.id, runs.chapterId))

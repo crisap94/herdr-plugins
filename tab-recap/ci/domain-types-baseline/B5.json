@@ -112,7 +112,6 @@
     "property": 2
   },
   "src/adapters/db/recap-records.ts": {
-    "parameter": 1,
     "assertion": 2
   },
   "src/adapters/db/requests.ts": {
@@ -161,7 +160,6 @@
     "property": 2
   },
   "src/adapters/db/stories.ts": {
-    "property": 1,
     "assertion": 1
   },
   "src/adapters/db/tab-row.ts": {
