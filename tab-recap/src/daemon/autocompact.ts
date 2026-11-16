@@ -5,10 +5,10 @@ import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, type PaneId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -31,7 +31,7 @@ export async function awaitingNow(pane: string): Promise<Waiting> {
 
 interface AutocompactParts {
     readonly config?: () => Config;
-    readonly awaiting?: (pane: string) => Promise<Waiting>;
+    readonly awaiting?: (pane: PaneId) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: TranscriptRegistry;
     readonly contexts: LaneContexts;
@@ -41,7 +41,7 @@ interface AutocompactParts {
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export function wireAutocompact(parts: AutocompactParts): Autocompact {

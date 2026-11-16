@@ -3,11 +3,10 @@
     "parameter": 1
   },
   "src/daemon/autocompact-sweep.ts": {
-    "parameter": 2,
-    "property": 2
+    "parameter": 1
   },
   "src/daemon/autocompact.ts": {
-    "parameter": 4
+    "parameter": 2
   },
   "src/daemon/backends.ts": {
     "parameter": 4,
@@ -27,10 +26,6 @@
     "container": 6,
     "property": 8,
     "assertion": 1
-  },
-  "src/daemon/curate.ts": {
-    "parameter": 2,
-    "return": 4
   },
   "src/daemon/deciders.ts": {
     "parameter": 3,

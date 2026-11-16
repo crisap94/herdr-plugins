@@ -1,6 +1,9 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 
 export const SWEEP_EVERY = 5;
 
@@ -9,16 +12,18 @@ export interface Considers {
     consider(lane: Lane): Promise<void>;
 }
 
+type SweepRun = 'idle' | 'running';
+
 export interface SweepParts {
     board(): Board;
     autocompact(): Considers | null;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export class AutocompactSweep {
     private readonly parts: SweepParts;
-    private ticks = 0;
-    private running = false;
+    private ticks: Count = must(parseCount(0));
+    private running: SweepRun = 'idle';
 
     constructor(parts: SweepParts) {
         this.parts = parts;
@@ -26,12 +31,12 @@ export class AutocompactSweep {
 
     tick(): void {
         const due = this.ticks % SWEEP_EVERY === 0;
-        this.ticks += 1;
-        if (!due || this.running) return;
-        this.running = true;
+        this.ticks = must(parseCount(this.ticks + 1));
+        if (!due || this.running === 'running') return;
+        this.running = 'running';
         this.sweep()
-            .catch((error: unknown) => { this.parts.log(`autocompact sweep: ${error instanceof Error ? error.message : String(error)}`); })
-            .finally(() => { this.running = false; });
+            .catch((error: unknown) => { this.parts.log(must(parseText(`autocompact sweep: ${error instanceof Error ? error.message : String(error)}`))); })
+            .finally(() => { this.running = 'idle'; });
     }
 
     async sweep(): Promise<void> {
