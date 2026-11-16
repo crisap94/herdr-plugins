@@ -1,4 +1,4 @@
-import { UNREAD, type Chunk, type Entry, type ScopeId } from '@stateforge-labs/session-ledger';
+import { UNREAD, type Chunk, type Entry, type Recap, type ScopeId } from '@stateforge-labs/session-ledger';
 import type { Behaviour, WrittenAnswer } from '../world.ts';
 import type { EngineWorld } from '../world.ts';
 
@@ -50,4 +50,22 @@ export const addOf = (section: string, text: string): object => ({ op: 'add', se
 export const blockedOps = (ops: readonly object[]): Behaviour<WrittenAnswer> => ({
     kind: 'block',
     after: { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 } },
+});
+
+export const recapOf = (world: EngineWorld, tab: ScopeId): Recap | null => {
+    const recap = world.store.records.readRecap(tab);
+    if (recap === null || 'kind' in recap) {
+        return null;
+    }
+    return recap;
+};
+
+export const chunkAt = (cursor: number, over: Partial<Chunk> = {}): Behaviour<Chunk> => ({
+    kind: 'answer',
+    value: { kind: 'chunk', entries: [{ role: 'user', text: 'hello' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor, tail: null }, grew: true, ...over },
+});
+
+export const quietAt = (cursor: number): Behaviour<Chunk> => ({
+    kind: 'answer',
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor, tail: null }, grew: false },
 });

@@ -58,6 +58,7 @@ export interface MemoryStore {
     marksOf(scope: ScopeId): readonly StoredMark[];
     calls(): readonly StoreCall[];
     failReads(which: ReadName, times: number): void;
+    failRecords(times: number): void;
     seed(recap: Recap | null, facts: readonly Fact[]): void;
     markdown(): string;
 }
@@ -65,6 +66,7 @@ export interface MemoryStore {
 interface State {
     readonly log: StoreCall[];
     readonly failures: Map<ReadName, number>;
+    recordFailures: number;
     readonly recaps: Map<string, Recap>;
     readonly lastRuns: Map<string, LastRun>;
     readonly marks: Map<string, readonly StoredMark[]>;
@@ -163,6 +165,7 @@ const recordsOf = (state: State): Records => ({
     },
     recordRun: (run: RecordedRun) => {
         state.log.push('recordRun');
+        if (state.recordFailures > 0) { state.recordFailures -= 1; throw new Error('scripted recordRun failure'); }
         const folded = foldOps(state, run);
         state.stored = folded.facts;
         state.recaps.set(run.tab, {
@@ -236,6 +239,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
     const state: State = {
         log: [],
         failures: new Map(),
+        recordFailures: 0,
         recaps: new Map(),
         lastRuns: new Map(),
         marks: new Map(),
@@ -253,6 +257,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         failReads: (which: ReadName, times: number) => {
             state.failures.set(which, times);
         },
+        failRecords: (times: number) => { state.recordFailures = times; },
         seed: (next: Recap | null, nextFacts: readonly Fact[]) => {
             if (next !== null) {
                 state.recaps.set(next.tab, next);

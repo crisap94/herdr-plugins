@@ -13,7 +13,10 @@ import { CMP_CASES } from './engine-cases/compacted.ts';
 import { CUR_CASES } from './engine-cases/curate.ts';
 import { HIS_CASES } from './engine-cases/history.ts';
 import { REF_CASES } from './engine-cases/refresh.ts';
+import { RUN_CASES } from './engine-cases/runs.ts';
+import { CSR_CASES } from './engine-cases/cursors.ts';
+import { LNG_CASES } from './engine-cases/language.ts';
 
-export const engineCases: readonly Case<EngineWorld, Engine>[] = [...FOL_CASES, ...TRN_CASES, ...STA_CASES, ...FBY_CASES, ...EVT_CASES, ...CMP_CASES, ...CUR_CASES, ...HIS_CASES, ...REF_CASES];
+export const engineCases: readonly Case<EngineWorld, Engine>[] = [...FOL_CASES, ...TRN_CASES, ...STA_CASES, ...FBY_CASES, ...EVT_CASES, ...CMP_CASES, ...CUR_CASES, ...HIS_CASES, ...REF_CASES, ...RUN_CASES, ...CSR_CASES, ...LNG_CASES];
 
 export const storeCases: readonly Case<null, StoreUnderTest>[] = [...RECORD_CASES, ...FACT_CASES];
