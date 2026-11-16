@@ -2,9 +2,8 @@ import { type Decided, type Noul } from '#src/ports/decider.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds } from '#src/recap/domain/time.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 export const textOf = (value: string): Text => must(parseText(value));
 
@@ -22,9 +21,9 @@ export const probabilitiesOf = (answers: Readonly<Record<string, number>>): Read
 export const decidedOf = (answers: Readonly<Record<string, number>>, extra: { readonly tokens?: number; readonly costUsd?: number; readonly tookMs?: number; readonly model?: string } = {}): Decided => ({
     kind: 'decided',
     answers: probabilitiesOf(answers),
-    tokens: must(parseCount(extra.tokens ?? 1)),
+    tokens: extra.tokens ?? 1,
     costUsd: must(parseUsd(extra.costUsd ?? 0)),
-    tookMs: must(parseMilliseconds(extra.tookMs ?? 1)),
+    tookMs: duration(extra.tookMs ?? 1),
     model: textOf(extra.model ?? 'fake'),
 });
 

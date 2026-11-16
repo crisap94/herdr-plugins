@@ -1,7 +1,6 @@
-import type { Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { Duration } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from './unknowable.ts';
 
@@ -18,9 +17,9 @@ export interface Noul {
 export interface Decided {
     readonly kind: 'decided';
     readonly answers: ReadonlyMap<Text, Probability>;
-    readonly tokens: Count;
+    readonly tokens: number;
     readonly costUsd: Usd;
-    readonly tookMs: Milliseconds;
+    readonly tookMs: Duration;
     readonly model: Text;
 }
 

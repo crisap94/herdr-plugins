@@ -80,3 +80,9 @@ test('a task with no facts has nothing to curate; a closed fact is a change too'
     assert.equal(model.read('w1:t1', view, NOW).tasks[0]?.curating, false);
     assert.deepEqual(asked, []);
 });
+
+test('a blank tab name reads zero autocompact decisions instead of failing', () => {
+    const store = memoryStore();
+    const deps: ExpandedDeps = { records: store.records, ledger: new MemoryLedger(), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: () => undefined }, edits: () => [], autocompact: store.autocompact };
+    assert.deepEqual(new ExpandedModel(deps).read(' ', null, NOW).session.autocompact, null);
+});

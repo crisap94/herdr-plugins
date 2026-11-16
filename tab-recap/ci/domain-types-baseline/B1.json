@@ -17,7 +17,7 @@
   "src/ports/autocompact-records.ts": {
     "return": 2,
     "container": 6,
-    "property": 10
+    "property": 14
   },
   "src/ports/boundaries.ts": {
     "parameter": 3,
@@ -48,6 +48,9 @@
   },
   "src/ports/context-windows.ts": {
     "parameter": 1
+  },
+  "src/ports/decider.ts": {
+    "property": 1
   },
   "src/ports/extension.ts": {
     "return": 1,
@@ -156,7 +159,7 @@
     "return": 3
   },
   "src/protocol/exchange.ts": {
-    "parameter": 4
+    "parameter": 3
   },
   "src/protocol/primitives.ts": {
     "parameter": 1

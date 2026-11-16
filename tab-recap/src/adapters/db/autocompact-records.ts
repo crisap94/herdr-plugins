@@ -5,7 +5,7 @@ import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import { agentKind, paneId, parseCompactionId, parseDecisionId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
-import { instant, parseDuration, type Instant } from '#src/recap/domain/time.ts';
+import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { BadRow, blob, guarded, maybeText, maybeWhole, text, whole } from './rows.ts';
@@ -53,7 +53,7 @@ function outcomeOf(row: Row): StoredCoverageOutcome | null {
     const outcome = maybeText(row, 'coverage_outcome');
     switch (outcome) {
         case 'passed': return { kind: 'passed' };
-        case 'missed': return { kind: 'missed', count: must(parseCount(whole(row, 'coverage_missing'))) };
+        case 'missed': return { kind: 'missed', count: whole(row, 'coverage_missing') };
         case 'unchecked': {
             const reason = maybeText(row, 'unchecked_reason');
             if (reason === 'no-decider' || reason === 'decider-cannot-answer' || reason === 'no-brief') return { kind: 'unchecked', reason };
@@ -84,12 +84,12 @@ function decisionOf(row: Row): StoredDecision {
     const compaction = row['compaction_id'] === null ? null : must(parseCompactionId(typeIdOf('compaction', blob(row, 'compaction_id'))));
     return {
         id: must(parseDecisionId(typeIdOf('decision', blob(row, 'id')))), tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), at: instant(whole(row, 'at')),
-        mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: must(parseCount(whole(row, 'tokens'))), window: must(parseCount(whole(row, 'window'))),
+        mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: whole(row, 'tokens'), window: whole(row, 'window'),
         gate: text(row, 'gate') as DecisionGate, verdict: text(row, 'verdict') as DecisionVerdict,
         askedVerdict: maybeText(row, 'asked_verdict') as DecisionVerdict | null,
         answers: numbers(text(row, 'answers')) ?? {}, coverage: numbers(maybeText(row, 'coverage')), decider: maybeText(row, 'decider'),
-        costUsd: must(parseUsd(whole(row, 'cost_micro_usd') / MICRO)), tookMs: maybeWhole(row, 'took_ms') === null ? null : must(parseDuration(whole(row, 'took_ms'))), why: maybeText(row, 'why'),
-        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms') === null ? null : must(parseDuration(whole(row, 'coverage_ms'))), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
+        costUsd: must(parseUsd(whole(row, 'cost_micro_usd') / MICRO)), tookMs: maybeWhole(row, 'took_ms') === null ? null : duration(whole(row, 'took_ms')), why: maybeText(row, 'why'),
+        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms') === null ? null : duration(whole(row, 'coverage_ms')), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
     };
 }
 
@@ -162,7 +162,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
                 .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane))))
                 .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null;
-            return row === null ? null : { at: instant(row.at), tokens: must(parseCount(row.tokens)), mode: row.mode, verdict: row.verdict, gate: row.gate };
+            return row === null ? null : { at: instant(row.at), tokens: row.tokens, mode: row.mode, verdict: row.verdict, gate: row.gate };
         }, null);
     }
 

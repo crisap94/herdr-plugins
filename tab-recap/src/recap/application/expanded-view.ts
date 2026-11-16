@@ -6,15 +6,17 @@ import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, DecisionCounts } from '#src/ports/autocompact-records.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import type { FileCount } from './edit-counts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
+const NO_DECISIONS: DecisionCounts = { decisions: must(parseCount(0)), compacted: must(parseCount(0)), waited: must(parseCount(0)) };
 
 export interface ExpandedDeps {
     readonly records: RecapRecords;
@@ -74,12 +76,13 @@ export class ExpandedModel {
             this.deps.requests.requestCurate(tab);
         }
         const lanes = view?.lanes ?? [];
+        const counted = parseTabId(tab);
         const session = sessionFactsOf({
             firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
             chapters: this.deps.boundaries.chapterCount(tab),
-            ...(this.deps.autocompact === undefined ? {} : { autocompact: this.deps.autocompact.countsFor(must(parseTabId(tab))) }),
+            ...(this.deps.autocompact === undefined ? {} : { autocompact: counted.kind === 'ok' ? this.deps.autocompact.countsFor(counted.value) : NO_DECISIONS }),
         });
         return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web), breaks: this.deps.boundaries.breaksOf(tab) };
     }

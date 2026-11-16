@@ -3,10 +3,9 @@ import { parseProbability, type Probability } from '#src/recap/domain/probabilit
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { duration, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { obj } from '../transcripts/jsonl.ts';
 
 export const JEV_TIMEOUT_MS = 10_000;
@@ -75,6 +74,6 @@ function answered(body: unknown, ids: readonly Text[], meta: { model: string; to
         answers.set(id, probability);
     }
     const used = obj(reply['usage'])['input_tokens'];
-    const tokens = must(parseCount(typeof used === 'number' && Number.isSafeInteger(used) && used >= 0 ? used : 0));
-    return { kind: 'decided', answers, tokens, costUsd: must(parseUsd(tokens * USD_PER_INPUT_TOKEN)), tookMs: must(parseMilliseconds(Math.max(0, meta.tookMs))), model: must(parseText(typeof reply['model'] === 'string' ? reply['model'] : meta.model)) };
+    const tokens = typeof used === 'number' && Number.isFinite(used) && used >= 0 ? used : 0;
+    return { kind: 'decided', answers, tokens, costUsd: must(parseUsd(tokens * USD_PER_INPUT_TOKEN)), tookMs: duration(meta.tookMs), model: must(parseText(typeof reply['model'] === 'string' ? reply['model'] : meta.model)) };
 }

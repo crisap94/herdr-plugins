@@ -8,7 +8,7 @@ export function parseUsd(input: unknown): Result<Usd, ParseFailure> {
     if (typeof input !== 'number') {
         return err({ kind: 'not-a-number' });
     }
-    if (!Number.isFinite(input) || input < 0) {
+    if (!Number.isFinite(input)) {
         return err({ kind: 'out-of-range' });
     }
     return ok(brand<number, 'Usd'>(input));

@@ -13,7 +13,7 @@ export interface PassedCoverage {
 }
 export interface MissedCoverage {
     readonly kind: 'missed';
-    readonly count: Count;
+    readonly count: number;
 }
 export interface UncheckedCoverage {
     readonly kind: 'unchecked';
@@ -41,7 +41,7 @@ export interface Skip {
 
 export interface LastDecision {
     readonly at: Instant;
-    readonly tokens: Count;
+    readonly tokens: number;
     readonly mode: DecisionMode;
     readonly verdict: DecisionVerdict;
     readonly gate: DecisionGate;
@@ -54,8 +54,8 @@ export interface Decision {
     readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: number;
-    readonly tokens: Count;
-    readonly window: Count;
+    readonly tokens: number;
+    readonly window: number;
     readonly gate: DecisionGate;
     readonly verdict: DecisionVerdict;
     readonly askedVerdict: DecisionVerdict | null;

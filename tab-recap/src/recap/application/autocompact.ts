@@ -13,7 +13,6 @@ import { gateOf, laneStatusAtDecision, type AutocompactMode, type AutocompactPol
 import { tuningOf, type AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -247,7 +246,7 @@ export class Autocompact {
         const { tab, pane } = lane;
         const { judged, effect, flight, atCeiling } = found;
         const made: Decision = {
-            tab, pane, agent: lane.agent, at: instant(deps.now()), mode: found.mode, share: shareOf(use), tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            tab, pane, agent: lane.agent, at: instant(deps.now()), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: laneStatusAtDecision(lane.status),
         };
         const id = deps.decisions.record(made);

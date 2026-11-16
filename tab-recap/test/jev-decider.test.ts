@@ -78,3 +78,11 @@ test('the key: TAB_RECAP_JEV_KEY, then TYPESAFE_API_KEY, then the file in the ho
     assert.equal(jevKey(() => undefined, () => null, '/h'), null);
     assert.equal(jevKey(() => undefined, () => '\n', '/h'), null);
 });
+
+test('jev: a fractional token count is kept and priced, and a clock that steps back gives a negative time', async () => {
+    const fetcher = ((): Promise<Response> => Promise.resolve(reply({ ...good, usage: { input_tokens: 12.5 } }))) as unknown as typeof fetch;
+    const clock = [5_000, 4_000];
+    const jev = new JevDecider({ url: 'https://gateway.test/v1/systemone', model: 'jev-1.13.0', key: (): string => SENTINEL, fetch: fetcher, now: (): number => clock.shift() ?? 0 });
+    const found = await jev.ask(documentOf({}), questions);
+    assert.deepEqual(found.kind === 'decided' ? [found.tokens, found.costUsd, found.tookMs] : found, [12.5, 12.5 * 0.042 / 1e6, -1_000]);
+});

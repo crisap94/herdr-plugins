@@ -5,10 +5,9 @@ import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { objectIn } from '#src/recap/application/recap-shape.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds } from '#src/recap/domain/time.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { unfenced } from './prompts/recap-prompt.ts';
 
 export function deciderInstructions(questions: ReadonlyMap<Text, Noul>): string {
@@ -60,6 +59,6 @@ export class HarnessDecider implements Decider {
         const answers = probabilitiesOf(ran.text, [...questions.keys()]);
         return answers === null
             ? unknown({ why: 'unreadable', detail: causeOf(must(parseText(`${this.harness.id} did not answer with one probability per question`))) })
-            : { kind: 'decided', answers, tokens: must(parseCount(Math.ceil(bytes / 4))), costUsd: must(parseUsd(ran.costUsd)), tookMs: must(parseMilliseconds(Math.max(0, this.now() - began))), model: must(parseText(this.harness.label(this.settings))) };
+            : { kind: 'decided', answers, tokens: Math.ceil(bytes / 4), costUsd: must(parseUsd(ran.costUsd)), tookMs: duration(this.now() - began), model: must(parseText(this.harness.label(this.settings))) };
     }
 }

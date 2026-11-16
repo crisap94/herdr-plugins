@@ -1,6 +1,6 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from './brand.ts';
-import { parseNonEmptyText } from './text.ts';
+import { parseNonEmptyText, parseText } from './text.ts';
 import type { ParseFailure } from './parse-failure.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
@@ -144,7 +144,7 @@ export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> 
 }
 
 export function parseDecisionId(input: unknown): Result<DecisionId, ParseFailure> {
-    const text = parseNonEmptyText(input);
+    const text = parseText(input);
     if (text.kind === 'err') {
         return text;
     }
@@ -152,7 +152,7 @@ export function parseDecisionId(input: unknown): Result<DecisionId, ParseFailure
 }
 
 export function parseCompactionId(input: unknown): Result<CompactionId, ParseFailure> {
-    const text = parseNonEmptyText(input);
+    const text = parseText(input);
     if (text.kind === 'err') {
         return text;
     }

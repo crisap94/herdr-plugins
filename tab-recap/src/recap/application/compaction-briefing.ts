@@ -5,8 +5,7 @@ import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import { parseDecisionId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
-import { must } from '#src/protocol/result.ts';
+import { type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -95,7 +94,7 @@ export class Briefing {
 
     linkedDecision(trigger: Trigger, tab: TabId, pane: PaneId, id: CompactionId): Link {
         const linked = trigger === 'auto' ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
-        return { trigger, decision: linked === null ? null : must(parseDecisionId(linked.id)), flow: this.flowOf(linked?.gate) };
+        return { trigger, decision: linked?.id ?? null, flow: this.flowOf(linked?.gate) };
     }
 
     private flowOf(gate: LinkedDecision['gate'] | undefined): CoverageFlow {
