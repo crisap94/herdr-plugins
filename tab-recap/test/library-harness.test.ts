@@ -15,6 +15,8 @@ import type { Config } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT } from '#src/recap/domain/claude-policy-ack.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
+import { HarnessCurator } from '#src/adapters/job/curator.ts';
+import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
 import { summarizerFor } from '#src/daemon/backends.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -197,16 +199,56 @@ test('answer text, or no answer: the call runs as before, one headless run', asy
     assert.equal(absent.calls.length, 2);
 });
 
-test('answer schema: Unknown failed with the structured-output detail, and no headless run starts', async () => {
-    const runtime = scripted('claude', { text: 'never' });
+test('answer schema on a harness without structured output: Unknown failed with the detail, and no headless run starts', async () => {
+    const runtime = scripted('opencode', { text: 'never' });
     const schema: HarnessCall = { ...call, answer: { kind: 'schema', schema: 'writer' } };
-    const ran = await new LibraryHarness(runtime, 'claude', 1000, undefined, true).run(schema, settings);
+    const ran = await new LibraryHarness(runtime, 'opencode', 1000).run(schema, settings);
     assert.ok(isUnknown(ran) && ran.why.why === 'failed' && ran.why.code === 1 && ran.why.detail === 'structured output is not available in this harness library');
     assert.equal(runtime.calls.length, 0);
 });
 
-test('the library harness declares structured support none', () => {
-    assert.equal(new LibraryHarness(fakeRuntime({ scripts: {} }), 'codex', 1000).structured, 'none');
+test('answer schema on claude: one run with the schema for the mode as outputSchema, and the output reaches the caller as its JSON text', async () => {
+    const runtime = scripted('claude', { text: '', output: { ops: [], story: 'done' } });
+    const schema: HarnessCall = { ...call, answer: { kind: 'schema', schema: 'story' } };
+    const ran = await new LibraryHarness(runtime, 'claude', 1000, undefined, true).run(schema, settings);
+    assert.ok(!isUnknown(ran) && ran.text === '{"ops":[],"story":"done"}');
+    assert.equal(runtime.calls.length, 1);
+    assert.deepEqual(firstCall(runtime).request.outputSchema, ANSWER_SCHEMAS.story);
+});
+
+test('answer text on claude: no outputSchema is sent', async () => {
+    const runtime = scripted('claude', { text: 'plain' });
+    await new LibraryHarness(runtime, 'claude', 1000, undefined, true).run({ ...call, answer: { kind: 'text' } }, settings);
+    assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
+});
+
+test('the library harness declares structured support from its capability: claude and codex schema, opencode none', () => {
+    const runtime = fakeRuntime({ scripts: {} });
+    assert.equal(new LibraryHarness(runtime, 'claude', 1000, undefined, true).structured, 'schema');
+    assert.equal(new LibraryHarness(runtime, 'codex', 1000).structured, 'schema');
+    assert.equal(new LibraryHarness(runtime, 'opencode', 1000).structured, 'none');
+});
+
+test('the curator over claude: a schema answer reaches the job as the run output, with the schema for the mode', async () => {
+    const runtime = scripted('claude', { text: '', output: { ops: [{ op: 'close', id: 'f1', why: 'merged', into: 'f2' }], story: 'the story' } });
+    const harness = new LibraryHarness(runtime, 'claude', 1000, undefined, true);
+    const curated = await new HarnessCurator(harness, settings, 'schema').write('doc', 'story');
+    assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[{"op":"close","id":"f1","why":"merged","into":"f2"}],"story":"the story"}' });
+    assert.deepEqual(firstCall(runtime).request.outputSchema, ANSWER_SCHEMAS.story);
+});
+
+test('the curator over opencode with a schema answer: the call falls back to text, one run without an outputSchema', async () => {
+    const runtime = scripted('opencode', { text: '{"ops":[]}' });
+    const curated = await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'schema').write('doc', 'reconcile');
+    assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[]}' });
+    assert.equal(runtime.calls.length, 1);
+    assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
+});
+
+test('the curator over opencode with a text answer: the run never carries an outputSchema', async () => {
+    const runtime = scripted('opencode', { text: 'plain' });
+    await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'text').write('doc', 'story');
+    assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
 });
 
 test('guard: no run class, argument builder, session cleanup or --pure under adapters/harness', () => {
