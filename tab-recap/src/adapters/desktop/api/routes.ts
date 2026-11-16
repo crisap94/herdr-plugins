@@ -67,7 +67,7 @@ const release = withTab((tab, call, context) => {
     sendEmpty(call.response, 204);
 });
 
-const ROUTES: readonly Route[] = [
+export const ROUTES: readonly Route[] = [
     { pattern: /^\/v1\/health$/u, handlers: { GET: health } },
     { pattern: /^\/v1\/index$/u, handlers: { GET: index } },
     { pattern: /^\/v1\/events$/u, handlers: { GET: eventsHandler } },
