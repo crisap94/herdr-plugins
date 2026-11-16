@@ -10,10 +10,9 @@
     "container": 1
   },
   "src/adapters/db/autocompact-records.ts": {
-    "parameter": 12,
-    "return": 11,
+    "parameter": 1,
+    "return": 6,
     "container": 14,
-    "property": 2,
     "assertion": 5
   },
   "src/adapters/db/boundaries.ts": {
@@ -29,7 +28,7 @@
   "src/adapters/db/checked-fact-codec.ts": {
     "container": 1,
     "property": 1,
-    "assertion": 2
+    "assertion": 1
   },
   "src/adapters/db/compaction-records.ts": {
     "parameter": 8,

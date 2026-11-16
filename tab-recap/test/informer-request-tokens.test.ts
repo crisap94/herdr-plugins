@@ -13,7 +13,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
@@ -132,7 +132,7 @@ test('a request a pane holds while sharing is off is remembered and never acted 
     void run.informer.run();
     await run.informer.enterSubscription();
     await flush();
-    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(toolName('coordinator')), rid('r9')), true, 'remembered while off');
+    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(parseToolName('coordinator')), rid('r9')), true, 'remembered while off');
     run.control.on = true;
     await run.informer.reconcile();
     await flush();

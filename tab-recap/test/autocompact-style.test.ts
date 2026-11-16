@@ -1,16 +1,23 @@
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { must as mustParsed } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { covered } from '#src/recap/application/brief-coverage.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { backoffOf, briefRetentionOf, ceilingPolicyOf, policyOf } from '#src/recap/domain/autocompact.ts';
+import { parseBackoff, parseBriefRetention, parseCeilingPolicy, policyOf } from '#src/recap/domain/autocompact.ts';
 import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Decider, DecidedResult } from '#src/ports/decider.ts';
 import { NOW, world, lane } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -19,12 +26,12 @@ function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
 }
 
 function waitedMinutesAgo(w: World, minutes: number): void {
-    w.store.autocompact.record({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', at: NOW - minutes * 60_000, mode: 'on', share: 12, tokens: 120_000, window: 1_000_000, gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: 0, tookMs: null, why: null });
+    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: 12, tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 }
 
 const passes = async (style: string): Promise<boolean> => (await covered('the brief', NEEDS, keeping(0.65), tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)).ok;
 
-const keeping = (keeps: number): Decider => ({ label: 'fake', ask: (_state, questions): Promise<DecidedResult> => Promise.resolve({ kind: 'decided', answers: Object.fromEntries(Object.keys(questions).map((id) => [id, keeps])), tokens: 1, costUsd: 0, tookMs: 1, model: 'fake' }) });
+const keeping = (keeps: number): Decider => ({ label: textOf('fake'), ask: (_state, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, keeps])))) });
 const NEEDS = [{ section: 'needs', text: 'Keep the token', why: null }];
 
 test('balanced is today\'s numbers: the verdict 0.30 and 0.70 with the band 0.35–0.65, the pass mark 0.70, the ceiling 80, the cooldown ten minutes, no re-check', () => {
@@ -63,12 +70,12 @@ test('coverage settings default to ceiling override on, backoff off and fourteen
     const policy = policyOf(env({}));
     assert.equal(policy.ceilingPolicy, 'overrides-check');
     assert.deepEqual(policy.coverageBackoff, { kind: 'off' });
-    assert.deepEqual(backoffOf('30000'), { kind: 'off' });
-    assert.deepEqual(backoffOf('1800000'), { kind: 'window', ms: 1_800_000 });
-    assert.deepEqual(backoffOf('86400001'), { kind: 'off' });
-    assert.deepEqual(briefRetentionOf(undefined), { kind: 'days', value: 14 });
-    assert.deepEqual(briefRetentionOf('0'), { kind: 'none' });
-    assert.deepEqual(briefRetentionOf('61'), { kind: 'days', value: 14 });
+    assert.deepEqual(parseBackoff('30000'), { kind: 'off' });
+    assert.deepEqual(parseBackoff('1800000'), { kind: 'window', ms: 1_800_000 });
+    assert.deepEqual(parseBackoff('86400001'), { kind: 'off' });
+    assert.deepEqual(parseBriefRetention(undefined), { kind: 'days', value: 14 });
+    assert.deepEqual(parseBriefRetention('0'), { kind: 'none' });
+    assert.deepEqual(parseBriefRetention('61'), { kind: 'days', value: 14 });
     assert.equal(policyOf(env({ TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK: 'off' })).ceilingPolicy, 'blocked-by-check');
 });
 
@@ -97,7 +104,7 @@ test('the gates: the ceiling of eager (65 %) gives compact with no model call, a
     const eager = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' });
     eager.share = 70;
     await eager.service.consider(lane());
-    assert.deepEqual([eager.asked.length, eager.store.autocompact.newest(1)[0]?.gate], [0, 'ceiling']);
+    assert.deepEqual([eager.asked.length, eager.store.autocompact.newest(must(parseCount(1)))[0]?.gate], [0, 'ceiling']);
     const balanced = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'balanced' });
     balanced.share = 70;
     await balanced.service.consider(lane());
@@ -176,8 +183,8 @@ test('no answer sheet inside the band compacts: every answer at 0.5 is undecided
 });
 
 test('out-of-range coverage settings fall back to their defaults; in-range ones are read', () => {
-    assert.deepEqual([backoffOf('59999'), backoffOf('86400001'), backoffOf('abc'), backoffOf('-5')], [{ kind: 'off' }, { kind: 'off' }, { kind: 'off' }, { kind: 'off' }]);
-    assert.deepEqual(backoffOf('60000'), { kind: 'window', ms: 60_000 });
-    assert.deepEqual([briefRetentionOf('-1'), briefRetentionOf('x'), briefRetentionOf('61')], [{ kind: 'days', value: 14 }, { kind: 'days', value: 14 }, { kind: 'days', value: 14 }]);
-    assert.deepEqual([ceilingPolicyOf('maybe'), ceilingPolicyOf('off'), ceilingPolicyOf('ON')], ['overrides-check', 'blocked-by-check', 'overrides-check']);
+    assert.deepEqual([parseBackoff('59999'), parseBackoff('86400001'), parseBackoff('abc'), parseBackoff('-5')], [{ kind: 'off' }, { kind: 'off' }, { kind: 'off' }, { kind: 'off' }]);
+    assert.deepEqual(parseBackoff('60000'), { kind: 'window', ms: 60_000 });
+    assert.deepEqual([parseBriefRetention('-1'), parseBriefRetention('x'), parseBriefRetention('61')], [{ kind: 'days', value: 14 }, { kind: 'days', value: 14 }, { kind: 'days', value: 14 }]);
+    assert.deepEqual([parseCeilingPolicy('maybe'), parseCeilingPolicy('off'), parseCeilingPolicy('ON')], ['overrides-check', 'blocked-by-check', 'overrides-check']);
 });

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import { capabilityValue, CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
-import { exchangeVersion } from '#src/protocol/primitives.ts';
+import { parseExchangeVersion } from '#src/protocol/primitives.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
 import { must } from '#src/protocol/result.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
 import { defineExchange } from '#src/protocol/exchange.ts';
-import { exchangeName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseRequestPrefix } from '#src/protocol/primitives.ts';
 import { ANSWER_TOKENS, REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { COMPACT_TOKEN, OWNED_TOKENS, PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
@@ -16,7 +16,7 @@ import { compact } from '#src/protocol/exchanges/compact.ts';
 const compactOnly = (setting: string): boolean => setting === 'TAB_RECAP_HERDR_EVENTS';
 
 test('the capability value for compact alone is compact1,kinds1', () => {
-    assert.deepEqual(capabilityValue(EXCHANGES, must(exchangeVersion(1)), compactOnly), { kind: 'ok', value: 'compact1,kinds1' });
+    assert.deepEqual(capabilityValue(EXCHANGES, must(parseExchangeVersion(1)), compactOnly), { kind: 'ok', value: 'compact1,kinds1' });
 });
 
 test('the compact names are derived from its descriptor: request prefix and answer token', () => {
@@ -38,8 +38,8 @@ test('tab-recap stays within the ten names a pane may carry', () => {
 });
 
 test('a new exchange reaches the owner table through its descriptor alone', () => {
-    const ticket = defineExchange({ ...handoffLike, name: must(exchangeName('ticket')), requestPrefix: 'ticket-req-' });
+    const ticket = defineExchange({ ...handoffLike, name: must(parseExchangeName('ticket')), requestPrefix: must(parseRequestPrefix('ticket-req-')) });
     const owners = ownerTable(must(buildRegistry([...EXCHANGES, ticket], [CAPABILITY_TOKEN])));
     assert.ok(owners.writable.some((name) => name === 'tab-recap-ticket'));
-    assert.ok(owners.readPrefixes.includes('ticket-req-'));
+    assert.ok(owners.readPrefixes.includes(must(parseRequestPrefix('ticket-req-'))));
 });

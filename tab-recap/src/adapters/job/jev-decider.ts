@@ -1,8 +1,10 @@
-import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
+import { type Decider, type DecidedResult, type Noul } from '#src/ports/decider.ts';
+import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { obj } from '../transcripts/jsonl.ts';
 
@@ -20,22 +22,23 @@ export interface JevOptions {
 const NO_KEY = 'a TypeSafe API key (TAB_RECAP_JEV_KEY, TYPESAFE_API_KEY or ~/.config/typesafe-api-key)';
 
 export class JevDecider implements Decider {
-    readonly label: string;
+    readonly label: Text;
     private readonly options: JevOptions;
 
     constructor(options: JevOptions) {
         this.options = options;
-        this.label = `jev · ${options.model}`;
+        this.label = must(parseText(`jev · ${options.model}`));
     }
 
-    async ask(state: object, questions: Readonly<Record<string, Noul>>): Promise<DecidedResult> {
+    async ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedResult> {
         const key = this.options.key();
         if (key === null) return unknown({ why: 'not-found', what: NO_KEY });
         const now = this.options.now ?? Date.now;
         const began = now();
-        const sent = await this.post(key, JSON.stringify({ model: this.options.model, state, questions: Object.fromEntries(Object.entries(questions).map(([id, noul]) => [id, { type: 'noul', ...noul }])) }));
+        const wire = Object.fromEntries([...questions].map(([id, noul]) => [id, { type: 'noul', ...noul }]));
+        const sent = await this.post(key, `{"model":${JSON.stringify(this.options.model)},"state":${state},"questions":${JSON.stringify(wire)}}`);
         if (sent.kind === 'unknown') return sent;
-        return answered(sent.body, Object.keys(questions), { model: this.options.model, tookMs: now() - began });
+        return answered(sent.body, [...questions.keys()], { model: this.options.model, tookMs: now() - began });
     }
 
     private async post(key: string, body: string): Promise<{ kind: 'body'; body: unknown } | ReturnType<typeof unknown>> {
@@ -62,14 +65,15 @@ function failure(status: number): string {
     return `HTTP ${status}`;
 }
 
-function answered(body: unknown, ids: readonly string[], meta: { model: string; tookMs: number }): DecidedResult {
-    const [reply, answers] = [obj(body), {} as Record<string, number>];
+function answered(body: unknown, ids: readonly Text[], meta: { model: string; tookMs: number }): DecidedResult {
+    const [reply, answers] = [obj(body), new Map<Text, Probability>()];
     for (const id of ids) {
         const noul = obj(obj(reply['answers'])[id])['noul'];
-        if (typeof noul !== 'number' || !Number.isFinite(noul) || noul < 0 || noul > 1) return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`no usable answer for ${id}`))) });
-        answers[id] = noul;
+        const probability = typeof noul === 'number' ? parseProbability(noul) : null;
+        if (probability === null) return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`no usable answer for ${id}`))) });
+        answers.set(id, probability);
     }
     const used = obj(reply['usage'])['input_tokens'];
     const tokens = typeof used === 'number' && Number.isFinite(used) && used >= 0 ? used : 0;
-    return { kind: 'decided', answers, tokens, costUsd: tokens * USD_PER_INPUT_TOKEN, tookMs: meta.tookMs, model: typeof reply['model'] === 'string' ? reply['model'] : meta.model };
+    return { kind: 'decided', answers, tokens, costUsd: must(parseUsd(tokens * USD_PER_INPUT_TOKEN)), tookMs: duration(meta.tookMs), model: must(parseText(typeof reply['model'] === 'string' ? reply['model'] : meta.model)) };
 }

@@ -11,10 +11,13 @@ import type { Registry } from '../src/protocol/registry.ts';
 import { observe } from '../src/protocol/requester.ts';
 import { answer, take } from '../src/protocol/responder.ts';
 import type { SeenCheck } from '../src/protocol/responder.ts';
+import { idGrammarOf } from '../src/protocol/codec.ts';
 import type { ParsedValue } from '../src/protocol/codec.ts';
+import { parseIdText, parseRequestId, parseTokenValue } from '../src/protocol/primitives.ts';
 import type { Refusal, RequestId, TokenValue } from '../src/protocol/primitives.ts';
 import type { Result } from '../src/protocol/result.ts';
 import { must } from '../src/protocol/result.ts';
+import { snapshotOf } from './fakes/token-map.ts';
 
 type Refused = { readonly kind: 'refused'; readonly reason: string; readonly subject: string };
 
@@ -81,8 +84,10 @@ const takeStep = (replay: Replay, trace: Trace, expect: TakeExpect): void => {
     }
 };
 
+const requestIdOf = (exchange: Exchange, raw: string): RequestId => must(parseRequestId(raw, must(idGrammarOf(exchange.request))));
+
 const observeStep = (exchange: Exchange, replay: Replay, trace: Trace, step: { readonly id: string; readonly expect: unknown }): void => {
-    const observed = observe(exchange, replay.tokens, step.id as RequestId);
+    const observed = observe(exchange, snapshotOf(replay.tokens), requestIdOf(exchange, step.id));
     assert.deepEqual(observed.kind === 'ok' ? observed.value : refusedOf(observed.error), step.expect, trace.name);
 };
 
@@ -90,7 +95,7 @@ const runStep = (exchange: Exchange, replay: Replay, trace: Trace, step: Step): 
     if ('write' in step) {
         writeToken(replay.tokens, step.write.name, step.write.value);
     } else if ('answer' in step) {
-        const written = must(answer(exchange, step.answer.id as RequestId, step.answer.stage));
+        const written = must(answer(exchange, requestIdOf(exchange, step.answer.id), step.answer.stage));
         writeToken(replay.tokens, written.name, written.value);
     } else if ('take' in step) {
         takeStep(replay, trace, step.take);
@@ -119,7 +124,7 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: request values parse as published`, () => {
         for (const item of vector.requests) {
-            assert.deepEqual(parsedOf(parseRequest(exchange, item.raw)), item.expect, JSON.stringify(item.raw));
+            assert.deepEqual(parsedOf(parseRequest(exchange, must(parseTokenValue(item.raw)))), item.expect, JSON.stringify(item.raw));
         }
     });
 
@@ -131,13 +136,13 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: answers are id and stage, cut and refused as published`, () => {
         for (const item of vector.answers) {
-            assert.deepEqual(valueOf(answerValue(exchange, item.id as RequestId, item.stage)), item.expect, JSON.stringify(item));
+            assert.deepEqual(valueOf(answerValue(exchange, parseIdText(item.id), item.stage)), item.expect, JSON.stringify(item));
         }
     });
 
     test(`${exchange.name}: bad ids are answered as published`, () => {
         for (const item of vector.badIds) {
-            assert.equal(badIdValue(item.rawId), item.expect, JSON.stringify(item.rawId));
+            assert.equal(badIdValue(parseIdText(item.rawId)), item.expect, JSON.stringify(item.rawId));
         }
     });
 

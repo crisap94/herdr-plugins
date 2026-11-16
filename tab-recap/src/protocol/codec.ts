@@ -1,7 +1,7 @@
 import { ok } from './result.ts';
 import type { Result } from './result.ts';
-import { LIMITS, WORD_SHAPES, checkedText, refuse, requestId, tokenValue } from './primitives.ts';
-import type { IdGrammar, Refusal, RequestId, TokenValue, WordShape } from './primitives.ts';
+import { LIMITS, WORD_SHAPES, parseWord, refuse, parseRequestId, parseIdText, parseTokenValue, parseFieldText, parseFlagFieldText, parseRestText, parseSegmentStart, parseNextSegment, parseSegmentEnd } from './primitives.ts';
+import type { CharLimit, FieldName, FieldText, FieldValue, FlagText, IdGrammar, IdText, Presence, Refusal, RequestId, SegmentIndex, TokenValue, WireText, WordShape } from './primitives.ts';
 
 export interface IdSpec {
     readonly kind: 'id';
@@ -10,22 +10,22 @@ export interface IdSpec {
 
 export interface WordSpec {
     readonly kind: 'word';
-    readonly name: string;
-    readonly optional: boolean;
+    readonly name: FieldName;
+    readonly presence: Presence;
     readonly shape?: WordShape;
 }
 
 export interface FlagSpec {
     readonly kind: 'flag';
-    readonly name: string;
-    readonly text: string;
+    readonly name: FieldName;
+    readonly text: FlagText;
 }
 
 export interface RestSpec {
     readonly kind: 'rest';
-    readonly name: string;
-    readonly optional: boolean;
-    readonly maxChars: number | null;
+    readonly name: FieldName;
+    readonly presence: Presence;
+    readonly maxChars: CharLimit | null;
 }
 
 export type FieldSpec = IdSpec | WordSpec | FlagSpec | RestSpec;
@@ -35,9 +35,10 @@ type RestField = Extract<Field, { readonly kind: 'rest' }>;
 
 const shapeOf = (shape: WordShape | undefined): RegExp => WORD_SHAPES[shape ?? 'word'];
 
-export type Fields = Readonly<Record<string, string | boolean | null>>;
-
-export type ParsedValue = Fields & { readonly id: RequestId };
+export interface ParsedValue {
+    readonly [field: string]: FieldValue | RequestId;
+    readonly id: RequestId;
+}
 
 interface Layout {
     readonly grammar: IdGrammar;
@@ -58,21 +59,26 @@ function layoutOf(specs: readonly FieldSpec[]): Result<Layout, Refusal> {
     return ok({ grammar: first.grammar, fields });
 }
 
-const checkedRest = (field: RestField, text: string): Result<string, Refusal> =>
+const checkedRest = (field: RestField, text: FieldText): Result<FieldText, Refusal> =>
     field.maxChars !== null && text.length > field.maxChars ? refuse('too-long', field.name) : ok(text);
 
-function pieceOf(field: Field, value: ParsedValue): Result<string | null, Refusal> {
+function pieceOf(field: Field, value: ParsedValue): Result<FieldText | null, Refusal> {
     if (field.kind === 'flag') {
-        return ok(value[field.name] === true ? field.text : null);
+        return ok(value[field.name] === true ? parseFlagFieldText(field.text) : null);
     }
-    const text = value[field.name] ?? null;
-    if (text === null) {
-        return field.optional ? ok(null) : refuse('bad-grammar', field.name);
+    const raw = value[field.name] ?? null;
+    if (raw === null) {
+        return field.presence === 'optional' ? ok(null) : refuse('bad-grammar', field.name);
     }
-    if (typeof text !== 'string') {
-        return refuse('bad-grammar', field.name);
+    const text = parseFieldText(raw);
+    if (text.kind === 'err') {
+        return refuse(text.error, field.name);
     }
-    return field.kind === 'word' ? checkedText(field.name, text, LIMITS.valueMax, shapeOf(field.shape)) : checkedRest(field, text);
+    if (field.kind === 'word') {
+        const word = parseWord(text.value, LIMITS.valueMax, shapeOf(field.shape));
+        return word.kind === 'ok' ? ok(text.value) : refuse(word.error, field.name);
+    }
+    return checkedRest(field, text.value);
 }
 
 export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue): Result<TokenValue, Refusal> {
@@ -95,29 +101,29 @@ export function serializeValue(specs: readonly FieldSpec[], value: ParsedValue):
             segments.push(piece.value);
         }
     }
-    return tokenValue(segments.join(':'));
+    return parseTokenValue(segments.join(':'));
 }
 
 interface Read {
-    readonly value: string | boolean | null;
-    readonly at: number;
+    readonly value: FieldValue;
+    readonly at: SegmentIndex;
 }
 
-function readField(field: Field, segments: readonly string[], at: number): Result<Read, Refusal> {
+function readField(field: Field, segments: readonly FieldText[], at: SegmentIndex): Result<Read, Refusal> {
     const segment = segments[at];
     if (field.kind === 'flag') {
-        const present = segment === field.text;
-        return ok({ value: present, at: present ? at + 1 : at });
+        const present = segment === parseFlagFieldText(field.text);
+        return ok({ value: present, at: present ? parseNextSegment(at) : at });
     }
     if (segment === undefined) {
-        return field.optional ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
+        return field.presence === 'optional' ? ok({ value: null, at }) : refuse('bad-grammar', field.name);
     }
     if (field.kind === 'word') {
-        const word = checkedText(field.name, segment, LIMITS.valueMax, shapeOf(field.shape));
-        return word.kind === 'ok' ? ok({ value: word.value, at: at + 1 }) : word;
+        const word = parseWord(segment, LIMITS.valueMax, shapeOf(field.shape));
+        return word.kind === 'ok' ? ok({ value: segment, at: parseNextSegment(at) }) : refuse(word.error, field.name);
     }
-    const text = checkedRest(field, segments.slice(at).join(':'));
-    return text.kind === 'ok' ? ok({ value: text.value, at: segments.length }) : text;
+    const text = checkedRest(field, parseRestText(segments.slice(at)));
+    return text.kind === 'ok' ? ok({ value: text.value, at: parseSegmentEnd(segments) }) : text;
 }
 
 export function idGrammarOf(specs: readonly FieldSpec[]): Result<IdGrammar, Refusal> {
@@ -125,24 +131,26 @@ export function idGrammarOf(specs: readonly FieldSpec[]): Result<IdGrammar, Refu
     return layout.kind === 'err' ? layout : ok(layout.value.grammar);
 }
 
-export const idTextOf = (raw: string): string => {
-    const cut = raw.indexOf(':');
-    return cut < 0 ? raw : raw.slice(0, cut);
-};
-
-export function parseValue(specs: readonly FieldSpec[], raw: string): Result<ParsedValue, Refusal> {
+export function parseValue(specs: readonly FieldSpec[], raw: WireText): Result<ParsedValue, Refusal> {
     const layout = layoutOf(specs);
     if (layout.kind === 'err') {
         return layout;
     }
-    const idText = idTextOf(raw);
-    const id = requestId(idText, layout.value.grammar);
+    const idText: IdText = parseIdText(raw);
+    const id = parseRequestId(idText, layout.value.grammar);
     if (id.kind === 'err') {
         return id;
     }
-    const segments = raw.length === idText.length ? [] : raw.slice(idText.length + 1).split(':');
-    const fields: Record<string, string | boolean | null> = {};
-    let at = 0;
+    const segments: FieldText[] = [];
+    for (const part of raw.length === idText.length ? [] : raw.slice(idText.length + 1).split(':')) {
+        const text = parseFieldText(part);
+        if (text.kind === 'err') {
+            return refuse(text.error, 'layout');
+        }
+        segments.push(text.value);
+    }
+    const fields: Record<string, FieldValue> = {};
+    let at = parseSegmentStart();
     for (const field of layout.value.fields) {
         const read = readField(field, segments, at);
         if (read.kind === 'err') {

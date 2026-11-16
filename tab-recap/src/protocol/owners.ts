@@ -1,7 +1,7 @@
-import type { TokenName } from './primitives.ts';
+import type { RequestPrefix, TokenName } from './primitives.ts';
 import type { Registry } from './registry.ts';
 
-export type OwnerTable = { readonly writable: readonly TokenName[]; readonly readPrefixes: readonly string[] };
+export type OwnerTable = { readonly writable: readonly TokenName[]; readonly readPrefixes: readonly RequestPrefix[] };
 
 export const ownerTable = (registry: Registry): OwnerTable => ({
     writable: registry.ownNames,

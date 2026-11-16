@@ -8,7 +8,7 @@ import { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { answerRestart } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
@@ -16,7 +16,7 @@ import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
-const coordinator = must(toolName('coordinator'));
+const coordinator = must(parseToolName('coordinator'));
 
 class CrashingLedger extends MemoryAskLedger {
     override withdraw(): void { }

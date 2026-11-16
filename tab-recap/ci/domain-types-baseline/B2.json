@@ -16,11 +16,10 @@
     "assertion": 2
   },
   "src/recap/domain/autocompact.ts": {
-    "parameter": 21,
-    "return": 8,
+    "parameter": 3,
+    "return": 2,
     "container": 4,
-    "property": 19,
-    "assertion": 2
+    "property": 13
   },
   "src/recap/domain/backoff.ts": {
     "parameter": 1,
@@ -41,8 +40,7 @@
   },
   "src/recap/domain/compact-request.ts": {
     "parameter": 4,
-    "return": 4,
-    "container": 1
+    "return": 4
   },
   "src/recap/domain/compaction-plan.ts": {
     "parameter": 5,
@@ -58,7 +56,7 @@
   "src/recap/domain/coordination.ts": {
     "parameter": 1,
     "return": 2,
-    "container": 4,
+    "container": 2,
     "property": 2
   },
   "src/recap/domain/curation.ts": {
@@ -134,7 +132,7 @@
     "assertion": 1
   },
   "src/recap/domain/lane-tokens.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 3,
     "container": 8,
     "property": 4
@@ -191,8 +189,7 @@
   },
   "src/recap/domain/typing-lease.ts": {
     "parameter": 1,
-    "return": 1,
-    "container": 1
+    "return": 1
   },
   "src/recap/domain/visibility.ts": {
     "return": 2,

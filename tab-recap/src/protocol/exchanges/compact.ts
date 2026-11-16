@@ -1,6 +1,6 @@
 import { COMPACT_FAILURES } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
-import { exchangeName, exchangeVersion } from '../primitives.ts';
+import { parseAnswerStage, parseEventName, parseExchangeName, parseExchangeVersion, parseFieldName, parseOptIn, parseRequestPrefix } from '../primitives.ts';
 import { must } from '../result.ts';
 
 export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'done' } as const;
@@ -16,17 +16,17 @@ export const COMPACT_EVENTS = {
 } as const;
 
 export const compact = {
-    name: must(exchangeName('compact')),
-    version: must(exchangeVersion(1)),
-    requestPrefix: 'compact-req-',
+    name: must(parseExchangeName('compact')),
+    version: must(parseExchangeVersion(1)),
+    requestPrefix: must(parseRequestPrefix('compact-req-')),
     request: [
         { kind: 'id', grammar: 'legacy-length' },
-        { kind: 'rest', name: 'note', optional: true, maxChars: null },
+        { kind: 'rest', name: must(parseFieldName('note')), presence: 'optional', maxChars: null },
     ],
-    answerStages: Object.values(COMPACT_STAGES),
+    answerStages: Object.values(COMPACT_STAGES).map((stage) => must(parseAnswerStage(stage))),
     failureReasons: Object.values(COMPACT_FAILURES),
-    events: Object.values(COMPACT_EVENTS),
-    optIn: 'TAB_RECAP_HERDR_EVENTS',
+    events: Object.values(COMPACT_EVENTS).map((event) => must(parseEventName(event))),
+    optIn: must(parseOptIn('TAB_RECAP_HERDR_EVENTS')),
     timing: {},
-    truncatesAnswer: true,
+    answerFit: 'truncate',
 } as const satisfies Exchange;

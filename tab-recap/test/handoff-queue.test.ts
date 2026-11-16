@@ -5,7 +5,7 @@ import { HandoffQueueRepository } from '#src/adapters/db/handoff-queue.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { NewAsk } from '#src/ports/ask-ledger.ts';
 import type { NewHandoffRequest } from '#src/ports/requests.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -13,7 +13,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { memoryStore } from './db/support.ts';
 import { rid } from './fakes/ask-ledger.ts';
 
-const ask: NewAsk = { exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: null };
+const ask: NewAsk = { exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: null };
 
 const request: NewHandoffRequest = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: null, refreshFirst: false, source: { kind: 'live' }, answer: must(parseText('h1')) };
 

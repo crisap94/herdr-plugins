@@ -15,7 +15,7 @@ import { agreement, kappa } from '#src/experiment/stats.ts';
 import { labelBriefs } from './autocompact-briefs.ts';
 import { operatorLabels } from './autocompact-operator.ts';
 
-const IDS = Object.keys(QUESTIONS);
+const IDS = [...QUESTIONS.keys()];
 const flag = (name: string): boolean => process.argv.includes(`--${name}`);
 const value = (name: string): string | null => {
     const at = process.argv.indexOf(`--${name}`);

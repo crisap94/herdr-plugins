@@ -8,7 +8,7 @@ import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
+import { instant, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 
 export const ACTIVE = new Set(['briefing', 'compacting', 'restoring']);
 export const ASKED_FOR_MS = 5 * 60_000;
@@ -28,10 +28,10 @@ export type CeilingReach = 'at-ceiling' | 'below-ceiling';
 
 export function busyOf(reads: BusyReads, asked: ReadonlyMap<PaneId, Instant>, tab: TabId, pane: PaneId, now: Instant): Busy {
     const since = asked.get(pane);
-    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, now - ASKED_FOR_MS)
+    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, instant(now - ASKED_FOR_MS))
         || reads.claims.has(pane) || reads.queue.compactQueued(tab, pane);
     if (own) return { kind: 'busy', detail: 'this lane' };
-    const other = reads.compactions.autoInProgress() || reads.decisions.unlinkedCompactAny(now - ASKED_FOR_MS);
+    const other = reads.compactions.autoInProgress() || reads.decisions.unlinkedCompactAny(instant(now - ASKED_FOR_MS));
     return other ? { kind: 'busy', detail: 'another lane' } : { kind: 'free' };
 }
 

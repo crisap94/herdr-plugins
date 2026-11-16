@@ -1,6 +1,6 @@
 import type { LastDecision, DecisionMode } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy, Gate } from '#src/recap/domain/autocompact.ts';
-import { milliseconds } from '#src/recap/domain/autocompact.ts';
+import { must } from '#src/protocol/result.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
@@ -8,7 +8,7 @@ import type { Flight } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
+import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import type { Busy, BusyDetail, CeilingReach, Recheck } from './autocompact-gates.ts';
 import type { Effect } from './autocompact-line.ts';
 
@@ -51,5 +51,5 @@ export function busyDetailOf(busy: Busy): BusyDetail | null {
 }
 
 export function idleMsOf(tuning: AutocompactTuning): Milliseconds | null {
-    return tuning.recheckIdleMs === null ? null : milliseconds(tuning.recheckIdleMs);
+    return tuning.recheckIdleMs === null ? null : must(parseMilliseconds(tuning.recheckIdleMs));
 }

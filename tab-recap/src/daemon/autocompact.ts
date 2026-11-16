@@ -5,7 +5,7 @@ import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -20,7 +20,7 @@ import { flightOf } from '#src/recap/application/in-flight.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 
 export async function awaitingNow(pane: string): Promise<Waiting> {
-    const found = await readPaneTokens(pane);
+    const found = await readPaneTokens(paneId(pane));
     if (found.kind !== 'tokens') return found;
     const value = awaitingOf(found.tokens);
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value };

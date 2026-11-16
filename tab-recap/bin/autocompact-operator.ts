@@ -6,7 +6,7 @@ import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { seeded, shuffled } from '#src/experiment/seeded.ts';
 
-const IDS = Object.keys(QUESTIONS);
+const IDS = [...QUESTIONS.keys()];
 
 const wrap = (text: string, width = 100): string => text.split('\n').flatMap((line) => line.match(new RegExp(`.{1,${width}}(\\s|$)|\\S+?(\\s|$)`, 'g')) ?? ['']).map((line) => `  ${line.trimEnd()}`).join('\n');
 

@@ -1,3 +1,5 @@
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps } from '#src/recap/application/autocompact.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -16,6 +18,7 @@ import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { flightReason, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 export const NOW = 10_000_000;
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status });
@@ -28,8 +31,8 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const clock = { at: NOW };
-    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningOf(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, decide: (): DecidedResult => ({ kind: 'decided', answers: SAFE, tokens: 700, costUsd: 0.00003, tookMs: 550, model: 'fake' }) };
-    const decider: Decider = { label: 'fake · m', ask: async (_state, questions) => { asked.push(Object.keys(questions).length); if (state.gate !== null) await state.gate; return state.decide(); } };
+    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningOf(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, decide: (): DecidedResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: 550 }) };
+    const decider: Decider = { label: textOf('fake · m'), ask: async (_state, questions) => { asked.push(questions.size); if (state.gate !== null) await state.gate; return state.decide(); } };
     const claims = new LaneClaims();
     const queued = new Set<string>();
     const deps: AutocompactDeps = {
@@ -51,4 +54,4 @@ function awaitingOf(state: { awaiting: string | null; lateAwaiting: string | nul
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value };
 }
 
-export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(20);
+export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(must(parseCount(20)));

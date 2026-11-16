@@ -1,10 +1,10 @@
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 
-export const rid = (raw: string): RequestId => must(requestId(raw, 'legacy-length'));
+export const rid = (raw: string): RequestId => must(parseRequestId(raw, 'legacy-length'));
 
 const keyOf = (exchange: ExchangeName, requester: Requester, id: string): string => `${exchange}\u0000${requester}\u0000${id}`;
 

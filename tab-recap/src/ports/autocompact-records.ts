@@ -1,5 +1,8 @@
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Duration, Instant } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
@@ -18,26 +21,26 @@ export interface UncheckedCoverage {
 }
 export type StoredCoverageOutcome = PassedCoverage | MissedCoverage | UncheckedCoverage;
 export interface PaneKey {
-    readonly tab: string;
-    readonly pane: string;
+    readonly tab: TabId;
+    readonly pane: PaneId;
 }
 export interface LinkedDecision {
-    readonly id: string;
+    readonly id: DecisionId;
     readonly gate: DecisionGate;
 }
 
 export interface Skip {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly gate: SkipGate;
     readonly share: number | null;
     readonly detail: string | null;
 }
 
 export interface LastDecision {
-    readonly at: number;
+    readonly at: Instant;
     readonly tokens: number;
     readonly mode: DecisionMode;
     readonly verdict: DecisionVerdict;
@@ -45,10 +48,10 @@ export interface LastDecision {
 }
 
 export interface Decision {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: number;
     readonly tokens: number;
@@ -59,52 +62,52 @@ export interface Decision {
     readonly answers: Readonly<Record<string, number>>;
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly decider: string | null;
-    readonly costUsd: number;
-    readonly tookMs: number | null;
+    readonly costUsd: Usd;
+    readonly tookMs: Duration | null;
     readonly why: string | null;
     readonly laneStatus: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
-    readonly coverageMs: number | null;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration | null;
+    readonly coverageCostUsd: Usd | null;
 }
 
 export interface StoredDecision extends Omit<Decision, 'coverageOutcome' | 'coverageMs' | 'coverageCostUsd'> {
-    readonly id: string;
-    readonly compactionId: string | null;
+    readonly id: DecisionId;
+    readonly compactionId: CompactionId | null;
     readonly coverageOutcome: StoredCoverageOutcome | null;
-    readonly coverageMs: number | null;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration | null;
+    readonly coverageCostUsd: Usd | null;
 }
 
 export interface DecisionCounts {
-    readonly decisions: number;
-    readonly compacted: number;
-    readonly waited: number;
+    readonly decisions: Count;
+    readonly compacted: Count;
+    readonly waited: Count;
 }
 
 export interface CoverageAmendment {
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly outcome: CoverageOutcome;
-    readonly coverageMs: number;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration;
+    readonly coverageCostUsd: Usd | null;
     readonly why: string | null;
     readonly block: boolean;
 }
 
 export interface AutocompactRecords {
-    record(decision: Decision): string;
-    link(id: string, compactionId: string): void;
-    linkLatest(tab: TabId, pane: PaneId, compactionId: string): LinkedDecision | null;
-    amend(id: string, update: CoverageAmendment): void;
-    lastDecisionAt(tab: TabId, pane: PaneId): number | null;
+    record(decision: Decision): DecisionId;
+    link(id: DecisionId, compactionId: CompactionId): void;
+    linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null;
+    amend(id: DecisionId, update: CoverageAmendment): void;
+    lastDecisionAt(tab: TabId, pane: PaneId): Instant | null;
     lastDecision(tab: TabId, pane: PaneId): LastDecision | null;
-    markRequested(id: string): void;
-    unlinkedCompactSince(tab: TabId, pane: PaneId, at: number): boolean;
-    unlinkedCompactAny(at: number): boolean;
+    markRequested(id: DecisionId): void;
+    unlinkedCompactSince(tab: TabId, pane: PaneId, at: Instant): boolean;
+    unlinkedCompactAny(at: Instant): boolean;
     pruneSkips(keep: readonly PaneKey[]): void;
     skip(skip: Skip): void;
     skips(): readonly Skip[];
-    newest(limit: number, tab?: string): readonly StoredDecision[];
-    countsFor(tab: string): DecisionCounts;
-    costSince(at: number): number;
+    newest(limit: Count, tab?: TabId): readonly StoredDecision[];
+    countsFor(tab: TabId): DecisionCounts;
+    costSince(at: Instant): Usd;
 }

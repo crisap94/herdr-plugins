@@ -7,16 +7,15 @@ import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import { gateOf, laneStatusAtDecision, type AutocompactMode, type AutocompactPolicy, type Gate } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import { tuningOf, type AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
+import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -24,8 +23,7 @@ import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, flightTextOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
 import type { CeilingReach, Recheck } from './autocompact-gates.ts';
-import { lineOf, moneyOf } from './autocompact-line.ts';
-import type { Effect } from './autocompact-line.ts';
+import { lineOf, moneyOf, type Effect } from './autocompact-line.ts';
 import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
 import type { Flight, Observed } from '#src/recap/domain/in-flight.ts';
 import { continuationNote } from '#src/recap/domain/continuation-note.ts';
@@ -83,7 +81,7 @@ interface Judged {
     readonly answers: Readonly<Record<string, number>>;
     readonly why: Text | null;
     readonly decider: string | null;
-    readonly costUsd: number;
+    readonly costUsd: Usd;
     readonly tookMs: Duration | null;
 }
 
@@ -104,8 +102,9 @@ function coverageBackoffActive(input: BackoffFacts): CoverageHold {
     return last.gate === 'coverage' && last.verdict === 'wait' && now - last.at < policy.coverageBackoff.ms && tokens - last.tokens <= window * 0.1 && (lastBreakAt === null || lastBreakAt <= last.at) ? 'backing-off' : 'open';
 }
 
-const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
-const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: 0, tookMs: null };
+const NO_COST = must(parseUsd(0));
+const CEILING: Judged = { verdict: 'compact', answers: {}, why: null, decider: null, costUsd: NO_COST, tookMs: null };
+const UNKNOWN: Judged = { verdict: 'unknown', answers: {}, why: null, decider: null, costUsd: NO_COST, tookMs: null };
 const NO_CONTEXT = must(parseText('the context share is not known yet'));
 
 const NOTHING: Flight = flightOf(NOTHING_IN_FLIGHT, NOT_AWAITING);
@@ -151,7 +150,7 @@ export class Autocompact {
     }
 
     prune(board: readonly Lane[]): void {
-        const keep = this.deps.policy().mode === 'off' ? [] : board.filter((lane) => READY.has(lane.status)).map((lane) => ({ tab: String(lane.tab), pane: String(lane.pane) }));
+        const keep = this.deps.policy().mode === 'off' ? [] : board.filter((lane) => READY.has(lane.status)).map((lane) => ({ tab: lane.tab, pane: lane.pane }));
         this.deps.decisions.pruneSkips(keep);
     }
 
@@ -194,7 +193,7 @@ export class Autocompact {
 
     private skip(lane: Lane, gate: SkipGate, share: number | null, detail: Text | null): void {
         const { pane } = lane;
-        this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: this.deps.now(), gate, share, detail });
+        this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: instant(this.deps.now()), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
         this.deps.events?.lane(pane, 'autocompact-skipped', gate);
@@ -247,7 +246,7 @@ export class Autocompact {
         const { tab, pane } = lane;
         const { judged, effect, flight, atCeiling } = found;
         const made: Decision = {
-            tab, pane, agent: lane.agent, at: deps.now(), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            tab, pane, agent: lane.agent, at: instant(deps.now()), mode: found.mode, share: shareOf(use), tokens: use.tokens, window: use.window, gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: laneStatusAtDecision(lane.status),
         };
         const id = deps.decisions.record(made);
@@ -257,7 +256,7 @@ export class Autocompact {
         if (asksForCompaction(found.mode, judged.verdict, effect) === 'asks') this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
-    private request(tab: TabId, pane: PaneId, id: string, note: ContinuationNote | null): void {
+    private request(tab: TabId, pane: PaneId, id: DecisionId, note: ContinuationNote | null): void {
         this.asked.set(pane, instant(this.deps.now()));
         this.deps.requests.requestCompact({ tab, pane, note, origin: 'auto' });
         this.deps.decisions.markRequested(id);
@@ -265,16 +264,16 @@ export class Autocompact {
 
     private async asking(lane: Lane, tuning: AutocompactTuning): Promise<Judged> {
         const decider = this.deps.decider();
-        const label = decider?.label ?? null;
         const state = autocompactState(await this.deps.recent(lane), this.deps.ledger.historyOf(String(lane.tab), String(lane.pane)));
-        const answered = decider === null ? null : await decider.ask(state, QUESTIONS);
+        const answered = decider === null ? null : await decider.ask(must(parseText(JSON.stringify(state))), QUESTIONS);
         if (answered === null || isUnknown(answered)) {
             const why = answered === null ? 'no decider is set up' : saying(answered.why);
             if (this.outage === 'reachable') this.deps.log(`autocompact: the decider is unreachable (${why}); decisions are unknown until it answers`);
             this.outage = 'unreachable';
-            return { ...UNKNOWN, why: must(parseText(why)), decider: label };
+            return { ...UNKNOWN, why: must(parseText(why)), decider: decider?.label ?? null };
         }
         this.outage = 'reachable';
-        return { verdict: verdictOf(answered.answers, tuning.verdict), answers: answered.answers, why: null, decider: label, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
+        const answers = Object.fromEntries(answered.answers);
+        return { verdict: verdictOf(answers, tuning.verdict), answers, why: null, decider: decider?.label ?? null, costUsd: answered.costUsd, tookMs: duration(answered.tookMs) };
     }
 }

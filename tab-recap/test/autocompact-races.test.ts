@@ -1,3 +1,6 @@
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -10,14 +13,15 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
+import { decidedOf } from './fakes/decider-fixtures.ts';
 
 const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
-const SAFE_DECISION: DecidedResult = { kind: 'decided', answers: SAFE, tokens: 1, costUsd: 0, tookMs: 1, model: 'x' };
+const SAFE_DECISION: DecidedResult = decidedOf(SAFE);
 
 test('an unknown verdict is not unchanged: after the cooldown, with the same tokens, the lane is asked again', async () => {
-    const w = world({ cooldownMs: 600_000 });
+    const w = world({ cooldownMs: brand<number, 'Milliseconds'>(600_000) });
     w.decide = (): DecidedResult => unknown({ why: 'timeout', after: 10_000 as never });
     await w.service.consider(lane());
     assert.deepEqual(rows(w).map((row) => row.verdict), ['unknown']);
@@ -58,7 +62,7 @@ test('a begun, linked, unfinished automatic compaction of lane 1 holds lane 2: b
     w.share = 85;
     await w.service.consider(at('w1:p1'));
     const begun = w.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW, origin: 'auto' });
-    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), begun);
+    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(begun)));
     await w.service.consider(at('w1:p2'));
     assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
 });
@@ -73,11 +77,11 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     assert.equal(rows(w).find((row) => row.pane === 'w1:p4')?.gate, 'ceiling');
     assert.deepEqual(w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate]), [['w1:p5', 'below-minimum']]);
     assert.equal(w.asked.length, 3, 'one decider call per eligible lane below the ceiling: 15, 45 and 60 %');
-    w.policy = { ...w.policy, minimum: 40 };
+    w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(40) };
     const idle30 = at('w1:p6');
     await new AutocompactSweep({ board: (): Board => boardOf([...lanes, idle30]), autocompact: (): Considers => w.service, log: (): void => undefined }).sweep();
     assert.deepEqual(w.store.autocompact.skips().filter((skip) => skip.pane === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
-    w.policy = { ...w.policy, minimum: 10 };
+    w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(10) };
     await new AutocompactSweep({ board: (): Board => boardOf([...lanes, idle30]), autocompact: (): Considers => w.service, log: (): void => undefined }).sweep();
     assert.equal(rows(w).find((row) => row.pane === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
 });

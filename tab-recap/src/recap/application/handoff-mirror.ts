@@ -4,7 +4,7 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { failureStage, terminalStage } from '#src/protocol/exchange.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answer as answerOf } from '#src/protocol/responder.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
@@ -54,7 +54,7 @@ export interface HandoffMirrorDeps {
     readonly log: HandoffLog;
 }
 
-export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(requestId(route.id, 'token-safe')), pane: route.source });
+export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(parseRequestId(route.id, 'token-safe')), pane: route.source });
 
 const REPORT_BOUND_MS = 5_000;
 
@@ -110,7 +110,7 @@ export class HandoffMirror {
         if (this.deps.sharing() !== 'on') {
             return;
         }
-        const write = answerOf(handoff, must(requestId(route.id, 'token-safe')), stage);
+        const write = answerOf(handoff, must(parseRequestId(route.id, 'token-safe')), stage);
         if (write.kind === 'ok') {
             this.report(route.source, write.value);
         }

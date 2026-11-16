@@ -11,7 +11,7 @@ import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts'
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -40,7 +40,7 @@ class MemoryAnswers implements HandoffAnswers {
 
 function setup(now: number): { readonly runner: HandoffRunner; readonly tokens: RecordingTokens; readonly answers: MemoryAnswers; readonly ran: number[]; readonly asks: MemoryAskLedger } {
     const asks = new MemoryAskLedger();
-    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(toolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
+    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
     const tokens = new RecordingTokens();
     const answers = new MemoryAnswers();
     const ran: number[] = [];

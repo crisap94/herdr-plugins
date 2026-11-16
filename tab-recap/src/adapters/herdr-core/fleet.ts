@@ -170,7 +170,7 @@ export class HcCoreFleet implements Fleet {
     }
 
     read(): Promise<PaneTokensResult> {
-        return Promise.resolve({ kind: 'tokens', tokens: {} });
+        return Promise.resolve({ kind: 'tokens', tokens: new Map() });
     }
 
     reportWorkspace(): Promise<Done> {

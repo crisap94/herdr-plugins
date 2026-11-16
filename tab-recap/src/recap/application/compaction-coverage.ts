@@ -3,10 +3,10 @@ import { must } from '#src/protocol/result.ts';
 import { correctionOf, factsOf } from './brief-coverage.ts';
 import type { Coverage } from './brief-coverage.ts';
 import type { CompactionDeps } from './compaction-deps.ts';
-import type { CheckedFact, CoverageOutcome } from '#src/recap/domain/autocompact.ts';
-import { isSection } from '#src/recap/domain/fact.ts';
+import { parseCheckedFact, type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
+import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 
 export interface Briefed {
     readonly text: string | null;
@@ -23,8 +23,8 @@ export interface Checked {
     readonly brief: Briefed;
     readonly coverage: Readonly<Record<string, number>> | null;
     readonly outcome: CoverageOutcome;
-    readonly coverageMs: number;
-    readonly coverageCostUsd: number | null;
+    readonly coverageMs: Duration;
+    readonly coverageCostUsd: Usd | null;
     readonly why: string | null;
 }
 
@@ -34,11 +34,13 @@ interface WaitingParts {
     readonly outcome: CoverageOutcome;
     readonly coverage?: Readonly<Record<string, number>> | null;
     readonly coverageMs?: Duration;
-    readonly coverageCostUsd?: number | null;
+    readonly coverageCostUsd?: Usd | null;
 }
 
+const usdOrNull = (result: Coverage): Usd | null => result.costUsd === null || result.costUsd === undefined ? null : must(parseUsd(result.costUsd));
+
 const waiting = (parts: WaitingParts): Checked => ({
-    brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? 0, coverageCostUsd: parts.coverageCostUsd ?? null,
+    brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? duration(0), coverageCostUsd: parts.coverageCostUsd ?? null,
 });
 
 type CoverageCheck = Pick<NonNullable<ReturnType<CompactionDeps['coverage']>>, 'check'>;
@@ -81,12 +83,12 @@ export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log'
     if (first.text === null) return waiting({ brief: first, why: first.why ?? 'the template would be used', outcome: { kind: 'unchecked', reason: 'no-brief' } });
     const facts = factsOf(history);
     const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, flow });
-    if (result.unknown !== null) return waiting({ brief, why: `brief not checked (${result.unknown})`, outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: duration(deps.now() - started), coverageCostUsd: result.costUsd ?? null });
+    if (result.unknown !== null) return waiting({ brief, why: `brief not checked (${result.unknown})`, outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
     if (!result.ok) {
-        const missed = result.missingFacts.flatMap(({ fact }) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
-        return waiting({ brief, why: `the brief still misses ${missed.length} fact(s)`, outcome: { kind: 'missed', facts: missed }, coverage: result.answers, coverageMs: duration(deps.now() - started), coverageCostUsd: result.costUsd ?? null });
+        const missed = result.missingFacts.flatMap(({ fact }) => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; });
+        return waiting({ brief, why: `the brief still misses ${missed.length} fact(s)`, outcome: { kind: 'missed', facts: missed }, coverage: result.answers, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
     }
-    return { brief, coverage: result.answers, outcome: { kind: 'passed' }, coverageMs: deps.now() - started, coverageCostUsd: result.costUsd ?? null, why: null };
+    return { brief, coverage: result.answers, outcome: { kind: 'passed' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result), why: null };
 }
 
 const APPEND_ORDER = ['goal', 'rules', 'needs', 'decisions'] as const;

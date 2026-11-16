@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoff, HANDOFF_EVENTS } from '#src/protocol/exchanges/handoff.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
+import { parseIdText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { eventValue } from '#src/recap/domain/event-token.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
@@ -48,7 +49,7 @@ test('every descriptor refusal, unsupported and failure reason maps to one answe
         ...handoff.failureReasons.map((reason) => `failed-${reason}`),
     ];
     for (const stage of stages) {
-        assert.ok(must(answerValue(handoff, 'x'.repeat(16), stage)).length <= 80, stage);
+        assert.ok(must(answerValue(handoff, parseIdText('x'.repeat(16)), stage)).length <= 80, stage);
     }
     for (const reason of HANDOFF_EXCHANGE_REFUSALS) {
         assert.ok(handoff.refusalReasons.some((each) => each === reason), `${reason} is a refusal of the descriptor`);

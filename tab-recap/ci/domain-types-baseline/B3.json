@@ -22,15 +22,15 @@
     "property": 2
   },
   "src/recap/application/autocompact.ts": {
-    "parameter": 3,
+    "parameter": 2,
     "return": 2,
     "container": 2,
-    "property": 7
+    "property": 6
   },
   "src/recap/application/brief-coverage.ts": {
     "parameter": 3,
     "return": 1,
-    "container": 8,
+    "container": 7,
     "property": 7
   },
   "src/recap/application/compact-keys.ts": {
@@ -55,15 +55,13 @@
     "property": 2
   },
   "src/recap/application/compaction-briefing.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 1
+    "return": 1
   },
   "src/recap/application/compaction-coverage.ts": {
     "parameter": 3,
     "return": 3,
     "container": 5,
-    "property": 11,
+    "property": 8,
     "assertion": 2
   },
   "src/recap/application/compaction-deps.ts": {
@@ -188,7 +186,7 @@
     "return": 1
   },
   "src/recap/application/handoff-pipeline.ts": {
-    "container": 2
+    "container": 1
   },
   "src/recap/application/handoff-print.ts": {
     "parameter": 1,
@@ -359,7 +357,6 @@
   },
   "src/recap/application/worksite-section.ts": {
     "return": 1,
-    "container": 1,
     "property": 1
   }
 }

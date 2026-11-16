@@ -2,17 +2,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CAPABILITY_TOKEN, capabilityValue, parseCapability } from '#src/protocol/capability.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
-import { exchangeName, exchangeVersion, tokenName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseExchangeVersion, parseOptIn, parseTokenName } from '#src/protocol/primitives.ts';
 import type { ExchangeVersion } from '#src/protocol/primitives.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { compactLike, handoffLike, nameOf, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
 
-const version = (n: number): ExchangeVersion => unwrap(exchangeVersion(n));
+const version = (n: number): ExchangeVersion => unwrap(parseExchangeVersion(n));
 
-const renamed = (exchange: Exchange, name: string, n: number): Exchange => ({ ...exchange, name: unwrap(exchangeName(name)), version: version(n) });
+const renamed = (exchange: Exchange, name: string, n: number): Exchange => ({ ...exchange, name: unwrap(parseExchangeName(name)), version: version(n) });
 
 test('the capability token name is a valid token name', () => {
-    assert.equal(tokenName(CAPABILITY_TOKEN).kind, 'ok');
+    assert.equal(parseTokenName(CAPABILITY_TOKEN).kind, 'ok');
 });
 
 test('the capability value for compact alone is compact1 with the kinds version', () => {
@@ -70,11 +70,17 @@ test('the owner table lists the registry own names and each exchange request pre
 });
 
 test('an exchange whose switch is off is not advertised, and is advertised once the switch is on', () => {
-    const switched: Exchange = { ...handoffLike, optIn: 'TAB_RECAP_HANDOFF' };
+    const switched: Exchange = { ...handoffLike, optIn: unwrap(parseOptIn('TAB_RECAP_HANDOFF')) };
     assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), () => false)), 'compact1,kinds1');
     assert.equal(unwrap(capabilityValue([compactLike, switched], version(1), (setting) => setting === 'TAB_RECAP_HANDOFF')), 'compact1,handoff1,kinds1');
 });
 
 test('an exchange with no switch is always advertised', () => {
     assert.equal(unwrap(capabilityValue([compactLike], version(1), () => false)), 'compact1,kinds1');
+});
+
+test('a capability past the token limit, with long names and high versions, parses as offered', () => {
+    const name = 'a-very-long-exchange-name';
+    const raw = `${name}120,${'b'.repeat(70)}3,kinds250`;
+    assert.deepEqual(parseCapability(raw), { kind: 'ok', value: { exchanges: [{ name, version: 120 }, { name: 'b'.repeat(70), version: 3 }], kinds: 250 } });
 });

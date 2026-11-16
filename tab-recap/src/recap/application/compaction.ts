@@ -25,7 +25,7 @@ import { Sender } from './compaction-send.ts';
 import type { Placed, Placement } from './compaction-send.ts';
 import { scopeOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, parseCompactionId } from '#src/recap/domain/ids.ts';
 import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -188,7 +188,7 @@ export class Compaction {
         const said = (text: Text): Text => must(parseText(auto ? compaction.auto(text) : text));
         await this.tell(said(must(parseText(compaction.title(agent)))), said(this.beginning(agent, placement)));
         const material = this.briefing.materialOf(tab, paneId(pane), request.note === null ? null : must(parseText(request.note)));
-        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, paneId(pane), trail.id);
+        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, paneId(pane), must(parseCompactionId(trail.id)));
         const verified = await this.briefing.verified(lane, tab, material, link);
         if (verified.kind === 'closed') {
             this.endClosed(lane, trail, verified.at);

@@ -1,6 +1,6 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from './brand.ts';
-import { parseNonEmptyText } from './text.ts';
+import { parseNonEmptyText, parseText } from './text.ts';
 import type { ParseFailure } from './parse-failure.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
@@ -10,6 +10,8 @@ export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;
 export type AgentKind = Brand<string, 'AgentKind'>;
+export type DecisionId = Brand<string, 'DecisionId'>;
+export type CompactionId = Brand<string, 'CompactionId'>;
 export interface AgentSessionId {
     readonly kind: 'id';
     readonly value: SessionId;
@@ -139,4 +141,20 @@ export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> 
         return text;
     }
     return ok(brand<string, 'AgentKind'>(text.value));
+}
+
+export function parseDecisionId(input: unknown): Result<DecisionId, ParseFailure> {
+    const text = parseText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'DecisionId'>(text.value));
+}
+
+export function parseCompactionId(input: unknown): Result<CompactionId, ParseFailure> {
+    const text = parseText(input);
+    if (text.kind === 'err') {
+        return text;
+    }
+    return ok(brand<string, 'CompactionId'>(text.value));
 }

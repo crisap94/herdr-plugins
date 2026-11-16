@@ -16,7 +16,7 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
-import { toolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -25,7 +25,7 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 
 const NOW = Date.parse('2026-10-10T10:00:00Z');
 const LANE = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
-const coordinator = must(toolName('coordinator'));
+const coordinator = must(parseToolName('coordinator'));
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[LANE.pane, LANE]]) });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 

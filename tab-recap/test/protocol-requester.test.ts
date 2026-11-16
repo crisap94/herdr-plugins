@@ -2,13 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { observe, request, withdraw } from '#src/protocol/requester.ts';
 import type { AnswerState } from '#src/protocol/requester.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseFieldText, parseRequestId, parseTokenValue } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
 import { compactLike, handoffLike, nameOf, parsedOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
 
-const idOf = (raw: string, grammar: 'legacy-length' | 'token-safe'): RequestId => unwrap(requestId(raw, grammar));
+const idOf = (raw: string, grammar: 'legacy-length' | 'token-safe'): RequestId => unwrap(parseRequestId(raw, grammar));
 
-const observeOwn = (raw: string, id: string): AnswerState => unwrap(observe(handoffLike, { [nameOf('tab-recap-handoff')]: raw }, idOf(id, 'token-safe')));
+const observeOwn = (raw: string, id: string): AnswerState =>
+    unwrap(observe(handoffLike, { [nameOf('tab-recap-handoff')]: unwrap(parseTokenValue(raw)) }, idOf(id, 'token-safe')));
 
 test('an absent or empty answer is not seen', () => {
     assert.deepEqual(observeOwn('', 'r1'), { kind: 'not-seen' });
@@ -37,6 +39,11 @@ test('an answer for another id is foreign, and names that id', () => {
     assert.deepEqual(observeOwn('b2:queued', 'r1'), { kind: 'foreign-id', id: 'b2' });
 });
 
+test('an answer for another id stays foreign even when its stage is not a stage word', () => {
+    assert.deepEqual(observeOwn('other:Bad Stage', 'r1'), { kind: 'foreign-id', id: 'other' });
+    assert.deepEqual(observeOwn('r1:Bad Stage', 'r1'), { kind: 'unreadable' });
+});
+
 test('a request writes its serialized value under the tool request name', () => {
     const writes = unwrap(request(handoffLike, toolOf('alpha'), parsedOf(handoffLike, 'r1:beta:urgent')));
     assert.deepEqual(writes, [{ name: 'handoff-req-alpha', value: 'r1:beta:urgent' }]);
@@ -48,7 +55,7 @@ test('a compact request keeps its legacy note as the rest of the value', () => {
 });
 
 test('a request that breaks its field grammar is refused and writes nothing', () => {
-    const value = { ...parsedOf(handoffLike, 'r1:beta'), target: 'two words' };
+    const value = { ...parsedOf(handoffLike, 'r1:beta'), target: must(parseFieldText('two words')) };
     assert.deepEqual(request(handoffLike, toolOf('alpha'), value), {
         kind: 'err',
         error: { reason: 'bad-characters', subject: 'target' },

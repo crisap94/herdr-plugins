@@ -4,7 +4,7 @@ import { observe, request } from '#src/protocol/requester.ts';
 import type { AnswerState } from '#src/protocol/requester.ts';
 import { answer, take } from '#src/protocol/responder.ts';
 import type { SeenCheck, Taken } from '#src/protocol/responder.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, ToolName } from '#src/protocol/primitives.ts';
 import type { Registry } from '#src/protocol/registry.ts';
 import { handoffLike, parsedOf, registryOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
@@ -16,13 +16,13 @@ const requestToken = 'handoff-req-alpha';
 
 const answerToken = 'tab-recap-handoff';
 
-const idOf = (raw: string): RequestId => unwrap(requestId(raw, 'token-safe'));
+const idOf = (raw: string): RequestId => unwrap(parseRequestId(raw, 'token-safe'));
 
 const ask = (map: FakeTokenMap, raw: string): void => {
     map.apply(unwrap(request(handoffLike, toolOf('alpha'), parsedOf(handoffLike, raw))));
 };
 
-const observeAs = (map: FakeTokenMap, raw: string): AnswerState => unwrap(observe(handoffLike, map.snapshot(), idOf(raw)));
+const observeAs = (map: FakeTokenMap, raw: string): AnswerState => unwrap(observe(handoffLike, map.tokenSnapshot(), idOf(raw)));
 
 const keyOf = (exchange: ExchangeName, tool: ToolName, id: RequestId): string => `${exchange}\u0000${tool}\u0000${id}`;
 

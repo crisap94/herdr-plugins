@@ -1,11 +1,12 @@
 import { collapsedText } from './text-collapse.ts';
+import type { Text } from './text.ts';
 
 const AWAITING = /^awaiting(?:-.+)?$/;
 const NOTE = /^note(?:-(.+))?$/;
 
-export function awaitingOf(tokens: Readonly<Record<string, string>>): string | null {
-    const first = Object.keys(tokens).filter((name) => AWAITING.test(name) && (tokens[name] ?? '') !== '').toSorted()[0];
-    return first === undefined ? null : (tokens[first] ?? null);
+export function awaitingOf(tokens: ReadonlyMap<Text, Text>): string | null {
+    const first = [...tokens.keys()].filter((name) => AWAITING.test(name) && (tokens.get(name) ?? '') !== '').toSorted()[0];
+    return first === undefined ? null : (tokens.get(first) ?? null);
 }
 
 export interface NoteToken {
@@ -23,9 +24,9 @@ export function notesOf(tokens: Readonly<Record<string, string>>): readonly Note
     });
 }
 
-export function coordinationNamesOf(tokens: Readonly<Record<string, string>>): readonly string[] {
-    return Object.keys(tokens).toSorted().filter((name) => {
-        const raw = tokens[name] ?? '';
+export function coordinationNamesOf(tokens: ReadonlyMap<Text, Text>): readonly string[] {
+    return [...tokens.keys()].toSorted().filter((name) => {
+        const raw = tokens.get(name) ?? '';
         return AWAITING.test(name) ? raw !== '' : NOTE.test(name) && plainText(raw) !== '';
     });
 }

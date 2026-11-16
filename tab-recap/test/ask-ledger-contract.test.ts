@@ -4,7 +4,7 @@ import { AskLedgerRepository } from '#src/adapters/db/ask-ledger.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import { exchangeName, toolName } from '#src/protocol/primitives.ts';
+import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
@@ -19,9 +19,9 @@ const sqlite = (): AskLedger => {
 
 const implementations: readonly (readonly [string, () => AskLedger])[] = [['SQLite', sqlite], ['in-memory double', (): AskLedger => new MemoryAskLedger()]];
 
-const coordinator = must(toolName('coordinator'));
-const reviewer = must(toolName('reviewer'));
-const handoff = must(exchangeName('handoff'));
+const coordinator = must(parseToolName('coordinator'));
+const reviewer = must(parseToolName('reviewer'));
+const handoff = must(parseExchangeName('handoff'));
 const DONE: AskOutcome = { kind: 'done' };
 
 for (const [name, make] of implementations) {

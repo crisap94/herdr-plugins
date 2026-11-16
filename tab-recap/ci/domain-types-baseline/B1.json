@@ -15,10 +15,9 @@
     "container": 1
   },
   "src/ports/autocompact-records.ts": {
-    "parameter": 11,
-    "return": 5,
+    "return": 2,
     "container": 6,
-    "property": 39
+    "property": 14
   },
   "src/ports/boundaries.ts": {
     "parameter": 3,
@@ -51,9 +50,7 @@
     "parameter": 1
   },
   "src/ports/decider.ts": {
-    "parameter": 1,
-    "container": 3,
-    "property": 11
+    "property": 1
   },
   "src/ports/extension.ts": {
     "return": 1,
@@ -107,10 +104,6 @@
   "src/ports/notifier.ts": {
     "parameter": 2
   },
-  "src/ports/pane-tokens.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/ports/process-control.ts": {
     "parameter": 3,
     "container": 1,
@@ -163,48 +156,17 @@
     "container": 2
   },
   "src/protocol/capability.ts": {
-    "parameter": 4,
-    "return": 5,
-    "property": 4,
-    "assertion": 1
-  },
-  "src/protocol/codec.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 6,
-    "property": 9
+    "return": 3
   },
   "src/protocol/exchange.ts": {
-    "parameter": 9,
-    "return": 3,
-    "container": 6,
-    "property": 5,
-    "assertion": 1
-  },
-  "src/protocol/owners.ts": {
-    "container": 1
+    "parameter": 3
   },
   "src/protocol/primitives.ts": {
-    "parameter": 11,
-    "property": 1,
-    "assertion": 3
-  },
-  "src/protocol/registry.ts": {
-    "parameter": 1,
-    "return": 3,
-    "container": 2,
-    "property": 1
-  },
-  "src/protocol/requester.ts": {
-    "parameter": 2,
-    "container": 2,
-    "property": 2,
-    "assertion": 1
+    "parameter": 1
   },
   "src/protocol/responder.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 2,
-    "container": 2,
-    "property": 1
+    "container": 1
   }
 }

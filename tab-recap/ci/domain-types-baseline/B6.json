@@ -97,7 +97,7 @@
     "container": 8
   },
   "src/adapters/herdr/fleet.ts": {
-    "parameter": 21,
+    "parameter": 18,
     "return": 1,
     "container": 11,
     "property": 1
@@ -130,9 +130,9 @@
     "container": 1
   },
   "src/adapters/job/decider.ts": {
-    "parameter": 4,
-    "return": 4,
-    "container": 6,
+    "parameter": 1,
+    "return": 3,
+    "container": 1,
     "assertion": 1
   },
   "src/adapters/job/enumerator.ts": {
@@ -140,11 +140,10 @@
     "container": 1
   },
   "src/adapters/job/jev-decider.ts": {
-    "parameter": 6,
+    "parameter": 5,
     "return": 3,
-    "container": 3,
-    "property": 5,
-    "assertion": 1
+    "container": 1,
+    "property": 5
   },
   "src/adapters/job/jev-key.ts": {
     "parameter": 4,

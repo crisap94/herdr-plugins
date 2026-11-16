@@ -16,7 +16,7 @@ import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
@@ -254,7 +254,7 @@ test('a restart sweep that fails on one ask logs it, leaves that ask open and se
     const { answers } = flakyAnswers((id) => id === broken);
     const { runner, asks, probe } = runnerOf(delivered, { answers });
     for (const [hex, id] of [['0123456789abcdef', broken], ['fedcba9876543210', healthy]] as const) {
-        asks.record({ exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(requestId(hex, 'legacy-length')), pane: SOURCE, at: NOW, ref: String(id) });
+        asks.record({ exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId(hex, 'legacy-length')), pane: SOURCE, at: NOW, ref: String(id) });
     }
     for (const ask of asks.unfinished()) {
         assert.doesNotThrow(() => { runner.interrupted(ask); });

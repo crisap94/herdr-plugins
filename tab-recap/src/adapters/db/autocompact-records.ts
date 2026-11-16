@@ -1,9 +1,13 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
-import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { AutocompactRecords, CoverageAmendment, LinkedDecision, Decision, DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LastDecision, PaneKey, Skip, SkipGate, StoredCoverageOutcome, StoredDecision } from '#src/ports/autocompact-records.ts';
 import { laneStatusAtDecision, unreachable } from '#src/recap/domain/autocompact.ts';
 import type { CoverageOutcome, LaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
-import { paneId, tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { agentKind, paneId, parseCompactionId, parseDecisionId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { BadRow, blob, guarded, maybeText, maybeWhole, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { writeTx } from './connection.ts';
@@ -16,17 +20,12 @@ const COMPACT = 'compact';
 const ON = 'on';
 const WAIT = 'wait';
 const COVERAGE_GATE = 'coverage';
-const NO_COUNTS: DecisionCounts = { decisions: 0, compacted: 0, waited: 0 };
+const NO_COUNTS: DecisionCounts = { decisions: must(parseCount(0)), compacted: must(parseCount(0)), waited: must(parseCount(0)) };
 const MICRO = 1e6;
 
 interface LatestDecision {
     readonly id: Uint8Array;
     readonly gate: DecisionGate;
-}
-
-interface KeptLane {
-    readonly tab: string;
-    readonly pane: string;
 }
 
 const NEWEST_COLUMNS = {
@@ -47,7 +46,7 @@ const numbers = (raw: string | null): Record<string, number> | null => {
 };
 
 function skipOf(row: Row): Skip {
-    return { tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'), gate: text(row, 'gate') as SkipGate, share: maybeWhole(row, 'share'), detail: maybeText(row, 'detail') };
+    return { tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), at: instant(whole(row, 'at')), gate: text(row, 'gate') as SkipGate, share: maybeWhole(row, 'share'), detail: maybeText(row, 'detail') };
 }
 
 function outcomeOf(row: Row): StoredCoverageOutcome | null {
@@ -65,9 +64,9 @@ function outcomeOf(row: Row): StoredCoverageOutcome | null {
     }
 }
 
-function costOf(row: Row): number | null {
+function costOf(row: Row): Usd | null {
     const cost = maybeWhole(row, 'coverage_cost_micro_usd');
-    return cost === null ? null : cost / MICRO;
+    return cost === null ? null : must(parseUsd(cost / MICRO));
 }
 
 function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['coverage']): number | null {
@@ -82,15 +81,15 @@ function missingOf(outcome: CoverageOutcome, coverage: CoverageAmendment['covera
 export const laneStatusOf = (row: Row): LaneStatusAtDecision | null => laneStatusAtDecision(maybeText(row, 'lane_status'));
 
 function decisionOf(row: Row): StoredDecision {
-    const compaction = row['compaction_id'] === null ? null : typeIdOf('compaction', blob(row, 'compaction_id'));
+    const compaction = row['compaction_id'] === null ? null : must(parseCompactionId(typeIdOf('compaction', blob(row, 'compaction_id'))));
     return {
-        id: typeIdOf('decision', blob(row, 'id')), tab: text(row, 'tab_id'), pane: text(row, 'pane'), agent: text(row, 'agent'), at: whole(row, 'at'),
+        id: must(parseDecisionId(typeIdOf('decision', blob(row, 'id')))), tab: tabId(text(row, 'tab_id')), pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), at: instant(whole(row, 'at')),
         mode: text(row, 'mode') as DecisionMode, share: whole(row, 'share'), tokens: whole(row, 'tokens'), window: whole(row, 'window'),
         gate: text(row, 'gate') as DecisionGate, verdict: text(row, 'verdict') as DecisionVerdict,
         askedVerdict: maybeText(row, 'asked_verdict') as DecisionVerdict | null,
         answers: numbers(text(row, 'answers')) ?? {}, coverage: numbers(maybeText(row, 'coverage')), decider: maybeText(row, 'decider'),
-        costUsd: whole(row, 'cost_micro_usd') / MICRO, tookMs: maybeWhole(row, 'took_ms'), why: maybeText(row, 'why'),
-        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms'), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
+        costUsd: must(parseUsd(whole(row, 'cost_micro_usd') / MICRO)), tookMs: maybeWhole(row, 'took_ms') === null ? null : duration(whole(row, 'took_ms')), why: maybeText(row, 'why'),
+        coverageOutcome: outcomeOf(row), coverageMs: maybeWhole(row, 'coverage_ms') === null ? null : duration(whole(row, 'coverage_ms')), coverageCostUsd: costOf(row), compactionId: compaction, laneStatus: laneStatusOf(row),
     };
 }
 
@@ -103,35 +102,35 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         this.orm = ormOf(db);
     }
 
-    record(d: Decision): string {
+    record(d: Decision): DecisionId {
         const id = ids.next();
         writeTx(this.db, () => {
             this.orm.insert(autocompactDecision).values({
-                id, tabId: tabId(d.tab), pane: paneId(d.pane), agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
+                id, tabId: d.tab, pane: d.pane, agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
                 gate: d.gate, verdict: d.verdict, answers: JSON.stringify(d.answers), coverage: d.coverage === null ? null : JSON.stringify(d.coverage),
                 decider: d.decider ?? null, costMicroUsd: Math.round(d.costUsd * MICRO), tookMs: d.tookMs ?? null, why: d.why ?? null,
                 askedVerdict: d.askedVerdict ?? null, laneStatus: d.laneStatus ?? null, requested: 0,
             }).run();
-            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, tabId(d.tab)), eq(autocompactSkip.pane, paneId(d.pane)))).run();
+            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, d.tab), eq(autocompactSkip.pane, d.pane))).run();
         });
-        return typeIdOf('decision', id);
+        return must(parseDecisionId(typeIdOf('decision', id)));
     }
 
-    link(id: string, compactionId: string): void {
+    link(id: DecisionId, compactionId: CompactionId): void {
         const [key, target] = [idOf('decision', id), idOf('compaction', compactionId)];
         if (key !== null && target !== null) writeTx(this.db, () => { this.attachTo(key, target); });
     }
 
-    linkLatest(tab: TabId, pane: PaneId, compactionId: string): LinkedDecision | null {
+    linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null {
         const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', compactionId)];
         if (row === null || target === null) return null;
         writeTx(this.db, () => { this.attachTo(row.id, target); });
-        return { id: typeIdOf('decision', row.id), gate: row.gate };
+        return { id: must(parseDecisionId(typeIdOf('decision', row.id))), gate: row.gate };
     }
 
-    amend(id: string, update: CoverageAmendment): void {
+    amend(id: DecisionId, update: CoverageAmendment): void {
         const key = idOf('decision', id);
         const { coverage, outcome, coverageMs, coverageCostUsd, why, block } = update;
         const waited = outcome.kind === 'unchecked' || outcome.kind === 'missed';
@@ -152,9 +151,10 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         }
     }
 
-    lastDecisionAt(tab: TabId, pane: PaneId): number | null {
-        return guarded(() => maybeWhole(this.orm.select({ at: sql<number | null>`MAX(${autocompactDecision.at})` }).from(autocompactDecision)
+    lastDecisionAt(tab: TabId, pane: PaneId): Instant | null {
+        const at = guarded(() => maybeWhole(this.orm.select({ at: sql<number | null>`MAX(${autocompactDecision.at})` }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)))).get() ?? { at: null }, 'at'), null);
+        return at === null ? null : instant(at);
     }
 
     lastDecision(tab: TabId, pane: PaneId): LastDecision | null {
@@ -162,32 +162,32 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
                 .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane))))
                 .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null;
-            return row === null ? null : { at: row.at, tokens: row.tokens, mode: row.mode, verdict: row.verdict, gate: row.gate };
+            return row === null ? null : { at: instant(row.at), tokens: row.tokens, mode: row.mode, verdict: row.verdict, gate: row.gate };
         }, null);
     }
 
-    unlinkedCompactSince(tab: TabId, pane: PaneId, at: number): boolean {
+    unlinkedCompactSince(tab: TabId, pane: PaneId, at: Instant): boolean {
         return guarded(() => this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tabId(tab)), eq(autocompactDecision.pane, paneId(pane)),
             eq(autocompactDecision.mode, ON), eq(autocompactDecision.verdict, COMPACT), eq(autocompactDecision.requested, 1), isNull(autocompactDecision.compactionId), gte(autocompactDecision.at, at)))
             .limit(1).get() !== undefined, false);
     }
 
-    unlinkedCompactAny(at: number): boolean {
+    unlinkedCompactAny(at: Instant): boolean {
         return guarded(() => this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.mode, ON), eq(autocompactDecision.verdict, COMPACT),
             eq(autocompactDecision.requested, 1), isNull(autocompactDecision.compactionId), gte(autocompactDecision.at, at))).limit(1).get() !== undefined, false);
     }
 
-    markRequested(id: string): void {
+    markRequested(id: DecisionId): void {
         const key = idOf('decision', id);
         if (key !== null) writeTx(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 
-    pruneSkips(keep: readonly KeptLane[]): void {
+    pruneSkips(keep: readonly PaneKey[]): void {
         const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
         writeTx(this.db, () => {
             for (const skip of this.skips()) {
                 if (!kept.has(`${skip.tab}\u0000${skip.pane}`)) {
-                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, tabId(skip.tab)), eq(autocompactSkip.pane, paneId(skip.pane)))).run();
+                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, skip.tab), eq(autocompactSkip.pane, skip.pane))).run();
                 }
             }
         });
@@ -196,7 +196,7 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     skip(skip: Skip): void {
         writeTx(this.db, () => {
             this.orm.insert(autocompactSkip).values({
-                tabId: tabId(skip.tab), pane: paneId(skip.pane), agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share ?? null, detail: skip.detail ?? null,
+                tabId: skip.tab, pane: skip.pane, agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share ?? null, detail: skip.detail ?? null,
             }).onConflictDoUpdate({
                 target: [autocompactSkip.tabId, autocompactSkip.pane],
                 set: { agent: sql`excluded.agent`, at: sql`excluded.at`, gate: sql`excluded.gate`, share: sql`excluded.share`, detail: sql`excluded.detail` },
@@ -211,25 +211,25 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
         }).from(autocompactSkip).orderBy(desc(autocompactSkip.at), asc(autocompactSkip.tabId), asc(autocompactSkip.pane)).all().map(skipOf), []);
     }
 
-    newest(limit: number, tab?: string): readonly StoredDecision[] {
+    newest(limit: Count, tab?: TabId): readonly StoredDecision[] {
         return guarded(() => this.orm.select(NEWEST_COLUMNS).from(autocompactDecision)
             .where(tab === undefined ? undefined : eq(autocompactDecision.tabId, tabId(tab)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(limit).all().map(decisionOf), []);
     }
 
-    countsFor(tab: string): DecisionCounts {
+    countsFor(tab: TabId): DecisionCounts {
         return guarded((): DecisionCounts => {
             const row = this.orm.select({
                 decisions: count(), compacted: count(autocompactDecision.compactionId),
                 waited: sql<number>`COALESCE(SUM(${autocompactDecision.verdict} <> ${COMPACT}), 0)`,
             }).from(autocompactDecision).where(eq(autocompactDecision.tabId, tabId(tab))).get() ?? NO_COUNTS;
-            return { decisions: row.decisions, compacted: row.compacted, waited: row.waited };
+            return { decisions: must(parseCount(row.decisions)), compacted: must(parseCount(row.compacted)), waited: must(parseCount(row.waited)) };
         }, NO_COUNTS);
     }
 
-    costSince(at: number): number {
-        return guarded(() => (this.orm.select({ micro: sql<number>`COALESCE(SUM(${autocompactDecision.costMicroUsd}), 0)` }).from(autocompactDecision)
-            .where(gte(autocompactDecision.at, at)).get()?.micro ?? 0) / MICRO, 0);
+    costSince(at: Instant): Usd {
+        return guarded((): Usd => must(parseUsd((this.orm.select({ micro: sql<number>`COALESCE(SUM(${autocompactDecision.costMicroUsd}), 0)` }).from(autocompactDecision)
+            .where(gte(autocompactDecision.at, at)).get()?.micro ?? 0) / MICRO)), must(parseUsd(0)));
     }
 
     private attachTo(decision: Uint8Array, compaction: Uint8Array): void {

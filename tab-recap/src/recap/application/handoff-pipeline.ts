@@ -1,3 +1,4 @@
+import type { Text } from '#src/recap/domain/text.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
@@ -24,8 +25,8 @@ export interface HandoffPipelineDeps {
 
 const referenceOf = (input: HandoffRenderInput): HandoffReference => (input.handoff === null ? { kind: 'dry-run' } : { kind: 'handoff', id: input.handoff, at: input.at });
 
-async function tokensOf(tokens: PaneTokens, lane: HandoffLane): Promise<Readonly<Record<string, string>> | null> {
-    const found = await tokens.read(String(lane.pane));
+async function tokensOf(tokens: PaneTokens, lane: HandoffLane): Promise<ReadonlyMap<Text, Text> | null> {
+    const found = await tokens.read(lane.pane);
     return isUnknown(found) ? null : found.tokens;
 }
 

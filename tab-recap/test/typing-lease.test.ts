@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
@@ -15,7 +16,7 @@ function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens;
         report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
     const panes: PaneTokens = {
-        read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: herdr.read(pane) }),
+        read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: tokenEntries(herdr.read(pane)) }),
     };
     return { herdr, tokens, panes };
 }

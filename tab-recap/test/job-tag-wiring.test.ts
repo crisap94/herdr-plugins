@@ -11,6 +11,7 @@ import { loadConfig } from '#src/daemon/config.ts';
 import type { Config } from '#src/daemon/config.ts';
 import type { RecapInput } from '#src/ports/recap-input.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
+import { documentOf } from './fakes/decider-fixtures.ts';
 
 interface Site {
     readonly name: string;
@@ -28,8 +29,8 @@ const SITES: readonly Site[] = [
     { name: 'briefFor', tag: 'compaction-brief', call: (config, available, work, runtime) => briefFor(config, available, work, runtime)?.write('document') ?? Promise.resolve(null) },
     { name: 'judgeFor', tag: 'judge', call: (config, available, work, runtime) => judgeFor(config, available, work, runtime)?.ask('score', 'document') ?? Promise.resolve(null) },
     { name: 'curatorFor', tag: 'curator', call: (config, available, work, runtime) => curatorFor(config, available, work, runtime)?.write('document') ?? Promise.resolve(null) },
-    { name: 'deciderFor', tag: 'decider', call: (config, available, work, runtime) => deciderFor(config, available, work, runtime)?.ask({}, {}) ?? Promise.resolve(null) },
-    { name: 'coverageDeciderFor', tag: 'coverage-check', call: (config, available, work, runtime) => coverageDeciderFor(config, available, work, runtime)?.ask({}, {}) ?? Promise.resolve(null) },
+    { name: 'deciderFor', tag: 'decider', call: (config, available, work, runtime) => deciderFor(config, available, work, runtime)?.ask(documentOf({}), new Map()) ?? Promise.resolve(null) },
+    { name: 'coverageDeciderFor', tag: 'coverage-check', call: (config, available, work, runtime) => coverageDeciderFor(config, available, work, runtime)?.ask(documentOf({}), new Map()) ?? Promise.resolve(null) },
 ];
 
 const SETTING_KEYS = ['HERDR_PLUGIN_CONFIG_DIR', 'PATH', 'TAB_RECAP_BACKEND', 'TAB_RECAP_CUSTOM_CMD', 'TAB_RECAP_TELEMETRY_TAGS', 'TAB_RECAP_CLAUDE_POLICY_ACK', 'TAB_RECAP_AUTOCOMPACT_BY', 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BY', 'OTEL_RESOURCE_ATTRIBUTES'];

@@ -13,9 +13,9 @@
     "property": 5
   },
   "src/experiment/label-prompt.ts": {
-    "parameter": 6,
-    "return": 3,
-    "container": 8,
+    "parameter": 4,
+    "return": 2,
+    "container": 6,
     "property": 2,
     "assertion": 3
   },

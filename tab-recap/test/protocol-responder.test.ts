@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { answer, take } from '#src/protocol/responder.ts';
 import type { SeenCheck, Taking } from '#src/protocol/responder.ts';
-import { requestId } from '#src/protocol/primitives.ts';
+import { parseIdText, parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, ToolName } from '#src/protocol/primitives.ts';
 import { badIdValue } from '#src/protocol/exchange.ts';
 import { compactLike, handoffLike, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
@@ -16,7 +16,7 @@ const onlyHandoffAlphaR1Seen: SeenCheck = (exchange: ExchangeName, tool: ToolNam
 
 const takeFrom = (tokens: Record<string, string>, seen: SeenCheck = nothingSeen): Taking => take(registry, tokens, seen);
 
-const idOf = (raw: string): RequestId => unwrap(requestId(raw, 'token-safe'));
+const idOf = (raw: string): RequestId => unwrap(parseRequestId(raw, 'token-safe'));
 
 const refusedOf = (tokens: Record<string, string>): { rawId: string; answer: string }[] => takeFrom(tokens).refused.map((refusal) => ({ rawId: refusal.rawId, answer: refusal.answer }));
 
@@ -61,7 +61,7 @@ test('a bad compact id is refused with exactly the answer the current code write
     for (const rawId of ['', 'x'.repeat(17), 'r'.repeat(40)]) {
         assert.deepEqual(
             refusedOf({ 'compact-req-coordinator': `${rawId}:note` }).map((refusal) => refusal.answer),
-            [badIdValue(rawId)],
+            [badIdValue(parseIdText(rawId))],
             `id ${JSON.stringify(rawId)}`,
         );
     }
@@ -87,6 +87,16 @@ test('an answer that would exceed 80 characters is refused where the exchange do
 });
 
 test('a compact answer is truncated to 80 characters, as before the protocol', () => {
-    const written = unwrap(answer(compactLike, unwrap(requestId('r1', 'legacy-length')), 'x'.repeat(78)));
+    const written = unwrap(answer(compactLike, unwrap(parseRequestId('r1', 'legacy-length')), 'x'.repeat(78)));
     assert.equal(written.value, `r1:${'x'.repeat(78)}`.slice(0, 80));
+});
+
+test('a request whose word runs past the value limit is refused, never cut to fit', () => {
+    assert.deepEqual(takeFrom({ 'handoff-req-alpha': `r1:${'b'.repeat(90)}` }), { taken: [], refused: [] });
+});
+
+test('a long note in a rest field without a limit is taken whole', () => {
+    const note = 'n'.repeat(120);
+    const result = takeFrom({ 'compact-req-alpha': `c1:${note}` });
+    assert.deepEqual(result.taken.map(({ value }) => value), [{ id: 'c1', note }]);
 });

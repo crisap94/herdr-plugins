@@ -5,11 +5,11 @@ import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import { isSection } from '#src/recap/domain/fact.ts';
-import type { CheckedFact, MissedFacts } from '#src/recap/domain/autocompact.ts';
+import { type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
@@ -22,7 +22,7 @@ export type Trigger = 'auto' | 'operator';
 
 export interface Link {
     readonly trigger: Trigger;
-    readonly decision: string | null;
+    readonly decision: DecisionId | null;
     readonly flow: CoverageFlow;
 }
 
@@ -64,7 +64,7 @@ export class Briefing {
     async verified(lane: Lane, tab: TabId, material: Material, link: Link): Promise<Verified> {
         const { trigger, decision, flow } = link;
         const first = await this.briefOf(lane, tab, material);
-        if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: 0, coverageCostUsd: null, why: null } };
+        if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: duration(0), coverageCostUsd: null, why: null } };
         if (!this.listed(lane)) return { kind: 'closed', at: 'after-writer' };
         const stop: { at: ClosePoint | null } = { at: null };
         const rewrite = async (correction: Text): Promise<Briefed> => {
@@ -83,8 +83,8 @@ export class Briefing {
         return { kind: 'checked', checked: saved };
     }
 
-    private rememberCoverage(decision: string | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
-        const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => isSection(fact.section) ? [{ section: fact.section, text: fact.text, why: fact.why }] : []);
+    private rememberCoverage(decision: DecisionId | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
+        const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => { const parsed = parseCheckedFact(fact); return parsed === null ? [] : [parsed]; });
         const appended = flow.appends && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;
@@ -92,7 +92,7 @@ export class Briefing {
         return appended === null ? checked : { ...checked, brief: { ...checked.brief, text: appended.text } };
     }
 
-    linkedDecision(trigger: Trigger, tab: TabId, pane: PaneId, id: string): Link {
+    linkedDecision(trigger: Trigger, tab: TabId, pane: PaneId, id: CompactionId): Link {
         const linked = trigger === 'auto' ? this.deps.decisions?.linkLatest(tab, pane, id) ?? null : null;
         return { trigger, decision: linked?.id ?? null, flow: this.flowOf(linked?.gate) };
     }

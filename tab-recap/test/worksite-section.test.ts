@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { worksiteOf } from '#src/recap/application/worksite-section.ts';
 import type { WorksiteDeps, WorksiteInput } from '#src/recap/application/worksite-section.ts';
@@ -31,7 +32,7 @@ function deps(site: MemoryWorksite, result: RepoResult = repo, files: readonly F
     return { reader: site, repo: repoAt(result), edits: edits(files) };
 }
 
-const input = (overrides: Partial<WorksiteInput> = {}): WorksiteInput => ({ directory: DIR, cursor: CURSOR, tokens: {}, ...overrides });
+const input = (overrides: Partial<WorksiteInput> = {}): WorksiteInput => ({ directory: DIR, cursor: CURSOR, tokens: new Map(), ...overrides });
 
 test('a clean worktree gives the directory, repository, branch, last commit and zero uncommitted paths', async () => {
     const site = new MemoryWorksite();
@@ -75,7 +76,7 @@ test('a git timeout omits the git values and keeps the rest of the section', asy
         lastCommit: (): Promise<LastCommitResult> => Promise.resolve(timed),
         uncommitted: (): Promise<UncommittedResult> => Promise.resolve(timed),
     };
-    const snapshot = await worksiteOf({ reader, repo: repoAt(timed), edits: edits([{ path: 'a.ts', count: 2 }]) }, input({ tokens: { 'awaiting-review': 'yes' } }));
+    const snapshot = await worksiteOf({ reader, repo: repoAt(timed), edits: edits([{ path: 'a.ts', count: 2 }]) }, input({ tokens: tokenEntries({ 'awaiting-review': 'yes' }) }));
     assert.deepEqual(snapshot, { kind: 'known', directory: DIR, repository: null, lastCommit: null, uncommitted: null, edited: [{ path: 'a.ts', edits: 2 }], tokens: ['awaiting-review'] });
 });
 
@@ -103,7 +104,7 @@ test('no recap cursor for the lane means no edits are read', async () => {
 test('waiting tokens are listed by name, never by value, and an empty one is not listed', async () => {
     const site = new MemoryWorksite();
     site.set(DIR, { commit: null, paths: [] });
-    const snapshot = await worksiteOf(deps(site), input({ tokens: { 'awaiting-review': 'secret value', 'awaiting-empty': '', 'note-tool': 'private note', unrelated: 'x' } }));
+    const snapshot = await worksiteOf(deps(site), input({ tokens: tokenEntries({ 'awaiting-review': 'secret value', 'awaiting-empty': '', 'note-tool': 'private note', unrelated: 'x' }) }));
     assert.equal(snapshot.kind, 'known');
     assert.deepEqual(snapshot.tokens, ['awaiting-review', 'note-tool']);
     assert.equal(JSON.stringify(snapshot).includes('secret value'), false);

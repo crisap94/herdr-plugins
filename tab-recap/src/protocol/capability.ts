@@ -1,10 +1,10 @@
-import { ok } from './result.ts';
+import { ok, must } from './result.ts';
 import type { Result } from './result.ts';
-import { refuse, tokenValue } from './primitives.ts';
-import type { ExchangeVersion, Refusal, TokenName, TokenValue } from './primitives.ts';
+import { parseOfferedName, parseOfferedVersion, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
+import type { ExchangeVersion, OfferedName, OfferedVersion, OptIn, Refusal, TokenName, TokenValue, WireText } from './primitives.ts';
 import type { Exchange } from './exchange.ts';
 
-export const CAPABILITY_TOKEN = 'tab-recap-x' as TokenName;
+export const CAPABILITY_TOKEN: TokenName = must(parseTokenName('tab-recap-x'));
 
 const KINDS = 'kinds';
 
@@ -14,9 +14,9 @@ const EXCHANGE_ITEM = /^([a-z](?:[a-z0-9-]*[a-z-])?)([1-9][0-9]*)$/;
 
 const KINDS_ITEM = /^kinds([1-9][0-9]*)$/;
 
-export type ExchangeEntry = { readonly name: string; readonly version: number };
+export type ExchangeEntry = { readonly name: OfferedName; readonly version: OfferedVersion };
 
-export type Capability = { readonly exchanges: readonly ExchangeEntry[]; readonly kinds: number | null };
+export type Capability = { readonly exchanges: readonly ExchangeEntry[]; readonly kinds: OfferedVersion | null };
 
 export interface ExchangeItem {
     readonly kind: 'exchange';
@@ -25,38 +25,48 @@ export interface ExchangeItem {
 
 export interface KindsItem {
     readonly kind: 'kinds';
-    readonly version: number;
+    readonly version: OfferedVersion;
 }
 
 type Entry = ExchangeItem | KindsItem;
 
-const entryOf = (item: string): Entry | null => {
+type Offer = 'offered' | 'withheld';
+
+type Enablement = 'enabled' | 'disabled';
+
+const entryOf = (item: WireText): Entry | null => {
     const kinds = KINDS_ITEM.exec(item);
     if (kinds?.[1] !== undefined) {
-        return { kind: 'kinds', version: Number(kinds[1]) };
+        return { kind: 'kinds', version: parseOfferedVersion(kinds[1]) };
     }
     const [, name, digits] = EXCHANGE_ITEM.exec(item) ?? [];
-    return name === undefined || digits === undefined ? null : { kind: 'exchange', entry: { name, version: Number(digits) } };
+    return name === undefined || digits === undefined ? null : { kind: 'exchange', entry: { name: parseOfferedName(name), version: parseOfferedVersion(digits) } };
 };
 
-const unofferable = (exchange: Exchange): boolean => !EXCHANGE_NAME.test(exchange.name) || exchange.name === KINDS;
+const offerOf = (exchange: Exchange): Offer => (EXCHANGE_NAME.test(exchange.name) && exchange.name !== KINDS ? 'offered' : 'withheld');
 
-const enabled = (isOn: (setting: string) => boolean) => (exchange: Exchange): boolean => exchange.optIn === null || isOn(exchange.optIn);
+const enablementOf = (isOn: (setting: OptIn) => boolean) => (exchange: Exchange): Enablement =>
+    exchange.optIn === null || isOn(exchange.optIn) ? 'enabled' : 'disabled';
 
-export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: string) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
-    const offending = exchanges.find(unofferable);
+export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: OptIn) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
+    const offending = exchanges.find((exchange) => offerOf(exchange) === 'withheld');
     if (offending !== undefined) {
         return refuse('bad-grammar', offending.name);
     }
-    const items = exchanges.filter(enabled(isOn)).map((exchange) => `${exchange.name}${exchange.version}`);
-    return tokenValue([...items, `${KINDS}${kindsVersion}`].join(','));
+    const enabled = enablementOf(isOn);
+    const items = exchanges.filter((exchange) => enabled(exchange) === 'enabled').map((exchange) => `${exchange.name}${exchange.version}`);
+    return parseTokenValue([...items, `${KINDS}${kindsVersion}`].join(','));
 }
 
-export function parseCapability(raw: string): Result<Capability, Refusal> {
+export function parseCapability(raw: unknown): Result<Capability, Refusal> {
+    const text = parseWireText(raw);
+    if (text.kind === 'err') {
+        return refuse(text.error, 'capability');
+    }
     const exchanges: ExchangeEntry[] = [];
-    const kinds: number[] = [];
-    for (const item of raw.split(',')) {
-        const entry = entryOf(item);
+    const kinds: OfferedVersion[] = [];
+    for (const item of text.value.split(',').map(parseWireText)) {
+        const entry = item.kind === 'ok' ? entryOf(item.value) : null;
         if (entry === null) {
             return refuse('bad-grammar', 'capability');
         }

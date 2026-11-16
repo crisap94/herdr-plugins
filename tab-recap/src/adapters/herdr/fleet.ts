@@ -11,6 +11,7 @@ import { sessionOfForKind } from './session-registry.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { ClosedAll, Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
@@ -41,12 +42,12 @@ const detail = (error: unknown): string => (error instanceof Error ? error.messa
 
 const MODAL_SIZE = '96%';
 
-const paneInfoOf = async (pane: string): Promise<Json> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
+const paneInfoOf = async (pane: PaneId): Promise<Json> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
 
-export async function readPaneTokens(pane: string): Promise<PaneTokensResult> {
+export async function readPaneTokens(pane: PaneId): Promise<PaneTokensResult> {
     try {
         const tokens = parseJson((await paneInfoOf(pane))['tokens']);
-        return { kind: 'tokens', tokens: Object.fromEntries(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
+        return { kind: 'tokens', tokens: new Map(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string').map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])) };
     } catch (error) {
         return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
     }
@@ -190,7 +191,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
     }
 
-    async read(pane: string): Promise<PaneTokensResult> {
+    async read(pane: PaneId): Promise<PaneTokensResult> {
         return readPaneTokens(pane);
     }
 

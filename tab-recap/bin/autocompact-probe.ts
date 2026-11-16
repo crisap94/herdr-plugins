@@ -5,9 +5,11 @@ import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { pooled, retried } from '#src/experiment/pool.ts';
 
 const CONCURRENCY = 4;
@@ -17,7 +19,7 @@ const value = (name: string): string | null => {
     return at < 0 ? null : (process.argv[at + 1] ?? null);
 };
 
-interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: object; readonly questions: Readonly<Record<string, Noul>> }
+interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: Text; readonly questions: ReadonlyMap<Text, Noul> }
 
 interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly CoverageFact[] }
 
@@ -25,8 +27,8 @@ export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(join(dir, 'corpus.jsonl')), ...readPoints(join(dir, 'outcome-points.jsonl'))];
     const briefs = readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[];
     return [
-        ...points.map((point): Job => ({ key: point.id, kind: 'point', state: point.state, questions: QUESTIONS })),
-        ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: { brief: row.brief, facts: row.facts }, questions: questionsFor(row.facts) })),
+        ...points.map((point): Job => ({ key: point.id, kind: 'point', state: must(parseText(JSON.stringify(point.state))), questions: QUESTIONS })),
+        ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsFor(row.facts) })),
     ];
 }
 

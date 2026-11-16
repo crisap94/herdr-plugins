@@ -1,57 +1,73 @@
-import { STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import { STYLE_DEFAULT, STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import type { AutocompactStyle } from './autocompact-style.ts';
 import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
 import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
-import type { Brand } from './brand.ts';
-import type { Section } from './fact.ts';
+import { brand, type Brand } from './brand.ts';
+import { isSection, type Section } from './fact.ts';
 import { holdsLane } from './in-flight.ts';
 import type { Flight } from './in-flight.ts';
+import type { Milliseconds } from './time.ts';
+import type { Text } from './text.ts';
 
-export type Milliseconds = Brand<number, 'Milliseconds'>;
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
-export type BriefRetention = { readonly kind: 'none' } | { readonly kind: 'days'; readonly value: number };
+export type RetentionDays = Brand<number, 'RetentionDays'>;
+export type BriefRetention = { readonly kind: 'none' } | { readonly kind: 'days'; readonly value: RetentionDays };
 export const MISSED_FACTS = ['append', 'wait'] as const;
 export type MissedFacts = (typeof MISSED_FACTS)[number];
 export const MISSED_FACTS_DEFAULT: MissedFacts = 'append';
 export type UncheckedReason = 'no-decider' | 'decider-cannot-answer' | 'no-brief';
 export interface CheckedFact {
     readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
+    readonly text: Text;
+    readonly why: Text | null;
+}
+
+export type TextOrNull = string | null;
+
+const isTextOrNull = (value: unknown): value is TextOrNull => value === null || typeof value === 'string';
+
+export function parseCheckedFact(raw: unknown): CheckedFact | null {
+    if (typeof raw !== 'object' || raw === null || !('section' in raw) || !('text' in raw) || !('why' in raw)) return null;
+    const { section, text, why } = raw;
+    if (!isSection(section) || typeof text !== 'string' || !isTextOrNull(why)) return null;
+    return { section, text: brand<string, 'Text'>(text), why: why === null ? null : brand<string, 'Text'>(why) };
 }
 
 export type CoverageOutcome = { readonly kind: 'passed' } | { readonly kind: 'missed'; readonly facts: readonly CheckedFact[] } | { readonly kind: 'unchecked'; readonly reason: UncheckedReason };
 
-export const ceilingPolicyOf = (raw: string | undefined): CeilingPolicy => raw?.trim().toLowerCase() === 'off' ? 'blocked-by-check' : 'overrides-check';
-export const backoffOf = (raw: string | undefined): Backoff => {
-    const ms = Number((raw ?? '').trim());
+export const parseCeilingPolicy = (raw: unknown): CeilingPolicy => typeof raw === 'string' && raw.trim().toLowerCase() === 'off' ? 'blocked-by-check' : 'overrides-check';
+export const parseBackoff = (raw: unknown): Backoff => {
+    const ms = Number(typeof raw === 'string' ? raw.trim() : '');
     if (ms === 0) return { kind: 'off' };
-    if (Number.isInteger(ms) && ms >= 60_000 && ms <= 86_400_000) return { kind: 'window', ms: ms as Milliseconds };
+    if (Number.isInteger(ms) && ms >= 60_000 && ms <= 86_400_000) return { kind: 'window', ms: brand<number, 'Milliseconds'>(ms) };
     return { kind: 'off' };
 };
-export const briefRetentionOf = (raw: string | undefined): BriefRetention => {
-    if (raw === undefined || raw.trim() === '') return { kind: 'days', value: 14 };
-    const days = Number(raw.trim());
-    if (!Number.isInteger(days) || days < 0 || days > 60) return { kind: 'days', value: 14 };
+export const parseBriefRetention = (raw: unknown): BriefRetention => {
+    const text = typeof raw === 'string' ? raw.trim() : '';
+    if (text === '') return { kind: 'days', value: brand<number, 'RetentionDays'>(14) };
+    const days = Number(text);
+    if (!Number.isInteger(days) || days < 0 || days > 60) return { kind: 'days', value: brand<number, 'RetentionDays'>(14) };
     if (days === 0) return { kind: 'none' };
-    return { kind: 'days', value: days };
+    return { kind: 'days', value: brand<number, 'RetentionDays'>(days) };
 };
-export const missedFactsOf = (raw: unknown): MissedFacts => {
+export const parseMissedFacts = (raw: unknown): MissedFacts => {
     const word = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     return MISSED_FACTS.find((each) => each === word) ?? MISSED_FACTS_DEFAULT;
 };
-export const milliseconds = (value: number): Milliseconds => value as Milliseconds;
 export function unreachable(value: never): never {
     throw new Error(`unexpected case: ${String(value)}`);
 }
 
 export type AutocompactMode = 'off' | 'shadow' | 'on';
 
+export type AutocompactPercent = Brand<number, 'AutocompactPercent'>;
+
 export interface AutocompactPolicy {
     readonly mode: AutocompactMode;
-    readonly minimum: number;
-    readonly ceiling: number;
-    readonly cooldownMs: number;
+    readonly minimum: AutocompactPercent;
+    readonly ceiling: AutocompactPercent;
+    readonly cooldownMs: Milliseconds;
     readonly kinds: readonly string[];
     readonly shadowKinds: readonly RegisteredKind[];
     readonly ceilingPolicy: CeilingPolicy;
@@ -72,47 +88,59 @@ export const KINDS_DEFAULT = autocompactDefaultKinds(REGISTERED_KINDS);
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 
-const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
-
-export const modeOf = (raw: string | undefined): AutocompactMode => MODES.find((mode) => mode === word(raw)) ?? 'shadow';
-
-function percentOf(raw: string | undefined): number | null {
-    const percent = Number(word(raw).replace(/%$/, ''));
-    return word(raw) !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : null;
+export function parseAutocompactMode(raw: unknown): AutocompactMode {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return MODES.find((mode) => mode === text) ?? 'shadow';
 }
 
-export const minimumOf = (raw: string | undefined): number => percentOf(raw) ?? MINIMUM_DEFAULT;
-
-export function ceilingOf(raw: string | undefined, minimum: number, fallback: number = CEILING_DEFAULT): number {
-    const ceiling = percentOf(raw) ?? fallback;
-    return ceiling > minimum ? ceiling : Math.min(MINIMUM_MAX, minimum + 10);
+export function parseAutocompactPercent(raw: unknown, fallback: number): AutocompactPercent {
+    const words = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    const text = typeof raw === 'number' ? String(raw) : words;
+    const percent = Number(text.replace(/%$/, ''));
+    return brand<number, 'AutocompactPercent'>(text !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : fallback);
 }
 
-export const cooldownOf = (raw: string | undefined): number => cooldownWith(raw, COOLDOWN_DEFAULT_MS);
+export type AutocompactCeiling = AutocompactPercent;
 
-export function cooldownWith(raw: string | undefined, fallback: number): number {
-    const ms = Number(word(raw));
-    return word(raw) !== '' && Number.isInteger(ms) && ms >= 0 ? ms : fallback;
+export function parseAutocompactCeiling(raw: unknown, minimum: AutocompactPercent, style: AutocompactStyle = STYLE_DEFAULT): AutocompactCeiling {
+    const ceiling = parseAutocompactPercent(raw, STYLE_NUMBERS[style].ceiling);
+    return ceiling > minimum ? ceiling : parseAutocompactPercent(Math.min(MINIMUM_MAX, minimum + 10), MINIMUM_MIN);
 }
 
-export function kindsOf(raw: string | undefined): readonly string[] {
-    const kinds = [...new Set(word(raw).split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
+export type CooldownMs = Milliseconds;
+
+export function parseCooldownMs(raw: unknown, style: AutocompactStyle): CooldownMs {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    const ms = Number(text);
+    return brand<number, 'Milliseconds'>(text !== '' && Number.isInteger(ms) && ms >= 0 ? ms : STYLE_NUMBERS[style].cooldownMs);
+}
+
+export type AutocompactKinds = readonly string[];
+
+export function parseAutocompactKinds(raw: unknown): AutocompactKinds {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    const kinds = [...new Set(text.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
     return kinds.length === 0 ? KINDS_DEFAULT : kinds;
 }
 
-export function shadowKindsOf(raw: string | undefined): readonly RegisteredKind[] {
-    const kinds = (raw ?? '').split(',').map((kind) => registeredKindOf(word(kind))).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
+export type ShadowKinds = readonly RegisteredKind[];
+
+export function parseShadowKinds(raw: unknown): ShadowKinds {
+    const text = typeof raw === 'string' ? raw : '';
+    const kinds = text.split(',').map((kind) => registeredKindOf(kind.trim().toLowerCase())).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
     return [...new Set(kinds)];
 }
 
-export function policyOf(get: (key: string) => string | undefined): AutocompactPolicy {
-    const numbers = STYLE_NUMBERS[styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'))];
-    const minimum = minimumOf(get('TAB_RECAP_AUTOCOMPACT_AT'));
+export type AutocompactSetting = 'TAB_RECAP_AUTOCOMPACT' | 'TAB_RECAP_AUTOCOMPACT_AT' | 'TAB_RECAP_AUTOCOMPACT_CEILING' | 'TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS' | 'TAB_RECAP_AUTOCOMPACT_KINDS' | 'TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS' | 'TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS' | 'TAB_RECAP_AUTOCOMPACT_MISSED_FACTS' | 'TAB_RECAP_AUTOCOMPACT_STYLE';
+
+export function policyOf(get: (key: AutocompactSetting) => string | undefined): AutocompactPolicy {
+    const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
+    const minimum = parseAutocompactPercent(get('TAB_RECAP_AUTOCOMPACT_AT'), MINIMUM_DEFAULT);
     return {
-        mode: modeOf(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: ceilingOf(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, numbers.ceiling),
-        cooldownMs: cooldownWith(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), numbers.cooldownMs), kinds: kindsOf(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: shadowKindsOf(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
-        ceilingPolicy: ceilingPolicyOf(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: backoffOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
-        missedFacts: missedFactsOf(get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS')),
+        mode: parseAutocompactMode(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: parseAutocompactCeiling(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, style),
+        cooldownMs: parseCooldownMs(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), style), kinds: parseAutocompactKinds(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: parseShadowKinds(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
+        ceilingPolicy: parseCeilingPolicy(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: parseBackoff(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
+        missedFacts: parseMissedFacts(get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS')),
     };
 }
 
@@ -122,7 +150,10 @@ export const COVERAGE_BY_DEFAULT: CoverageBy = 'auto';
 
 const COVERAGE_BY: readonly CoverageBy[] = ['auto', 'jev', 'decider'];
 
-export const coverageByOf = (raw: string | undefined): CoverageBy => COVERAGE_BY.find((by) => by === word(raw)) ?? COVERAGE_BY_DEFAULT;
+export function parseCoverageBy(raw: unknown): CoverageBy {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return COVERAGE_BY.find((by) => by === text) ?? COVERAGE_BY_DEFAULT;
+}
 
 export interface JevSettings {
     readonly url: string;
