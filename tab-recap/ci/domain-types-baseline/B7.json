@@ -10,9 +10,8 @@
     "parameter": 4
   },
   "src/daemon/backends.ts": {
-    "parameter": 8,
-    "container": 7,
-    "property": 2
+    "parameter": 4,
+    "container": 2
   },
   "src/daemon/bounded.ts": {
     "parameter": 2

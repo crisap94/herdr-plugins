@@ -11,7 +11,9 @@ import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { AUTO_ORDER, enumeratorFor, judgeFor, summarizerFor } from '#src/daemon/backends.ts';
+import { AUTO_ORDER, availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Judge } from '#src/ports/judge.ts';
@@ -60,9 +62,9 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
 
 function counted(config: Config, available: readonly string[], dir: string, runtime: HarnessRuntime): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
-    const made = summarizerFor(config, available, join(dir, 'summarizer'), runtime);
+    const made = summarizerFor(config, availableIn(available), summarizerWork(dir), runtime);
     const writer = countedWriter(made, calls);
-    const own = enumeratorFor(config, available, join(dir, 'enumerator'), runtime);
+    const own = enumeratorFor(config, availableIn(available), must(parseDirectory(join(dir, 'enumerator'))), runtime);
     const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };
 }
@@ -87,7 +89,7 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
     const runtime = createRuntime();
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const judge: Judge | null = judgeFor(config, available, join(scratch.dir, 'judge'), runtime, operatorAnchors(databasePath(stateDir())));
+    const judge: Judge | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databasePath(stateDir())));
     try {
         await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available, runtime });
         if (judge === null) {

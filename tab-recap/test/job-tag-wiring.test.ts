@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import type { PolicedRuntime } from '#test/fakes/harness-runtime.ts';
-import { briefFor, curatorFor, enumeratorFor, judgeFor, summarizerFor } from '#src/daemon/backends.ts';
+import { briefFor, curatorFor, enumeratorFor, judgeFor, summarizerFor, type Available } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import type { Config } from '#src/daemon/config.ts';
@@ -16,7 +19,7 @@ import { documentOf } from './fakes/decider-fixtures.ts';
 interface Site {
     readonly name: string;
     readonly tag: JobTag;
-    readonly call: (config: Config, available: readonly string[], work: string, runtime: PolicedRuntime) => Promise<unknown>;
+    readonly call: (config: Config, available: Available, work: Directory, runtime: PolicedRuntime) => Promise<unknown>;
 }
 
 const EMPTY_INPUT: RecapInput = { tab: { id: 'tab', now: 0, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };
@@ -75,7 +78,7 @@ async function withSettings<T>(backend: Backend, tagging: 'on' | 'off', inherite
 async function libraryEnvSeenBy(backend: Exclude<Backend, 'custom'>, tagging: 'on' | 'off', site: Site, inherited: string | undefined): Promise<string> {
     return withSettings(backend, tagging, inherited, async (root) => {
         const runtime = fakeRuntime({ scripts: { [backend]: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
-        await site.call(loadConfig(), [backend], join(root, 'work'), runtime);
+        await site.call(loadConfig(), [backend], must(parseDirectory(join(root, 'work'))), runtime);
         const env = runtime.calls[0]?.options.env;
         assert.ok(env?.kind === 'inherit' && env.transform !== undefined, 'the run carries an environment transform');
         return env.transform(inherited === undefined ? {} : { OTEL_RESOURCE_ATTRIBUTES: inherited })['OTEL_RESOURCE_ATTRIBUTES'] ?? '';
@@ -84,7 +87,7 @@ async function libraryEnvSeenBy(backend: Exclude<Backend, 'custom'>, tagging: 'o
 
 async function customEnvSeenBy(site: Site, inherited: string): Promise<string> {
     return withSettings('custom', 'on', inherited, async (root) => {
-        await site.call(loadConfig(), ['custom'], join(root, 'work'), fakeRuntime({ scripts: {} }));
+        await site.call(loadConfig(), ['custom'], must(parseDirectory(join(root, 'work'))), fakeRuntime({ scripts: {} }));
         return readFileSync(join(root, 'bin', `${CUSTOM_COMMAND}.env`), 'utf8');
     });
 }

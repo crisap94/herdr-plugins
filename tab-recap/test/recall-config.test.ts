@@ -4,6 +4,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { enumeratorFor } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
@@ -44,13 +46,13 @@ test('TAB_RECAP_PIPELINE names the steps of a run (one unless set; nonsense is t
 test('the enumeration is the writer\'s harness at low effort; none when no harness is installed or the writer is a custom command', () => {
     withConfig('TAB_RECAP_BACKEND=claude\nTAB_RECAP_MODEL_CLAUDE=sonnet\nTAB_RECAP_EFFORT=high\n', () => {
         const config = loadConfig();
-        const made = enumeratorFor(config, ['claude', 'codex'], '/tmp/none', runtime);
+        const made = enumeratorFor(config, ['claude', 'codex'], must(parseDirectory('/tmp/none')), runtime);
         assert.ok(made !== null && made.job === 'claude · sonnet · low', made?.job);
     });
     withConfig('TAB_RECAP_BACKEND=auto\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), [], '/tmp/none', runtime), null);
+        assert.equal(enumeratorFor(loadConfig(), [], must(parseDirectory('/tmp/none')), runtime), null);
     });
     withConfig('TAB_RECAP_BACKEND=custom\nTAB_RECAP_CUSTOM_CMD=cat\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), ['custom'], '/tmp/none', runtime), null);
+        assert.equal(enumeratorFor(loadConfig(), ['custom'], must(parseDirectory('/tmp/none')), runtime), null);
     });
 });

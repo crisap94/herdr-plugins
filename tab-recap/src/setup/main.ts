@@ -5,7 +5,7 @@ import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
-import { intersect, summarizerFor } from '#src/daemon/backends.ts';
+import { availableIn, intersect, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
 import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -79,7 +79,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, ids, join(stateDir(), 'summarizer'), createRuntime());
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, availableIn(ids), summarizerWork(stateDir()), createRuntime());
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);

@@ -14,6 +14,8 @@ import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
 import { enumeratorFor } from '#src/daemon/backends.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -313,9 +315,9 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model or
         assert.equal(MAKERS[id](config, dir, runtime).id, id);
     }
     assert.equal(MODEL_DEFAULTS.custom, '');
-    assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], dir, runtime), null);
+    assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], must(parseDirectory(dir)), runtime), null);
     for (const id of BACKEND_IDS.filter((each) => each !== 'custom')) {
-        assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], dir, runtime), null, `${id} enumerates`);
+        assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], must(parseDirectory(dir)), runtime), null, `${id} enumerates`);
     }
     const harness: Harness = new CustomHarness('my-llm --model x', dir, 1000);
     assert.equal(harness.label({ model: 'gpt-x', effort: 'high' }), 'custom/my-llm');
