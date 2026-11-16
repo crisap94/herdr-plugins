@@ -55,14 +55,13 @@
   },
   "src/recap/render/handoff-budget.ts": {
     "parameter": 1,
-    "return": 3,
-    "container": 4,
+    "return": 2,
+    "container": 2,
     "property": 2
   },
   "src/recap/render/handoff-markdown.ts": {
-    "return": 4,
-    "container": 5,
-    "property": 1
+    "return": 2,
+    "container": 2
   },
   "src/recap/render/setup.ts": {
     "parameter": 18,

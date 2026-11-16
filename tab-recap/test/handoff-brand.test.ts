@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { must } from '#src/protocol/result.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import type { HandoffEntry } from '#src/recap/domain/handoff-content.ts';
 import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import type { HandoffFit } from '#src/recap/render/handoff-budget.ts';
@@ -56,7 +58,14 @@ const rawParts = (note: string, freshness: string, worksite: string): HandoffPar
     // @ts-expect-error
     worksiteText: worksite,
     groups: [],
-    omitted: { done: 0, links: 0, closed: 0, now: 0, next: 0, withheld: 0 },
+    omitted: {
+        done: must(parseCount(0)),
+        links: must(parseCount(0)),
+        closed: must(parseCount(0)),
+        now: must(parseCount(0)),
+        next: must(parseCount(0)),
+        withheld: must(parseCount(0)),
+    },
 });
 
 const rawFit = (note: string): HandoffFit => ({

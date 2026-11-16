@@ -26,7 +26,7 @@ export interface HandoffPipelineDeps {
     readonly tokens: PaneTokens;
 }
 
-const referenceOf = (input: HandoffRenderInput): HandoffReference => (input.handoff === null ? { kind: 'dry-run' } : { kind: 'handoff', id: input.handoff, at: input.at });
+const referenceOf = (input: HandoffRenderInput): HandoffReference => (input.handoff === null ? { kind: 'dry-run' } : { kind: 'handoff', id: input.handoff, at: instant(input.at) });
 
 async function tokensOf(tokens: PaneTokens, lane: HandoffLane): Promise<ReadonlyMap<Text, Text> | null> {
     const found = await tokens.read(lane.pane);

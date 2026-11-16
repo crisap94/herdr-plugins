@@ -8,6 +8,7 @@ import type { RenderedBlocks } from '#src/recap/application/handoff-text.ts';
 import { taskFactsOf } from '#src/recap/application/ledger-input.ts';
 import type { FactId, Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
@@ -36,7 +37,7 @@ const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
 const BIG = byteBudgetOf(10_000_000);
 const FRESHNESS: Freshness = { lastRun: { at: AT - 60_000, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
-const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: AT }, freshnessText: freshnessTextOf(FRESHNESS), worksiteText: null };
+const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: instant(AT) }, freshnessText: freshnessTextOf(FRESHNESS), worksiteText: null };
 
 const bytesOf = (text: string): number => new TextEncoder().encode(text).byteLength;
 
@@ -83,12 +84,12 @@ const WORKSITE_BLOCK = worksiteTextOf(
 const countOf = (fit: HandoffFit, id: HandoffGroupId): number => fit.groups.filter((group) => group.id === id).reduce((sum, group) => sum + group.capped + group.entries.length, 0);
 
 const omittedAll = (fit: HandoffFit): OmittedCounts => ({
-    done: countOf(fit, 'done'),
-    links: countOf(fit, 'links'),
-    closed: countOf(fit, 'closed'),
-    now: countOf(fit, 'now'),
-    next: countOf(fit, 'next'),
-    withheld: fit.withheld,
+    done: must(parseCount(countOf(fit, 'done'))),
+    links: must(parseCount(countOf(fit, 'links'))),
+    closed: must(parseCount(countOf(fit, 'closed'))),
+    now: must(parseCount(countOf(fit, 'now'))),
+    next: must(parseCount(countOf(fit, 'next'))),
+    withheld: must(parseCount(fit.withheld)),
 });
 
 const minimalTextOf = (fit: HandoffFit): string =>
@@ -305,7 +306,7 @@ test('the handoff text is identical for identical inputs and changes only its re
     const content = contentOf([fact('g1', 'goal', 'the goal', AT - 1_000)], [], 'a note');
     const first = renderOf(content);
     assert.deepEqual(first, renderOf(content));
-    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc'), at: AT } });
+    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc'), at: instant(AT) } });
     const firstLines = shownOf(first).text.split('\n');
     const otherLines = shownOf(other).text.split('\n');
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);
