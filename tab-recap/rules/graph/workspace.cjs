@@ -1,4 +1,4 @@
-const PACKAGES = ['session-ledger', 'session-ledger-sqlite', 'recap-view'];
+const PACKAGES = [];
 
 const names = PACKAGES.join('|');
 
