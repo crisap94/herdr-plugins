@@ -1,7 +1,7 @@
 import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
 import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, JsonObject, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
 import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
-import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
+import type { ConfinementCell, Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport, ToolSupport } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
@@ -53,6 +53,7 @@ export class LibraryHarness<Id extends LibraryId> implements Harness<Id> {
     readonly id: Id;
     readonly limit: number | null;
     readonly structured: StructuredSupport;
+    readonly tools: ToolSupport = 'none';
     private readonly runtime: HarnessRuntime;
     private readonly timeoutMs: number;
     private readonly jobTag: JobTag | undefined;
