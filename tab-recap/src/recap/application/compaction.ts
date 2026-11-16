@@ -214,8 +214,9 @@ export class Compaction {
         }
     }
 
-    private keptNote(brief: string | null, request: CompactRequest): string | null {
-        return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(must(parseText(brief)), must(parseText(request.note))) : brief;
+    private keptNote(brief: string | null, request: CompactRequest): Text | null {
+        const parsed = brief === null ? null : must(parseText(brief));
+        return parsed !== null && request.origin === 'auto' && request.note !== null ? withNote(parsed, must(parseText(request.note))) : parsed;
     }
 
     private async stoppedByCoverage(parts: CoverageStop): Promise<boolean> {

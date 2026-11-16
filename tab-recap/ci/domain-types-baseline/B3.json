@@ -74,16 +74,13 @@
     "parameter": 1,
     "property": 1
   },
-  "src/recap/application/compaction-send.ts": {
-    "property": 1
-  },
   "src/recap/application/compaction-trail.ts": {
     "parameter": 1,
     "property": 1
   },
   "src/recap/application/compaction.ts": {
     "parameter": 6,
-    "return": 4,
+    "return": 3,
     "container": 1,
     "property": 1
   },
@@ -169,11 +166,6 @@
     "parameter": 5,
     "return": 1,
     "property": 5
-  },
-  "src/recap/application/handoff-content.ts": {
-    "parameter": 3,
-    "return": 4,
-    "property": 2
   },
   "src/recap/application/handoff-flow.ts": {
     "parameter": 4,

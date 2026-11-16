@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
 import { HANDOFF_BUDGET_BYTES, HANDOFF_WORKSITE_BYTES } from '#src/recap/application/handoff-limits.ts';
 import { handoffTextOf } from '#src/recap/application/handoff-text.ts';
+import { must } from '#src/protocol/result.ts';
 import type { RenderedBlocks } from '#src/recap/application/handoff-text.ts';
 import { taskFactsOf } from '#src/recap/application/ledger-input.ts';
 import type { FactId, Fact, TaskId } from '#src/recap/domain/fact.ts';
@@ -13,6 +14,8 @@ import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fitHandoff } from '#src/recap/render/handoff-budget.ts';
 import type { FittedHandoff, HandoffFit } from '#src/recap/render/handoff-budget.ts';
@@ -66,7 +69,7 @@ const bodyOf = (content: HandoffContent): HandoffBody => (content.kind === 'cont
 const renderOf = (content: HandoffContent): FittedHandoff => handoffTextOf(bodyOf(content), BLOCKS);
 
 const contentOf = (open: readonly Fact[], closed: readonly Fact[] = [], note: string | null = null): HandoffContent =>
-    buildHandoffContent({ at: AT, task: { open, closed }, freshness: FRESHNESS, worksite: WORKSITE, note });
+    buildHandoffContent({ at: instant(AT), task: { open, closed }, freshness: FRESHNESS, worksite: WORKSITE, note: note === null ? null : must(parseText(note)) });
 
 const omittedLineOf = (text: string): RegExpExecArray | null => /^(\d+) facts omitted \((.*)\)$/m.exec(text);
 

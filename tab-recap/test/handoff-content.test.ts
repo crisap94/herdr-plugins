@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import type { HandoffInput } from '#src/recap/application/handoff-content.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { CLOSED_SHOWN_MS, taskFactsOf } from '#src/recap/application/ledger-input.ts';
@@ -26,7 +29,7 @@ const closedFact = (id: string, section: Fact['section'], text: string, closedAt
 
 const taskOf = (open: readonly Fact[], closed: readonly Fact[] = []): TaskFacts => ({ key: TASK.key, open, closed });
 
-const inputOf = (task: TaskFacts, more: Partial<HandoffInput> = {}): HandoffInput => ({ at: NOW, task, freshness: FRESHNESS, worksite: WORKSITE, note: null, ...more });
+const inputOf = (task: TaskFacts, more: { readonly note?: string } = {}): HandoffInput => ({ at: instant(NOW), task, freshness: FRESHNESS, worksite: WORKSITE, note: more.note === undefined ? null : must(parseText(more.note)) });
 
 const bodyOf = (content: HandoffContent): HandoffBody => (content.kind === 'content' ? content : assert.fail(`refused ${content.reason}`));
 
