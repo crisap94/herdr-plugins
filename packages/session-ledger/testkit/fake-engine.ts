@@ -47,7 +47,7 @@ export function createFakeEngine(script: FakeScript = {}): FakeEngine {
         },
         followedBy: (harness: HarnessKind, session: SessionId) => {
             log.push('followedBy');
-            const found = follows.find((entry) => entry.session.harness === harness && entry.session.session === session);
+            const found = follows.findLast((entry) => entry.session.harness === harness && entry.session.session === session);
             return found === undefined ? null : { scope: found.scope, key: found.session.key };
         },
         turnEnded: () => {
@@ -63,9 +63,9 @@ export function createFakeEngine(script: FakeScript = {}): FakeEngine {
             log.push('refresh');
             return Promise.resolve();
         },
-        compacted: () => {
+        compacted: (scope: ScopeId, key: SessionKey) => {
             log.push('compacted');
-            return scripted;
+            return follows.some((entry) => isFollow(entry, scope, key)) ? scripted : restore('');
         },
         history: () => {
             log.push('history');
