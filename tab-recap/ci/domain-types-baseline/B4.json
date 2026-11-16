@@ -7,9 +7,8 @@
     "container": 2
   },
   "src/column/main.ts": {
-    "parameter": 5,
-    "return": 2,
-    "container": 3
+    "return": 1,
+    "container": 1
   },
   "src/i18n/en.ts": {
     "parameter": 88,
