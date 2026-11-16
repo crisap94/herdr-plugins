@@ -161,18 +161,6 @@
   "src/protocol/primitives.ts": {
     "parameter": 1
   },
-  "src/protocol/registry.ts": {
-    "parameter": 1,
-    "return": 3,
-    "container": 2,
-    "property": 1
-  },
-  "src/protocol/requester.ts": {
-    "parameter": 2,
-    "container": 1,
-    "property": 2,
-    "assertion": 1
-  },
   "src/protocol/responder.ts": {
     "parameter": 4,
     "return": 2,

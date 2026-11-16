@@ -22,7 +22,7 @@ const ask = (map: FakeTokenMap, raw: string): void => {
     map.apply(unwrap(request(handoffLike, toolOf('alpha'), parsedOf(handoffLike, raw))));
 };
 
-const observeAs = (map: FakeTokenMap, raw: string): AnswerState => unwrap(observe(handoffLike, map.snapshot(), idOf(raw)));
+const observeAs = (map: FakeTokenMap, raw: string): AnswerState => unwrap(observe(handoffLike, map.tokenSnapshot(), idOf(raw)));
 
 const keyOf = (exchange: ExchangeName, tool: ToolName, id: RequestId): string => `${exchange}\u0000${tool}\u0000${id}`;
 

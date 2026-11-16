@@ -16,6 +16,7 @@ import { parseIdText, parseTokenValue } from '../src/protocol/primitives.ts';
 import type { Refusal, RequestId, TokenValue } from '../src/protocol/primitives.ts';
 import type { Result } from '../src/protocol/result.ts';
 import { must } from '../src/protocol/result.ts';
+import { snapshotOf } from './fakes/token-map.ts';
 
 type Refused = { readonly kind: 'refused'; readonly reason: string; readonly subject: string };
 
@@ -83,7 +84,7 @@ const takeStep = (replay: Replay, trace: Trace, expect: TakeExpect): void => {
 };
 
 const observeStep = (exchange: Exchange, replay: Replay, trace: Trace, step: { readonly id: string; readonly expect: unknown }): void => {
-    const observed = observe(exchange, replay.tokens, step.id as RequestId);
+    const observed = observe(exchange, snapshotOf(replay.tokens), step.id as RequestId);
     assert.deepEqual(observed.kind === 'ok' ? observed.value : refusedOf(observed.error), step.expect, trace.name);
 };
 

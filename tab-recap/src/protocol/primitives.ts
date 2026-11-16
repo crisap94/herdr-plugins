@@ -37,6 +37,8 @@ export type EventName = Brand<string, 'EventName'>;
 export type OptIn = Brand<string, 'OptIn'>;
 export type TimingName = Brand<string, 'TimingName'>;
 export type TimingMs = Brand<number, 'TimingMs'>;
+export type RefusalDetail = Brand<string, 'RefusalDetail'>;
+export type CharCount = Brand<number, 'CharCount'>;
 export type AnswerFit = 'truncate' | 'whole';
 export type Presence = 'optional' | 'required';
 
@@ -152,6 +154,10 @@ export const parseSegmentStart = (): SegmentIndex => brand<number, 'SegmentIndex
 export const parseNextSegment = (at: SegmentIndex): SegmentIndex => brand<number, 'SegmentIndex'>(at + 1);
 
 export const parseSegmentEnd = (segments: readonly FieldText[]): SegmentIndex => brand<number, 'SegmentIndex'>(segments.length);
+
+export const parseRefusalDetail = (raw: unknown): RefusalDetail => brand<string, 'RefusalDetail'>(String(raw));
+
+export const parseCharCount = (raw: unknown): CharCount => brand<number, 'CharCount'>(Number(raw));
 
 export function parseIdText(raw: string): IdText {
     const cut = raw.indexOf(':');
