@@ -1,0 +1,21 @@
+[
+  { "export": "CallKind", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "Entry", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "AgentNote", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "Position", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "Mark", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "Chunk", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "Located", "origin": "tab-recap/src/ports/transcripts.ts" },
+  { "export": "RunningCount", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "FlightReason", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "AwaitedNames", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "BackgroundTool", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "BackgroundLabel", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "BackgroundItem", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "Foreground", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "Awaiting", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "Observed", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "Flight", "origin": "tab-recap/src/recap/domain/in-flight.ts" },
+  { "export": "WindowSource", "origin": "tab-recap/src/recap/domain/compaction.ts" },
+  { "export": "ContextUse", "origin": "tab-recap/src/recap/domain/compaction.ts" }
+]

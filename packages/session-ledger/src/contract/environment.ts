@@ -1,6 +1,16 @@
-import type { Instant } from './kernel.ts';
+import type { Instant, Unknown } from './kernel.ts';
 
-export interface RepoResult { readonly pendingStep: 'FND-2c' }
+export type Forge = 'gitlab' | 'github';
+
+export interface WebBase {
+    readonly base: string;
+    readonly forge: Forge;
+}
+
+export type RepoResult =
+    | { readonly kind: 'repo'; readonly root: string; readonly branch: string | null; readonly web: WebBase | null }
+    | { readonly kind: 'no-repo' }
+    | Unknown;
 
 export interface Clock { now(): Instant }
 export interface Ids { next(): string }

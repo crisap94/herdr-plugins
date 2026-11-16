@@ -1,0 +1,1850 @@
+[
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "decisionId",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: decisionId of the inline object of Consideration in Consideration keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: key of the inline object of SafePointEvent and DecisionLog in SafePointEvent and DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "ms",
+    "reason": "EC 2.5, copied shape: ms of the inline object of Backoff keeps the plain type of Backoff in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: scope of the inline object of DecisionLog in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "share",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: share of the inline object of SafePointEvent in SafePointEvent keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "value",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: value of the inline object of SessionSignals in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "<anonymous>",
+    "field": "why",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: why of the inline object of Consideration and SafePointEvent in Consideration and SafePointEvent keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Candidate",
+    "field": "harness",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: harness of Candidate in Candidate keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Candidate",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: key of Candidate in Candidate keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Candidate",
+    "field": "ready",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: ready of Candidate in Candidate keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Candidate",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: scope of Candidate in Candidate keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CheckedFact",
+    "field": "text",
+    "reason": "EC 2.5, copied shape: text of CheckedFact keeps the plain type of CheckedFact in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CheckedFact",
+    "field": "why",
+    "reason": "EC 2.5, copied shape: why of CheckedFact keeps the plain type of CheckedFact in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CompactionAsk",
+    "field": "decisionId",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: decisionId of CompactionAsk in CompactionAsk keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CompactionAsk",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: key of CompactionAsk in CompactionAsk keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CompactionAsk",
+    "field": "note",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: note of CompactionAsk in CompactionAsk keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CompactionAsk",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: scope of CompactionAsk in CompactionAsk keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CoverageAmendment",
+    "field": "block",
+    "reason": "EC 2.5, copied shape: block of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CoverageAmendment",
+    "field": "coverage",
+    "reason": "EC 2.5, copied shape: coverage of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CoverageAmendment",
+    "field": "coverageCostUsd",
+    "reason": "EC 2.5, copied shape: coverageCostUsd of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CoverageAmendment",
+    "field": "coverageMs",
+    "reason": "EC 2.5, copied shape: coverageMs of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "CoverageAmendment",
+    "field": "why",
+    "reason": "EC 2.5, copied shape: why of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decided",
+    "field": "answers",
+    "reason": "EC 2.5, copied shape: answers of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decided",
+    "field": "costUsd",
+    "reason": "EC 2.5, copied shape: costUsd of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decided",
+    "field": "model",
+    "reason": "EC 2.5, copied shape: model of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decided",
+    "field": "tokens",
+    "reason": "EC 2.5, copied shape: tokens of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decided",
+    "field": "tookMs",
+    "reason": "EC 2.5, copied shape: tookMs of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decider",
+    "field": "label",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: label of Decider in Decider keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "DeciderState",
+    "field": "goal",
+    "reason": "EC 2.5, copied shape: goal of DeciderState keeps the plain type of AutocompactState in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "DeciderState",
+    "field": "last_prompt",
+    "reason": "EC 2.5, copied shape: last_prompt of DeciderState keeps the plain type of AutocompactState in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "DeciderState",
+    "field": "last_reply",
+    "reason": "EC 2.5, copied shape: last_reply of DeciderState keeps the plain type of AutocompactState in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "agent",
+    "reason": "EC 2.5, copied shape: agent of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "answers",
+    "reason": "EC 2.5, copied shape: answers of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "at",
+    "reason": "EC 2.5, copied shape: at of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "costUsd",
+    "reason": "EC 2.5, copied shape: costUsd of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "coverage",
+    "reason": "EC 2.5, copied shape: coverage of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "coverageCostUsd",
+    "reason": "EC 2.5, copied shape: coverageCostUsd of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "coverageMs",
+    "reason": "EC 2.5, copied shape: coverageMs of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "coverageOutcome",
+    "reason": "EC 2.5, copied shape: coverageOutcome of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "decider",
+    "reason": "EC 2.5, copied shape: decider of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "pane",
+    "reason": "EC 2.5, copied shape: pane of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "share",
+    "reason": "EC 2.5, copied shape: share of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "tab",
+    "reason": "EC 2.5, copied shape: tab of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "tokens",
+    "reason": "EC 2.5, copied shape: tokens of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "tookMs",
+    "reason": "EC 2.5, copied shape: tookMs of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "why",
+    "reason": "EC 2.5, copied shape: why of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Decision",
+    "field": "window",
+    "reason": "EC 2.5, copied shape: window of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "LastDecision",
+    "field": "at",
+    "reason": "EC 2.5, copied shape: at of LastDecision keeps the plain type of LastDecision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "LastDecision",
+    "field": "tokens",
+    "reason": "EC 2.5, copied shape: tokens of LastDecision keeps the plain type of LastDecision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "LinkedDecision",
+    "field": "id",
+    "reason": "EC 2.5, copied shape: id of LinkedDecision keeps the plain type of LinkedDecision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "OpenWorkItem",
+    "field": "section",
+    "reason": "EC 2.5, copied shape: section of OpenWorkItem keeps the plain type of OpenWorkItem in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "OpenWorkItem",
+    "field": "text",
+    "reason": "EC 2.5, copied shape: text of OpenWorkItem keeps the plain type of OpenWorkItem in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Policy",
+    "field": "ceiling",
+    "reason": "EC 2.5, copied shape: ceiling of Policy keeps the plain type of AutocompactPolicy in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Policy",
+    "field": "cooldownMs",
+    "reason": "EC 2.5, copied shape: cooldownMs of Policy keeps the plain type of AutocompactPolicy in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Policy",
+    "field": "kinds",
+    "reason": "EC 2.5, copied shape: kinds of Policy keeps the plain type of AutocompactPolicy in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Policy",
+    "field": "minimum",
+    "reason": "EC 2.5, copied shape: minimum of Policy keeps the plain type of AutocompactPolicy in tab-recap/src/recap/domain/autocompact.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Question",
+    "field": "instructions",
+    "reason": "EC 2.5, copied shape: instructions of Question keeps the plain type of Noul in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "QuestionCriteria",
+    "field": "true",
+    "reason": "EC 2.5, copied shape: true of QuestionCriteria keeps the plain type of NoulCriteria in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "QuestionCriteria",
+    "field": "false",
+    "reason": "EC 2.5, copied shape: false of QuestionCriteria keeps the plain type of NoulCriteria in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "agent",
+    "reason": "EC 2.5, copied shape: agent of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "at",
+    "reason": "EC 2.5, copied shape: at of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "detail",
+    "reason": "EC 2.5, copied shape: detail of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "pane",
+    "reason": "EC 2.5, copied shape: pane of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "share",
+    "reason": "EC 2.5, copied shape: share of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Skip",
+    "field": "tab",
+    "reason": "EC 2.5, copied shape: tab of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Thresholds",
+    "field": "closes",
+    "reason": "EC 2.5, copied shape: closes of Thresholds keeps the plain type of Thresholds in tab-recap/src/recap/domain/autocompact-verdict.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Thresholds",
+    "field": "safe",
+    "reason": "EC 2.5, copied shape: safe of Thresholds keeps the plain type of Thresholds in tab-recap/src/recap/domain/autocompact-verdict.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Thresholds",
+    "field": "undecidedFrom",
+    "reason": "EC 2.5, copied shape: undecidedFrom of Thresholds keeps the plain type of Thresholds in tab-recap/src/recap/domain/autocompact-verdict.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Thresholds",
+    "field": "undecidedTo",
+    "reason": "EC 2.5, copied shape: undecidedTo of Thresholds keeps the plain type of Thresholds in tab-recap/src/recap/domain/autocompact-verdict.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Tuning",
+    "field": "coverageAtLeast",
+    "reason": "EC 2.5, copied shape: coverageAtLeast of Tuning keeps the plain type of AutocompactTuning in tab-recap/src/recap/domain/autocompact-style.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Tuning",
+    "field": "recheckIdleMs",
+    "reason": "EC 2.5, copied shape: recheckIdleMs of Tuning keeps the plain type of AutocompactTuning in tab-recap/src/recap/domain/autocompact-style.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "Turn",
+    "field": "text",
+    "reason": "EC 2.5, copied shape: text of Turn keeps the plain type of Turn in tab-recap/src/recap/application/autocompact-state.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "activeFor",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of activeFor in CompactionActivity keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "activeFor",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of activeFor in CompactionActivity keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "activeFor",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of activeFor in CompactionActivity keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "amend",
+    "field": "id",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter id of amend in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "ask",
+    "field": "questions",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter questions of ask in Decider keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "automaticInProgress",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of automaticInProgress in CompactionActivity keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "awaiting",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of awaiting in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "awaiting",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of awaiting in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "contextUse",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of contextUse in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "ensure",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of ensure in RecapReadiness keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "history",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of history in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "history",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of history in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastBreakAt",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of lastBreakAt in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastBreakAt",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of lastBreakAt in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastBreakAt",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of lastBreakAt in SessionSignals keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastDecision",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of lastDecision in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastDecision",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of lastDecision in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastDecisionAt",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of lastDecisionAt in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastDecisionAt",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of lastDecisionAt in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "lastDecisionAt",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of lastDecisionAt in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "link",
+    "field": "compactionId",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter compactionId of link in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "link",
+    "field": "id",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter id of link in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "linkLatest",
+    "field": "compactionId",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter compactionId of linkLatest in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "linkLatest",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of linkLatest in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "linkLatest",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of linkLatest in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "log",
+    "field": "line",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter line of log in SafePointPorts keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "markRequested",
+    "field": "id",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter id of markRequested in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "now",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of now in SafePointPorts keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "pruneSkips",
+    "field": "keep",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter keep of pruneSkips in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "record",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of record in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "statusOf",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of statusOf in SafePointPorts keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "statusOf",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of statusOf in SafePointPorts keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactAny",
+    "field": "at",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter at of unlinkedCompactAny in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactAny",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of unlinkedCompactAny in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactSince",
+    "field": "at",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter at of unlinkedCompactSince in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactSince",
+    "field": "key",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter key of unlinkedCompactSince in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactSince",
+    "field": "return",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: the return of unlinkedCompactSince in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/compaction-timing/contract.ts",
+    "symbol": "unlinkedCompactSince",
+    "field": "scope",
+    "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: parameter scope of unlinkedCompactSince in DecisionLog keeps the plain type of that text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/environment.ts",
+    "symbol": "<anonymous>",
+    "field": "branch",
+    "reason": "EC 2.2, copied shape: branch of the inline object of RepoResult keeps the plain type of RepoResult in tab-recap/src/ports/lane-repo.ts, held equal by gates/copied-shapes/environment.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/environment.ts",
+    "symbol": "<anonymous>",
+    "field": "root",
+    "reason": "EC 2.2, copied shape: root of the inline object of RepoResult keeps the plain type of RepoResult in tab-recap/src/ports/lane-repo.ts, held equal by gates/copied-shapes/environment.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/environment.ts",
+    "symbol": "WebBase",
+    "field": "base",
+    "reason": "EC 2.2, copied shape: base of WebBase keeps the plain type of WebBase in tab-recap/src/ports/lane-repo.ts, held equal by gates/copied-shapes/environment.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "ref",
+    "reason": "EC 2.2, copied shape: ref of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "AddOp",
+    "field": "why",
+    "reason": "EC 2.2, copied shape: why of AddOp keeps the plain type of AddOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "CloseOp",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of CloseOp keeps the plain type of CloseOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "CloseOp",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of CloseOp keeps the plain type of CloseOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "closedAt",
+    "reason": "EC 2.2, copied shape: closedAt of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "firstAt",
+    "reason": "EC 2.2, copied shape: firstAt of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "language",
+    "reason": "EC 2.2, copied shape: language of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "lastAt",
+    "reason": "EC 2.2, copied shape: lastAt of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "ref",
+    "reason": "EC 2.2, copied shape: ref of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "Fact",
+    "field": "why",
+    "reason": "EC 2.2, copied shape: why of Fact keeps the plain type of Fact in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "RunRef",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of RunRef keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "RunRef",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of RunRef keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "RunRef",
+    "field": "language",
+    "reason": "EC 2.2, copied shape: language of RunRef keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "TaskId",
+    "field": "key",
+    "reason": "EC 2.2, copied shape: key of TaskId keeps the plain type of TaskId in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "TaskId",
+    "field": "tab",
+    "reason": "EC 2.2, copied shape: tab of TaskId keeps the plain type of TaskId in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "TaskOps",
+    "field": "task",
+    "reason": "EC 2.2, copied shape: task of TaskOps keeps the plain type of TaskOps in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "UpdateOp",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of UpdateOp keeps the plain type of UpdateOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "UpdateOp",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of UpdateOp keeps the plain type of UpdateOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "UpdateOp",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of UpdateOp keeps the plain type of UpdateOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "UpdateOp",
+    "field": "why",
+    "reason": "EC 2.2, copied shape: why of UpdateOp keeps the plain type of UpdateOp in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/facts.ts",
+    "symbol": "mint",
+    "field": "return",
+    "reason": "EC 2.2, copied shape: the return of mint keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "costUsd",
+    "reason": "EC 2.2, copied shape: costUsd of the inline object of Written and Enumerated keeps the plain type of Written and Enumerated in tab-recap/src/ports/summarizer.ts and tab-recap/src/ports/enumerators.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "gate",
+    "reason": "EC 2.2, copied shape: gate of the inline object of RefusedOperation keeps the plain type of RefusedOperation in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of the inline object of RecapInput keeps the plain type of RecapInput in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "now",
+    "reason": "EC 2.2, copied shape: now of the inline object of RecapInput keeps the plain type of RecapInput in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "reason",
+    "reason": "EC 2.2, copied shape: reason of the inline object of RefusedOperation keeps the plain type of RefusedOperation in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of the inline object of Written, Enumerated and Curated keeps the plain type of Written, Enumerated and Curated in tab-recap/src/ports/summarizer.ts, tab-recap/src/ports/enumerators.ts and tab-recap/src/ports/curators.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "<anonymous>",
+    "field": "zone",
+    "reason": "EC 2.2, copied shape: zone of the inline object of RecapInput keeps the plain type of RecapInput in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Correction",
+    "field": "problems",
+    "reason": "EC 2.2, copied shape: problems of Correction keeps the plain type of Correction in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Correction",
+    "field": "tasks",
+    "reason": "EC 2.2, copied shape: tasks of Correction keeps the plain type of Correction in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Curator",
+    "field": "backend",
+    "reason": "EC 2.4, approved as written: backend of Curator in Curator keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Enumerator",
+    "field": "backend",
+    "reason": "EC 2.4, approved as written: backend of Enumerator in Enumerator keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Enumerator",
+    "field": "job",
+    "reason": "EC 2.4, approved as written: job of Enumerator in Enumerator keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputAgent",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of InputAgent keeps the plain type of InputAgent in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputAgent",
+    "field": "kind",
+    "reason": "EC 2.2, copied shape: kind of InputAgent keeps the plain type of InputAgent in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputAgent",
+    "field": "label",
+    "reason": "EC 2.2, copied shape: label of InputAgent keeps the plain type of InputAgent in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputAgent",
+    "field": "pane",
+    "reason": "EC 2.2, copied shape: pane of InputAgent keeps the plain type of InputAgent in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "flagged",
+    "reason": "EC 2.2, copied shape: flagged of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "ref",
+    "reason": "EC 2.2, copied shape: ref of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputCandidate",
+    "field": "why",
+    "reason": "EC 2.2, copied shape: why of InputCandidate keeps the plain type of InputCandidate in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "anchor",
+    "reason": "EC 2.2, copied shape: anchor of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "first",
+    "reason": "EC 2.2, copied shape: first of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "last",
+    "reason": "EC 2.2, copied shape: last of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "ref",
+    "reason": "EC 2.2, copied shape: ref of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputFact",
+    "field": "why",
+    "reason": "EC 2.2, copied shape: why of InputFact keeps the plain type of InputFact in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputLedger",
+    "field": "hidden",
+    "reason": "EC 2.2, copied shape: hidden of InputLedger keeps the plain type of InputLedger in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputLedger",
+    "field": "task",
+    "reason": "EC 2.2, copied shape: task of InputLedger keeps the plain type of InputLedger in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputNote",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of InputNote keeps the plain type of InputNote in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "InputTranscript",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of InputTranscript keeps the plain type of InputTranscript in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RecapInput",
+    "field": "tab",
+    "reason": "EC 2.2, copied shape: tab of RecapInput keeps the plain type of RecapInput in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RecapRequest",
+    "field": "correction",
+    "reason": "EC 2.2, copied shape: correction of RecapRequest keeps the plain type of RecapRequest in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RecapRequest",
+    "field": "language",
+    "reason": "EC 2.2, copied shape: language of RecapRequest keeps the plain type of RecapRequest in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RecapRequest",
+    "field": "previousLanguage",
+    "reason": "EC 2.2, copied shape: previousLanguage of RecapRequest keeps the plain type of RecapRequest in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RefusedOperation",
+    "field": "reasons",
+    "reason": "EC 2.2, copied shape: reasons of RefusedOperation keeps the plain type of RefusedOperation in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "RefusedOperation",
+    "field": "task",
+    "reason": "EC 2.2, copied shape: task of RefusedOperation keeps the plain type of RefusedOperation in tab-recap/src/ports/summarizer.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "TaskGroup",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of TaskGroup keeps the plain type of TaskGroup in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "TaskGroup",
+    "field": "lanes",
+    "reason": "EC 2.2, copied shape: lanes of TaskGroup keeps the plain type of TaskGroup in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "TaskGroup",
+    "field": "name",
+    "reason": "EC 2.2, copied shape: name of TaskGroup keeps the plain type of TaskGroup in tab-recap/src/ports/recap-input.ts, held equal by gates/copied-shapes/models.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "Writer",
+    "field": "backend",
+    "reason": "EC 2.4, approved as written: backend of Writer in Writer keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/models.ts",
+    "symbol": "write",
+    "field": "document",
+    "reason": "EC 2.4, approved as written: parameter document of write in Writer, Enumerator and Curator keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Advance",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Advance",
+    "field": "error",
+    "reason": "EC 2.2, copied shape: error of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Advance",
+    "field": "tab",
+    "reason": "EC 2.2, copied shape: tab of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "FailedRun",
+    "field": "error",
+    "reason": "EC 2.2, copied shape: error of FailedRun keeps the plain type of FailedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "GateStats",
+    "field": "dropped",
+    "reason": "EC 2.2, copied shape: dropped of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "GateStats",
+    "field": "flagged",
+    "reason": "EC 2.2, copied shape: flagged of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "GateStats",
+    "field": "refused",
+    "reason": "EC 2.2, copied shape: refused of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "LastRun",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of LastRun keeps the plain type of LastRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "backend",
+    "reason": "EC 2.2, copied shape: backend of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "costUsd",
+    "reason": "EC 2.2, copied shape: costUsd of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "error",
+    "reason": "EC 2.2, copied shape: error of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "language",
+    "reason": "EC 2.2, copied shape: language of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "running",
+    "reason": "EC 2.2, copied shape: running of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "Recap",
+    "field": "tab",
+    "reason": "EC 2.2, copied shape: tab of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "decisions",
+    "reason": "EC 2.2, copied shape: decisions of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "done",
+    "reason": "EC 2.2, copied shape: done of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "goal",
+    "reason": "EC 2.2, copied shape: goal of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "links",
+    "reason": "EC 2.2, copied shape: links of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "needs",
+    "reason": "EC 2.2, copied shape: needs of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "next",
+    "reason": "EC 2.2, copied shape: next of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "now",
+    "reason": "EC 2.2, copied shape: now of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapSections",
+    "field": "rules",
+    "reason": "EC 2.2, copied shape: rules of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapTask",
+    "field": "id",
+    "reason": "EC 2.2, copied shape: id of RecapTask keeps the plain type of RecapTask in tab-recap/src/recap/domain/tasks.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapTask",
+    "field": "lanes",
+    "reason": "EC 2.2, copied shape: lanes of RecapTask keeps the plain type of RecapTask in tab-recap/src/recap/domain/tasks.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapTask",
+    "field": "markdown",
+    "reason": "EC 2.2, copied shape: markdown of RecapTask keeps the plain type of RecapTask in tab-recap/src/recap/domain/tasks.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecapTask",
+    "field": "name",
+    "reason": "EC 2.2, copied shape: name of RecapTask keeps the plain type of RecapTask in tab-recap/src/recap/domain/tasks.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecordedRun",
+    "field": "error",
+    "reason": "EC 2.2, copied shape: error of RecordedRun keeps the plain type of RecordedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "RecordedRun",
+    "field": "input",
+    "reason": "EC 2.2, copied shape: input of RecordedRun keeps the plain type of RecordedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "agent",
+    "reason": "EC 2.2, copied shape: agent of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "claudeRecap",
+    "reason": "EC 2.2, copied shape: claudeRecap of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "cursor",
+    "reason": "EC 2.2, copied shape: cursor of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "lastPrompt",
+    "reason": "EC 2.2, copied shape: lastPrompt of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "pane",
+    "reason": "EC 2.2, copied shape: pane of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "tail",
+    "reason": "EC 2.2, copied shape: tail of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "title",
+    "reason": "EC 2.2, copied shape: title of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionCursor",
+    "field": "transcript",
+    "reason": "EC 2.2, copied shape: transcript of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "cursor",
+    "reason": "EC 2.2, copied shape: cursor of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "pane",
+    "reason": "EC 2.2, copied shape: pane of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "tokensAfter",
+    "reason": "EC 2.2, copied shape: tokensAfter of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "tokensBefore",
+    "reason": "EC 2.2, copied shape: tokensBefore of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "SessionMark",
+    "field": "tookMs",
+    "reason": "EC 2.2, copied shape: tookMs of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "beginRun",
+    "field": "at",
+    "reason": "EC 2.4, approved as written: parameter at of beginRun in Records keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "beginRun",
+    "field": "backend",
+    "reason": "EC 2.4, approved as written: parameter backend of beginRun in Records keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "beginRun",
+    "field": "scope",
+    "reason": "EC 2.4, approved as written: parameter scope of beginRun in Records keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "historyOf",
+    "field": "key",
+    "reason": "EC 2.4, approved as written: parameter key of historyOf in FactStore keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "historyOf",
+    "field": "scope",
+    "reason": "EC 2.4, approved as written: parameter scope of historyOf in FactStore keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "keysOf",
+    "field": "return",
+    "reason": "EC 2.4, approved as written: the return of keysOf in FactStore keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "keysOf",
+    "field": "scope",
+    "reason": "EC 2.4, approved as written: parameter scope of keysOf in FactStore keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "lastRunOf",
+    "field": "scope",
+    "reason": "EC 2.4, approved as written: parameter scope of lastRunOf in Records keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "readRecap",
+    "field": "scope",
+    "reason": "EC 2.4, approved as written: parameter scope of readRecap in Records keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/records.ts",
+    "symbol": "recentlyClosed",
+    "field": "sinceMs",
+    "reason": "EC 2.4, approved as written: parameter sinceMs of recentlyClosed in FactStore keeps the plain type of the contract text; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "<anonymous>",
+    "field": "count",
+    "reason": "EC 2.5, copied shape: count of the inline object of Foreground keeps the plain type of Foreground in tab-recap/src/recap/domain/in-flight.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "<anonymous>",
+    "field": "source",
+    "reason": "EC 2.2, copied shape: source of the inline object of Located keeps the plain type of Located in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "<anonymous>",
+    "field": "why",
+    "reason": "EC 2.5, copied shape: why of the inline object of Foreground keeps the plain type of Foreground in tab-recap/src/recap/domain/in-flight.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "AgentNote",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of AgentNote keeps the plain type of AgentNote in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "AgentNote",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of AgentNote keeps the plain type of AgentNote in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "BackgroundItem",
+    "field": "label",
+    "reason": "EC 2.5, copied shape: label of BackgroundItem keeps the plain type of BackgroundItem in tab-recap/src/recap/domain/in-flight.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "BackgroundItem",
+    "field": "tool",
+    "reason": "EC 2.5, copied shape: tool of BackgroundItem keeps the plain type of BackgroundItem in tab-recap/src/recap/domain/in-flight.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Chunk",
+    "field": "claudeRecap",
+    "reason": "EC 2.2, copied shape: claudeRecap of Chunk keeps the plain type of Chunk in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Chunk",
+    "field": "grew",
+    "reason": "EC 2.2, copied shape: grew of Chunk keeps the plain type of Chunk in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Chunk",
+    "field": "lastPrompt",
+    "reason": "EC 2.2, copied shape: lastPrompt of Chunk keeps the plain type of Chunk in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Chunk",
+    "field": "title",
+    "reason": "EC 2.2, copied shape: title of Chunk keeps the plain type of Chunk in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "ContextUse",
+    "field": "tokens",
+    "reason": "EC 2.5, copied shape: tokens of ContextUse keeps the plain type of ContextUse in tab-recap/src/recap/domain/compaction.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "ContextUse",
+    "field": "window",
+    "reason": "EC 2.5, copied shape: window of ContextUse keeps the plain type of ContextUse in tab-recap/src/recap/domain/compaction.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Entry",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of Entry keeps the plain type of Entry in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Entry",
+    "field": "text",
+    "reason": "EC 2.2, copied shape: text of Entry keeps the plain type of Entry in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Entry",
+    "field": "what",
+    "reason": "EC 2.2, copied shape: what of Entry keeps the plain type of Entry in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Mark",
+    "field": "at",
+    "reason": "EC 2.2, copied shape: at of Mark keeps the plain type of Mark in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Mark",
+    "field": "tokensAfter",
+    "reason": "EC 2.2, copied shape: tokensAfter of Mark keeps the plain type of Mark in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Mark",
+    "field": "tokensBefore",
+    "reason": "EC 2.2, copied shape: tokensBefore of Mark keeps the plain type of Mark in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/session.ts",
+    "symbol": "Mark",
+    "field": "tookMs",
+    "reason": "EC 2.2, copied shape: tookMs of Mark keeps the plain type of Mark in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/settings.ts",
+    "symbol": "<anonymous>",
+    "field": "window",
+    "reason": "EC 2.2, copied shape: window of the inline object of Debounce keeps the plain type of Debounce in tab-recap/src/recap/domain/debounce.ts, held equal by gates/copied-shapes/settings.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/settings.ts",
+    "symbol": "PrunedWriterView",
+    "field": "keepNewest",
+    "reason": "EC 2.2, copied shape: keepNewest of PrunedWriterView keeps the plain type of PrunedWriterView in tab-recap/src/recap/domain/writer-view.ts, held equal by gates/copied-shapes/settings.json; ENG-5 types it"
+  },
+  {
+    "class": "contract",
+    "file": "src/contract/settings.ts",
+    "symbol": "PrunedWriterView",
+    "field": "nextHours",
+    "reason": "EC 2.2, copied shape: nextHours of PrunedWriterView keeps the plain type of PrunedWriterView in tab-recap/src/recap/domain/writer-view.ts, held equal by gates/copied-shapes/settings.json; ENG-5 types it"
+  }
+]

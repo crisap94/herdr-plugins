@@ -1,8 +1,11 @@
 import type {
     AccomplishmentEstablished,
+    AgentKind,
     Brand,
     Clock,
+    Count,
     CreateEngine,
+    DecisionId,
     Directory,
     Duration,
     Engine,
@@ -13,8 +16,10 @@ import type {
     Ids,
     Instant,
     LedgerEvent,
+    PaneId,
     ParseFailure,
     Position,
+    Probability,
     RecapCause,
     RecapWritten,
     RestoreText,
@@ -24,16 +29,18 @@ import type {
     SessionKey,
     SessionReader,
     SessionSource,
+    TabId,
     Text,
     TurnRecorded,
     Unknowable,
     Unknown,
+    Usd,
     Workplaces,
 } from '@stateforge-labs/session-ledger';
 
 type Holds<T extends true> = T;
 
-export type KernelNames = [Brand<string, 'Probe'>, Result<Instant, ParseFailure>, Duration, Text, Unknowable, Unknown];
+export type KernelNames = [Brand<string, 'Probe'>, Result<Instant, ParseFailure>, Duration, Text, Unknowable, Unknown, Count, Usd, Probability, TabId, PaneId, AgentKind, DecisionId];
 export type IdNames = [ScopeId, SessionKey, SessionId, HarnessKind, RestoreText, Directory];
 export type SessionNames = [FollowedSession, RecapCause, SessionReader, SessionSource, Position, HistoryFact];
 export type EnvironmentNames = [Clock, Ids, Workplaces];

@@ -1,0 +1,18 @@
+[
+  { "export": "HistoryFact", "origin": "tab-recap/src/ports/ledger.ts" },
+  { "export": "FactId", "origin": "tab-recap/src/recap/domain/fact.ts" },
+  { "export": "RunId", "origin": "tab-recap/src/recap/domain/fact.ts" },
+  { "export": "TaskId", "origin": "tab-recap/src/recap/domain/fact.ts" },
+  { "export": "Section", "origin": "tab-recap/src/recap/domain/fact.ts", "originConst": "SECTION_IDS" },
+  { "export": "ClosedWhy", "origin": "tab-recap/src/recap/domain/fact.ts", "originConst": "CLOSED_WHY" },
+  { "export": "Fact", "origin": "tab-recap/src/recap/domain/fact.ts" },
+  { "export": "AddOp", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "UpdateOp", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "CloseOp", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "Operation", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "TaskOps", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "Reason", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "Refusal", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "RunRef", "origin": "tab-recap/src/recap/domain/ops.ts" },
+  { "export": "Applied", "origin": "tab-recap/src/ports/ledger.ts" }
+]

@@ -1,0 +1,16 @@
+[
+  { "export": "SessionCursor", "origin": "tab-recap/src/ports/recap-records.ts", "originName": "LaneCursor" },
+  { "export": "Recap", "origin": "tab-recap/src/ports/recap-records.ts", "originName": "TabRecap" },
+  { "export": "RecapSections", "origin": "tab-recap/src/recap/domain/shape.ts" },
+  { "export": "RecapTask", "origin": "tab-recap/src/recap/domain/tasks.ts" },
+  { "export": "TaskShape", "origin": "tab-recap/src/recap/domain/grouping.ts" },
+  { "export": "OwnTrigger", "origin": "tab-recap/src/recap/domain/boundary.ts" },
+  { "export": "SessionMark", "origin": "tab-recap/src/recap/domain/boundary.ts", "originName": "LaneMark" },
+  { "export": "GateStats", "origin": "tab-recap/src/recap/domain/gates/item-gate.ts" },
+  { "export": "RunFacts", "origin": "tab-recap/src/ports/recap-records.ts" },
+  { "export": "RecordedRun", "origin": "tab-recap/src/ports/recap-records.ts" },
+  { "export": "FailedRun", "origin": "tab-recap/src/ports/recap-records.ts" },
+  { "export": "Advance", "origin": "tab-recap/src/ports/recap-records.ts" },
+  { "export": "LastRun", "origin": "tab-recap/src/ports/recap-records.ts" },
+  { "export": "Story", "origin": "tab-recap/src/ports/stories.ts" }
+]

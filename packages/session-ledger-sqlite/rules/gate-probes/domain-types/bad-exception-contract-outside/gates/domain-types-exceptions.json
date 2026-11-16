@@ -1,0 +1,9 @@
+[
+  {
+    "class": "contract",
+    "file": "src/domain/value.ts",
+    "symbol": "Size",
+    "field": "width",
+    "reason": "probe: a contract exception outside src/contract/ and src/compaction-timing/ excepts nothing"
+  }
+]
