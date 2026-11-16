@@ -1,4 +1,6 @@
-import type { Brand } from './brand.ts';
+import { err, must, ok, type Result } from '#src/protocol/result.ts';
+import { brand, type Brand } from './brand.ts';
+import type { ParseFailure } from './parse-failure.ts';
 import type { Duration } from './time.ts';
 
 export type Unsupported = { readonly kind: 'unsupported'; readonly why: string };
@@ -10,15 +12,36 @@ export function unsupported(why: string): Unsupported {
 export type CompactionPiece = Brand<string, 'CompactionPiece'>;
 export type ConfirmationReads = Brand<number, 'ConfirmationReads'>;
 
+export function parseCompactionPiece(input: unknown): Result<CompactionPiece, ParseFailure> {
+    if (typeof input !== 'string') {
+        return err({ kind: 'not-a-string' });
+    }
+    return ok(brand<string, 'CompactionPiece'>(input));
+}
+
 export function compactionPiece(text: string): CompactionPiece {
-    return text as CompactionPiece;
+    return must(parseCompactionPiece(text));
+}
+
+export function parseConfirmationReads(input: unknown): Result<ConfirmationReads, ParseFailure> {
+    if (typeof input !== 'number') {
+        return err({ kind: 'not-a-number' });
+    }
+    return ok(brand<number, 'ConfirmationReads'>(input));
 }
 
 export function confirmationReads(reads: number): ConfirmationReads {
-    return reads as ConfirmationReads;
+    return must(parseConfirmationReads(reads));
 }
 
 export type NeedsIdleReason = Brand<string, 'NeedsIdleReason'>;
+
+export function parseNeedsIdleReason(input: unknown): Result<NeedsIdleReason, ParseFailure> {
+    if (typeof input !== 'string') {
+        return err({ kind: 'not-a-string' });
+    }
+    return ok(brand<string, 'NeedsIdleReason'>(input.trim()));
+}
 
 export class NotAReasonError extends Error {
     override readonly name = 'NotAReasonError';
@@ -32,7 +55,7 @@ export function needsIdle(reason: string): WhileWorking {
     if (reason.trim() === '') {
         throw new NotAReasonError('a kind that needs the lane idle must say why');
     }
-    return { kind: 'needs-idle', reason: reason.trim() as NeedsIdleReason };
+    return { kind: 'needs-idle', reason: must(parseNeedsIdleReason(reason)) };
 }
 
 export interface CompactionLine {

@@ -37,8 +37,7 @@
   },
   "src/recap/domain/compaction-plan.ts": {
     "parameter": 5,
-    "property": 3,
-    "assertion": 3
+    "property": 3
   },
   "src/recap/domain/coordination.ts": {
     "parameter": 1,
@@ -173,10 +172,6 @@
   },
   "src/recap/domain/token-registry.ts": {
     "parameter": 1
-  },
-  "src/recap/domain/typing-lease.ts": {
-    "parameter": 1,
-    "return": 1
   },
   "src/recap/domain/visibility.ts": {
     "return": 2,

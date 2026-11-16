@@ -2,6 +2,7 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
 export const RETRY_MS = 1000;
@@ -25,7 +26,7 @@ export class TypingLease {
     }
 
     private async take(pane: string): Promise<Acquired> {
-        const stamp = this.deps.now();
+        const stamp = instant(this.deps.now());
         const wrote = await this.deps.tokens.report(pane, { [LEASE]: String(stamp) }, LEASE_TTL_MS);
         if (isUnknown(wrote)) {
             return 'unavailable';
@@ -35,7 +36,7 @@ export class TypingLease {
             await this.release(pane);
             return 'unavailable';
         }
-        if (leaseBlocked(read.tokens, stamp)) {
+        if (leaseBlocked(read.tokens, stamp) === 'blocked') {
             await this.release(pane);
             return 'busy';
         }
