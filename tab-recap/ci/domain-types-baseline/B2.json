@@ -40,12 +40,6 @@
     "property": 3,
     "assertion": 3
   },
-  "src/recap/domain/continuation-note.ts": {
-    "parameter": 8,
-    "return": 6,
-    "container": 2,
-    "assertion": 2
-  },
   "src/recap/domain/coordination.ts": {
     "parameter": 1,
     "return": 2,

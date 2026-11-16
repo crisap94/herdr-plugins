@@ -215,7 +215,7 @@ export class Compaction {
     }
 
     private keptNote(brief: string | null, request: CompactRequest): string | null {
-        return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(brief, request.note) : brief;
+        return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(must(parseText(brief)), must(parseText(request.note))) : brief;
     }
 
     private async stoppedByCoverage(parts: CoverageStop): Promise<boolean> {
