@@ -1,5 +1,7 @@
 export const LIBRARY_IDS = { claude: 'claude', codex: 'codex', opencode: 'opencode' } as const;
 
+export const TOOL_ROUTE_DENIED = ['opencode'] as const;
+
 export const LIBRARY_HARNESS = {
     loginStore: 'login-store',
     harnessDefaultEffort: 'harness-default',

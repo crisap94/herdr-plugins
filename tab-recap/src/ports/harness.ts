@@ -18,6 +18,8 @@ export type AnswerMode = TextAnswer | SchemaAnswer;
 
 export type StructuredSupport = 'none' | 'schema';
 
+export type ToolSupport = 'none' | 'stdio';
+
 export interface HarnessCall {
     readonly instructions: string;
     readonly input: string;
@@ -41,5 +43,6 @@ export interface Harness<Id extends string = string> {
     label(settings: HarnessSettings): string;
     readonly limit: number | null;
     readonly structured?: StructuredSupport;
+    readonly tools?: ToolSupport;
     run(call: HarnessCall, settings: HarnessSettings): Promise<Ran>;
 }

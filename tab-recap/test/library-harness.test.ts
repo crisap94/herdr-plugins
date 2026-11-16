@@ -15,6 +15,7 @@ import type { Config } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT } from '#src/recap/domain/claude-policy-ack.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
+import { LIBRARY_IDS } from '#src/adapters/harness/library-constants.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
 import { summarizerFor } from '#src/daemon/backends.ts';
@@ -329,4 +330,9 @@ test('a run whose cost is unavailable says so in the same line, and a fully supp
     const quiet = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });
     await MAKERS.opencode(config, '/work', quiet).run(call, settings);
     assert.deepEqual(lines, ['harness codex: cost unavailable']);
+});
+
+test('every library harness id reports tool support none', () => {
+    const runtime = fakeRuntime({ scripts: {} });
+    for (const id of Object.values(LIBRARY_IDS)) assert.equal(new LibraryHarness(runtime, id, 1000).tools, 'none');
 });
