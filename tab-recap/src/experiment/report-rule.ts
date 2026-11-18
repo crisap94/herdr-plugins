@@ -1,26 +1,37 @@
 import type { ArmName } from '#src/adapters/experiment/arms.ts';
+import { must } from '#src/protocol/result.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+
+export { decide } from './legacy.ts';
+export type { ArmScore, Decision } from './legacy.ts';
 
 export const WITHIN_POINTS = 0.03;
 export const MAX_DRIFT = 0.15;
 
-export interface ArmScore { readonly arm: string; readonly precision: number; readonly drift: number; readonly coverageAuc: number; readonly needsOnlyRecapHarness: boolean }
+export type HarnessNeed = 'recap-only' | 'other';
 
-export interface Decision { readonly defaultArm: string | null; readonly coverageArm: string | null; readonly why: string }
+export interface ArmRating { readonly arm: Text; readonly precision: Probability | null; readonly drift: Probability | null; readonly coverageAuc: Probability | null; readonly harness: HarnessNeed }
 
-function whyOf(harness: ArmScore | undefined, other: ArmScore | undefined, best: number): string {
-    if (harness !== undefined) return `${harness.arm}: a recap-writer harness within ${WITHIN_POINTS * 100} points of the best precision (${best.toFixed(3)}) with drift ${harness.drift.toFixed(3)} ≤ ${MAX_DRIFT}`;
-    if (other === undefined) return 'no arm has drift within the limit: the default stays `recap`';
-    return `${other.arm}: no recap-writer harness is within ${WITHIN_POINTS * 100} points of the best precision with drift ≤ ${MAX_DRIFT}`;
+export interface Choice { readonly defaultArm: Text | null; readonly coverageArm: Text | null; readonly why: Text }
+
+interface Rated { readonly arm: Text; readonly precision: Probability; readonly drift: Probability | null; readonly harness: HarnessNeed }
+
+function whyOf(harness: Rated | undefined, other: Rated | undefined, best: Probability | null): Text {
+    if (harness !== undefined) return must(parseText(`${harness.arm}: a recap-writer harness within ${WITHIN_POINTS * 100} points of the best precision (${(best ?? Number.NEGATIVE_INFINITY).toFixed(3)}) with drift ${(harness.drift ?? Number.NaN).toFixed(3)} ≤ ${MAX_DRIFT}`));
+    if (other === undefined) return must(parseText('no arm has drift within the limit: the default stays `recap`'));
+    return must(parseText(`${other.arm}: no recap-writer harness is within ${WITHIN_POINTS * 100} points of the best precision with drift ≤ ${MAX_DRIFT}`));
 }
 
-export function decide(arms: readonly ArmScore[]): Decision {
-    const rated = arms.filter((arm) => !Number.isNaN(arm.precision));
-    const best = Math.max(...rated.map((arm) => arm.precision));
-    const steady = rated.filter((arm) => arm.drift <= MAX_DRIFT);
-    const closest = (list: readonly ArmScore[]): ArmScore | undefined => list.reduce<ArmScore | undefined>((top, arm) => (top === undefined || arm.precision > top.precision ? arm : top), undefined);
-    const harness = closest(steady.filter((arm) => arm.needsOnlyRecapHarness && arm.precision >= best - WITHIN_POINTS));
+const closest = (list: readonly Rated[]): Rated | undefined => list.reduce<Rated | undefined>((top, arm) => (top === undefined || arm.precision > top.precision ? arm : top), undefined);
+
+export function choose(arms: readonly ArmRating[]): Choice {
+    const rated = arms.flatMap((arm): Rated[] => (arm.precision === null ? [] : [{ arm: arm.arm, precision: arm.precision, drift: arm.drift, harness: arm.harness }]));
+    const best = closest(rated)?.precision ?? null;
+    const steady = rated.filter((arm) => arm.drift !== null && arm.drift <= MAX_DRIFT);
+    const harness = closest(steady.filter((arm) => arm.harness === 'recap-only' && best !== null && arm.precision >= best - WITHIN_POINTS));
     const other = harness === undefined ? closest(steady) : undefined;
-    const coverage = arms.filter((arm) => !Number.isNaN(arm.coverageAuc)).reduce<ArmScore | undefined>((top, arm) => (top === undefined || arm.coverageAuc > top.coverageAuc ? arm : top), undefined);
+    const coverage = arms.reduce<ArmRating | undefined>((top, arm) => (arm.coverageAuc !== null && (top?.coverageAuc === undefined || top.coverageAuc === null || arm.coverageAuc > top.coverageAuc) ? arm : top), undefined);
     return { defaultArm: harness?.arm ?? other?.arm ?? null, coverageArm: coverage?.arm ?? null, why: whyOf(harness, other, best) };
 }
 

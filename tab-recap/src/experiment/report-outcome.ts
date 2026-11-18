@@ -1,17 +1,26 @@
-import { mean } from './stats.ts';
-import { verdictFor } from './report-metrics.ts';
-import type { Answer } from './report-metrics.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { countMean, flagShare, type CountMean, type Flag } from './stats.ts';
+import { verdictOfAnswer, type ScoredReps } from './report-metrics.ts';
 
-export interface BoundaryRow { readonly point_id: string | null; readonly reReads: number; readonly restated: boolean; readonly followed: boolean }
+export { outcomeGap } from './legacy.ts';
+export type { BoundaryRow, Group, OutcomeGap } from './legacy.ts';
 
-export interface Group { readonly n: number; readonly reReads: number; readonly restated: number }
+export interface Boundary { readonly pointId: Text | null; readonly reReads: Count; readonly restated: Flag; readonly followed: Flag }
 
-export interface OutcomeGap { readonly allowed: Group; readonly blocked: Group }
+export interface OutcomeGroup { readonly n: Count; readonly reReads: CountMean; readonly restated: Probability | null }
 
-const groupOf = (rows: readonly BoundaryRow[]): Group => ({ n: rows.length, reReads: mean(rows.map((row) => row.reReads)), restated: mean(rows.map((row) => Number(row.restated))) });
+export interface Gap { readonly allowed: OutcomeGroup; readonly blocked: OutcomeGroup }
 
-export function outcomeGap(boundaries: readonly BoundaryRow[], reps: readonly (readonly Answer[])[]): OutcomeGap {
-    const joined = boundaries.filter((row) => row.point_id !== null && row.followed);
-    const verdicts = reps.flatMap((rep) => { const byKey = new Map(rep.map((answer) => [answer.key, answer])); return joined.map((row) => ({ row, allowed: verdictFor(byKey.get(row.point_id ?? '')) === 'compact' })); });
+const groupOf = (rows: readonly Boundary[]): OutcomeGroup => ({ n: must(parseCount(rows.length)), reReads: countMean(rows.map((row) => row.reReads)), restated: flagShare(rows.map((row) => row.restated)) });
+
+export function gapOf(boundaries: readonly Boundary[], reps: ScoredReps): Gap {
+    const joined = boundaries.filter((row) => row.pointId !== null && row.followed === 'yes');
+    const verdicts = reps.flatMap((rep) => {
+        const byKey = new Map(rep.map((answer) => [answer.key, answer]));
+        return joined.map((row) => ({ row, allowed: row.pointId !== null && verdictOfAnswer(byKey.get(row.pointId)) === 'compact' }));
+    });
     return { allowed: groupOf(verdicts.filter((v) => v.allowed).map((v) => v.row)), blocked: groupOf(verdicts.filter((v) => !v.allowed).map((v) => v.row)) };
 }
