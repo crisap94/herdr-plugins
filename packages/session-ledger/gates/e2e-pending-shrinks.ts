@@ -4,14 +4,24 @@ import { join } from 'node:path';
 
 export const PENDING_PATH = 'packages/session-ledger/gates/e2e-pending.json';
 
-export function pendingGrowth(head: readonly string[], base: readonly string[] | null): readonly string[] {
+export type FileAtBase = (entryFile: string) => 'existed' | 'new';
+
+const PACKAGE_DIR = 'packages/session-ledger';
+const UNSTABLE = './unstable/';
+
+export function sourceOf(entryFile: string): string {
+    return entryFile.startsWith(UNSTABLE) ? `${PACKAGE_DIR}/src/${entryFile.slice(UNSTABLE.length)}` : `${PACKAGE_DIR}/${entryFile.replace(/^\.\//u, '')}`;
+}
+
+export function pendingGrowth(head: readonly string[], base: readonly string[] | null, atBase: FileAtBase = () => 'existed'): readonly string[] {
     if (base === null) {
         return [];
     }
     const before = new Set(base);
     return head
         .filter((entry) => !before.has(entry))
-        .map((entry) => `${entry} is added to ${PENDING_PATH}; the list only shrinks against the merge base`);
+        .filter((entry) => atBase(entry.split(' ')[0] ?? '') === 'existed')
+        .map((entry) => `${entry} is added to ${PENDING_PATH}; the list only shrinks against the merge base (only an export of a file that is new since then may enter it)`);
 }
 
 function git(args: readonly string[]): string {
@@ -42,7 +52,9 @@ function baseSha(): string {
 if (import.meta.main) {
     const top = git(['rev-parse', '--show-toplevel']).trim();
     const head = entriesOf(readFileSync(join(top, PENDING_PATH), 'utf8'));
-    const violations = pendingGrowth(head, entriesAt(baseSha()));
+    const base = baseSha();
+    const atBase: FileAtBase = (entryFile) => (git(['ls-tree', '--name-only', base, '--', sourceOf(entryFile)]).trim() === '' ? 'new' : 'existed');
+    const violations = pendingGrowth(head, entriesAt(base), atBase);
     for (const line of violations) {
         process.stdout.write(`${line}\n`);
     }
