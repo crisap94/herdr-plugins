@@ -1,23 +1,12 @@
 import { said } from './item-gate.ts';
 import type { Gate } from './item-gate.ts';
+import { subjectOf } from './legacy.ts';
+import type { Outcome } from './legacy.ts';
 
 const GENERIC = ['agent', 'the agent', 'the assistant', 'the model', 'el agente', 'el asistente', 'el modelo', 'the plugin'];
-const OPENING = /^\W*([\p{L}\p{N}_-]+(?: [\p{L}\p{N}_-]+)?)(.*)$/su;
-
-function subjectOf(text: string, known: ReadonlySet<string>): { readonly rest: string } | null {
-    const lowered = text.toLowerCase();
-    const named = [...known].filter((name) => lowered.startsWith(name) && !/[\p{L}\p{N}_-]/u.test(lowered.charAt(name.length)));
-    const longest = named.toSorted((a, b) => b.length - a.length)[0];
-    if (longest !== undefined) {
-        return { rest: text.slice(longest.length) };
-    }
-    const first = OPENING.exec(text)?.[1]?.toLowerCase();
-    return first !== undefined && known.has(first) ? { rest: text.slice(first.length) } : null;
-}
-
 export const narrator: Gate = {
     id: 'G1',
-    check: (item, context) => {
+    check: (item, context): Outcome | null => {
         if (item.section === 'links') {
             return null;
         }

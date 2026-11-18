@@ -1,8 +1,8 @@
-import type { Gate } from './gate.ts';
+import type { Finding, Gate } from './gate.ts';
 
 export const answeredGate: Gate = {
     id: 'G12',
-    check: (ops, context) => ops.flatMap((op, at) => {
+    check: (ops, context): readonly Finding[] => ops.flatMap((op, at) => {
         if (op.op !== 'close' || op.why !== 'answered') {
             return [];
         }
