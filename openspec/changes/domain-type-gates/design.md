@@ -64,10 +64,10 @@ imports it, following `bin/check-protocol-names.ts`; the other `bin/` files are 
 ### D2. Raw input is `unknown`, parsed at one edge per value
 
 A **parser** is a function named `parse<Name>`, exported from the file that declares `<Name>`, taking `unknown` and returning
-`Result<Name, E>` with the one `Result` union. A **type guard** `(input: unknown): input is Name` is allowed only in the same
-file. `unknown` in any other parameter fails. The places that receive raw values (the configuration reader, the herdr transport
-decoder, the database row mappers, the transcript readers, the command-line argument reader) call parsers and pass domain types
-on. A database row mapper calls `parse<Name>` exported from the port file that declares `<Name>`; the adapter first renames the
+`Result<Name, E>` with the one `Result` union. A **type guard** `(input: unknown): input is Name` is allowed only in the same file.
+`unknown` in any other parameter fails. The places that receive raw values (the configuration reader, the herdr transport decoder,
+the database row mappers, the transcript readers, the command-line argument reader) call parsers and pass domain types on.
+A database row mapper calls `parse<Name>` exported from the port file that declares `<Name>`; the adapter first renames the
 columns to the domain field names in its query or select map, so no adapter function takes `unknown` (D-8a).
 
 **Exceptions** are per symbol, never per file or folder. Each entry is `file + function + parameter or return`, with its reason,
@@ -85,14 +85,14 @@ Existing constructors that throw `NotAnIdentifierError` become parsers. Callers 
 
 `src/recap/domain/brand.ts` exports the one function that applies a brand. Two rules confine it:
 
-New shared vocabulary (a brand and its parser) is added by a lead step before the slices that need it, together with its line in
-`ci/brand-importers.json`; a lane never mints a brand (D-5a). The protocol brands use this `Brand`; `src/protocol/primitives.ts`
-is the one file under `src/protocol` that imports `brand.ts` (D-6a).
-
 - a dependency-cruiser rule: only the exact list of files that declare a branded type may import `brand.ts`; a test fails when the
   list names a file that no longer declares one, or misses one that does;
 - an ast-grep rule `recap-brand-in-own-parser`: a call to the brand function appears only inside the `parse<Name>` (or the type
   guard) of the file that declares `<Name>`.
+
+New shared vocabulary (a brand and its parser) is added by a lead step before the slices that need it, together with its line in
+`ci/brand-importers.json`; a lane never mints a brand (D-5a). The protocol brands use this `Brand`; `src/protocol/primitives.ts`
+is the one file under `src/protocol` that imports `brand.ts` (D-6a).
 
 A third rule, `recap-one-brand-cast`, refuses every type assertion outside `brand.ts`: both the `as` form other than `as const` and
 the angle-bracket `type_assertion` form (`<PaneId>raw`), in `src/` and `bin/`. This is stricter than "no cast to a brand" on
@@ -159,10 +159,10 @@ the `legacy` category; a lane's verify line excludes only that category. Phase C
 The old throwing constructors of `src/recap/domain/ids.ts` take this path in lane B2.
 
 Callers keep their import path. The file that held the old export re-exports it from its folder's `legacy.ts`; the module graph
-exempts a cycle that passes through `legacy.ts` and stays inside that folder (rule `no-circular-legacy`), until BCa (D-2a; Q-1,
-accepted: any other same-folder loop may also pass through a `legacy.ts` until Phase C deletes the legacy files). An interface
-that another key implements gets a twin: the domain-typed shape takes a new name, and the old one moves to `legacy.ts` until BCa
-(D-3a). The `lane-scope::adapts` label is not used in Phase B, and it never admits a file of ENG, STO or VIEW (D-4a).
+exempts a cycle that passes through `legacy.ts` and stays inside that folder (rule `no-circular-legacy`), until BCa (D-2a). The
+graph tool cannot limit this to the two files, so any other same-folder loop through a `legacy.ts` also passes until Phase C
+deletes the legacy files; the owner accepted that (Q-1). An interface that another key implements gets a twin: the domain-typed
+shape takes a new name, and the old one moves to `legacy.ts` until BCa (D-3a). The `lane-scope::adapts` label is not used in Phase B, and it never admits a file of ENG, STO or VIEW (D-4a).
 
 An engine file is never changed by a lane. Its debt leaves with it. The package keeps the same rule with its own `legacy.ts` files
 and its own baseline. The files of lanes `STO` and `VIEW` follow the same rule.
