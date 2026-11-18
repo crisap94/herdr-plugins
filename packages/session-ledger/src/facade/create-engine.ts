@@ -2,14 +2,15 @@ import type { CreateEngine, Engine } from '#src/contract/engine.ts';
 import type { HistoryFact } from '#src/contract/facts.ts';
 import type { ScopeId, SessionKey } from '#src/contract/ids.ts';
 import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
-import { createEngine as createLegacyEngine, type Engine as LegacyEngine } from '#src/recap/application/engine.ts';
+import { createEngine as createLegacyEngine, type Engine as LegacyEngine, type EngineStore } from '#src/recap/application/engine.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { compacted } from './compacted.ts';
 import { curate } from './curate.ts';
 import { createFollowSet } from './follow-set.ts';
 import { followedBy, type FollowedBy } from './followed-by.ts';
 import { legacyPlugsOf, type FacadePlugs } from './plugs.ts';
-import { sessionStarted } from './session-started.ts';
+import { sessionStarted, type Retired, type Started } from './session-started.ts';
+import type { Advance, LaneCursor } from '#src/ports/recap-records.ts';
 import { laneOf, tabOf, writtenOf } from './translate.ts';
 
 const reportWritten = (plugs: FacadePlugs) => (event: RunEvent): void => {
@@ -21,9 +22,41 @@ const reportWritten = (plugs: FacadePlugs) => (event: RunEvent): void => {
     plugs.on?.(written);
 };
 
-const legacyOf = (plugs: FacadePlugs): LegacyEngine => createLegacyEngine({
+type Moved = Pick<Advance, 'tab' | 'lanes'>;
+
+const unread = (cursors: readonly LaneCursor[], read: readonly LaneCursor[]): readonly LaneCursor[] =>
+    cursors.filter((cursor) => !read.some((other) => other.pane === cursor.pane && other.transcript === cursor.transcript));
+
+const createRetired = (): Retired => {
+    const kept = new Map<string, readonly LaneCursor[]>();
+    const withKept = (move: Moved): readonly LaneCursor[] => [...move.lanes, ...unread(kept.get(move.tab) ?? [], move.lanes)];
+    return {
+        keep: (recap, was): void => {
+            kept.set(recap.tab, [...unread(kept.get(recap.tab) ?? [], recap.lanes), ...recap.lanes.filter((cursor) => cursor.pane === String(was.pane))]);
+        },
+        over: (store): EngineStore => ({
+            ...store,
+            records: {
+                readRecap: store.records.readRecap.bind(store.records),
+                lastRunOf: store.records.lastRunOf.bind(store.records),
+                beginRun: store.records.beginRun.bind(store.records),
+                recordRun: (run): void => {
+                    store.records.recordRun({ ...run, lanes: withKept(run) });
+                },
+                failRun: (run): void => {
+                    store.records.failRun({ ...run, lanes: withKept(run) });
+                },
+                advance: (move): void => {
+                    store.records.advance({ ...move, lanes: withKept(move) });
+                },
+            },
+        }),
+    };
+};
+
+const legacyOf = (plugs: FacadePlugs, retired: Retired): LegacyEngine => createLegacyEngine({
     source: plugs.source,
-    store: plugs.store,
+    store: retired.over(plugs.store),
     models: plugs.models,
     environment: plugs.environment,
     settings: plugs.settings,
@@ -34,7 +67,8 @@ export type { FacadePlugs };
 
 export function engineOver(plugs: FacadePlugs): Engine {
     const set = createFollowSet();
-    const legacy = legacyOf(plugs);
+    const retired = createRetired();
+    const legacy = legacyOf(plugs, retired);
     return {
         follow: (scope: ScopeId, session: FollowedSession): void => {
             const lane = laneOf(scope, session);
@@ -59,8 +93,12 @@ export function engineOver(plugs: FacadePlugs): Engine {
             }
             legacy.turnEnded(tab, set.lanesOf(scope), cause);
         },
-        sessionStarted: (scope, key): void => {
-            sessionStarted(set, legacy, scope, key);
+        sessionStarted: (scope: ScopeId, key: SessionKey, now: Started): void => {
+            if (set.followed(scope, key) === undefined) {
+                plugs.environment.log(`engine-adapter: session started for a key that is not followed: ${scope} ${key}`);
+                return;
+            }
+            sessionStarted(set, legacy, { retired, store: plugs.store }, { scope, key }, now);
         },
         refresh: (scope: ScopeId): Promise<void> => {
             const tab = tabOf(scope);
