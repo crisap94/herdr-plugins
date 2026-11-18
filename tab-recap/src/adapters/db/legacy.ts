@@ -17,7 +17,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { agentKind, paneId, parseCompactionId, parseDecisionId, tabId, type CompactionId, type DecisionId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, tabId, type CompactionId, type DecisionId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -123,11 +123,12 @@ export class BoundaryRepository implements Boundaries {
     }
 
     breaksOf(tab: string): readonly Break[] {
-        return this.log.breaksOf(tabId(tab)).map(breakOf);
+        const id = parseTabId(tab);
+        return id.kind === 'ok' ? this.log.breaksOf(id.value).map(breakOf) : [];
     }
 
-    chapterCount(tab: string): number { return this.log.chapterCount(tabId(tab)); }
-    lastBreakAt(tab: TabId, pane: string): number | null { return this.log.lastBreakAt(tab, paneId(pane)); }
+    chapterCount(tab: string): number { const id = parseTabId(tab); return id.kind === 'ok' ? this.log.chapterCount(id.value) : 0; }
+    lastBreakAt(tab: TabId, pane: string): number | null { const id = parsePaneId(pane); return id.kind === 'ok' ? this.log.lastBreakAt(tab, id.value) : null; }
 }
 
 const compactionRecordOf = ({ took, retry, queue, ...rest }: CompactionRow): CompactionRecord => ({ ...rest, tookMs: took, retried: retry === 'retried', queued: queue === 'queued' });
@@ -160,7 +161,7 @@ export class CompactionRecordsRepository implements CompactionRecords {
     dismissTurn(tab: string, pane: string, at: number): void { this.log.dismissTurn(tabId(tab), paneId(pane), instant(at)); }
     interrupted(at: number, why: string): number { return this.log.interrupted(instant(at), must(parseText(why))); }
     autoInProgress(): boolean { return this.log.autoInProgress() === 'auto-in-progress'; }
-    shownFor(tab: string): readonly CompactionRecord[] { return this.log.shownFor(tabId(tab)).map(compactionRecordOf); }
+    shownFor(tab: string): readonly CompactionRecord[] { const id = parseTabId(tab); return id.kind === 'ok' ? this.log.shownFor(id.value).map(compactionRecordOf) : []; }
 }
 
 export class HandoffAnswersRepository implements HandoffAnswers {
