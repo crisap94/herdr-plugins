@@ -26,7 +26,7 @@ if (CURL === undefined) process.stdout.write('NOT COVERED: no curl\n');
 
 function shimIn(stateDir: string, timeoutMs?: number): string {
     const text = renderCurlShim({ harness: 'claude', socketPath: hooksSocketPath(stateDir), tokenSource: 'none', failClosed: false, ...(timeoutMs === undefined ? {} : { timeoutMs }) });
-    writeFileSync(hookShimPath(stateDir), text, { mode: 0o700 });
+    writeFileSync(hookShimPath(stateDir, 'claude'), text, { mode: 0o700 });
     return text;
 }
 
@@ -72,7 +72,7 @@ test('the shim prints the stdout and exits with the code of every row of shim-fa
             assert.ok(behaviour, `${name}: ${endpoint} is a behaviour of the fake endpoint`);
             const fake = await startFakeHookEndpoint(hooksSocketPath(stateDir), behaviour);
             try {
-                const result = await runShim(hookShimPath(stateDir), 'Stop', request);
+                const result = await runShim(hookShimPath(stateDir, 'claude'), 'Stop', request);
                 assert.deepEqual(result, { stdout: `${stdout}\n`, code: Number(code) }, name);
             } finally {
                 await fake.stop();
@@ -88,7 +88,7 @@ test('the shim prints the reply of a case answered by the fake endpoint', { skip
         shimIn(stateDir, TEST_SHIM_MS);
         const fake = await startFakeHookEndpoint(hooksSocketPath(stateDir), 'reply-from-cases');
         try {
-            const result = await runShim(hookShimPath(stateDir), restore.event, restore.request);
+            const result = await runShim(hookShimPath(stateDir, 'claude'), restore.event, restore.request);
             assert.deepEqual(result, { stdout: `${JSON.stringify(restore.reply)}\n`, code: 0 });
             assert.deepEqual(fake.requests, [{ path: '/hook/claude', body: restore.request }]);
         } finally {

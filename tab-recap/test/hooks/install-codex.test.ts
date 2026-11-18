@@ -49,14 +49,14 @@ test('install, install, uninstall leaves the codex sample hooks.json byte-identi
         assert.equal(read(room.settingsPath), once);
         assert.deepEqual(uninstallHooks(room.stateDir, settings), { kind: 'done', changed: YES });
         assert.equal(read(room.settingsPath), original);
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'codex')), false);
     });
 });
 
 test('install keeps the other hooks of the sample and appends one group per event', () => {
     inRoom(true, (room) => {
         installHooks(room.stateDir, codexSettings(room.settingsPath), goodCurl);
-        const shim = hookShimPath(room.stateDir);
+        const shim = hookShimPath(room.stateDir, 'codex');
         const json: { hooks: Record<string, { hooks: unknown[] }[]> } = JSON.parse(read(room.settingsPath));
         assert.deepEqual(Object.keys(json.hooks), ['SessionStart', 'UserPromptSubmit', 'Stop', 'PreCompact']);
         assert.equal(json.hooks['SessionStart']?.length, 2);
@@ -73,8 +73,8 @@ test("a second state directory's entries survive the first's uninstall", () => {
         installHooks(room.otherStateDir, settings, goodCurl);
         uninstallHooks(room.stateDir, settings);
         const text = read(room.settingsPath);
-        assert.equal(text.includes(hookShimPath(room.stateDir)), false);
-        for (const event of EVENTS) assert.ok(text.includes(`${hookShimPath(room.otherStateDir)} ${event}`), event);
+        assert.equal(text.includes(hookShimPath(room.stateDir, 'codex')), false);
+        for (const event of EVENTS) assert.ok(text.includes(`${hookShimPath(room.otherStateDir, 'codex')} ${event}`), event);
         uninstallHooks(room.otherStateDir, settings);
         assert.equal(read(room.settingsPath), original);
     });
@@ -86,7 +86,7 @@ test('malformed hooks.json is refused and nothing is written', () => {
         const result = installHooks(room.stateDir, codexSettings(room.settingsPath), goodCurl);
         assert.equal(result.kind === 'refused' && result.why, 'malformed');
         assert.equal(read(room.settingsPath), '{ "hooks": ');
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'codex')), false);
     });
 });
 
@@ -97,7 +97,7 @@ test('a missing hooks.json is created with a top-level hooks object that holds o
         const json: { hooks: Record<string, unknown[]> } = JSON.parse(read(room.settingsPath));
         assert.deepEqual(Object.keys(json), ['hooks']);
         assert.deepEqual(Object.keys(json.hooks), EVENTS);
-        for (const event of EVENTS) assert.deepEqual(json.hooks[event], [{ hooks: [{ type: 'command', command: `${hookShimPath(room.stateDir)} ${event}` }] }], event);
+        for (const event of EVENTS) assert.deepEqual(json.hooks[event], [{ hooks: [{ type: 'command', command: `${hookShimPath(room.stateDir, 'codex')} ${event}` }] }], event);
     });
 });
 

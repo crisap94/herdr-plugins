@@ -88,7 +88,7 @@ function writeSettings(path: FsPath, document: SettingsDocument, original: Text 
 }
 
 function writeShim(stateDir: FsPath, settings: HarnessSettings): Flag {
-    const path = hookShimPath(stateDir);
+    const path = hookShimPath(stateDir, settings.harness);
     const text = renderCurlShim({ harness: settings.harness, socketPath: hooksSocketPath(stateDir), timeoutMs: HOOK_LIMITS.shimMs, tokenSource: 'none', failClosed: false });
     if (existsSync(path) && readFileSync(path, 'utf8') === text && (statSync(path).mode & PERMISSION_BITS) === SHIM_MODE) return NO;
     writeAtomically(path, text, SHIM_MODE);
@@ -100,7 +100,7 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
     if (curl !== null) return curl;
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const next = settings.add(loaded.document, must(parseFsPath(hookShimPath(stateDir))));
+    const next = settings.add(loaded.document, must(parseFsPath(hookShimPath(stateDir, settings.harness))));
     const settingsChanged = loaded.original === null || !isDeepStrictEqual(next, loaded.document);
     try {
         const shimChanged = writeShim(stateDir, settings);
@@ -114,7 +114,7 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
 export function uninstallHooks(stateDir: FsPath, settings: HarnessSettings): InstallResult {
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const shim = must(parseFsPath(hookShimPath(stateDir)));
+    const shim = must(parseFsPath(hookShimPath(stateDir, settings.harness)));
     const next = settings.remove(loaded.document, shim);
     const settingsChanged = loaded.original !== null && !isDeepStrictEqual(next, loaded.document);
     const shimFound = existsSync(shim);
