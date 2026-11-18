@@ -5,6 +5,7 @@ import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { lastGoodRun, run as runs, tab as tabs } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { BoundaryRows } from './boundaries.ts';
@@ -66,7 +67,7 @@ export class RecapRecordsRepository implements RecapRecords {
         writeTx(this.db, () => {
             this.tabs.ensure(run.tab, run.at);
             const moved = this.transcripts.attach(run.tab, run.lanes, run.at);
-            this.boundaries.record(run.tab, { at: run.at, marks: run.marks ?? [], moved });
+            this.boundaries.record(tabId(run.tab), { at: instant(run.at), marks: run.marks ?? [], moved });
             const id = this.runs.insertRun(run, null, run.gateStats ?? null);
             if (run.input !== undefined) {
                 this.runs.insertInput(id, run.input);
@@ -84,7 +85,7 @@ export class RecapRecordsRepository implements RecapRecords {
         writeTx(this.db, () => {
             this.tabs.ensure(run.tab, run.at);
             const moved = this.transcripts.attach(run.tab, run.lanes, run.at);
-            this.boundaries.record(run.tab, { at: run.at, marks: run.marks ?? [], moved });
+            this.boundaries.record(tabId(run.tab), { at: instant(run.at), marks: run.marks ?? [], moved });
             this.runs.insertRun(run, run.error);
             this.settle(run);
         });
@@ -94,7 +95,7 @@ export class RecapRecordsRepository implements RecapRecords {
         writeTx(this.db, () => {
             this.tabs.ensure(move.tab, move.at);
             const moved = this.transcripts.attach(move.tab, move.lanes, move.at);
-            this.boundaries.record(move.tab, { at: move.at, marks: move.marks ?? [], moved });
+            this.boundaries.record(tabId(move.tab), { at: instant(move.at), marks: move.marks ?? [], moved });
             this.orm.update(tabs).set({ error: move.error }).where(eq(tabs.id, tabId(move.tab))).run();
         });
     }

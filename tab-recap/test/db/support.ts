@@ -5,7 +5,7 @@ import { Database } from 'bun:sqlite';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { BUSY_PRAGMA, MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
-import { storeOver } from '#src/adapters/db/database.ts';
+import { storeWith } from '#src/adapters/db/legacy.ts';
 import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
@@ -22,7 +22,7 @@ export function memoryStore(options: StoreOptions = {}): Store {
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
-    return storeOver(opened.db, options);
+    return storeWith(opened.db, options);
 }
 
 export const shapeOf = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])

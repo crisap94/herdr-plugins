@@ -1,47 +1,64 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, eq, max, sql } from 'drizzle-orm';
-import type { Boundaries, Break } from '#src/ports/boundaries.ts';
+import type { BoundaryBreak, BoundaryLog } from '#src/ports/boundaries.ts';
+import { must } from '#src/protocol/result.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
 
-export class BoundaryRepository implements Boundaries {
+const KINDS: readonly BoundaryKind[] = ['compacted', 'switched'];
+const TRIGGERS: readonly Trigger[] = ['auto', 'manual', 'plugin'];
+const NONE = must(parseCount(0));
+
+export class BoundaryLogRepository implements BoundaryLog {
     private readonly orm: Orm;
 
     constructor(db: Database) {
         this.orm = ormOf(db);
     }
 
-    breaksOf(tab: string): readonly Break[] {
-        return guarded(() => this.orm.select({
+    breaksOf(tab: TabId): readonly BoundaryBreak[] {
+        return guarded((): readonly BoundaryBreak[] => this.orm.select({
             kind: boundary.kind,
             at: boundary.at,
             trigger: boundary.trigger,
             tokensBefore: sql<number | null>`COALESCE(${boundary.tokensBefore}, ${compaction.tokensBefore})`,
             tokensAfter: sql<number | null>`COALESCE(${boundary.tokensAfter}, ${compaction.tokensAfter})`,
-            tookMs: sql<number | null>`COALESCE(${boundary.tookMs}, ${compaction.tookMs})`,
+            took: sql<number | null>`COALESCE(${boundary.tookMs}, ${compaction.tookMs})`,
         }).from(boundary)
             .innerJoin(chapter, eq(chapter.id, boundary.chapterId))
             .leftJoin(compaction, eq(compaction.boundaryId, boundary.id))
             .where(eq(chapter.tabId, tabId(tab)))
             .orderBy(asc(boundary.at), asc(chapter.n))
             .all()
-            .map((row): Break => ({
-                kind: row.kind as BoundaryKind, at: row.at, trigger: row.trigger as Trigger | null,
-                tokensBefore: row.tokensBefore, tokensAfter: row.tokensAfter, tookMs: row.tookMs,
-            })), []);
+            .flatMap((row) => {
+                const kind = KINDS.find((each) => each === row.kind);
+                const trigger = row.trigger === null ? null : TRIGGERS.find((each) => each === row.trigger);
+                if (kind === undefined || trigger === undefined) return [];
+                return [{
+                    kind, at: instant(row.at), trigger,
+                    tokensBefore: row.tokensBefore === null ? null : must(parseCount(row.tokensBefore)),
+                    tokensAfter: row.tokensAfter === null ? null : must(parseCount(row.tokensAfter)),
+                    took: row.took === null ? null : duration(row.took),
+                }];
+            }), []);
     }
 
-    chapterCount(tab: string): number {
-        return guarded(() => this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, tabId(tab))).get()?.n ?? 0, 0);
+    chapterCount(tab: TabId): Count {
+        return guarded(() => must(parseCount(this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, tabId(tab))).get()?.n ?? 0)), NONE);
     }
 
-    lastBreakAt(tab: TabId, pane: string): number | null {
-        return guarded(() => this.orm.select({ at: max(boundary.at) }).from(boundary)
-            .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
-            .where(and(eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null, null);
+    lastBreakAt(tab: TabId, pane: PaneId): Instant | null {
+        return guarded(() => {
+            const at = this.orm.select({ at: max(boundary.at) }).from(boundary)
+                .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
+                .where(and(eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null;
+            return at === null ? null : instant(at);
+        }, null);
     }
 }

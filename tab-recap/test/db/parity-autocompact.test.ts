@@ -8,7 +8,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
-import { AutocompactRecordsRepository } from '#src/adapters/db/autocompact-records.ts';
+import { AutocompactRecordsRepository } from '#src/adapters/db/legacy.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameEffect, withParity } from './parity.ts';
 import { memoryStore } from './support.ts';

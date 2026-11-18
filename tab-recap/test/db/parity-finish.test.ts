@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { BoundaryRepository } from '#src/adapters/db/boundary-read.ts';
+import { BoundaryRepository } from '#src/adapters/db/legacy.ts';
 import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { SessionSourceRepository } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must } from '#src/protocol/result.ts';
@@ -195,7 +196,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
             ORDER BY b.at LIMIT 1)
           WHERE tab_id = ? AND boundary_id IS NULL AND stage IN ('compacting','restoring','compacted')`).run('t4');
             },
-            builder: (db) => { new BoundaryRows(db, new TranscriptRows(db)).record('t4', { at: 500, marks: [], moved: [] }); },
+            builder: (db) => { new BoundaryRows(db, new TranscriptRows(db)).record(tabId('t4'), { at: instant(500), marks: [], moved: [] }); },
             dump: (db) => ({ chapters: db.prepare(CHAPTERS).all(), links: db.prepare(COMPACTION_LINKS).all() }),
         });
     });

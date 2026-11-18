@@ -7,6 +7,7 @@ import { RecapRecordsRepository } from './recap-records.ts';
 import type { RecapRecords } from '#src/ports/recap-records.ts';
 import { TabViewsRepository } from './tab-views.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 
 export interface PrintStore {
@@ -17,7 +18,7 @@ export interface PrintStore {
     close(): void;
 }
 
-export function openPrintStore(path: string, closedDays: ClosedLaneDays): PrintStore {
+export function openPrintStore(path: FsPath, closedDays: ClosedLaneDays): PrintStore {
     const db = connectReadOnly(path);
     return {
         ledger: new LedgerRepository(db),

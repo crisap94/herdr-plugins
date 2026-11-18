@@ -12,7 +12,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
 import { idOf } from '#src/adapters/db/typeid.ts';
 import { decode } from '#src/adapters/db/checked-fact-codec.ts';
-import { laneStatusOf } from '#src/adapters/db/autocompact-records.ts';
+import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { listing } from '#src/recap/application/autocompact-listing.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
@@ -195,5 +195,5 @@ test('a decision that recorded no status lists as a dash', () => {
 });
 
 test('a stored lane status that is not one of the three reads as null', () => {
-    assert.deepEqual([laneStatusOf({ lane_status: 'done' }), laneStatusOf({ lane_status: 'bogus' }), laneStatusOf({ lane_status: null })], ['done', null, null]);
+    assert.deepEqual([parseLaneStatusAtDecision('done'), parseLaneStatusAtDecision('bogus'), parseLaneStatusAtDecision(null)], ['done', null, null]);
 });
