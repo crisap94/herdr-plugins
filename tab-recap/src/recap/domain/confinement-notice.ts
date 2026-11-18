@@ -1,5 +1,5 @@
-import type { BackendId } from './backend.ts';
-import { parseText, type Text } from './text.ts';
+import type { BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export type ConfinementNoticeLine = Text;
 

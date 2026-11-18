@@ -2,9 +2,9 @@ import { agentKind, paneId, sessionId, tabId, workspaceId } from './ids.ts';
 import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
-import type { Instant } from './time.ts';
-import { parseDirectory } from './directory.ts';
-import type { Directory } from './directory.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 
 export interface SeenLane {
     readonly paneId: string;

@@ -1,7 +1,7 @@
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from './brand.ts';
-import type { ParseFailure } from './parse-failure.ts';
-import type { Duration } from './time.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type Unsupported = { readonly kind: 'unsupported'; readonly why: string };
 

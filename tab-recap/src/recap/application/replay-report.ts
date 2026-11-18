@@ -1,6 +1,6 @@
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import { localTime } from './local-time.ts';
+import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
 
 const pct = (part: number, whole: number): string => (whole === 0 ? 'n/a' : `${Math.round((100 * part) / whole)}%`);
 const words = (fact: Fact): number => fact.text.split(/\s+/).filter((word) => word !== '').length;

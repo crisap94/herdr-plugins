@@ -1,7 +1,7 @@
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface TabLayout {
     readonly kind: 'layout';

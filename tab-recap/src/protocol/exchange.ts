@@ -1,5 +1,5 @@
-import { must } from './result.ts';
-import type { Result } from './result.ts';
+import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 import { LIMITS, parseIdText, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
 import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, IdText, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';

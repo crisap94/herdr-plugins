@@ -1,5 +1,5 @@
 import type { HandoffOutcome } from './handoff-outcome.ts';
-import type { Duration } from './time.ts';
+import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type HandoffEvidence = 'transcript' | 'status' | 'either';
 

@@ -22,7 +22,7 @@ import { CODE_CRITERIA as STORY_CRITERIA, grade as gradeStory } from '../curator
 import { closeEvidenceFlag, writerArmMarkdown, writerCounters, writerLine } from '../writer/arm.ts';
 import { loadItems as loadWriterItems, prompt as writerPrompt, type WriterItem } from '../writer/prompt.ts';
 import { CODE_CRITERIA as WRITER_CRITERIA, grade as gradeWriter, outcomeOf, stubAnswer as writerStub } from '../writer/scoring.ts';
-import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
+import type { CloseEvidence } from '../../packages/session-ledger/src/recap/domain/pipeline.ts';
 
 const failures: string[] = [];
 

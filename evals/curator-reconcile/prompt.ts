@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
-import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
-import { reconcileInput } from '../../tab-recap/src/recap/application/curator-input.ts';
-import type { TaskGround } from '../../tab-recap/src/recap/application/ops-gating.ts';
-import type { Fact } from '../../tab-recap/src/recap/domain/fact.ts';
+import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
+import { reconcileInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
+import type { TaskGround } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
+import type { Fact } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface Spanned {

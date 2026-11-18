@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs';
-import { writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
-import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
-import type { InputFact } from '../../tab-recap/src/ports/recap-input.ts';
+import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
+import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
+import type { InputFact } from '../../packages/session-ledger/src/ports/recap-input.ts';
 import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
-import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
+import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
 import { CASES_A } from './cases-a.ts';
 import { CASES_B } from './cases-b.ts';
 import type { Beat, Case, Planted, Section } from './cases-types.ts';

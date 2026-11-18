@@ -4,9 +4,9 @@ import { autocompactState, OPEN_WORK_SHOWN, TURNS_SHOWN, type AutocompactState }
 import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
 import { deciderInstructions, probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
 import { verdictOf } from '../../tab-recap/src/recap/domain/autocompact-verdict.ts';
-import { SECTION_IDS, CLOSED_WHY } from '../../tab-recap/src/recap/domain/fact.ts';
-import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
-import type { HistoryFact } from '../../tab-recap/src/ports/ledger.ts';
+import { SECTION_IDS, CLOSED_WHY } from '../../packages/session-ledger/src/recap/domain/fact.ts';
+import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
+import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';
 
 interface Evidence { readonly question: string; readonly field: keyof AutocompactState; readonly quote: string }
 interface Row {

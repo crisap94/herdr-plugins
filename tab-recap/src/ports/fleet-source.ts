@@ -1,6 +1,6 @@
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface Topic {
     readonly type: string;

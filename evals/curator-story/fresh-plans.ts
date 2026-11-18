@@ -1,4 +1,4 @@
-import type { ClosedWhy, Section } from '../../tab-recap/src/recap/domain/fact.ts';
+import type { ClosedWhy, Section } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 
 // FRESH-1b: the fresh items of curator-story. All projects, names, places and hosts are invented; hosts end in .test.
 // The shapes mirror `Draft`, `Project` and `Plan` of build-dataset.ts (which cannot be imported: it writes dataset.jsonl

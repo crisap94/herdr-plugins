@@ -1,5 +1,5 @@
 import type { RunItem } from '#src/ports/run-inputs.ts';
-import { element, leaf } from './xml.ts';
+import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
 
 interface ScoringParts { readonly rubric: string; readonly input: string; readonly items: readonly RunItem[]; readonly state?: readonly RunItem[] }
 

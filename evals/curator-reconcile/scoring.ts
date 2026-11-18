@@ -1,9 +1,9 @@
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
-import { judge } from '../../tab-recap/src/recap/application/ops-gating.ts';
-import { LEDGER_GATES } from '../../tab-recap/src/recap/domain/gates/ledger-gates.ts';
-import type { Operation } from '../../tab-recap/src/recap/domain/ops.ts';
-import { quotedIn } from '../../tab-recap/src/recap/domain/quote.ts';
-import { reconciliationOf, type Reconciled } from '../../tab-recap/src/recap/domain/reconciliation.ts';
+import { judge } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
+import { LEDGER_GATES } from '../../packages/session-ledger/src/recap/domain/gates/ledger-gates.ts';
+import type { Operation } from '../../packages/session-ledger/src/recap/domain/ops.ts';
+import { quotedIn } from '../../packages/session-ledger/src/recap/domain/quote.ts';
+import { reconciliationOf, type Reconciled } from '../../packages/session-ledger/src/recap/domain/reconciliation.ts';
 import type { Answer, Graded, Mark } from '../lib/types.ts';
 import { builtOf, groundOf, type ReconcileItem } from './prompt.ts';
 

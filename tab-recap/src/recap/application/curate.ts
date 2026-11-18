@@ -5,13 +5,13 @@ import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { curatorInput } from './curator-input.ts';
+import { curatorInput } from '@stateforge-labs/session-ledger/unstable/recap/application/curator-input.ts';
 import { newestChange } from './expanded-view.ts';
-import { Reconciling } from './ledger-reconcile.ts';
+import { Reconciling } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 import { storyAnswerOf } from './job-kit/story-repair.ts';
 import type { StoryReading } from './job-kit/story-repair.ts';
-import { answerTextOf } from './recap-shape.ts';
-import type { CurateWhy, ReconcilingDeps, RunEvent } from './ledger-reconcile.ts';
+import { answerTextOf } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
+import type { CurateWhy, ReconcilingDeps, RunEvent } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 
 export type { CurateWhy, RunEvent };
 

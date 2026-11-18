@@ -1,14 +1,14 @@
 import { STYLE_DEFAULT, STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
 import type { AutocompactStyle } from './autocompact-style.ts';
-import { REGISTERED_KINDS, kindsWith, registeredKindOf } from './registered-kinds.ts';
-import type { RegisteredKind, RegisteredKindTable } from './registered-kinds.ts';
-import { brand, type Brand } from './brand.ts';
-import { isSection, type Section } from './fact.ts';
-import { holdsLane } from './in-flight.ts';
-import type { Flight } from './in-flight.ts';
-import type { Instant, Milliseconds } from './time.ts';
+import { REGISTERED_KINDS, kindsWith, registeredKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import type { RegisteredKind, RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { isSection, type Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { holdsLane } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
+import type { Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
+import type { Instant, Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { agentKind, type AgentKind } from './ids.ts';
-import type { Text } from './text.ts';
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };

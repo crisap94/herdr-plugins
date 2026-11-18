@@ -1,9 +1,9 @@
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from './brand.ts';
-import type { ParseFailure } from './parse-failure.ts';
-import { parseText } from './text.ts';
-import { instant } from './time.ts';
-import type { Instant } from './time.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export const DEFAULT_KEEP_DAYS = 30;
 const DAY_MS = 86_400_000;

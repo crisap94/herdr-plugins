@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { compactionInput, type CompactionMaterial } from '../../tab-recap/src/recap/application/compaction-input.ts';
 import { factsOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
 import { FORBIDDEN, vetted } from '../../tab-recap/src/recap/application/compaction-brief.ts';
-import { settledBefore } from '../../tab-recap/src/recap/domain/boundary.ts';
+import { settledBefore } from '../../packages/session-ledger/src/recap/domain/boundary.ts';
 import { BRIEF_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/brief-instructions.ts';
 import { inputWordsIn, isEnglish, isPlain, ownOf, tokensOf, unknownTokens } from './checks.ts';
 

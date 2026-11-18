@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
-import { curatorInput } from '../../tab-recap/src/recap/application/curator-input.ts';
-import { localTime } from '../../tab-recap/src/recap/application/local-time.ts';
-import type { ClosedWhy, Fact, FactId, Section } from '../../tab-recap/src/recap/domain/fact.ts';
+import { curatorInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
+import { localTime } from '../../packages/session-ledger/src/recap/application/local-time.ts';
+import type { ClosedWhy, Fact, FactId, Section } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { checkedTokens } from './tokens.ts';
 import { FRESH_ITEMS, FRESH_SEED, rngOf, sampleOf } from '../lib/fresh.ts';
 import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';

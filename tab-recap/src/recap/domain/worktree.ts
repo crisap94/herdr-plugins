@@ -1,17 +1,17 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import { parseCount } from './count.ts';
 import type { Count } from './count.ts';
-import { parseDirectory } from './directory.ts';
-import type { Directory } from './directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { PaneId } from './ids.ts';
 import type { Lane } from './lane.ts';
-import type { ParseFailure } from './parse-failure.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { PorcelainReading } from './porcelain.ts';
 import { endsTurn } from './status.ts';
 import type { LaneStatus } from './status.ts';
-import { parseText } from './text.ts';
-import type { Text } from './text.ts';
-import type { Duration, Instant } from './time.ts';
+import { parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type StatusTier = 'tracked' | 'full';
 

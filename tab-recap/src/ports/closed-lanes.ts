@@ -5,8 +5,8 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { LastRun } from './recap-records.ts';
-import type { Unknown } from './unknowable.ts';
+import type { LastRun } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface ClosureAssociation {
     readonly task: TaskId;

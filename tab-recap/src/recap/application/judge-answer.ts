@@ -1,4 +1,4 @@
-import { objectIn } from './recap-shape.ts';
+import { objectIn } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 
 export const ITEM_CHECKS: readonly string[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
 

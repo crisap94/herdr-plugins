@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
-import { reconciliationOf } from '../../tab-recap/src/recap/domain/reconciliation.ts';
-import { parseText } from '../../tab-recap/src/recap/domain/text.ts';
-import { answerTextOf } from '../../tab-recap/src/recap/application/recap-shape.ts';
+import { reconciliationOf } from '../../packages/session-ledger/src/recap/domain/reconciliation.ts';
+import { parseText } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { answerTextOf } from '../../packages/session-ledger/src/recap/application/recap-shape.ts';
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { readJsonl } from './runner.ts';
 

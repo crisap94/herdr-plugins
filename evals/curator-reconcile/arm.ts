@@ -1,11 +1,11 @@
 import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-instructions.ts';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
-import type { Curated, CuratorMode, Curators } from '../../tab-recap/src/ports/curators.ts';
-import type { Stories } from '../../tab-recap/src/ports/stories.ts';
-import { unknown as unknownResult } from '../../tab-recap/src/ports/unknowable.ts';
-import type { RepairMode } from '../../tab-recap/src/recap/application/job-kit/repair.ts';
-import { reconcileTask } from '../../tab-recap/src/recap/application/ledger-reconcile.ts';
+import type { Curated, CuratorMode, Curators } from '../../packages/session-ledger/src/ports/curators.ts';
+import type { Stories } from '../../packages/session-ledger/src/ports/stories.ts';
+import { unknown as unknownResult } from '../../packages/session-ledger/src/ports/unknowable.ts';
+import type { RepairMode } from '../../packages/session-ledger/src/recap/application/job-kit/repair.ts';
+import { reconcileTask } from '../../packages/session-ledger/src/recap/application/ledger-reconcile.ts';
 import { plainOf, type ArmCounters } from '../lib/arm.ts';
 import { joinedCalled, type ArmedAnswer, type ArmRecord, type Asker, type Rounded } from '../lib/runner.ts';
 import type { Called, Item } from '../lib/types.ts';

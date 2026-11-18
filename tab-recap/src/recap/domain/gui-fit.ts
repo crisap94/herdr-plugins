@@ -2,7 +2,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from './count.ts';
 import type { GuiCut, GuiCutPart, GuiFact, GuiRegions, GuiTimelineRow } from './gui-tab-parts.ts';
 import type { GuiLane, GuiSections, GuiTab, GuiTask } from './gui-tab-types.ts';
-import { parseText, type NonEmptyText, type Text } from './text.ts';
+import { parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export const PROMPT_BYTES: Count = must(parseCount(2048));
 export const FACT_TEXT_BYTES: Count = must(parseCount(4096));

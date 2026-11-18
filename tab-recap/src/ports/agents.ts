@@ -3,7 +3,7 @@ import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Done } from './columns.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type AgentState = { readonly kind: 'agent'; readonly agent: string; readonly status: LaneStatus } | Unknown;
 

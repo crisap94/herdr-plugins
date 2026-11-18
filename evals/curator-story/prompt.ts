@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-instructions.ts';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
-import { curatorInput } from '../../tab-recap/src/recap/application/curator-input.ts';
-import type { CuratorMaterial } from '../../tab-recap/src/recap/application/curator-input.ts';
+import { curatorInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
+import type { CuratorMaterial } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface MergePair {

@@ -11,8 +11,8 @@ import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { must } from '#src/protocol/result.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 import { HANDOFF_CLOSED_SHOWN, HANDOFF_DONE_SHOWN, HANDOFF_LINKS_SHOWN } from './handoff-limits.ts';
-import { CLOSED_SHOWN_MS } from './ledger-input.ts';
-import type { TaskFacts } from './ledger-input.ts';
+import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+import type { TaskFacts } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
 
 export interface HandoffInput {
     readonly at: Instant;

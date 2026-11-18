@@ -1,7 +1,7 @@
 import { HANDOFF_FAILURES, HANDOFF_REFUSALS, HANDOFF_UNSUPPORTED } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
 import { parseAnswerStage, parseEventName, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseOptIn, parseRequestPrefix, parseTimingMs, parseTimingName } from '../primitives.ts';
-import { must } from '../result.ts';
+import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 
 export const HANDOFF_STAGES = { queued: 'queued', running: 'running', delivered: 'delivered' } as const;
 

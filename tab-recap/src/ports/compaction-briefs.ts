@@ -1,4 +1,4 @@
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type Briefed = { readonly kind: 'briefed'; readonly text: string } | Unknown;
 

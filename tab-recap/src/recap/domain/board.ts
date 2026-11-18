@@ -1,7 +1,7 @@
 import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { RestoredLane } from './closures.ts';
-import type { Instant } from './time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type Shape = 'side' | 'bar';
 

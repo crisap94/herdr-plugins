@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
-import { batch } from '../../tab-recap/src/recap/application/job-kit/batch.ts';
-import { parseAnswer } from '../../tab-recap/src/recap/application/ops-answer.ts';
-import { forTask, judge } from '../../tab-recap/src/recap/application/ops-gating.ts';
-import { LEDGER_GATES } from '../../tab-recap/src/recap/domain/gates/ledger-gates.ts';
-import { instant } from '../../tab-recap/src/recap/domain/time.ts';
+import { batch } from '../../packages/session-ledger/src/recap/application/job-kit/batch.ts';
+import { parseAnswer } from '../../packages/session-ledger/src/recap/application/ops-answer.ts';
+import { forTask, judge } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
+import { LEDGER_GATES } from '../../packages/session-ledger/src/recap/domain/gates/ledger-gates.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { readJsonl, runDir } from '../lib/runner.ts';
 import type { Answer } from '../lib/types.ts';
 import { loadItems } from './prompt.ts';

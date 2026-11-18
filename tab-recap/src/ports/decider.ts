@@ -2,7 +2,7 @@ import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface NoulCriteria {
     readonly true: Text;

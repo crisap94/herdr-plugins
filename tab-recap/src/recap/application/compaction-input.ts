@@ -5,9 +5,9 @@ import { settledBefore } from '#src/recap/domain/boundary.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { localTime } from './local-time.ts';
-import { turnsOf } from './writer-transcript.ts';
-import { element, leaf } from './xml.ts';
+import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
+import { turnsOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
+import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
 
 export const RECENT_BUDGET = 12_000;
 const NEST = '\n';

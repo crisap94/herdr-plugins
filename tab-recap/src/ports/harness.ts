@@ -1,7 +1,7 @@
 import type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis } from '#src/recap/domain/confinement-notice.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type AnswerSchema = 'writer' | 'reconcile' | 'story';
 

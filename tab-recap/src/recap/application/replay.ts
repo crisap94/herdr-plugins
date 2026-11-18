@@ -17,7 +17,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
-import type { EngineModels, EngineSettings } from './engine.ts';
+import type { EngineModels, EngineSettings } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
 
 export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];

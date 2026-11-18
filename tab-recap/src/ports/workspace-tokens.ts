@@ -1,5 +1,5 @@
 import type { Done } from './columns.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type WorkspacesResult = { readonly kind: 'workspaces'; readonly ids: readonly string[] } | Unknown;
 

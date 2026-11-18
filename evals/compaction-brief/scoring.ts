@@ -1,8 +1,8 @@
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { refusedIn, vetted } from '../../tab-recap/src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT } from '../../tab-recap/src/recap/application/compaction-message.ts';
-import { must } from '../../tab-recap/src/protocol/result.ts';
-import { parseText, type Text } from '../../tab-recap/src/recap/domain/text.ts';
+import { must } from '../../packages/session-ledger/src/protocol/result.ts';
+import { parseText, type Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { unparsed } from '../lib/scoring.ts';
 import type { Answer, Graded, Judged, JudgeView, Mark } from '../lib/types.ts';
 import { inputWordsIn, isEnglish, isPlain, unknownTokens } from './checks.ts';

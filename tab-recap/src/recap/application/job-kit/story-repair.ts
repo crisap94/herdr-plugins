@@ -6,7 +6,7 @@ import { STORY_TOO_LONG } from '#src/recap/domain/curation.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { ReconcilingDeps } from '../ledger-reconcile.ts';
+import type { ReconcilingDeps } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 
 export type StoryReading = (answer: Curated) => Curation;
 

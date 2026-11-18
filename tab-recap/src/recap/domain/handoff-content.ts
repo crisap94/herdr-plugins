@@ -1,5 +1,5 @@
-import { SECTION_IDS } from './fact.ts';
-import type { FactId } from './fact.ts';
+import { SECTION_IDS } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { Freshness } from './freshness.ts';
 import type { HandoffReason } from './handoff-outcome.ts';
 import type { HandoffText } from './handoff-sanitize.ts';
