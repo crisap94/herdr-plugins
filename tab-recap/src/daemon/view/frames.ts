@@ -1,4 +1,5 @@
 import { stripVTControlCharacters } from 'node:util';
+import { parseCursor, parseHeight, parseLine, screen as fitScreen } from '@stateforge-labs/recap-view';
 import { expandedScreen } from '#src/column/expanded-modal.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Config } from '#src/daemon/config.ts';
@@ -21,7 +22,6 @@ import type { Role } from '#src/wire/view/protocol.ts';
 
 const GUTTER: Count = must(parseCount(2));
 const MIN_WIDTH: Count = must(parseCount(10));
-const MIN_ROWS: Count = must(parseCount(3));
 const ZERO: Count = must(parseCount(0));
 
 export interface Screen {
@@ -86,14 +86,9 @@ export function frameSource(parts: FrameParts): FrameSource {
                 return style === coloured ? drawn : drawn.map((line) => must(parseText(stripVTControlCharacters(line))));
             };
             const body = screen.role === 'modal' ? modal(view, span) : present(view, span, markdown);
-            const room = Math.max(MIN_ROWS, screen.rows) - 1;
-            const top = Math.max(0, Math.min(screen.scroll, body.length - room));
-            const shown = body.slice(top, top + room);
-            while (shown.length < room) {
-                shown.push('');
-            }
-            shown.push(footer(span, screen.role, messages, style));
-            return { lines: shown.map((line) => must(parseText(line))), scroll: must(parseCount(top)), awaiting };
+            const fitted = fitScreen(body.map((line) => must(parseLine(line))), must(parseHeight(screen.rows)), must(parseCursor(screen.scroll)));
+            const shown = [...fitted.lines, footer(span, screen.role, messages, style)];
+            return { lines: shown.map((line) => must(parseText(line))), scroll: must(parseCount(fitted.cursor)), awaiting };
         },
     };
 }
