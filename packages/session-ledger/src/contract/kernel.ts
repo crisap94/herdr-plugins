@@ -1,6 +1,6 @@
-declare const marker: unique symbol;
+import type { Brand } from '../recap/domain/brand.ts';
 
-export type Brand<C, N extends string> = C & { readonly [marker]: N };
+export type { Brand };
 
 export type Result<T, E> = { readonly kind: 'ok'; readonly value: T } | { readonly kind: 'err'; readonly error: E };
 

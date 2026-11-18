@@ -8,3 +8,8 @@ export * from './contract/environment.ts';
 export * from './contract/settings.ts';
 export * from './contract/events.ts';
 export * from './contract/engine.ts';
+export { createEngine } from './facade/create-engine.ts';
+export { saying } from './ports/unknowable.ts';
+export { isScreenSource } from './ports/transcript-source.ts';
+export { SECTIONS, sectionOf } from './i18n/sections.ts';
+export { FULL_WRITER_VIEW } from './recap/domain/writer-view.ts';
