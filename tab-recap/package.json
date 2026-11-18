@@ -21,14 +21,14 @@
     "@stateforge-labs/harness-adapters": "0.5.0",
     "@stateforge-labs/harness-hooks": "0.3.1",
     "@stateforge-labs/herdr-sdk": "0.4.0",
+    "@stateforge-labs/recap-view": "workspace:*",
+    "@stateforge-labs/session-ledger": "workspace:*",
+    "@stateforge-labs/session-ledger-sqlite": "workspace:*",
     "drizzle-orm": "0.45.4",
     "isomorphic-git": "1.44.4"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
-    "@stateforge-labs/recap-view": "workspace:*",
-    "@stateforge-labs/session-ledger": "workspace:*",
-    "@stateforge-labs/session-ledger-sqlite": "workspace:*",
     "@types/node": "24.7.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "dependency-cruiser": "18.5.0",
