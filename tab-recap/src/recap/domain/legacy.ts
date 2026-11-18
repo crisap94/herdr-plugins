@@ -1,4 +1,10 @@
 import type { ParsedValue } from '#src/protocol/codec.ts';
+import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { placementFor, judgeSettingOf, compactSettingOf, curateSettingOf, deciderSettingOf, keepDaysCountOf } from './job.ts';
+import type { DeciderBy, JobAnswer, JobBy, JobPlacement, JobReader } from './job.ts';
+import type { Effort } from './effort.ts';
 import { COMPACT_FAILURES, COMPACT_STAGES, type CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import { failureStage, isFailureStage } from '#src/protocol/exchange.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
@@ -415,4 +421,47 @@ export interface HandoffBody {
     readonly worksite: WorksiteSnapshot;
     readonly groups: readonly HandoffGroup[];
     readonly withheld: number;
+}
+
+export interface Job {
+    readonly by: JobBy;
+    readonly model: string;
+    readonly effort: Effort;
+    readonly timeoutMs?: Milliseconds;
+    readonly answer?: JobAnswer;
+}
+
+export interface DeciderJob {
+    readonly by: DeciderBy;
+    readonly model: string;
+    readonly effort: Effort;
+}
+
+export interface RecapChoices {
+    readonly backend: BackendChoice;
+    readonly models: Readonly<Record<BackendId, string>>;
+}
+
+const textValue = (raw: string | undefined): Text | undefined => (raw === undefined ? undefined : must(parseText(raw)));
+
+const readerOf = (get: TuningReader): JobReader => (key) => textValue(get(key));
+
+export const judgeJobOf = (get: TuningReader): Job => judgeSettingOf(readerOf(get));
+
+export const compactJobOf = (get: TuningReader): Job => compactSettingOf(readerOf(get));
+
+export const curateJobOf = (get: TuningReader): Job => curateSettingOf(readerOf(get));
+
+export const deciderJobOf = (get: TuningReader): DeciderJob => deciderSettingOf(readerOf(get));
+
+export function keepDaysOf(raw: string | undefined): number {
+    return keepDaysCountOf(textValue(raw));
+}
+
+export function placementOf(job: Job, recap: RecapChoices, available: readonly string[]): JobPlacement | null {
+    return placementFor(
+        { ...job, model: must(parseText(job.model)) },
+        { backend: recap.backend, models: harnessLabels((id) => must(parseText(recap.models[id]))) },
+        available.filter((id): id is BackendId => BACKEND_IDS.some((known) => known === id)),
+    );
 }

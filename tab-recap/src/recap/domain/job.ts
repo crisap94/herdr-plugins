@@ -1,91 +1,110 @@
 import { JOB_HARNESSES, pick } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
-import { EFFORTS } from './effort.ts';
-import type { Effort } from './effort.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 import { parseMilliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { parseCount } from './count.ts';
+import type { Count } from './count.ts';
+import { EFFORTS } from './effort.ts';
+import type { Effort } from './effort.ts';
+import type { DeciderJob, Job } from './legacy.ts';
+
+export { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf, placementOf } from './legacy.ts';
+export type { DeciderJob, Job, RecapChoices } from './legacy.ts';
 
 export type JobBy = BackendChoice | 'recap' | 'off';
 
 export type JobAnswer = 'text' | 'schema';
 
-export interface Job {
-    readonly by: JobBy;
-    readonly model: string;
+export type DeciderBy = JobBy | 'jev';
+
+export interface DeciderSetting<By extends DeciderBy = DeciderBy> {
+    readonly by: By;
+    readonly model: Text;
+    readonly effort: Effort;
+}
+
+export interface JobSetting extends DeciderSetting<JobBy> {
+    readonly timeoutMs?: Milliseconds;
+    readonly answer?: JobAnswer;
+}
+
+export interface JobPlacement {
+    readonly harness: BackendId;
+    readonly model: Text;
     readonly effort: Effort;
     readonly timeoutMs?: Milliseconds;
     readonly answer?: JobAnswer;
 }
 
-export const COMPACT_DEFAULT: Job = { by: 'recap', model: '', effort: 'high' };
-
-export const JUDGE_DEFAULT: Job = { by: 'recap', model: '', effort: 'medium' };
-
-export type DeciderBy = JobBy | 'jev';
-
-export interface DeciderJob {
-    readonly by: DeciderBy;
-    readonly model: string;
-    readonly effort: Effort;
+export interface RecapSetting {
+    readonly backend: BackendChoice;
+    readonly models: Readonly<Record<BackendId, Text>>;
 }
+
+export type JobPrefix = 'TAB_RECAP_JUDGE' | 'TAB_RECAP_COMPACT' | 'TAB_RECAP_CURATE' | 'TAB_RECAP_AUTOCOMPACT';
+
+export type JobKey = `${JobPrefix}_${'BY' | 'MODEL' | 'EFFORT'}` | 'TAB_RECAP_CURATE_TIMEOUT_MS' | 'TAB_RECAP_CURATE_ANSWER';
+
+export type JobReader = (key: JobKey) => Text | undefined;
 
 export const JOB_BY_CHOICES: readonly JobBy[] = ['recap', 'auto', ...JOB_HARNESSES.map(({ id }) => id), 'off'];
 
 export const DECIDER_BY_CHOICES: readonly DeciderBy[] = [...JOB_BY_CHOICES.slice(0, -1), 'jev', 'off'];
 
-export const DECIDER_DEFAULT: DeciderJob = { by: 'recap', model: '', effort: 'low' };
+const NO_MODEL = must(parseText(''));
 
-const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
+const COMPACT_SETTING: JobSetting = { by: 'recap', model: NO_MODEL, effort: 'high' };
 
-function jobFrom(get: (key: string) => string | undefined, prefix: string, fallback: Job): Job;
-function jobFrom(get: (key: string) => string | undefined, prefix: string, fallback: DeciderJob, choices: readonly DeciderBy[]): DeciderJob;
-function jobFrom(get: (key: string) => string | undefined, prefix: string, fallback: DeciderJob, choices: readonly DeciderBy[] = JOB_BY_CHOICES): DeciderJob {
-    return {
-        by: choices.find((by) => by === word(get(`${prefix}_BY`))) ?? fallback.by,
-        model: (get(`${prefix}_MODEL`) ?? '').trim(),
-        effort: EFFORTS.find((effort) => effort === word(get(`${prefix}_EFFORT`))) ?? fallback.effort,
-    };
-}
+const JUDGE_SETTING: JobSetting = { by: 'recap', model: NO_MODEL, effort: 'medium' };
 
-export const judgeJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_JUDGE', JUDGE_DEFAULT);
+const CURATE_SETTING: JobSetting = { by: 'recap', model: NO_MODEL, effort: 'medium' };
+
+const DECIDER_SETTING: DeciderSetting = { by: 'recap', model: NO_MODEL, effort: 'low' };
+
+export const COMPACT_DEFAULT: Job = COMPACT_SETTING;
+
+export const JUDGE_DEFAULT: Job = JUDGE_SETTING;
+
+export const CURATE_DEFAULT: Job = CURATE_SETTING;
+
+export const DECIDER_DEFAULT: DeciderJob = DECIDER_SETTING;
 
 export const KEEP_INPUT_DAYS = 14;
 
-export function keepDaysOf(raw: string | undefined): number {
-    const days = Number((raw ?? '').trim());
-    return (raw ?? '').trim() !== '' && Number.isInteger(days) && days >= 0 ? days : KEEP_INPUT_DAYS;
+const textOf = (raw: Text | undefined): Text => must(parseText((raw ?? NO_MODEL).trim()));
+
+function settingFrom<By extends DeciderBy>(get: JobReader, prefix: JobPrefix, fallback: DeciderSetting<By>, choices: readonly By[]): DeciderSetting<By> {
+    return {
+        by: choices.find((by) => by === textOf(get(`${prefix}_BY`)).toLowerCase()) ?? fallback.by,
+        model: textOf(get(`${prefix}_MODEL`)),
+        effort: EFFORTS.find((effort) => effort === textOf(get(`${prefix}_EFFORT`)).toLowerCase()) ?? fallback.effort,
+    };
 }
 
+export const judgeSettingOf = (get: JobReader): JobSetting => settingFrom(get, 'TAB_RECAP_JUDGE', JUDGE_SETTING, JOB_BY_CHOICES);
 
-export const compactJobOf = (get: (key: string) => string | undefined): Job => jobFrom(get, 'TAB_RECAP_COMPACT', COMPACT_DEFAULT);
+export const compactSettingOf = (get: JobReader): JobSetting => settingFrom(get, 'TAB_RECAP_COMPACT', COMPACT_SETTING, JOB_BY_CHOICES);
 
-export const CURATE_DEFAULT: Job = { by: 'recap', model: '', effort: 'medium' };
-
-export const curateJobOf = (get: (key: string) => string | undefined): Job => {
-    const job = jobFrom(get, 'TAB_RECAP_CURATE', CURATE_DEFAULT);
-    const raw = (get('TAB_RECAP_CURATE_TIMEOUT_MS') ?? '').trim();
+export function curateSettingOf(get: JobReader): JobSetting {
+    const job = settingFrom(get, 'TAB_RECAP_CURATE', CURATE_SETTING, JOB_BY_CHOICES);
+    const raw = textOf(get('TAB_RECAP_CURATE_TIMEOUT_MS'));
     const count = Number(raw);
     const limit = parseMilliseconds(count);
-    const timed = raw !== '' && Number.isInteger(count) && count > 0 && limit.kind === 'ok' ? { ...job, timeoutMs: limit.value } : job;
-    return word(get('TAB_RECAP_CURATE_ANSWER')) === 'schema' ? { ...timed, answer: 'schema' } : timed;
-};
-
-export const deciderJobOf = (get: (key: string) => string | undefined): DeciderJob => jobFrom(get, 'TAB_RECAP_AUTOCOMPACT', DECIDER_DEFAULT, DECIDER_BY_CHOICES);
-
-export interface Placement {
-    readonly harness: BackendId;
-    readonly model: string;
-    readonly effort: Effort;
-    readonly timeoutMs?: Milliseconds;
-    readonly answer?: JobAnswer;
+    const timed: JobSetting = raw !== '' && Number.isInteger(count) && count > 0 && limit.kind === 'ok' ? { ...job, timeoutMs: limit.value } : job;
+    return textOf(get('TAB_RECAP_CURATE_ANSWER')).toLowerCase() === 'schema' ? { ...timed, answer: 'schema' } : timed;
 }
 
-export interface RecapChoices {
-    readonly backend: BackendChoice;
-    readonly models: Readonly<Record<BackendId, string>>;
+export const deciderSettingOf = (get: JobReader): DeciderSetting => settingFrom(get, 'TAB_RECAP_AUTOCOMPACT', DECIDER_SETTING, DECIDER_BY_CHOICES);
+
+export function keepDaysCountOf(raw: Text | undefined): Count {
+    const text = textOf(raw);
+    const days = parseCount(Number(text));
+    return text !== '' && days.kind === 'ok' ? days.value : must(parseCount(KEEP_INPUT_DAYS));
 }
 
-export function placementOf(job: Job, recap: RecapChoices, available: readonly string[]): Placement | null {
+export function placementFor(job: JobSetting, recap: RecapSetting, available: readonly BackendId[]): JobPlacement | null {
     if (job.by === 'off') {
         return null;
     }
