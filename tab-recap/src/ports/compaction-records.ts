@@ -1,79 +1,90 @@
 import { err, ok } from '#src/protocol/result.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { parseAgentKind, parseCompactionId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant } from '#src/recap/domain/time.ts';
+
 export type ActiveStage = 'briefing' | 'compacting' | 'restoring';
 export type EndStage = 'compacted' | 'failed' | 'unconfirmed' | 'skipped';
 export type Stage = ActiveStage | EndStage;
 
 export type BriefOrigin = 'written' | 'template';
 
-export interface CompactionRecord {
-    readonly id: string;
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
+export type { BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionView, StageFacts } from './legacy.ts';
+
+export type RetryMark = 'retried' | 'first-try';
+export type QueueMark = 'queued' | 'direct';
+export type CompactionActivity = 'auto-in-progress' | 'idle';
+
+export interface CompactionRow {
+    readonly id: CompactionId;
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
     readonly stage: Stage;
     readonly brief: BriefOrigin | null;
-    readonly writer: string | null;
-    readonly templateWhy: string | null;
-    readonly startedAt: number;
-    readonly stageAt: number;
-    readonly finishedAt: number | null;
-    readonly tokensBefore: number | null;
-    readonly tokensAfter: number | null;
-    readonly tookMs: number | null;
-    readonly retried: boolean;
-    readonly queued: boolean;
-    readonly why: string | null;
+    readonly writer: Text | null;
+    readonly templateWhy: Text | null;
+    readonly startedAt: Instant;
+    readonly stageAt: Instant;
+    readonly finishedAt: Instant | null;
+    readonly tokensBefore: Count | null;
+    readonly tokensAfter: Count | null;
+    readonly took: Duration | null;
+    readonly retry: RetryMark;
+    readonly queue: QueueMark;
+    readonly why: Text | null;
     readonly origin: Origin;
 }
 
-export interface BeginCompaction {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
+export interface CompactionStart {
+    readonly tab: TabId;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
     readonly stage: Stage;
-    readonly at: number;
-    readonly writer?: string | null;
-    readonly why?: string | null;
+    readonly at: Instant;
+    readonly writer?: Text | null;
+    readonly why?: Text | null;
     readonly origin?: Origin;
-    readonly answer?: string | null;
+    readonly answer?: Text | null;
 }
 
-export interface StageFacts {
-    readonly at: number;
+export interface StageNote {
+    readonly at: Instant;
     readonly brief?: BriefOrigin | null;
-    readonly writer?: string | null;
-    readonly templateWhy?: string | null;
-    readonly queued?: boolean;
+    readonly writer?: Text | null;
+    readonly templateWhy?: Text | null;
+    readonly queue?: QueueMark;
 }
 
-export interface CompactionEnd {
+export interface CompactionFinish {
     readonly stage: EndStage;
-    readonly at: number;
-    readonly tokensBefore?: number | null;
-    readonly tokensAfter?: number | null;
-    readonly tookMs?: number | null;
-    readonly retried?: boolean;
-    readonly why?: string | null;
+    readonly at: Instant;
+    readonly tokensBefore?: Count | null;
+    readonly tokensAfter?: Count | null;
+    readonly took?: Duration | null;
+    readonly retry?: RetryMark;
+    readonly why?: Text | null;
 }
 
-export interface CompactionView {
-    shownFor(tab: string): readonly CompactionRecord[];
-    autoInProgress(): boolean;
+export interface CompactionShown {
+    shownFor(tab: TabId): readonly CompactionRow[];
+    autoInProgress(): CompactionActivity;
 }
 
-export interface CompactionRecords extends CompactionView {
-    begin(start: BeginCompaction): string;
-    advance(id: string, stage: ActiveStage, facts: StageFacts): void;
-    finish(id: string, end: CompactionEnd): void;
-    dismissTurn(tab: string, pane: string, at: number): void;
-    interrupted(at: number, why: string): number;
+export interface CompactionLog extends CompactionShown {
+    begin(start: CompactionStart): CompactionId;
+    advance(id: CompactionId, stage: ActiveStage, facts: StageNote): void;
+    finish(id: CompactionId, end: CompactionFinish): void;
+    dismissTurn(tab: TabId, pane: PaneId, at: Instant): void;
+    interrupted(at: Instant, why: Text): Count;
 }
 
 const STAGES: readonly Stage[] = ['briefing', 'compacting', 'restoring', 'compacted', 'failed', 'unconfirmed', 'skipped'];
@@ -86,11 +97,11 @@ interface Row {
 
 const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
 
-type CompactionIdentity = Pick<CompactionRecord, 'id' | 'tab' | 'pane' | 'agent' | 'stage' | 'brief'>;
-type CompactionNotes = Pick<CompactionRecord, 'writer' | 'templateWhy' | 'why'>;
-type CompactionFlags = Pick<CompactionRecord, 'retried' | 'queued' | 'origin'>;
-type CompactionTimes = Pick<CompactionRecord, 'startedAt' | 'stageAt' | 'finishedAt'>;
-type CompactionMeasures = Pick<CompactionRecord, 'tokensBefore' | 'tokensAfter' | 'tookMs'>;
+type CompactionIdentity = Pick<CompactionRow, 'id' | 'tab' | 'pane' | 'agent' | 'stage' | 'brief'>;
+type CompactionNotes = Pick<CompactionRow, 'writer' | 'templateWhy' | 'why'>;
+type CompactionFlags = Pick<CompactionRow, 'retry' | 'queue' | 'origin'>;
+type CompactionTimes = Pick<CompactionRow, 'startedAt' | 'stageAt' | 'finishedAt'>;
+type CompactionMeasures = Pick<CompactionRow, 'tokensBefore' | 'tokensAfter' | 'took'>;
 
 export function parseStage(input: unknown): Result<Stage, ParseFailure> {
     const found = STAGES.find((stage) => stage === input);
@@ -132,7 +143,7 @@ function flagsOf(row: Row): Result<CompactionFlags, ParseFailure> {
     const origin = ORIGINS.find((value) => value === row.origin);
     if (origin === undefined) return err({ kind: 'out-of-range' });
     if (typeof row.retried !== 'boolean' || typeof row.queued !== 'boolean') return err({ kind: 'not-a-row' });
-    return ok({ retried: row.retried, queued: row.queued, origin });
+    return ok({ retry: row.retried ? 'retried' : 'first-try', queue: row.queued ? 'queued' : 'direct', origin });
 }
 
 function timesOf(row: Row): Result<CompactionTimes, ParseFailure> {
@@ -152,10 +163,10 @@ function measuresOf(row: Row): Result<CompactionMeasures, ParseFailure> {
     if (tokensAfter.kind === 'err') return tokensAfter;
     const tookMs = row.tookMs === null ? ok(null) : parseDuration(row.tookMs);
     if (tookMs.kind === 'err') return tookMs;
-    return ok({ tokensBefore: tokensBefore.value, tokensAfter: tokensAfter.value, tookMs: tookMs.value });
+    return ok({ tokensBefore: tokensBefore.value, tokensAfter: tokensAfter.value, took: tookMs.value });
 }
 
-export function parseCompactionRecord(input: unknown): Result<CompactionRecord, ParseFailure> {
+export function parseCompactionRow(input: unknown): Result<CompactionRow, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const identity = identityOf(input);
     if (identity.kind === 'err') return identity;

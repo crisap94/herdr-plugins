@@ -1,68 +1,6 @@
 {
-  "src/ports/agents.ts": {
-    "parameter": 5,
-    "container": 1,
-    "property": 3
-  },
-  "src/ports/ask-ledger.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 4
-  },
-  "src/ports/autocompact-briefs.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 1
-  },
-  "src/ports/autocompact-records.ts": {
-    "return": 2,
-    "container": 6,
-    "property": 14
-  },
-  "src/ports/boundaries.ts": {
-    "parameter": 3,
-    "return": 2,
-    "property": 4
-  },
-  "src/ports/capability.ts": {
-    "parameter": 2
-  },
-  "src/ports/columns.ts": {
-    "parameter": 2,
-    "property": 5
-  },
-  "src/ports/compaction-briefs.ts": {
-    "parameter": 2,
-    "property": 3
-  },
-  "src/ports/compaction-plans.ts": {
-    "parameter": 2
-  },
-  "src/ports/compaction-records.ts": {
-    "parameter": 8,
-    "return": 3,
-    "property": 30
-  },
-  "src/ports/config-paths.ts": {
-    "property": 2
-  },
-  "src/ports/context-windows.ts": {
-    "parameter": 1
-  },
-  "src/ports/decider.ts": {
-    "property": 1
-  },
-  "src/ports/extension.ts": {
-    "return": 1,
-    "container": 2,
-    "property": 4
-  },
-  "src/ports/fleet-source.ts": {
-    "container": 4,
-    "property": 4
-  },
   "src/ports/legacy.ts": {
-    "legacy": 72
+    "legacy": 159
   },
   "src/ports/run-inputs.ts": {
     "parameter": 4,
@@ -87,6 +25,9 @@
     "return": 1,
     "property": 12
   },
+  "src/ports/twins/legacy.ts": {
+    "legacy": 42
+  },
   "src/ports/verdicts.ts": {
     "parameter": 2,
     "container": 1,
@@ -94,8 +35,8 @@
   },
   "src/ports/worksite-reader.ts": {
     "parameter": 2,
-    "container": 1,
-    "property": 3
+    "property": 3,
+    "container": 1
   },
   "src/ports/workspace-tokens.ts": {
     "parameter": 2,

@@ -1,5 +1,8 @@
 import type { WindowOf } from '#src/recap/domain/compaction.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 
-export interface ContextWindows {
-    windowOf(kind: string): WindowOf;
+export type { ContextWindows } from './twins/legacy.ts';
+
+export interface ContextWindowLookup {
+    windowOf(kind: AgentKind): WindowOf;
 }

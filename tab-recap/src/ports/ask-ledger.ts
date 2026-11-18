@@ -8,29 +8,33 @@ import { parsePaneId } from '#src/recap/domain/ids.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
 export const LOCAL_REQUESTER = 'cli';
 
 export type Requester = ToolName | typeof LOCAL_REQUESTER;
 
-export interface Ask {
+export type { Ask, AskLedger, NewAsk } from './legacy.ts';
+
+export interface AskEntry {
     readonly exchange: ExchangeName;
     readonly requester: Requester;
     readonly id: RequestId;
     readonly pane: PaneId;
-    readonly at: number;
-    readonly ref: string | null;
+    readonly at: Instant;
+    readonly ref: Text | null;
     readonly outcome: AskOutcome | null;
 }
 
-export interface NewAsk {
+export interface AskDraft {
     readonly exchange: ExchangeName;
     readonly requester: Requester;
     readonly id: RequestId;
     readonly pane: PaneId;
-    readonly at: number;
-    readonly ref: string | null;
+    readonly at: Instant;
+    readonly ref: Text | null;
 }
 
 export interface AskKey {
@@ -45,14 +49,16 @@ export interface AskIdentity {
     readonly id: RequestId;
 }
 
-export interface AskLedger {
-    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean;
-    record(ask: NewAsk): void;
-    attach(match: AskKey, ref: string): void;
+export type AskSighting = 'seen' | 'unseen';
+
+export interface AskBook {
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): AskSighting;
+    record(ask: AskDraft): void;
+    attach(match: AskKey, ref: Text): void;
     withdraw(identity: AskIdentity): void;
     settle(match: AskKey, outcome: AskOutcome): void;
-    unfinished(): readonly Ask[];
-    prune(before: number): void;
+    unfinished(): readonly AskEntry[];
+    prune(before: Instant): void;
 }
 
 interface Row {
@@ -79,7 +85,7 @@ export function parseRequester(input: unknown): Result<Requester, ParseFailure> 
     return lift(parseToolName(input));
 }
 
-type AskNotes = Pick<Ask, 'ref' | 'outcome'>;
+type AskNotes = Pick<AskEntry, 'ref' | 'outcome'>;
 
 function notesOf(row: Row): Result<AskNotes, ParseFailure> {
     const ref = row.ref === null ? ok(null) : parseText(row.ref);
@@ -91,7 +97,7 @@ function notesOf(row: Row): Result<AskNotes, ParseFailure> {
     return ok({ ref: ref.value, outcome });
 }
 
-export function parseAsk(input: unknown): Result<Ask, ParseFailure> {
+export function parseAskEntry(input: unknown): Result<AskEntry, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const exchange = lift(parseExchangeName(input.exchange));
     if (exchange.kind === 'err') return exchange;

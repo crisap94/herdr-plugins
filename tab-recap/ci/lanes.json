@@ -48,6 +48,7 @@
       "src/ports/session-identity.ts",
       "src/ports/session-source.ts",
       "src/ports/tab-views.ts",
+      "src/ports/twins/legacy.ts",
       "src/ports/verdicts.ts",
       "src/ports/worksite-reader.ts",
       "src/ports/workspace-tokens.ts",

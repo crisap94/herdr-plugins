@@ -1,20 +1,30 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export interface Note {
-    readonly label: string;
-    readonly at: number | null;
-    readonly details: readonly string[];
-    readonly mark?: string;
-}
-
-export type NotesResult = { readonly kind: 'notes'; readonly byPane: ReadonlyMap<string, readonly Note[]> } | Unknown;
+export type { Extension, Note, NotesResult } from './twins/legacy.ts';
 
 export const DEFAULT_MARK = '⚑';
 
-export interface Extension {
-    readonly id: string;
-    notes?(lanes?: readonly TabLane[], locale?: Locale): NotesResult;
-    warning?(locale: Locale): string | null;
+export interface PaneNote {
+    readonly label: Text;
+    readonly at: Instant | null;
+    readonly details: readonly Text[];
+    readonly mark?: Text;
+}
+
+export interface PaneNotes {
+    readonly kind: 'notes';
+    readonly byPane: ReadonlyMap<PaneId, readonly PaneNote[]>;
+}
+
+export type PaneNotesResult = PaneNotes | Unknown;
+
+export interface ExtensionPort {
+    readonly id: Text;
+    notes?(lanes?: readonly TabLane[], locale?: Locale): PaneNotesResult;
+    warning?(locale: Locale): Text | null;
 }
