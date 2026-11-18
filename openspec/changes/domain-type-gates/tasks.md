@@ -81,6 +81,7 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
 `packages/recap-view` (roadmap tracks STO and VIEW).
 
 - [ ] 4.1 B1 `src/protocol/`, `src/ports/`, except the files of lane `ENG`. Verify: B1's baseline holds only `legacy` counts.
+  B1 runs B1-4 (`src/protocol`) first, then B1-1 to B1-3; B1-1 and B1-2 add the `parse<Name>` of every port record lane B5 maps.
 - [ ] 4.2 B2 `src/recap/domain/` (gates included), except the files of lane `ENG`, including the throwing constructors of `ids.ts`, whose wrappers move to
       `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts.
 - [ ] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts.
