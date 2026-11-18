@@ -1,6 +1,6 @@
 {
   "src/ports/legacy.ts": {
-    "legacy": 159
+    "legacy": 96
   },
   "src/ports/run-inputs.ts": {
     "parameter": 4,
@@ -27,6 +27,9 @@
   },
   "src/ports/twins/legacy.ts": {
     "legacy": 42
+  },
+  "src/ports/twins/runs/legacy.ts": {
+    "legacy": 63
   },
   "src/ports/verdicts.ts": {
     "parameter": 2,

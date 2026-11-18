@@ -3,7 +3,7 @@ import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 
-export type { InFlight, InFlightReading } from './legacy.ts';
+export type { InFlight, InFlightReading } from './twins/runs/legacy.ts';
 
 export interface InFlightNotStarted {
     readonly kind: 'not-started';

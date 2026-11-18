@@ -5,7 +5,8 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { ClosedAll, Columns, LayoutResult, TabLayout } from './legacy.ts';
+export type { Columns } from './legacy.ts';
+export type { ClosedAll, LayoutResult, TabLayout } from './twins/runs/legacy.ts';
 
 export type OpenResult = { readonly kind: 'opened'; readonly pane: PaneId } | Unknown;
 
