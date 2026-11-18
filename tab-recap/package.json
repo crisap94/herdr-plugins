@@ -18,7 +18,7 @@
     "daemon": "bun src/daemon/launch.mjs"
   },
   "dependencies": {
-    "@stateforge-labs/harness-adapters": "0.5.0",
+    "@stateforge-labs/harness-adapters": "0.6.0",
     "@stateforge-labs/harness-hooks": "0.4.0",
     "@stateforge-labs/herdr-sdk": "0.5.0",
     "@stateforge-labs/recap-view": "workspace:*",
