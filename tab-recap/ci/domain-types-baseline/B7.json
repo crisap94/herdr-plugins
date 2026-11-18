@@ -8,13 +8,6 @@
   "src/daemon/autocompact.ts": {
     "parameter": 2
   },
-  "src/daemon/backends.ts": {
-    "parameter": 4,
-    "container": 2
-  },
-  "src/daemon/bounded.ts": {
-    "parameter": 2
-  },
   "src/daemon/compaction.ts": {
     "parameter": 18,
     "return": 3,
@@ -38,12 +31,7 @@
     "return": 1
   },
   "src/daemon/legacy.ts": {
-    "legacy": 22
-  },
-  "src/daemon/main.ts": {
-    "parameter": 8,
-    "return": 13,
-    "container": 3
+    "legacy": 47
   },
   "src/daemon/refresh-status.ts": {
     "parameter": 2

@@ -1,4 +1,22 @@
+import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
+import { handoff } from '#src/protocol/exchanges/handoff.ts';
+import type { TokenMap } from '#src/protocol/tokens.ts';
+import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
+import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
+import type { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { ANY_KIND } from '#src/recap/domain/policy.ts';
+import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
+import { notesOf } from '#src/recap/domain/coordination.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { duration } from '#src/recap/domain/time.ts';
+import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import type { Available, TextAnchors } from './backends.ts';
+import { boundedBy, withinBy, type Bounded } from './bounded.ts';
+import type { Box } from './dispatch-parts.ts';
+import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
+import type { Worktrees } from './worktrees.ts';
 import type { Locale } from '#src/i18n/index.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
@@ -18,7 +36,7 @@ import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view.ts';
-import { environmentName } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, environmentName } from '#src/recap/domain/backend.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { backendFrom, configDirectory, loadSettings, localeFrom, modelsFrom, parseSettingsFile, settingReader, stateDirectory } from './config.ts';
 import type { CompactionSettings, SettingReader } from './settings.ts';
@@ -105,4 +123,76 @@ export function configGetter(): LegacyReader {
 
 export function loadConfig(): Config {
     return loadSettings();
+}
+
+const isBackendId = (id: string): id is BackendId => BACKEND_IDS.some((known) => known === id);
+
+export function availableIn(ids: readonly string[]): Available {
+    return ids.filter(isBackendId);
+}
+
+export function summarizerWork(root: string): Directory {
+    return must(parseDirectory(join(root, 'summarizer')));
+}
+
+const textAnchors = (anchors: CheckAnchors): TextAnchors => new Map([...anchors].map(([key, found]) => [must(parseText(key)), found]));
+
+export type JudgeWith = (config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors) => Judge | null;
+
+const judges: { made?: JudgeWith } = {};
+
+export function judgeVia(made: JudgeWith): void {
+    judges.made = made;
+}
+
+export function judgeFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
+    if (judges.made === undefined) {
+        throw new Error('judgeFor runs once src/daemon/backends.ts is loaded');
+    }
+    return judges.made(config, available, work, runtime, anchors === undefined ? undefined : textAnchors(anchors));
+}
+
+export async function bounded(task: Promise<void>, ms: number): Promise<Bounded> {
+    return boundedBy(task, duration(ms));
+}
+
+export async function within<T>(task: Promise<T>, ms: number, fallback: T): Promise<T> {
+    return withinBy(task, duration(ms), fallback);
+}
+
+export function logVia(write: (line: Text) => void): (line: string) => void {
+    return (line) => { write(must(parseText(line))); };
+}
+
+export function herdrEventsOn(): boolean {
+    return loadConfig().herdrEvents === 'on';
+}
+
+function switchOn(setting: string): boolean {
+    return setting === handoff.optIn ? loadConfig().handoffRequests === 'on' : herdrEventsOf(configGetter()(setting)) === 'on';
+}
+
+export function capabilityNow(): string {
+    return capabilityOf(switchOn);
+}
+
+export function wantsScreen(agent: string): boolean {
+    const { screenAgents } = loadConfig();
+    return screenAgents.includes(ANY_KIND) || screenAgents.includes(agent);
+}
+
+export function listeningIn(box: Box): () => boolean {
+    return () => box.informer?.listening ?? false;
+}
+
+export function failureLog(log: (line: string) => void, what: string): (error: unknown) => void {
+    return (error) => { log(`${what}: ${error instanceof Error ? error.message : String(error)}`); };
+}
+
+export function paneTokensTo(worktrees: Worktrees, answers: CompactRequests, exchange: HandoffExchangeWiring): (pane: string, tokens: TokenMap) => void {
+    return (pane, tokens) => {
+        worktrees.feed.update(paneId(pane), notesOf(tokens));
+        answers.onPaneTokens(pane, tokens);
+        exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])));
+    };
 }

@@ -8,7 +8,7 @@ import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import type { Decider } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
+import type { CheckAnchor, Judge } from '#src/ports/judge.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -27,18 +27,19 @@ import type { Config } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
+import { judgeVia } from './legacy.ts';
+
+export { availableIn, judgeFor, summarizerWork } from './legacy.ts';
 
 export type Available = readonly BackendId[];
 
 type Warning = 'unwarned' | 'warned';
 
-const isBackendId = (id: string): id is BackendId => BACKEND_IDS.some((known) => known === id);
+export type TextAnchors = ReadonlyMap<Text, readonly CheckAnchor[]>;
 
-export const availableIn = (ids: readonly string[]): Available => ids.filter(isBackendId);
-
-export const summarizerWork = (root: string): Directory => must(parseDirectory(join(root, 'summarizer')));
-
-const line = (raw: string): Text => must(parseText(raw));
+export function summarizerWorkIn(root: Directory): Directory {
+    return must(parseDirectory(join(root, 'summarizer')));
+}
 
 export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
     if (isUnknown(fromPath)) {
@@ -72,10 +73,12 @@ export function briefFor(config: Config, available: Available, work: Directory, 
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
-export function judgeFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
+export function judgeWith(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): Judge | null {
     const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
+
+judgeVia(judgeWith);
 
 export function curatorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Curators | null {
     const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
@@ -96,8 +99,8 @@ export class Backends {
     private readonly notifier: Notifier;
     private readonly log: LogLine;
 
-    constructor(root: string, sources: HarnessSources, notifier: Notifier, log: LogLine, runtime: HarnessRuntime) {
-        this.work = summarizerWork(root);
+    constructor(root: Directory, sources: HarnessSources, notifier: Notifier, log: LogLine, runtime: HarnessRuntime) {
+        this.work = summarizerWorkIn(root);
         this.runtime = runtime;
         this.sources = sources;
         this.notifier = notifier;
@@ -107,10 +110,10 @@ export class Backends {
     async refresh(): Promise<void> {
         const found = intersect(await this.sources.herdr.available(), await this.sources.path.available());
         if (isUnknown(found)) {
-            this.log(line(`harness lookup failed: ${saying(found.why)}`));
+            this.log(must(parseText(`harness lookup failed: ${saying(found.why)}`)));
             return;
         }
-        this.available = availableIn(found.ids);
+        this.available = BACKEND_IDS.filter((known) => found.ids.includes(known));
         await this.warnWhenNone();
     }
 
@@ -119,7 +122,7 @@ export class Backends {
             return;
         }
         this.warning = 'warned';
-        this.log(line(`no backend: ${NONE}`));
+        this.log(must(parseText(`no backend: ${NONE}`)));
         await this.notifier.notify('Tab Recap', `No recap writer found — ${NONE}`);
     }
 
