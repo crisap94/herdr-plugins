@@ -1,25 +1,4 @@
 {
-  "src/recap/domain/handoff-outcome.ts": {
-    "parameter": 7,
-    "return": 1,
-    "assertion": 1
-  },
-  "src/recap/domain/handoff-sanitize.ts": {
-    "parameter": 1,
-    "assertion": 1
-  },
-  "src/recap/domain/handoff-vetting.ts": {
-    "return": 1
-  },
-  "src/recap/domain/herdr-events.ts": {
-    "parameter": 1
-  },
-  "src/recap/domain/lane-tokens.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 8,
-    "property": 4
-  },
   "src/recap/domain/lane.ts": {
     "parameter": 1,
     "return": 1,
@@ -35,7 +14,7 @@
     "container": 1
   },
   "src/recap/domain/legacy.ts": {
-    "legacy": 117
+    "legacy": 142
   },
   "src/recap/domain/origin.ts": {
     "parameter": 1

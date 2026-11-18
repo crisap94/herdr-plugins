@@ -1,3 +1,7 @@
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+
 export type HerdrEvents = 'off' | 'on';
 
-export const herdrEventsOf = (raw: string | undefined): HerdrEvents => (raw?.trim().toLowerCase() === 'on' ? 'on' : 'off');
+export { herdrEventsOf } from './legacy.ts';
+
+export const herdrEventsFrom = (raw: Text | undefined): HerdrEvents => (raw?.trim().toLowerCase() === 'on' ? 'on' : 'off');

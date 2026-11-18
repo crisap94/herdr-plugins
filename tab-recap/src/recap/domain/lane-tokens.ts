@@ -1,18 +1,20 @@
-import { CAPABILITY_TOKEN, capabilityValue } from '#src/protocol/capability.ts';
+import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
-import { handoff } from '#src/protocol/exchanges/handoff.ts';
-import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
-import { KINDS_VERSION } from '#src/protocol/kinds.ts';
-import type { OptIn } from '#src/protocol/primitives.ts';
+import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
+import type { Milliseconds, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Count } from './count.ts';
 import { ANSWER_TOKENS, OWNERS, answerNameOf } from './token-registry.ts';
+import { CAPABILITY_VALUE, PROTOCOL_VERSION } from './lane-capability.ts';
 import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
 import { EVENT_TOKEN } from './event-token.ts';
 
-export const PROTOCOL_VERSION = '1';
+export { capabilityOf, clearing, unownedName, valuesOf, writeDue } from './legacy.ts';
+export type { LaneFacts, TokenValues, Written } from './legacy.ts';
+
+export { CAPABILITY_VALUE, PROTOCOL_VERSION, capabilityValueOf } from './lane-capability.ts';
+
 export const COMPACT_TOKEN = answerNameOf(compact);
-export const capabilityOf = (isOn: (setting: OptIn) => boolean): string => must(capabilityValue(EXCHANGES, KINDS_VERSION, isOn));
-export const CAPABILITY_VALUE = must(capabilityValue(EXCHANGES.filter((exchange) => exchange.optIn !== handoff.optIn), KINDS_VERSION));
 
 const LANE_NAMES: readonly string[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN];
 
@@ -23,37 +25,43 @@ export const STATE_TOKENS: readonly string[] = [...LANE_NAMES, CAPABILITY_TOKEN]
 export const PANE_WRITABLE: readonly string[] = OWNERS.writable;
 export const WORKSPACE_WRITABLE: readonly string[] = [EVENT_TOKEN];
 
-export const unownedName = (names: readonly string[], allowed: readonly string[]): string | null => names.find((name) => !allowed.includes(name)) ?? null;
-
-export interface LaneFacts {
-    readonly share: number | null;
-    readonly recapAt: number | null;
-    readonly needs: number;
+export interface LaneTokenFacts {
+    readonly share: Count | null;
+    readonly recapAt: Instant | null;
+    readonly needs: Count;
 }
 
-export type TokenValues = Readonly<Record<string, string>>;
+export type TokenMap = ReadonlyMap<TokenName, TokenValue>;
 
-export function valuesOf(facts: LaneFacts, capability: string = CAPABILITY_VALUE): TokenValues {
-    return {
-        [API_TOKEN]: PROTOCOL_VERSION,
-        ...(facts.share === null ? {} : { [SHARE_TOKEN]: String(facts.share) }),
-        ...(facts.recapAt === null ? {} : { [RECAP_TOKEN]: String(facts.recapAt) }),
-        [NEEDS_TOKEN]: String(facts.needs),
-        [CAPABILITY_TOKEN]: capability,
-    };
+export interface LaneWrite {
+    readonly values: TokenMap;
+    readonly at: Instant;
 }
 
-export interface Written {
-    readonly values: TokenValues;
-    readonly at: number;
+const API = must(parseTokenName(API_TOKEN));
+const SHARE = must(parseTokenName(SHARE_TOKEN));
+const RECAP = must(parseTokenName(RECAP_TOKEN));
+const NEEDS = must(parseTokenName(NEEDS_TOKEN));
+const PROTOCOL = must(parseTokenValue(PROTOCOL_VERSION));
+
+const valueOfNumber = (count: Count | Instant): TokenValue => must(parseTokenValue(String(count)));
+
+export function tokenValuesOf(facts: LaneTokenFacts, capability: TokenValue = CAPABILITY_VALUE): TokenMap {
+    const entries: [TokenName, TokenValue][] = [[API, PROTOCOL]];
+    if (facts.share !== null) {
+        entries.push([SHARE, valueOfNumber(facts.share)]);
+    }
+    if (facts.recapAt !== null) {
+        entries.push([RECAP, valueOfNumber(facts.recapAt)]);
+    }
+    entries.push([NEEDS, valueOfNumber(facts.needs)], [CAPABILITY_TOKEN, capability]);
+    return new Map(entries);
 }
 
-export function writeDue(previous: Written | null, values: TokenValues, now: number, ttlMs: number): TokenValues | null {
+export function writeDueOf(previous: LaneWrite | null, values: TokenMap, now: Instant, ttl: Milliseconds): TokenMap | null {
     if (previous === null) {
         return values;
     }
-    const changed = Object.keys(values).some((name) => values[name] !== previous.values[name]) || Object.keys(previous.values).some((name) => !(name in values));
-    return changed || now - previous.at >= ttlMs / 2 ? values : null;
+    const unchanged = previous.values.size === values.size && [...values].every(([name, value]) => previous.values.get(name) === value);
+    return !unchanged || now - previous.at >= ttl / 2 ? values : null;
 }
-
-export const clearing = (names: readonly string[]): Readonly<Record<string, null>> => Object.fromEntries(names.map((name) => [name, null]));

@@ -150,6 +150,7 @@
       "src/recap/domain/job-tag.ts",
       "src/recap/domain/job.ts",
       "src/recap/domain/kappa.ts",
+      "src/recap/domain/lane-capability.ts",
       "src/recap/domain/lane-claim.ts",
       "src/recap/domain/lane-closed.ts",
       "src/recap/domain/lane-token-names.ts",

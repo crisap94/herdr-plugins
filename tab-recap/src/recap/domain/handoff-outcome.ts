@@ -1,3 +1,6 @@
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { err, ok, type Result } from '#src/protocol/result.ts';
+
 interface HandoffRowOf<Outcome, Reason, Storable, Exit, Message> {
     readonly outcome: Outcome;
     readonly reason: Reason;
@@ -41,6 +44,33 @@ export const HANDOFF_OUTCOME_ROWS = [
     outcomeRow('failed', 'not-answered-taken', false, 1, 'failed.notAnsweredMayDeliver'),
 ] as const;
 
+const HANDOFF_OUTCOMES: readonly HandoffOutcome[] = [
+    { kind: 'delivered' },
+    { kind: 'printed' },
+    { kind: 'refused', reason: 'source-unavailable' },
+    { kind: 'refused', reason: 'task-ambiguous' },
+    { kind: 'refused', reason: 'source-equals-target' },
+    { kind: 'refused', reason: 'not-a-lane' },
+    { kind: 'refused', reason: 'status-not-ready' },
+    { kind: 'refused', reason: 'in-flight' },
+    { kind: 'refused', reason: 'lane-busy' },
+    { kind: 'refused', reason: 'typing-lease-busy' },
+    { kind: 'refused', reason: 'content-empty' },
+    { kind: 'refused', reason: 'ledger-empty' },
+    { kind: 'refused', reason: 'too-large' },
+    { kind: 'refused', reason: 'daemon-not-running' },
+    { kind: 'refused', reason: 'daemon-outdated' },
+    { kind: 'unsupported', reason: 'no-plan' },
+    { kind: 'failed', reason: 'transport' },
+    { kind: 'failed', reason: 'unconfirmed' },
+    { kind: 'failed', reason: 'internal-error' },
+    { kind: 'failed', reason: 'source-unreadable' },
+    { kind: 'failed', reason: 'expired' },
+    { kind: 'failed', reason: 'interrupted' },
+    { kind: 'failed', reason: 'not-answered-withdrawn' },
+    { kind: 'failed', reason: 'not-answered-taken' },
+];
+
 export const USAGE_EXIT = 2;
 
 export type HandoffOutcomeRow = (typeof HANDOFF_OUTCOME_ROWS)[number];
@@ -49,25 +79,21 @@ export type HandoffReason = Exclude<HandoffOutcomeRow['reason'], null>;
 export type HandoffMessageKey = Exclude<HandoffOutcomeRow['message'], null>;
 export type HandoffExitCode = HandoffOutcomeRow['exit'];
 
-interface ReasonedOutcome<Kind, Reason> {
-    readonly kind: Kind;
-    readonly reason: Reason;
-}
+type Kinded<Kind> = { readonly kind: Kind };
 
-interface PlainOutcome<Kind> {
-    readonly kind: Kind;
-}
+type Reasoned<Kind, Reason> = { readonly kind: Kind; readonly reason: Reason };
 
-type OutcomeOfRow<Row extends HandoffOutcomeRow> = Row extends { readonly reason: infer Reason extends string }
-    ? ReasonedOutcome<Row['outcome'], Reason>
-    : PlainOutcome<Row['outcome']>;
+type OutcomeOf<Row extends HandoffOutcomeRow> = Row extends { readonly reason: null }
+    ? Kinded<Row['outcome']>
+    : Reasoned<Row['outcome'], Exclude<Row['reason'], null>>;
 
-export type HandoffOutcome = OutcomeOfRow<HandoffOutcomeRow>;
-export type StoredHandoffOutcome = OutcomeOfRow<Extract<HandoffOutcomeRow, { readonly storable: true }>>;
+export type HandoffOutcome = OutcomeOf<HandoffOutcomeRow>;
 
-const reasonOf = (outcome: HandoffOutcome): string | null => ('reason' in outcome ? outcome.reason : null);
+export type StoredHandoffOutcome = OutcomeOf<Extract<HandoffOutcomeRow, { readonly storable: true }>>;
 
-const rowFor = (kind: string, reason: string | null): HandoffOutcomeRow | undefined =>
+const reasonOf = (outcome: HandoffOutcome): HandoffReason | null => ('reason' in outcome ? outcome.reason : null);
+
+const rowFor = (kind: HandoffOutcomeKind, reason: HandoffReason | null): HandoffOutcomeRow | undefined =>
     HANDOFF_OUTCOME_ROWS.find((row) => row.outcome === kind && row.reason === reason);
 
 const rowOf = (outcome: HandoffOutcome): HandoffOutcomeRow | undefined => rowFor(outcome.kind, reasonOf(outcome));
@@ -81,20 +107,19 @@ const requiredRowOf = (outcome: HandoffOutcome): HandoffOutcomeRow => {
     return row;
 };
 
-const outcomeOfRow = (row: HandoffOutcomeRow): HandoffOutcome =>
-    (row.reason === null ? { kind: row.outcome } : { kind: row.outcome, reason: row.reason }) as HandoffOutcome;
-
-export function handoffOutcomeOf(kind: string, reason: string | null): HandoffOutcome | null {
-    const row = rowFor(kind, reason);
-    return row === undefined ? null : outcomeOfRow(row);
+export function parseHandoffOutcome(kind: unknown, reason: unknown): Result<HandoffOutcome, ParseFailure> {
+    const outcome = HANDOFF_OUTCOMES.find((candidate) => candidate.kind === kind && reasonOf(candidate) === reason);
+    return outcome === undefined ? err({ kind: 'out-of-range' }) : ok(outcome);
 }
 
 export const isStorable = (outcome: HandoffOutcome): outcome is StoredHandoffOutcome => rowOf(outcome)?.storable === true;
 
-export function storedOutcomeOf(kind: string, reason: string | null): StoredHandoffOutcome | null {
-    const outcome = handoffOutcomeOf(kind, reason);
-    return outcome !== null && isStorable(outcome) ? outcome : null;
+export function parseStoredHandoffOutcome(kind: unknown, reason: unknown): Result<StoredHandoffOutcome, ParseFailure> {
+    const parsed = parseHandoffOutcome(kind, reason);
+    return parsed.kind === 'ok' && isStorable(parsed.value) ? ok(parsed.value) : err({ kind: 'out-of-range' });
 }
+
+export { handoffOutcomeOf, storedOutcomeOf } from './legacy.ts';
 
 const INTERNAL_FAILURE: StoredHandoffOutcome = { kind: 'failed', reason: 'internal-error' };
 
