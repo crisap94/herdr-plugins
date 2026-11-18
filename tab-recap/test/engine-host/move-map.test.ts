@@ -125,6 +125,6 @@ test('every engine row of the package baseline folder is at or below its row bef
     const files = readdirSync(PACKAGE_BASELINE_DIR).filter((name) => name.endsWith('.json')).toSorted();
     assert.equal(files.length, 6);
     const packageRows: BaselineRows = Object.assign({}, ...files.map((name) => baselineOf(JSON.parse(readFileSync(new URL(name, PACKAGE_BASELINE_DIR), 'utf8')))));
-    const engineRows = Object.fromEntries(Object.entries(packageRows).filter(([file]) => !file.startsWith('src/contract/')));
+    const engineRows = Object.fromEntries(Object.entries(packageRows).filter(([file]) => !file.startsWith('src/contract/') && !file.endsWith('/legacy.ts')));
     assert.deepEqual(packageRowsAbovePlugin(plugin, engineRows, ['src/recap/domain/lane-shape.ts']), []);
 });

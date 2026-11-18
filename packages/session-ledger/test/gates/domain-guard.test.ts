@@ -13,6 +13,7 @@ interface Snapshot {
     readonly inherited: Readonly<Record<string, unknown>>;
     readonly head: Readonly<Record<string, unknown>>;
     readonly moves?: string;
+    readonly split?: boolean;
 }
 
 interface Outcome {
@@ -26,6 +27,9 @@ const fakeGit = (snapshot: Snapshot): Git => (args) => {
     if (command === 'ls-tree') {
         if (target.endsWith('domain-types-baseline.json')) {
             return `${target}\n`;
+        }
+        if (snapshot.split === true && target.endsWith('domain-types-baseline')) {
+            return `${target}/recap.json\n`;
         }
         return target.endsWith('inherited') ? `${target}/B2.json\n` : '';
     }
@@ -94,4 +98,13 @@ test('a moved file is compared with the inherited row of the file it moved from'
         moves: 'src/recap/domain/lane-shape.ts\tsrc/recap/domain/lane.ts\n',
     });
     assert.equal(outcome.status, 0, outcome.lines.join('\n'));
+});
+
+test('a new legacy row passes while its baseline file total falls, and fails once the total rises', () => {
+    const own = { 'src/recap/domain/fact.ts': { property: 3 } };
+    const fell = guarded({ own, inherited: {}, split: true, head: { 'src/recap/domain/legacy.ts': { legacy: 2 } } });
+    assert.equal(fell.status, 0, fell.lines.join('\n'));
+    const rose = guarded({ own, inherited: {}, split: true, head: { 'src/recap/domain/legacy.ts': { legacy: 4 } } });
+    assert.equal(rose.status, 1);
+    assert.ok(rose.lines.includes('baseline total rose: recap.json: 3 -> 4'), rose.lines.join('\n'));
 });

@@ -1,19 +1,8 @@
-import type { Fact } from '../fact.ts';
 import type { Operation } from '../ops.ts';
 import type { Finding, Gate, GateContext } from './gate.ts';
 import { GATES } from './index.ts';
 import type { Item } from './index.ts';
-
-const withWhy = (section: Item['section'], text: string, why: string | null): string => (section === 'decisions' && why !== null ? `${text} — ${why}` : text);
-
-function itemOf(op: Operation, at: number, shown: ReadonlyMap<string, Fact>): Item | null {
-    if (op.op === 'close') {
-        return null;
-    }
-    const was = op.op === 'update' ? shown.get(op.id) : undefined;
-    const section = op.op === 'add' ? op.section : was?.section;
-    return section === undefined ? null : { task: '', section, position: at, text: withWhy(section, op.text, op.why ?? was?.why ?? null) };
-}
+import { itemOf } from './legacy.ts';
 
 export const itemGate: Gate = {
     id: 'ITEM',

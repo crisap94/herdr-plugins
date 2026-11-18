@@ -1,17 +1,12 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from './brand.ts';
+import { duration } from './legacy.ts';
 import type { ParseFailure } from './parse-failure.ts';
 
 export type Instant = Brand<number, 'Instant'>;
 export type Duration = Brand<number, 'Duration'>;
 
-export function instant(ms: number): Instant {
-    return ms as Instant;
-}
-
-export function duration(ms: number): Duration {
-    return ms as Duration;
-}
+export { duration, instant } from './legacy.ts';
 
 export function elapsed(from: Instant, to: Instant): Duration {
     return duration(Math.max(0, to - from));

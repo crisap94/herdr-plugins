@@ -5,7 +5,7 @@
   { "export": "HiddenCounts", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
   { "export": "PrunedWriterView", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
   { "export": "WriterView", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
-  { "export": "Pipeline", "origin": "packages/session-ledger/src/recap/domain/pipeline.ts", "originConst": "PIPELINES" },
+  { "export": "Pipeline", "origin": "packages/session-ledger/src/recap/domain/legacy.ts", "originConst": "PIPELINES" },
   { "export": "CloseEvidence", "origin": "packages/session-ledger/src/recap/domain/pipeline.ts" },
   { "export": "Debounce", "origin": "packages/session-ledger/src/recap/domain/debounce.ts" }
 ]

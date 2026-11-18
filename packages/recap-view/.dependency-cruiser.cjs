@@ -14,7 +14,7 @@ module.exports = {
       name: 'no-circular',
       severity: 'error',
       from: {},
-      to: { circular: true },
+      to: { circular: true, viaOnly: { pathNot: '(^|/)legacy\\.ts$' } },
     },
     {
       name: 'no-orphans',

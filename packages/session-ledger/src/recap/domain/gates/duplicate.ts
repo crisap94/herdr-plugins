@@ -1,12 +1,12 @@
 import { said } from './item-gate.ts';
-import type { Gate } from './item-gate.ts';
+import type { Gate, Outcome } from './item-gate.ts';
 import { jaccard, tokensOf } from './words.ts';
 
 export const THRESHOLD = 0.6;
 
 export const duplicate: Gate = {
     id: 'G2',
-    check: (item, context) => {
+    check: (item, context): Outcome | null => {
         if (item.section === 'links') {
             return null;
         }

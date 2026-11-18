@@ -5,8 +5,8 @@ export type Debounce = { readonly kind: 'off' } | { readonly kind: 'window'; rea
 
 export const DEBOUNCE_OFF: Debounce = { kind: 'off' };
 
-export function debounceOf(raw: string | undefined): Debounce {
-    const parsed = Number(raw);
+export function parseDebounce(input: unknown): Debounce {
+    const parsed = Number(input);
     if (parsed === 0) {
         return DEBOUNCE_OFF;
     }
@@ -14,3 +14,5 @@ export function debounceOf(raw: string | undefined): Debounce {
         ? { kind: 'window', window: duration(parsed) }
         : DEBOUNCE_OFF;
 }
+
+export { parseDebounce as debounceOf };

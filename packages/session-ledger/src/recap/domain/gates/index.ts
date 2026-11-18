@@ -13,5 +13,5 @@ export const GATES: readonly Gate[] = [narrator, duplicate, withoutWhy, unresolv
 
 export function outcomesOf(item: Item, context: Context): readonly Outcome[] {
     const found = GATES.flatMap((gate) => gate.check(item, context) ?? []);
-    return found.toSorted((a, b) => Number(b.kind === 'refuse') - Number(a.kind === 'refuse'));
+    return [...found.filter((outcome) => outcome.kind === 'refuse'), ...found.filter((outcome) => outcome.kind !== 'refuse')];
 }

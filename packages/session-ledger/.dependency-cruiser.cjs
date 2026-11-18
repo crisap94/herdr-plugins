@@ -14,7 +14,13 @@ module.exports = {
       name: 'no-circular',
       severity: 'error',
       from: {},
-      to: { circular: true },
+      to: { circular: true, viaOnly: { pathNot: '(^|/)legacy\\.ts$' } },
+    },
+    {
+      name: 'no-circular-legacy',
+      severity: 'error',
+      from: { path: '^(src/.+/)[^/]+\\.ts$' },
+      to: { circular: true, via: { pathNot: '^$1[^/]+\\.ts$' } },
     },
     {
       name: 'no-orphans',

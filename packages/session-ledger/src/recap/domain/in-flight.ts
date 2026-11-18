@@ -1,3 +1,4 @@
+import { brand } from './brand.ts';
 import type { Brand } from './brand.ts';
 
 export type RunningCount = Brand<number, 'RunningCount'>;
@@ -7,13 +8,7 @@ export type BackgroundTool = Brand<string, 'BackgroundTool'>;
 export type BackgroundLabel = Brand<string, 'BackgroundLabel'>;
 export type FlightDetail = Brand<string, 'FlightDetail'>;
 
-export const NO_RUNNING = 0 as RunningCount;
-
-export const runningCount = (raw: number): RunningCount => Math.max(0, Math.trunc(raw)) as RunningCount;
-export const flightReason = (raw: string): FlightReason => raw as FlightReason;
-export const awaitedNames = (raw: string): AwaitedNames => raw as AwaitedNames;
-export const backgroundTool = (raw: string): BackgroundTool => raw as BackgroundTool;
-export const backgroundLabel = (raw: string): BackgroundLabel => raw as BackgroundLabel;
+export const NO_RUNNING = brand<number, 'RunningCount'>(0);
 
 export interface BackgroundItem {
     readonly tool: BackgroundTool;
@@ -21,7 +16,7 @@ export interface BackgroundItem {
 }
 
 export function backgroundItem(tool: BackgroundTool, label: BackgroundLabel | null): BackgroundItem {
-    return { tool, label: label ?? (String(tool) as BackgroundLabel) };
+    return { tool, label: label ?? brand<string, 'BackgroundLabel'>(tool) };
 }
 
 export type Foreground =
@@ -59,31 +54,23 @@ export function flightOf(observed: Observed, awaiting: Awaiting): Flight {
     return { ...observed, awaiting };
 }
 
-export function holdsLane(flight: Flight, atCeiling: boolean): boolean {
-    if (flight.foreground.kind !== 'none') return true;
-    return flight.awaiting.kind === 'on' && !atCeiling;
-}
-
-function holdingDetail(flight: Flight): string | null {
+export function holdingDetail(flight: Flight): FlightDetail | null {
     const { foreground, awaiting } = flight;
-    if (foreground.kind === 'unknown') return foreground.why;
-    if (foreground.kind === 'running') return `${foreground.count} running`;
-    return awaiting.kind === 'on' ? `awaiting ${awaiting.names}` : null;
+    if (foreground.kind === 'unknown') return brand<string, 'FlightDetail'>(foreground.why);
+    if (foreground.kind === 'running') return brand<string, 'FlightDetail'>(`${foreground.count} running`);
+    return awaiting.kind === 'on' ? brand<string, 'FlightDetail'>(`awaiting ${awaiting.names}`) : null;
 }
 
-function overridingDetail(flight: Flight): string[] {
-    return flight.awaiting.kind === 'on' ? [`ceiling-overrides-wait (awaiting ${flight.awaiting.names})`] : [];
+export function overridingDetail(flight: Flight): readonly FlightDetail[] {
+    return flight.awaiting.kind === 'on' ? [brand<string, 'FlightDetail'>(`ceiling-overrides-wait (awaiting ${flight.awaiting.names})`)] : [];
 }
 
-function keptDetail(flight: Flight): string[] {
-    return flight.background.length > 0 ? [`background: ${flight.background.length} kept running`] : [];
+export function keptDetail(flight: Flight): readonly FlightDetail[] {
+    return flight.background.length > 0 ? [brand<string, 'FlightDetail'>(`background: ${flight.background.length} kept running`)] : [];
 }
 
-export function flightDetail(flight: Flight, atCeiling: boolean): FlightDetail | null {
-    if (holdsLane(flight, atCeiling)) {
-        const held = holdingDetail(flight);
-        return held === null ? null : (held as FlightDetail);
-    }
-    const parts = [...(atCeiling ? overridingDetail(flight) : []), ...keptDetail(flight)];
-    return parts.length === 0 ? null : (parts.join('; ') as FlightDetail);
+export function joinedDetail(parts: readonly FlightDetail[]): FlightDetail | null {
+    return parts.length === 0 ? null : brand<string, 'FlightDetail'>(parts.join('; '));
 }
+
+export { awaitedNames, backgroundLabel, backgroundTool, flightDetail, flightReason, holdsLane, runningCount } from './legacy.ts';
