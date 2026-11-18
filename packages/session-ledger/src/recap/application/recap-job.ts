@@ -21,6 +21,7 @@ import { marksOf } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
+
 export interface RecapJobDeps {
     readonly transcripts: TranscriptRegistry;
     readonly records: CheckedRecapRecords;
@@ -249,6 +250,7 @@ export class RecapJob {
     private async summarize(prior: TabRecap, readings: readonly Reading[], plan: Plan, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
         const note = errors.length > 0 ? errors.join('; ') : null;
+        const unmoved = readings.map((r) => r.cursor);
         const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
         const parts = readings.filter((r) => r.chunk !== null && r.chunk.entries.length > 0);
         const { records, clock } = this.deps;
@@ -263,7 +265,7 @@ export class RecapJob {
         const took = `${((facts.at - began) / 1000).toFixed(1)} s (${plan.cause})`;
         if (asked.kind === 'failed') {
             this.deps.log(`recap ${prior.tab}: failed in ${took}`);
-            records.failRun({ ...facts, language: plan.was, error: asked.error, lanes: readings.map((r) => r.cursor), marks: marksOf(readings, facts.at, false) });
+            records.failRun({ ...facts, language: plan.was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
             return;
         }
         this.deps.log(`recap ${prior.tab}: written in ${took}`);
