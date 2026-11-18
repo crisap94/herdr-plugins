@@ -151,10 +151,13 @@ export class RecapJob {
     }
 
     refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> {
-        return new Promise((resolve) => {
-            this.request(tab, lanes, 'requested');
-            this.slots.get(String(tab))?.waiting.push(resolve);
-        });
+        this.request(tab, lanes, 'requested');
+        return this.idle(tab);
+    }
+
+    idle(scope: TabId): Promise<void> {
+        const slot = this.slots.get(String(scope));
+        return slot === undefined || (!slot.running && slot.timer === null) ? Promise.resolve() : new Promise((resolve) => { slot.waiting.push(resolve); });
     }
 
     private async locate(lane: Lane): Promise<Located | string> {

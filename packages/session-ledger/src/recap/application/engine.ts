@@ -39,6 +39,7 @@ export interface Engine {
     compacted(scope: ScopeId, sessions: readonly FollowedSession[]): Promise<void>;
     history(scope: ScopeId, session: FollowedSession): readonly HistoryFact[];
     restore(scope: ScopeId, session: FollowedSession): RestoreFacts;
+    idle(scope: ScopeId): Promise<void>;
 }
 
 const heldBy = (session: FollowedSession): PaneId => session.pane;
@@ -70,5 +71,6 @@ export function createEngine(plugs: EnginePlugs): Engine {
         compacted: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
         history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(String(scope), String(heldBy(session))),
         restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
+        idle: (scope): Promise<void> => job.idle(scope),
     };
 }

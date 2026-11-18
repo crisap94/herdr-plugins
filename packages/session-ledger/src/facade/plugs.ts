@@ -18,6 +18,7 @@ import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type HiddenCounts, type PositiveCount, type WriterView } from '#src/recap/domain/writer-view.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
+import { curate } from './curate.ts';
 import { followedOf } from './translate.ts';
 
 export interface RestoreHooks {
@@ -28,6 +29,7 @@ export interface RestoreHooks {
 export interface FacadePlugs extends Omit<LegacyPlugs, 'ran'> {
     on?(event: sl.LedgerEvent): void;
     restore?: RestoreHooks;
+    curate?(scope: sl.ScopeId): Promise<void>;
 }
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
@@ -259,6 +261,7 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
         },
+        curate: curate(plugs),
         restore: {
             bytes: () => settings.restoreBytes?.(),
             render: (facts: LegacyRestoreFacts) => settings.restoreText?.({

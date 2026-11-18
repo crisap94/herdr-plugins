@@ -8,6 +8,8 @@ import {
     type HarnessKind,
     type LedgerEvent,
     type RecapRequest,
+    type Stories,
+    type KeptStory,
     type Writer,
 } from '@stateforge-labs/session-ledger';
 import { createMemoryStore, type Fold, type MemoryStore } from './memory-store.ts';
@@ -63,6 +65,19 @@ const SETTLE_ROUNDS = 20;
 const DEFAULT_READ: Behaviour<Chunk> = {
     kind: 'answer',
     value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+};
+
+const storiesOf = (): Stories => {
+    const kept = new Map<string, KeptStory>();
+    return {
+        read: (task) => kept.get(`${task.tab}\u0000${task.key}`) ?? null,
+        keep: (run, change) => {
+            if (change.story !== null) {
+                kept.set(`${run.task.tab}\u0000${run.task.key}`, { text: change.story, at: run.at });
+            }
+            return { changed: [], refused: [] };
+        },
+    };
 };
 
 const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behaviour: () => Behaviour<WrittenAnswer> | undefined): Writer => ({
@@ -167,7 +182,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
 
     const plugs: EnginePlugs = {
         source: { sessions: sessionsOf(run, (session) => script.locate(session), (source) => script.chunk(source), probes, () => script.noReader) },
-        store: { records: store.records, facts: store.facts },
+        store: { records: store.records, facts: store.facts, stories: storiesOf() },
         models: { writer: () => { probes.writers.push(1); return writerOf(run, store, requests, () => script.written); }, curator: () => curatorOf(run, (document) => probes.curated.push(document), () => script.curator) },
         environment: {
             clock,

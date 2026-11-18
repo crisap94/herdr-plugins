@@ -1,9 +1,10 @@
 import type { Directory, HarnessKind, RestoreText, ScopeId, SessionId, SessionKey } from './ids.ts';
 import type { FollowedSession, RecapCause, SessionSource } from './session.ts';
-import type { Fact, HistoryFact } from './facts.ts';
+import type { Applied, CloseOp, Fact, HistoryFact, TaskId, UpdateOp } from './facts.ts';
 import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
+import type { Instant, Text } from './kernel.ts';
 import type { Debounce, Pipeline, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
@@ -12,9 +13,31 @@ export interface RestoreFacts {
     readonly closed: readonly Fact[];
 }
 
+export interface CurationRun {
+    readonly task: TaskId;
+    readonly at: Instant;
+    readonly language: Text;
+}
+
+export interface StoryChange {
+    readonly story: Text | null;
+    readonly merges: readonly CloseOp[];
+    readonly reconciled?: readonly (UpdateOp | CloseOp)[];
+}
+
+export interface KeptStory {
+    readonly text: Text;
+    readonly at: Instant;
+}
+
+export interface Stories {
+    read(task: TaskId): KeptStory | null;
+    keep(run: CurationRun, change: StoryChange): Applied;
+}
+
 export interface EnginePlugs {
     readonly source: { readonly sessions: SessionSource };
-    readonly store: { readonly records: Records; readonly facts: FactStore };
+    readonly store: { readonly records: Records; readonly facts: FactStore; readonly stories?: Stories };
     readonly models: { writer(): Writer; enumerator?(): Enumerator | null; curator?(): Curator | null };
     readonly environment: { readonly clock: Clock; readonly ids: Ids; readonly workplaces: Workplaces; log(line: string): void };
     readonly settings: {
@@ -24,6 +47,7 @@ export interface EnginePlugs {
         pipeline?(): Pipeline;
         debounce?(): Debounce;
         restoreBytes?(): number;
+        rubric?(): Text;
         restoreText?(facts: RestoreFacts): RestoreText;
     };
     on?(event: LedgerEvent): void;
