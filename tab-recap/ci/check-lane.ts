@@ -59,8 +59,10 @@ function foreignKeys(): readonly string[] {
     return [...new Set([...Object.keys(base), ...Object.keys(lanes)])].filter((name) => name !== lane && JSON.stringify(base[name]) !== JSON.stringify(lanes[name]));
 }
 
+const FROZEN_KEYS: ReadonlySet<string> = new Set(['ENG', 'STO', 'VIEW']);
+
 function adaptsForeignSource(file: string): boolean {
-    return adapts && otherOwner.has(file) && file.startsWith(`${PREFIX}src/`) && !file.endsWith('/legacy.ts');
+    return adapts && otherOwner.has(file) && file.startsWith(`${PREFIX}src/`) && !file.endsWith('/legacy.ts') && !FROZEN_KEYS.has(otherOwner.get(file) ?? '');
 }
 
 function openToEveryLane(file: string): boolean {
