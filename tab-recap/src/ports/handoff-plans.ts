@@ -1,5 +1,8 @@
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 
-export interface HandoffPlans {
-    forKind(rawKind: string): HandoffPlanResult;
+export type { HandoffPlans } from './legacy.ts';
+
+export interface HandoffPlanCatalogue {
+    forKind(kind: AgentKind): HandoffPlanResult;
 }

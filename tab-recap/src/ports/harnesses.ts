@@ -1,7 +1,15 @@
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type HarnessesResult = { readonly kind: 'available'; readonly ids: readonly string[] } | Unknown;
+export type { Harnesses, HarnessesResult } from './legacy.ts';
 
-export interface Harnesses {
-    available(): Promise<HarnessesResult>;
+export interface HarnessesAvailable {
+    readonly kind: 'available';
+    readonly ids: readonly AgentKind[];
+}
+
+export type HarnessList = HarnessesAvailable | Unknown;
+
+export interface HarnessDirectory {
+    available(): Promise<HarnessList>;
 }

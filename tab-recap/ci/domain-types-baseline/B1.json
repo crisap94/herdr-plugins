@@ -61,62 +61,8 @@
     "container": 4,
     "property": 4
   },
-  "src/ports/handoff-answers.ts": {
-    "parameter": 1,
-    "property": 2
-  },
-  "src/ports/handoff-plans.ts": {
-    "parameter": 1
-  },
-  "src/ports/handoff-print.ts": {
-    "property": 3
-  },
-  "src/ports/harness.ts": {
-    "parameter": 1,
-    "return": 1,
-    "property": 6
-  },
-  "src/ports/harnesses.ts": {
-    "container": 1
-  },
-  "src/ports/imported-recaps.ts": {
-    "property": 2
-  },
-  "src/ports/in-flight.ts": {
-    "property": 3
-  },
-  "src/ports/judge.ts": {
-    "parameter": 1,
-    "property": 6
-  },
-  "src/ports/lane-settling.ts": {
-    "parameter": 2,
-    "property": 1
-  },
-  "src/ports/lane-tokens.ts": {
-    "parameter": 2,
-    "container": 1
-  },
-  "src/ports/model-catalogue.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/ports/notifier.ts": {
-    "parameter": 2
-  },
-  "src/ports/process-control.ts": {
-    "parameter": 3,
-    "container": 1,
-    "property": 8
-  },
-  "src/ports/requests.ts": {
-    "parameter": 2,
-    "return": 2,
-    "property": 12
-  },
-  "src/ports/retention.ts": {
-    "parameter": 1,
-    "property": 5
+  "src/ports/legacy.ts": {
+    "legacy": 72
   },
   "src/ports/run-inputs.ts": {
     "parameter": 4,

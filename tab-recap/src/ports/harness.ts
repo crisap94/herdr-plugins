@@ -1,7 +1,12 @@
 import type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis } from '#src/recap/domain/confinement-notice.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+
+export type { Harness, HarnessCall, HarnessSettings, Ran } from './legacy.ts';
 
 export type AnswerSchema = 'writer' | 'reconcile' | 'story';
 
@@ -20,14 +25,14 @@ export type StructuredSupport = 'none' | 'schema';
 
 export type ToolSupport = 'none' | 'stdio';
 
-export interface HarnessCall {
-    readonly instructions: string;
-    readonly input: string;
+export interface HarnessAsk {
+    readonly instructions: Text;
+    readonly input: Text;
     readonly answer?: AnswerMode;
 }
 
-export interface HarnessSettings {
-    readonly model: string;
+export interface HarnessChoice {
+    readonly model: Text;
     readonly effort: Effort;
     readonly timeoutMs?: Milliseconds;
 }
@@ -36,13 +41,21 @@ export type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasi
 
 export type LogLine = (line: ConfinementNoticeLine) => void;
 
-export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis; readonly confinement?: readonly ConfinementCell[] } | Unknown;
+export interface RanText {
+    readonly kind: 'ran';
+    readonly text: Text;
+    readonly costUsd: Usd;
+    readonly costBasis?: CostBasis;
+    readonly confinement?: readonly ConfinementCell[];
+}
 
-export interface Harness<Id extends string = string> {
+export type HarnessRun = RanText | Unknown;
+
+export interface HarnessPort<Id extends Text = Text> {
     readonly id: Id;
-    label(settings: HarnessSettings): string;
-    readonly limit: number | null;
+    label(settings: HarnessChoice): Text;
+    readonly limit: Count | null;
     readonly structured?: StructuredSupport;
     readonly tools?: ToolSupport;
-    run(call: HarnessCall, settings: HarnessSettings): Promise<Ran>;
+    run(call: HarnessAsk, settings: HarnessChoice): Promise<HarnessRun>;
 }

@@ -1,7 +1,20 @@
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { LaneStatus } from '#src/recap/domain/status.ts';
+import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
 
-export type Settled = { readonly kind: 'settled'; readonly status: string } | { readonly kind: 'timeout' };
+export type { LaneSettling, Settled } from './legacy.ts';
 
-export interface LaneSettling {
-    settled(pane: string, since: Instant, timeoutMs: number): Promise<Settled>;
+export interface SettledStatus {
+    readonly kind: 'settled';
+    readonly status: LaneStatus;
+}
+
+export interface SettleTimeout {
+    readonly kind: 'timeout';
+}
+
+export type Settling = SettledStatus | SettleTimeout;
+
+export interface LaneSettler {
+    settled(pane: PaneId, since: Instant, timeoutMs: Milliseconds): Promise<Settling>;
 }
