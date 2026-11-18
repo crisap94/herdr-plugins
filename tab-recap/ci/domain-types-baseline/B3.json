@@ -21,20 +21,8 @@
     "parameter": 1,
     "return": 1
   },
-  "src/recap/application/brief-coverage.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 7,
-    "property": 7
-  },
   "src/recap/application/compact-keys.ts": {
     "parameter": 2
-  },
-  "src/recap/application/compact-requests.ts": {
-    "parameter": 10,
-    "return": 3,
-    "container": 2,
-    "property": 2
   },
   "src/recap/application/compact-start.ts": {
     "parameter": 7,
@@ -255,6 +243,9 @@
     "parameter": 1,
     "return": 1,
     "container": 2
+  },
+  "src/recap/application/legacy.ts": {
+    "legacy": 30
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,

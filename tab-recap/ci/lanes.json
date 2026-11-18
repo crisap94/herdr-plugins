@@ -424,6 +424,7 @@
       "src/recap/application/lane-recent.ts",
       "src/recap/application/lane-tokens.ts",
       "src/recap/application/lane-webs.ts",
+      "src/recap/application/legacy.ts",
       "src/recap/application/live-prompts.ts",
       "src/recap/application/need-answer.ts",
       "src/recap/application/pane-note-feed.ts",

@@ -1,33 +1,48 @@
+import type { AnswerTally } from '#src/ports/autocompact-records.ts';
 import type { Decider, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
+import type { Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 
-const COVERED: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'decisions', 'next', 'rules']);
-const BLOCKING: ReadonlySet<string> = new Set(['goal', 'needs', 'decisions', 'rules']);
+export type { Coverage, CoverageFact, MissingFact } from './legacy.ts';
+export { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from './legacy.ts';
+
+const COVERED: ReadonlySet<Section> = new Set<Section>(['goal', 'now', 'needs', 'decisions', 'next', 'rules']);
+const BLOCKING: ReadonlySet<Section> = new Set<Section>(['goal', 'needs', 'decisions', 'rules']);
 export const FACTS_CHECKED = 40;
 export const KEPT_AT_LEAST = 0.70;
 
-export interface CoverageFact {
-    readonly section: string;
-    readonly text: string;
-    readonly why: string | null;
+export type MissingPart = 'text' | 'reason';
+
+export interface UnmetFact {
+    readonly index: Count;
+    readonly fact: CheckedFact;
+    readonly parts: readonly MissingPart[];
 }
 
-export interface Coverage {
-    readonly ok: boolean;
-    readonly missing: readonly string[];
-    readonly missingFacts: readonly MissingFact[];
-    readonly answers: Readonly<Record<string, number>>;
-    readonly unknown: string | null;
-    readonly costUsd?: number | null;
+export interface CheckedCoverage {
+    readonly complete: Presence;
+    readonly missing: readonly Text[];
+    readonly missingFacts: readonly UnmetFact[];
+    readonly answers: AnswerTally;
+    readonly unknown: Text | null;
+    readonly costUsd?: Usd | null;
 }
 
-export const factsOf = (history: readonly HistoryFact[]): readonly CoverageFact[] =>
-    history.filter((fact) => fact.state === 'open' && COVERED.has(fact.section)).slice(0, FACTS_CHECKED).map((fact) => ({ section: fact.section, text: fact.text, why: fact.why }));
+export const checkedFactsOf = (history: readonly HistoryFact[]): readonly CheckedFact[] =>
+    history.flatMap((fact) => {
+        const checked = parseCheckedFact(fact);
+        return fact.state === 'open' && checked !== null && COVERED.has(checked.section) ? [checked] : [];
+    }).slice(0, FACTS_CHECKED);
 
-export function questionsFor(facts: readonly CoverageFact[]): ReadonlyMap<Text, Noul> {
+export function questionsOf(facts: readonly CheckedFact[]): ReadonlyMap<Text, Noul> {
     const questions = new Map<Text, Noul>();
     facts.forEach((fact, at) => {
         questions.set(must(parseText(`keeps_${at}`)), {
@@ -44,32 +59,28 @@ export function questionsFor(facts: readonly CoverageFact[]): ReadonlyMap<Text, 
     return questions;
 }
 
-export type MissingPart = 'text' | 'reason';
-
-export interface MissingFact {
-    readonly index: number;
-    readonly fact: CoverageFact;
-    readonly parts: readonly MissingPart[];
-}
-
-export function missingOf(answers: Readonly<Record<string, number>>, facts: readonly CoverageFact[], keptAtLeast: number = KEPT_AT_LEAST): readonly MissingFact[] {
+export function unmetOf(answers: AnswerTally, facts: readonly CheckedFact[], keptAtLeast: Probability): readonly UnmetFact[] {
     return facts.flatMap((fact, index) => {
         if (!BLOCKING.has(fact.section)) return [];
-        const kept = (answers[`keeps_${index}`] ?? 1) >= keptAtLeast;
-        const reasoned = (answers[`reason_${index}`] ?? 1) >= keptAtLeast;
-        const parts: readonly MissingPart[] = [...(kept ? [] : ['text' as const]), ...(reasoned ? [] : ['reason' as const])];
-        return parts.length === 0 ? [] : [{ index, fact, parts }];
+        const keptAnswer = answers.get(must(parseText(`keeps_${index}`)));
+        const reasonAnswer = answers.get(must(parseText(`reason_${index}`)));
+        const parts: MissingPart[] = [];
+        if (keptAnswer !== undefined && keptAnswer < keptAtLeast) parts.push('text');
+        if (reasonAnswer !== undefined && reasonAnswer < keptAtLeast) parts.push('reason');
+        return parts.length === 0 ? [] : [{ index: must(parseCount(index)), fact, parts }];
     });
 }
 
-export const linesOf = (missing: readonly MissingFact[]): readonly string[] => missing.flatMap(({ fact, parts }) => parts.map((part) => part === 'text' ? `${fact.section}: ${fact.text}` : `the reason for the decision: ${fact.text} (${fact.why ?? ''})`));
+export const unmetLinesOf = (missing: readonly UnmetFact[]): readonly Text[] =>
+    missing.flatMap(({ fact, parts }) => parts.map((part) => must(parseText(part === 'text' ? `${fact.section}: ${fact.text}` : `the reason for the decision: ${fact.text} (${fact.why ?? ''})`))));
 
-export async function covered(brief: string, facts: readonly CoverageFact[], decider: Decider, keptAtLeast: number = KEPT_AT_LEAST): Promise<Coverage> {
-    if (facts.length === 0) return { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null };
-    const asked = await decider.ask(must(parseText(JSON.stringify({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }))), questionsFor(facts));
-    if (isUnknown(asked)) return { ok: false, missing: [], missingFacts: [], answers: {}, unknown: saying(asked.why) };
-    const missingFacts = missingOf(Object.fromEntries(asked.answers), facts, keptAtLeast);
-    return { ok: missingFacts.length === 0, missing: linesOf(missingFacts), missingFacts, answers: Object.fromEntries(asked.answers), unknown: null, costUsd: asked.costUsd };
+export async function checkCoverage(brief: Text, facts: readonly CheckedFact[], decider: Decider, keptAtLeast: Probability): Promise<CheckedCoverage> {
+    if (facts.length === 0) return { complete: 'present', missing: [], missingFacts: [], answers: new Map(), unknown: null };
+    const asked = await decider.ask(must(parseText(JSON.stringify({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }))), questionsOf(facts));
+    if (isUnknown(asked)) return { complete: 'absent', missing: [], missingFacts: [], answers: new Map(), unknown: must(parseText(saying(asked.why))) };
+    const missingFacts = unmetOf(asked.answers, facts, keptAtLeast);
+    return { complete: missingFacts.length === 0 ? 'present' : 'absent', missing: unmetLinesOf(missingFacts), missingFacts, answers: asked.answers, unknown: null, costUsd: asked.costUsd };
 }
 
-export const correctionOf = (missing: readonly string[]): string => `The first version did not keep these; keep every one of them, with its detail:\n${missing.map((line) => `- ${line}`).join('\n')}`;
+export const correctionFor = (missing: readonly Text[]): Text =>
+    must(parseText(`The first version did not keep these; keep every one of them, with its detail:\n${missing.map((line) => `- ${line}`).join('\n')}`));
