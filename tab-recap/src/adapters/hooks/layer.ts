@@ -1,11 +1,9 @@
 import type { HarnessId, HookContext, Middleware, NeutralKind, NeutralReply } from '@stateforge-labs/harness-hooks';
-import type { HookAnswer, HookCall, HookHarness, HookKind, HookReceiver, HookSource } from '#src/wire/hooks/contract.ts';
+import type { HookAnswer, HookCall, HookHarness, HookKind, HookReceiver } from '#src/wire/hooks/contract.ts';
 
 const HARNESSES: readonly HookHarness[] = ['claude', 'codex'];
 
 const KINDS: readonly HookKind[] = ['stop', 'session-start', 'pre-compact'];
-
-const SOURCES: readonly HookSource[] = ['startup', 'resume', 'clear', 'compact', 'fork'];
 
 const harnessOf = (id: HarnessId): HookHarness | null => HARNESSES.find((harness) => harness === id) ?? null;
 
@@ -16,15 +14,14 @@ function callOf(context: HookContext): HookCall | null {
     if (harness === null) {
         return null;
     }
-    const source = context.raw['source'];
+    const source = context.event.source ?? null;
     const cwd = context.raw['cwd'];
-    const found = SOURCES.find((known) => known === source) ?? null;
     return {
         harness,
         kind: kindOf(context.event.kind),
         native: context.event.native,
         session: context.event.session,
-        source: found === 'fork' ? 'startup' : found,
+        source: source === 'fork' ? 'startup' : source,
         cwd: typeof cwd === 'string' ? cwd : null,
     };
 }
