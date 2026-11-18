@@ -1,4 +1,4 @@
-import { harnessSettings, installHooks, systemInstallIo, uninstallHooks, type InstallResult } from '#src/adapters/hooks/install.ts';
+import { harnessSettings, installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallResult } from '#src/adapters/hooks/install.ts';
 import type { HarnessSettings } from '#src/adapters/hooks/settings.ts';
 import { configGetter, stateDir } from '#src/daemon/config.ts';
 import { must } from '#src/protocol/result.ts';
@@ -61,5 +61,6 @@ export async function run(args: readonly string[]): Promise<number> {
     const chosen = chosenSettings(rest);
     if (word === undefined || action === undefined || chosen === null) return usage();
     const codes = chosen.map((settings) => report(word, settings, action(settings)));
+    retireSharedShim(must(parseFsPath(stateDir())), harnessSettings(null) ?? []);
     return codes.includes(REFUSED) ? REFUSED : OK;
 }

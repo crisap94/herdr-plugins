@@ -7,11 +7,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCurlVersion, renderCurlShim } from '@stateforge-labs/harness-hooks';
 import { claudeSettings } from '#src/adapters/hooks/claude-settings.ts';
+import { codexSettings } from '#src/adapters/hooks/codex-settings.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { NO, YES } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { installHooks, systemInstallIo, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
+import { installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
 import { HOOK_LIMITS } from '#src/wire/hooks/contract.ts';
 import { hookShimPath, hooksSocketPath } from '#src/wire/paths.ts';
 import { hookFixture, readHookCases, runShim } from '#test/contracts/wire/fakes/fake-harness.ts';
@@ -78,14 +79,14 @@ test('install, install, uninstall leaves the sample settings file byte-identical
         assert.equal(read(room.settingsPath), once);
         assert.deepEqual(uninstallHooks(room.stateDir, settings), { kind: 'done', changed: YES });
         assert.equal(read(room.settingsPath), original);
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
     });
 });
 
 test('install appends one group per event, keeps the other keys in order, and writes hook.sh with mode 0700', async () => {
     await inRoom((room) => {
         installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
-        const shim = hookShimPath(room.stateDir);
+        const shim = hookShimPath(room.stateDir, 'claude');
         const json: { hooks: Record<string, unknown[]> } = JSON.parse(read(room.settingsPath));
         assert.deepEqual(Object.keys(json), ['model', 'permissions', 'hooks', 'effortLevel']);
         assert.deepEqual(Object.keys(json.hooks), ['SessionStart', 'Stop', 'PreCompact']);
@@ -104,9 +105,9 @@ test("a second state directory's entries survive the first's uninstall", async (
         installHooks(room.otherStateDir, settings, goodCurl);
         uninstallHooks(room.stateDir, settings);
         const text = read(room.settingsPath);
-        assert.equal(text.includes(hookShimPath(room.stateDir)), false);
-        for (const event of EVENTS) assert.ok(text.includes(`${hookShimPath(room.otherStateDir)} ${event}`), event);
-        assert.ok(existsSync(hookShimPath(room.otherStateDir)));
+        assert.equal(text.includes(hookShimPath(room.stateDir, 'claude')), false);
+        for (const event of EVENTS) assert.ok(text.includes(`${hookShimPath(room.otherStateDir, 'claude')} ${event}`), event);
+        assert.ok(existsSync(hookShimPath(room.otherStateDir, 'claude')));
         uninstallHooks(room.otherStateDir, settings);
         assert.equal(read(room.settingsPath), original);
     });
@@ -118,7 +119,7 @@ test('malformed settings JSON is refused and nothing is written', async () => {
         const result = installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
         assert.equal(result.kind === 'refused' && result.why, 'malformed');
         assert.equal(read(room.settingsPath), '{ "hooks": ');
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
     });
 });
 
@@ -128,7 +129,7 @@ test('tab-recap hooks install exits 1 on malformed settings JSON and writes noth
         const done = cli(room, ['install', '--harness', 'claude']);
         assert.equal(done.status, 1, done.stderr);
         assert.equal(read(room.settingsPath), '[1, 2');
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
     });
 });
 
@@ -145,7 +146,7 @@ test('tab-recap hooks install then uninstall, switched on, edits ~/.claude/setti
         const original = read(room.settingsPath);
         const installed = cli(room, ['install']);
         assert.equal(installed.status, 0, installed.stderr);
-        assert.ok(read(room.settingsPath).includes(`${hookShimPath(room.stateDir)} Stop`));
+        assert.ok(read(room.settingsPath).includes(`${hookShimPath(room.stateDir, 'claude')} Stop`));
         const removed = cli(room, ['uninstall', '--harness', 'claude']);
         assert.equal(removed.status, 0, removed.stderr);
         assert.equal(read(room.settingsPath), original);
@@ -158,7 +159,7 @@ test('tab-recap hooks install stays dark while TAB_RECAP_HOOKS is not on: exit 3
         assert.equal(done.status, 3, done.stderr);
         assert.equal(done.stderr, 'tab-recap: 3 — hooks: not available\n');
         assert.equal(read(room.settingsPath), read(SAMPLE.pathname));
-        assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+        assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
     });
 });
 
@@ -172,7 +173,7 @@ test('curl missing or older than 7.55.0 is refused and nothing is written', asyn
             const result = installHooks(room.stateDir, claudeSettings(room.settingsPath), io);
             assert.equal(result.kind === 'refused' && result.why, why);
             assert.equal(read(room.settingsPath), read(SAMPLE.pathname));
-            assert.equal(existsSync(hookShimPath(room.stateDir)), false);
+            assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
         });
     }
 });
@@ -187,7 +188,7 @@ test('the installed hook.sh prints {} and exits 0 for every row of shim-failures
             assert.ok(behaviour, `${name}: ${endpoint} is a behaviour of the fake endpoint`);
             const fake = await startFakeHookEndpoint(hooksSocketPath(room.stateDir), behaviour);
             try {
-                assert.deepEqual(await runShim(hookShimPath(room.stateDir), 'Stop', request), { stdout: `${stdout}\n`, code: Number(code) }, name);
+                assert.deepEqual(await runShim(hookShimPath(room.stateDir, 'claude'), 'Stop', request), { stdout: `${stdout}\n`, code: Number(code) }, name);
             } finally {
                 await fake.stop();
             }
@@ -202,7 +203,7 @@ test('the installed hook.sh prints the reply of K5-session-start-compact-restore
         installHooks(room.stateDir, claudeSettings(room.settingsPath), systemInstallIo);
         const fake = await startFakeHookEndpoint(hooksSocketPath(room.stateDir), 'reply-from-cases');
         try {
-            assert.deepEqual(await runShim(hookShimPath(room.stateDir), restore.event, restore.request), { stdout: `${JSON.stringify(restore.reply)}\n`, code: 0 });
+            assert.deepEqual(await runShim(hookShimPath(room.stateDir, 'claude'), restore.event, restore.request), { stdout: `${JSON.stringify(restore.reply)}\n`, code: 0 });
             assert.deepEqual(fake.requests, [{ path: '/hook/claude', body: restore.request }]);
         } finally {
             await fake.stop();
@@ -219,13 +220,13 @@ test("a state directory with a space and a quote still runs hook.sh and uninstal
         const json = JSON.parse(read(room.settingsPath)) as { hooks: { Stop: { hooks: { command: string }[] }[] } };
         const command = json.hooks.Stop.at(-1)?.hooks[0]?.command;
         assert.ok(command);
-        writeFileSync(hookShimPath(dir), '#!/bin/sh\nprintf "%s" "$1"\n', { mode: 0o700 });
+        writeFileSync(hookShimPath(dir, 'claude'), '#!/bin/sh\nprintf "%s" "$1"\n', { mode: 0o700 });
         const ran = spawnSync('sh', ['-c', command], { encoding: 'utf8', input: '' });
         assert.equal(ran.status, 0);
         assert.equal(ran.stdout, 'Stop');
         uninstallHooks(dir, settings);
         assert.equal(read(room.settingsPath), original);
-        assert.equal(existsSync(hookShimPath(dir)), false);
+        assert.equal(existsSync(hookShimPath(dir, 'claude')), false);
     });
 });
 
@@ -238,5 +239,57 @@ test('a settings file at mode 0600 stays 0600 through install and uninstall, and
         uninstallHooks(room.stateDir, settings);
         assert.equal(statSync(room.settingsPath).mode & 0o777, 0o600);
         assert.deepEqual(readdirSync(join(room.home, '.claude')).filter((name) => name.endsWith('.tmp')), []);
+    });
+});
+
+test('claude and codex installed together keep one shim each, and each shim posts to its own harness path', { skip: CURL === undefined, timeout: SLOW_ROW_MS }, async () => {
+    const request = readHookCases()[0]?.request;
+    await inRoom(async (room) => {
+        const codexPath = fsPath(join(room.home, '.codex', 'hooks.json'));
+        mkdirSync(join(room.home, '.codex'), { recursive: true });
+        const claudeShim = hookShimPath(room.stateDir, 'claude');
+        const codexShim = hookShimPath(room.stateDir, 'codex');
+        assert.deepEqual(installHooks(room.stateDir, claudeSettings(room.settingsPath), systemInstallIo), { kind: 'done', changed: YES });
+        assert.deepEqual(installHooks(room.stateDir, codexSettings(codexPath), systemInstallIo), { kind: 'done', changed: YES });
+        assert.ok(read(room.settingsPath).includes(`${claudeShim} Stop`));
+        assert.ok(!read(room.settingsPath).includes(codexShim));
+        assert.ok(read(codexPath).includes(`${codexShim} Stop`));
+        assert.ok(!read(codexPath).includes(claudeShim));
+        const fake = await startFakeHookEndpoint(hooksSocketPath(room.stateDir), 'reply-from-cases');
+        try {
+            await runShim(claudeShim, 'Stop', request);
+            await runShim(codexShim, 'Stop', request);
+            assert.deepEqual(fake.requests.map((posted) => posted.path), ['/hook/claude', '/hook/codex']);
+        } finally {
+            await fake.stop();
+        }
+        assert.deepEqual(uninstallHooks(room.stateDir, codexSettings(codexPath)), { kind: 'done', changed: YES });
+        assert.equal(existsSync(codexShim), false);
+        assert.equal(existsSync(claudeShim), true);
+        assert.ok(read(room.settingsPath).includes(`${claudeShim} Stop`));
+    });
+});
+
+test('an upgrade from the shared hook.sh drops its entries and deletes it once no harness uses it', async () => {
+    await inRoom((room) => {
+        const codexPath = fsPath(join(room.home, '.codex', 'hooks.json'));
+        mkdirSync(join(room.home, '.codex'), { recursive: true });
+        const shared = join(room.stateDir, 'hook.sh');
+        const everyHarness = [claudeSettings(room.settingsPath), codexSettings(codexPath)];
+        installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
+        installHooks(room.stateDir, codexSettings(codexPath), goodCurl);
+        writeFileSync(room.settingsPath, read(room.settingsPath).replaceAll(hookShimPath(room.stateDir, 'claude'), shared));
+        writeFileSync(codexPath, read(codexPath).replaceAll(hookShimPath(room.stateDir, 'codex'), shared));
+        writeFileSync(shared, '#!/bin/sh\n', { mode: 0o700 });
+        assert.deepEqual(installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl), { kind: 'done', changed: YES });
+        assert.ok(!read(room.settingsPath).includes(`${shared} `));
+        assert.equal(read(room.settingsPath).split(`${hookShimPath(room.stateDir, 'claude')} Stop`).length, 2);
+        assert.equal(retireSharedShim(room.stateDir, everyHarness), NO);
+        assert.equal(existsSync(shared), true);
+        assert.deepEqual(uninstallHooks(room.stateDir, codexSettings(codexPath)), { kind: 'done', changed: YES });
+        assert.ok(!read(codexPath).includes(shared));
+        assert.equal(retireSharedShim(room.stateDir, everyHarness), YES);
+        assert.equal(existsSync(shared), false);
+        assert.ok(read(room.settingsPath).includes(`${hookShimPath(room.stateDir, 'claude')} Stop`));
     });
 });

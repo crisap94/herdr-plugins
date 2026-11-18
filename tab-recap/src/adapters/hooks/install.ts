@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { CURL_MIN_VERSION, curlSupports, parseCurlVersion, renderCurlShim } from '@stateforge-labs/harness-hooks';
 import { writeAtomically } from '#src/adapters/os/atomic-file.ts';
@@ -50,6 +50,24 @@ const SETTINGS_OF: ReadonlyMap<HookHarness, () => HarnessSettings> = new Map<Hoo
 
 const refused = (why: RefusalReason, detail: Text): Refused => ({ kind: 'refused', why, detail });
 
+const sharedShimPath = (stateDir: FsPath): FsPath => must(parseFsPath(join(stateDir, 'hook.sh')));
+
+function withoutSharedShim(stateDir: FsPath, settings: HarnessSettings, document: SettingsDocument): SettingsDocument {
+    return settings.remove(document, sharedShimPath(stateDir));
+}
+
+function sharedShimUse(stateDir: FsPath, settings: HarnessSettings): Flag {
+    const loaded = load(settings.path);
+    return loaded.kind === 'refused' || !isDeepStrictEqual(withoutSharedShim(stateDir, settings, loaded.document), loaded.document) ? YES : NO;
+}
+
+export function retireSharedShim(stateDir: FsPath, everyHarness: readonly HarnessSettings[]): Flag {
+    const shared = sharedShimPath(stateDir);
+    if (!existsSync(shared) || everyHarness.map((settings) => sharedShimUse(stateDir, settings)).includes(YES)) return NO;
+    rmSync(shared, { force: true });
+    return YES;
+}
+
 export const systemInstallIo: InstallIo = {
     curlVersionText: () => {
         const probe = spawnSync('curl', ['--version'], { encoding: 'utf8' });
@@ -88,7 +106,7 @@ function writeSettings(path: FsPath, document: SettingsDocument, original: Text 
 }
 
 function writeShim(stateDir: FsPath, settings: HarnessSettings): Flag {
-    const path = hookShimPath(stateDir);
+    const path = hookShimPath(stateDir, settings.harness);
     const text = renderCurlShim({ harness: settings.harness, socketPath: hooksSocketPath(stateDir), timeoutMs: HOOK_LIMITS.shimMs, tokenSource: 'none', failClosed: false });
     if (existsSync(path) && readFileSync(path, 'utf8') === text && (statSync(path).mode & PERMISSION_BITS) === SHIM_MODE) return NO;
     writeAtomically(path, text, SHIM_MODE);
@@ -100,7 +118,7 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
     if (curl !== null) return curl;
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const next = settings.add(loaded.document, must(parseFsPath(hookShimPath(stateDir))));
+    const next = settings.add(withoutSharedShim(stateDir, settings, loaded.document), must(parseFsPath(hookShimPath(stateDir, settings.harness))));
     const settingsChanged = loaded.original === null || !isDeepStrictEqual(next, loaded.document);
     try {
         const shimChanged = writeShim(stateDir, settings);
@@ -114,8 +132,8 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
 export function uninstallHooks(stateDir: FsPath, settings: HarnessSettings): InstallResult {
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const shim = must(parseFsPath(hookShimPath(stateDir)));
-    const next = settings.remove(loaded.document, shim);
+    const shim = must(parseFsPath(hookShimPath(stateDir, settings.harness)));
+    const next = settings.remove(withoutSharedShim(stateDir, settings, loaded.document), shim);
     const settingsChanged = loaded.original !== null && !isDeepStrictEqual(next, loaded.document);
     const shimFound = existsSync(shim);
     try {
