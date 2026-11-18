@@ -1,3 +1,13 @@
+import type { Done } from '#src/ports/columns.ts';
+import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { PaneTokens } from '#src/ports/pane-tokens.ts';
+import type { Exchange } from '#src/protocol/exchange.ts';
+import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import { beginCompact, noteFromRequest, opensAskPopup, type CompactStart } from './compact-start.ts';
+import { stepNote, type NoteState, type NoteStepped } from './compact-keys.ts';
+import { restartAnswers } from './ask-restart.ts';
+import { PaneTypingLease, type Acquired } from './typing-lease.ts';
+import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import type { AnswerTally } from '#src/ports/autocompact-records.ts';
 import type { Decider, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
@@ -7,15 +17,15 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { checkCoverage, checkedFactsOf, correctionFor, KEPT_AT_LEAST, questionsOf, unmetLinesOf, unmetOf, type CheckedCoverage, type MissingPart, type UnmetFact } from './brief-coverage.ts';
-import type { AskLedger } from '#src/ports/ask-ledger.ts';
+import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { parseWireText, type WireText } from '#src/protocol/primitives.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { parseAskId } from '#src/recap/domain/compact-request.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant, parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { CompactRequestQueue } from './compact-requests.ts';
 
@@ -134,5 +144,64 @@ export class CompactRequests {
         if (askId !== null && pane.trim() !== '') {
             this.queue.answer(askId, paneId(pane), must(parseWireText(stage)));
         }
+    }
+}
+
+export const optionalText = (note: string | null | undefined): Text | null | undefined => (note === null || note === undefined ? note : must(parseText(note)));
+
+export function requestNoteOf(text: string): Text | null {
+    return noteFromRequest(must(parseText(text)));
+}
+
+export const opensPopup = (note: string | null | undefined, setting: CompactNote): boolean => opensAskPopup(optionalText(note), setting) === 'present';
+
+export function startCompact(tab: string, pane: string | null, note: string | null | undefined, setting: CompactNote, start: CompactStart): Promise<Done> {
+    return beginCompact(tabId(tab), pane === null ? null : paneId(pane), optionalText(note), setting, start);
+}
+
+export function step(state: NoteState, key: string): NoteStepped {
+    return stepNote(state, must(parseText(key)));
+}
+
+export interface RestartDeps {
+    readonly exchanges: readonly Exchange[];
+    readonly ledger: AskLedger;
+    readonly requests: Pick<Requests, 'takeAnswered'>;
+    readonly compactions: Pick<CompactionRecords, 'interrupted'>;
+    readonly tokens: Pick<LaneTokens, 'report'>;
+    readonly enabled: () => boolean;
+    readonly local: (ask: Ask) => void;
+    readonly handoff: (ask: Ask) => void;
+    readonly withdraw: (ask: Ask) => void;
+    readonly log: (line: string) => void;
+    readonly now: () => number;
+    readonly restartedWhy: string;
+}
+
+export function answerRestart(deps: RestartDeps): number {
+    return restartAnswers({ ...deps, compactions: { interrupted: (at, why) => must(parseCount(deps.compactions.interrupted(at, why))) }, enabled: () => (deps.enabled() ? 'present' : 'absent'), now: () => instant(deps.now()), restartedWhy: must(parseText(deps.restartedWhy)) });
+}
+
+export interface TypingLeaseDeps {
+    readonly tokens: LaneTokens;
+    readonly panes: PaneTokens;
+    readonly now: () => number;
+    readonly pause: (ms: Milliseconds) => Promise<void>;
+    readonly log: (line: string) => void;
+}
+
+export class TypingLease {
+    private readonly lease: PaneTypingLease;
+
+    constructor(deps: TypingLeaseDeps) {
+        this.lease = new PaneTypingLease({ tokens: deps.tokens, panes: deps.panes, now: (): Instant => instant(deps.now()), pause: deps.pause, log: deps.log });
+    }
+
+    release(pane: string): Promise<void> {
+        return this.lease.release(paneId(pane));
+    }
+
+    acquire(pane: string, waitMs: number = LEASE_TTL_MS): Promise<Acquired> {
+        return this.lease.acquire(paneId(pane), must(parseMilliseconds(waitMs)));
     }
 }

@@ -1,9 +1,4 @@
 {
-  "src/recap/application/ask-restart.ts": {
-    "parameter": 1,
-    "return": 4,
-    "property": 1
-  },
   "src/recap/application/async-queue.ts": {
     "container": 4,
     "property": 1,
@@ -19,13 +14,6 @@
   },
   "src/recap/application/autocompact.ts": {
     "parameter": 1,
-    "return": 1
-  },
-  "src/recap/application/compact-keys.ts": {
-    "parameter": 2
-  },
-  "src/recap/application/compact-start.ts": {
-    "parameter": 7,
     "return": 1
   },
   "src/recap/application/compaction-deps.ts": {
@@ -245,7 +233,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 30
+    "legacy": 48
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
@@ -308,10 +296,6 @@
     "assertion": 2
   },
   "src/recap/application/transcript-tail.ts": {
-    "return": 1
-  },
-  "src/recap/application/typing-lease.ts": {
-    "parameter": 5,
     "return": 1
   },
   "src/recap/application/worksite-section.ts": {
