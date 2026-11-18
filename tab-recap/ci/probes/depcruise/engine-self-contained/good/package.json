@@ -1,8 +1,0 @@
-{
-  "private": true,
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*",
-    "#test/*": "./test/*"
-  }
-}

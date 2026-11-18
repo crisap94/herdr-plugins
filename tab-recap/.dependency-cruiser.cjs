@@ -4,6 +4,7 @@ const brandImporters = require('./ci/brand-importers.json');
 
 const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
 const brandFile = exact('src/recap/domain/brand.ts');
+const ledger = '^\\.\\./packages/session-ledger/src/';
 const graphRules = join(__dirname, 'rules', 'graph');
 const fragments = readdirSync(graphRules).filter((name) => name.endsWith('.cjs')).toSorted().flatMap((name) => require(join(graphRules, name)));
 
@@ -18,13 +19,13 @@ module.exports = {
       name: 'domain-pure',
       severity: 'error',
       from: { path: '^src/recap/domain/(?!gates/)' },
-      to: { pathNot: ['^src/recap/domain/', '^src/protocol/'] },
+      to: { pathNot: ['^src/recap/domain/', '^src/protocol/', ledger] },
     },
     {
       name: 'domain-gates-pure',
       severity: 'error',
       from: { path: '^src/recap/domain/gates/' },
-      to: { pathNot: ['^src/recap/domain/gates/', '^src/recap/domain/[^/]+\\.ts$'] },
+      to: { pathNot: ['^src/recap/domain/gates/', '^src/recap/domain/[^/]+\\.ts$', ledger] },
     },
     {
       name: 'layers-no-io-core',
@@ -42,13 +43,13 @@ module.exports = {
       name: 'protocol-self-contained',
       severity: 'error',
       from: { path: '^src/protocol/(?!exchanges/)' },
-      to: { pathNot: ['^src/protocol/', brandFile] },
+      to: { pathNot: ['^src/protocol/', brandFile, ledger] },
     },
     {
       name: 'protocol-exchanges-self-contained',
       severity: 'error',
       from: { path: '^src/protocol/exchanges/' },
-      to: { pathNot: ['^src/protocol/exchanges/', '^src/protocol/[^/]+\\.ts$'] },
+      to: { pathNot: ['^src/protocol/exchanges/', '^src/protocol/[^/]+\\.ts$', ledger] },
     },
     {
       name: 'wire-self-contained',
@@ -65,8 +66,8 @@ module.exports = {
     {
       name: 'brand-importers',
       severity: 'error',
-      from: { pathNot: [...brandImporters.map(exact), brandFile] },
-      to: { path: brandFile },
+      from: { pathNot: [...brandImporters.map(exact), brandFile, ledger] },
+      to: { path: [brandFile, exact('../packages/session-ledger/src/recap/domain/brand.ts')] },
     },
     {
       name: 'drizzle-adapter-only',
