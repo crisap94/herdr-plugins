@@ -1,17 +1,24 @@
+import { must } from '#src/protocol/result.ts';
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import type { Brand } from '#src/recap/domain/brand.ts';
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
 export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
 
-const blockOf = (composed: string): WorksiteBlock => composed as WorksiteBlock;
+type Fit = 'fits' | 'over';
 
-export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf('worksite unavailable');
+const blockOf = (composed: Text): WorksiteBlock => brand<string, 'WorksiteBlock'>(composed);
+
+export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf(must(parseText('worksite unavailable')));
 
 const encoder = new TextEncoder();
 
-const bytesOf = (text: string): number => encoder.encode(text).byteLength;
+const bytesOf = (text: WorksiteBlock): Count => must(parseCount(encoder.encode(text).byteLength));
+
+const fitting = (budget: ByteBudget, text: WorksiteBlock): Fit => (fits(budget, bytesOf(text)) ? 'fits' : 'over');
 
 function linesOf(facts: WorksiteFacts): WorksiteBlock {
     const lines = ['## Worksite', `- directory: ${sanitizeHandoffText(facts.directory)}`];
@@ -33,10 +40,10 @@ function linesOf(facts: WorksiteFacts): WorksiteBlock {
     if (facts.tokens.length > 0) {
         lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
     }
-    return blockOf(lines.join('\n'));
+    return blockOf(must(parseText(lines.join('\n'))));
 }
 
-function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts> {
+function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts, void, undefined> {
     yield facts;
     const untokened = { ...facts, tokens: [] };
     yield untokened;
@@ -50,24 +57,24 @@ function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts> {
     }
 }
 
-function largestFitting(max: number, fitsAt: (kept: number) => boolean): number {
+function largestFitting(max: Count, fitsAt: (kept: Count) => Fit): Count {
     let low = 0;
-    let high = max;
+    let high: number = max;
     while (low < high) {
-        const mid = Math.ceil((low + high) / 2);
-        if (fitsAt(mid)) {
+        const mid = must(parseCount(Math.ceil((low + high) / 2)));
+        if (fitsAt(mid) === 'fits') {
             low = mid;
         } else {
             high = mid - 1;
         }
     }
-    return low;
+    return must(parseCount(low));
 }
 
 function cutToBytes(text: WorksiteBlock, budget: ByteBudget): WorksiteBlock {
     const points = Array.from(text);
-    const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(points.slice(0, count).join(''))));
-    return blockOf(points.slice(0, kept).join(''));
+    const kept = largestFitting(must(parseCount(points.length)), (count) => fitting(budget, blockOf(must(parseText(points.slice(0, count).join(''))))));
+    return blockOf(must(parseText(points.slice(0, kept).join(''))));
 }
 
 function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock {
@@ -76,8 +83,8 @@ function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock 
     }
     const { hash, subject } = bare.lastCommit;
     const points = Array.from(subject);
-    const cutAt = (count: number): WorksiteFacts => ({ ...bare, lastCommit: { hash, subject: points.slice(0, count).join('') } });
-    const kept = largestFitting(points.length, (count) => fits(budget, bytesOf(linesOf(cutAt(count)))));
+    const cutAt = (count: Count): WorksiteFacts => ({ ...bare, lastCommit: { hash, subject: points.slice(0, count).join('') } });
+    const kept = largestFitting(must(parseCount(points.length)), (count) => fitting(budget, linesOf(cutAt(count))));
     return linesOf(cutAt(kept));
 }
 
@@ -87,11 +94,11 @@ export function worksiteTextOf(snapshot: WorksiteSnapshot, budget: ByteBudget): 
     }
     for (const candidate of shrinking(snapshot)) {
         const text = linesOf(candidate);
-        if (fits(budget, bytesOf(text))) {
+        if (fitting(budget, text) === 'fits') {
             return text;
         }
     }
     const bare = { ...snapshot, tokens: [], edited: [], uncommitted: snapshot.uncommitted === null ? null : { count: snapshot.uncommitted.count, paths: [] } };
     const subjectCut = withSubjectCut(bare, budget);
-    return fits(budget, bytesOf(subjectCut)) ? subjectCut : cutToBytes(subjectCut, budget);
+    return fitting(budget, subjectCut) === 'fits' ? subjectCut : cutToBytes(subjectCut, budget);
 }

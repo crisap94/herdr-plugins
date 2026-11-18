@@ -7,19 +7,14 @@
     "parameter": 88,
     "return": 67
   },
-  "src/i18n/index.ts": {
-    "parameter": 3,
-    "return": 3
+  "src/i18n/legacy.ts": {
+    "legacy": 11
   },
   "src/i18n/messages.ts": {
     "parameter": 89,
     "return": 68,
     "container": 11,
     "property": 104
-  },
-  "src/i18n/relative.ts": {
-    "parameter": 3,
-    "return": 2
   },
   "src/recap/render/compact.ts": {
     "parameter": 3,
@@ -38,10 +33,6 @@
     "container": 7,
     "property": 2
   },
-  "src/recap/render/freshness.ts": {
-    "return": 2,
-    "assertion": 1
-  },
   "src/recap/render/handoff-budget.ts": {
     "parameter": 1,
     "return": 2,
@@ -52,20 +43,13 @@
     "return": 2,
     "container": 2
   },
+  "src/recap/render/legacy.ts": {
+    "legacy": 2
+  },
   "src/recap/render/setup.ts": {
     "parameter": 18,
     "return": 34,
     "container": 26,
-    "assertion": 1
-  },
-  "src/recap/render/utc-minute.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/render/worksite.ts": {
-    "parameter": 7,
-    "return": 5,
-    "container": 1,
     "assertion": 1
   }
 }
