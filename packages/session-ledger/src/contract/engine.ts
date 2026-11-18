@@ -1,11 +1,16 @@
 import type { Directory, HarnessKind, RestoreText, ScopeId, SessionId, SessionKey } from './ids.ts';
 import type { FollowedSession, RecapCause, SessionSource } from './session.ts';
-import type { HistoryFact } from './facts.ts';
+import type { Fact, HistoryFact } from './facts.ts';
 import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
 import type { Debounce, Pipeline, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
+
+export interface RestoreFacts {
+    readonly open: readonly Fact[];
+    readonly closed: readonly Fact[];
+}
 
 export interface EnginePlugs {
     readonly source: { readonly sessions: SessionSource };
@@ -19,6 +24,7 @@ export interface EnginePlugs {
         pipeline?(): Pipeline;
         debounce?(): Debounce;
         restoreBytes?(): number;
+        restoreText?(facts: RestoreFacts): RestoreText;
     };
     on?(event: LedgerEvent): void;
 }
