@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Operation } from '#src/recap/domain/ops.ts';
-import type { Tasked } from '#src/recap/application/ops-answer.ts';
-import { listedIn, live, stageFor, staged, submittedStage, toolOf } from '#src/recap/application/job-kit/stage.ts';
-import type { Stage, Staging } from '#src/recap/application/job-kit/stage.ts';
+import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+import type { Tasked } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
+import { listedIn, live, stageFor, staged, submittedStage, toolOf } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
+import type { Stage, Staging } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
 
 const add: Tasked = { task: 't1', op: { op: 'add', section: 'next', text: 'Ship it', why: null, ref: null, at: null, agent: null } };
 const update: Tasked = { task: 't1', op: { op: 'update', id: 'f1', text: 'Ship it now', why: null } };

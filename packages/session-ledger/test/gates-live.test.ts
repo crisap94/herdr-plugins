@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { outcomesOf } from '#src/recap/domain/gates/index.ts';
-import type { GatedSection, Item } from '#src/recap/domain/gates/index.ts';
+import { outcomesOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
+import type { GatedSection, Item } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
 
 const CONTEXT = { language: 'en', agents: ['a1', 'a2', 'claude', 'codex'], earlier: [] as readonly Item[] };
 

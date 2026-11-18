@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attribute, clean, element, leaf, text } from '#src/recap/application/xml.ts';
+import { attribute, clean, element, leaf, text } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
 
 test('text: plain stays plain; `<` or `&` makes one CDATA section; `]]>` is split', () => {
     assert.equal(text('plain words, 1 > 0'), 'plain words, 1 > 0');

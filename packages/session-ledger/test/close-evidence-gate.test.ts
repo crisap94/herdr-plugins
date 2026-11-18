@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeEvidenceGate } from '#src/recap/domain/gates/g13-close-evidence.ts';
-import type { GateContext } from '#src/recap/domain/gates/gate.ts';
-import { foldedOf } from '#src/recap/domain/gates/words.ts';
-import type { CloseOp, Operation } from '#src/recap/domain/ops.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { closeEvidenceGate } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g13-close-evidence.ts';
+import type { GateContext } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/gate.ts';
+import { foldedOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
+import type { CloseOp, Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 const SOURCE = foldedOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0');
 const context: GateContext = { now: 1, language: 'en', agents: [], shown: new Map(), open: [], closedLately: [], source: SOURCE };

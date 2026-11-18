@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText, parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 const NOT_TEXT = [undefined, null, 1, true, {}, [], 1n];
 const BLANK = ['', ' ', '\t\n'];

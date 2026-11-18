@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseHidden, serializeHidden } from '#src/recap/application/hidden-codec.ts';
-import { positiveCount } from '#src/recap/domain/writer-view.ts';
+import { parseHidden, serializeHidden } from '@stateforge-labs/session-ledger/unstable/recap/application/hidden-codec.ts';
+import { positiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
 
 test('hidden section counts round-trip through their serializer', () => {
     const counts = new Map([['done', positiveCount(20)], ['next', positiveCount(3)]] as const);
