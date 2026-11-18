@@ -14,10 +14,7 @@ export function sourceOf(entryFile: string): string {
 }
 
 export function pendingGrowth(head: readonly string[], base: readonly string[] | null, atBase: FileAtBase = () => 'existed'): readonly string[] {
-    if (base === null) {
-        return [];
-    }
-    const before = new Set(base);
+    const before = new Set(base ?? []);
     return head
         .filter((entry) => !before.has(entry))
         .filter((entry) => atBase(entry.split(' ')[0] ?? '') === 'existed')
