@@ -96,6 +96,8 @@ function compilerOptions(): ts.CompilerOptions {
     return ts.parseJsonConfigFileContent(config.config, ts.sys, packageRoot).options;
 }
 
+const contractHome = (path: string | undefined): boolean => path !== undefined && (path.startsWith('src/contract/') || path === 'src/recap/domain/brand.ts');
+
 function exportsOf(specifier: string, replaced: string | null = null): readonly Exported[] {
     const options = compilerOptions();
     const resolved = ts.resolveModuleName(specifier, importer, options, ts.sys).resolvedModule;
@@ -122,8 +124,8 @@ test('engine-port re-exports exactly the nineteen names of EC 2.2', () => {
     assert.deepEqual(exportsOf(PORT).map(({ name }) => name), NINETEEN);
 });
 
-test('every name of engine-port is declared once, in src/contract, never in compaction-timing', () => {
-    const outside = exportsOf(PORT).filter(({ declaredIn }) => declaredIn.length !== 1 || !declaredIn[0]?.startsWith('src/contract/'));
+test('every name of engine-port is declared once, in src/contract or the brand file it re-exports, never in compaction-timing', () => {
+    const outside = exportsOf(PORT).filter(({ declaredIn }) => declaredIn.length !== 1 || !contractHome(declaredIn[0]));
     assert.deepEqual(outside, []);
 });
 
@@ -133,7 +135,7 @@ test('a port that declares a name of its own instead of re-exporting it is repor
     const text = `${ts.sys.readFile(resolved.resolvedFileName) ?? ''}export type Extra = string;\n`;
     const seeded = exportsOf(PORT, text);
     assert.equal(seeded.length, 20);
-    assert.deepEqual(seeded.filter(({ declaredIn }) => !declaredIn[0]?.startsWith('src/contract/')).map(({ name }) => name), ['Extra']);
+    assert.deepEqual(seeded.filter(({ declaredIn }) => !contractHome(declaredIn[0])).map(({ name }) => name), ['Extra']);
 });
 
 test('the compaction-timing entry exports no value', () => {
