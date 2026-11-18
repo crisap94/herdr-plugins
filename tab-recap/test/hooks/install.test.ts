@@ -12,7 +12,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { NO, YES } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { installHooks, systemInstallIo, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
+import { installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
 import { HOOK_LIMITS } from '#src/wire/hooks/contract.ts';
 import { hookShimPath, hooksSocketPath } from '#src/wire/paths.ts';
 import { hookFixture, readHookCases, runShim } from '#test/contracts/wire/fakes/fake-harness.ts';
@@ -267,5 +267,29 @@ test('claude and codex installed together keep one shim each, and each shim post
         assert.equal(existsSync(codexShim), false);
         assert.equal(existsSync(claudeShim), true);
         assert.ok(read(room.settingsPath).includes(`${claudeShim} Stop`));
+    });
+});
+
+test('an upgrade from the shared hook.sh drops its entries and deletes it once no harness uses it', async () => {
+    await inRoom((room) => {
+        const codexPath = fsPath(join(room.home, '.codex', 'hooks.json'));
+        mkdirSync(join(room.home, '.codex'), { recursive: true });
+        const shared = join(room.stateDir, 'hook.sh');
+        const everyHarness = [claudeSettings(room.settingsPath), codexSettings(codexPath)];
+        installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
+        installHooks(room.stateDir, codexSettings(codexPath), goodCurl);
+        writeFileSync(room.settingsPath, read(room.settingsPath).replaceAll(hookShimPath(room.stateDir, 'claude'), shared));
+        writeFileSync(codexPath, read(codexPath).replaceAll(hookShimPath(room.stateDir, 'codex'), shared));
+        writeFileSync(shared, '#!/bin/sh\n', { mode: 0o700 });
+        assert.deepEqual(installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl), { kind: 'done', changed: YES });
+        assert.ok(!read(room.settingsPath).includes(`${shared} `));
+        assert.equal(read(room.settingsPath).split(`${hookShimPath(room.stateDir, 'claude')} Stop`).length, 2);
+        assert.equal(retireSharedShim(room.stateDir, everyHarness), NO);
+        assert.equal(existsSync(shared), true);
+        assert.deepEqual(uninstallHooks(room.stateDir, codexSettings(codexPath)), { kind: 'done', changed: YES });
+        assert.ok(!read(codexPath).includes(shared));
+        assert.equal(retireSharedShim(room.stateDir, everyHarness), YES);
+        assert.equal(existsSync(shared), false);
+        assert.ok(read(room.settingsPath).includes(`${hookShimPath(room.stateDir, 'claude')} Stop`));
     });
 });
