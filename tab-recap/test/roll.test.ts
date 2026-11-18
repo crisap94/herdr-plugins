@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -108,6 +108,7 @@ test('a column process rolls to the new version in place: same pid, same termina
         for (const file of ['package.json', 'herdr-plugin.toml']) {
             cpSync(join(plugin, file), join(code, file));
         }
+        symlinkSync(join(plugin, 'node_modules'), join(code, 'node_modules'));
         const store = stateStore(state);
         if (store.kind !== 'ready') {
             throw new Error('a new state directory holds a database of this version');

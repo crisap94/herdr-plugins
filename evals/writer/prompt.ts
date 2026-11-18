@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { instructions } from '../../tab-recap/src/adapters/job/prompts/recap-instructions.ts';
-import { TRANSCRIPT_BUDGET, writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
-import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
-import type { CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
+import { TRANSCRIPT_BUDGET, writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
+import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
+import type { CloseEvidence } from '../../packages/session-ledger/src/recap/domain/pipeline.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface KeyFact {

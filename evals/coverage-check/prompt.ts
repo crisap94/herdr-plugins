@@ -1,7 +1,7 @@
 import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
 import { factsOf, questionsFor } from '../../tab-recap/src/recap/application/brief-coverage.ts';
 import type { CoverageFact } from '../../tab-recap/src/recap/application/brief-coverage.ts';
-import type { HistoryFact } from '../../tab-recap/src/ports/ledger.ts';
+import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface ExpectedQuestion {

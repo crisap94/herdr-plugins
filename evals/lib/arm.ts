@@ -1,8 +1,8 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { answerTextOf } from '../../tab-recap/src/recap/application/recap-shape.ts';
-import { parseRepairMode, type RepairMode } from '../../tab-recap/src/recap/application/job-kit/repair.ts';
-import { parseText } from '../../tab-recap/src/recap/domain/text.ts';
+import { answerTextOf } from '../../packages/session-ledger/src/recap/application/recap-shape.ts';
+import { parseRepairMode, type RepairMode } from '../../packages/session-ledger/src/recap/application/job-kit/repair.ts';
+import { parseText } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { readJsonl } from './runner.ts';
 import { writeJson } from './output.ts';
 

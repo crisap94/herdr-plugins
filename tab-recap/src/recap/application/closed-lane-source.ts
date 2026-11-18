@@ -10,7 +10,7 @@ import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { HandoffLane } from './handoff-render.ts';
 import type { ClosedView } from './closed-view.ts';
-import { CLOSED_SHOWN_MS } from './ledger-input.ts';
+import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
 
 export type ClosedLaneResolution =
     | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view: ClosedView }

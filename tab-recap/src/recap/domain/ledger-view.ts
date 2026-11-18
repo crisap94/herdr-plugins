@@ -1,6 +1,6 @@
-import type { Fact } from './fact.ts';
-import { CAPS } from './shape.ts';
-import type { ListSection, RecapSections } from './shape.ts';
+import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { CAPS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
+import type { ListSection, RecapSections } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
 
 const newestFirst = (facts: readonly Fact[]): readonly Fact[] => facts.toSorted((a, b) => b.lastAt - a.lastAt);
 

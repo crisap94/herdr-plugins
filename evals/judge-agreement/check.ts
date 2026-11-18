@@ -3,8 +3,8 @@ import { judgeInstructions } from '../../tab-recap/src/adapters/job/prompts/judg
 import { RUBRIC_TEXT } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { parseScore } from '../../tab-recap/src/recap/application/judge-answer.ts';
 import { scoringDocument } from '../../tab-recap/src/recap/application/judge-context.ts';
-import { writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
-import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
+import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
+import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
 
 type Mark = 'pass' | 'fail' | 'open';

@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { InputFact, RecapInput } from '../../tab-recap/src/ports/recap-input.ts';
-import type { RecapRequest } from '../../tab-recap/src/ports/summarizer.ts';
-import type { Entry } from '../../tab-recap/src/ports/transcripts.ts';
-import { localTime } from '../../tab-recap/src/recap/application/local-time.ts';
-import { writerContext } from '../../tab-recap/src/recap/application/writer-context.ts';
-import { jaccard } from '../../tab-recap/src/recap/domain/gates/jaccard.ts';
+import type { InputFact, RecapInput } from '../../packages/session-ledger/src/ports/recap-input.ts';
+import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
+import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
+import { localTime } from '../../packages/session-ledger/src/recap/application/local-time.ts';
+import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
+import { jaccard } from '../../packages/session-ledger/src/recap/domain/gates/jaccard.ts';
 import { SCENARIOS } from './dataset-scenarios.ts';
 import { FRESH_DECISIONS, FRESH_PROJECTS, FRESH_SCENARIOS } from './dataset-fresh-scenarios.ts';
 import type { FreshScenario } from './dataset-fresh-scenarios.ts';

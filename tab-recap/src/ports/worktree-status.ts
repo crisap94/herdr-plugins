@@ -3,7 +3,7 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
 import type { StatusTier, WorktreeStatus, WorktreeWatch } from '#src/recap/domain/worktree.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type WorktreeLookup = { readonly kind: 'worktree'; readonly worktree: WorktreeWatch } | { readonly kind: 'no-repo' } | Unknown;
 

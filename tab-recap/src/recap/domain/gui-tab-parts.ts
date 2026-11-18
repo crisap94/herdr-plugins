@@ -1,14 +1,14 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { BoundaryKind, Trigger } from './boundary.ts';
-import type { WindowSource } from './compaction.ts';
+import type { BoundaryKind, Trigger } from '@stateforge-labs/session-ledger/unstable/recap/domain/boundary.ts';
+import type { WindowSource } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 import type { Count } from './count.ts';
-import type { ClosedWhy, Section } from './fact.ts';
+import type { ClosedWhy, Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { PaneId } from './ids.ts';
-import type { ParseFailure } from './parse-failure.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { Origin } from './origin.ts';
 import type { RunCause } from './session-facts.ts';
-import type { NonEmptyText, Text } from './text.ts';
-import type { Instant } from './time.ts';
+import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type Flag = 'yes' | 'no';
 export const YES: Flag = 'yes';

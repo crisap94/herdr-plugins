@@ -1,5 +1,5 @@
-import { ok } from './result.ts';
-import type { Result } from './result.ts';
+import { ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 import { parseIdText, parseRequestId, parseToolName, parseWireText } from './primitives.ts';
 import type { ExchangeName, IdText, Refusal, RequestId, TokenValue, ToolName } from './primitives.ts';
 import { answerToken, answerValue, badIdValue, parseRequest } from './exchange.ts';

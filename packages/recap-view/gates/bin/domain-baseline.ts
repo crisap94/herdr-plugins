@@ -178,7 +178,9 @@ export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, s
         }),
     );
 
-const git = (args: readonly string[]): string => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+export type Git = (args: readonly string[]) => string;
+
+const git: Git = (args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 const countsOfTexts = (texts: readonly string[]): Result<Counts, string> => {
     const merged: Record<string, Counts[string]> = {};
@@ -199,27 +201,36 @@ const textsNow = (path: string): readonly string[] =>
         ? jsonFiles(readdirSync(path).join('\n')).map((name) => readFileSync(join(path, name), 'utf8'))
         : [readFileSync(path, 'utf8')];
 
-const renamesOf = (base: string, moves: string): ReadonlyMap<string, string> => {
-    const committed = git(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
-    const pending = git(['diff', '-M', '--name-status', '--relative', 'HEAD']).split('\n');
-    const atBase = new Set(git(['ls-tree', '-r', '--name-only', base, '--', '.']).split('\n'));
+const renamesOf = (run: Git, base: string, moves: string): ReadonlyMap<string, string> => {
+    const committed = run(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
+    const pending = run(['diff', '-M', '--name-status', '--relative', 'HEAD']).split('\n');
+    const atBase = new Set(run(['ls-tree', '-r', '--name-only', base, '--', '.']).split('\n'));
     return chainRenames([...committed, ...pending], existsSync(moves) ? parseMoves(readFileSync(moves, 'utf8')) : new Map(), atBase);
 };
 
-const filesAt = (base: string, local: string): readonly string[] => jsonFiles(git(['ls-tree', '-r', '--name-only', base, '--', local]));
+const filesAt = (run: Git, base: string, local: string): readonly string[] => jsonFiles(run(['ls-tree', '-r', '--name-only', base, '--', local]));
 
-export const guardAt = (path: string, base: string, moves: string): Result<readonly string[] | null, string> => {
+const textsAt = (run: Git, base: string, files: readonly string[]): readonly string[] => files.map((file) => run(['show', `${base}:./${file}`]));
+
+const inheritedAt = (run: Git, base: string, inherit: string | null): Result<Counts, string> =>
+    inherit === null ? ok({}) : countsOfTexts(textsAt(run, base, filesAt(run, base, relative(process.cwd(), inherit))));
+
+export const guardAt = (path: string, base: string, moves: string, inherit: string | null = null, run: Git = git): Result<readonly string[] | null, string> => {
     const local = relative(process.cwd(), path);
-    const listed = filesAt(base, local);
-    const files = listed.length > 0 || local.endsWith('.json') ? listed : filesAt(base, `${local}.json`);
-    const before = files.map((file) => git(['show', `${base}:./${file}`]));
+    const listed = filesAt(run, base, local);
+    const files = listed.length > 0 || local.endsWith('.json') ? listed : filesAt(run, base, `${local}.json`);
+    const before = textsAt(run, base, files);
     if (before.length === 0) {
         return ok(null);
     }
-    const was = countsOfTexts(before);
+    const own = countsOfTexts(before);
+    const inherited = inheritedAt(run, base, inherit);
     const now = existsSync(path) ? countsOfTexts(textsNow(path)) : ok({});
-    if (was.kind === 'err') {
-        return was;
+    if (own.kind === 'err') {
+        return own;
     }
-    return now.kind === 'err' ? now : ok(guard(was.value, now.value, renamesOf(base, moves)));
+    if (inherited.kind === 'err') {
+        return inherited;
+    }
+    return now.kind === 'err' ? now : ok(guard({ ...inherited.value, ...own.value }, now.value, renamesOf(run, base, moves)));
 };

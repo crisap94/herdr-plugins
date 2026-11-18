@@ -1,9 +1,9 @@
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from './brand.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { plainText } from './coordination.ts';
-import type { AwaitedNames, Awaiting, BackgroundItem, BackgroundLabel, BackgroundTool } from './in-flight.ts';
-import type { ParseFailure } from './parse-failure.ts';
-import { parseText, type Text } from './text.ts';
+import type { AwaitedNames, Awaiting, BackgroundItem, BackgroundLabel, BackgroundTool } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export type ContinuationNote = Brand<string, 'ContinuationNote'>;
 export type NoteLimit = Brand<number, 'NoteLimit'>;

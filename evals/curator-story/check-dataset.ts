@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-instructions.ts';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
-import { curatorInput } from '../../tab-recap/src/recap/application/curator-input.ts';
-import type { CuratorMaterial } from '../../tab-recap/src/recap/application/curator-input.ts';
+import { curatorInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
+import type { CuratorMaterial } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
-import { CLOSED_WHY, SECTION_IDS } from '../../tab-recap/src/recap/domain/fact.ts';
+import { CLOSED_WHY, SECTION_IDS } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { checkedTokens, outsideOf } from './tokens.ts';
 import { guardOf, overlapOf } from '../lib/fresh.ts';
 

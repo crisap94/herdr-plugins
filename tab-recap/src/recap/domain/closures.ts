@@ -1,7 +1,7 @@
 import type { AgentKind, PaneId, TabId } from './ids.ts';
-import type { Directory } from './directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Lane } from './lane.ts';
-import type { Instant } from './time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export interface ClosedLaneIdentity {
     readonly tab: TabId;

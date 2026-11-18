@@ -70,7 +70,7 @@ export function packageRowsAbovePlugin(plugin: BaselineRows, pkg: BaselineRows, 
     return rises.toSorted((left, right) => left.localeCompare(right));
 }
 
-export const PLUGIN_ENGINE_BASELINE_PATH = new URL('../../ci/domain-types-baseline/ENG.json', import.meta.url);
+export const PLUGIN_ENGINE_BASELINE_PATH = new URL('fixtures/eng-baseline-at-e2a.json', import.meta.url);
 
 export const MOVE_MAP_PATH = new URL('../../../ci/codemod/moves/ENG-E2b.tsv', import.meta.url);
 export const ENGINE_FILES_PATH = new URL('../../ci/engine-files.json', import.meta.url);

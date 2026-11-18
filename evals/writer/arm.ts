@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseCloseEvidence, type CloseEvidence } from '../../tab-recap/src/recap/domain/pipeline.ts';
+import { parseCloseEvidence, type CloseEvidence } from '../../packages/session-ledger/src/recap/domain/pipeline.ts';
 import { flagOf, pairedConfigs } from '../lib/arm.ts';
 import type { Answer } from '../lib/types.ts';
 import type { WriterItem } from './prompt.ts';

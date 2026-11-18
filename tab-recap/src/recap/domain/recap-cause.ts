@@ -1,2 +1,1 @@
-export const RECAP_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
-export type RecapCause = typeof RECAP_CAUSES[number];
+export * from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';

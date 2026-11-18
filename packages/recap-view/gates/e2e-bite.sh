@@ -118,5 +118,34 @@ for spec in "../src/index.ts" "#src/index.ts" "@probe/unit/src/index.ts"; do
     rm -rf "$scratch/bad-private"
 done
 
+pending() {
+    probe "$1"
+    mkdir -p "$scratch/$1/src/unstable"
+    printf "export const five = 5;\n" > "$scratch/$1/src/unstable/five.ts"
+    mkdir -p "$scratch/$1/gates"
+    printf '%s\n' "$2" > "$scratch/$1/gates/e2e-pending.json"
+}
+
+pending good-pending '["./unstable/five.ts five"]'
+run good-pending
+if [ "$status" -eq 0 ] && grep -qF "pending: 1 uncovered export(s) listed in gates/e2e-pending.json" <<<"$out"; then echo "  ok    good-pending: an uncovered export listed in gates/e2e-pending.json passes and the list is said"; else fail "good-pending: exit $status, expected 0 with the pending line: $out"; fi
+
+pending bad-pending-new '["./unstable/five.ts five"]'
+printf "export const six = 6;\n" >> "$scratch/bad-pending-new/src/unstable/five.ts"
+run bad-pending-new
+if [ "$status" -eq 1 ] && grep -qF "uncovered: ./unstable/five.ts six (src/unstable/five.ts)" <<<"$out" && ! grep -qF "uncovered: ./unstable/five.ts five " <<<"$out"; then echo "  ok    bad-pending-new: a new uncovered export the pending list does not name fails"; else fail "bad-pending-new: exit $status, expected 1 naming only ./unstable/five.ts six: $out"; fi
+
+pending bad-pending-covered '["./unstable/five.ts five", ". two"]'
+run bad-pending-covered
+if [ "$status" -eq 1 ] && grep -qF "pending no longer uncovered: . two is covered or gone" <<<"$out"; then echo "  ok    bad-pending-covered: a listed export a test now uses fails until it leaves the list"; else fail "bad-pending-covered: exit $status, expected 1 naming . two: $out"; fi
+
+pending bad-pending-gone '["./unstable/five.ts five", "./unstable/five.ts seven"]'
+run bad-pending-gone
+if [ "$status" -eq 1 ] && grep -qF "pending no longer uncovered: ./unstable/five.ts seven is covered or gone" <<<"$out"; then echo "  ok    bad-pending-gone: a listed export that no longer exists fails"; else fail "bad-pending-gone: exit $status, expected 1 naming ./unstable/five.ts seven: $out"; fi
+
+pending bad-pending-shape '{"./unstable/five.ts five": true}'
+run bad-pending-shape
+if [ "$status" -eq 1 ] && grep -qF "bad pending list: gates/e2e-pending.json must be a JSON array" <<<"$out"; then echo "  ok    bad-pending-shape: a pending list that is not an array of strings fails"; else fail "bad-pending-shape: exit $status, expected 1 naming the bad list: $out"; fi
+
 [ "$failures" -eq 0 ] && { echo "e2e-bite: clean"; exit 0; }
 echo "e2e-bite: $failures finding(s)"; exit 1

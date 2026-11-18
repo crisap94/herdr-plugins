@@ -10,7 +10,7 @@ import type { Lane, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
-import type { Instant } from './time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { hiddenState, restoreHidden, withVisibility } from './visibility.ts';
 
 export interface SeenColumn {

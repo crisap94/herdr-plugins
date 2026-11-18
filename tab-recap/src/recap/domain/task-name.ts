@@ -1,7 +1,7 @@
 import { ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from './brand.ts';
-import type { ParseFailure } from './parse-failure.ts';
-import { parseNonEmptyText } from './text.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export type TaskName = Brand<string, 'TaskName'>;
 

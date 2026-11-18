@@ -1,9 +1,1 @@
-import type { RecapSections } from './shape.ts';
-
-export interface RecapTask {
-    readonly id: string;
-    readonly name: string;
-    readonly lanes: readonly string[];
-    readonly sections: RecapSections | null;
-    readonly markdown: string;
-}
+export * from '@stateforge-labs/session-ledger/unstable/recap/domain/tasks.ts';

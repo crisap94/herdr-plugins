@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { pendingReport, type Uncovered } from './e2e-pending.ts';
 
 export interface Entry {
     readonly key: string;
@@ -139,7 +140,7 @@ const usedIn = (checker: ts.TypeChecker, file: ts.SourceFile, used: Set<ts.Symbo
     visit(file);
 };
 
-export const coverageOf = (root: string, entries: readonly Entry[], notes: string[]): readonly string[] => {
+export const uncoveredOf = (root: string, entries: readonly Entry[], notes: string[]): readonly Uncovered[] => {
     const tests = filesUnder(root, 'test/e2e');
     const program = ts.createProgram({ rootNames: [...entries.map((entry) => join(root, entry.file)), ...tests.map((file) => join(root, file))], options: optionsOf(root) });
     const checker = program.getTypeChecker();
@@ -160,7 +161,7 @@ export const coverageOf = (root: string, entries: readonly Entry[], notes: strin
         notes.push(`no entry point exports a runtime value yet: ${E2E} has nothing to cover`);
     }
     return counted.flatMap(({ entry, values }) =>
-        [...values].filter(([, symbol]) => !used.has(symbol)).map(([name]) => `uncovered: ${entry.key} ${name} (${entry.file}) is used by no test under ${E2E}`));
+        [...values].filter(([, symbol]) => !used.has(symbol)).map(([name]) => ({ key: entry.key, name, file: entry.file })));
 };
 
 const lineOf = (text: string, position: number): number => text.slice(0, position).split('\n').length;
@@ -257,7 +258,7 @@ export const checkE2e = (root: string): Report => {
     const notes: string[] = [];
     const entries = entriesOf(root, notes);
     const scope = scopeOf(root);
-    const findings = [...coverageOf(root, entries, notes), ...importsOf(scope), ...unreadableOf(scope.manifest)];
+    const findings = [...pendingReport(root, uncoveredOf(root, entries, notes), notes), ...importsOf(scope), ...unreadableOf(scope.manifest)];
     return { notes, findings };
 };
 

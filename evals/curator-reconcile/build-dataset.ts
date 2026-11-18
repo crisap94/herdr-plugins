@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs';
 import { CASES, type Case } from './dataset-source/cases.ts';
 import { FRESH_CASES, FRESH_PROJECTS, type FreshCase } from './dataset-source/fresh.ts';
 import { PROJECTS, type Project } from './dataset-source/pools.ts';
-import { clipTurn } from '../../tab-recap/src/recap/application/writer-clip.ts';
+import { clipTurn } from '../../packages/session-ledger/src/recap/application/writer-clip.ts';
 import { FRESH_ITEMS, FRESH_SEED, sampleOf, shuffledOf } from '../lib/fresh.ts';
 
 // Without --fresh this writes dataset.jsonl exactly as before. With --fresh it writes dataset-fresh.jsonl and fresh-sample.md.

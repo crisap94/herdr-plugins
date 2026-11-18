@@ -1,4 +1,4 @@
-import { brand, type Brand } from './brand.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 
 export type Probability = Brand<number, 'Probability'>;
 

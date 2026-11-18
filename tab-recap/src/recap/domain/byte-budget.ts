@@ -1,4 +1,4 @@
-import type { Brand } from './brand.ts';
+import type { Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 
 export type ByteBudget = Brand<number, 'ByteBudget'>;
 

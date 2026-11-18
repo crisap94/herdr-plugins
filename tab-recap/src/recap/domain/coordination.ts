@@ -1,5 +1,5 @@
 import { collapsedText } from './text-collapse.ts';
-import type { Text } from './text.ts';
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 const AWAITING = /^awaiting(?:-.+)?$/;
 const NOTE = /^note(?:-(.+))?$/;

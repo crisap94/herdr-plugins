@@ -1846,5 +1846,12 @@
     "symbol": "PrunedWriterView",
     "field": "nextHours",
     "reason": "EC 2.2, copied shape: nextHours of PrunedWriterView keeps the plain type of PrunedWriterView in tab-recap/src/recap/domain/writer-view.ts, held equal by gates/copied-shapes/settings.json; ENG-5 types it"
+  },
+  {
+    "class": "brand",
+    "file": "src/recap/domain/brand.ts",
+    "function": "brand",
+    "parameter": null,
+    "reason": "the one brand function casts its carrier"
   }
 ]

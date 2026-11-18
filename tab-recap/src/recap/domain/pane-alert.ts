@@ -1,9 +1,9 @@
 import type { Result } from '#src/protocol/result.ts';
 import type { PaneId } from './ids.ts';
-import type { ParseFailure } from './parse-failure.ts';
-import { parseNonEmptyText } from './text.ts';
-import type { NonEmptyText, Text } from './text.ts';
-import type { Instant } from './time.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type AlertSource = NonEmptyText;
 

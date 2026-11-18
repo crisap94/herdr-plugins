@@ -1,7 +1,7 @@
 import { err, ok, must, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from './count.ts';
 import type { TabId } from './ids.ts';
-import { parseNonEmptyText, type NonEmptyText } from './text.ts';
+import { parseNonEmptyText, type NonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { fitGuiTab } from './gui-fit.ts';
 import { GUI_TAB_V1, GUI_TAB_VERSION, type GuiLaneV1, type GuiTab } from './gui-tab-types.ts';
 

@@ -1,6 +1,6 @@
 import type { Origin } from './origin.ts';
-import { shareOf } from './compaction.ts';
-import type { ContextUse } from './compaction.ts';
+import { shareOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 
 export const RUN_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
 export type RunCause = (typeof RUN_CAUSES)[number];

@@ -3,10 +3,10 @@ import type { Board, Placement, Shape } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
-import { duration, elapsed, instant } from './time.ts';
-import type { Duration, Instant } from './time.ts';
-import { REGISTERED_KINDS, kindsWith } from './registered-kinds.ts';
-import type { RegisteredKindTable } from './registered-kinds.ts';
+import { duration, elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { REGISTERED_KINDS, kindsWith } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import type { RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 
 export const ANY_KIND = '*';
 

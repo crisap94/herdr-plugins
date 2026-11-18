@@ -1,5 +1,5 @@
-import { err, ok } from './result.ts';
-import type { Result } from './result.ts';
+import { err, ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 import { LIMITS, parseCharCount, parseExchangeName, parseExchangeVersion, parseRefusalDetail } from './primitives.ts';
 import type { CharCount, RefusalDetail, RequestPrefix, TokenName } from './primitives.ts';
 import { answerToken, INTERRUPTED_REASON, terminalStage, terminalsOf } from './exchange.ts';

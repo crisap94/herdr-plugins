@@ -1,4 +1,4 @@
-import type { HistoryFact } from '../../../tab-recap/src/ports/ledger.ts';
+import type { HistoryFact } from '../../../packages/session-ledger/src/ports/ledger.ts';
 
 export interface BankFact {
     id: string;

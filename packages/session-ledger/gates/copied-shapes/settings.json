@@ -1,11 +1,11 @@
 [
-  { "export": "PositiveCount", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "KeepNewest", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "NextHours", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "HiddenCounts", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "PrunedWriterView", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "WriterView", "origin": "tab-recap/src/recap/domain/writer-view.ts" },
-  { "export": "Pipeline", "origin": "tab-recap/src/recap/domain/pipeline.ts", "originConst": "PIPELINES" },
-  { "export": "CloseEvidence", "origin": "tab-recap/src/recap/domain/pipeline.ts" },
-  { "export": "Debounce", "origin": "tab-recap/src/recap/domain/debounce.ts" }
+  { "export": "PositiveCount", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "KeepNewest", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "NextHours", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "HiddenCounts", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "PrunedWriterView", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "WriterView", "origin": "packages/session-ledger/src/recap/domain/writer-view.ts" },
+  { "export": "Pipeline", "origin": "packages/session-ledger/src/recap/domain/pipeline.ts", "originConst": "PIPELINES" },
+  { "export": "CloseEvidence", "origin": "packages/session-ledger/src/recap/domain/pipeline.ts" },
+  { "export": "Debounce", "origin": "packages/session-ledger/src/recap/domain/debounce.ts" }
 ]

@@ -1,8 +1,8 @@
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Forge } from './lane-repo.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface LaneWeb {
     readonly base: string;

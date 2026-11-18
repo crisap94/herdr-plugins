@@ -1,3 +1,3 @@
 [
-  { "export": "Directory", "origin": "tab-recap/src/recap/domain/directory.ts" }
+  { "export": "Directory", "origin": "packages/session-ledger/src/recap/domain/directory.ts" }
 ]

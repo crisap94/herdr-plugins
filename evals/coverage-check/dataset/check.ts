@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { deciderInstructions, probabilitiesOf } from '../../../tab-recap/src/adapters/job/decider.ts';
 import { FACTS_CHECKED, KEPT_AT_LEAST, factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
-import { isSection } from '../../../tab-recap/src/recap/domain/fact.ts';
+import { isSection } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
 import { BANK, INTRO, SETTLED } from './bank.ts';
 
 

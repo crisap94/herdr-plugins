@@ -1,6 +1,6 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface Note {
     readonly label: string;

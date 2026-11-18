@@ -1,4 +1,4 @@
-import type { Unknown } from './unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type HarnessesResult = { readonly kind: 'available'; readonly ids: readonly string[] } | Unknown;
 

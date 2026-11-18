@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
-import type { HistoryFact } from '../../../tab-recap/src/ports/ledger.ts';
+import type { HistoryFact } from '../../../packages/session-ledger/src/ports/ledger.ts';
 import { BANK, INTRO, SETTLED } from './bank.ts';
 import type { BankFact } from './bank.ts';
 

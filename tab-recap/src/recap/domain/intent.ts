@@ -2,11 +2,11 @@ import type { ClosedLane } from './closures.ts';
 import type { Lane } from './lane.ts';
 import type { HiddenState, Shape } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
-import type { RecapCause } from './recap-cause.ts';
-import type { Instant } from './time.ts';
+import type { RecapCause } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-export { RECAP_CAUSES } from './recap-cause.ts';
-export type { RecapCause } from './recap-cause.ts';
+export { RECAP_CAUSES } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
+export type { RecapCause } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
 
 export type Intent =
     | { readonly kind: 'open-column'; readonly tab: TabId; readonly shape: Shape }

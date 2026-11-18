@@ -1,7 +1,7 @@
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { curationOf, STORY_WORDS, storyOf } from '../../tab-recap/src/recap/domain/curation.ts';
 import type { Curation, Merge } from '../../tab-recap/src/recap/domain/curation.ts';
-import { languageOfLine } from '../../tab-recap/src/recap/domain/gates/language.ts';
+import { languageOfLine } from '../../packages/session-ledger/src/recap/domain/gates/language.ts';
 import { unparsed } from '../lib/scoring.ts';
 import type { Graded, Mark } from '../lib/types.ts';
 import { openIds } from './prompt.ts';
