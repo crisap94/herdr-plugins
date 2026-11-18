@@ -68,21 +68,8 @@
     "return": 2,
     "container": 1
   },
-  "src/adapters/harness/custom.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 2,
-    "property": 2
-  },
-  "src/adapters/harness/library.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 3
-  },
-  "src/adapters/harness/on-path.ts": {
-    "parameter": 2,
-    "return": 1,
-    "container": 1
+  "src/adapters/harness/legacy.ts": {
+    "legacy": 12
   },
   "src/adapters/herdr/agents.ts": {
     "parameter": 13,
@@ -187,15 +174,13 @@
     "parameter": 3,
     "container": 1
   },
-  "src/adapters/os/process/control.ts": {
-    "parameter": 2,
-    "return": 3,
-    "container": 2
-  },
   "src/adapters/os/process/core.ts": {
     "parameter": 6,
     "container": 1,
     "property": 1
+  },
+  "src/adapters/os/process/legacy.ts": {
+    "legacy": 2
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,

@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { CustomHarness, splitArgv } from '#src/adapters/harness/custom.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { readFileSync } from 'node:fs';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
@@ -43,11 +45,13 @@ test('golden: the English instructions are exactly the reviewed operations-contr
     assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);
 });
 
+const argvOf = (line: string): string[] => splitArgv(must(parseText(line)));
+
 test('splitArgv: whitespace, quotes, no shell', () => {
-    assert.deepEqual(splitArgv('  my-llm  --model "big one" \'a b\' x\'y\'z  '), ['my-llm', '--model', 'big one', 'a b', 'xyz']);
-    assert.deepEqual(splitArgv('say ""'), ['say', '']);
-    assert.deepEqual(splitArgv('   '), []);
-    assert.deepEqual(splitArgv('echo $HOME; rm'), ['echo', '$HOME;', 'rm']);
+    assert.deepEqual(argvOf('  my-llm  --model "big one" \'a b\' x\'y\'z  '), ['my-llm', '--model', 'big one', 'a b', 'xyz']);
+    assert.deepEqual(argvOf('say ""'), ['say', '']);
+    assert.deepEqual(argvOf('   '), []);
+    assert.deepEqual(argvOf('echo $HOME; rm'), ['echo', '$HOME;', 'rm']);
 });
 
 const custom = (command: string, cwd: string, ms: number): Harness<BackendId> => new CustomHarness(command, cwd, ms);

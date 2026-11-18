@@ -1,11 +1,16 @@
 import type { ProcessControl, Runner } from '#src/ports/process-control.ts';
 import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
-import { isJobTag, JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
-import type { JobAttributes, JobTag } from '#src/recap/domain/job-tag.ts';
+import { JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
+import type { JobTag } from '#src/recap/domain/job-tag.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { type JobAttributesRecord, mergeJobAttributes } from './attributes.ts';
 import { posixProcess } from './control-posix.ts';
 
 export type { Runner, RunOptions, RunResult } from '#src/ports/process-control.ts';
+export { serializeJobAttributes, type JobAttributesRecord } from './attributes.ts';
+export { mergeResourceAttributes } from './legacy.ts';
 export { KILL_AFTER_MS } from './core.ts';
 
 export const hostProcess: ProcessControl = posixProcess();
@@ -25,32 +30,15 @@ export function scrubEnvironment(source: NodeJS.ProcessEnv, names: readonly Envi
     return env;
 }
 
-export function serializeJobAttributes(attributes: JobAttributes): string {
-    const value: unknown = attributes[JOB_ATTRIBUTE_KEY];
-    if (!isJobTag(value)) {
-        throw new TypeError('Unknown job tag');
-    }
-    return `${JOB_ATTRIBUTE_KEY}=${encodeURIComponent(value)}`;
-}
-
-function keyOf(entry: string): string | null {
-    const equals = entry.indexOf('=');
-    return equals < 0 ? null : entry.slice(0, equals).trim();
-}
-
-export function mergeResourceAttributes(inherited: string | undefined, attributes: JobAttributes): string {
-    const kept = inherited?.split(',').filter((entry) => entry !== '' && keyOf(entry) !== JOB_ATTRIBUTE_KEY) ?? [];
-    return [...kept, serializeJobAttributes(attributes)].join(',');
-}
-
 export function scrubbedFrom(source: NodeJS.ProcessEnv, jobTag?: JobTag): NodeJS.ProcessEnv {
     const env = scrubEnvironment(source, SCRUBBED_ENV_NAMES);
     if (jobTag === undefined) {
         return env;
     }
     try {
-        const attributes = { [JOB_ATTRIBUTE_KEY]: jobTag } satisfies JobAttributes;
-        env['OTEL_RESOURCE_ATTRIBUTES'] = mergeResourceAttributes(env['OTEL_RESOURCE_ATTRIBUTES'], attributes);
+        const attributes = { [JOB_ATTRIBUTE_KEY]: jobTag } satisfies JobAttributesRecord;
+        const inherited = env['OTEL_RESOURCE_ATTRIBUTES'];
+        env['OTEL_RESOURCE_ATTRIBUTES'] = mergeJobAttributes(inherited === undefined ? undefined : must(parseText(inherited)), attributes);
     } catch (error) {
         if (!(error instanceof TypeError)) {
             throw error;
