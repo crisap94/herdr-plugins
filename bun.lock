@@ -81,7 +81,7 @@
       "dependencies": {
         "@stateforge-labs/harness-adapters": "0.5.0",
         "@stateforge-labs/harness-hooks": "0.4.0",
-        "@stateforge-labs/herdr-sdk": "0.4.0",
+        "@stateforge-labs/herdr-sdk": "0.5.0",
         "@stateforge-labs/recap-view": "workspace:*",
         "@stateforge-labs/session-ledger": "workspace:*",
         "@stateforge-labs/session-ledger-sqlite": "workspace:*",
@@ -175,7 +175,7 @@
 
     "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.4.0", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-H3gb8d38z5ApGFCxpqDV5D0w+uzWnWZaK7eM40cLUo47Ng8BdpAfGImuTc5DQW7gqCQ/O6tozBnlYf+WVR4wug=="],
 
-    "@stateforge-labs/herdr-sdk": ["@stateforge-labs/herdr-sdk@0.4.0", "", { "bin": { "herdr-drift": "bin/herdr-drift.js", "herdr-skill": "bin/herdr-skill.js" } }, "sha512-s2GRmzKYbjWO5IVCzBE+ShlE8scqeeBmQiVh09aWAre8vWLqyUMJdTA9cvt7OYzgGoNtZmLVa8EvcZc7VGFEkA=="],
+    "@stateforge-labs/herdr-sdk": ["@stateforge-labs/herdr-sdk@0.5.0", "", { "bin": { "herdr-drift": "bin/herdr-drift.js", "herdr-skill": "bin/herdr-skill.js" } }, "sha512-u9NduWW75UW+9pgcl7EIApXoj2fiiVfGsVf7/t3996l029AprxtexjVwelkTYuOEqQyLIY+AoquPkVCPGdzPzw=="],
 
     "@stateforge-labs/recap-view": ["@stateforge-labs/recap-view@workspace:packages/recap-view"],
 
