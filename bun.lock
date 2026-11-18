@@ -80,7 +80,7 @@
       "version": "3.1.0",
       "dependencies": {
         "@stateforge-labs/harness-adapters": "0.5.0",
-        "@stateforge-labs/harness-hooks": "0.3.1",
+        "@stateforge-labs/harness-hooks": "0.4.0",
         "@stateforge-labs/herdr-sdk": "0.4.0",
         "@stateforge-labs/recap-view": "workspace:*",
         "@stateforge-labs/session-ledger": "workspace:*",
@@ -173,7 +173,7 @@
 
     "@stateforge-labs/harness-adapters": ["@stateforge-labs/harness-adapters@0.5.0", "", { "dependencies": { "@stateforge-labs/harness-hooks": "0.3.1", "zod": "4.6.7" }, "peerDependencies": { "@anthropic-ai/claude-agent-sdk": "0.3.316" }, "optionalPeers": ["@anthropic-ai/claude-agent-sdk"] }, "sha512-RuPksP4T0wCyPZEoZ9Rg++9g8/8rvlO1vDb5++sIWUwQMxXX2c00NVNZ3s/mTMNZeTk3vJf3Txcyh3rmEkS3+A=="],
 
-    "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.3.1", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-8s7Zq9zaXFK8o1GNYPolzpzUVdLCVqUwctcAXkq8uh0KRR+xQDDpXm4XdDmsKzG5mNU6QStlXkLO761CVvYVAQ=="],
+    "@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.4.0", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-H3gb8d38z5ApGFCxpqDV5D0w+uzWnWZaK7eM40cLUo47Ng8BdpAfGImuTc5DQW7gqCQ/O6tozBnlYf+WVR4wug=="],
 
     "@stateforge-labs/herdr-sdk": ["@stateforge-labs/herdr-sdk@0.4.0", "", { "bin": { "herdr-drift": "bin/herdr-drift.js", "herdr-skill": "bin/herdr-skill.js" } }, "sha512-s2GRmzKYbjWO5IVCzBE+ShlE8scqeeBmQiVh09aWAre8vWLqyUMJdTA9cvt7OYzgGoNtZmLVa8EvcZc7VGFEkA=="],
 
@@ -406,6 +406,8 @@
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
 
     "zod": ["zod@4.6.7", "", {}, "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg=="],
+
+    "@stateforge-labs/harness-adapters/@stateforge-labs/harness-hooks": ["@stateforge-labs/harness-hooks@0.3.1", "", { "dependencies": { "zod": "4.6.7" } }, "sha512-8s7Zq9zaXFK8o1GNYPolzpzUVdLCVqUwctcAXkq8uh0KRR+xQDDpXm4XdDmsKzG5mNU6QStlXkLO761CVvYVAQ=="],
 
     "isomorphic-git/ignore": ["ignore@5.3.2", "", {}, "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g=="],
   }
