@@ -1,6 +1,6 @@
 import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { LIMITS, parseIdText, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
+import { ANSWER_SEPARATOR, LIMITS, parseIdText, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
 import type { AnswerFit, AnswerStage, EventName, ExchangeName, ExchangeVersion, IdText, OptIn, Refusal, RequestPrefix, TimingMs, TimingName, TokenName, TokenValue, ToolName, WireText } from './primitives.ts';
 import { parseValue, serializeValue } from './codec.ts';
 import type { FieldSpec, ParsedValue } from './codec.ts';
@@ -39,7 +39,7 @@ export type FailureStage = `${typeof FAILURE_PREFIX}${ReasonWord}`;
 
 export const failureStage = (reason: ReasonWord): FailureStage => `${FAILURE_PREFIX}${reason}`;
 
-export const isFailureStage = (stage: string): stage is FailureStage => stage.startsWith(FAILURE_PREFIX);
+export const isFailureStage = (stage: unknown): stage is FailureStage => typeof stage === 'string' && stage.startsWith(FAILURE_PREFIX);
 
 export type TerminalKind = 'failed' | 'refused' | 'unsupported';
 
@@ -65,16 +65,7 @@ export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => p
 
 export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => parseTokenName(`${exchange.requestPrefix}${tool}`);
 
-const ANSWER_SEPARATOR = ':';
-
-const answerText = (id: IdText, stage: string, fit: AnswerFit): Result<TokenValue, Refusal> => {
-    const text = `${id}${ANSWER_SEPARATOR}${stage}`;
-    return parseTokenValue(fit === 'truncate' ? text.slice(0, LIMITS.valueMax) : text);
-};
-
-export function answerValue(exchange: Exchange, id: IdText, stage: string): Result<TokenValue, Refusal> {
-    return answerText(id, stage, exchange.answerFit);
-}
+export { answerValue } from './legacy.ts';
 
 export const badIdValue = (rawId: IdText): TokenValue => must(parseTokenValue(`${rawId.slice(0, LIMITS.idMax)}${ANSWER_SEPARATOR}${failureStage('bad-id')}`));
 

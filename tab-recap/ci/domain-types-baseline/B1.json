@@ -155,18 +155,7 @@
     "parameter": 2,
     "container": 2
   },
-  "src/protocol/capability.ts": {
-    "return": 3
-  },
-  "src/protocol/exchange.ts": {
-    "parameter": 3
-  },
-  "src/protocol/primitives.ts": {
-    "parameter": 1
-  },
-  "src/protocol/responder.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 1
+  "src/protocol/legacy.ts": {
+    "legacy": 5
   }
 }

@@ -34,6 +34,12 @@ type Offer = 'offered' | 'withheld';
 
 type Enablement = 'enabled' | 'disabled';
 
+export type Setting = 'on' | 'off';
+
+export type SettingCheck = (setting: OptIn) => Setting;
+
+const ALWAYS_ON: SettingCheck = () => 'on';
+
 const entryOf = (item: WireText): Entry | null => {
     const kinds = KINDS_ITEM.exec(item);
     if (kinds?.[1] !== undefined) {
@@ -45,10 +51,12 @@ const entryOf = (item: WireText): Entry | null => {
 
 const offerOf = (exchange: Exchange): Offer => (EXCHANGE_NAME.test(exchange.name) && exchange.name !== KINDS ? 'offered' : 'withheld');
 
-const enablementOf = (isOn: (setting: OptIn) => boolean) => (exchange: Exchange): Enablement =>
-    exchange.optIn === null || isOn(exchange.optIn) ? 'enabled' : 'disabled';
+const enablementOf = (isOn: SettingCheck) => (exchange: Exchange): Enablement =>
+    exchange.optIn === null || isOn(exchange.optIn) === 'on' ? 'enabled' : 'disabled';
 
-export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: OptIn) => boolean = (): boolean => true): Result<TokenValue, Refusal> {
+export { capabilityValue } from './legacy.ts';
+
+export function capabilityValueTyped(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: SettingCheck = ALWAYS_ON): Result<TokenValue, Refusal> {
     const offending = exchanges.find((exchange) => offerOf(exchange) === 'withheld');
     if (offending !== undefined) {
         return refuse('bad-grammar', offending.name);
