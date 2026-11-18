@@ -8,6 +8,8 @@ import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 
 export type FreshnessBlock = Brand<string, 'FreshnessBlock'>;
 
+const parseFreshnessBlock = (composed: Text): FreshnessBlock => brand<string, 'FreshnessBlock'>(composed);
+
 const CAUSE_WORDS: Readonly<Record<LastRunCause, string>> = {
     'turn-ended': 'after a turn',
     focused: 'when the lane was focused',
@@ -42,10 +44,10 @@ const statusWords = (status: LaneStatus): Text => must(parseText(`lane status: $
 const closedWords = (closedAt: Instant): Text => must(parseText(`closed at ${utcMinuteOf(closedAt)}`));
 
 export function freshnessTextOf(freshness: Freshness, closedAt: Instant | null = null): FreshnessBlock {
-    return brand<string, 'FreshnessBlock'>([
+    return parseFreshnessBlock(must(parseText([
         `last run: ${utcMinuteOf(instant(freshness.lastRun.at))}, ${CAUSE_WORDS[freshness.lastRun.cause]}`,
         closedAt === null ? statusWords(freshness.status) : closedWords(closedAt),
         newerWords(freshness.newerPrompts),
         REFRESH_WORDS[freshness.refresh],
-    ].join('\n'));
+    ].join('\n'))));
 }

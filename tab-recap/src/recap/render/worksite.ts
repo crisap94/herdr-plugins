@@ -10,9 +10,9 @@ export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
 
 type Fit = 'fits' | 'over';
 
-const blockOf = (composed: Text): WorksiteBlock => brand<string, 'WorksiteBlock'>(composed);
+const parseWorksiteBlock = (composed: Text): WorksiteBlock => brand<string, 'WorksiteBlock'>(composed);
 
-export const WORKSITE_UNAVAILABLE: WorksiteBlock = blockOf(must(parseText('worksite unavailable')));
+export const WORKSITE_UNAVAILABLE: WorksiteBlock = parseWorksiteBlock(must(parseText('worksite unavailable')));
 
 const encoder = new TextEncoder();
 
@@ -40,7 +40,7 @@ function linesOf(facts: WorksiteFacts): WorksiteBlock {
     if (facts.tokens.length > 0) {
         lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
     }
-    return blockOf(must(parseText(lines.join('\n'))));
+    return parseWorksiteBlock(must(parseText(lines.join('\n'))));
 }
 
 function* shrinking(facts: WorksiteFacts): Generator<WorksiteFacts, void, undefined> {
@@ -73,8 +73,8 @@ function largestFitting(max: Count, fitsAt: (kept: Count) => Fit): Count {
 
 function cutToBytes(text: WorksiteBlock, budget: ByteBudget): WorksiteBlock {
     const points = Array.from(text);
-    const kept = largestFitting(must(parseCount(points.length)), (count) => fitting(budget, blockOf(must(parseText(points.slice(0, count).join(''))))));
-    return blockOf(must(parseText(points.slice(0, kept).join(''))));
+    const kept = largestFitting(must(parseCount(points.length)), (count) => fitting(budget, parseWorksiteBlock(must(parseText(points.slice(0, count).join(''))))));
+    return parseWorksiteBlock(must(parseText(points.slice(0, kept).join(''))));
 }
 
 function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock {
