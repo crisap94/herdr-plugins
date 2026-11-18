@@ -775,6 +775,7 @@
       "src/adapters/transcripts/context-values.ts",
       "src/adapters/transcripts/in-flight.ts",
       "src/adapters/transcripts/jsonl.ts",
+      "src/adapters/transcripts/legacy.ts",
       "src/adapters/transcripts/opencode/context.ts",
       "src/adapters/transcripts/opencode/in-flight.ts",
       "src/adapters/transcripts/opencode/parts.ts",
