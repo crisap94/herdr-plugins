@@ -45,8 +45,8 @@ process.on('SIGINT', () => { process.exit(0); });
 if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', (key: string) => {
-        const stepped = step(state, key);
+    process.stdin.on('data', (chunk) => {
+        const stepped = step(state, String(chunk));
         state = stepped.state;
         if (stepped.effect !== null) {
             perform(stepped.effect);

@@ -34,9 +34,18 @@ export class AutocompactSweep {
         this.ticks = must(parseCount(this.ticks + 1));
         if (!due || this.running === 'running') return;
         this.running = 'running';
-        this.sweep()
-            .catch((error: unknown) => { this.parts.log(must(parseText(`autocompact sweep: ${error instanceof Error ? error.message : String(error)}`))); })
-            .finally(() => { this.running = 'idle'; });
+        void this.run();
+    }
+
+    private async run(): Promise<void> {
+        try {
+            await this.sweep();
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            this.parts.log(must(parseText(`autocompact sweep: ${detail}`)));
+        } finally {
+            this.running = 'idle';
+        }
     }
 
     async sweep(): Promise<void> {

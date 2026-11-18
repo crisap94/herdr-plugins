@@ -1,3 +1,4 @@
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from '#src/daemon/handoff.ts';
@@ -29,7 +30,7 @@ test('the poll hands the taken rows to the runner, and a rejected take is logged
 
 test('the answer prune cuts at the answer time-to-live before now', () => {
     const cuts: number[] = [];
-    pruneHandoffAnswers({ answers: { prune: (before: number): void => { cuts.push(before); } }, now: (): number => NOW });
+    pruneHandoffAnswers({ answers: { prune: (before: number): void => { cuts.push(before); } }, now: (): Instant => instant(NOW) });
     assert.deepEqual(cuts, [NOW - HANDOFF_ANSWER_TTL_MS]);
 });
 

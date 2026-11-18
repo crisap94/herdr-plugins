@@ -1,4 +1,14 @@
 import { join } from 'node:path';
+import type { TabRecaps } from '#src/engine/tab-recaps.ts';
+import type { Waiting } from '#src/recap/application/autocompact.ts';
+import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
+import type { RecapRecords } from '#src/ports/recap-records.ts';
+import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { refreshedWithin } from './refresh-status.ts';
+import { awaitingPane } from './autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
@@ -10,7 +20,7 @@ import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import type { Available, TextAnchors } from './backends.ts';
 import { boundedBy, withinBy, type Bounded } from './bounded.ts';
@@ -162,6 +172,25 @@ export async function within<T>(task: Promise<T>, ms: number, fallback: T): Prom
 
 export function logVia(write: (line: Text) => void): (line: string) => void {
     return (line) => { write(must(parseText(line))); };
+}
+
+export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number) => Promise<void> {
+    return (ms) => pause(duration(ms));
+}
+
+export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<RecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {
+    return (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), records, tab, RECAP_WAIT_MS);
+}
+
+export function awaitingNow(pane: string): Promise<Waiting> {
+    return awaitingPane(paneId(pane));
+}
+
+export function keyFileVia(read: (path: FsPath) => Text | null): (path: string) => Text | null {
+    return (path) => {
+        const parsed = parseFsPath(path);
+        return parsed.kind === 'ok' ? read(parsed.value) : null;
+    };
 }
 
 export function herdrEventsOn(): boolean {

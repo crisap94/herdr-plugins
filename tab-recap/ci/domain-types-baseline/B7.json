@@ -1,27 +1,8 @@
 {
-  "src/compact/main.ts": {
-    "parameter": 1
-  },
-  "src/daemon/autocompact-sweep.ts": {
-    "parameter": 1
-  },
-  "src/daemon/autocompact.ts": {
-    "parameter": 2
-  },
   "src/daemon/compaction.ts": {
     "parameter": 18,
     "return": 3,
     "container": 1
-  },
-  "src/daemon/deciders.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 3
-  },
-  "src/daemon/handoff.ts": {
-    "parameter": 9,
-    "return": 4,
-    "container": 2
   },
   "src/daemon/harness-makers.ts": {
     "parameter": 5
@@ -31,7 +12,7 @@
     "return": 1
   },
   "src/daemon/legacy.ts": {
-    "legacy": 47
+    "legacy": 54
   },
   "src/daemon/refresh-status.ts": {
     "parameter": 2

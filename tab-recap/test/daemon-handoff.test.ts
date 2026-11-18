@@ -1,3 +1,4 @@
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
@@ -55,7 +56,7 @@ function runnerOf(
     const probe: Probe = { flowRuns: [], asksSeenAtRun: [], logs: [], released: [] };
     const runner = new HandoffRunner({
         flow: { execute: async (request): Promise<HandoffRun> => { probe.flowRuns.push(String(request.id)); probe.asksSeenAtRun.push(asks.unfinished().length); return unrendered(await flowRun(request, probe)); } },
-        asks, answers, claims: { release: (pane: string): void => { probe.released.push(pane); } }, mirror: silentMirror(), transaction: <T>(work: () => T): T => work(), now: (): number => NOW, log: (line: string): void => { probe.logs.push(line); }, ...over,
+        asks, answers, claims: { release: (pane: string): void => { probe.released.push(pane); } }, mirror: silentMirror(), transaction: <T>(work: () => T): T => work(), now: (): Instant => instant(NOW), log: (line: string): void => { probe.logs.push(line); }, ...over,
     });
     return { runner, asks, answers, probe };
 }
@@ -133,10 +134,10 @@ test('a restart answers an unfinished handoff ask failed interrupted, settles it
 });
 
 test('on the SQLite store the restart finds the ask again (its id parses) and writes the interrupted answer in one transaction', async () => {
-    const store = memoryStore({ now: (): number => NOW });
+    const store = memoryStore({ now: (): Instant => instant(NOW) });
     const runner = new HandoffRunner({
         flow: { execute: (): Promise<HandoffRun> => new Promise<HandoffRun>(() => undefined) },
-        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
     });
     const taken = row();
     void runner.take([taken]);
@@ -147,10 +148,10 @@ test('on the SQLite store the restart finds the ask again (its id parses) and wr
 });
 
 test('on the SQLite store a delivered handoff writes its answer and settles its ask in the same transaction', async () => {
-    const store = memoryStore({ now: (): number => NOW });
+    const store = memoryStore({ now: (): Instant => instant(NOW) });
     const runner = new HandoffRunner({
         flow: { execute: async (): Promise<HandoffRun> => unrendered({ kind: 'delivered' }) },
-        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): number => NOW, log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
     });
     const taken = row();
     await runner.take([taken]);
