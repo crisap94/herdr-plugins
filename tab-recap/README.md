@@ -57,7 +57,8 @@ herdr plugin action invoke tab-recap.start               # turn the daemon on
 ```
 
 The install runs `bun install --frozen-lockfile --production` (the `[[build]]` step of `herdr-plugin.toml`).
-Bun is the only runtime.
+Bun is the only runtime. The recap engine lives in the `session-ledger` package of the same repository
+(`packages/session-ledger`), and the install links it from there: nothing extra is downloaded.
 
 To turn the plugin off, run `herdr plugin action invoke tab-recap.stop`. It closes every column and stays off until
 you start it again. To remove the plugin, run `herdr plugin uninstall tab-recap`.
