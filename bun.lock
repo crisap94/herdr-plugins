@@ -12,6 +12,19 @@
         "typescript": "6.0.3",
       },
     },
+    "agent-sdk": {
+      "name": "agent-sdk-session-ledger",
+      "version": "0.0.0",
+      "dependencies": {
+        "@stateforge-labs/session-ledger": "workspace:*",
+      },
+      "peerDependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.3.311",
+      },
+      "optionalPeers": [
+        "@anthropic-ai/claude-agent-sdk",
+      ],
+    },
     "desktop": {
       "name": "herdr-desktop-mods",
       "version": "0.0.0",
@@ -79,6 +92,7 @@
         "@ast-grep/cli": "0.45.3",
         "@types/node": "24.7.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
+        "agent-sdk-session-ledger": "workspace:*",
         "dependency-cruiser": "18.5.0",
         "herdr-desktop-mods": "workspace:*",
         "oxlint": "1.85.0",
@@ -198,6 +212,8 @@
     "acorn-loose": ["acorn-loose@8.5.2", "", { "dependencies": { "acorn": "^8.15.0" } }, "sha512-PPvV6g8UGMGgjrMu+n/f9E/tCSkNQ2Y97eFvuVdJfG11+xdIeDcLyNdC8SHcrHbRqkfwLASdplyR6B6sKM1U4A=="],
 
     "acorn-walk": ["acorn-walk@8.3.5", "", { "dependencies": { "acorn": "^8.11.0" } }, "sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw=="],
+
+    "agent-sdk-session-ledger": ["agent-sdk-session-ledger@workspace:agent-sdk"],
 
     "ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],
 
