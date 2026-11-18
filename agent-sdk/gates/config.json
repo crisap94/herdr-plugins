@@ -1,0 +1,4 @@
+{
+  "source": ["src", "test", "testkit", "gates"],
+  "context": "CONTEXT.md"
+}
