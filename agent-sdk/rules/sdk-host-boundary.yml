@@ -1,0 +1,36 @@
+id: sdk-host-boundary
+language: typescript
+severity: error
+message: >-
+  agent-sdk src/ imports a bare specifier only from @stateforge-labs/session-ledger (root export) or as a type-only import of
+  @anthropic-ai/claude-agent-sdk; never a relative path that climbs with `..`, never a string that names tab-recap/ or claude-code/.
+note: >-
+  The vocabulary and the import rule are in CONTEXT.md. A test kit import is written only in test/ and testkit/, which this rule
+  does not yet hold.
+files:
+  - "**/src/**"
+  - "**/probes/sdk-host-boundary/**"
+rule:
+  any:
+    - all:
+        - kind: string_fragment
+        - inside:
+            kind: import_statement
+            stopBy: end
+        - regex: "^[^./]"
+        - not:
+            regex: "^(@stateforge-labs/session-ledger|@anthropic-ai/claude-agent-sdk)$"
+    - all:
+        - kind: string_fragment
+        - inside:
+            kind: import_statement
+            stopBy: end
+        - regex: "^\\.\\."
+    - all:
+        - kind: import_statement
+        - regex: "claude-agent-sdk[\"']"
+        - not:
+            regex: "^import type "
+    - all:
+        - kind: string_fragment
+        - regex: "tab-recap/|claude-code/"
