@@ -31,6 +31,7 @@
     "@ast-grep/cli": "0.45.3",
     "@types/node": "24.7.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "agent-sdk-session-ledger": "workspace:*",
     "dependency-cruiser": "18.5.0",
     "herdr-desktop-mods": "workspace:*",
     "oxlint": "1.85.0",

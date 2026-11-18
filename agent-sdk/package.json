@@ -1,0 +1,29 @@
+{
+  "name": "agent-sdk-session-ledger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./testkit": "./testkit/index.ts"
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "bash gates/run.sh typecheck",
+    "test": "bash gates/run.sh test"
+  },
+  "dependencies": {
+    "@stateforge-labs/session-ledger": "workspace:*"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.311"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/claude-agent-sdk": {
+      "optional": true
+    }
+  }
+}
