@@ -94,6 +94,18 @@ test('a callback exception never covers an assertion', () => {
     assert.deepEqual(applyEntries([cast], [entry], []).findings, [cast]);
 });
 
+test('a callback exception covers the container finding of its parameter and of its return, never an assertion', () => {
+    const parameter: Entry = { class: 'callback', file: 'src/domain/value.ts', function: 'echo', parameter: 'sizes', reason: 'a Node callback' };
+    const returned: Entry = { ...parameter, parameter: null };
+    const containerParameter = finding({ category: 'container', parameter: 'sizes', site: 'parameter sizes' });
+    const containerReturn = finding({ category: 'container', parameter: null, site: 'return' });
+    const assertion = finding({ category: 'assertion', parameter: null, site: 'type assertion' });
+    assert.deepEqual(applyEntries([containerParameter, containerReturn, assertion], [parameter, returned], []), {
+        findings: [assertion],
+        stale: [],
+    });
+});
+
 test('the released migrations are the files of the latest release tag, not the registry and not newer files', () => {
     const dir = mkdtempSync(join(tmpdir(), 'released-'));
     try {

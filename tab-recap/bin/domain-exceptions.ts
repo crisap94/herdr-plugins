@@ -141,7 +141,8 @@ const matchesFunction = (entry: Extract<Entry, { readonly class: 'callback' | 'b
         return false;
     }
     const castInBrand = entry.class === 'brand' && finding.category === 'assertion';
-    return (finding.category === 'parameter' || finding.category === 'return' || castInBrand) &&
+    const signatureInCallback = entry.class === 'callback' && finding.category === 'container';
+    return (finding.category === 'parameter' || finding.category === 'return' || signatureInCallback || castInBrand) &&
         entry.function === finding.owner &&
         entry.parameter === finding.parameter;
 };
