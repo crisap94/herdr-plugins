@@ -54,6 +54,8 @@ export type RefusalSubject = FieldName | 'TokenName' | 'TokenValue' | 'RequestId
 
 export type Refusal = { readonly reason: RefusalReason; readonly subject: RefusalSubject };
 
+export const ANSWER_SEPARATOR = ':';
+
 export const WORD_SHAPE = /^[A-Za-z0-9_-]+$/;
 
 export const PANE_PART_SHAPE = /^(?!refresh$)[A-Za-z0-9]+$/;
@@ -165,9 +167,10 @@ export const parseOfferedName = (raw: unknown): OfferedName => brand<string, 'Of
 
 export const parseOfferedVersion = (raw: unknown): OfferedVersion => brand<number, 'OfferedVersion'>(Number(raw));
 
-export function parseIdText(raw: string): IdText {
-    const cut = raw.indexOf(':');
-    return brand<string, 'IdText'>(cut < 0 ? raw : raw.slice(0, cut));
+export function parseIdText(raw: unknown): IdText {
+    const text = String(raw);
+    const cut = text.indexOf(':');
+    return brand<string, 'IdText'>(cut < 0 ? text : text.slice(0, cut));
 }
 
 export function parseRequestPrefix(raw: unknown): Result<RequestPrefix, RefusalReason> {
