@@ -60,7 +60,7 @@ test('hindsight: six entries or the character budget, and the next operator prom
     const found = hindsightOf(entries);
     assert.equal(found.following.length, 6);
     assert.match(found.next_prompt ?? '', /^entry 2/);
-    const clipped = hindsightOf([{ role: 'agent', text: 'y'.repeat(9000) }], 6, 8000);
+    const clipped = hindsightOf([{ role: 'agent', text: 'y'.repeat(9000) }]);
     assert.ok((clipped.following[0]?.text.length ?? 0) <= 8001);
     assert.ok(!agentTextOf(found).includes('entry 2'));
 });

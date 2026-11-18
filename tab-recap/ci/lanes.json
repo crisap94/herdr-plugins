@@ -852,6 +852,7 @@
       "src/experiment/hindsight.ts",
       "src/experiment/kappa-report.ts",
       "src/experiment/label-prompt.ts",
+      "src/experiment/legacy.ts",
       "src/experiment/outcomes.ts",
       "src/experiment/pool.ts",
       "src/experiment/read-paths.ts",
