@@ -22,8 +22,10 @@ reviews:
         reason.
     - path: "tab-recap/**"
       instructions: >-
-        The plugin runs straight from source on Bun with ONE runtime dependency, @stateforge-labs/herdr-sdk
-        (the herdr-core client): any other entry under "dependencies" is a blocker; prefer built-ins (node:*, Intl, util, which Bun runs) and justify
+        The plugin runs straight from source on Bun. Its runtime dependencies are the ones in tab-recap/CLAUDE.md
+        (the herdr-sdk client, harness-adapters, harness-hooks, drizzle-orm and isomorphic-git, pinned exactly, plus the
+        workspace packages session-ledger, session-ledger-sqlite and recap-view as workspace:*): any other new entry under
+        "dependencies" is a blocker unless the merge request says why; prefer built-ins (node:*, Intl, util, which Bun runs) and justify
         any hand-written piece a built-in could do. No comments in code
         (rules/recap-no-comments.yml): meaning lives in names, types, small functions and tests;
         rationale in CONTEXT.md, the README or the OpenSpec design; only directive pragmas with
