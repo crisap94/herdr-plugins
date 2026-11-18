@@ -123,7 +123,7 @@ export class Compaction {
         if (trail === null) {
             const pane = String(lane.pane);
             const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-            linkAsk(this.deps.asks, request, paneId(pane), id);
+            linkAsk(this.deps.asks, request, paneId(pane), must(parseText(id)));
             if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
             this.answer(request, pane, failureStage(refusal.reason));
         } else {
@@ -152,7 +152,7 @@ export class Compaction {
 
     private begun(request: CompactRequest, start: Start): string {
         const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
-        linkAsk(this.deps.asks, request, start.pane, id);
+        linkAsk(this.deps.asks, request, start.pane, must(parseText(id)));
         this.deps.events?.lane(start.pane, COMPACT_EVENTS.queued, id);
         return id;
     }
@@ -165,7 +165,7 @@ export class Compaction {
 
     private opened(lane: Lane, tab: TabId, request: CompactRequest): Trail {
         const pane = lane.pane;
-        const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
+        const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, COMPACT_STAGES.running);
         this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
         return new Trail(this.deps.compactions, id, () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
@@ -174,14 +174,14 @@ export class Compaction {
     private beginning(agent: AgentKind, placement: Placement): Text {
         const { compaction } = this.deps.messages();
         if (placement === 'queued') return must(parseText(compaction.startedQueued(agent)));
-        return must(parseText(this.deps.brief.enabled() ? compaction.writing(agent) : compaction.started(agent)));
+        return must(parseText(this.deps.brief.enabled() === 'present' ? compaction.writing(agent) : compaction.started(agent)));
     }
 
     private async compact(lane: Lane, tab: TabId, request: CompactRequest, placement: Placement): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [String(lane.pane), lane.agent, request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);
-        if (!this.briefing.listed(lane)) {
+        if (this.briefing.listed(lane) === 'absent') {
             this.endClosed(lane, trail, 'before-writer');
             return;
         }
@@ -201,7 +201,7 @@ export class Compaction {
     private async typed(at: TypedAt, material: Material, brief: Briefed): Promise<void> {
         const { lane, tab, request, trail } = at;
         trail.to('compacting', { brief: brief.text === null ? 'template' : 'written', ...(brief.why === null ? {} : { templateWhy: brief.why }) });
-        if (!this.briefing.listed(lane)) {
+        if (this.briefing.listed(lane) === 'absent') {
             this.endClosed(lane, trail, 'before-typing');
             return;
         }

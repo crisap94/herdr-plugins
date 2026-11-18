@@ -1,3 +1,4 @@
+import { parseText } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
@@ -107,9 +108,9 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         compactions: store.compactions,
         settling: world.settling,
         brief: {
-            enabled: () => briefing !== null,
+            enabled: () => (briefing === null ? 'absent' : 'present'),
             job: () => (briefing === null ? null : 'codex · gpt-6-luna · high'),
-            write: (document) => { world.events.push('brief'); briefing?.documents.push(document); return Promise.resolve({ text: briefing?.answer ?? null, why: briefing?.answer === null ? 'the answer is empty' : null }); },
+            write: (document) => { world.events.push('brief'); briefing?.documents.push(document); const answer = briefing?.answer ?? null; return Promise.resolve({ text: answer === null ? null : must(parseText(answer)), why: briefing?.answer === null ? must(parseText('the answer is empty')) : null }); },
         },
         recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
         now: () => world.clock?.() ?? NOW,

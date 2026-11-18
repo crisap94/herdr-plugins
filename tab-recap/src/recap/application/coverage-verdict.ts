@@ -21,11 +21,11 @@ export function coverageLog(outcome: Checked['outcome'], messages: Messages): st
 }
 
 export function blockedByCoverage(checked: Checked, flow: CoverageFlow): boolean {
-    if (flow.atCeiling) return false;
+    if (flow.atCeiling === 'present') return false;
     switch (checked.outcome.kind) {
         case 'passed': return false;
-        case 'missed': return !flow.appends;
-        case 'unchecked': return checked.outcome.reason === 'decider-cannot-answer' ? !flow.appends : true;
+        case 'missed': return flow.appends === 'absent';
+        case 'unchecked': return checked.outcome.reason === 'decider-cannot-answer' ? flow.appends === 'absent' : true;
         default: return unreachable(checked.outcome);
     }
 }

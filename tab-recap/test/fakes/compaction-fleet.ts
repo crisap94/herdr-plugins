@@ -1,3 +1,5 @@
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { en } from '#src/i18n/en.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
@@ -80,7 +82,7 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
         boundaries: { lastBreakAt: () => null },
         compactions: world.store.compactions,
         settling: world.settling,
-        brief: { enabled: () => false, job: () => null, write: () => Promise.resolve({ text: null, why: 'the job is off' }) },
+        brief: { enabled: () => 'absent', job: () => null, write: () => Promise.resolve({ text: null, why: must(parseText('the job is off')) }) },
         recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
         now: () => NOW,
         marks: () => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); },

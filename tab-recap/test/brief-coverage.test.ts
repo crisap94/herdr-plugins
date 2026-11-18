@@ -1,3 +1,4 @@
+import { parseText } from '#src/recap/domain/text.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
@@ -89,7 +90,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
-        brief: { enabled: () => true, job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: correction === undefined ? 'first brief' : 'second brief', why: null } : { text: null, why: template.why }); } },
+        brief: { enabled: () => 'present', job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: mustParsed(parseText(correction === undefined ? 'first brief' : 'second brief')), why: null } : { text: null, why: mustParsed(parseText(template.why)) }); } },
         coverage: () => (withCoverage ? { check: () => { clock += 40; return Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])); } } : null),
         decisions: store.autocompact,
         ceilingOverride: () => ceilingOverride,
@@ -307,7 +308,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
 
 test('the appended block is one line whatever the facts hold: line breaks and runs of spaces collapse, and the order is kept', () => {
     const checked = [{ section: 'decisions' as const, text: brand<string, 'Text'>('Keep\nSQLite\tfor\n\nreads'), why: brand<string, 'Text'>('one\r\nfile') }, { section: 'goal' as const, text: brand<string, 'Text'>('Ship\n  it'), why: null }];
-    const appended = appendedBrief('The brief', checked, checked);
+    const appended = appendedBrief(mustParsed(parseText('The brief')), checked, checked);
     assert.equal(appended.text, 'The brief. Facts not carried into the brief (2 missed; 0 left out): (1) goal: Ship it; (2) decisions: Keep SQLite for reads — one file');
     assert.doesNotMatch(appended.text, /[\r\n]/u);
     assert.deepEqual(appended.indexes, [1, 0]);

@@ -1,3 +1,5 @@
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compaction } from '#src/recap/application/compaction.ts';
@@ -42,12 +44,12 @@ function hostile(steps: Steps = {}): Hostile {
         ...base,
         listsPane: () => board.listed,
         brief: {
-            enabled: () => true,
+            enabled: () => 'present',
             job: () => 'writer',
             write: (_document, _own, correction) => {
                 if (correction === undefined) calls.writer += 1; else calls.rewrites += 1;
                 if (steps.closesIn === 'writer' && correction === undefined) board.listed = false;
-                return Promise.resolve({ text: 'Ship the cart rewrite.', why: null });
+                return Promise.resolve({ text: must(parseText('Ship the cart rewrite.')), why: null });
             },
         },
         coverage: () => ({
