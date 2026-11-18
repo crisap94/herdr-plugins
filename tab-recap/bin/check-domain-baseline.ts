@@ -1,29 +1,31 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { ok, type Result } from '#src/protocol/result.ts';
-import { chainRenames, guard, parseBaseline, parseMoves } from './domain-baseline.ts';
+import { chainRenames, guardLanes, parseBaseline, parseMoves } from './domain-baseline.ts';
 import type { Counts } from './domain-findings.ts';
 
 const git = (args: readonly string[]): string => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
-const countsOfTexts = (texts: readonly string[]): Result<Counts, string> => {
-    const merged: Record<string, Counts[string]> = {};
-    for (const text of texts) {
+type LaneText = readonly [string, string];
+
+const parseLanes = (entries: readonly LaneText[]): Result<ReadonlyMap<string, Counts>, string> => {
+    const lanes = new Map<string, Counts>();
+    for (const [lane, text] of entries) {
         const parsed = parseBaseline(JSON.parse(text));
         if (parsed.kind === 'err') {
             return parsed;
         }
-        Object.assign(merged, parsed.value);
+        lanes.set(lane, parsed.value);
     }
-    return ok(merged);
+    return ok(lanes);
 };
 
-const baseTexts = (dir: string, base: string): readonly string[] =>
+const baseTexts = (dir: string, base: string): readonly LaneText[] =>
     git(['ls-tree', '--name-only', base, `${dir}/`])
         .split('\n')
         .filter((line) => line.endsWith('.json'))
-        .map((path) => git(['show', `${base}:./${path.slice(path.indexOf(dir))}`]));
+        .map((path): LaneText => [basename(path, '.json'), git(['show', `${base}:./${path.slice(path.indexOf(dir))}`])]);
 
 const MOVES = 'ci/domain-types-moves.tsv';
 
@@ -34,13 +36,13 @@ const renamesOf = (base: string): ReadonlyMap<string, string> => {
     return chainRenames([...committed, ...pending], existsSync(MOVES) ? parseMoves(readFileSync(MOVES, 'utf8')) : new Map(), atBase);
 };
 
-const compare = (dir: string, before: readonly string[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
-    const was = countsOfTexts(before);
-    const now = countsOfTexts(readdirSync(dir).filter((name) => name.endsWith('.json')).map((name) => readFileSync(join(dir, name), 'utf8')));
+const compare = (dir: string, before: readonly LaneText[], renamed: ReadonlyMap<string, string>): Result<readonly string[], string> => {
+    const was = parseLanes(before);
+    const now = parseLanes(readdirSync(dir).filter((name) => name.endsWith('.json')).map((name): LaneText => [basename(name, '.json'), readFileSync(join(dir, name), 'utf8')]));
     if (was.kind === 'err') {
         return was;
     }
-    return now.kind === 'err' ? now : ok(guard(was.value, now.value, renamed));
+    return now.kind === 'err' ? now : ok(guardLanes(was.value, now.value, renamed));
 };
 
 const main = (args: readonly string[]): number => {

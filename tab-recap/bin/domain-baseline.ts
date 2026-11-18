@@ -149,3 +149,33 @@ export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, s
             return now > was ? [`raised: ${file}: ${category} ${was} -> ${now}`] : [];
         }),
     );
+
+const LEGACY_FILE = /(^|\/)legacy\.ts$/u;
+const LEGACY_LINE = /^(?:new entry|raised): (.+?): legacy /u;
+
+const legacyFileOf = (line: string): string | undefined => {
+    const file = LEGACY_LINE.exec(line)?.[1];
+    return file !== undefined && LEGACY_FILE.test(file) ? file : undefined;
+};
+
+const totalOf = (counts: Counts): number =>
+    Object.values(counts).reduce((sum, row) => sum + Object.values(row).reduce((rowSum, count) => rowSum + count, 0), 0);
+
+const mergeLanes = (lanes: ReadonlyMap<string, Counts>): Counts => Object.fromEntries([...lanes.values()].flatMap((counts) => Object.entries(counts)));
+
+export const guardLanes = (base: ReadonlyMap<string, Counts>, head: ReadonlyMap<string, Counts>, renamed: ReadonlyMap<string, string> = new Map()): readonly string[] => {
+    const lines = guard(mergeLanes(base), mergeLanes(head), renamed);
+    const kept = lines.filter((line) => legacyFileOf(line) === undefined);
+    const dropped = lines.filter((line) => legacyFileOf(line) !== undefined);
+    const totals = [...head.keys()].toSorted().flatMap((lane) => {
+        const counts = head.get(lane) ?? {};
+        const paid = dropped.some((line) => {
+            const file = legacyFileOf(line);
+            return file !== undefined && counts[file] !== undefined;
+        });
+        const before = totalOf(base.get(lane) ?? {});
+        const after = totalOf(counts);
+        return paid && after > before ? [`lane total rose: ${lane}: ${before} -> ${after}`] : [];
+    });
+    return [...kept, ...totals];
+};
