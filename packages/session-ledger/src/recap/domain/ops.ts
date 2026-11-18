@@ -1,39 +1,8 @@
-import type { ClosedWhy, Fact, FactId, RunId, Section, TaskId } from './fact.ts';
-import { sameTask } from './fact.ts';
-import type { Text } from './text.ts';
-
-export interface AddOp {
-    readonly op: 'add';
-    readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
-    readonly ref: string | null;
-    readonly at: number | null;
-    readonly agent: string | null;
-    readonly anchor?: string | null;
-}
-
-export interface UpdateOp {
-    readonly op: 'update';
-    readonly id: string;
-    readonly text: string;
-    readonly why: string | null;
-    readonly anchor?: string | null;
-}
-
-export interface CloseOp {
-    readonly op: 'close';
-    readonly id: string;
-    readonly why: ClosedWhy | null;
-    readonly anchor?: Text;
-}
+import type { ClosedWhy } from './fact.ts';
+import type { AddOp, CloseOp, Fact, RunRef, UpdateOp } from './legacy.ts';
+import { sameTask } from './legacy.ts';
 
 export type Operation = AddOp | UpdateOp | CloseOp;
-
-export interface TaskOps {
-    readonly task: string;
-    readonly ops: readonly Operation[];
-}
 
 export type Reason = 'unknown-id' | 'closed' | 'no-why' | 'second-goal';
 
@@ -42,23 +11,20 @@ export interface Refusal {
     readonly reason: Reason;
 }
 
-export interface RunRef {
-    readonly id: RunId;
-    readonly task: TaskId;
-    readonly at: number;
-    readonly language: string;
-    mint(): FactId;
-}
-
 export interface Folded {
     readonly ledger: readonly Fact[];
     readonly refused: readonly Refusal[];
     readonly changed: readonly Fact[];
 }
 
-const closedBy = (fact: Fact, why: ClosedWhy, at: number): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: at, lastAt: Math.max(fact.lastAt, at) });
+interface Stepped {
+    readonly facts: readonly Fact[];
+    readonly refusal: Refusal | null;
+}
 
-function closeOne(facts: readonly Fact[], op: CloseOp, run: RunRef): { facts: readonly Fact[]; refusal: Refusal | null } {
+const closedBy = (fact: Fact, why: ClosedWhy, run: RunRef): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: run.at, lastAt: Math.max(fact.lastAt, run.at) });
+
+function closeOne(facts: readonly Fact[], op: CloseOp, run: RunRef): Stepped {
     const target = facts.find((fact) => fact.id === op.id);
     if (target === undefined) {
         return { facts, refusal: { op, reason: 'unknown-id' } };
@@ -70,10 +36,10 @@ function closeOne(facts: readonly Fact[], op: CloseOp, run: RunRef): { facts: re
         return { facts, refusal: { op, reason: 'no-why' } };
     }
     const why = op.why;
-    return { facts: facts.map((fact) => (fact === target ? closedBy(fact, why, run.at) : fact)), refusal: null };
+    return { facts: facts.map((fact) => (fact === target ? closedBy(fact, why, run) : fact)), refusal: null };
 }
 
-function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): { facts: readonly Fact[]; refusal: Refusal | null } {
+function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): Stepped {
     const target = facts.find((fact) => fact.id === op.id);
     if (target === undefined) {
         return { facts, refusal: { op, reason: 'unknown-id' } };
@@ -88,7 +54,7 @@ function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): { facts: 
     return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, anchor: op.anchor ?? fact.anchor, lastAt: Math.max(fact.lastAt, run.at), language: run.language } : fact)), refusal: null };
 }
 
-function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readonly Fact[]; refusal: Refusal | null } {
+function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): Stepped {
     if (op.section === 'decisions' && op.why === null) {
         return { facts, refusal: { op, reason: 'no-why' } };
     }
@@ -97,15 +63,15 @@ function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): { facts: readon
         id: run.mint(), task: run.task, section: op.section, text: op.text, why: op.why, ref: op.ref, agent: op.agent, anchor: op.anchor ?? null,
         firstAt: first, lastAt: run.at, state: 'open', closedWhy: null, closedAt: null, language: run.language,
     };
-    const replaced = op.section === 'goal' ? facts.map((each) => (each.section === 'goal' && each.state === 'open' && sameTask(each.task, run.task) ? closedBy(each, 'superseded', run.at) : each)) : facts;
+    const replaced = op.section === 'goal' ? facts.map((each) => (each.section === 'goal' && each.state === 'open' && sameTask(each.task, run.task) ? closedBy(each, 'superseded', run) : each)) : facts;
     return { facts: [...replaced, fact], refusal: null };
 }
 
-export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow = false): Folded {
+function stepped(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
     let facts = ledger;
     const refused: Refusal[] = [];
     let goals = 0;
-    const step = (result: { facts: readonly Fact[]; refusal: Refusal | null }): void => {
+    const step = (result: Stepped): void => {
         facts = result.facts;
         if (result.refusal !== null) {
             refused.push(result.refusal);
@@ -121,10 +87,27 @@ export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: R
         goals += op.section === 'goal' ? 1 : 0;
         step(op.section === 'goal' && goals > 1 ? { facts, refusal: { op, reason: 'second-goal' } } : addOne(facts, op, run));
     }
-    const swept = !sweepNow || ops.length === 0 ? facts : supersedeNow(facts, { before: ledger.length, named: new Set(ops.flatMap((op) => (op.op === 'add' ? [] : [op.id]))) }, run);
-    return { ledger: swept, refused, changed: swept.filter((fact, at) => ledger[at] !== fact) };
+    return { ledger: facts, refused, changed: [] };
 }
 
-function supersedeNow(facts: readonly Fact[], seen: { readonly before: number; readonly named: ReadonlySet<string> }, run: RunRef): readonly Fact[] {
-    return facts.map((fact, at) => (at < seen.before && fact.section === 'now' && fact.state === 'open' && !seen.named.has(fact.id) ? closedBy(fact, 'superseded', run.at) : fact));
+function changedFrom(ledger: readonly Fact[], facts: readonly Fact[], refused: readonly Refusal[]): Folded {
+    return { ledger: facts, refused, changed: facts.filter((fact, at) => ledger[at] !== fact) };
 }
+
+function supersedeNow(facts: readonly Fact[], ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): readonly Fact[] {
+    const named = new Set(ops.flatMap((op) => (op.op === 'add' ? [] : [op.id])));
+    return facts.map((fact, at) => (at < ledger.length && fact.section === 'now' && fact.state === 'open' && !named.has(fact.id) ? closedBy(fact, 'superseded', run) : fact));
+}
+
+export function fold(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+    const { ledger: facts, refused } = stepped(ledger, ops, run);
+    return changedFrom(ledger, facts, refused);
+}
+
+export function foldSwept(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+    const { ledger: facts, refused } = stepped(ledger, ops, run);
+    return changedFrom(ledger, ops.length === 0 ? facts : supersedeNow(facts, ledger, ops, run), refused);
+}
+
+export type { AddOp, CloseOp, RunRef, TaskOps, UpdateOp } from './legacy.ts';
+export { apply } from './legacy.ts';

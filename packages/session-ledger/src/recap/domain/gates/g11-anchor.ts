@@ -1,12 +1,7 @@
 import type { Gate, GateContext } from './gate.ts';
-import { foldedOf } from './words.ts';
+import { ANCHOR_CHARS, anchorQuotedIn as quotedIn } from '../legacy.ts';
 
-export const ANCHOR_CHARS = 120;
-
-export function quotedIn(anchor: string, source: string): boolean {
-    const folded = foldedOf(anchor);
-    return folded !== '' && ` ${source} `.includes(` ${folded} `);
-}
+export { ANCHOR_CHARS, anchorQuotedIn as quotedIn } from '../legacy.ts';
 
 const MISSING = `the anchor is missing: copy a quote of at most ${ANCHOR_CHARS} characters from the turn, tool call or note the fact comes from`;
 

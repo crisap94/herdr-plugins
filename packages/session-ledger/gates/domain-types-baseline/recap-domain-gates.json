@@ -6,8 +6,8 @@
     "container": 1
   },
   "src/recap/domain/gates/g11-anchor.ts": {
-    "parameter": 3,
-    "return": 2,
+    "parameter": 1,
+    "return": 1,
     "container": 1
   },
   "src/recap/domain/gates/g12-answered.ts": {

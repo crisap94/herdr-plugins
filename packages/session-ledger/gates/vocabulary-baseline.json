@@ -30,8 +30,6 @@
   "src/recap/application/reconcile.ts": 9,
   "src/recap/application/writer-candidates.ts": 2,
   "src/recap/application/writer-context.ts": 21,
-  "src/recap/domain/boundary.ts": 4,
-  "src/recap/domain/fact.ts": 3,
-  "src/recap/domain/grouping.ts": 23,
-  "src/recap/domain/lane-shape.ts": 4
+  "src/recap/domain/lane-shape.ts": 1,
+  "src/recap/domain/legacy.ts": 35
 }
