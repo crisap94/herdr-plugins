@@ -27,7 +27,7 @@ import { AskLedgerRepository, AutocompactBriefsRepository, AutocompactRecordsRep
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
 import { LedgerRepository } from './ledger.ts';
-import { openDatabase } from './open.ts';
+import { openForRole } from './open.ts';
 import type { NewerDatabase, Role, StaleDatabase } from './open.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
@@ -102,7 +102,9 @@ export function storeOver(db: Database, options: StoreSettings = {}): Store {
 
 export const databaseFile = (stateDir: Directory): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
 
+export function openStoreAt(path: FsPath, options?: StoreSettings, role?: 'owner'): Store | NewerDatabase;
+export function openStoreAt(path: FsPath, options: StoreSettings, role: Role): Store | NewerDatabase | StaleDatabase;
 export function openStoreAt(path: FsPath, options: StoreSettings = {}, role: Role = 'owner'): Store | NewerDatabase | StaleDatabase {
-    const opened = openDatabase(path, MIGRATIONS, role);
+    const opened = openForRole(path, MIGRATIONS, role);
     return opened.kind === 'ready' ? storeOver(opened.db, options) : opened;
 }
