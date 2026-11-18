@@ -9,3 +9,4 @@ stub	tab-recap/src/recap/render/linked.ts	export * from '@stateforge-labs/recap-
 text	#src/i18n/messages.ts	./wording.ts	packages/recap-view/src/wrap.ts
 text	#src/ports/tab-views.ts	./model.ts	packages/recap-view/src/link*.ts
 text	LaneWeb	Web	packages/recap-view/src/link*.ts
+specifier	../../../../packages/recap-view/src	@stateforge-labs/recap-view/unstable
