@@ -21,11 +21,7 @@
     "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
-  "include": [
-    "src",
-    "test",
-    "testkit"
-  ],
+  "include": ["src", "test", "testkit", "gates"],
   "exclude": [
     "node_modules"
   ]
