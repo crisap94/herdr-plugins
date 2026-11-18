@@ -8,10 +8,14 @@ import * as root from '@stateforge-labs/session-ledger';
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const surfaceDir = join(packageRoot, 'test', 'e2e', 'surface');
 
-const ELEVEN = [
+const SEVENTEEN = [
+    'FULL_WRITER_VIEW',
+    'SECTIONS',
     'UNREAD',
+    'createEngine',
     'err',
     'instant',
+    'isScreenSource',
     'isUnknown',
     'ok',
     'parseDirectory',
@@ -19,6 +23,8 @@ const ELEVEN = [
     'parseScopeId',
     'parseSessionId',
     'parseSessionKey',
+    'saying',
+    'sectionOf',
     'unknown',
 ];
 
@@ -44,8 +50,18 @@ function errorsOf(rootNames: readonly string[], seeded: ReadonlyMap<string, stri
     return ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
 }
 
-test('the root exports exactly the eleven values', () => {
-    assert.deepEqual(Object.keys(root).toSorted(), ELEVEN);
+test('the root exports exactly the seventeen values', () => {
+    assert.deepEqual(Object.keys(root).toSorted(), SEVENTEEN);
+});
+
+test('the six values of the facade step keep the behaviour of main', () => {
+    assert.equal(typeof root.createEngine, 'function');
+    assert.deepEqual(root.FULL_WRITER_VIEW, { kind: 'full' });
+    assert.deepEqual(root.SECTIONS.map((section) => section.id), ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links']);
+    assert.equal(root.sectionOf('## Waiting on you'), 'needs');
+    assert.equal(root.isScreenSource('screen:1'), true);
+    assert.equal(root.isScreenSource('/a.jsonl'), false);
+    assert.equal(typeof root.saying({ why: 'not-found', what: 'transcript' }), 'string');
 });
 
 test('every surface fixture compiles', () => {
