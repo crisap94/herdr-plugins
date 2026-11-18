@@ -1,9 +1,11 @@
 import type { CreateEngine, Engine } from '#src/contract/engine.ts';
 import type { HistoryFact } from '#src/contract/facts.ts';
-import type { ScopeId, SessionKey } from '#src/contract/ids.ts';
+import type { AccomplishmentEstablished, LedgerEvent, TurnRecorded } from '#src/contract/events.ts';
+import { instant } from '#src/contract/kernel.ts';
+import { parseSessionKey, type ScopeId, type SessionKey } from '#src/contract/ids.ts';
 import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
 import { createEngine as createLegacyEngine, type Engine as LegacyEngine, type EngineStore } from '#src/recap/application/engine.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RunAccomplishment, RunEvent, RunTurn } from '#src/recap/application/ledger-reconcile.ts';
 import { compacted } from './compacted.ts';
 import { curate } from './curate.ts';
 import { createFollowSet } from './follow-set.ts';
@@ -13,13 +15,48 @@ import { sessionStarted, type Retired, type Started } from './session-started.ts
 import type { Advance, LaneCursor } from '#src/ports/recap-records.ts';
 import { laneOf, tabOf, writtenOf } from './translate.ts';
 
-const reportWritten = (plugs: FacadePlugs) => (event: RunEvent): void => {
+const emit = (plugs: FacadePlugs, make: () => LedgerEvent | null): void => {
+    try {
+        const event = make();
+        if (event !== null) {
+            plugs.on?.(event);
+        }
+    } catch (error) {
+        plugs.environment.log(`engine-adapter: ledger event failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+const turnOf = (scope: ScopeId, turn: RunTurn): TurnRecorded | null => {
+    const read = parseSessionKey(turn.key);
+    return read.kind === 'ok' ? { kind: 'turn-recorded', scope, key: read.value, at: instant(turn.at) } : null;
+};
+
+const accomplishmentOf = (scope: ScopeId, done: RunAccomplishment): AccomplishmentEstablished => ({
+    kind: 'accomplishment-established',
+    scope,
+    task: done.fact.task,
+    sessions: done.task.lanes.flatMap((member) => {
+        const read = parseSessionKey(member);
+        return read.kind === 'ok' ? [read.value] : [];
+    }),
+    fact: done.fact,
+    at: instant(done.at),
+});
+
+const reportRun = (plugs: FacadePlugs) => (event: RunEvent): void => {
     const written = writtenOf(event);
     if (written === null) {
-        plugs.environment.log(`engine-adapter: recap-written skipped, the tab id is empty: ${event.tab}`);
+        plugs.environment.log(`engine-adapter: run events skipped, the tab id is empty: ${event.tab}`);
         return;
     }
-    plugs.on?.(written);
+    const { scope } = written;
+    for (const turn of event.entries ?? []) {
+        emit(plugs, () => turnOf(scope, turn));
+    }
+    for (const done of event.established ?? []) {
+        emit(plugs, () => accomplishmentOf(scope, done));
+    }
+    emit(plugs, () => written);
 };
 
 type Moved = Pick<Advance, 'tab' | 'lanes'>;
@@ -60,7 +97,7 @@ const legacyOf = (plugs: FacadePlugs, retired: Retired): LegacyEngine => createL
     models: plugs.models,
     environment: plugs.environment,
     settings: plugs.settings,
-    ran: reportWritten(plugs),
+    ran: reportRun(plugs),
 });
 
 export type { FacadePlugs };

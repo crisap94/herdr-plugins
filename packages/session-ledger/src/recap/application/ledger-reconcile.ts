@@ -5,6 +5,9 @@ import type { Stories } from '#src/ports/stories.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
+import type { TaskShape } from '#src/recap/domain/grouping.ts';
+import type { PaneId } from '#src/recap/domain/lane-shape.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { CloseOp, Operation, UpdateOp } from '#src/recap/domain/ops.ts';
 import { reconciliationOf } from '#src/recap/domain/reconciliation.ts';
@@ -121,11 +124,24 @@ export const RECONCILE_EVERY = 8;
 
 export type CurateWhy = 'open' | 'turns' | 'boundary';
 
+export interface RunTurn {
+    readonly key: PaneId;
+    readonly at: Instant;
+}
+
+export interface RunAccomplishment {
+    readonly task: TaskShape;
+    readonly fact: Fact;
+    readonly at: Instant;
+}
+
 export interface RunEvent {
     readonly tab: string;
     readonly turns: number;
     readonly boundary: boolean;
     readonly cause?: string;
+    readonly entries?: readonly RunTurn[];
+    readonly established?: readonly RunAccomplishment[];
 }
 
 export interface ReconcilingDeps {
@@ -179,7 +195,7 @@ export class Reconciling {
         this.lastRun.set(key, now);
         this.running.add(key);
         try {
-            const mine = lanes.filter((lane) => task.lanes.length === 0 || task.lanes.includes(lane.pane));
+            const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.includes(seat.pane));
             const tail = await deps.tail(mine);
             const parts = { writer, stories: deps.stories, language: deps.language(), rubric: deps.rubric, clock: { now, zone: deps.zone() }, ...(deps.repair === undefined ? {} : { repair: deps.repair }), log: (line: string): void => { deps.log(line); } };
             await reconcileTask(parts, { tab, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => name.toLowerCase()) });

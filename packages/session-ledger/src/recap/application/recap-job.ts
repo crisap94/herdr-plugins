@@ -17,6 +17,7 @@ import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
 import type { RunEvent } from './ledger-reconcile.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { marksOf } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
@@ -42,9 +43,9 @@ export interface RecapJobDeps {
 
 const TURN_SETTLE_MS = 2500;
 const READ_BUDGET = 768 * 1024;
-async function placeOf(lane: Lane, repos: LaneRepo): Promise<PlacedLane> {
-    const found = lane.cwd === null ? null : await repos.repoOf(lane.cwd);
-    return { pane: String(lane.pane), place: found?.kind === 'repo' ? found.root : lane.cwd };
+async function placeOf(seat: Lane, repos: LaneRepo): Promise<PlacedLane> {
+    const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
+    return { pane: String(seat.pane), place: found?.kind === 'repo' ? found.root : seat.cwd };
 }
 
 interface Reading { readonly lane: Lane; readonly cursor: LaneCursor; readonly chunk: Chunk | null; readonly grew: boolean; readonly fresh: boolean; readonly error: string | null }
@@ -273,9 +274,8 @@ export class RecapJob {
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'ops' | 'marks' | 'input' | 'gateStats'>, run: { tasks: readonly TaskShape[]; request: RecapRequest; asked: Extract<Extracted, { kind: 'ops' }>; readings: readonly Reading[]; parts: readonly Reading[] }): void {
-        const input = this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {};
-        const marks = marksOf(run.readings, base.at, true);
-        this.deps.records.recordRun({ ...base, tasks: run.tasks, ops: run.asked.tasks, gateStats: run.asked.stats, marks, ...input });
-        this.deps.ran?.({ tab: base.tab, turns: run.parts.flatMap((r) => r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).length, boundary: marks.length > 0, cause: base.cause });
+        const marks = marksOf(run.readings, base.at, true), before = run.tasks.flatMap((task) => this.deps.ledger.allOf({ tab: base.tab, key: task.id })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: instant(entry.at ?? base.at) })));
+        this.deps.records.recordRun({ ...base, tasks: run.tasks, ops: run.asked.tasks, gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
+        this.deps.ran?.({ tab: base.tab, turns: entries.length, boundary: marks.length > 0, cause: base.cause, entries, established: run.tasks.flatMap((task) => this.deps.ledger.allOf({ tab: base.tab, key: task.id }).filter((fact) => fact.section === 'done' && !before.some((old) => old.id === fact.id)).map((fact) => ({ task, fact, at: instant(base.at) }))) });
     }
 }
