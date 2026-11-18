@@ -19,6 +19,11 @@ import { NotAReasonError, parseCompactionPiece, parseConfirmationReads, parseNee
 import { NOTE } from './coordination.ts';
 import { STORY_TOO_LONG, STORY_WORDS, storyOf } from './curation.ts';
 import { VALUE_MAX as EVENT_MAX, type EventKind } from './event-token.ts';
+import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import type { Freshness, LastRunCause, RefreshStatus, WaitResult } from './freshness.ts';
+import type { HandoffGroupId } from './handoff-content.ts';
+import type { HandoffText } from './handoff-sanitize.ts';
+import type { WorksiteSnapshot } from './worksite.ts';
 import { NotAnIdentifierError, isUncheckedSessionId, isUncheckedSessionPath, parseAgentKind, parseHandoffId, parsePaneId, parseSessionId, parseSessionPath, parseTabId, parseWorkspaceId, type HandoffId, type PaneId, type SessionId, type SessionPath, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { collapsedText } from './text-collapse.ts';
@@ -361,4 +366,53 @@ export function agentKind(raw: string): AgentKind {
         throw new NotAnIdentifierError('an agent kind cannot be empty');
     }
     return parsed.value;
+}
+
+export interface LastRun {
+    readonly at: number;
+    readonly cause: LastRunCause;
+}
+
+export type NewerPrompts = { readonly kind: 'none' } | { readonly kind: 'at-least'; readonly count: number } | { readonly kind: 'unknown' };
+
+export function refreshStatusOf(waited: WaitResult, error: string | null): RefreshStatus {
+    if (waited === 'timeout') {
+        return 'timed-out';
+    }
+    return error === null ? 'refreshed' : 'failed';
+}
+
+export function newerPromptsOf(count: number | null): NewerPrompts {
+    if (count === null) {
+        return { kind: 'unknown' };
+    }
+    return count > 0 ? { kind: 'at-least', count } : { kind: 'none' };
+}
+
+export interface SettleEvidence {
+    readonly trials: number;
+    readonly source: string;
+}
+
+export interface HandoffEntry {
+    readonly id: FactId;
+    readonly text: HandoffText;
+    readonly firstAt: number;
+    readonly lastAt: number;
+    readonly reason: HandoffText | null;
+}
+
+export interface HandoffGroup {
+    readonly id: HandoffGroupId;
+    readonly entries: readonly HandoffEntry[];
+    readonly capped: number;
+}
+
+export interface HandoffBody {
+    readonly kind: 'content';
+    readonly note: HandoffText | null;
+    readonly freshness: Freshness;
+    readonly worksite: WorksiteSnapshot;
+    readonly groups: readonly HandoffGroup[];
+    readonly withheld: number;
 }
