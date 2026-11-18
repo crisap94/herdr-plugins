@@ -20,13 +20,6 @@
     "return": 3,
     "container": 1
   },
-  "src/daemon/config.ts": {
-    "parameter": 14,
-    "return": 10,
-    "container": 6,
-    "property": 8,
-    "assertion": 1
-  },
   "src/daemon/deciders.ts": {
     "parameter": 3,
     "return": 2,
@@ -44,9 +37,12 @@
     "parameter": 4,
     "return": 1
   },
+  "src/daemon/legacy.ts": {
+    "legacy": 22
+  },
   "src/daemon/main.ts": {
     "parameter": 8,
-    "return": 14,
+    "return": 13,
     "container": 3
   },
   "src/daemon/refresh-status.ts": {
