@@ -1,5 +1,6 @@
 import { THRESHOLDS, parseThreshold } from './autocompact-verdict.ts';
 import type { Thresholds } from './autocompact-verdict.ts';
+import { numberIn, type AutocompactTuning, type TuningReader } from './legacy.ts';
 import { parseProbability } from './probability.ts';
 
 export const STYLES = ['gentle', 'balanced', 'eager'] as const;
@@ -20,25 +21,18 @@ export const STYLE_NUMBERS: Readonly<Record<AutocompactStyle, StyleNumbers>> = {
     eager: { verdict: { safe: parseThreshold(0.40), closes: parseThreshold(0.60), undecidedFrom: parseThreshold(0.45), undecidedTo: parseThreshold(0.55) }, coverageAtLeast: 0.60, ceiling: 65, cooldownMs: 5 * 60_000, recheckIdleMs: 30 * 60_000 },
 };
 
-export interface AutocompactTuning {
-    readonly style: AutocompactStyle;
-    readonly verdict: Thresholds;
-    readonly coverageAtLeast: number;
-    readonly recheckIdleMs: number | null;
+export function parseAutocompactStyle(raw: unknown): AutocompactStyle {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return STYLES.find((style) => style === text) ?? STYLE_DEFAULT;
 }
 
-const word = (raw: string | undefined): string => (raw ?? '').trim().toLowerCase();
+export type { AutocompactTuning } from './legacy.ts';
+export { numberIn } from './legacy.ts';
 
-export const styleOf = (raw: string | undefined): AutocompactStyle => STYLES.find((style) => style === word(raw)) ?? STYLE_DEFAULT;
+export const styleOf = parseAutocompactStyle;
 
-export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
-    const value = Number(word(raw));
-    const usable = word(raw) !== '' && Number.isFinite(value) && (!whole || Number.isInteger(value));
-    return usable && value >= min && value <= max ? value : null;
-}
-
-export function tuningOf(get: (key: string) => string | undefined): AutocompactTuning {
-    const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
+export function tuningOf(get: TuningReader): AutocompactTuning {
+    const style = parseAutocompactStyle(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const numbers = STYLE_NUMBERS[style];
     const band = numbers.verdict;
     const safeKey = parseProbability(numberIn(get('TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST'), 0.05, 0.50));

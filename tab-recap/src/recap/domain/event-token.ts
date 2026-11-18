@@ -15,9 +15,4 @@ const EXCHANGE_EVENT_KINDS = [...Object.values(COMPACT_EVENTS), ...Object.values
 export const EVENT_KINDS = [...LANE_EVENT_KINDS, ...EXCHANGE_EVENT_KINDS] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
-export const seqOf = (startedAt: number, n: number): string => (Math.floor(startedAt) + n).toString(36);
-
-export function eventValue(seq: string, kind: EventKind, detail?: string | null): string {
-    const tail = detail === undefined || detail === null || detail === '' ? '' : `:${detail}`;
-    return `${seq}:${kind}${tail}`.slice(0, VALUE_MAX);
-}
+export { eventValue, seqOf } from './legacy.ts';

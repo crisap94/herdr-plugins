@@ -1,76 +1,4 @@
 {
-  "src/recap/domain/ask-outcome.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/domain/autocompact-style.ts": {
-    "parameter": 7,
-    "return": 3,
-    "property": 2
-  },
-  "src/recap/domain/autocompact.ts": {
-    "parameter": 1,
-    "return": 2,
-    "container": 1,
-    "property": 8
-  },
-  "src/recap/domain/backoff.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/domain/board.ts": {
-    "return": 1,
-    "container": 3,
-    "property": 5
-  },
-  "src/recap/domain/byte-budget.ts": {
-    "parameter": 2,
-    "return": 1,
-    "assertion": 1
-  },
-  "src/recap/domain/compact-note.ts": {
-    "parameter": 1
-  },
-  "src/recap/domain/compact-request.ts": {
-    "parameter": 4,
-    "return": 4
-  },
-  "src/recap/domain/compaction-plan.ts": {
-    "parameter": 5,
-    "property": 3
-  },
-  "src/recap/domain/coordination.ts": {
-    "parameter": 1,
-    "return": 2,
-    "container": 2,
-    "property": 2
-  },
-  "src/recap/domain/curation.ts": {
-    "parameter": 4,
-    "return": 3,
-    "container": 8,
-    "property": 3,
-    "assertion": 1
-  },
-  "src/recap/domain/effort.ts": {
-    "parameter": 2,
-    "return": 1
-  },
-  "src/recap/domain/event-token.ts": {
-    "parameter": 4,
-    "return": 2
-  },
-  "src/recap/domain/fold.ts": {
-    "parameter": 4,
-    "return": 3,
-    "container": 3,
-    "property": 9,
-    "assertion": 8
-  },
-  "src/recap/domain/forbidden-words.ts": {
-    "return": 1,
-    "container": 1
-  },
   "src/recap/domain/freshness.ts": {
     "parameter": 2,
     "property": 2
@@ -136,6 +64,9 @@
   "src/recap/domain/ledger-view.ts": {
     "return": 1,
     "container": 1
+  },
+  "src/recap/domain/legacy.ts": {
+    "legacy": 91
   },
   "src/recap/domain/origin.ts": {
     "parameter": 1

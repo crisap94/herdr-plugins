@@ -1,14 +1,14 @@
-import { STYLE_DEFAULT, STYLE_NUMBERS, styleOf } from './autocompact-style.ts';
+import { STYLE_DEFAULT, STYLE_NUMBERS, parseAutocompactStyle } from './autocompact-style.ts';
 import type { AutocompactStyle } from './autocompact-style.ts';
 import { REGISTERED_KINDS, kindsWith, registeredKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
-import type { RegisteredKind, RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { isSection, type Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import { holdsLane } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import type { Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import type { Instant, Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { agentKind, type AgentKind } from './ids.ts';
 import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { AutocompactReader, GateInput, JevReader } from './legacy.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
@@ -81,11 +81,7 @@ export const MINIMUM_MIN = 10;
 export const MINIMUM_MAX = 95;
 export const CEILING_DEFAULT = STYLE_NUMBERS.balanced.ceiling;
 export const COOLDOWN_DEFAULT_MS = STYLE_NUMBERS.balanced.cooldownMs;
-export function autocompactDefaultKinds<T extends RegisteredKindTable>(table: T): readonly (keyof T)[] {
-    return kindsWith(table, 'autocompactDefault');
-}
-
-export const KINDS_DEFAULT = autocompactDefaultKinds(REGISTERED_KINDS);
+export const KINDS_DEFAULT = kindsWith(REGISTERED_KINDS, 'autocompactDefault');
 
 const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
 
@@ -94,11 +90,11 @@ export function parseAutocompactMode(raw: unknown): AutocompactMode {
     return MODES.find((mode) => mode === text) ?? 'shadow';
 }
 
-export function parseAutocompactPercent(raw: unknown, fallback: number): AutocompactPercent {
+export function parseAutocompactPercent(raw: unknown, fallback: unknown): AutocompactPercent {
     const words = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const text = typeof raw === 'number' ? String(raw) : words;
     const percent = Number(text.replace(/%$/, ''));
-    return brand<number, 'AutocompactPercent'>(text !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : fallback);
+    return brand<number, 'AutocompactPercent'>(text !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : Number(fallback));
 }
 
 export type AutocompactCeiling = AutocompactPercent;
@@ -135,8 +131,8 @@ export function parseShadowKinds(raw: unknown): ShadowKinds {
 
 export type AutocompactSetting = 'TAB_RECAP_AUTOCOMPACT' | 'TAB_RECAP_AUTOCOMPACT_AT' | 'TAB_RECAP_AUTOCOMPACT_CEILING' | 'TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS' | 'TAB_RECAP_AUTOCOMPACT_KINDS' | 'TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS' | 'TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS' | 'TAB_RECAP_AUTOCOMPACT_MISSED_FACTS' | 'TAB_RECAP_AUTOCOMPACT_STYLE';
 
-export function policyOf(get: (key: AutocompactSetting) => string | undefined): AutocompactPolicy {
-    const style = styleOf(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
+export function policyOf(get: AutocompactReader): AutocompactPolicy {
+    const style = parseAutocompactStyle(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const minimum = parseAutocompactPercent(get('TAB_RECAP_AUTOCOMPACT_AT'), MINIMUM_DEFAULT);
     return {
         mode: parseAutocompactMode(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: parseAutocompactCeiling(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, style),
@@ -184,7 +180,7 @@ export function parseJevModel(raw: unknown): JevModel {
     return brand<string, 'JevModel'>(model === '' ? JEV_MODEL_DEFAULT : model);
 }
 
-export function jevOf(get: (key: JevSetting) => string | undefined): JevSettings {
+export function jevOf(get: JevReader): JevSettings {
     return { url: parseJevUrl(get('TAB_RECAP_JEV_URL')), model: parseJevModel(get('TAB_RECAP_JEV_MODEL')) };
 }
 
@@ -198,23 +194,6 @@ export function parseLaneStatusAtDecision(raw: unknown): LaneStatusAtDecision | 
 export const SKIP_GATES = ['below-minimum', 'busy', 'in-flight', 'cooldown', 'unchanged', 'no-context', 'coverage-backoff'] as const;
 export type SkipGate = (typeof SKIP_GATES)[number];
 export type Gate = SkipGate | 'ceiling' | 'ask';
-
-export interface GateInput {
-    readonly kind: LaneKind;
-    readonly kinds: AutocompactKinds;
-    readonly shadowKinds: readonly RegisteredKind[];
-    readonly busy: boolean;
-    readonly flight: Flight | null;
-    readonly share: number;
-    readonly minimum: number;
-    readonly ceiling: number;
-    readonly now: number;
-    readonly lastBreakAt: number | null;
-    readonly lastDecisionAt: Instant | null;
-    readonly cooldownMs: number;
-    readonly unchanged: boolean;
-    readonly coverageBackoff?: boolean;
-}
 
 function backoffGate(input: GateInput): Gate | null {
     if (input.coverageBackoff && input.share < input.ceiling) return 'coverage-backoff';
@@ -243,3 +222,6 @@ export function gateOf(input: GateInput): GateDecision {
     })();
     return { gate, recordOnly };
 }
+
+export type { GateInput } from './legacy.ts';
+export { autocompactDefaultKinds } from './legacy.ts';

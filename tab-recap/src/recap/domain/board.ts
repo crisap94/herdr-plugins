@@ -1,42 +1,12 @@
 import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
-import type { RestoredLane } from './closures.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Board } from './legacy.ts';
 
 export type Shape = 'side' | 'bar';
-
-export interface Placement {
-    readonly pane: PaneId;
-    readonly shape: Shape;
-    readonly since?: number;
-}
 
 export type Visibility = boolean | 'toggle';
 
 export type VisibilityTarget = { readonly tab: TabId } | 'all';
-
-export interface HiddenState {
-    readonly all: boolean;
-    readonly hidden: readonly string[];
-    readonly shown: readonly string[];
-}
-
-export interface Board {
-    readonly lanes: ReadonlyMap<PaneId, Lane>;
-    readonly columns: ReadonlyMap<TabId, Placement>;
-    readonly closing: ReadonlyMap<PaneId, Instant>;
-    readonly opening: ReadonlySet<TabId>;
-    readonly reopens: ReadonlyMap<TabId, readonly Instant[]>;
-    readonly givenUp: ReadonlyMap<TabId, Instant>;
-    readonly widths: ReadonlyMap<TabId, number>;
-    readonly focused: TabId | null;
-    readonly enabled: boolean;
-    readonly seeded: boolean;
-    readonly hidden: ReadonlySet<TabId>;
-    readonly allHidden: boolean;
-    readonly shown: ReadonlySet<TabId>;
-    readonly persisted: readonly RestoredLane[] | null;
-}
 
 export function emptyBoard(): Board {
     return {
@@ -59,10 +29,6 @@ export function emptyBoard(): Board {
 
 export function lanesOf(board: Board, tab: TabId): readonly Lane[] {
     return [...board.lanes.values()].filter((lane) => lane.tab === tab);
-}
-
-export function listsPane(board: Board, pane: PaneId): boolean {
-    return board.lanes.has(pane);
 }
 
 export function tabsWithLanes(board: Board): readonly TabId[] {
@@ -113,3 +79,6 @@ export function removed<T>(set: ReadonlySet<T>, value: T): ReadonlySet<T> {
     next.delete(value);
     return next;
 }
+
+export type { Board, HiddenState, Placement } from './legacy.ts';
+export { listsPane } from './legacy.ts';
