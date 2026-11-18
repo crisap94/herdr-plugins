@@ -151,7 +151,7 @@ function openModal(): void {
 
 function askToCompact(): void {
     if (mode !== 'modal') {
-        compactFromColumn(store, tab);
+        compactFromColumn(store, tabId(tab));
         return;
     }
     spawn(process.execPath, [COMMAND_LAUNCHER, 'compact'], { detached: true, stdio: 'ignore', env: { ...process.env, TAB_RECAP_TAB: tab, TAB_RECAP_COMPACT_DELAY_MS: '400' } }).unref();
@@ -166,12 +166,14 @@ function openSettings(): void {
     }
 }
 
-function isTap(input: Key): boolean {
+type Press = 'tap' | 'none';
+
+function pressOf(input: Key): Press {
     const at = input.indexOf(`${ESC}[<`);
     if (at < 0 || !input.endsWith('M')) {
-        return false;
+        return 'none';
     }
-    return input.slice(at + 3).split(';')[0] === '0';
+    return input.slice(at + 3).split(';')[0] === '0' ? 'tap' : 'none';
 }
 
 const KEYS: Readonly<Record<string, () => void>> = {
@@ -212,7 +214,7 @@ if (process.stdin.isTTY) {
         if (key === '\u0003' || (mode === 'modal' && (key === 'q' || key === ESC))) {
             process.exit(0);
         }
-        if (isTap(key)) {
+        if (pressOf(key) === 'tap') {
             openModal();
             return;
         }

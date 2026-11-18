@@ -7,14 +7,15 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 
 interface ColumnStore {
     readonly requests: Requests;
 }
 
-export function compactFromColumn(store: ColumnStore | null, tab: string): void {
+export function compactFromColumn(store: ColumnStore | null, tab: TabId): void {
     void startCompact(tab, null, undefined, loadConfig().compactNote, {
-        askNote: (asked, pane) => new HerdrFleet(stateDir()).agents().askNote(asked, pane),
+        askNote: (asked: TabId, pane: PaneId | null) => new HerdrFleet(stateDir()).agents().askNote(asked, pane),
         queue: (request): Done => {
             if (store === null) {
                 return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the state store is not ready'))) });

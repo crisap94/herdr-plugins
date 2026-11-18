@@ -1,15 +1,4 @@
 {
-  "src/column/compact.ts": {
-    "parameter": 3
-  },
-  "src/column/expanded-modal.ts": {
-    "parameter": 3,
-    "container": 2
-  },
-  "src/column/main.ts": {
-    "return": 1,
-    "container": 1
-  },
   "src/i18n/en.ts": {
     "parameter": 88,
     "return": 67
