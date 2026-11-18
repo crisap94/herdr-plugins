@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { chainRenames, filesAbove, guard, loadBaseline, parseMoves, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import { chainRenames, filesAbove, guard, guardLanes, loadBaseline, parseMoves, parseBaseline, ratchet, writeBaseline } from '../bin/domain-baseline.ts';
+import type { Counts } from '../bin/domain-findings.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCRATCH = mkdtempSync(join(tmpdir(), 'domain-baseline-'));
@@ -54,6 +55,38 @@ test('the merge-base guard refuses a raised entry and a new entry, and allows a 
     assert.deepEqual(guard(base, { [FILE]: { parameter: 1 } }), []);
     assert.deepEqual(guard(base, {}), []);
     assert.deepEqual(guard(base, { [FILE]: { parameter: 2, assertion: 1, return: 1 } }), [`new entry: ${FILE}: return 1`]);
+});
+
+const lanesOf = (entries: Readonly<Record<string, Counts>>): ReadonlyMap<string, Counts> => new Map(Object.entries(entries));
+
+const AGENTS = 'src/ports/agents.ts';
+const LEGACY = 'src/ports/legacy.ts';
+const PLAIN = 'src/ports/plain.ts';
+
+test('a legacy row is allowed while its lane total does not rise', () => {
+    const base = lanesOf({ B1: { [AGENTS]: { parameter: 5 } } });
+    assert.deepEqual(guardLanes(base, lanesOf({ B1: { [AGENTS]: { parameter: 3 }, [LEGACY]: { legacy: 2 } } })), []);
+});
+
+test('a legacy row whose lane total rises fails with the lane total', () => {
+    const base = lanesOf({ B1: { [AGENTS]: { parameter: 5 } } });
+    assert.deepEqual(guardLanes(base, lanesOf({ B1: { [AGENTS]: { parameter: 5 }, [LEGACY]: { legacy: 2 } } })), ['lane total rose: B1: 5 -> 7']);
+});
+
+test('a legacy row in one lane is not paid by a fall in another lane', () => {
+    const base = lanesOf({ B1: { [AGENTS]: { parameter: 5 } }, B2: { [PLAIN]: { return: 2 } } });
+    const head = lanesOf({ B1: { [AGENTS]: { parameter: 5 }, [LEGACY]: { legacy: 2 } }, B2: { [PLAIN]: { return: 1 } } });
+    assert.deepEqual(guardLanes(base, head), ['lane total rose: B1: 5 -> 7']);
+});
+
+test('a new non-legacy entry still fails beside a legacy row', () => {
+    const base = lanesOf({ B1: { [AGENTS]: { parameter: 5 } } });
+    assert.deepEqual(guardLanes(base, lanesOf({ B1: { [AGENTS]: { parameter: 5 }, [PLAIN]: { return: 1 } } })), [`new entry: ${PLAIN}: return 1`]);
+});
+
+test('a legacy count on a file not named legacy.ts is a new entry', () => {
+    const base = lanesOf({ B1: { [AGENTS]: { parameter: 5 } } });
+    assert.deepEqual(guardLanes(base, lanesOf({ B1: { [AGENTS]: { parameter: 5 }, [PLAIN]: { legacy: 1 } } })), [`new entry: ${PLAIN}: legacy 1`]);
 });
 
 test('renames chain across commits back to the merge-base path, and a listed move fills only what git did not see', () => {
@@ -207,6 +240,17 @@ test('the merge-base guard fails a raised entry and a new entry', () => {
     const added = guarded(dir);
     assert.equal(added.status, 1);
     assert.match(String(added.stderr), /new entry: src\/domain\/other\.ts: return 1/u);
+});
+
+test('the merge-base guard passes a legacy row when the lane total does not rise, and fails it when the total rises', () => {
+    const dir = repo('guard-legacy');
+    writeFileSync(join(dir, 'ci/domain-types-baseline/B1.json'), JSON.stringify({ 'src/ports/legacy.ts': { legacy: 2 } }));
+    const paid = guarded(dir);
+    assert.equal(paid.status, 0, String(paid.stderr));
+    writeFileSync(join(dir, 'ci/domain-types-baseline/B1.json'), JSON.stringify({ [FILE]: { parameter: 2 }, 'src/ports/legacy.ts': { legacy: 2 } }));
+    const raised = guarded(dir);
+    assert.equal(raised.status, 1);
+    assert.match(String(raised.stderr), /lane total rose: B1: 2 -> 4/u);
 });
 
 test('a change that introduces the baseline folder passes the guard', () => {
