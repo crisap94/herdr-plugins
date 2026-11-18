@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { err, ok, type Result } from './result.ts';
-import { countsOf, filesAbove, guardAt, loadBaseline, ratchet, writeBaseline } from './domain-baseline.ts';
+import { countsOf, filesAbove, guardAt, loadBaseline, ratchet, writeBaseline, type Git } from './domain-baseline.ts';
 import { applyEntries, loadEntries, releasedMigrations, type Migrations } from './domain-exceptions.ts';
 import { compareFindings, describeFinding, type Counts, type Finding } from './domain-findings.ts';
 import { loadLanes, type Lanes } from './lane-map.ts';
@@ -13,9 +13,10 @@ export interface Settings {
     readonly brandFile: string | null;
     readonly exceptions: string;
     readonly migrations: Migrations | null;
+    readonly inheritBaseline: string | null;
 }
 
-const DEFAULTS: Settings = { brandFile: null, exceptions: 'gates/domain-types-exceptions.json', migrations: null };
+const DEFAULTS: Settings = { brandFile: null, exceptions: 'gates/domain-types-exceptions.json', migrations: null, inheritBaseline: null };
 
 type Fields = Readonly<Record<string, unknown>>;
 
@@ -32,6 +33,7 @@ export const parseSettings = (input: unknown): Result<Settings, string> => {
         brandFile: typeof input.brandFile === 'string' ? input.brandFile : null,
         exceptions: typeof input.exceptions === 'string' ? input.exceptions : DEFAULTS.exceptions,
         migrations: migrationsOf(input.migrations),
+        inheritBaseline: typeof input.inheritBaseline === 'string' ? input.inheritBaseline : null,
     });
 };
 
@@ -157,14 +159,19 @@ export const runReport = (args: readonly string[], found: Result<Report, string>
     return printReport(found.value, args.includes('--json'), mode.value.kind === 'ratchet' ? mode.value.outcome : null);
 };
 
-export const runGuard = (root: string, args: readonly string[]): number => {
+export const runGuard = (root: string, args: readonly string[], run?: Git): number => {
     const path = optionOf(args, '--baseline');
     const base = args[args.indexOf('--guard') + 1];
     if (path.kind === 'err' || path.value === null || base === undefined || base.startsWith('--')) {
         return notCovered('usage: --baseline <file or folder> --guard <merge base>');
     }
+    const settings = settingsOf(root);
+    if (settings.kind === 'err') {
+        return notCovered(settings.error);
+    }
+    const inherit = settings.value.inheritBaseline === null ? null : resolve(root, settings.value.inheritBaseline);
     try {
-        const problems = guardAt(path.value, base, join(root, MOVES));
+        const problems = guardAt(path.value, base, join(root, MOVES), inherit, run);
         if (problems.kind === 'err') {
             return notCovered(problems.error);
         }
