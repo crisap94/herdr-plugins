@@ -1,0 +1,134 @@
+import type { Fact } from '@stateforge-labs/session-ledger';
+import { SECTIONS } from '@stateforge-labs/session-ledger';
+import type { Break, ExpandedStory, SessionRecap, Web } from './model.ts';
+import { assertAmount } from './wording.ts';
+import type { TextWording } from './wording.ts';
+import { linked } from './linked.ts';
+import { breakLine } from './timeline-breaks.ts';
+import { sessionLines } from './session-lines.ts';
+import { clockOf, dateLines, dayOf, timelineOf } from './timeline.ts';
+import { elapsed, visibleLength, wrap } from './wrap.ts';
+import type { Style } from './wrap.ts';
+
+export interface Draw {
+    readonly width: number;
+    readonly style: Style;
+    readonly wording: TextWording;
+    readonly now: number;
+    readonly zone: string;
+    readonly webs: readonly (Web | null | undefined)[];
+    readonly breaks: readonly Break[];
+}
+
+export interface TaskData {
+    readonly facts: readonly Fact[];
+    readonly story: ExpandedStory | null;
+    readonly curating: boolean;
+}
+
+export type RegionId = 'head' | 'goal' | 'now' | 'needs' | 'decisions' | 'timeline' | 'next' | 'rules' | 'links' | 'session';
+export type Regions = Readonly<Record<RegionId, readonly string[]>>;
+
+const headingOf = (id: Exclude<RegionId, 'head'>, m: TextWording): string => {
+    const named = SECTIONS.find((section) => section.id === id);
+    return named === undefined ? m.expanded[id as 'timeline' | 'rules' | 'session'] : named[m.locale];
+};
+
+const titled = (id: Exclude<RegionId, 'head'>, body: readonly string[], draw: Draw): readonly string[] =>
+    body.length === 0 ? [] : [draw.style.bold(draw.style.cyan(headingOf(id, draw.wording).toUpperCase())), ...body];
+
+const open = (facts: readonly Fact[], section: Fact['section']): readonly Fact[] => facts.filter((fact) => fact.section === section && fact.state === 'open');
+const newest = (facts: readonly Fact[]): readonly Fact[] => facts.toSorted((a, b) => b.lastAt - a.lastAt);
+
+const text = (fact: Fact, draw: Draw): string => linked(fact.agent === null ? fact.text : `${fact.agent} · ${fact.text}`, draw.webs);
+
+const bullets = (facts: readonly Fact[], draw: Draw): readonly string[] => facts.flatMap((fact) => wrap(`• ${text(fact, draw)}`, draw.width, '  '));
+
+function stamp(at: number, draw: Draw): string {
+    return dayOf(at, draw.zone) === dayOf(draw.now, draw.zone) ? clockOf(at, draw.zone) : `${dayOf(at, draw.zone)} ${clockOf(at, draw.zone)}`;
+}
+
+function tailed(lines: readonly string[], tail: string, draw: Draw, hang: string): readonly string[] {
+    const last = lines.at(-1) ?? '';
+    return visibleLength(`${last} · ${tail}`) <= draw.width ? [...lines.slice(0, -1), `${last}${draw.style.gray(' · ')}${tail}`] : [...lines, `${hang}${tail}`];
+}
+
+function needs(facts: readonly Fact[], draw: Draw): readonly string[] {
+    return open(facts, 'needs').toSorted((a, b) => a.firstAt - b.firstAt).flatMap((fact) => {
+        const waited = elapsed(draw.now - fact.firstAt);
+        assertAmount(waited.amount);
+        return tailed(wrap(`• ${text(fact, draw)}`, draw.width, '  '), draw.style.yellow(draw.wording.expanded.waiting(waited.amount, waited.unit)), draw, '  ');
+    });
+}
+
+const NOT_RECORDED = '(not recorded)';
+
+const inDecisions = (fact: Fact): boolean => fact.section === 'decisions' && fact.closedWhy !== 'rewritten';
+
+function decisions(facts: readonly Fact[], draw: Draw): readonly string[] {
+    return facts.filter(inDecisions).toSorted((a, b) => b.firstAt - a.firstAt).flatMap((fact) => {
+        const when = stamp(fact.firstAt, draw);
+        const hang = ' '.repeat(when.length + 1);
+        const why = fact.why === null || fact.why === NOT_RECORDED ? [] : wrap(fact.why, draw.width - hang.length).map((line) => draw.style.dim(`${hang}${line}`));
+        const body = wrap(`${when} ${text(fact, draw)}`, draw.width, hang);
+        return (fact.closedWhy === null ? body : tailed(body, draw.style.gray(draw.wording.expanded.closed(fact.closedWhy)), draw, hang)).concat(why);
+    });
+}
+
+type Row = { readonly at: number; readonly entry: ReturnType<typeof timelineOf>[number] } | { readonly at: number; readonly broke: Break };
+
+function timeline(facts: readonly Fact[], draw: Draw): readonly string[] {
+    const rows: readonly Row[] = [
+        ...timelineOf(facts).map((entry): Row => ({ at: entry.drawnAt, entry })),
+        ...draw.breaks.map((broke): Row => ({ at: broke.at, broke })),
+    ].toSorted((a, b) => b.at - a.at || ('broke' in a ? -1 : 1) - ('broke' in b ? -1 : 1));
+    const days = dateLines(rows.map((row) => row.at), draw.now, draw.zone);
+    return rows.flatMap((row, at) => {
+        const day = days[at];
+        const dated = day === null || day === undefined ? [] : [draw.style.gray(day)];
+        if ('broke' in row) {
+            return dated.concat(draw.style.gray(breakLine(row.broke, draw.wording.chapters, draw.width)));
+        }
+        const { entry } = row;
+        const body = wrap(`${clockOf(entry.drawnAt, draw.zone)} ${text(entry.fact, draw)}`, draw.width, '      ');
+        return dated.concat(entry.closed === null ? body : tailed(body, draw.style.gray(draw.wording.expanded.closed(entry.closed)), draw, '      '));
+    });
+}
+
+function links(facts: readonly Fact[], draw: Draw): readonly string[] {
+    return newest(open(facts, 'links')).flatMap((fact) => {
+        const shown = fact.ref === null || fact.text.includes(fact.ref) ? fact.text : `${fact.text} ${fact.ref}`;
+        return wrap(`• ${linked(shown, draw.webs)}`, draw.width, '  ');
+    });
+}
+
+function head(data: TaskData, draw: Draw): readonly string[] {
+    const { story, curating } = data;
+    if (story === null && !curating) {
+        return [];
+    }
+    const m = draw.wording.expanded;
+    const tags = [...(story === null ? [] : [draw.style.gray(stamp(story.at, draw))]), ...(curating ? [draw.style.magenta(m.updatingStory)] : [])];
+    return [[draw.style.bold(draw.style.cyan(m.story.toUpperCase())), ...tags].join(draw.style.gray(' · ')), ...(story === null ? [] : wrap(story.text, draw.width))];
+}
+
+export function session(facts: SessionRecap, draw: Draw): readonly string[] {
+    const lines = sessionLines(facts, { now: draw.now, zone: draw.zone, wording: draw.wording });
+    return titled('session', lines.flatMap((line) => wrap(`${draw.style.gray(line.label)} ${line.text}`, draw.width, '  ')), draw);
+}
+
+export function regionsOf(data: TaskData, draw: Draw): Omit<Regions, 'session'> {
+    const { facts } = data;
+    const goal = newest(open(facts, 'goal')).slice(0, 1);
+    return {
+        head: head(data, draw),
+        goal: titled('goal', goal.flatMap((fact) => wrap(text(fact, draw), draw.width)), draw),
+        now: titled('now', bullets(newest(open(facts, 'now')), draw), draw),
+        needs: titled('needs', needs(facts, draw), draw),
+        decisions: titled('decisions', decisions(facts, draw), draw),
+        timeline: titled('timeline', timeline(facts, draw), draw),
+        next: titled('next', bullets(newest(open(facts, 'next')), draw), draw),
+        rules: titled('rules', bullets(newest(open(facts, 'rules')), draw), draw),
+        links: titled('links', links(facts, draw), draw),
+    };
+}

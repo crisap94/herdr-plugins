@@ -1,0 +1,21 @@
+path	tab-recap/src/recap/render/present.ts	packages/recap-view/src/present.ts
+path	tab-recap/src/recap/render/expanded.ts	packages/recap-view/src/expanded.ts
+path	tab-recap/src/recap/render/expanded-regions.ts	packages/recap-view/src/expanded-regions.ts
+path	tab-recap/src/recap/render/timeline.ts	packages/recap-view/src/timeline.ts
+path	tab-recap/src/recap/render/timeline-breaks.ts	packages/recap-view/src/timeline-breaks.ts
+path	tab-recap/src/recap/render/groups.ts	packages/recap-view/src/groups.ts
+path	tab-recap/src/recap/render/compaction-stage.ts	packages/recap-view/src/compaction-stage.ts
+path	tab-recap/src/recap/render/session-lines.ts	packages/recap-view/src/session-lines.ts
+stub	tab-recap/src/recap/render/present.ts	export * from '#src/view-model/present.ts';
+stub	tab-recap/src/recap/render/expanded.ts	export * from '#src/view-model/expanded.ts';
+stub	tab-recap/src/recap/render/expanded-regions.ts	export * from '#src/view-model/expanded-regions.ts';
+stub	tab-recap/src/recap/render/groups.ts	export * from '#src/view-model/groups.ts';
+stub	tab-recap/src/recap/render/compaction-stage.ts	export * from '#src/view-model/compaction-stage.ts';
+stub	tab-recap/src/recap/render/session-lines.ts	export * from '#src/view-model/session-lines.ts';
+stub	tab-recap/src/recap/render/timeline.ts	export * from '@stateforge-labs/recap-view/unstable/timeline.ts';
+stub	tab-recap/src/recap/render/timeline-breaks.ts	export * from '@stateforge-labs/recap-view/unstable/timeline-breaks.ts';
+text	@stateforge-labs/recap-view/unstable/	./	packages/recap-view/src/{present,expanded,expanded-regions,timeline,timeline-breaks,groups,compaction-stage,session-lines}.ts
+text	#src/recap/domain/compaction.ts	@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts	packages/recap-view/src/{present,expanded,expanded-regions,timeline,timeline-breaks,groups,compaction-stage,session-lines}.ts
+text	#src/recap/application/recap-shape.ts	@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts	packages/recap-view/src/{present,expanded,expanded-regions,timeline,timeline-breaks,groups,compaction-stage,session-lines}.ts
+text	#src/i18n/sections.ts	@stateforge-labs/session-ledger/unstable/i18n/sections.ts	packages/recap-view/src/{present,expanded,expanded-regions,timeline,timeline-breaks,groups,compaction-stage,session-lines}.ts
+text	#src/recap/domain/fact.ts	@stateforge-labs/session-ledger	packages/recap-view/src/{present,expanded,expanded-regions,timeline,timeline-breaks,groups,compaction-stage,session-lines}.ts

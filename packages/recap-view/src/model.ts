@@ -1,4 +1,4 @@
-import type { ClosedWhy, Fact, RecapSections } from '@stateforge-labs/session-ledger';
+import type { ClosedWhy, ContextUse, Fact, RecapSections } from '@stateforge-labs/session-ledger';
 import type { Brand } from './kernel.ts';
 import type { Wording } from './wording.ts';
 
@@ -48,7 +48,7 @@ export interface Row {
     readonly cwd: string | null;
     readonly lastPrompt?: string | null;
     readonly web?: Web | null;
-    readonly context?: { readonly tokens: number; readonly window: number } | null;
+    readonly context?: ContextUse | null;
     readonly since?: number | null;
     readonly fromScreen: boolean;
     readonly harnessRecap: string | null;
@@ -71,6 +71,8 @@ export interface RecapColumn {
 
 export interface CompactionRow {
     readonly pane: string;
+    readonly agent?: string;
+    readonly startedAt?: number;
     readonly stage: Stage;
     readonly brief: BriefOrigin | null;
     readonly writer: string | null;
@@ -95,6 +97,8 @@ export interface ColumnView<Text> {
     readonly compactions?: readonly CompactionRow[];
     readonly style?: Style<Text>;
 }
+
+export interface TextColumnView extends ColumnView<string> {}
 
 export interface SessionStarted {
     readonly at: number;
@@ -178,6 +182,8 @@ export interface ExpandedView<Text> {
     readonly webs: readonly (Web | null | undefined)[];
     readonly breaks?: readonly Break[];
 }
+
+export interface TextExpandedView extends ExpandedView<string> {}
 
 export interface TimelineEntry {
     readonly fact: Fact;

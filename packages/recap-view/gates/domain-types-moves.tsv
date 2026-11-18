@@ -1,0 +1,8 @@
+src/present.ts	src/recap/render/present.ts
+src/expanded.ts	src/recap/render/expanded.ts
+src/expanded-regions.ts	src/recap/render/expanded-regions.ts
+src/timeline.ts	src/recap/render/timeline.ts
+src/timeline-breaks.ts	src/recap/render/timeline-breaks.ts
+src/groups.ts	src/recap/render/groups.ts
+src/compaction-stage.ts	src/recap/render/compaction-stage.ts
+src/session-lines.ts	src/recap/render/session-lines.ts
