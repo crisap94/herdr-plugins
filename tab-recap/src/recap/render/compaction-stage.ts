@@ -1,7 +1,7 @@
 import type { Messages } from '#src/i18n/messages.ts';
 import { tokensOf } from '#src/recap/domain/compaction.ts';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
-import type { Style } from './wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 export function clockOf(since: number, now: number): string {
     const seconds = Math.max(0, Math.floor((now - since) / 1000));

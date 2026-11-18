@@ -5,8 +5,8 @@ import type { DeciderJob } from '#src/recap/domain/job.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { AUTO_ORDER, hasAvailabilityMark, JOB_HARNESSES, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-import { coloured, visibleLength, wrap } from './wrap.ts';
-import type { Style } from './wrap.ts';
+import { coloured, visibleLength, wrap } from '../../../../packages/recap-view/src/wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 const LABEL_WIDTH = 18;
 

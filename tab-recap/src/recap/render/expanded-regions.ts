@@ -5,12 +5,12 @@ import { SECTIONS } from '#src/i18n/sections.ts';
 import type { Break } from '#src/ports/boundaries.ts';
 import type { Story } from '#src/ports/stories.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
-import { linked } from './linked.ts';
+import { linked } from '../../../../packages/recap-view/src/linked.ts';
 import { breakLine } from './timeline-breaks.ts';
 import { sessionLines } from './session-lines.ts';
 import { clockOf, dateLines, dayOf, timelineOf } from './timeline.ts';
-import { elapsed, visibleLength, wrap } from './wrap.ts';
-import type { Style } from './wrap.ts';
+import { elapsed, visibleLength, wrap } from '../../../../packages/recap-view/src/wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 export interface Draw {
     readonly width: number;

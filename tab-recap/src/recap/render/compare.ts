@@ -1,6 +1,6 @@
 import { percent } from '#src/recap/application/eval-report.ts';
 import type { ChapterResult, Comparison, Side } from '#src/recap/application/compare-imported.ts';
-import type { Style } from './wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 interface Tally {
     readonly passed: number;

@@ -1,7 +1,7 @@
 import type { Messages } from '#src/i18n/messages.ts';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
-import { coloured, visibleLength, wrap } from './wrap.ts';
-import type { Style } from './wrap.ts';
+import { coloured, visibleLength, wrap } from '../../../../packages/recap-view/src/wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 export function compactView(state: NoteState, m: Messages, agent: string, width: number, style: Style = coloured): string[] {
     return [

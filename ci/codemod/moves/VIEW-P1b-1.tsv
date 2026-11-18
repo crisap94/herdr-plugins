@@ -1,0 +1,11 @@
+path	tab-recap/src/recap/render/wrap.ts	packages/recap-view/src/wrap.ts
+path	tab-recap/src/recap/render/hyperlink.ts	packages/recap-view/src/hyperlink.ts
+path	tab-recap/src/recap/render/links.ts	packages/recap-view/src/links.ts
+path	tab-recap/src/recap/render/linked.ts	packages/recap-view/src/linked.ts
+stub	tab-recap/src/recap/render/wrap.ts	export * from '@stateforge-labs/recap-view/unstable/wrap.ts';
+stub	tab-recap/src/recap/render/hyperlink.ts	export * from '@stateforge-labs/recap-view/unstable/hyperlink.ts';
+stub	tab-recap/src/recap/render/links.ts	export * from '@stateforge-labs/recap-view/unstable/links.ts';
+stub	tab-recap/src/recap/render/linked.ts	export * from '@stateforge-labs/recap-view/unstable/linked.ts';
+text	#src/i18n/messages.ts	./wording.ts	packages/recap-view/src/wrap.ts
+text	#src/ports/tab-views.ts	./model.ts	packages/recap-view/src/link*.ts
+text	LaneWeb	Web	packages/recap-view/src/link*.ts

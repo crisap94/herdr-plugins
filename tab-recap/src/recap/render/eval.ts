@@ -3,7 +3,7 @@ import type { Agreement, GateReport } from '#src/recap/application/eval-stats.ts
 import { percent } from '#src/recap/application/eval-report.ts';
 import type { EvalReport, RunLine, Totals } from '#src/recap/application/eval-report.ts';
 import type { Candidate } from '#src/recap/application/eval-label.ts';
-import type { Style } from './wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 const NAMES: Readonly<Record<string, string>> = {
     I1: 'atomic', I2: 'stands alone', I3: 'specific', I4: 'supported', I5: 'about the work', I6: 'new', I7: 'still true',

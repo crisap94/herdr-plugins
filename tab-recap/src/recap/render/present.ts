@@ -14,10 +14,10 @@ import { headlineOf, renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { stageLine } from './compaction-stage.ts';
 import { groupsOf } from './groups.ts';
-import { linked } from './linked.ts';
+import { linked } from '../../../../packages/recap-view/src/linked.ts';
 import type { Group } from './groups.ts';
-import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from './wrap.ts';
-import type { Style } from './wrap.ts';
+import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from '../../../../packages/recap-view/src/wrap.ts';
+import type { Style } from '../../../../packages/recap-view/src/wrap.ts';
 
 export interface ColumnView {
     readonly tab: TabView | null;
