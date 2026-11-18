@@ -27,7 +27,6 @@ const ledgerFactId = (id: FactId): sl.FactId => bridged(id, isLedgerFactId, 'a f
 const pluginFactId = (id: sl.FactId): FactId => bridged(id, isPluginFactId, 'a fact id');
 
 const ledgerFact = (fact: Fact): sl.Fact => ({ ...fact, id: ledgerFactId(fact.id) });
-const pluginFact = (fact: sl.Fact): Fact => ({ ...fact, id: pluginFactId(fact.id) });
 
 const ledgerOperation = (op: Operation): sl.Operation => {
     if (op.op !== 'close' || op.anchor === undefined) {
@@ -43,7 +42,6 @@ const pluginOperation = (op: sl.Operation): Operation => {
 };
 
 const ledgerRefusal = (refusal: Refusal): sl.Refusal => ({ op: ledgerOperation(refusal.op), reason: refusal.reason });
-const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(refusal.op), reason: refusal.reason });
 
 const pluginTaskOps = (task: sl.TaskOps): TaskOps => ({ task: task.task, ops: task.ops.map(pluginOperation) });
 
