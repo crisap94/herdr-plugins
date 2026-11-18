@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
@@ -6,12 +6,10 @@ import type { Subject } from '@stateforge-labs/session-ledger/testkit';
 import type { MigrationHistory, NewerResult, OpenResult, ReadOnlyResult, ReadyResult, Role, StoreSubject, StoreWorld } from '@stateforge-labs/session-ledger-sqlite/testkit';
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { closeDatabase, connectReadOnly, MEMORY, writeTx } from '#src/adapters/db/connection.ts';
-import { openDatabase } from '#src/adapters/db/open.ts';
-import { latestVersion, versionOf } from '#src/adapters/db/migrate.ts';
+import { openDatabase, type Opened, type StaleDatabase } from '#src/adapters/db/open.ts';
+import { versionOf } from '#src/adapters/db/migrate.ts';
 
 const handles = new WeakMap<ReadyResult, Database>();
-
-const NO_READER = 'no reader role until M2b-1';
 
 const readyOver = (db: Database): ReadyResult => {
     const result: ReadyResult = {
@@ -39,29 +37,20 @@ const newerOver = (db: Database, found: number, known: number, backup: string | 
     },
 });
 
-const ownerOpen = (path: string, history: MigrationHistory): OpenResult => {
-    const opened = openDatabase(path, history);
-    return opened.kind === 'ready' ? readyOver(opened.db) : newerOver(opened.db, opened.found, opened.known, opened.backup);
-};
-
-const readerOpen = (path: string, history: MigrationHistory): OpenResult => {
-    const known = latestVersion(history);
-    if (!existsSync(path)) {
-        throw new Error(NO_READER);
+const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
+    if (opened.kind === 'ready') {
+        return readyOver(opened.db);
     }
-    const probe = connectReadOnly(path);
-    const found = versionOf(probe);
-    if (found <= known) {
-        probe.close();
-        throw new Error(NO_READER);
+    if (opened.kind === 'newer-db') {
+        return newerOver(opened.db, opened.found, opened.known, opened.backup);
     }
-    return newerOver(probe, found, known, backupsOf(path)[0] ?? null);
+    return { kind: 'stale', found: opened.found, known: opened.known, close: opened.close };
 };
 
 const pluginStore: StoreSubject = {
     name: 'plugin store',
     memory: MEMORY,
-    open: (path: string, history: MigrationHistory, role: Role): OpenResult => (role === 'owner' ? ownerOpen(path, history) : readerOpen(path, history)),
+    open: (path: string, history: MigrationHistory, role: Role): OpenResult => openedOver(openDatabase(path, history, role)),
     openReadOnly: (path: string): ReadOnlyResult => {
         const db = connectReadOnly(path);
         return {

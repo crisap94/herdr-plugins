@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import { backUp, backupsOf } from './backup.ts';
@@ -6,6 +6,8 @@ import { closeDatabase, connect, connectReadOnly, MEMORY } from './connection.ts
 import { latestVersion, migrate, versionOf } from './migrate.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
+
+export type Role = 'owner' | 'reader';
 
 export interface NewerDatabase {
     readonly kind: 'newer-db';
@@ -15,7 +17,19 @@ export interface NewerDatabase {
     readonly backup: string | null;
 }
 
-export type Opened = { readonly kind: 'ready'; readonly db: Database } | NewerDatabase;
+export interface StaleDatabase {
+    readonly kind: 'stale-store';
+    readonly found: number;
+    readonly known: number;
+    readonly close: () => void;
+}
+
+export interface ReadyDatabase {
+    readonly kind: 'ready';
+    readonly db: Database;
+}
+
+export type Opened = ReadyDatabase | NewerDatabase;
 
 function createFresh(db: Database, path: string): void {
     db.exec('PRAGMA auto_vacuum = INCREMENTAL');
@@ -34,7 +48,29 @@ function newerThan(path: string, known: number): NewerDatabase | null {
     return { kind: 'newer-db', db, found, known, backup: backupsOf(path)[0] ?? null };
 }
 
-export function openDatabase(path: string, migrations: readonly Migration[] = MIGRATIONS): Opened {
+function openReader(path: string, migrations: readonly Migration[]): Opened | StaleDatabase {
+    const known = latestVersion(migrations);
+    if (!existsSync(path)) {
+        return { kind: 'stale-store', found: 0, known, close: () => undefined };
+    }
+    const probe = connectReadOnly(path);
+    const found = versionOf(probe);
+    if (found > known) {
+        return { kind: 'newer-db', db: probe, found, known, backup: backupsOf(path)[0] ?? null };
+    }
+    if (found < known) {
+        return { kind: 'stale-store', found, known, close: () => { probe.close(); } };
+    }
+    probe.close();
+    return { kind: 'ready', db: connect(path) };
+}
+
+export function openDatabase(path: string, migrations?: readonly Migration[], role?: 'owner'): Opened;
+export function openDatabase(path: string, migrations: readonly Migration[], role: Role): Opened | StaleDatabase;
+export function openDatabase(path: string, migrations: readonly Migration[] = MIGRATIONS, role: Role = 'owner'): Opened | StaleDatabase {
+    if (role === 'reader') {
+        return openReader(path, migrations);
+    }
     const known = latestVersion(migrations);
     if (path !== MEMORY) {
         mkdirSync(dirname(path), { recursive: true });

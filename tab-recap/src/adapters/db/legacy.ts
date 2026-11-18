@@ -30,8 +30,8 @@ import { BoundaryLogRepository } from './boundary-read.ts';
 import { CompactionLogRepository } from './compaction-records.ts';
 import { connectReadOnly } from './connection.ts';
 import { openStoreAt, storeOver, type Store, type StoreSettings } from './database.ts';
+import type { NewerDatabase, Role, StaleDatabase } from './open.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
-import type { NewerDatabase } from './open.ts';
 import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
 
@@ -181,10 +181,15 @@ export interface StoreOptions {
     readonly now?: () => number;
     readonly log?: (line: string) => void;
     readonly closedDays?: ClosedLaneDays;
+    readonly role?: Role;
+}
+
+export interface OwnerOptions extends StoreOptions {
+    readonly role?: 'owner';
 }
 
 const settingsOf = (options: StoreOptions): StoreSettings => {
-    const { now, daemonVersion, ...rest } = options;
+    const { now, daemonVersion, role: _role, ...rest } = options;
     return { ...rest, ...(daemonVersion === undefined ? {} : { daemonVersion: textOf(daemonVersion) }), ...(now === undefined ? {} : { now: (): Instant => instant(now()) }) };
 };
 
@@ -192,11 +197,17 @@ export const storeWith = (db: Database, options: StoreOptions = {}): Store => st
 
 export const databasePath = (stateDir: string): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
 
-export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
-    return openStoreAt(must(parseFsPath(path)), settingsOf(options));
+export function openStore(path: string, options?: OwnerOptions): Store | NewerDatabase;
+export function openStore(path: string, options: StoreOptions): Store | NewerDatabase | StaleDatabase;
+export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase | StaleDatabase {
+    return openStoreAt(must(parseFsPath(path)), settingsOf(options), options.role);
 }
 
-export const stateStore = (stateDir: string, options: StoreOptions = {}): Store | NewerDatabase => openStore(databasePath(stateDir), options);
+export function stateStore(stateDir: string, options?: OwnerOptions): Store | NewerDatabase;
+export function stateStore(stateDir: string, options: StoreOptions): Store | NewerDatabase | StaleDatabase;
+export function stateStore(stateDir: string, options: StoreOptions = {}): Store | NewerDatabase | StaleDatabase {
+    return openStore(databasePath(stateDir), options);
+}
 
 export function operatorAnchors(path: string): CheckAnchors {
     if (!existsSync(path)) {
