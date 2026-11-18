@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import { err, ok, type Result } from './result.ts';
 import { CATEGORIES, type Counts, type Finding } from './domain-findings.ts';
 import type { Lanes } from './lane-map.ts';
@@ -178,28 +178,60 @@ export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, s
         }),
     );
 
+const LEGACY_LINE = /^(?:new entry|raised): (.+?): legacy /u;
+
+const legacyFileOf = (line: string): string | undefined => {
+    const file = LEGACY_LINE.exec(line)?.[1];
+    return file !== undefined && /(^|\/)legacy\.ts$/u.test(file) ? file : undefined;
+};
+
+const totalOf = (counts: Counts): number =>
+    Object.values(counts).reduce((sum, row) => sum + Object.values(row).reduce((rowSum, count) => rowSum + count, 0), 0);
+
+const mergeFiles = (files: ReadonlyMap<string, Counts>): Counts => Object.fromEntries([...files.values()].flatMap((counts) => Object.entries(counts)));
+
+export const guardFiles = (base: ReadonlyMap<string, Counts>, head: ReadonlyMap<string, Counts>, renamed: ReadonlyMap<string, string> = new Map()): readonly string[] => {
+    const lines = guard(mergeFiles(base), mergeFiles(head), renamed);
+    const kept = lines.filter((line) => legacyFileOf(line) === undefined);
+    const dropped = lines.flatMap((line) => {
+        const file = legacyFileOf(line);
+        return file === undefined ? [] : [file];
+    });
+    const totals = [...head.keys()].toSorted().flatMap((name) => {
+        const counts = head.get(name) ?? {};
+        const before = totalOf(base.get(name) ?? {});
+        const after = totalOf(counts);
+        return dropped.some((file) => counts[file] !== undefined) && after > before ? [`baseline total rose: ${name}: ${before} -> ${after}`] : [];
+    });
+    return [...kept, ...totals];
+};
+
 export type Git = (args: readonly string[]) => string;
 
 const git: Git = (args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
-const countsOfTexts = (texts: readonly string[]): Result<Counts, string> => {
-    const merged: Record<string, Counts[string]> = {};
-    for (const text of texts) {
+type Texts = ReadonlyMap<string, string>;
+
+const countsOfTexts = (texts: Texts): Result<ReadonlyMap<string, Counts>, string> => {
+    const files = new Map<string, Counts>();
+    for (const [name, text] of texts) {
         const parsed = parseBaseline(JSON.parse(text));
         if (parsed.kind === 'err') {
             return parsed;
         }
-        Object.assign(merged, parsed.value);
+        files.set(name, parsed.value);
     }
-    return ok(merged);
+    return ok(files);
 };
 
 const jsonFiles = (lines: string): readonly string[] => lines.split('\n').filter((line) => line.endsWith('.json'));
 
-const textsNow = (path: string): readonly string[] =>
-    statSync(path).isDirectory()
-        ? jsonFiles(readdirSync(path).join('\n')).map((name) => readFileSync(join(path, name), 'utf8'))
-        : [readFileSync(path, 'utf8')];
+const textsNow = (path: string): Texts =>
+    new Map(
+        statSync(path).isDirectory()
+            ? jsonFiles(readdirSync(path).join('\n')).map((name): [string, string] => [name, readFileSync(join(path, name), 'utf8')])
+            : [[basename(path), readFileSync(path, 'utf8')]],
+    );
 
 const renamesOf = (run: Git, base: string, moves: string): ReadonlyMap<string, string> => {
     const committed = run(['log', '--reverse', '-M', '--name-status', '--format=', '--relative', `${base}..HEAD`, '--', '.']).split('\n');
@@ -210,27 +242,28 @@ const renamesOf = (run: Git, base: string, moves: string): ReadonlyMap<string, s
 
 const filesAt = (run: Git, base: string, local: string): readonly string[] => jsonFiles(run(['ls-tree', '-r', '--name-only', base, '--', local]));
 
-const textsAt = (run: Git, base: string, files: readonly string[]): readonly string[] => files.map((file) => run(['show', `${base}:./${file}`]));
+const textsAt = (run: Git, base: string, files: readonly string[]): Texts => new Map(files.map((file): [string, string] => [basename(file), run(['show', `${base}:./${file}`])]));
 
-const inheritedAt = (run: Git, base: string, inherit: string | null): Result<Counts, string> =>
-    inherit === null ? ok({}) : countsOfTexts(textsAt(run, base, filesAt(run, base, relative(process.cwd(), inherit))));
+const inheritedAt = (run: Git, base: string, inherit: string | null): Result<ReadonlyMap<string, Counts>, string> =>
+    inherit === null ? ok(new Map()) : countsOfTexts(textsAt(run, base, filesAt(run, base, relative(process.cwd(), inherit))));
 
 export const guardAt = (path: string, base: string, moves: string, inherit: string | null = null, run: Git = git): Result<readonly string[] | null, string> => {
     const local = relative(process.cwd(), path);
     const listed = filesAt(run, base, local);
     const files = listed.length > 0 || local.endsWith('.json') ? listed : filesAt(run, base, `${local}.json`);
     const before = textsAt(run, base, files);
-    if (before.length === 0) {
+    if (before.size === 0) {
         return ok(null);
     }
     const own = countsOfTexts(before);
     const inherited = inheritedAt(run, base, inherit);
-    const now = existsSync(path) ? countsOfTexts(textsNow(path)) : ok({});
+    const now = existsSync(path) ? countsOfTexts(textsNow(path)) : ok(new Map<string, Counts>());
     if (own.kind === 'err') {
         return own;
     }
     if (inherited.kind === 'err') {
         return inherited;
     }
-    return now.kind === 'err' ? now : ok(guard({ ...inherited.value, ...own.value }, now.value, renamesOf(run, base, moves)));
+    const inheritedRows: ReadonlyMap<string, Counts> = new Map([['', mergeFiles(inherited.value)]]);
+    return now.kind === 'err' ? now : ok(guardFiles(new Map([...inheritedRows, ...own.value]), now.value, renamesOf(run, base, moves)));
 };
