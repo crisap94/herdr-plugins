@@ -28,71 +28,25 @@ export class NotAnIdentifierError extends Error {
     override readonly name = 'NotAnIdentifierError';
 }
 
-function nonEmpty(raw: string, what: string): string {
-    if (raw.trim() === '') {
-        throw new NotAnIdentifierError(`${what} cannot be empty`);
-    }
-    return raw;
-}
-
-export function paneId(raw: string): PaneId {
-    return nonEmpty(raw, 'a pane id') as PaneId;
-}
-
-export function tabId(raw: string): TabId {
-    return nonEmpty(raw, 'a tab id') as TabId;
-}
-
-export function workspaceId(raw: string): WorkspaceId {
-    const parsed = parseWorkspaceId(raw);
-    if (parsed.kind === 'err') {
-        throw new NotAnIdentifierError('a workspace id cannot be empty');
-    }
-    return parsed.value;
-}
-
 export function workspaceOfTab(tab: TabId): WorkspaceId | null {
     const raw = String(tab);
     const colon = raw.indexOf(':');
     if (colon === -1 || raw.slice(0, colon).trim() === '' || raw.slice(colon + 1).trim() === '') {
         return null;
     }
-    return raw.slice(0, colon) as WorkspaceId;
+    return brand<string, 'WorkspaceId'>(raw.slice(0, colon));
 }
 
-export function sessionId(raw: string): SessionId {
-    return nonEmpty(raw, 'a session id') as SessionId;
-}
+export const isUncheckedSessionId = (raw: unknown): raw is SessionId => typeof raw === 'string';
 
-export function sessionIdFromAgentValue(raw: string): SessionId {
-    return raw as SessionId;
-}
-
-export function sessionPath(raw: string): SessionPath {
-    return nonEmpty(raw, 'a session path') as SessionPath;
-}
-
-export function sessionPathFromAgentValue(raw: string): SessionPath {
-    return raw as SessionPath;
-}
+export const isUncheckedSessionPath = (raw: unknown): raw is SessionPath => typeof raw === 'string';
 
 const HANDOFF_TYPE_ID = /^hnd_[0-7][0-9a-hjkmnp-tv-z]{25}$/;
 
-const isHandoffTypeId = (raw: string): raw is HandoffId => HANDOFF_TYPE_ID.test(raw);
-
-export function handoffId(raw: string): HandoffId {
-    if (!isHandoffTypeId(raw)) {
-        throw new NotAnIdentifierError('a handoff id must be a TypeID: hnd_ and 26 base32 characters');
-    }
-    return raw;
-}
+const isHandoffTypeId = (raw: unknown): raw is HandoffId => typeof raw === 'string' && HANDOFF_TYPE_ID.test(raw);
 
 export function parseHandoffId(raw: unknown): HandoffId | null {
-    return typeof raw === 'string' && isHandoffTypeId(raw) ? raw : null;
-}
-
-export function agentKind(raw: string): AgentKind {
-    return nonEmpty(raw, 'an agent kind') as AgentKind;
+    return isHandoffTypeId(raw) ? raw : null;
 }
 
 export function parsePaneId(input: unknown): Result<PaneId, ParseFailure> {
@@ -158,3 +112,5 @@ export function parseCompactionId(input: unknown): Result<CompactionId, ParseFai
     }
     return ok(brand<string, 'CompactionId'>(text.value));
 }
+
+export { agentKind, handoffId, paneId, sessionId, sessionIdFromAgentValue, sessionPath, sessionPathFromAgentValue, tabId, workspaceId } from './legacy.ts';

@@ -19,7 +19,7 @@ import { NotAReasonError, parseCompactionPiece, parseConfirmationReads, parseNee
 import { NOTE } from './coordination.ts';
 import { STORY_TOO_LONG, STORY_WORDS, storyOf } from './curation.ts';
 import { VALUE_MAX as EVENT_MAX, type EventKind } from './event-token.ts';
-import type { PaneId, TabId } from './ids.ts';
+import { NotAnIdentifierError, isUncheckedSessionId, isUncheckedSessionPath, parseAgentKind, parseHandoffId, parsePaneId, parseSessionId, parseSessionPath, parseTabId, parseWorkspaceId, type HandoffId, type PaneId, type SessionId, type SessionPath, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { collapsedText } from './text-collapse.ts';
 
@@ -292,3 +292,73 @@ export interface StatusObservation { readonly kind: 'status'; readonly pane: Pan
 export interface SessionObservation { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
 export interface ColumnOpenedObservation { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
 export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean }
+
+export function paneId(raw: string): PaneId {
+    const parsed = parsePaneId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a pane id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function tabId(raw: string): TabId {
+    const parsed = parseTabId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a tab id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function workspaceId(raw: string): WorkspaceId {
+    const parsed = parseWorkspaceId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a workspace id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function sessionId(raw: string): SessionId {
+    const parsed = parseSessionId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a session id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function sessionIdFromAgentValue(raw: string): SessionId {
+    if (isUncheckedSessionId(raw)) {
+        return raw;
+    }
+    throw new NotAnIdentifierError('a session id cannot be empty');
+}
+
+export function sessionPath(raw: string): SessionPath {
+    const parsed = parseSessionPath(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a session path cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function sessionPathFromAgentValue(raw: string): SessionPath {
+    if (isUncheckedSessionPath(raw)) {
+        return raw;
+    }
+    throw new NotAnIdentifierError('a session path cannot be empty');
+}
+
+export function handoffId(raw: string): HandoffId {
+    const parsed = parseHandoffId(raw);
+    if (parsed === null) {
+        throw new NotAnIdentifierError('a handoff id must be a TypeID: hnd_ and 26 base32 characters');
+    }
+    return parsed;
+}
+
+export function agentKind(raw: string): AgentKind {
+    const parsed = parseAgentKind(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('an agent kind cannot be empty');
+    }
+    return parsed.value;
+}

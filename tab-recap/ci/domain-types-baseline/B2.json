@@ -25,11 +25,6 @@
   "src/recap/domain/herdr-events.ts": {
     "parameter": 1
   },
-  "src/recap/domain/ids.ts": {
-    "parameter": 12,
-    "return": 1,
-    "assertion": 8
-  },
   "src/recap/domain/intent.ts": {
     "property": 1
   },
@@ -66,7 +61,7 @@
     "container": 1
   },
   "src/recap/domain/legacy.ts": {
-    "legacy": 91
+    "legacy": 100
   },
   "src/recap/domain/origin.ts": {
     "parameter": 1
