@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDuration, parseInstant } from '#src/recap/domain/time.ts';
+import { parseDuration, parseInstant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 test('an instant accepts zero and any non-negative finite number, and keeps its value', () => {
     assert.deepEqual(parseInstant(0), { kind: 'ok', value: 0 });

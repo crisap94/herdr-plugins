@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts';
 
 test('a failure cause is the error name alone when the error has no string code', () => {
     assert.equal(failureCauseOf(new TypeError('bad\nvalue  here')), 'TypeError');

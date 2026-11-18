@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pieceOf, QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
+import { pieceOf, QUOTE_CHARS, quotedIn } from '@stateforge-labs/session-ledger/unstable/recap/domain/quote.ts';
 
 test('a quote is found by its words: whitespace, line ends and punctuation do not matter, case does', () => {
     const text = 'The   pipeline\nwas green, then `npm test` failed on part6.';
