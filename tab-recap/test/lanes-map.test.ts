@@ -122,6 +122,14 @@ test('a foreign source edit fails without the adapts label and passes with it, b
     assert.equal(lane('B2', ['tab-recap/src/recap/application/zz-unowned.ts'], { LANE_ADAPTS: '1' }).status, 1);
 });
 
+test('a foreign source edit of a frozen lane key fails even with the adapts label', () => {
+    const lanes: Record<string, string[]> = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes;
+    for (const key of ['ENG', 'STO', 'VIEW']) {
+        const file = String(lanes[key]?.find((entry) => entry.startsWith('src/')));
+        assert.equal(lane('B2', [`tab-recap/${file}`], { LANE_ADAPTS: '1' }).status, 1, key);
+    }
+});
+
 const TREE = ['src/protocol/result.ts', 'src/recap/application/thing.ts', 'test/thing.test.ts', 'test/fixtures/data.txt'] as const;
 
 function treeWith(files: readonly string[]): string {
