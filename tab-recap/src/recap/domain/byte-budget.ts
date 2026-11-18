@@ -1,12 +1,17 @@
-import type { Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { err, ok, type Result } from '#src/protocol/result.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
 export type ByteBudget = Brand<number, 'ByteBudget'>;
 
-export function byteBudgetOf(bytes: number): ByteBudget {
-    if (!Number.isSafeInteger(bytes) || bytes <= 0) {
-        throw new RangeError('a byte budget is a positive integer');
+export function parseByteBudget(input: unknown): Result<ByteBudget, ParseFailure> {
+    if (typeof input !== 'number') {
+        return err({ kind: 'not-a-number' });
     }
-    return bytes as ByteBudget;
+    if (!Number.isSafeInteger(input) || input <= 0) {
+        return err({ kind: 'out-of-range' });
+    }
+    return ok(brand<number, 'ByteBudget'>(input));
 }
 
-export const fits = (budget: ByteBudget, bytes: number): boolean => bytes <= budget;
+export { byteBudgetOf, fits } from './legacy.ts';

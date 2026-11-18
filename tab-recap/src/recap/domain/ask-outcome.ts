@@ -18,9 +18,10 @@ interface FailedAskOutcome {
 
 export type AskOutcome = PlainAskOutcome | FailedAskOutcome;
 
-export const outcomeText = (outcome: AskOutcome): string => (outcome.kind === 'failed' ? failureStage(outcome.reason) : outcome.kind);
-
-export function outcomeOf(text: string): AskOutcome | null {
+export function parseAskOutcome(text: unknown): AskOutcome | null {
+    if (typeof text !== 'string') {
+        return null;
+    }
     if (isFailureStage(text)) {
         const reason = FAILURE_REASONS.find((each) => failureStage(each) === text);
         return reason === undefined ? null : { kind: 'failed', reason };
@@ -28,3 +29,7 @@ export function outcomeOf(text: string): AskOutcome | null {
     const kind = PLAIN_OUTCOMES.find((each) => each === text);
     return kind === undefined ? null : { kind };
 }
+
+export const outcomeOf = parseAskOutcome;
+
+export { outcomeText } from './legacy.ts';

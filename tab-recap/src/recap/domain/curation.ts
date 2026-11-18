@@ -1,85 +1,24 @@
-export interface Merge {
-    readonly id: string;
-    readonly into: string;
-}
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export const STORY_WORDS = 120;
 
 export const STORY_TOO_LONG = 'the paragraph is too long';
 
-export interface Curation {
-    readonly merges: readonly Merge[];
-    readonly story: string | null;
-    readonly refused: readonly string[];
-}
+export type Story = Text;
 
-const NOTHING: Curation = { merges: [], story: null, refused: [] };
-
-const isObject = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === 'object' && value !== null && !Array.isArray(value);
-
-export function storyOf(raw: unknown): string | null {
+export function parseStory(raw: unknown): Story | null {
     if (typeof raw !== 'string') {
         return null;
     }
     const words = raw.split(/\s+/u).filter((word) => word !== '');
-    if (words.length === 0) {
+    if (words.length === 0 || words.length > STORY_WORDS) {
         return null;
     }
-    return words.length <= STORY_WORDS ? words.join(' ') : null;
+    const story = parseText(words.join(' '));
+    return story.kind === 'ok' ? story.value : null;
 }
 
-interface Merged {
-    readonly ids: ReadonlySet<string>;
-    readonly targets: ReadonlySet<string>;
-}
+export const storyOf = parseStory;
 
-function closeRefusal(op: Readonly<Record<string, unknown>>, open: ReadonlySet<string>, merged: Merged): string | null {
-    const [id, into] = [op['id'], op['into']];
-    if (op['why'] !== 'merged' || typeof into !== 'string') {
-        return `close ${String(id)} must say why "merged" and the fact it merges into`;
-    }
-    if (typeof id !== 'string' || !open.has(id) || merged.ids.has(id)) {
-        return `${String(id)} is not an open fact (or is already merged)`;
-    }
-    if (merged.targets.has(id)) {
-        return `${id} is where another fact was merged: it stays open`;
-    }
-    return id === into || !open.has(into) || merged.ids.has(into) ? `${id} cannot merge into ${into}` : null;
-}
-
-function refusal(op: unknown, open: ReadonlySet<string>, merged: Merged): string | null {
-    if (!isObject(op)) {
-        return 'not an operation';
-    }
-    return op['op'] === 'close' ? closeRefusal(op, open, merged) : `${String(op['op'])} is not allowed: the curator may only close`;
-}
-
-export function curationOf(answer: string, open: ReadonlySet<string>): Curation {
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(answer);
-    } catch {
-        return { ...NOTHING, refused: ['the answer is not JSON'] };
-    }
-    if (!isObject(parsed)) {
-        return { ...NOTHING, refused: ['the answer is not an object'] };
-    }
-    const ops: readonly unknown[] = Array.isArray(parsed['ops']) ? parsed['ops'] : [];
-    const merges: Merge[] = [];
-    const refused: string[] = [];
-    for (const op of ops) {
-        const why = refusal(op, open, { ids: new Set(merges.map((merge) => merge.id)), targets: new Set(merges.map((merge) => merge.into)) });
-        if (why === null) {
-            const { id, into } = op as { id: string; into: string };
-            merges.push({ id, into });
-        } else {
-            refused.push(why);
-        }
-    }
-    const said = parsed['story'];
-    const count = typeof said === 'string' ? said.trim().split(/\s+/u).length : 0;
-    if (count > STORY_WORDS) {
-        refused.push(`${STORY_TOO_LONG}: ${count} words, at most ${STORY_WORDS}`);
-    }
-    return { merges, story: storyOf(said), refused };
-}
+export type { Curation, Merge } from './legacy.ts';
+export { curationOf } from './legacy.ts';

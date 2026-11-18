@@ -3,11 +3,9 @@ export type Effort = (typeof EFFORTS)[number];
 
 export const DEFAULT_EFFORT: Effort = 'medium';
 
-export const effortOf = (raw: string | undefined): Effort => EFFORTS.find((effort) => effort === (raw ?? '').trim().toLowerCase()) ?? DEFAULT_EFFORT;
-
-export function levelOf(effort: Effort, low: string): string | null {
-    if (effort === 'default') {
-        return null;
-    }
-    return effort === 'low' ? low : effort;
+export function parseEffort(raw: unknown): Effort {
+    const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    return EFFORTS.find((effort) => effort === text) ?? DEFAULT_EFFORT;
 }
+
+export const effortOf = parseEffort;
