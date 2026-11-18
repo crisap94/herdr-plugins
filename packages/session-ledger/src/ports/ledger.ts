@@ -1,5 +1,6 @@
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal, RunRef } from '#src/recap/domain/ops.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 
 export interface Applied {
     readonly changed: readonly Fact[];
@@ -25,3 +26,9 @@ export interface Ledger {
     keysOf(tab: string): readonly string[];
     historyOf(tab: string, pane: string): readonly HistoryFact[];
 }
+
+type Reads = 'openOf' | 'recentlyClosed' | 'keysOf';
+
+export type CheckedLedger = Omit<Ledger, Reads> & {
+    readonly [K in Reads]: (...args: Parameters<Ledger[K]>) => ReturnType<Ledger[K]> | Unknown;
+};

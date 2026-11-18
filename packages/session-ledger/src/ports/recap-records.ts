@@ -4,6 +4,7 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 
 export interface LaneCursor {
     readonly pane: string;
@@ -80,3 +81,7 @@ export interface RecapRecords {
     failRun(run: FailedRun): void;
     advance(move: Advance): void;
 }
+
+export type CheckedRecapRecords = Omit<RecapRecords, 'readRecap'> & {
+    readonly [K in 'readRecap']: (...args: Parameters<RecapRecords[K]>) => ReturnType<RecapRecords[K]> | Unknown;
+};

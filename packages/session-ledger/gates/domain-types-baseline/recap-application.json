@@ -100,10 +100,10 @@
     "property": 3
   },
   "src/recap/application/recap-job.ts": {
-    "parameter": 8,
+    "parameter": 7,
     "return": 9,
     "container": 3,
-    "property": 14
+    "property": 13
   },
   "src/recap/application/recap-shape.ts": {
     "parameter": 4,

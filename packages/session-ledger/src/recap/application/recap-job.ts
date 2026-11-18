@@ -3,16 +3,16 @@ import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import { blankRecap, hasRecap, type LaneCursor, type RecapRecords, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
+import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
+import { blankRecap, hasRecap, type CheckedRecapRecords, type LaneCursor, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF, type Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
-import { taskFactsOf, type TaskFacts } from './ledger-input.ts';
+import { taskFactsOf } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
@@ -21,11 +21,10 @@ import { marksOf } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
-
 export interface RecapJobDeps {
     readonly transcripts: TranscriptRegistry;
-    readonly records: RecapRecords;
-    readonly ledger: Ledger;
+    readonly records: CheckedRecapRecords;
+    readonly ledger: CheckedLedger;
     readonly repos: LaneRepo;
     readonly clock: Clock;
     summarizer(): Summarizer;
@@ -47,32 +46,19 @@ async function placeOf(lane: Lane, repos: LaneRepo): Promise<PlacedLane> {
     return { pane: String(lane.pane), place: found?.kind === 'repo' ? found.root : lane.cwd };
 }
 
-interface Reading {
-    readonly lane: Lane;
-    readonly cursor: LaneCursor;
-    readonly chunk: Chunk | null;
-    readonly grew: boolean;
-    readonly fresh: boolean;
-    readonly error: string | null;
-}
+interface Reading { readonly lane: Lane; readonly cursor: LaneCursor; readonly chunk: Chunk | null; readonly grew: boolean; readonly fresh: boolean; readonly error: string | null }
+
+interface Located { readonly reader: Transcripts; readonly source: string }
 
 type Start = { readonly kind: 'after'; readonly delay: number } | { readonly kind: 'at'; readonly deadline: number };
 
-interface Pending {
-    readonly lanes: readonly Lane[];
-    readonly cause: RecapCause;
-    readonly forced: boolean;
-    readonly start: Start;
-}
+interface Pending { readonly lanes: readonly Lane[]; readonly cause: RecapCause; readonly forced: boolean; readonly start: Start }
 
-interface Slot {
-    timer: ReturnType<typeof setTimeout> | null;
-    running: boolean;
-    pending: Pending | null;
-    lastStart: number | null;
-    lastLanes: ReadonlySet<Lane['pane']>;
-    waiting: (() => void)[];
-}
+interface Plan { readonly want: string; readonly was: string; readonly switched: boolean; readonly cause: RecapCause; readonly keys: readonly string[] }
+interface Prepared { readonly tasks: readonly TaskShape[]; readonly request: RecapRequest; readonly ground: Ground }
+function throwingLedger(ledger: CheckedLedger): Omit<Ledger, 'keysOf'> { return { ...ledger, openOf: (task) => { const found = ledger.openOf(task); if ('kind' in found) throw new Error(saying(found.why)); return found; }, recentlyClosed: (task, sinceMs) => { const found = ledger.recentlyClosed(task, sinceMs); if ('kind' in found) throw new Error(saying(found.why)); return found; } }; }
+
+interface Slot { timer: ReturnType<typeof setTimeout> | null; running: boolean; pending: Pending | null; lastStart: number | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[] }
 
 const forcedCause = (cause: RecapCause): boolean => cause !== 'turn-ended';
 
@@ -169,7 +155,7 @@ export class RecapJob {
         });
     }
 
-    private async locate(lane: Lane): Promise<{ reader: Transcripts; source: string } | string> {
+    private async locate(lane: Lane): Promise<Located | string> {
         const agent = String(lane.agent);
         const reader = this.deps.transcripts.readerFor(agent);
         if (reader === undefined) return this.deps.transcripts.unavailableReason(agent);
@@ -202,17 +188,31 @@ export class RecapJob {
     }
 
     private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
-        const prior = this.deps.records.readRecap(String(tab)) ?? blankRecap(String(tab));
-        const readings = await this.readAll(prior, lanes, cause);
+        const key = String(tab);
+        const prior = this.deps.records.readRecap(key) ?? blankRecap(key);
+        if ('kind' in prior) return this.skipped(key, prior);
+        const keys = this.deps.ledger.keysOf(key);
+        if ('kind' in keys) return this.skipped(key, keys);
         const want = this.deps.language();
-        const switched = hasRecap(prior) && (prior.language !== want || (cause !== 'focused' && this.deps.ledger.keysOf(prior.tab).some((key) => this.deps.ledger.openOf({ tab: prior.tab, key }).some((fact) => fact.language !== want))));
+        const switched = this.switchedOf(prior, keys, want, cause);
+        if (typeof switched !== 'boolean') return this.skipped(key, switched);
+        const readings = await this.readAll(prior, lanes, cause);
         if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) return;
-        await this.summarize(prior, readings, { want, switched, cause }, writerStarted);
+        await this.summarize(prior, readings, { want, was: hasRecap(prior) ? prior.language : want, switched, cause, keys }, writerStarted);
     }
 
-    private factsOf(tab: string, tasks: readonly TaskShape[], now: number): readonly TaskFacts[] {
-        const { ledger } = this.deps;
-        return tasks.map((task) => taskFactsOf(ledger, { tab, key: task.id }, now));
+    private skipped(tab: string, failure: Unknown): void { this.deps.log(`recap ${tab}: skipped, ${saying(failure.why)}`); }
+
+    private switchedOf(prior: TabRecap, keys: readonly string[], want: string, cause: RecapCause): boolean | Unknown {
+        if (!hasRecap(prior)) return false;
+        if (prior.language !== want) return true;
+        if (cause === 'focused') return false;
+        for (const key of keys) {
+            const open = this.deps.ledger.openOf({ tab: prior.tab, key });
+            if ('kind' in open) return open;
+            if (open.some((fact) => fact.language !== want)) return true;
+        }
+        return false;
     }
 
     private async piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
@@ -227,44 +227,47 @@ export class RecapJob {
         }
     }
 
-    private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
-        const now = this.deps.clock.now();
-        const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), this.deps.ledger.keysOf(prior.tab));
+    private async prepared(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
+        const now = this.deps.clock.now(); const ledger = throwingLedger(this.deps.ledger);
+        const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), plan.keys);
         const writerView = this.deps.writerView();
-        const facts = this.factsOf(prior.tab, tasks, now);
-        const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== language.want);
+        const facts = tasks.map((task) => taskFactsOf(ledger, { tab: prior.tab, key: task.id }, now));
+        const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== plan.want);
         const built = await inputOf(readings, { tab: prior.tab, repos: this.deps.repos, now, tasks, facts, writerView });
-        const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger: this.deps.ledger, now, language: language.want });
-        return { tasks, ground, request: { input: built.input, language: language.want, previousLanguage: stale?.language ?? language.was } };
+        const ground = groundOf({ tab: prior.tab, tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: plan.want });
+        return { tasks, ground, request: { input: built.input, language: plan.want, previousLanguage: stale?.language ?? plan.was } };
     }
 
-    private async summarize(prior: TabRecap, readings: readonly Reading[], language: { want: string; switched: boolean; cause: RecapCause }, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
+    private async preparedOrFail(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
+        try { return await this.prepared(prior, readings, plan); } catch (error) {
+            const at = this.deps.clock.now();
+            this.deps.records.failRun({ tab: prior.tab, at, cause: plan.cause, backend: this.deps.summarizer().backend, costUsd: 0, language: plan.was, error: error instanceof Error ? error.message : String(error), lanes: readings.map((r) => r.cursor), marks: marksOf(readings, at, false) });
+            throw error;
+        }
+    }
+
+    private async summarize(prior: TabRecap, readings: readonly Reading[], plan: Plan, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
         const note = errors.length > 0 ? errors.join('; ') : null;
-        const was = hasRecap(prior) ? prior.language : language.want;
-        const unmoved = readings.map((r) => r.cursor);
         const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
         const parts = readings.filter((r) => r.chunk !== null && r.chunk.entries.length > 0);
         const { records, clock } = this.deps;
-        if (parts.length === 0 && !language.switched) {
-            records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced, marks: marksOf(readings, clock.now(), true) });
-            return;
-        }
+        if (parts.length === 0 && !plan.switched) return records.advance({ tab: prior.tab, at: clock.now(), error: note, lanes: advanced, marks: marksOf(readings, clock.now(), true) });
         const summarizer = this.deps.summarizer();
         const began = clock.now();
         writerStarted(began);
         records.beginRun(prior.tab, summarizer.backend, began);
-        const { tasks, request, ground } = await this.prepared(prior, readings, { want: language.want, was });
+        const { tasks, request, ground } = await this.preparedOrFail(prior, readings, plan);
         const asked = await this.piped(summarizer, request, ground);
-        const facts = { tab: prior.tab, at: this.deps.clock.now(), cause: language.cause, backend: summarizer.backend, costUsd: asked.cost };
-        const took = `${((facts.at - began) / 1000).toFixed(1)} s (${language.cause})`;
+        const facts = { tab: prior.tab, at: clock.now(), cause: plan.cause, backend: summarizer.backend, costUsd: asked.cost };
+        const took = `${((facts.at - began) / 1000).toFixed(1)} s (${plan.cause})`;
         if (asked.kind === 'failed') {
             this.deps.log(`recap ${prior.tab}: failed in ${took}`);
-            records.failRun({ ...facts, language: was, error: asked.error, lanes: unmoved, marks: marksOf(readings, facts.at, false) });
+            records.failRun({ ...facts, language: plan.was, error: asked.error, lanes: readings.map((r) => r.cursor), marks: marksOf(readings, facts.at, false) });
             return;
         }
         this.deps.log(`recap ${prior.tab}: written in ${took}`);
-        this.written({ ...facts, language: language.want, error: note, lanes: advanced }, { tasks, request, asked, readings, parts });
+        this.written({ ...facts, language: plan.want, error: note, lanes: advanced }, { tasks, request, asked, readings, parts });
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'ops' | 'marks' | 'input' | 'gateStats'>, run: { tasks: readonly TaskShape[]; request: RecapRequest; asked: Extract<Extracted, { kind: 'ops' }>; readings: readonly Reading[]; parts: readonly Reading[] }): void {
