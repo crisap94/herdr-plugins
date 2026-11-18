@@ -9,6 +9,8 @@ import { jaccard, tokensOf } from '@stateforge-labs/session-ledger/unstable/reca
 import { languageOfLine } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/language.ts';
 import { itemOf, subjectOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/legacy.ts';
 import { hasReference } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/link.ts';
+import { isSpecific } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/specific.ts';
+import { foldedOf, jaccard as setJaccard, tokensOf as wordTokensOf, wordsOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
 
 const fact: Fact = {
     id: brand<string, 'FactId'>('f1'), task: { tab: 'tab-1', key: 't1' }, section: 'decisions', text: 'use sqlite', why: 'it is local', ref: null, agent: null, anchor: null,
@@ -38,4 +40,14 @@ test('the item gate helpers read words, language, references and the subject', (
     assert.equal(hasReference('nothing here'), false);
     assert.deepEqual(subjectOf('Claude fixed it', new Set(['claude'])), { rest: ' fixed it' });
     assert.equal(subjectOf('The build broke', new Set(['claude'])), null);
+});
+
+test('the word helpers fold, tokenise and compare, and a specific item names something', () => {
+    assert.deepEqual(wordsOf('Fix the CI, now!'), ['Fix', 'the', 'CI', 'now']);
+    assert.equal(foldedOf('a,  b'), 'a b');
+    assert.deepEqual([...wordTokensOf('Fix the CI')], ['fix', 'the']);
+    assert.equal(setJaccard(new Set(['a', 'b']), new Set(['b', 'c'])), 1 / 3);
+    assert.equal(setJaccard(new Set(), new Set()), 0);
+    assert.equal(isSpecific('bump to v2'), true);
+    assert.equal(isSpecific('make it better'), false);
 });

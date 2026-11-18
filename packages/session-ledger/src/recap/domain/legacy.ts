@@ -6,7 +6,6 @@ import type { WindowOf, WindowSource } from './compaction.ts';
 import type { Directory } from './directory.ts';
 import type { ClosedWhy, FactId, RunId, Section } from './fact.ts';
 import { parseFailureCause, type FailureCause } from './failure-cause.ts';
-import { foldedOf } from './gates/words.ts';
 import type { TaskShape } from './grouping.ts';
 import { holdingDetail, joinedDetail, keptDetail, overridingDetail, type AwaitedNames, type BackgroundLabel, type BackgroundTool, type Flight, type FlightDetail, type FlightReason, type RunningCount } from './in-flight.ts';
 import type { AgentKind, LaneStatus, PaneId, SessionId, TabId, WorkspaceId } from './lane-shape.ts';
@@ -130,20 +129,16 @@ export const sameTask = (a: TaskId, b: TaskId): boolean => a.tab === b.tab && a.
 
 export const isOpen = (fact: Fact): boolean => fact.state === 'open';
 
-const NAME_SHAPE = /^[A-Za-z][A-Za-z0-9]{0,39}$/;
-const CODE_SHAPE = /^[A-Z][A-Z0-9_]{0,39}$/;
 
 export function failureCauseOf(error: unknown): FailureCause {
     let text = 'NonError';
     try {
         if (error instanceof Error) {
-            const name = NAME_SHAPE.test(error.name) ? error.name : 'Error';
-            const code = 'code' in error && typeof error.code === 'string' && CODE_SHAPE.test(error.code) ? error.code : null;
+            const name = /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(error.name) ? error.name : 'Error';
+            const code = 'code' in error && typeof error.code === 'string' && /^[A-Z][A-Z0-9_]{0,39}$/.test(error.code) ? error.code : null;
             text = code === null ? name : `${name}: ${code}`;
         }
-    } catch {
-        text = 'Error';
-    }
+    } catch { text = 'Error'; }
     return parseFailureCause(must(parseText(text)));
 }
 
@@ -214,6 +209,15 @@ export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: R
 export const PIPELINES = ['one', 'enumerate', 'enumerate+gates', 'full'] as const;
 export const retriesTargeted = (pipeline: (typeof PIPELINES)[number]): boolean => pipeline !== 'enumerate';
 
+const SEGMENTER = new Intl.Segmenter('en', { granularity: 'word' });
+export const wordsOf = (text: string): readonly string[] => [...SEGMENTER.segment(text)].flatMap((part) => (part.isWordLike === true ? [part.segment] : []));
+export const foldedOf = (text: string): string => wordsOf(text).join(' ');
+export const wordTokensOf = (text: string): ReadonlySet<string> => new Set(wordsOf(text).map((word) => word.toLowerCase()).filter((word) => word.length >= 3));
+export function wordJaccard(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
+    const shared = [...a].filter((word) => b.has(word)).length;
+    return a.size + b.size - shared === 0 ? 0 : shared / (a.size + b.size - shared);
+}
+
 export const ANCHOR_CHARS = 120;
 
 export function anchorQuotedIn(anchor: string, source: string): boolean {
@@ -246,7 +250,7 @@ type Fields = Readonly<Record<string, unknown>>;
 const isFields = (value: unknown): value is Fields => typeof value === 'object' && value !== null && !Array.isArray(value);
 const textOf = (value: unknown): string => (typeof value === 'string' ? value : '');
 
-const wordsOf = (value: unknown, max: number): string | null => {
+const clippedWords = (value: unknown, max: number): string | null => {
     const words = textOf(value).split(/\s+/u).filter((word) => word !== '');
     if (words.length === 0) return null;
     return words.length > max ? `${words.slice(0, max).join(' ')}…` : words.join(' ');
@@ -295,8 +299,8 @@ function operationOf(fields: Fields): Reconciled | null {
         const why = CLOSES.find((each) => each === fields['why']);
         return why === undefined ? null : { op: 'close', id, why };
     }
-    const text = wordsOf(fields['text'], 16);
-    return text === null ? null : { op: 'update', id, text, why: wordsOf(fields['why'], 24) };
+    const text = clippedWords(fields['text'], 16);
+    return text === null ? null : { op: 'update', id, text, why: clippedWords(fields['why'], 24) };
 }
 
 function answerOf(raw: string): readonly unknown[] | null {
@@ -304,9 +308,7 @@ function answerOf(raw: string): readonly unknown[] | null {
         const parsed: unknown = JSON.parse(raw);
         const ops: unknown = isFields(parsed) ? parsed['ops'] : undefined;
         return Array.isArray(ops) ? Array.from<unknown>(ops) : [];
-    } catch {
-        return null;
-    }
+    } catch { return null; }
 }
 
 function entryOf(entry: unknown, ground: Ground): Reconciled | string {

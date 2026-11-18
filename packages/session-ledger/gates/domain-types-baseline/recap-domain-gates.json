@@ -1,20 +1,5 @@
 {
   "src/recap/domain/gates/legacy.ts": {
-    "legacy": 58
-  },
-  "src/recap/domain/gates/pronoun.ts": {
-    "return": 1
-  },
-  "src/recap/domain/gates/specific.ts": {
-    "parameter": 2,
-    "return": 3
-  },
-  "src/recap/domain/gates/why.ts": {
-    "return": 1
-  },
-  "src/recap/domain/gates/words.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 4
+    "legacy": 62
   }
 }

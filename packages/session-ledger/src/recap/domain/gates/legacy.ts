@@ -150,3 +150,19 @@ export function subjectOf(text: string, known: ReadonlySet<string>): { readonly 
     const first = OPENING.exec(text)?.[1]?.toLowerCase();
     return first !== undefined && known.has(first) ? { rest: text.slice(first.length) } : null;
 }
+
+const ROLES = /(?<![\p{L}\p{N}])(operator|reviewer|user|owner|maintainer|operador|revisor|usuario)(?![\p{L}\p{N}])/iu;
+const SIGNS = [
+    /\d/u,
+    /[`"“«]/u,
+    /[/\\]/u,
+    /[!#]\d/u,
+    /[\p{Ll}][\p{Lu}]/u,
+    /[\p{L}\p{N}][_-][\p{L}\p{N}]/u,
+    /(?<![\p{L}])\p{Lu}{2,}(?![\p{L}])/u,
+    ROLES,
+];
+
+const hasName = (text: string): boolean => wordsOf(text).slice(1).some((word) => /^\p{Lu}\p{L}+$/u.test(word));
+
+export const isSpecific = (text: string): boolean => SIGNS.some((sign) => sign.test(text)) || hasName(text) || hasReference(text);
