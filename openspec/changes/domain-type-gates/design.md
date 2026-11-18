@@ -67,12 +67,14 @@ A **parser** is a function named `parse<Name>`, exported from the file that decl
 `Result<Name, E>` with the one `Result` union. A **type guard** `(input: unknown): input is Name` is allowed only in the same file.
 `unknown` in any other parameter fails. The places that receive raw values (the configuration reader, the herdr transport decoder,
 the database row mappers, the transcript readers, the command-line argument reader) call parsers and pass domain types on.
+A database row mapper calls `parse<Name>` exported from the port file that declares `<Name>`; the adapter first renames the
+columns to the domain field names in its query or select map, so no adapter function takes `unknown` (D-8a).
 
 **Exceptions** are per symbol, never per file or folder. Each entry is `file + function + parameter or return`, with its reason,
 in one exception file per lane (`ci/domain-types-exceptions/<lane>.json`). The check fails on an entry that no finding hits.
 Three classes exist, and nothing else:
 
-1. a Node or third-party callback, or a signature declared by a frozen lane (ENG, STO, VIEW) that a B lane implements, that forces a primitive; converted at once where it is received; the entry goes stale and is removed when that lane leaves the plugin;
+1. a Node or third-party callback, or a signature declared by a frozen lane (ENG, STO, VIEW) that a B lane implements, that forces a primitive, including the container of that parameter or return; converted at once where it is received; the entry goes stale and is removed when that lane leaves the plugin;
 2. the released migrations, frozen by `ci/check-migrations.sh`: the list names each released migration file, derived from the
    latest `tab-recap-v*` tag the same way that script derives it, and a new migration must comply;
 3. `src/recap/domain/brand.ts`, whose one brand function takes the primitive carrier by necessity.
@@ -87,6 +89,10 @@ Existing constructors that throw `NotAnIdentifierError` become parsers. Callers 
   list names a file that no longer declares one, or misses one that does;
 - an ast-grep rule `recap-brand-in-own-parser`: a call to the brand function appears only inside the `parse<Name>` (or the type
   guard) of the file that declares `<Name>`.
+
+New shared vocabulary (a brand and its parser) is added by a lead step before the slices that need it, together with its line in
+`ci/brand-importers.json`; a lane never mints a brand (D-5a). The protocol brands use this `Brand`; `src/protocol/primitives.ts`
+is the one file under `src/protocol` that imports `brand.ts` (D-6a).
 
 A third rule, `recap-one-brand-cast`, refuses every type assertion outside `brand.ts`: both the `as` form other than `as const` and
 the angle-bracket `type_assertion` form (`<PaneId>raw`), in `src/` and `bin/`. This is stricter than "no cast to a brand" on
@@ -139,7 +145,8 @@ category: `parameter`, `return`, `container`, `property`, `assertion`, `legacy`.
 - a category never pays for another: one assertion fixed does not allow one primitive parameter;
 - a file with no entry must have no finding;
 - a CI guard, `ci/check-domain-baseline.sh`, in the style of `ci/check-migrations.sh`, compares every baseline file with the merge
-  base: no entry may rise and no new entry may appear.
+  base: no entry may rise and no new entry may appear. A `legacy` count on a `legacy.ts` row may be new or rise while that
+  lane's baseline total does not rise (decision D-1a, 2026-11-18).
 
 Phase C deletes the baseline folder; from then on any finding fails the build.
 
@@ -150,6 +157,12 @@ its own `legacy.ts` (for example `src/recap/domain/legacy.ts`), as a thin wrappe
 compiling against the legacy export until their own lane moves them. Legacy findings are counted in the lane's own baseline under
 the `legacy` category; a lane's verify line excludes only that category. Phase C deletes every `legacy.ts` once no caller remains.
 The old throwing constructors of `src/recap/domain/ids.ts` take this path in lane B2.
+
+Callers keep their import path. The file that held the old export re-exports it from its folder's `legacy.ts`; the module graph
+exempts a cycle that passes through `legacy.ts` and stays inside that folder (rule `no-circular-legacy`), until BCa (D-2a). The
+graph tool cannot limit this to the two files, so any other same-folder loop through a `legacy.ts` also passes until Phase C
+deletes the legacy files; the owner accepted that (Q-1). An interface that another key implements gets a twin: the domain-typed
+shape takes a new name, and the old one moves to `legacy.ts` until BCa (D-3a). The `lane-scope::adapts` label is not used in Phase B, and it never admits a file of ENG, STO or VIEW (D-4a).
 
 An engine file is never changed by a lane. Its debt leaves with it. The package keeps the same rule with its own `legacy.ts` files
 and its own baseline. The files of lanes `STO` and `VIEW` follow the same rule.
