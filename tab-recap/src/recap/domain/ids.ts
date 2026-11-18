@@ -31,10 +31,11 @@ export class NotAnIdentifierError extends Error {
 export function workspaceOfTab(tab: TabId): WorkspaceId | null {
     const raw = String(tab);
     const colon = raw.indexOf(':');
-    if (colon === -1 || raw.slice(0, colon).trim() === '' || raw.slice(colon + 1).trim() === '') {
+    if (colon === -1 || raw.slice(colon + 1).trim() === '') {
         return null;
     }
-    return brand<string, 'WorkspaceId'>(raw.slice(0, colon));
+    const workspace = parseWorkspaceId(raw.slice(0, colon));
+    return workspace.kind === 'ok' ? workspace.value : null;
 }
 
 export const isUncheckedSessionId = (raw: unknown): raw is SessionId => typeof raw === 'string';
