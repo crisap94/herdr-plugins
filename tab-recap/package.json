@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@stateforge-labs/harness-adapters": "0.5.0",
-    "@stateforge-labs/harness-hooks": "0.3.1",
+    "@stateforge-labs/harness-hooks": "0.4.0",
     "@stateforge-labs/herdr-sdk": "0.4.0",
     "@stateforge-labs/recap-view": "workspace:*",
     "@stateforge-labs/session-ledger": "workspace:*",
