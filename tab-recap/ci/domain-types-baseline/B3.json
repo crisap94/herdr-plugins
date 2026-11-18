@@ -4,18 +4,6 @@
     "property": 1,
     "assertion": 1
   },
-  "src/recap/application/autocompact-line.ts": {
-    "parameter": 1
-  },
-  "src/recap/application/autocompact-listing.ts": {
-    "parameter": 2,
-    "container": 1,
-    "property": 2
-  },
-  "src/recap/application/autocompact.ts": {
-    "parameter": 1,
-    "return": 1
-  },
   "src/recap/application/compaction-deps.ts": {
     "parameter": 8,
     "return": 4,
@@ -233,7 +221,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 48
+    "legacy": 54
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,

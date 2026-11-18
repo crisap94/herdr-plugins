@@ -8,7 +8,7 @@ import { stepNote, type NoteState, type NoteStepped } from './compact-keys.ts';
 import { restartAnswers } from './ask-restart.ts';
 import { PaneTypingLease, type Acquired } from './typing-lease.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import type { AnswerTally } from '#src/ports/autocompact-records.ts';
+import type { AnswerTally, Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
 import type { Decider, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { must } from '#src/protocol/result.ts';
@@ -26,6 +26,8 @@ import type { TokenMap } from '#src/protocol/tokens.ts';
 import { parseAskId } from '#src/recap/domain/compact-request.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant, parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
+import { listingOf, parseListingArgs, type ParsedListing } from './autocompact-listing.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { CompactRequestQueue } from './compact-requests.ts';
 
@@ -204,4 +206,12 @@ export class TypingLease {
     acquire(pane: string, waitMs: number = LEASE_TTL_MS): Promise<Acquired> {
         return this.lease.acquire(paneId(pane), must(parseMilliseconds(waitMs)));
     }
+}
+
+export function parseListing(argv: readonly string[]): ParsedListing {
+    return parseListingArgs(argv.map((arg) => must(parseText(arg))));
+}
+
+export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
+    return listingOf(decisions, { since: instant(spent.since), costUsd: must(parseUsd(spent.costUsd)) }, instant(now), must(parseText(zone)), skips);
 }
