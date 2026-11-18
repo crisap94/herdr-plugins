@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import { ENGINE_FILES_PATH, MOVE_MAP_PATH, PLUGIN_ENGINE_BASELINE_PATH, baselineOf, engineOf, moveMap, packageRowsAbovePlugin, stubOf } from './move-map.ts';
+import type { BaselineRows } from './move-map.ts';
 
 const FROM = 'tab-recap/';
 const TO = 'packages/session-ledger/';
@@ -116,4 +117,14 @@ test('a baseline that is not rows of whole counts is refused', () => {
     assert.throws(() => baselineOf({ 'src/a.ts': 3 }), /no category counts/u);
     assert.throws(() => baselineOf({ 'src/a.ts': { property: -1 } }), /not a count/u);
     assert.throws(() => baselineOf({ 'src/a.ts': { property: 1.5 } }), /not a count/u);
+});
+
+const PACKAGE_BASELINE_DIR = new URL('../../../packages/session-ledger/gates/domain-types-baseline/', import.meta.url);
+
+test('every engine row of the package baseline folder is at or below its row before the move', () => {
+    const files = readdirSync(PACKAGE_BASELINE_DIR).filter((name) => name.endsWith('.json')).toSorted();
+    assert.equal(files.length, 6);
+    const rows = files.reduce<BaselineRows>((all, name) => ({ ...all, ...baselineOf(JSON.parse(readFileSync(new URL(name, PACKAGE_BASELINE_DIR), 'utf8'))) }), {});
+    const engineRows = Object.fromEntries(Object.entries(rows).filter(([file]) => !file.startsWith('src/contract/')));
+    assert.deepEqual(packageRowsAbovePlugin(plugin, engineRows, ['src/recap/domain/lane-shape.ts']), []);
 });
