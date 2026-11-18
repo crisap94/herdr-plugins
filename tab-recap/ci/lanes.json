@@ -58,6 +58,7 @@
       "src/protocol/exchanges/handoff.ts",
       "src/protocol/exchanges/index.ts",
       "src/protocol/kinds.ts",
+      "src/protocol/legacy.ts",
       "src/protocol/owners.ts",
       "src/protocol/primitives.ts",
       "src/protocol/reasons.ts",
