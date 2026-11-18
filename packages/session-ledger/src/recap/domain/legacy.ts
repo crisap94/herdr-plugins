@@ -13,7 +13,7 @@ import type { AgentKind, LaneStatus, PaneId, SessionId, TabId, WorkspaceId } fro
 import { fold, foldSwept, type Folded, type Operation } from './ops.ts';
 import { REGISTERED_KINDS, type RegisteredKind, type RegisteredKindTable } from './registered-kinds.ts';
 import { parseText, type Text } from './text.ts';
-import type { Instant } from './time.ts';
+import type { Duration, Instant } from './time.ts';
 
 export function environmentName(raw: string): EnvironmentName {
     if (raw.trim() === '') throw new Error('an environment name cannot be empty');
@@ -328,3 +328,6 @@ export function reconciliationOf(answer: string, facts: ReadonlyMap<string, Fact
     const entries = listed.map((entry) => entryOf(entry, ground));
     return { ops: entries.filter((one) => typeof one !== 'string'), refused: entries.filter((one) => typeof one === 'string') };
 }
+
+export function instant(ms: number): Instant { return brand<number, 'Instant'>(ms); }
+export function duration(ms: number): Duration { return brand<number, 'Duration'>(ms); }

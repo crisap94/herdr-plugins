@@ -1,15 +1,5 @@
 {
   "src/recap/domain/legacy.ts": {
-    "legacy": 208
-  },
-  "src/recap/domain/time.ts": {
-    "parameter": 2,
-    "assertion": 2
-  },
-  "src/recap/domain/writer-view.ts": {
-    "parameter": 5,
-    "return": 1,
-    "property": 2,
-    "assertion": 3
+    "legacy": 210
   }
 }

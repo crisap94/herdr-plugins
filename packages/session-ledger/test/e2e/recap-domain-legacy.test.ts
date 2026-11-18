@@ -15,7 +15,8 @@ import { pieceOf, QUOTE_CHARS, quotedIn } from '@stateforge-labs/session-ledger/
 import { EVIDENCE_CHARS, reconciliationOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/reconciliation.ts';
 import { kindsWith, REGISTERED_KINDS, registeredKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 import { CAPS, MAX_WORDS, NO_SECTIONS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
-import { duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { duration, elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { keepNewestOf, nextHoursOf, positiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
 import { parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -174,4 +175,14 @@ test('the recap shape caps its lists', () => {
     assert.equal(CAPS.links, 6);
     assert.equal(MAX_WORDS, 16);
     assert.equal(NO_SECTIONS.goal, '');
+});
+
+test('time brands its milliseconds and the writer view reads its counts in range', () => {
+    assert.equal(elapsed(instant(5), instant(2)), duration(0));
+    assert.equal(positiveCount(3), 3);
+    assert.throws(() => positiveCount(0));
+    assert.equal(keepNewestOf(50), 50);
+    assert.throws(() => keepNewestOf(51));
+    assert.equal(nextHoursOf(720), 720);
+    assert.throws(() => nextHoursOf(1.5));
 });

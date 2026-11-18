@@ -154,15 +154,10 @@
   "./unstable/recap/domain/questions.ts READBACK",
   "./unstable/recap/domain/recap-cause.ts RECAP_CAUSES",
   "./unstable/recap/domain/text.ts parseNonEmptyText",
-  "./unstable/recap/domain/time.ts elapsed",
-  "./unstable/recap/domain/time.ts instant",
   "./unstable/recap/domain/time.ts parseDuration",
   "./unstable/recap/domain/time.ts parseInstant",
   "./unstable/recap/domain/time.ts parseMilliseconds",
-  "./unstable/recap/domain/writer-view.ts keepNewestOf",
   "./unstable/recap/domain/writer-view.ts KEEP_NEWEST_RANGE",
-  "./unstable/recap/domain/writer-view.ts nextHoursOf",
   "./unstable/recap/domain/writer-view.ts NEXT_HOURS_RANGE",
-  "./unstable/recap/domain/writer-view.ts positiveCount",
   "./unstable/recap/domain/writer-view.ts prunedWriterView"
 ]
