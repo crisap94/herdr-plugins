@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { mock, test } from 'node:test';
 import type { Git } from '../../gates/bin/domain-baseline.ts';
 import { runGuard } from '../../gates/bin/domain-report.ts';
 
@@ -38,22 +38,24 @@ const fakeGit = (snapshot: Snapshot): Git => (args) => {
 const guarded = (snapshot: Snapshot): Outcome => {
     const root = mkdtempSync(join(tmpdir(), 'domain-guard-'));
     const lines: string[] = [];
-    const error = console.error;
-    const log = console.log;
+    const keep = (line: unknown): void => {
+        lines.push(String(line).trim());
+    };
+    const error = mock.method(console, 'error', keep);
+    const log = mock.method(console, 'log', keep);
     try {
         mkdirSync(join(root, 'gates', 'domain-types-baseline'), { recursive: true });
+        mkdirSync(join(root, 'inherited'));
         writeFileSync(join(root, 'gates', 'config.json'), JSON.stringify({ inheritBaseline: 'inherited' }));
         writeFileSync(join(root, 'gates', 'domain-types-baseline', 'recap.json'), JSON.stringify(snapshot.head));
         if (snapshot.moves !== undefined) {
             writeFileSync(join(root, 'gates', 'domain-types-moves.tsv'), snapshot.moves);
         }
-        console.error = (line: unknown) => lines.push(String(line).trim());
-        console.log = (line: unknown) => lines.push(String(line).trim());
         const status = runGuard(root, ['--baseline', join(root, 'gates', 'domain-types-baseline'), '--guard', BASE], fakeGit(snapshot));
         return { status, lines };
     } finally {
-        console.error = error;
-        console.log = log;
+        error.mock.restore();
+        log.mock.restore();
         rmSync(root, { recursive: true, force: true });
     }
 };

@@ -124,7 +124,7 @@ const PACKAGE_BASELINE_DIR = new URL('../../../packages/session-ledger/gates/dom
 test('every engine row of the package baseline folder is at or below its row before the move', () => {
     const files = readdirSync(PACKAGE_BASELINE_DIR).filter((name) => name.endsWith('.json')).toSorted();
     assert.equal(files.length, 6);
-    const rows = files.reduce<BaselineRows>((all, name) => ({ ...all, ...baselineOf(JSON.parse(readFileSync(new URL(name, PACKAGE_BASELINE_DIR), 'utf8'))) }), {});
-    const engineRows = Object.fromEntries(Object.entries(rows).filter(([file]) => !file.startsWith('src/contract/')));
+    const packageRows: BaselineRows = Object.assign({}, ...files.map((name) => baselineOf(JSON.parse(readFileSync(new URL(name, PACKAGE_BASELINE_DIR), 'utf8')))));
+    const engineRows = Object.fromEntries(Object.entries(packageRows).filter(([file]) => !file.startsWith('src/contract/')));
     assert.deepEqual(packageRowsAbovePlugin(plugin, engineRows, ['src/recap/domain/lane-shape.ts']), []);
 });

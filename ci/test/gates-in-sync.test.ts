@@ -14,6 +14,7 @@ const SYNCED = [
     'test.sh',
     'check-boundaries.ts',
     'check-e2e.ts',
+    'e2e-pending.ts',
     'e2e-bite.sh',
     'bin/check-domain-types.ts',
     'bin/domain-findings.ts',

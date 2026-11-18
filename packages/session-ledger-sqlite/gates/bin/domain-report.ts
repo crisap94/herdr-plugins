@@ -159,24 +159,40 @@ export const runReport = (args: readonly string[], found: Result<Report, string>
     return printReport(found.value, args.includes('--json'), mode.value.kind === 'ratchet' ? mode.value.outcome : null);
 };
 
-export const runGuard = (root: string, args: readonly string[], run?: Git): number => {
-    const path = optionOf(args, '--baseline');
-    const base = args[args.indexOf('--guard') + 1];
-    if (path.kind === 'err' || path.value === null || base === undefined || base.startsWith('--')) {
-        return notCovered('usage: --baseline <file or folder> --guard <merge base>');
-    }
+const inheritOf = (root: string): Result<string | null, string> => {
     const settings = settingsOf(root);
     if (settings.kind === 'err') {
-        return notCovered(settings.error);
+        return settings;
     }
     const inherit = settings.value.inheritBaseline === null ? null : resolve(root, settings.value.inheritBaseline);
+    return ok(inherit !== null && existsSync(inherit) ? inherit : null);
+};
+
+const guardArgs = (args: readonly string[]): Result<{ readonly path: string; readonly base: string }, string> => {
+    const path = optionOf(args, '--baseline');
+    const base = args[args.indexOf('--guard') + 1];
+    return path.kind === 'err' || path.value === null || base === undefined || base.startsWith('--')
+        ? err('usage: --baseline <file or folder> --guard <merge base>')
+        : ok({ path: path.value, base });
+};
+
+export const runGuard = (root: string, args: readonly string[], run?: Git): number => {
+    const parsed = guardArgs(args);
+    if (parsed.kind === 'err') {
+        return notCovered(parsed.error);
+    }
+    const inherit = inheritOf(root);
+    if (inherit.kind === 'err') {
+        return notCovered(inherit.error);
+    }
+    const { path, base } = parsed.value;
     try {
-        const problems = guardAt(path.value, base, join(root, MOVES), inherit, run);
+        const problems = guardAt(path, base, join(root, MOVES), inherit.value, run);
         if (problems.kind === 'err') {
             return notCovered(problems.error);
         }
         if (problems.value === null) {
-            console.log(`domain baseline: ${path.value} is not at the merge base: this change introduces it`);
+            console.log(`domain baseline: ${path} is not at the merge base: this change introduces it`);
             return 0;
         }
         problems.value.forEach((line) => console.error(`  ${line}`));
