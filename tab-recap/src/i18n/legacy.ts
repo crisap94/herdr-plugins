@@ -1,7 +1,7 @@
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { languageNameOf, languageSettingOf, recapLanguageOfSetting } from './index.ts';
+import { languageNameOf, languageSettingOf, recapLanguageOfSetting } from './language.ts';
 import type { AgoUnit, Locale } from './messages.ts';
 import { agoTextOf } from './relative.ts';
 

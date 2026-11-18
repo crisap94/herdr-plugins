@@ -506,6 +506,7 @@
       "src/i18n/en.ts",
       "src/i18n/es.ts",
       "src/i18n/index.ts",
+      "src/i18n/language.ts",
       "src/i18n/legacy.ts",
       "src/i18n/messages.ts",
       "src/i18n/refusal.ts",

@@ -1,6 +1,6 @@
 import type { Messages } from './messages.ts';
 import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
-import { agoIn } from './relative.ts';
+import { agoIn } from './legacy.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const en: Messages = {
