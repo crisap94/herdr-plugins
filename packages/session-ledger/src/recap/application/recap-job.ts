@@ -150,10 +150,7 @@ export class RecapJob {
         if (slot.pending !== null) this.arm(slot, tab);
     }
 
-    refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> {
-        this.request(tab, lanes, 'requested');
-        return this.idle(tab);
-    }
+    refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
 
     idle(scope: TabId): Promise<void> {
         const slot = this.slots.get(String(scope));
