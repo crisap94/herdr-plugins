@@ -46,6 +46,7 @@ export function looseOf(catalog: Catalog): Messages {
             outcome: (agent, outcome, retried, figures) => catalog.compaction.outcome(textOf(agent), outcome, presenceOf(retried), { tokens: textOf(figures.tokens), took: textOf(figures.took) }),
             joined: (agent, noted) => catalog.compaction.joined(textOf(agent), presenceOf(noted)),
         },
+        cli: { ...loose.cli, statusDaemon: (pid, off, version) => catalog.cli.statusDaemon(pid, presenceOf(off), version === null ? null : textOf(version)) },
     };
 }
 

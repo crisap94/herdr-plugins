@@ -206,8 +206,8 @@ export interface DatabaseMessages {
 }
 
 export interface KeyBinding {
-    readonly key: string;
-    readonly action: string;
+    readonly key: Text;
+    readonly action: Text;
 }
 
 export interface CliMessages {
@@ -227,19 +227,19 @@ export interface CliMessages {
     readonly backendNow: (what: Text) => Text;
     readonly usageBackend: (choices: Text) => Text;
     readonly usage: (commands: Text) => Text;
-    readonly statusVersion: (code: string | null) => string;
-    readonly statusRuntime: (path: string, version: string) => string;
-    readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;
-    readonly statusKeys: (bindings: readonly KeyBinding[], configPath: string) => string;
-    readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
-    readonly statusBackend: (what: string) => string;
+    readonly statusVersion: (code: Text | null) => Text;
+    readonly statusRuntime: (path: Text, version: Text) => Text;
+    readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: Text) => Text;
+    readonly statusKeys: (bindings: readonly KeyBinding[], configPath: Text) => Text;
+    readonly statusDaemon: (pid: number | null, off: Presence, version: Text | null) => Text;
+    readonly statusBackend: (what: Text) => Text;
     readonly statusLanguage: 'language' | 'idioma  ';
     readonly statusSources: LanguageSourceNames;
-    readonly statusExtensions: (ids: string) => string;
-    readonly statusState: string;
-    readonly statusConfig: string;
-    readonly handoff: Readonly<Record<HandoffMessageKey, string>>;
-    readonly none: string;
+    readonly statusExtensions: (ids: Text) => Text;
+    readonly statusState: Text;
+    readonly statusConfig: Text;
+    readonly handoff: Readonly<Record<HandoffMessageKey, Text>>;
+    readonly none: Text;
 }
 
 export interface Catalog {
