@@ -8,7 +8,7 @@ import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import type { Operation, AddOp } from '#src/recap/domain/ops.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must as unwrap } from '#src/protocol/result.ts';
@@ -17,7 +17,7 @@ import { newestChange, ExpandedModel } from '#src/recap/application/expanded-vie
 import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { cursor, memoryStore, must, openFixture, scratchDir } from './support.ts';
+import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from './support.ts';
 
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
@@ -44,7 +44,7 @@ test('migration 7 from the oldest fixture: every registered migration runs, a fr
 });
 
 test('migration 7: the request CHECK accepts curate (a tab only) and still refuses an unknown kind and a stray pane or note', () => {
-    const { db } = memoryStore();
+    const store = memoryStore(); const { db } = store;
     const insert = (kind: string, pane: string | null = null): void => { db.prepare('INSERT INTO request (id, at, kind, target, pane) VALUES (?, 1, ?, ?, ?)').run(ids.next(), kind, 'w1:t1', pane); };
     insert('curate');
     assert.throws(() => { insert('curate', 'w1:p1'); }, /CHECK/);
@@ -73,7 +73,7 @@ const SHAPE = [{ id: 't1', name: '', lanes: ['w1:p1'] }];
 const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text, why: section === 'decisions' ? 'a reason' : null, ref: null, at: null, agent: null });
 
 function writerRun(store: ReturnType<typeof memoryStore>, at: number, ops: readonly Operation[]): void {
-    store.records.recordRun({ tab: 'w1:t1', at, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
+    recordOps(store, { tab: 'w1:t1', at, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
 }
 
 test('a task has no story until the curator keeps one; the story keeps the run time it was begun at', () => {
@@ -89,7 +89,7 @@ test('a task has no story until the curator keeps one; the story keeps the run t
 test('the story and the merges land together: a ledger that fails leaves no story', () => {
     const store = memoryStore();
     writerRun(store, 10, [adding('a')]);
-    const failing: Ledger = { ...store.ledger, openOf: () => [], recentlyClosed: () => [], allOf: () => [], keysOf: () => [], historyOf: () => [], apply: () => { throw new Error('disk full'); } };
+    const failing = Object.assign(new LedgerRepository(store.db), { apply: (): never => { throw new Error('disk full'); } });
     const stories = new StoriesRepository(store.db, failing);
     assert.throws(() => stories.keep({ task: T1, at: 9, language: 'en' }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
     assert.equal(stories.read('w1:t1', 't1'), null);
@@ -131,7 +131,7 @@ test('the real ledger stores what the view reads: a done fact is drawn when it h
 });
 
 test('curate requests are taken once; a tab asked twice is one request, and the other queues are not disturbed', () => {
-    const { requests } = memoryStore();
+    const store = memoryStore(); const { requests } = store;
     requests.requestCurate('w1:t1');
     requests.requestCurate('w1:t1');
     requests.requestCurate('w1:t2');
@@ -146,7 +146,7 @@ test('session source: first seen, runs by cause (imported apart), and the finish
     assert.equal(store.session.firstSeen('w1:t1'), null);
     assert.deepEqual(store.session.runsByCause('w1:t1'), {});
     const run = (cause: 'turn-ended' | 'focused' | 'requested' | 'imported', at: number): void => {
-        store.records.recordRun({ tab: 'w1:t1', at, cause, backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
+        recordOps(store, { tab: 'w1:t1', at, cause, backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
     };
     run('turn-ended', 100); run('turn-ended', 200); run('focused', 300); run('imported', 50);
     assert.equal(store.session.firstSeen('w1:t1'), 100, 'the tab row keeps the time it was first touched');

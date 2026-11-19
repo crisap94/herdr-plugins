@@ -14,7 +14,7 @@ import { TranscriptRows } from '#src/adapters/db/transcripts.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { VerdictsRepository } from '#src/adapters/db/verdicts.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
@@ -129,7 +129,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('stories: read returns the stored text and time like the raw select', () => {
         withParity(seedAll, (parity) => {
-            const stories = new StoriesRepository(parity.raw, {} as Ledger);
+            const stories = new StoriesRepository(parity.raw, new LedgerRepository(parity.raw));
             const produced = [stories.read('t1', 'k1'), stories.read('t1', 'k2')];
             expectSameRows(parity, { sql: STORY, params: ['t1', 'k1'] }, [produced[0]], (row) => ({ text: row.story_text, at: row.story_at }));
             expectSameRows(parity, { sql: STORY, params: ['t1', 'k2'] }, [produced[1]], (row) => (row.story_text === null ? null : { text: row.story_text, at: row.story_at }));
@@ -137,7 +137,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
     });
 
     test('stories: keep writes the story onto the task like the raw update', () => {
-        const ledger = { apply: () => ({}) } as unknown as Ledger;
+        const ledger = { apply: () => ({}) } as unknown as LedgerRepository;
         expectSameEffect({
             seed: seedAll,
             raw: (db) => { db.prepare(STORY_UPDATE).run('new story', 40, 't1', 'k1'); },

@@ -10,7 +10,7 @@ import type { StoredRun } from '#src/ports/run-inputs.ts';
 import type { Operation, TaskOps } from '#src/recap/domain/ops.ts';
 import { reportLines } from '#src/recap/render/eval.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
@@ -21,7 +21,7 @@ function history(): { store: ReturnType<typeof memoryStore>; runs: readonly Stor
     const record = (at: number, ops: (ids: Record<string, string>) => readonly Operation[]): void => {
         const ids = Object.fromEntries(store.ledger.openOf(TAB).map((fact) => [fact.text, fact.id]));
         const tasks: readonly TaskOps[] = [{ task: 't1', ops: ops(ids) }];
-        store.records.recordRun({ tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: tasks, input: `<recap_input version="2">run at ${at}</recap_input>` });
+        recordOps(store, { tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: tasks, input: `<recap_input version="2">run at ${at}</recap_input>` });
     };
     record(1000, () => [add('done', 'Merged !256.'), add('next', 'Tag the release.')]);
     record(2000, (ids) => [add('done', 'Tagged 1.9.0.'), { op: 'close', id: ids['Tag the release.'] ?? '', why: 'done' }]);
@@ -78,7 +78,7 @@ test('judging the third run: coverage and no-filler over the state (an older fac
 test('judge vs anchor: a fact whose quote is in the input and that the judge calls unsupported is listed; an unanchored one is only a failing item', async () => {
     const store = memoryStore();
     const anchored: Operation = { op: 'add', section: 'done', text: 'Merged !256.', why: null, ref: null, at: null, agent: null, anchor: 'merge !256' };
-    store.records.recordRun({ tab: 'w1:t1', at: 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops: [anchored, add('done', 'Tagged 1.9.0.')] }], input: '<recap_input version="2">merge !256</recap_input>' });
+    recordOps(store, { tab: 'w1:t1', at: 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops: [anchored, add('done', 'Tagged 1.9.0.')] }], input: '<recap_input version="2">merge !256</recap_input>' });
     const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: true })[0];
     assert.ok(run !== undefined);
     const score = JSON.stringify({

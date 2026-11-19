@@ -28,7 +28,7 @@ const isThenable = (value: unknown): boolean => typeof value === 'object' && val
 
 const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
     const keys = [...new Set(facts.map((fact) => fact.task.key))];
-    store.records.recordRun(runOf({ tab, at, lanes: keys.map((key) => cursor(key)), tasks: keys.map((key) => shapeOf(key, [key])), changed: facts }));
+    store.records.recordRun(runOf({ tab, at, lanes: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [k])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>

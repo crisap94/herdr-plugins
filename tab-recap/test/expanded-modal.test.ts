@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { stripVTControlCharacters } from 'node:util';
 import { join } from 'node:path';
 import { stateStore } from '#src/adapters/db/database.ts';
-import { cursor } from '#test/db/support.ts';
+import { cursor, recordOps } from '#test/db/support.ts';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 const hasScript = ((): boolean => { try { execFileSync('sh', ['-c', 'command -v script'], { stdio: 'ignore' }); return true; } catch { return false; } })();
@@ -25,7 +25,7 @@ test('the modal draws the expanded view; r asks for a recap, q and Esc close it'
         const store = stateStore(state);
         assert.equal(store.kind, 'ready');
         store.views.writeTab({ tab: 'w1:t1', column: null, at: Date.now() - 3_600_000, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] });
-        store.records.recordRun({ tab: 'w1:t1', at: Date.now() - 3_600_000, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
+        recordOps(store, { tab: 'w1:t1', at: Date.now() - 3_600_000, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
         store.close();
         const open = (): { output: () => string; code: () => number | null; send: (keys: string) => void } => {
             let output = '';

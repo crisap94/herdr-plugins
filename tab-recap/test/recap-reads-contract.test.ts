@@ -17,7 +17,7 @@ const subjects: readonly Subject[] = [
     { name: 'in-memory double', runs: () => new MemoryRunHistory(), views: () => new MemoryTabViews() },
 ];
 
-const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ tab, at, cause, backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
+const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ tab, at, cause, backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], changed: [], refused: [] });
 const lane = (pane: string): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
 
 for (const { name, runs, views } of subjects) {

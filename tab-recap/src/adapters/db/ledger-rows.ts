@@ -108,15 +108,12 @@ export class LedgerRows {
         }).where(eq(factTable.id, id)).run();
     }
 
-    private factExists(id: Uint8Array): boolean {
-        return this.orm.select({ id: factTable.id }).from(factTable).where(eq(factTable.id, id)).get() !== undefined;
-    }
-
     keep(run: Uint8Array, changed: readonly Fact[]): void {
         for (const f of changed) {
             const id = factIdOf(f);
             const owner = this.taskRow(f.task);
-            if (this.factExists(id)) {
+            const existing = this.orm.select({ id: factTable.id }).from(factTable).where(eq(factTable.id, id)).get();
+            if (existing !== undefined) {
                 this.updateFact(run, id, f);
             } else {
                 this.insertFact(run, owner, f.task, id, f);

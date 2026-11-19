@@ -4,7 +4,7 @@ import type { EvalOptions } from '#src/recap/application/eval-options.ts';
 import type { EvalDeps } from '#src/recap/application/eval-run.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 
 export const DAY = 86_400_000;
@@ -45,7 +45,7 @@ export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>):
 
 export function seed(store: Rig['store'], count: number, over: { readonly input?: boolean; readonly gate?: boolean; readonly tab?: string; readonly first?: number } = {}): void {
     for (let n = 0; n < count; n += 1) {
-        store.records.recordRun({
+        recordOps(store, {
             tab: over.tab ?? 'w1:t1', at: NOW - (over.first ?? 1) * DAY + n * 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')],
             ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: `<recap_input version="1">run ${n}</recap_input>` }),
             ...(over.gate === true ? { gateStats: { refused: { G1: 1 }, flagged: { G8: 2 }, dropped: 0 } } : {}),

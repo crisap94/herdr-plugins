@@ -8,7 +8,7 @@ import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { comparisonLines } from '#src/recap/render/compare.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';
 
@@ -17,7 +17,7 @@ const add = (section: 'goal' | 'done' | 'next', text: string): Operation => ({ o
 function replayStore(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
     const run = (minutes: number, ops: readonly Operation[], turn: string): void => {
-        store.records.recordRun({
+        recordOps(store, {
             tab: 'replay:t1', at: T0 + minutes * MIN, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops }],
             input: `<recap_input version="2"><tab id="x"/><ledger><fact id="f1" section="goal">LEDGER-ONLY</fact></ledger><transcript agent="a1"><turn role="user">${turn}</turn></transcript></recap_input>`,
         });
