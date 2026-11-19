@@ -128,6 +128,24 @@ test('TAB_RECAP_WRITER_CLOSE_EVIDENCE: off unless on; on in any case and spacing
     }
 });
 
+test('TAB_RECAP_WRITER_ANSWER: unset leaves the field absent; schema in any case and spacing; anything else is absent', () => {
+    const saved = process.env['TAB_RECAP_WRITER_ANSWER'];
+    try {
+        delete process.env['TAB_RECAP_WRITER_ANSWER'];
+        assert.equal('writerAnswer' in loadConfig(), false);
+        for (const raw of ['text', 'json', '']) {
+            process.env['TAB_RECAP_WRITER_ANSWER'] = raw;
+            assert.equal('writerAnswer' in loadConfig(), false, raw);
+        }
+        for (const raw of [' Schema ', 'SCHEMA']) {
+            process.env['TAB_RECAP_WRITER_ANSWER'] = raw;
+            assert.equal(loadConfig().writerAnswer, 'schema', raw);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env['TAB_RECAP_WRITER_ANSWER']; } else { process.env['TAB_RECAP_WRITER_ANSWER'] = saved; }
+    }
+});
+
 test('TAB_RECAP_RUN_DEBOUNCE_MS: a whole number of ms from 5000 to 300000 is the window; 0, unset or anything else is off', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_RUN_DEBOUNCE_MS'] as const;
     const saved = keys.map((key) => process.env[key]);
