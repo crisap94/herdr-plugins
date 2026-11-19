@@ -1,17 +1,24 @@
 import { mkdirSync } from 'node:fs';
 import { basename } from 'node:path';
-import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
+import type { HarnessAsk, HarnessPort, HarnessRun } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { duration, type Milliseconds } from '#src/recap/domain/time.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { run, scrubbedEnv } from '../os/process/control.ts';
 
-export function splitArgv(line: string): string[] {
-    const argv: string[] = [];
+export { CustomHarness } from './legacy.ts';
+
+const CUSTOM_ID = must(parseText('custom'));
+const FREE = must(parseUsd(0));
+
+export function splitArgv(line: Text): Text[] {
+    const argv: Text[] = [];
     let word = '';
-    let quote: string | null = null;
+    let quote: '"' | "'" | null = null;
     let started = false;
     for (const char of line) {
         if (quote !== null) {
@@ -20,7 +27,7 @@ export function splitArgv(line: string): string[] {
             quote = char;
             started = true;
         } else if (/\s/.test(char)) {
-            if (started) { argv.push(word); }
+            if (started) { argv.push(must(parseText(word))); }
             word = '';
             started = false;
         } else {
@@ -28,27 +35,27 @@ export function splitArgv(line: string): string[] {
             started = true;
         }
     }
-    return started ? [...argv, word] : argv;
+    return started ? [...argv, must(parseText(word))] : argv;
 }
 
-export class CustomHarness implements Harness {
-    readonly id = 'custom';
+export class CustomHarnessPort implements HarnessPort {
+    readonly id = CUSTOM_ID;
     readonly limit = null;
-    private readonly argv: readonly string[];
-    private readonly workDir: string;
-    private readonly timeoutMs: number;
+    private readonly argv: readonly Text[];
+    private readonly workDir: FsPath;
+    private readonly timeoutMs: Milliseconds;
 
-    constructor(command: string, workDir: string, timeoutMs: number) {
+    constructor(command: Text, workDir: FsPath, timeoutMs: Milliseconds) {
         this.argv = splitArgv(command);
         this.workDir = workDir;
         this.timeoutMs = timeoutMs;
     }
 
-    label(): string {
-        return `custom/${basename(this.argv[0] ?? '?')}`;
+    label(): Text {
+        return must(parseText(`custom/${basename(this.argv[0] ?? '?')}`));
     }
 
-    async run(call: HarnessCall): Promise<Ran> {
+    async run(call: HarnessAsk): Promise<HarnessRun> {
         const [program, ...args] = this.argv;
         if (program === undefined) {
             return unknown({ why: 'not-found', what: 'TAB_RECAP_CUSTOM_CMD (it is empty)' });
@@ -62,6 +69,6 @@ export class CustomHarness implements Harness {
         if (ran.code !== 0 || ran.stdout.trim() === '') {
             return unknown({ why: 'failed', code: ran.code, detail: causeOf(must(parseText((ran.stderr || ran.stdout).trim().slice(0, 300)))) });
         }
-        return { kind: 'ran', text: ran.stdout, costUsd: 0 };
+        return { kind: 'ran', text: must(parseText(ran.stdout)), costUsd: FREE };
     }
 }

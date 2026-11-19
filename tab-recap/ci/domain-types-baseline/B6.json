@@ -68,21 +68,8 @@
     "return": 2,
     "container": 1
   },
-  "src/adapters/harness/custom.ts": {
-    "parameter": 4,
-    "return": 1,
-    "container": 2,
-    "property": 2
-  },
-  "src/adapters/harness/library.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 3
-  },
-  "src/adapters/harness/on-path.ts": {
-    "parameter": 2,
-    "return": 1,
-    "container": 1
+  "src/adapters/harness/legacy.ts": {
+    "legacy": 12
   },
   "src/adapters/herdr/agents.ts": {
     "parameter": 13,
@@ -129,12 +116,6 @@
     "parameter": 1,
     "container": 1
   },
-  "src/adapters/job/decider.ts": {
-    "parameter": 1,
-    "return": 3,
-    "container": 1,
-    "assertion": 1
-  },
   "src/adapters/job/enumerator.ts": {
     "parameter": 1,
     "container": 1
@@ -153,25 +134,17 @@
     "parameter": 1,
     "container": 2
   },
-  "src/adapters/job/prompts/judge-instructions.ts": {
-    "parameter": 1,
-    "return": 2,
-    "container": 4
+  "src/adapters/job/legacy.ts": {
+    "legacy": 3
+  },
+  "src/adapters/job/prompts/legacy.ts": {
+    "legacy": 16
   },
   "src/adapters/job/prompts/recap-instructions.ts": {
     "parameter": 3,
     "return": 4,
     "container": 1,
     "property": 1
-  },
-  "src/adapters/job/prompts/recap-prompt.ts": {
-    "parameter": 4,
-    "return": 5
-  },
-  "src/adapters/job/prompts/rubric.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 3
   },
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
@@ -201,15 +174,13 @@
     "parameter": 3,
     "container": 1
   },
-  "src/adapters/os/process/control.ts": {
-    "parameter": 2,
-    "return": 3,
-    "container": 2
-  },
   "src/adapters/os/process/core.ts": {
     "parameter": 6,
     "container": 1,
     "property": 1
+  },
+  "src/adapters/os/process/legacy.ts": {
+    "legacy": 2
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
@@ -245,28 +216,23 @@
     "container": 1
   },
   "src/adapters/transcripts/codex/tool-calls.ts": {
-    "parameter": 3,
-    "container": 2
+    "parameter": 3
   },
   "src/adapters/transcripts/codex/transcripts.ts": {
     "parameter": 13,
-    "container": 3,
+    "container": 1,
     "property": 2
   },
   "src/adapters/transcripts/context-values.ts": {
     "parameter": 1,
     "return": 1,
-    "container": 2
+    "container": 1
   },
   "src/adapters/transcripts/in-flight.ts": {
     "return": 4
   },
-  "src/adapters/transcripts/jsonl.ts": {
-    "parameter": 16,
-    "return": 6,
-    "container": 8,
-    "property": 3,
-    "assertion": 2
+  "src/adapters/transcripts/legacy.ts": {
+    "legacy": 19
   },
   "src/adapters/transcripts/opencode/in-flight.ts": {
     "parameter": 2
@@ -295,7 +261,6 @@
   "src/adapters/transcripts/tool-calls.ts": {
     "parameter": 8,
     "return": 4,
-    "container": 4,
     "property": 2
   }
 }

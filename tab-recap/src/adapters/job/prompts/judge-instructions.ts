@@ -1,9 +1,15 @@
 import { READBACK as QUESTIONS } from '#src/recap/domain/questions.ts';
-import { RUBRIC } from './rubric.ts';
-import type { CheckAnchor, CheckAnchors, JudgeTask } from '#src/ports/judge.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { RUBRIC } from './rubric-text.ts';
+import type { AnchorCheck, AnchorChecks, JudgeTask } from '#src/ports/judge.ts';
 import { ANCHORS_PER_CHECK } from '#src/recap/application/judge-anchors.ts';
 
-export const READBACK_QUESTIONS: readonly string[] = QUESTIONS.map((question) => question.text);
+export { judgeInstructions } from './legacy.ts';
+
+export const READBACK_TEXTS: readonly Text[] = QUESTIONS.map((question) => must(parseText(question.text)));
+
+export { READBACK_TEXTS as READBACK_QUESTIONS };
 
 const SCORE = [
     'You judge a recap that an AI wrote for a terminal tab. Input: one <judge_input> document. <rubric> is the rubric,',
@@ -47,7 +53,7 @@ const READBACK = [
     'You are handed over a piece of work with nothing but a recap. Input: one <readback_input> document with the recap\'s items.',
     'Answer these six questions using ONLY the recap, one or two sentences each; when the recap does not say, answer "not stated".',
     '',
-    ...READBACK_QUESTIONS.map((question, at) => `${at + 1}. ${question}`),
+    ...READBACK_TEXTS.map((question, at) => `${at + 1}. ${question}`),
     '',
     'Answer with ONLY one JSON object, no other text, no code fence: {"answers":["...", "...", "...", "...", "...", "..."]} — six strings, in order.',
 ].join('\n');
@@ -57,7 +63,7 @@ const GRADE = [
     '(everything the work involved), <keyfacts> are its key facts, <answers> are the six answers.',
     '',
     'The questions were:',
-    ...READBACK_QUESTIONS.map((question, at) => `${at + 1}. ${question}`),
+    ...READBACK_TEXTS.map((question, at) => `${at + 1}. ${question}`),
     '',
     'An answer passes when it is correct and complete according to <writer_input>; "not stated" passes only when the input holds',
     'nothing to say (for example no rule was ever given). For question 5, the decision asked about is the most important one among <keyfacts>.',
@@ -66,16 +72,26 @@ const GRADE = [
     'Answer with ONLY one JSON object, no other text, no code fence: {"grades":[{"question":1,"pass":true,"critique":""}]} — one entry per question.',
 ].join('\n');
 
-export const JUDGE_INSTRUCTIONS: Readonly<Record<JudgeTask, string>> = { score: SCORE, readback: READBACK, grade: GRADE, cover: COVER };
+export const JUDGE_TEXT: Readonly<Record<JudgeTask, Text>> = {
+    score: must(parseText(SCORE)),
+    readback: must(parseText(READBACK)),
+    grade: must(parseText(GRADE)),
+    cover: must(parseText(COVER)),
+};
 
-const anchorLines = (check: string, anchors: readonly CheckAnchor[]): readonly string[] =>
-    [`${check}:`, ...anchors.map((anchor) => `- "${anchor.item}" — the operator ruled ${anchor.pass ? 'PASS' : 'FAIL'}${anchor.reason === '' ? '' : `: ${anchor.reason}`}`)];
+export { JUDGE_TEXT as JUDGE_INSTRUCTIONS };
 
-export function judgeInstructions(task: JudgeTask, anchors: CheckAnchors = new Map()): string {
+const anchorBlock = (check: Text, anchors: readonly AnchorCheck[]): Text =>
+    must(parseText([`${check}:`, ...anchors.map((anchor) => `- "${anchor.item}" — the operator ruled ${anchor.verdict === 'pass' ? 'PASS' : 'FAIL'}${anchor.reason === '' ? '' : `: ${anchor.reason}`}`)].join('\n')));
+
+const collate = new Intl.Collator('en', { numeric: true }).compare;
+
+export function judgeInstructionsOf(task: JudgeTask, anchors: AnchorChecks = new Map()): Text {
     const given = [...anchors].filter(([, list]) => list.length > 0);
     if (task !== 'score' || given.length === 0) {
-        return JUDGE_INSTRUCTIONS[task];
+        return JUDGE_TEXT[task];
     }
-    const lines = given.toSorted(([a], [b]) => a.localeCompare(b, 'en', { numeric: true })).flatMap(([check, list]) => anchorLines(check, list.slice(0, ANCHORS_PER_CHECK)));
-    return [JUDGE_INSTRUCTIONS[task], '', 'Where the operator overruled an earlier judge, they decided like this (newest first). When in doubt, decide the same way:', ...lines].join('\n');
+    const checks = given.map(([check]) => check).toSorted(collate);
+    const blocks = checks.map((check) => anchorBlock(check, (anchors.get(check) ?? []).slice(0, ANCHORS_PER_CHECK)));
+    return must(parseText([JUDGE_TEXT[task], '', 'Where the operator overruled an earlier judge, they decided like this (newest first). When in doubt, decide the same way:', ...blocks].join('\n')));
 }
