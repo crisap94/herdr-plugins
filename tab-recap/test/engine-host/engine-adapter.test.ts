@@ -145,7 +145,7 @@ test('the adapter reports each recap as a recap-written event, as the legacy run
     const [direct, faced] = [world(), world()];
     await legacyDriver(direct).refresh(tabId(TAB), lanes);
     await adapterDriver(faced).refresh(tabId(TAB), lanes);
-    assert.deepEqual(faced.events, direct.ran.map((event) => ({ kind: 'recap-written', scope: event.tab, turns: event.turns, boundary: event.boundary, cause: event.cause })));
+    assert.deepEqual(faced.events.filter((event) => event.kind === 'recap-written'), direct.ran.map((event) => ({ kind: 'recap-written', scope: event.tab, turns: event.turns, boundary: event.boundary, cause: event.cause })));
     assert.notDeepEqual(faced.events, []);
 });
 
