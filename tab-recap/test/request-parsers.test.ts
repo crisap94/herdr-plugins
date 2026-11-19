@@ -36,6 +36,7 @@ test('a compact ask keeps an absent origin and answer out of its value, and refu
         kind: 'ok',
         value: { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'done' },
     });
+    assert.deepEqual(parseCompactAsk({ ...compact, answer: null }), { kind: 'ok', value: { tab: 'w1:t1', pane: null, note: null } });
     assert.equal(parseCompactAsk({ ...compact, origin: 'robot' }).kind, 'err');
     assert.equal(parseCompactAsk({ ...compact, tab: 7 }).kind, 'err');
 });

@@ -124,6 +124,10 @@ function answerOf(row: Row): Result<Text | null | undefined, ParseFailure> {
     return row.answer === undefined || row.answer === null ? ok(row.answer) : parseText(row.answer);
 }
 
+function compactAnswerOf(row: Row): Result<Text | undefined, ParseFailure> {
+    return row.answer === undefined || row.answer === null ? ok(undefined) : parseText(row.answer);
+}
+
 function refreshOf(row: Row): Result<RefreshFirst, ParseFailure> {
     const refresh = REFRESHES.find((option) => option === row.refresh);
     return refresh === undefined ? err({ kind: 'out-of-range' }) : ok(refresh);
@@ -163,7 +167,7 @@ export function parseCompactAsk(input: unknown): Result<CompactAsk, ParseFailure
     if (note.kind === 'err') return note;
     const origin = originOf(input);
     if (origin.kind === 'err') return origin;
-    const answer = input.answer === undefined ? ok(undefined) : parseText(input.answer);
+    const answer = compactAnswerOf(input);
     if (answer.kind === 'err') return answer;
     return ok({
         tab: tab.value,
