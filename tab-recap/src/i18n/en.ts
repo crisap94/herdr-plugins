@@ -1,28 +1,31 @@
-import type { Messages } from './messages.ts';
+import type { Catalog } from './messages.ts';
 import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
-import { agoIn } from './legacy.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { looseOf, type Messages } from './legacy.ts';
+import { agoTextOf } from './relative.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
-export const en: Messages = {
+export const english: Catalog = {
     locale: 'en',
-    badge: { working: 'working', blocked: 'blocked — needs you', idle: 'idle', done: 'done', unknown: 'unknown' },
-    waitingForAgent: 'Waiting for an agent in this tab…',
-    fromScreen: '(screen)',
-    recapTitle: 'TAB RECAP',
-    taskNumber: (n) => `Task ${n}`,
-    updating: '⟳ updating',
-    daemonStale: (daemon) => `daemon v${daemon ?? '?'} — restart`,
-    claudeOwn: "Claude's own recap, until the tab's is written:",
-    noRecapYet: 'No recap yet. It is written when an agent in this tab finishes a turn — press r to write it now.',
-    noRecapShort: 'no recap yet',
-    autocompactSettings: { ceilingOverride: (enabled) => `ceiling override ${enabled ? 'on' : 'off'}`, coverageBackoff: (window) => `coverage backoff ${window}`, missedFacts: (choice) => `missed facts ${choice}` },
-    git: { unpushed: (count) => `${count} unpushed`, changed: (count) => `${count} changed` },
-    recapError: (error) => `recap: ${error}`,
-    needsYou: (what) => `needs you: ${what}`,
-    ago: agoIn('en'),
+    badge: { working: must(parseText('working')), blocked: must(parseText('blocked — needs you')), idle: must(parseText('idle')), done: must(parseText('done')), unknown: must(parseText('unknown')) },
+    waitingForAgent: must(parseText('Waiting for an agent in this tab…')),
+    fromScreen: must(parseText('(screen)')),
+    recapTitle: must(parseText('TAB RECAP')),
+    taskNumber: (n) => must(parseText(`Task ${n}`)),
+    updating: must(parseText('⟳ updating')),
+    daemonStale: (daemon) => must(parseText(`daemon v${daemon ?? '?'} — restart`)),
+    claudeOwn: must(parseText("Claude's own recap, until the tab's is written:")),
+    noRecapYet: must(parseText('No recap yet. It is written when an agent in this tab finishes a turn — press r to write it now.')),
+    noRecapShort: must(parseText('no recap yet')),
+    autocompactSettings: { ceilingOverride: (enabled) => must(parseText(`ceiling override ${(enabled === 'present') ? 'on' : 'off'}`)), coverageBackoff: (window) => must(parseText(`coverage backoff ${window}`)), missedFacts: (choice) => must(parseText(`missed facts ${choice}`)) },
+    git: { unpushed: (count) => must(parseText(`${count} unpushed`)), changed: (count) => must(parseText(`${count} changed`)) },
+    recapError: (error) => must(parseText(`recap: ${error}`)),
+    needsYou: (what) => must(parseText(`needs you: ${what}`)),
+    ago: agoTextOf(must(parseText('en'))),
     hints: {
-        column: ['tap: full screen · r recap · c compact · s settings · h hide · j/k scroll', 'tap: full screen · r · c · s · h · j/k', 'r recap · s settings · h hide', 'r s h'],
-        modal: ['q close · r recap now · c compact · s settings · h hide column · j/k scroll · g top', 'q close · r recap now · c compact · s settings · h hide · j/k', 'q close · r · h · j/k', 'q'],
+        column: [must(parseText('tap: full screen · r recap · c compact · s settings · h hide · j/k scroll')), must(parseText('tap: full screen · r · c · s · h · j/k')), must(parseText('r recap · s settings · h hide')), must(parseText('r s h'))],
+        modal: [must(parseText('q close · r recap now · c compact · s settings · h hide column · j/k scroll · g top')), must(parseText('q close · r recap now · c compact · s settings · h hide · j/k')), must(parseText('q close · r · h · j/k')), must(parseText('q'))],
     },
     setup: {
         title: 'TAB RECAP — settings',
@@ -198,3 +201,5 @@ export const en: Messages = {
         },
     },
 };
+
+export const en: Messages = looseOf(english);

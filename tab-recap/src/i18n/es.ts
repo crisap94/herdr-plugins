@@ -1,29 +1,32 @@
-import type { Messages } from './messages.ts';
+import type { Catalog } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
-import { agoIn } from './legacy.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { looseOf, type Messages } from './legacy.ts';
+import { agoTextOf } from './relative.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
-export const es: Messages = {
+export const spanish: Catalog = {
     locale: 'es',
-    badge: { working: 'trabajando', blocked: 'bloqueado — te necesita', idle: 'en pausa', done: 'listo', unknown: 'desconocido' },
-    waitingForAgent: 'Esperando a que haya un agente en esta pestaña…',
-    fromScreen: '(pantalla)',
-    recapTitle: 'RESUMEN DE PESTAÑA',
-    taskNumber: (n) => `Tarea ${n}`,
-    updating: '⟳ actualizando',
-    daemonStale: (daemon) => `daemon v${daemon ?? '?'} — reinicia`,
-    claudeOwn: 'El resumen propio de Claude, hasta que se escriba el de la pestaña:',
-    noRecapYet: 'Aún no hay resumen. Se escribe cuando un agente de esta pestaña termina un turno; pulsa r para escribirlo ahora.',
-    noRecapShort: 'aún sin resumen',
-    autocompactSettings: { ceilingOverride: (enabled) => `límite anula cobertura ${enabled ? 'sí' : 'no'}`, coverageBackoff: (window) => `espera de cobertura ${window}`, missedFacts: (choice) => `datos que faltan ${choice}` },
-    git: { unpushed: (count) => `${count} sin subir`, changed: (count) => (count === 1 ? '1 cambiado' : `${count} cambiados`) },
-    recapError: (error) => `resumen: ${error}`,
-    needsYou: (what) => `te necesita: ${what}`,
-    ago: agoIn('es'),
+    badge: { working: must(parseText('trabajando')), blocked: must(parseText('bloqueado — te necesita')), idle: must(parseText('en pausa')), done: must(parseText('listo')), unknown: must(parseText('desconocido')) },
+    waitingForAgent: must(parseText('Esperando a que haya un agente en esta pestaña…')),
+    fromScreen: must(parseText('(pantalla)')),
+    recapTitle: must(parseText('RESUMEN DE PESTAÑA')),
+    taskNumber: (n) => must(parseText(`Tarea ${n}`)),
+    updating: must(parseText('⟳ actualizando')),
+    daemonStale: (daemon) => must(parseText(`daemon v${daemon ?? '?'} — reinicia`)),
+    claudeOwn: must(parseText('El resumen propio de Claude, hasta que se escriba el de la pestaña:')),
+    noRecapYet: must(parseText('Aún no hay resumen. Se escribe cuando un agente de esta pestaña termina un turno; pulsa r para escribirlo ahora.')),
+    noRecapShort: must(parseText('aún sin resumen')),
+    autocompactSettings: { ceilingOverride: (enabled) => must(parseText(`límite anula cobertura ${(enabled === 'present') ? 'sí' : 'no'}`)), coverageBackoff: (window) => must(parseText(`espera de cobertura ${window}`)), missedFacts: (choice) => must(parseText(`datos que faltan ${choice}`)) },
+    git: { unpushed: (count) => must(parseText(`${count} sin subir`)), changed: (count) => must(parseText(count === 1 ? '1 cambiado' : `${count} cambiados`)) },
+    recapError: (error) => must(parseText(`resumen: ${error}`)),
+    needsYou: (what) => must(parseText(`te necesita: ${what}`)),
+    ago: agoTextOf(must(parseText('es'))),
     hints: {
-        column: ['toca: pantalla completa · r actualizar · c compactar · s ajustes · h ocultar · j/k desplazar', 'toca: pantalla completa · r · c · s · h · j/k', 'r actualizar · s ajustes · h ocultar', 'r s h'],
-        modal: ['q cerrar · r actualizar ahora · c compactar · s ajustes · h ocultar columna · j/k desplazar · g inicio', 'q cerrar · r actualizar · c compactar · s ajustes · h ocultar · j/k', 'q cerrar · r · h · j/k', 'q'],
+        column: [must(parseText('toca: pantalla completa · r actualizar · c compactar · s ajustes · h ocultar · j/k desplazar')), must(parseText('toca: pantalla completa · r · c · s · h · j/k')), must(parseText('r actualizar · s ajustes · h ocultar')), must(parseText('r s h'))],
+        modal: [must(parseText('q cerrar · r actualizar ahora · c compactar · s ajustes · h ocultar columna · j/k desplazar · g inicio')), must(parseText('q cerrar · r actualizar · c compactar · s ajustes · h ocultar · j/k')), must(parseText('q cerrar · r · h · j/k')), must(parseText('q'))],
     },
     setup: {
         title: 'RESUMEN DE PESTAÑA — ajustes',
@@ -199,3 +202,5 @@ export const es: Messages = {
         },
     },
 };
+
+export const es: Messages = looseOf(spanish);

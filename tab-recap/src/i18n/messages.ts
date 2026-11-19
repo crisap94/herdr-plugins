@@ -1,9 +1,14 @@
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
+
+export type { Messages } from './legacy.ts';
 
 export type Locale = 'en' | 'es';
 
@@ -19,17 +24,17 @@ export interface LanguageSourceNames {
     readonly system: LanguageSourceName;
 }
 
-export interface BadgeMessages { readonly working: string; readonly blocked: string; readonly idle: string; readonly done: string; readonly unknown: string }
+export interface BadgeMessages { readonly working: Text; readonly blocked: Text; readonly idle: Text; readonly done: Text; readonly unknown: Text }
 
 export interface AutocompactSettingsMessages {
-    readonly ceilingOverride: (enabled: boolean) => string;
-    readonly coverageBackoff: (window: string) => string;
-    readonly missedFacts: (choice: MissedFacts) => string;
+    readonly ceilingOverride: (enabled: Presence) => Text;
+    readonly coverageBackoff: (window: Text) => Text;
+    readonly missedFacts: (choice: MissedFacts) => Text;
 }
 
-export interface GitMessages { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string }
+export interface GitMessages { readonly unpushed: (count: Count) => Text; readonly changed: (count: Count) => Text }
 
-export interface HintMessages { readonly column: readonly string[]; readonly modal: readonly string[] }
+export interface HintMessages { readonly column: readonly Text[]; readonly modal: readonly Text[] }
 
 export interface ToggleChoices { readonly on: string; readonly off: string }
 
@@ -237,23 +242,23 @@ export interface CliMessages {
     readonly none: string;
 }
 
-export interface Messages {
+export interface Catalog {
     readonly locale: Locale;
     readonly badge: BadgeMessages;
-    readonly waitingForAgent: string;
-    readonly fromScreen: string;
-    readonly recapTitle: string;
-    readonly taskNumber: (n: number) => string;
-    readonly updating: string;
-    readonly daemonStale: (daemon: string | null) => string;
-    readonly claudeOwn: string;
-    readonly noRecapYet: string;
-    readonly noRecapShort: string;
+    readonly waitingForAgent: Text;
+    readonly fromScreen: Text;
+    readonly recapTitle: Text;
+    readonly taskNumber: (n: Count) => Text;
+    readonly updating: Text;
+    readonly daemonStale: (daemon: Text | null) => Text;
+    readonly claudeOwn: Text;
+    readonly noRecapYet: Text;
+    readonly noRecapShort: Text;
     readonly autocompactSettings: AutocompactSettingsMessages;
     readonly git: GitMessages;
-    readonly recapError: (error: string) => string;
-    readonly needsYou: (what: string) => string;
-    readonly ago: (amount: number, unit: AgoUnit) => string;
+    readonly recapError: (error: Text) => Text;
+    readonly needsYou: (what: Text) => Text;
+    readonly ago: (amount: Count, unit: AgoUnit) => Text;
     readonly hints: HintMessages;
     readonly setup: SetupMessages;
     readonly compaction: CompactionMessages;
