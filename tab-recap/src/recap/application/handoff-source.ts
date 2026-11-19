@@ -1,16 +1,15 @@
+import { isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
-import { saying } from '#src/ports/unknowable.ts';
+import { saying, type Unknown } from '#src/ports/unknowable.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;
@@ -21,8 +20,8 @@ export type SourceLane = Pick<Lane, 'pane' | 'tab'>;
 
 export interface SourceDeps {
     readonly lanes: readonly SourceLane[];
-    readonly records: Pick<RecapRecords, 'readRecap'>;
-    readonly ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>;
+    readonly records: Pick<GuardedRecapRecords, 'readRecap'>;
+    readonly ledger: Pick<GuardedLedger, 'openOf' | 'recentlyClosed'>;
     readonly now: number;
 }
 
@@ -84,12 +83,18 @@ export function isLaneOfTab(lanes: readonly SourceLane[], source: SourceRequest)
     return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab);
 }
 
+const unknownOf = (read: Unknown): SourceResolution => ({ kind: 'unknown', why: read.why.why === 'unreadable' ? read.why.detail : saying(read.why) });
+
 const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution => {
     if (!isLaneOfTab(deps.lanes, source)) {
         return { kind: 'source-unavailable' };
     }
     try {
-        const listing = (deps.records.readRecap(source.tab)?.tasks ?? []).filter((task) => task.lanes.includes(source.pane));
+        const recap = deps.records.readRecap(source.tab);
+        if (isUnknownRead(recap)) {
+            return unknownOf(recap);
+        }
+        const listing = (recap?.tasks ?? []).filter((task) => task.lanes.includes(source.pane));
         if (listing.length > 1) {
             return { kind: 'task-ambiguous' };
         }
@@ -99,7 +104,13 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         }
         const task: TaskId = { tab: source.tab, key: only.id };
         const open = deps.ledger.openOf(task);
+        if (isUnknownRead(open)) {
+            return unknownOf(open);
+        }
         const closed = deps.ledger.recentlyClosed(task, deps.now - HANDOFF_CLOSED_WINDOW_MS);
+        if (isUnknownRead(closed)) {
+            return unknownOf(closed);
+        }
         return { kind: 'found', source: 'live', task, facts: [...open, ...closed] };
     } catch (error) {
         return { kind: 'unknown', why: failureCauseOf(error) };
@@ -112,7 +123,7 @@ const closedResolver: SourceResolver<'closed'> = (identity, deps): SourceResolut
         case 'found':
             return { kind: 'found', source: 'closed', identity, task: resolution.task, facts: resolution.facts, view: resolution.view };
         case 'unknown':
-            return { kind: 'unknown', why: resolution.why.why === 'unreadable' ? resolution.why.detail : saying(resolution.why) };
+            return unknownOf(resolution);
         default:
             return { kind: 'source-unavailable' };
     }

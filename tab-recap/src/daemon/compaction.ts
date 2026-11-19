@@ -1,3 +1,4 @@
+import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
@@ -23,9 +24,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -51,10 +50,10 @@ interface CompactionTyping {
 
 interface CompactionParts {
     readonly fleet: Fleet;
-    readonly records: RecapRecords;
+    readonly records: GuardedRecapRecords;
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;
-    readonly ledger: Ledger;
+    readonly ledger: GuardedLedger;
     readonly boundaries: Boundaries;
     readonly webs: CompactionWebs;
     readonly recaps: Pick<TabRecaps, 'refresh'>;

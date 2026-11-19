@@ -1,8 +1,9 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
-import { memoryStore, seed } from '#test/db/support.ts';
+import { memoryStore, seed, storeRead } from '#test/db/support.ts';
 import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { en } from '#src/i18n/en.ts';
@@ -118,7 +119,7 @@ const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ?
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: store.records, ledger: store.ledger, repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
@@ -134,7 +135,7 @@ test('a tab with two lanes in two places: the request carries each lane\'s hints
     assert.deepEqual(request.input.agents.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
-    const recap = store.records.readRecap('w1:t1');
+    const recap = storeRead(store.records.readRecap('w1:t1'));
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'pay', ['w1:p1'], 'pay v2'], ['t2', 'docs', ['w1:p2'], 'docs']], 'no grouping yet: one task per place, named by its folder');
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
     assert.deepEqual(request.input.tasks, [{ id: 't1', name: 'pay', lanes: ['w1:p1'] }, { id: 't2', name: 'docs', lanes: ['w1:p2'] }], 'and the grouping is told to the writer');
@@ -144,7 +145,7 @@ test('a tab with ONE lane is not told about tasks, but is still described: the a
     const { store, requests } = await run([JSON.stringify({ ops: [op('goal', 'solo')] })], ['w1:p1']);
     assert.deepEqual(requests[0]?.input.agents.map((agent) => [agent.cwd, agent.repo, agent.branch, agent.files]), [['/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']]], 'the hints are there for a single agent too');
     assert.deepEqual(requests[0].input.tasks, []);
-    assert.deepEqual(store.records.readRecap('w1:t1')?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
+    assert.deepEqual(storeRead(store.records.readRecap('w1:t1'))?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
 test('the second run: the grouping is kept and goes back to the writer; an add names its task; an update or close goes to the fact\'s own task', async () => {
@@ -154,7 +155,7 @@ test('the second run: the grouping is kept and goes back to the writer; an add n
     const { requests } = await run([JSON.stringify({ ops: [op('done', 'wrote the intro', 't2'), { op: 'close', id: 'f1', why: 'done' }] })], ['w1:p1', 'w1:p2'], store);
     assert.deepEqual(requests[0]?.input.tasks, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
     assert.deepEqual(requests[0].input.ledgers.map((ledger) => [ledger.task, ledger.facts.map((fact) => fact.id)]), [['t1', ['f1']], ['t2', ['f2']]]);
-    const recap = store.records.readRecap('w1:t1');
+    const recap = storeRead(store.records.readRecap('w1:t1'));
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
 

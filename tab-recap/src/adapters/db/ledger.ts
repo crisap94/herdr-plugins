@@ -1,5 +1,7 @@
 import type { Database } from 'bun:sqlite';
-import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
+import type { Applied, HistoryFact } from '#src/ports/ledger.ts';
+import type { GuardedLedger } from '#src/ports/guarded-reads.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { parsePaneId, parseTabId, tabId } from '#src/recap/domain/ids.ts';
@@ -9,10 +11,10 @@ import { instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { LedgerHistory } from './ledger-history.ts';
 import { LedgerRows } from './ledger-rows.ts';
-import { guarded } from './rows.ts';
+import { guarded, guardedRead } from './rows.ts';
 import { idOf } from './typeid.ts';
 
-export class LedgerRepository implements Ledger {
+export class LedgerRepository implements GuardedLedger {
     private readonly db: Database;
     private readonly rows: LedgerRows;
     private readonly history: LedgerHistory;
@@ -23,20 +25,20 @@ export class LedgerRepository implements Ledger {
         this.history = new LedgerHistory(db);
     }
 
-    openOf(task: TaskId): readonly Fact[] {
-        return guarded(() => this.rows.openOf(task), []);
+    openOf(task: TaskId): readonly Fact[] | Unknown {
+        return guardedRead(() => this.rows.openOf(task));
     }
 
-    recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[] {
-        return guarded(() => this.rows.recentlyClosed(task, instant(sinceMs)), []);
+    recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[] | Unknown {
+        return guardedRead(() => this.rows.recentlyClosed(task, instant(sinceMs)));
     }
 
-    allOf(task: TaskId): readonly Fact[] {
-        return guarded(() => this.rows.allOf(task), []);
+    allOf(task: TaskId): readonly Fact[] | Unknown {
+        return guardedRead(() => this.rows.allOf(task));
     }
 
-    keysOf(tab: string): readonly TaskName[] {
-        return guarded(() => this.rows.keysOf(tabId(tab)), []);
+    keysOf(tab: string): readonly TaskName[] | Unknown {
+        return guardedRead(() => this.rows.keysOf(tabId(tab)));
     }
 
     historyOf(tab: string, pane: string): readonly HistoryFact[] {

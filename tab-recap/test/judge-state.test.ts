@@ -10,7 +10,7 @@ import type { StoredRun } from '#src/ports/run-inputs.ts';
 import type { Operation, TaskOps } from '#src/recap/domain/ops.ts';
 import { reportLines } from '#src/recap/render/eval.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps, storeRead } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
@@ -19,7 +19,7 @@ const TAB = { tab: 'w1:t1', key: 't1' };
 function history(): { store: ReturnType<typeof memoryStore>; runs: readonly StoredRun[] } {
     const store = memoryStore();
     const record = (at: number, ops: (ids: Record<string, string>) => readonly Operation[]): void => {
-        const ids = Object.fromEntries(store.ledger.openOf(TAB).map((fact) => [fact.text, fact.id]));
+        const ids = Object.fromEntries(storeRead(store.ledger.openOf(TAB)).map((fact) => [fact.text, fact.id]));
         const tasks: readonly TaskOps[] = [{ task: 't1', ops: ops(ids) }];
         recordOps(store, { tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: tasks, input: `<recap_input version="2">run at ${at}</recap_input>` });
     };

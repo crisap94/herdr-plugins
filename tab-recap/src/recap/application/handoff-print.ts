@@ -1,9 +1,9 @@
+import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { AgentState } from '#src/ports/agents.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffPrinter, PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
+import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
@@ -26,8 +26,8 @@ import type { ClosedView } from './closed-view.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
 
 export interface PrintStore {
-    readonly ledger: Pick<Ledger, 'openOf' | 'recentlyClosed' | 'allOf'>;
-    readonly records: Pick<RecapRecords, 'readRecap' | 'lastRunOf'>;
+    readonly ledger: Pick<GuardedLedger, 'openOf' | 'recentlyClosed' | 'allOf'>;
+    readonly records: Pick<GuardedRecapRecords, 'readRecap' | 'lastRunOf'>;
     readonly views: Pick<TabViews, 'tabOf' | 'readTab'>;
     readonly closures: ClosureReader & ClosureRuns;
     close(): void;
@@ -126,7 +126,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         if (live === null || source === undefined) {
             return null;
         }
-        const cursor = store.records.readRecap(String(live.tab))?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
+        const cursor = knownOr(store.records.readRecap(String(live.tab)), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
         return { lane: laneOf(live.tab, source), cursor, facts, closed: undefined };
     }
 

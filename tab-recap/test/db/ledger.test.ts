@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
@@ -24,22 +25,22 @@ test('open facts come newest last seen first, the order of adding breaking a tie
     const store = memoryStore(); const { ledger } = store;
     recordOps(store, run(100, [add('done', 'first'), add('done', 'second')]));
     recordOps(store, run(200, [add('done', 'third')]));
-    assert.deepEqual(ledger.openOf(TASK).map((fact) => fact.text), ['third', 'first', 'second']);
-    const first = ledger.openOf(TASK).find((fact) => fact.text === 'first');
+    assert.deepEqual(storeRead(ledger.openOf(TASK)).map((fact) => fact.text), ['third', 'first', 'second']);
+    const first = storeRead(ledger.openOf(TASK)).find((fact) => fact.text === 'first');
     assert.ok(first !== undefined);
     recordOps(store, run(300, [{ op: 'close', id: first.id, why: 'done' }]));
-    assert.deepEqual(ledger.openOf(TASK).map((fact) => fact.text), ['third', 'second']);
-    assert.deepEqual(ledger.recentlyClosed(TASK, 250).map((fact) => [fact.text, fact.closedWhy, fact.closedAt, fact.lastAt]), [['first', 'done', 300, 300]]);
-    assert.deepEqual(ledger.recentlyClosed(TASK, 301), []);
-    assert.deepEqual(ledger.allOf(TASK).map((fact) => fact.text), ['first', 'second', 'third']);
+    assert.deepEqual(storeRead(ledger.openOf(TASK)).map((fact) => fact.text), ['third', 'second']);
+    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, 250)).map((fact) => [fact.text, fact.closedWhy, fact.closedAt, fact.lastAt]), [['first', 'done', 300, 300]]);
+    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, 301)), []);
+    assert.deepEqual(storeRead(ledger.allOf(TASK)).map((fact) => fact.text), ['first', 'second', 'third']);
 });
 
 test('keysOf: the tasks of the tab that have ever had facts, closed or not; another tab\'s are not', () => {
     const store = memoryStore(); const { ledger } = store;
     recordOps(store, { ...run(100, []), tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: [] }], ops: [{ task: 't2', ops: [add('done', 'x')] }, { task: 't1', ops: [add('done', 'y')] }] });
     recordOps(store, { ...run(200, []), tab: 'w1:t2', ops: [{ task: 't1', ops: [add('done', 'z')] }] });
-    assert.deepEqual(ledger.keysOf('w1:t1'), ['t1', 't2']);
-    assert.deepEqual(ledger.keysOf('w1:t9'), []);
+    assert.deepEqual(storeRead(ledger.keysOf('w1:t1')), ['t1', 't2']);
+    assert.deepEqual(storeRead(ledger.keysOf('w1:t9')), []);
 });
 
 test('apply through the port: the fold\'s result is stored, refusals come back, and the run that created and last touched a fact is kept', () => {
@@ -52,7 +53,7 @@ test('apply through the port: the fold\'s result is stored, refusals come back, 
     assert.ok(fact !== undefined);
     const again = repo.apply(ref(db, 150), [{ op: 'close', id: 'fct_missing', why: 'done' }, { op: 'update', id: fact.id, text: 'Merge !34 today', why: null }]);
     assert.deepEqual(again.refused.map((refusal) => refusal.reason), ['unknown-id']);
-    assert.deepEqual(ledger.openOf(TASK).map((each) => [each.text, each.firstAt, each.lastAt]), [['Merge !34 today', 100, 150]]);
+    assert.deepEqual(storeRead(ledger.openOf(TASK)).map((each) => [each.text, each.firstAt, each.lastAt]), [['Merge !34 today', 100, 150]]);
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM fact WHERE born_run = last_run').get() as { n: number }).n, 1);
 });
 
@@ -61,7 +62,7 @@ test('a failing write in the middle of an answer leaves nothing of it: the facts
     const repo = new LedgerRepository(db);
     recordOps(store, run(100, []));
     assert.throws(() => repo.apply(ref(db, 120), [add('done', 'kept?'), add('done', '')]), /CHECK constraint failed/);
-    assert.deepEqual(ledger.allOf(TASK), []);
+    assert.deepEqual(storeRead(ledger.allOf(TASK)), []);
     assert.equal(db.inTransaction, false);
 });
 
@@ -90,7 +91,7 @@ test('the schema refuses what the fold cannot: every CHECK of the table bites', 
 test('the views: fact_readable shows ids as text, open_facts only the open ones', () => {
     const store = memoryStore(); const { records, db } = store;
     recordOps(store, run(100, [add('done', 'a'), add('done', 'b')]));
-    const [one] = records.readRecap('w1:t1')?.tasks ?? [];
+    const [one] = storeRead(records.readRecap('w1:t1'))?.tasks ?? [];
     assert.ok(one !== undefined);
     const readable = db.prepare('SELECT id, task_id FROM fact_readable').get() as { id: string; task_id: string };
     assert.match(readable.id, /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -103,15 +104,15 @@ test('twenty open "done" facts are all stored, and the column shows the five las
         recordOps(store, run(at, [add('done', `finished ${at}`)]));
     }
     assert.equal((db.prepare("SELECT COUNT(*) AS n FROM fact WHERE state = 'open'").get() as { n: number }).n, 20);
-    assert.deepEqual(records.readRecap('w1:t1')?.tasks.at(0)?.sections?.done, ['finished 20', 'finished 19', 'finished 18', 'finished 17', 'finished 16']);
+    assert.deepEqual(storeRead(records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.done, ['finished 20', 'finished 19', 'finished 18', 'finished 17', 'finished 16']);
 });
 
 test('a goal add closes the previous goal as superseded; the column shows the open goal only', () => {
     const store = memoryStore(); const { records, ledger } = store;
     recordOps(store, run(100, [add('goal', 'Ship 2.0')]));
     recordOps(store, run(200, [add('goal', 'Ship 2.0 this week')]));
-    assert.equal(records.readRecap('w1:t1')?.tasks.at(0)?.sections?.goal, 'Ship 2.0 this week');
-    assert.deepEqual(ledger.allOf(TASK).map((fact) => [fact.text, fact.state, fact.closedWhy]), [['Ship 2.0', 'closed', 'superseded'], ['Ship 2.0 this week', 'open', null]]);
+    assert.equal(storeRead(records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.goal, 'Ship 2.0 this week');
+    assert.deepEqual(storeRead(ledger.allOf(TASK)).map((fact) => [fact.text, fact.state, fact.closedWhy]), [['Ship 2.0', 'closed', 'superseded'], ['Ship 2.0 this week', 'open', null]]);
 });
 
 test('history: every fact of the agent\'s tasks, open and closed, with why and dates; other tasks and panes stay out; newest first', () => {
@@ -119,7 +120,7 @@ test('history: every fact of the agent\'s tasks, open and closed, with why and d
     recordOps(store, { ...run(100, []), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: ['w1:p2'] }], ops: [
         { task: 't1', ops: [add('decisions', 'Use SQLite', 'one file to back up'), add('done', 'a')] }, { task: 't2', ops: [add('decisions', 'Other pane decision', 'not ours')] },
     ] });
-    const decision = ledger.openOf(TASK).find((fact) => fact.section === 'decisions');
+    const decision = storeRead(ledger.openOf(TASK)).find((fact) => fact.section === 'decisions');
     assert.ok(decision !== undefined);
     recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: ['w1:p2'] }] });
     const items = ledger.historyOf('w1:t1', 'w1:p1');

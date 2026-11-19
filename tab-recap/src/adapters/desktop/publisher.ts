@@ -1,8 +1,9 @@
+import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { blankRecap, type RecapRecords } from '#src/ports/recap-records.ts';
+import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import { BLANK_READS, type GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
@@ -21,7 +22,7 @@ const limit = must(parseCount(GUI_TAB_LIMIT));
 
 export interface GuiPublisherDeps {
     readonly dir: Directory;
-    readonly records: RecapRecords;
+    readonly records: GuardedRecapRecords;
     readonly views: TabViews;
     readonly now: () => Instant;
     readonly reads?: (tab: TabId, view: TabView | null) => GuiReads;
@@ -46,7 +47,7 @@ export class GuiPublisher {
     }
 
     document(tab: TabId): GuiTab | null {
-        const recap = this.deps.records.readRecap(tab);
+        const recap = knownOr(this.deps.records.readRecap(tab), null);
         const view = this.deps.views.readTab(tab);
         if (recap === null && view === null) { return null; }
         const reads = this.deps.reads === undefined ? BLANK_READS : this.deps.reads(tab, view);

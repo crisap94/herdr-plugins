@@ -1,4 +1,4 @@
-import type { Ledger } from '#src/ports/ledger.ts';
+import { knownOr, type GuardedLedger } from '#src/ports/guarded-reads.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -17,7 +17,7 @@ export type NeedAnswer =
     | Unknown;
 
 export interface NeedAnswerDeps {
-    readonly ledger: Pick<Ledger, 'keysOf' | 'allOf'>;
+    readonly ledger: Pick<GuardedLedger, 'keysOf' | 'allOf'>;
     readonly stories: Pick<Stories, 'keep'>;
     readonly now: () => Instant;
 }
@@ -25,8 +25,8 @@ export interface NeedAnswerDeps {
 const refused = (reason: NeedRefusal): NeedAnswer => ({ kind: 'refused', reason });
 
 function factOf(ledger: NeedAnswerDeps['ledger'], tab: TabId, id: NonEmptyText): Fact | null {
-    for (const key of ledger.keysOf(tab)) {
-        const found = ledger.allOf({ tab, key }).find((fact) => String(fact.id) === id);
+    for (const key of knownOr(ledger.keysOf(tab), [])) {
+        const found = knownOr(ledger.allOf({ tab, key }), []).find((fact) => String(fact.id) === id);
         if (found !== undefined) { return found; }
     }
     return null;

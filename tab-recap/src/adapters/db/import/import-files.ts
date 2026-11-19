@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeTx } from '../connection.ts';
@@ -43,7 +44,7 @@ export function loadAndCompare(store: Store, legacy: LegacyFiles, now: number): 
     ].flatMap((message) => message ?? []);
     const differences = [
         ...refused,
-        ...recaps.flatMap((file) => recapDifferences(file, store.records.readRecap(file.tab))),
+        ...recaps.flatMap((file) => recapDifferences(file, knownOr(store.records.readRecap(file.tab), null))),
         ...views.flatMap((file) => viewDifferences(file, store.views.readTab(file.tab))),
         ...(hidden !== null && JSON.stringify(store.visibility.readHidden()) !== JSON.stringify(hidden) ? ['hidden: reads back differently'] : []),
     ];

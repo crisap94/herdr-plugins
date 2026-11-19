@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Engine, FollowedSession, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
@@ -10,7 +11,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
-import { memoryStore } from '#test/db/support.ts';
+import { memoryStore, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -61,7 +62,7 @@ function world(): World {
     };
     const plugs: Omit<EnginePlugs, 'ran'> = {
         source: { transcripts: registryWith({ claude: reader }) },
-        store: { records: store.records, ledger: store.ledger },
+        store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW, keepInput: (): boolean => true },
@@ -87,7 +88,7 @@ function adapterDriver(at: World): TabRecaps {
 }
 
 function outcome(at: World, history: readonly Lane[]): unknown {
-    const recap = at.store.records.readRecap(TAB);
+    const recap = storeRead(at.store.records.readRecap(TAB));
     return {
         asked: at.asked.map((request) => request.input),
         lanes: recap?.lanes,

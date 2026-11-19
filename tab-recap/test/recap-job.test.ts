@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { CloseEvidence } from '#src/recap/domain/pipeline.ts';
-import { memoryStore, seed } from '#test/db/support.ts';
+import { memoryStore, seed, storeRead } from '#test/db/support.ts';
 import { firstTask, NO_REPOS, oneTask } from '#test/support.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
@@ -44,7 +45,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     const store = memoryStore();
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
         transcripts: registryWith({ claude: transcriptsOf('claude'), codex: transcriptsOf('codex') }),
-        records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
     const lanes = [
         laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }),
@@ -57,7 +58,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     assert.ok(only !== undefined);
     assert.deepEqual(only.input.agents.map((agent) => [agent.id, agent.kind, agent.pane]), [['a1', 'claude', 'w1:p1'], ['a2', 'codex', 'w1:p2']], 'every lane is described, hints included');
     assert.deepEqual(only.input.transcripts.map((lane) => [lane.agent, lane.entries.map((entry) => entry.text)]), [['a1', ['migrate victoria']], ['a2', ['run the tests']]]);
-    const recap = store.records.readRecap('w1:t1');
+    const recap = storeRead(store.records.readRecap('w1:t1'));
     assert.ok(recap !== null);
     assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
     assert.match(firstTask(recap).markdown, /^## Goal\nboth\n\n## Now\n- migrating\n\n## Needs you\n—/);
@@ -88,12 +89,12 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
         ...(stored === undefined ? {} : { language: stored }),
     });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
-        transcripts: registryWith({ claude: quiet }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        transcripts: registryWith({ claude: quiet }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
         language: (): string => language, log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [lane], cause);
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    return { calls, recap: store.records.readRecap('w1:t1') };
+    return { calls, recap: storeRead(store.records.readRecap('w1:t1')) };
 }
 
 test('a language switch with nothing new REWRITES the recap — on a request and on a focus', async () => {
@@ -122,10 +123,10 @@ test('a recap stored before languages existed counts as English; a failed rewrit
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: quiet }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): string => 'es', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: quiet }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): string => 'es', log: (): void => undefined });
     job.request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    assert.equal(store.records.readRecap('w1:t1')?.language, 'en');
+    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'en');
 });
 
 function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; calls: RecapRequest[] } {
@@ -146,12 +147,12 @@ async function recapWith(answers: readonly string[], stored: Partial<TabRecap> =
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), ...stored });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
-        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
+        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'en', log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
-    const recap = store.records.readRecap('w1:t1');
+    const recap = storeRead(store.records.readRecap('w1:t1'));
     assert.ok(recap !== null);
     return { calls, recap };
 }
@@ -202,19 +203,19 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
     const custom: Summarizer = { backend: 'custom/mine', contract: 'free-text', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ goal: 'x' }), costUsd: 0 }); } };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-    new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => custom, language: (): string => 'en', log: (): void => undefined })
+    new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => custom, language: (): string => 'en', log: (): void => undefined })
         .request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1, 'no retry for a custom writer');
-    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /custom writer must answer operations \(see README\)/);
-    assert.equal(store.ledger.allOf({ tab: 'w1:t1', key: 't1' }).length, 0, 'nothing stored');
+    assert.match(storeRead(store.records.readRecap('w1:t1'))?.error ?? '', /custom writer must answer operations \(see README\)/);
+    assert.equal(storeRead(store.ledger.allOf({ tab: 'w1:t1', key: 't1' })).length, 0, 'nothing stored');
 });
 
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
     const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const store = memoryStore();
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): string => 'en', log: (): void => undefined });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1);
@@ -229,9 +230,9 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
     await job.refreshNow(tabId('w1:t1'), [lane]);
-    assert.equal(firstTask(store.records.readRecap('w1:t1') ?? blankRecap('w1:t1')).sections?.goal, 'written late');
+    assert.equal(firstTask(storeRead(store.records.readRecap('w1:t1')) ?? blankRecap('w1:t1')).sections?.goal, 'written late');
 });
 
 test('a run logs how long it took and why it ran, written or failed', async () => {
@@ -241,7 +242,7 @@ test('a run logs how long it took and why it ran, written or failed', async () =
         let ticks = -1;
         const clock = { now: (): ReturnType<typeof instant> => { ticks += 1; return instant(1_000 + (ticks < 2 ? 0 : 12_400)); } };
         const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
-        const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: store.records, ledger: store.ledger, clock, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (line): void => { lines.push(line); } });
+        const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (line): void => { lines.push(line); } });
         job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'turn-ended');
         await new Promise((resolve) => { setTimeout(resolve, 2700); });
         assert.ok(lines.includes(want), `${want} in ${JSON.stringify(lines)}`);
@@ -263,7 +264,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
         lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
     });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
-        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'es', log: (): void => undefined,
     });
     const once = async (): Promise<void> => {
@@ -274,7 +275,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
     await once();
     await once();
     assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en'], ['es', 'en'], ['es', 'es']], 'the switch run, then a run that left f1 in English, then a run after f1 was rewritten');
-    assert.equal(store.records.readRecap('w1:t1')?.language, 'es');
+    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'es');
 });
 
 test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten on request, and a quiet focus does not call the writer', async () => {
@@ -292,7 +293,7 @@ test('a recap already stamped in the wanted language but holding an open fact in
     });
     const jobWith = (transcripts: Transcripts): RecapJob => new RecapJob({
         writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
-        transcripts: registryWith({ claude: transcripts }), records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        transcripts: registryWith({ claude: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'es', log: (): void => undefined,
     });
     const once = async (job: RecapJob, cause: 'requested' | 'focused'): Promise<void> => {
@@ -300,8 +301,8 @@ test('a recap already stamped in the wanted language but holding an open fact in
         await new Promise((resolve) => { setTimeout(resolve, 20); });
     };
     await once(jobWith(transcriptsOf('claude')), 'requested');
-    assert.equal(store.records.readRecap('w1:t1')?.language, 'es');
-    assert.deepEqual(store.ledger.keysOf('w1:t1').flatMap((key) => store.ledger.openOf({ tab: 'w1:t1', key }).map((fact) => fact.language)), ['en']);
+    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'es');
+    assert.deepEqual(storeRead(store.ledger.keysOf('w1:t1')).flatMap((key) => storeRead(store.ledger.openOf({ tab: 'w1:t1', key })).map((fact) => fact.language)), ['en']);
     calls.length = 0;
     await once(jobWith(quiet), 'requested');
     await once(jobWith(quiet), 'focused');
@@ -323,13 +324,13 @@ test('the close-evidence setting reaches the writer request and the piped run; u
         });
         const deps = { writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
             transcripts: registryWith({ claude: transcriptsOf('claude') }),
-            records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+            records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
         };
         const job = new RecapJob(setting === undefined ? deps : { ...deps, closeEvidence: (): CloseEvidence => setting });
         job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
         await new Promise((resolve) => { setTimeout(resolve, 20); });
         const expected: CloseEvidence = setting ?? 'off';
         assert.equal(requests[0]?.closeEvidence, expected, String(setting));
-        assert.equal(store.ledger.openOf({ tab: 'w1:t1', key: 't1' }).length, setting === 'on' ? 1 : 0, `open after ${String(setting)}`);
+        assert.equal(storeRead(store.ledger.openOf({ tab: 'w1:t1', key: 't1' })).length, setting === 'on' ? 1 : 0, `open after ${String(setting)}`);
     }
 });

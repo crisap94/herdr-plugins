@@ -12,6 +12,9 @@ import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
+import { unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from './fakes/cause.ts';
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
@@ -30,7 +33,7 @@ const readingOf = (recap: TabRecap | null): Pick<RecapRecords, 'readRecap'> => (
 interface Parts {
     readonly lanes?: readonly Lane[];
     readonly recap?: TabRecap | null;
-    readonly records?: Pick<RecapRecords, 'readRecap'>;
+    readonly records?: SourceDeps['records'];
     readonly facts?: readonly Fact[];
 }
 
@@ -101,4 +104,15 @@ test('closed facts count only inside the closed window', () => {
 test('a source that cannot be read is unknown', () => {
     const broken: Pick<RecapRecords, 'readRecap'> = { readRecap: () => { throw new Error('store locked'); } };
     assert.deepEqual(resolveSource('live', SOURCE, depsOf({ records: broken })), { kind: 'unknown', why: 'Error' });
+});
+
+test('an unknown recap read is unknown with the store cause', () => {
+    const locked: Pick<GuardedRecapRecords, 'readRecap'> = { readRecap: () => unknown({ why: 'unreadable', detail: causeOf('locked') }) };
+    assert.deepEqual(resolveSource('live', SOURCE, depsOf({ records: locked })), { kind: 'unknown', why: 'locked' });
+});
+
+test('an unknown open-facts read is unknown with the store cause', () => {
+    const ledger = new MemoryLedger();
+    const locked: SourceDeps['ledger'] = { openOf: () => unknown({ why: 'unreadable', detail: causeOf('locked') }), recentlyClosed: (id, since) => ledger.recentlyClosed(id, since) };
+    assert.deepEqual(resolveSource('live', SOURCE, { ...depsOf(), ledger: locked }), { kind: 'unknown', why: 'locked' });
 });

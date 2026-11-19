@@ -16,7 +16,7 @@ import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay, windowsOf } from '#src/recap/application/replay.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { checksOf, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
-import { scratchDir } from '#test/db/support.ts';
+import { scratchDir, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -115,7 +115,7 @@ test('the store a replay writes to is a real store: the same repositories, the f
     const scratch = scratchStore();
     try {
         assert.equal(scratch.store.kind, 'ready');
-        assert.ok(storeOver(scratch.store.db).ledger.openOf({ tab: 'x', key: 't1' }).length === 0);
+        assert.ok(storeRead(storeOver(scratch.store.db).ledger.openOf({ tab: 'x', key: 't1' })).length === 0);
     } finally {
         scratch.dispose();
     }

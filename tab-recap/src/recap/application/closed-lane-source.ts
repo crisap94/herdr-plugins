@@ -1,10 +1,10 @@
+import { isUnknownRead, type GuardedLedger } from '#src/ports/guarded-reads.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { inWindow } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
 import { isUnknown, unreadableOf } from '#src/ports/unknowable.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -20,7 +20,7 @@ export type ClosedLaneResolution =
 
 export interface ClosedSourceDeps {
     readonly closures: Pick<ClosureReader, 'resolve'>;
-    readonly ledger: Pick<Ledger, 'allOf'>;
+    readonly ledger: Pick<GuardedLedger, 'allOf'>;
     readonly runs: Pick<ClosureRuns, 'runAt'>;
     readonly closedDays: ClosedLaneDays;
     readonly now: Instant;
@@ -62,7 +62,11 @@ export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSour
     }
     try {
         const task = record.association.task;
-        const facts = factsAsOf(deps.ledger.allOf(task), record.closedAt);
+        const all = deps.ledger.allOf(task);
+        if (isUnknownRead(all)) {
+            return all;
+        }
+        const facts = factsAsOf(all, record.closedAt);
         const view = { closedAt: record.closedAt, agent: record.agent, cwd: record.cwd, run: deps.runs.runAt(task, record.closedAt) };
         return { kind: 'found', task, facts, view };
     } catch (error) {

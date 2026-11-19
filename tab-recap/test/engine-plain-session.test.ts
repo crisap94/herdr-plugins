@@ -1,3 +1,5 @@
+import { storeRead } from '#test/db/support.ts';
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -47,7 +49,7 @@ function plainHost(records: string, store: Store): PlainHost {
     const { summarizer } = writer();
     const engine = createEngine({
         source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
-        store: { records: store.records, ledger: store.ledger },
+        store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: () => summarizer },
         environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },
         settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW },
@@ -80,8 +82,8 @@ test('the engine follows a plain Claude session with no herdr: runs per turn, fa
         grow(host, [...TURNS.slice(6, 8), ...COMPACTION]);
         await host.engine.compacted(host.scope, [host.session]);
         assert.equal(runsOf(host), 4, 'the compaction is read in one more run');
-        const tasks = scratch.store.records.readRecap(String(host.scope))?.tasks ?? [];
-        const facts = tasks.flatMap((task) => scratch.store.ledger.allOf({ tab: String(host.scope), key: task.id }));
+        const tasks = storeRead(scratch.store.records.readRecap(String(host.scope)))?.tasks ?? [];
+        const facts = tasks.flatMap((task) => storeRead(scratch.store.ledger.allOf({ tab: String(host.scope), key: task.id })));
         assert.deepEqual(facts.map((fact) => fact.text).toSorted(), ['Add a cart to the shop', 'Added cart totals in src/totals.ts', 'Opened !34 for feat/cart', 'Store carts in SQLite'].toSorted());
         const breaks = scratch.store.boundaries.breaksOf(String(host.scope));
         assert.deepEqual(breaks.map((each) => [each.kind, each.at, each.trigger]), [['compacted', Date.parse('2026-10-07T16:38:09.490Z'), 'manual']]);

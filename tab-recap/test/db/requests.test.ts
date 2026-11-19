@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -39,7 +40,7 @@ test('a column asks while the daemon writes: two connections to one file lose no
             daemon.records.advance({ tab: 'w1:t1', at, error: null, lanes: [cursor('w1:p1', at)] });
             column.requests.request(`w1:t${at}`);
             taken.push(...daemon.requests.takeRequests().map(String));
-            assert.equal(column.records.readRecap('w1:t1')?.tab, 'w1:t1', 'the column reads while the daemon writes');
+            assert.equal(storeRead(column.records.readRecap('w1:t1'))?.tab, 'w1:t1', 'the column reads while the daemon writes');
         }
         assert.equal(taken.length, 50);
         assert.equal((daemon.db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode, 'wal');

@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -60,7 +61,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
         },
     };
     const job = new RecapJob({
-        transcripts: registryWith({ claude: reader }), records: store.records, ledger: store.ledger, repos: NO_REPOS,
+        transcripts: registryWith({ claude: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos: NO_REPOS,
         clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Summarizer => summarizer,
         language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce, writerView: (): WriterView => FULL_WRITER_VIEW, mint: mintFactId,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },

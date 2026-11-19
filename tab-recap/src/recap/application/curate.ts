@@ -1,5 +1,6 @@
+import { fallbackLedger, isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
+import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
@@ -28,8 +29,9 @@ export const CURATE_GAP_MS = 5 * 60_000;
 
 interface CurateScope { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }
 
-export interface CurateDeps extends ReconcilingDeps {
-    readonly records: RecapRecords;
+export interface CurateDeps extends Omit<ReconcilingDeps, 'ledger'> {
+    readonly records: GuardedRecapRecords;
+    readonly ledger: GuardedLedger;
 }
 
 export class CurateTasks {
@@ -37,10 +39,12 @@ export class CurateTasks {
     private readonly lastRun = new Map<Text, Instant>();
     private readonly running = new Set<Text>();
     private readonly reconciling: Reconciling;
+    private readonly plain: ReconcilingDeps;
 
     constructor(deps: CurateDeps) {
         this.deps = deps;
-        this.reconciling = new Reconciling(deps);
+        this.plain = { ...deps, ledger: fallbackLedger(deps.ledger) };
+        this.reconciling = new Reconciling(this.plain);
     }
 
     async afterRun(event: RunEvent): Promise<void> {
@@ -52,6 +56,9 @@ export class CurateTasks {
 
     async run(tab: TabId, why: CurateWhy = 'open'): Promise<void> {
         const recap = this.deps.records.readRecap(tab);
+        if (isUnknownRead(recap)) {
+            return;
+        }
         const done: Presence[] = [];
         for (const task of recap?.tasks ?? []) {
             done.push(await this.one(tab, task, { lanes: recap?.lanes ?? [], why }));
@@ -85,6 +92,9 @@ export class CurateTasks {
         const { deps } = this;
         const [key, now] = [must(parseText(`${tab}\u0000${task.id}`)), instant(deps.clock())];
         const facts = deps.ledger.allOf({ tab, key: task.id });
+        if (isUnknownRead(facts)) {
+            return;
+        }
         const writer = deps.writer();
         const storyAt = deps.stories.read(tab, task.id)?.at;
         if (writer === null || this.due(key, facts, storyAt === undefined ? null : instant(storyAt), now) === 'absent') {
@@ -111,7 +121,7 @@ export class CurateTasks {
                 const read = parseText(text);
                 return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, open);
             };
-            const kept = await storyAnswerOf(deps, { writer, run, sent: parseText(document), first: answered, reading });
+            const kept = await storyAnswerOf(this.plain, { writer, run, sent: parseText(document), first: answered, reading });
             this.store(run, must(parseText(kept.kind === 'curated' ? kept.text : answered.text)), named);
         } finally {
             this.running.delete(key);

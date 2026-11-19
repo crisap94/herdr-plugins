@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
@@ -21,10 +22,10 @@ test('the anchor an add carries is stored and read back; an update may replace i
     const store = memoryStore(); const { ledger, db } = store;
     const repo = new LedgerRepository(db);
     recordOps(store, run(100, [{ op: 'add', section: 'done', text: 'Merged !256', why: null, ref: null, at: null, agent: null, anchor: 'merge !256 after green' }, add('Tagged 1.9.0')]));
-    const [merged, tagged] = ['Merged !256', 'Tagged 1.9.0'].map((text) => ledger.openOf(TASK).find((fact) => fact.text === text));
+    const [merged, tagged] = ['Merged !256', 'Tagged 1.9.0'].map((text) => storeRead(ledger.openOf(TASK)).find((fact) => fact.text === text));
     assert.ok(merged !== undefined && tagged !== undefined);
     assert.deepEqual([merged.anchor, tagged.anchor], ['merge !256 after green', null]);
     repo.apply(ref(db, 200), [{ op: 'update', id: merged.id, text: 'Merged !256 today', why: null }, { op: 'update', id: tagged.id, text: 'Tagged 1.9.0 today', why: null, anchor: 'the tag is v1.9.0' }]);
-    assert.deepEqual(ledger.openOf(TASK).map((fact) => [fact.text, fact.anchor]).toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))), [['Merged !256 today', 'merge !256 after green'], ['Tagged 1.9.0 today', 'the tag is v1.9.0']]);
+    assert.deepEqual(storeRead(ledger.openOf(TASK)).map((fact) => [fact.text, fact.anchor]).toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))), [['Merged !256 today', 'merge !256 after green'], ['Tagged 1.9.0 today', 'the tag is v1.9.0']]);
     assert.deepEqual(db.prepare('SELECT anchor FROM fact_readable ORDER BY anchor').all().map((row) => row['anchor']), ['merge !256 after green', 'the tag is v1.9.0']);
 });

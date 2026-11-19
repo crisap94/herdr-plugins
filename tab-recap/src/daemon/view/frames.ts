@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import { stripVTControlCharacters } from 'node:util';
 import { parseCursor, parseHeight, parseLine, screen as fitScreen } from '@stateforge-labs/recap-view';
 import { expandedScreen } from '#src/column/expanded-modal.ts';
@@ -62,7 +63,7 @@ export function frameSource(parts: FrameParts): FrameSource {
             const extensions = [storedNotes({ statuses: parts.store.worktrees, notes: parts.store.paneNotes, alerts: parts.store.paneAlerts, gitNote: worktreeSwitch })];
             const view: ColumnView = {
                 tab: stored,
-                recap: parts.store.records.readRecap(screen.tab),
+                recap: knownOr(parts.store.records.readRecap(screen.tab), null),
                 notes: notesOf(extensions, stored?.lanes, config.locale),
                 warnings: warningsOf(extensions, config.locale),
                 now: parts.clock.now(),

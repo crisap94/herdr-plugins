@@ -10,6 +10,8 @@ import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneCursor, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { checkedLedger, isUnknownRead } from '#src/ports/guarded-reads.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
 import { foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
 import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 
@@ -31,13 +33,20 @@ export function memoryStore(options: StoreOptions = {}): Store {
 export const shapeOf = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
 
+export function storeRead<T>(read: T | Unknown): T {
+    if (isUnknownRead(read)) {
+        throw new Error(`the store read failed: ${read.why.why}`);
+    }
+    return read;
+}
+
 export const scratchDir = (name: string): string => mkdtempSync(join(tmpdir(), `recap-${name}-`));
 
 export type RunInput = Omit<RecordedRun, 'changed' | 'refused'> & { readonly ops?: readonly TaskOps[] };
 
 export function recordOps(store: Pick<Store, 'records' | 'ledger'>, run: RunInput): void {
     const { ops = [], ...rest } = run;
-    const folded = foldedRun(throwingLedger(store.ledger), ops, { owner: { tab: run.tab }, at: run.at, language: run.language, mint: mintFactId });
+    const folded = foldedRun(throwingLedger(checkedLedger(store.ledger)), ops, { owner: { tab: run.tab }, at: run.at, language: run.language, mint: mintFactId });
     store.records.recordRun({ ...rest, ...folded });
 }
 

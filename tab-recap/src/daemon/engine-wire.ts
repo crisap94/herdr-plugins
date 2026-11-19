@@ -19,6 +19,7 @@ import type { Backends } from './backends.ts';
 import { loadConfig } from './config.ts';
 import { parseLine, parseMessage } from './slots.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 
 type EngineLog = Parameters<typeof pluginEngine>[0]['environment']['log'];
 type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
@@ -67,7 +68,7 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
 export function wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger, log }: EngineParts): WiredEngine {
     const engine = pluginEngine({
         source: { transcripts },
-        store: { records: store.records, ledger: store.ledger },
+        store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         environment: { clock, log, repos, mint: mintFactId },
         models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
         settings: {

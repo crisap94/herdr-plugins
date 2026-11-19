@@ -1,3 +1,5 @@
+import { storeRead } from '#test/db/support.ts';
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
@@ -98,16 +100,16 @@ test('the story and the merges land together: a ledger that fails leaves no stor
 test('merges go through the real ledger in the same call as the story; a story of null leaves the old one', () => {
     const store = memoryStore();
     writerRun(store, 10, [adding('Running the tests'), adding('Running tests again')]);
-    const [first, second] = store.ledger.allOf(T1);
+    const [first, second] = storeRead(store.ledger.allOf(T1));
     assert.ok(first && second);
     const applied = store.stories.keep({ task: T1, at: 50, language: 'en' }, { story: 's', merges: [{ op: 'close', id: first.id, why: 'merged' }] });
     assert.equal(applied.changed.length, 1);
-    const closed = store.ledger.allOf(T1).find((each) => each.id === first.id);
+    const closed = storeRead(store.ledger.allOf(T1)).find((each) => each.id === first.id);
     assert.deepEqual([closed?.state, closed?.closedWhy, closed?.closedAt], ['closed', 'merged', 50]);
     assert.equal(store.stories.read('w1:t1', 't1')?.at, 50);
     store.stories.keep({ task: T1, at: 99, language: 'en' }, { story: null, merges: [{ op: 'close', id: second.id, why: 'merged' }] });
     assert.deepEqual(store.stories.read('w1:t1', 't1'), { text: 's', at: 50 });
-    assert.equal(store.ledger.openOf(T1).length, 0);
+    assert.equal(storeRead(store.ledger.openOf(T1)).length, 0);
 });
 
 test('a tab that has never run has nothing for a curator to attribute merges to', () => {
@@ -118,15 +120,15 @@ test('a tab that has never run has nothing for a curator to attribute merges to'
 test('the real ledger stores what the view reads: a done fact is drawn when it happened, a fact closed wrong at its close, merged as such', () => {
     const store = memoryStore();
     writerRun(store, timeOf('14:00'), [{ ...adding('Merged !34', 'done'), at: timeOf('13:40') }, adding('Add a retention sweep', 'next'), adding('Keep the guard out', 'decisions')]);
-    const next = must(store.ledger.allOf(T1).find((each) => each.text === 'Add a retention sweep'));
+    const next = must(storeRead(store.ledger.allOf(T1)).find((each) => each.text === 'Add a retention sweep'));
     writerRun(store, timeOf('14:02'), [{ op: 'close', id: next.id, why: 'wrong' }]);
-    const facts = store.ledger.allOf(T1);
+    const facts = storeRead(store.ledger.allOf(T1));
     const timeline = timelineOf(facts);
     assert.deepEqual(timeline.map((entry) => [entry.fact.text, clockOf(entry.drawnAt, 'UTC'), entry.closed]), [['Add a retention sweep', '14:02', 'wrong'], ['Merged !34', '13:40', null]]);
     const closed = must(facts.find((each) => each.id === next.id));
     assert.deepEqual([closed.closedAt, closed.lastAt >= timeOf('14:02')], [timeOf('14:02'), true], 'a closed fact is a change: the newest change is its close');
     assert.equal(newestChange(facts), timeOf('14:02'));
-    const view = new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): readonly FileCount[] => [] }).read('w1:t1', null, timeOf('15:00'));
+    const view = new ExpandedModel({ records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): readonly FileCount[] => [] }).read('w1:t1', null, timeOf('15:00'));
     assert.deepEqual(view.tasks[0]?.facts.map((each) => each.text).toSorted(), ['Add a retention sweep', 'Keep the guard out', 'Merged !34']);
 });
 

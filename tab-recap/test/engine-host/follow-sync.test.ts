@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -53,7 +54,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     };
     const plugs: PluginEnginePlugs = {
         source: { transcripts: registryWith({ claude: reader }) },
-        store: { records: store.records, ledger: store.ledger },
+        store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW, keepInput: (): boolean => true },

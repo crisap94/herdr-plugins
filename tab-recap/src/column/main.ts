@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { glowRenderer } from '#src/adapters/os/glow.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -97,7 +98,7 @@ function view(): ColumnView {
     const locale = localeNow();
     const stored = store?.views.readTab(tab) ?? null;
     const newer = opened.kind === 'newer-db' ? [messagesFor(locale).database.newer(opened.backup)] : [];
-    return { tab: stored, recap: store?.records.readRecap(tab) ?? null, notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, compactions: store?.compactions.shownFor(tab) ?? [], style };
+    return { tab: stored, recap: store === null ? null : knownOr(store.records.readRecap(tab), null), notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, compactions: store?.compactions.shownFor(tab) ?? [], style };
 }
 
 function size(): Size {

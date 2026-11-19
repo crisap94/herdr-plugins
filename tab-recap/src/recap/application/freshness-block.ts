@@ -1,5 +1,6 @@
+import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
+import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { UNREAD, type Position } from '#src/ports/transcripts.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -20,7 +21,7 @@ export interface FreshnessInput {
 export type FreshnessOutcome = { readonly kind: 'fresh'; readonly freshness: Freshness } | { readonly kind: 'ledger-empty' };
 
 export interface FreshnessDeps {
-    readonly records: Pick<RecapRecords, 'lastRunOf'>;
+    readonly records: Pick<GuardedRecapRecords, 'lastRunOf'>;
     readonly transcripts: TranscriptRegistry;
 }
 
@@ -48,7 +49,7 @@ export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
 
 export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): Promise<FreshnessOutcome> {
     const lastRun = deps.records.lastRunOf(input.tab);
-    if (lastRun === null) {
+    if (lastRun === null || isUnknownRead(lastRun)) {
         return { kind: 'ledger-empty' };
     }
     const count = await newerPromptCount(deps.transcripts, input);
