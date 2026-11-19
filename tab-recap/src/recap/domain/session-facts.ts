@@ -1,90 +1,98 @@
 import type { Origin } from './origin.ts';
+import { parseCount, type Count } from './count.ts';
+import { must } from '#src/protocol/result.ts';
 import { shareOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { elapsed, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+
+export { sessionFactsOf, type SessionInputs } from './legacy.ts';
 
 export const RUN_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
 export type RunCause = (typeof RUN_CAUSES)[number];
 
-interface CompactionInput {
-    readonly tokensBefore: number | null;
-    readonly tokensAfter: number | null;
+export type RunCounts = Readonly<Partial<Record<RunCause, Count>>>;
+
+export interface CompactionReading {
+    readonly tokensBefore: Count | null;
+    readonly tokensAfter: Count | null;
     readonly origin: Origin;
 }
 
-interface LaneInput {
-    readonly agent: string;
-    readonly label: string | null;
+export interface LaneReading {
+    readonly agent: Text;
+    readonly label: Text | null;
     readonly context: ContextUse | null;
 }
 
-interface WebInput {
-    readonly base: string;
-    readonly branch: string | null;
+export interface WebReading {
+    readonly base: Text;
+    readonly branch: Text | null;
 }
 
-interface FileEdit {
-    readonly path: string;
-    readonly count: number;
+export interface FileEdit {
+    readonly path: Text;
+    readonly count: Count;
 }
 
-interface AutocompactCounts {
-    readonly decisions: number;
-    readonly compacted: number;
-    readonly waited: number;
+export interface AutocompactCounts {
+    readonly decisions: Count;
+    readonly compacted: Count;
+    readonly waited: Count;
 }
 
-export interface SessionInputs {
-    readonly firstSeen: number | null;
-    readonly now: number;
-    readonly runs: Readonly<Record<string, number>>;
-    readonly compactions: readonly CompactionInput[];
-    readonly lanes: readonly LaneInput[];
-    readonly webs: readonly (WebInput | null)[];
+export interface SessionReadings {
+    readonly firstSeen: Instant | null;
+    readonly now: Instant;
+    readonly runs: RunCounts;
+    readonly compactions: readonly CompactionReading[];
+    readonly lanes: readonly LaneReading[];
+    readonly webs: readonly (WebReading | null)[];
     readonly edits: readonly FileEdit[];
-    readonly chapters?: number;
+    readonly chapters?: Count;
     readonly autocompact?: AutocompactCounts;
 }
 
 interface StartedFacts {
-    readonly at: number;
-    readonly forMs: number;
+    readonly at: Instant;
+    readonly forMs: Duration;
 }
 
 interface RunCauseCount {
     readonly cause: RunCause;
-    readonly count: number;
+    readonly count: Count;
 }
 
 interface RunFacts {
-    readonly total: number;
+    readonly total: Count;
     readonly byCause: readonly RunCauseCount[];
 }
 
 interface OriginCounts {
-    readonly operator: number;
-    readonly auto: number;
+    readonly operator: Count;
+    readonly auto: Count;
 }
 
 interface TokenSpan {
-    readonly before: number;
-    readonly after: number;
+    readonly before: Count;
+    readonly after: Count;
 }
 
 interface CompactionFacts {
-    readonly count: number;
+    readonly count: Count;
     readonly byOrigin: OriginCounts;
     readonly measured: readonly TokenSpan[];
 }
 
 interface AgentFacts {
-    readonly label: string;
-    readonly share: number;
-    readonly window: number;
+    readonly label: Text;
+    readonly share: Count;
+    readonly window: Count;
 }
 
 interface RepoFacts {
-    readonly name: string;
-    readonly branch: string | null;
+    readonly name: Text;
+    readonly branch: Text | null;
 }
 
 export interface SessionFacts {
@@ -94,33 +102,53 @@ export interface SessionFacts {
     readonly agents: readonly AgentFacts[];
     readonly repo: RepoFacts | null;
     readonly files: readonly FileEdit[];
-    readonly chapters: number | null;
+    readonly chapters: Count | null;
     readonly autocompact: AutocompactCounts | null;
 }
 
 export const FILES_SHOWN = 5;
 
-const lastSegment = (base: string): string => base.split('/').findLast((part) => part !== '') ?? base;
+function lastSegment(base: Text): Text {
+    const last = parseText(base.split('/').findLast((part) => part !== '') ?? base);
+    return last.kind === 'ok' ? last.value : base;
+}
 
-function runsOf(counts: Readonly<Record<string, number>>): SessionFacts['runs'] {
-    const byCause = RUN_CAUSES.map((cause) => ({ cause, count: counts[cause] ?? 0 })).filter((entry) => entry.count > 0);
-    const total = byCause.reduce((sum, entry) => sum + entry.count, 0);
+function labelOf(lane: LaneReading): Text {
+    const joined = parseText(lane.label === null ? lane.agent : `${lane.agent} · ${lane.label}`);
+    return joined.kind === 'ok' ? joined.value : lane.agent;
+}
+
+function agentOf(lane: LaneReading): readonly AgentFacts[] {
+    if (lane.context === null || lane.context.window <= 0) {
+        return [];
+    }
+    const share = parseCount(shareOf(lane.context));
+    const window = parseCount(lane.context.window);
+    return share.kind === 'ok' && window.kind === 'ok' ? [{ label: labelOf(lane), share: share.value, window: window.value }] : [];
+}
+
+function runsOf(counts: RunCounts): SessionFacts['runs'] {
+    const byCause = RUN_CAUSES.flatMap((cause): readonly RunCauseCount[] => {
+        const count = counts[cause];
+        return count === undefined || count === 0 ? [] : [{ cause, count }];
+    });
+    const total = must(parseCount(byCause.reduce((sum, entry) => sum + entry.count, 0)));
     return total === 0 ? null : { total, byCause };
 }
 
-function compactionsOf(found: SessionInputs['compactions']): SessionFacts['compactions'] {
-    const measured = found.flatMap((record) => (record.tokensBefore === null || record.tokensAfter === null ? [] : [{ before: record.tokensBefore, after: record.tokensAfter }]));
+function compactionsOf(found: SessionReadings['compactions']): SessionFacts['compactions'] {
+    const measured = found.flatMap((record): readonly TokenSpan[] => (record.tokensBefore === null || record.tokensAfter === null ? [] : [{ before: record.tokensBefore, after: record.tokensAfter }]));
     const auto = found.filter((record) => record.origin === 'auto').length;
-    return found.length === 0 ? null : { count: found.length, byOrigin: { operator: found.length - auto, auto }, measured };
+    return found.length === 0 ? null : { count: must(parseCount(found.length)), byOrigin: { operator: must(parseCount(found.length - auto)), auto: must(parseCount(auto)) }, measured };
 }
 
-export function sessionFactsOf(input: SessionInputs): SessionFacts {
+export function sessionFactsFrom(input: SessionReadings): SessionFacts {
     const web = input.webs.find((candidate) => candidate !== null) ?? null;
     return {
-        started: input.firstSeen === null ? null : { at: input.firstSeen, forMs: Math.max(0, input.now - input.firstSeen) },
+        started: input.firstSeen === null ? null : { at: input.firstSeen, forMs: elapsed(input.firstSeen, input.now) },
         runs: runsOf(input.runs),
         compactions: compactionsOf(input.compactions),
-        agents: input.lanes.flatMap((lane) => (lane.context === null || lane.context.window <= 0 ? [] : [{ label: lane.label === null ? lane.agent : `${lane.agent} · ${lane.label}`, share: shareOf(lane.context), window: lane.context.window }])),
+        agents: input.lanes.flatMap(agentOf),
         repo: web === null ? null : { name: lastSegment(web.base), branch: web.branch },
         files: input.edits.slice(0, FILES_SHOWN),
         chapters: input.chapters !== undefined && input.chapters > 1 ? input.chapters : null,

@@ -5,17 +5,10 @@ import type { LaneStatus } from './status.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { SeenLane } from './twins/lane/legacy.ts';
 
-export interface SeenLane {
-    readonly paneId: string;
-    readonly tabId: string;
-    readonly workspaceId: string;
-    readonly agent: string;
-    readonly status?: string | null | undefined;
-    readonly session?: string | null | undefined;
-    readonly cwd?: string | null | undefined;
-    readonly title?: string | null | undefined;
-}
+export type { SeenLane } from './twins/lane/legacy.ts';
 
 export interface Lane {
     readonly pane: PaneId;
@@ -25,26 +18,23 @@ export interface Lane {
     readonly status: LaneStatus;
     readonly session: SessionId | null;
     readonly cwd: Directory | null;
-    readonly title: string | null;
+    readonly title: Text | null;
     readonly since: Instant | null;
 }
 
-function orNull(raw: string | null | undefined): string | null {
-    return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
-}
-
 export function laneFrom(seen: SeenLane): Lane {
-    const session = orNull(seen.session);
+    const session = parseText(seen.session);
     const cwd = parseDirectory(seen.cwd);
+    const title = parseText(seen.title);
     return {
         pane: paneId(seen.paneId),
         tab: tabId(seen.tabId),
         workspace: workspaceId(seen.workspaceId),
         agent: agentKind(seen.agent),
         status: laneStatus(seen.status),
-        session: session === null ? null : sessionId(session),
+        session: session.kind === 'ok' && session.value.trim() !== '' ? sessionId(session.value) : null,
         cwd: cwd.kind === 'ok' ? cwd.value : null,
-        title: orNull(seen.title),
+        title: title.kind === 'ok' && title.value.trim() !== '' ? title.value : null,
         since: null,
     };
 }

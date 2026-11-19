@@ -13,9 +13,7 @@ import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-n
 import { EVENT_TOKEN } from './event-token.ts';
 import { LEASE } from './typing-lease.ts';
 
-const named = (raw: string): TokenName => must(parseTokenName(raw));
-
-const FIXED_OWN_NAMES: readonly TokenName[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN, EVENT_TOKEN, LEASE].map(named);
+const FIXED_OWN_NAMES: readonly TokenName[] = [API_TOKEN, SHARE_TOKEN, RECAP_TOKEN, NEEDS_TOKEN, EVENT_TOKEN, LEASE].map((raw) => must(parseTokenName(raw)));
 
 export const REGISTRY: Registry = must(buildRegistry(EXCHANGES, [...FIXED_OWN_NAMES, CAPABILITY_TOKEN]));
 

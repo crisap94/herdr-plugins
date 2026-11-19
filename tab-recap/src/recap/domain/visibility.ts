@@ -1,24 +1,25 @@
 import { added, removed, without } from './board.ts';
 import type { Board, HiddenState, Visibility, VisibilityTarget } from './board.ts';
 import type { TabId } from './ids.ts';
+import type { Presence } from './presence.ts';
+import { isHidden } from './twins/visibility/legacy.ts';
 
-export function isHidden(board: Board, tab: TabId): boolean {
-    return board.allHidden ? !board.shown.has(tab) : board.hidden.has(tab);
-}
+export * from './twins/visibility/legacy.ts';
 
 function forgiven(board: Board, tab: TabId): Board {
     return { ...board, reopens: without(board.reopens, tab), givenUp: without(board.givenUp, tab) };
 }
 
-function resolved(board: Board, target: VisibilityTarget, change: Visibility): boolean {
+function resolved(board: Board, target: VisibilityTarget, change: Visibility): Presence {
     if (change !== 'toggle') {
-        return change;
+        return change ? 'present' : 'absent';
     }
-    return target === 'all' ? !board.allHidden : !isHidden(board, target.tab);
+    const toggled = target === 'all' ? !board.allHidden : !isHidden(board, target.tab);
+    return toggled ? 'present' : 'absent';
 }
 
 export function withVisibility(board: Board, target: VisibilityTarget, change: Visibility): Board {
-    const hidden = resolved(board, target, change);
+    const hidden = resolved(board, target, change) === 'present';
     if (target === 'all') {
         const cleared: Board = { ...board, allHidden: hidden, hidden: new Set(), shown: new Set() };
         return hidden ? cleared : { ...cleared, reopens: new Map(), givenUp: new Map() };
@@ -32,8 +33,4 @@ export function withVisibility(board: Board, target: VisibilityTarget, change: V
 
 export function hiddenState(board: Board): HiddenState {
     return { all: board.allHidden, hidden: [...board.hidden].map(String).toSorted(), shown: [...board.shown].map(String).toSorted() };
-}
-
-export function restoreHidden(board: Board, state: HiddenState): Board {
-    return { ...board, allHidden: state.all, hidden: new Set(state.hidden as readonly TabId[]), shown: new Set(state.shown as readonly TabId[]) };
 }
