@@ -21,6 +21,14 @@ const factsOf = (world: EngineWorld): readonly Fact[] => {
     return 'kind' in found ? [] : found;
 };
 
+const scopeFactsOf = (world: EngineWorld): readonly Fact[] => {
+    const keys = world.store.facts.keysOf(TAB);
+    return 'kind' in keys ? [] : keys.flatMap((one) => {
+        const found = world.store.facts.allOf({ tab: TAB, key: one });
+        return 'kind' in found ? [] : found;
+    });
+};
+
 const seedFacts = (world: EngineWorld): void => {
     world.store.seed(null, [factOf('fct_1', { task: TASK, text: 'open work', firstAt: 1, lastAt: 1 })]);
 };
@@ -122,7 +130,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 1);
             seedFacts(world);
-            const facts = factsOf(world);
+            const facts = scopeFactsOf(world);
             world.setCurator(CURATED);
             const before = world.curated().length;
             const curating = engine.curate(TAB);
@@ -131,7 +139,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             await world.settle();
             assert.equal(countOf(world, 'recordRun'), 1);
             assert.equal(world.curated().length, before + 1);
-            const after = factsOf(world);
+            const after = scopeFactsOf(world);
             assert.deepEqual(after.filter((fact) => fact.text !== 'late work'), facts);
             assert.equal(after.filter((fact) => fact.text === 'late work').length, 1);
         },

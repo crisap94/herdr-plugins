@@ -7,7 +7,6 @@ import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
 import { createEngine as createLegacyEngine, type Engine as LegacyEngine, type EngineStore } from '#src/recap/application/engine.ts';
 import type { RunAccomplishment, RunEvent, RunTurn } from '#src/recap/application/ledger-reconcile.ts';
 import { compacted } from './compacted.ts';
-import { curate } from './curate.ts';
 import { createFollowSet } from './follow-set.ts';
 import { followedBy, type FollowedBy } from './followed-by.ts';
 import { legacyPlugsOf, type FacadePlugs, type RestoreHooks } from './plugs.ts';
@@ -153,7 +152,13 @@ export function engineOver(plugs: FacadePlugs): Engine {
             }
             return legacy.history(tab, lane);
         },
-        curate: (scope) => curate(scope),
+        curate: async (scope: ScopeId): Promise<void> => {
+            const held = tabOf(scope);
+            if (held !== null) {
+                await legacy.idle(held);
+            }
+            await plugs.curate?.(scope);
+        },
     };
 }
 

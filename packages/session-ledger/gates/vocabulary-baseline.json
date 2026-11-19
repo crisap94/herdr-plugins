@@ -5,6 +5,7 @@
   "src/contract/records.ts": 5,
   "src/facade/compacted.ts": 3,
   "src/facade/create-engine.ts": 25,
+  "src/facade/curate.ts": 1,
   "src/facade/follow-set.ts": 22,
   "src/facade/plugs.ts": 24,
   "src/facade/translate.ts": 31,
