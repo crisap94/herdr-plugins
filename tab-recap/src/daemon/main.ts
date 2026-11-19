@@ -25,7 +25,7 @@ import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
 import { dispatchFor, type Box } from './dispatch-parts.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
-import { laneTurns } from './lane-turns.ts';
+import { laneTurns, parseStatusPush } from './lane-turns.ts';
 import { Informer, type Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -138,7 +138,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
         onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board),
-        onStatus: turns,
+        onStatus: parseStatusPush.bind(undefined, turns),
         onPaneTokens: paneTokensTo(worktrees, answers, exchange),
         sessionIdentity: sessionOfForKind,
     });

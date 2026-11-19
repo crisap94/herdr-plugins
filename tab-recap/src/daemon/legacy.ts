@@ -7,7 +7,7 @@ import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { refreshedWithin } from './refresh-status.ts';
+import { refreshWithin } from './refresh-status.ts';
 import { awaitingPane } from './autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
@@ -24,6 +24,12 @@ import { listsPane } from '#src/recap/domain/board.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Notifier } from '#src/ports/notifier.ts';
+import type { Store } from '#src/adapters/db/database.ts';
+import type { Columns } from '#src/ports/columns.ts';
+import { openStateAt } from './state.ts';
+import { shutDownWithin, SHUTDOWN_MS, type StoppableInformer } from './shutdown.ts';
 import type { Available, TextAnchors } from './backends.ts';
 import { boundedBy, withinBy, type Bounded } from './bounded.ts';
 import type { Box } from './dispatch-parts.ts';
@@ -81,7 +87,7 @@ export interface Config {
     readonly decider: DeciderJob;
     readonly coverage: CoverageBy;
     readonly jev: JevSettings;
-    readonly keepDays: number;
+    readonly keepDays: Count;
     readonly closedLaneDays: ClosedLaneDays;
     readonly glow: 'auto' | 'on' | 'off';
     readonly timeoutMs: number;
@@ -178,6 +184,18 @@ export function logVia(write: (line: Text) => void): (line: string) => void {
 
 export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number) => Promise<void> {
     return (ms) => pause(duration(ms));
+}
+
+export function refreshedWithin(run: Promise<void>, records: Pick<RecapRecords, 'readRecap'>, tab: string, ms: number): Promise<RefreshStatus> {
+    return refreshWithin(run, records, tabId(tab), duration(ms));
+}
+
+export function shutDown(columns: Pick<Columns, 'closeEvery'>, informer: StoppableInformer, log: (line: string) => void, ms: number = SHUTDOWN_MS): Promise<void> {
+    return shutDownWithin(columns, informer, log, duration(ms));
+}
+
+export function openState(root: string, notifier: Notifier, log: (line: string) => void): Promise<Store | null> {
+    return openStateAt(must(parseDirectory(root)), notifier, log);
 }
 
 export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<RecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {

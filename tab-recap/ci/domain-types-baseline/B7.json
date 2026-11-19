@@ -1,29 +1,9 @@
 {
-  "src/daemon/harness-makers.ts": {
-    "parameter": 5
-  },
-  "src/daemon/lane-turns.ts": {
-    "parameter": 4,
-    "return": 1
-  },
   "src/daemon/legacy.ts": {
-    "legacy": 59
+    "legacy": 64
   },
-  "src/daemon/refresh-status.ts": {
-    "parameter": 2
-  },
-  "src/daemon/retention.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/daemon/shutdown.ts": {
-    "parameter": 2
-  },
-  "src/daemon/state.ts": {
-    "parameter": 4
-  },
-  "src/extensions/load.ts": {
-    "container": 2
+  "src/extensions/legacy.ts": {
+    "legacy": 2
   },
   "src/setup/main.ts": {
     "parameter": 2,

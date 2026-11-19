@@ -873,6 +873,7 @@
       "src/daemon/timing.ts",
       "src/daemon/worktree-switch.ts",
       "src/daemon/worktrees.ts",
+      "src/extensions/legacy.ts",
       "src/extensions/load.ts",
       "src/extensions/stored-notes.ts",
       "src/setup/launch.mjs",

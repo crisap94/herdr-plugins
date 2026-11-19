@@ -289,11 +289,11 @@ test('TAB_RECAP_CLAUDE_POLICY_ACK: off by default, on and off by name, anything 
 test('the claude maker passes the configured acknowledgement: off makes no run call, on makes one', async () => {
     const config = { timeoutMs: 1000 } as Config;
     const refused = scripted('claude', { text: 'x' });
-    const off = await MAKERS.claude({ ...config, claudePolicyAck: 'off' }, '/work', refused).run(call, settings);
+    const off = await MAKERS.claude({ ...config, claudePolicyAck: 'off' }, must(parseDirectory('/work')), refused).run(call, settings);
     assert.ok(isUnknown(off));
     assert.equal(refused.calls.length, 0);
     const allowed = scripted('claude', { text: 'x' });
-    const on = await MAKERS.claude({ ...config, claudePolicyAck: 'on' }, '/work', allowed).run(call, settings);
+    const on = await MAKERS.claude({ ...config, claudePolicyAck: 'on' }, must(parseDirectory('/work')), allowed).run(call, settings);
     assert.equal(on.kind, 'ran');
     assert.equal(allowed.calls.length, 1);
 });
@@ -315,7 +315,7 @@ const emulatedBuiltins = [
 test('a run on a harness with an emulated cell is logged with the weak cells and nothing else', async () => {
     const lines: string[] = [];
     const runtime = scripted('opencode', { text: '## Goal\n- x', confinement: emulatedBuiltins, cost: { usd: 0.01, basis: 'billed' } });
-    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], must(parseDirectory('/work')), runtime, (line) => { lines.push(line); });
+    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], must(parseDirectory(must(parseDirectory('/work')))), runtime, (line) => { lines.push(line); });
     const written = await writer.write(requestOf({ entries: ENTRIES }));
     assert.ok(!isUnknown(written));
     assert.deepEqual(lines, ['harness opencode: builtins emulated, mcp unmeasured']);
@@ -326,11 +326,11 @@ test('a run whose cost is unavailable says so in the same line, and a fully supp
     const log = (line: string): void => { lines.push(line); };
     const config = { timeoutMs: 1000 } as Config;
     const codex = scripted('codex', { text: 'a', cost: { usd: null, basis: 'unavailable' } });
-    await MAKERS.codex(config, '/work', codex, undefined, log).run(call, settings);
+    await MAKERS.codex(config, must(parseDirectory('/work')), codex, undefined, log).run(call, settings);
     const opencode = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });
-    await MAKERS.opencode(config, '/work', opencode, undefined, log).run(call, settings);
+    await MAKERS.opencode(config, must(parseDirectory('/work')), opencode, undefined, log).run(call, settings);
     const quiet = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });
-    await MAKERS.opencode(config, '/work', quiet).run(call, settings);
+    await MAKERS.opencode(config, must(parseDirectory('/work')), quiet).run(call, settings);
     assert.deepEqual(lines, ['harness codex: cost unavailable']);
 });
 
