@@ -22,9 +22,9 @@ interface Stepped {
     readonly refusal: Refusal | null;
 }
 
-const closedBy = (fact: Fact, why: ClosedWhy, run: RunRef): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: run.at, lastAt: Math.max(fact.lastAt, run.at) });
+const closedBy = (fact: Fact, why: ClosedWhy, run: Omit<RunRef, 'id'>): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: run.at, lastAt: Math.max(fact.lastAt, run.at) });
 
-function closeOne(facts: readonly Fact[], op: CloseOp, run: RunRef): Stepped {
+function closeOne(facts: readonly Fact[], op: CloseOp, run: Omit<RunRef, 'id'>): Stepped {
     const target = facts.find((fact) => fact.id === op.id);
     if (target === undefined) {
         return { facts, refusal: { op, reason: 'unknown-id' } };
@@ -39,7 +39,7 @@ function closeOne(facts: readonly Fact[], op: CloseOp, run: RunRef): Stepped {
     return { facts: facts.map((fact) => (fact === target ? closedBy(fact, why, run) : fact)), refusal: null };
 }
 
-function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): Stepped {
+function updateOne(facts: readonly Fact[], op: UpdateOp, run: Omit<RunRef, 'id'>): Stepped {
     const target = facts.find((fact) => fact.id === op.id);
     if (target === undefined) {
         return { facts, refusal: { op, reason: 'unknown-id' } };
@@ -54,7 +54,7 @@ function updateOne(facts: readonly Fact[], op: UpdateOp, run: RunRef): Stepped {
     return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, anchor: op.anchor ?? fact.anchor, lastAt: Math.max(fact.lastAt, run.at), language: run.language } : fact)), refusal: null };
 }
 
-function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): Stepped {
+function addOne(facts: readonly Fact[], op: AddOp, run: Omit<RunRef, 'id'>): Stepped {
     if (op.section === 'decisions' && op.why === null) {
         return { facts, refusal: { op, reason: 'no-why' } };
     }
@@ -67,7 +67,7 @@ function addOne(facts: readonly Fact[], op: AddOp, run: RunRef): Stepped {
     return { facts: [...replaced, fact], refusal: null };
 }
 
-function stepped(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+function stepped(ledger: readonly Fact[], ops: readonly Operation[], run: Omit<RunRef, 'id'>): Folded {
     let facts = ledger;
     const refused: Refusal[] = [];
     let goals = 0;
@@ -94,17 +94,17 @@ function changedFrom(ledger: readonly Fact[], facts: readonly Fact[], refused: r
     return { ledger: facts, refused, changed: facts.filter((fact, at) => ledger[at] !== fact) };
 }
 
-function supersedeNow(facts: readonly Fact[], ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): readonly Fact[] {
+function supersedeNow(facts: readonly Fact[], ledger: readonly Fact[], ops: readonly Operation[], run: Omit<RunRef, 'id'>): readonly Fact[] {
     const named = new Set(ops.flatMap((op) => (op.op === 'add' ? [] : [op.id])));
     return facts.map((fact, at) => (at < ledger.length && fact.section === 'now' && fact.state === 'open' && !named.has(fact.id) ? closedBy(fact, 'superseded', run) : fact));
 }
 
-export function fold(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+export function fold(ledger: readonly Fact[], ops: readonly Operation[], run: Omit<RunRef, 'id'>): Folded {
     const { ledger: facts, refused } = stepped(ledger, ops, run);
     return changedFrom(ledger, facts, refused);
 }
 
-export function foldSwept(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef): Folded {
+export function foldSwept(ledger: readonly Fact[], ops: readonly Operation[], run: Omit<RunRef, 'id'>): Folded {
     const { ledger: facts, refused } = stepped(ledger, ops, run);
     return changedFrom(ledger, ops.length === 0 ? facts : supersedeNow(facts, ledger, ops, run), refused);
 }

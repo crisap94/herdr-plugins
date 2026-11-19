@@ -18,6 +18,7 @@ import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { closureOf } from '#test/support/closure.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const THIS_FILE = 'test/engine-plain-session.test.ts';
 const HERDR_SIDE = ['src/adapters/herdr/', 'src/adapters/herdr-core/', 'src/transport/', 'src/daemon/', 'src/column/', 'src/setup/', 'src/compact/'];
@@ -48,7 +49,7 @@ function plainHost(records: string, store: Store): PlainHost {
         source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
         store: { records: store.records, ledger: store.ledger },
         models: { summarizer: () => summarizer },
-        environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, log: () => undefined },
+        environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },
         settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW },
     });
     return { engine, store, scope, session, records, clock };

@@ -4,7 +4,6 @@
   "./unstable/facade/curate.ts curate",
   "./unstable/facade/follow-set.ts createFollowSet",
   "./unstable/facade/followed-by.ts followedBy",
-  "./unstable/facade/plugs.ts contractFold",
   "./unstable/facade/plugs.ts legacyPlugsOf",
   "./unstable/facade/session-started.ts sessionStarted",
   "./unstable/facade/translate.ts tabOf",

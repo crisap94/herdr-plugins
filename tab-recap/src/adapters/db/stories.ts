@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq } from 'drizzle-orm';
-import type { Applied, Ledger } from '#src/ports/ledger.ts';
+import type { Applied } from '#src/ports/ledger.ts';
 import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { CloseOp, UpdateOp } from '#src/recap/domain/ops.ts';
@@ -10,6 +10,7 @@ import { writeTx } from './connection.ts';
 import { chapter, run as runs, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
+import { LedgerRepository } from './ledger.ts';
 import { typeIdOf } from './typeid.ts';
 
 type CuratedRunId = RunId;
@@ -20,10 +21,10 @@ export type CurationChange = { readonly story: Text | null; readonly merges: rea
 
 export class StoriesRepository implements Stories {
     private readonly db: Database;
-    private readonly ledger: Ledger;
+    private readonly ledger: LedgerRepository;
     private readonly orm: Orm;
 
-    constructor(db: Database, ledger: Ledger) {
+    constructor(db: Database, ledger: LedgerRepository) {
         this.db = db;
         this.ledger = ledger;
         this.orm = ormOf(db);

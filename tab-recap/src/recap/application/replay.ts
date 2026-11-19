@@ -13,7 +13,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { PositiveCount } from '#src/recap/domain/count.ts';
 import { parsePositiveCount } from '#src/recap/domain/count.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { SessionPath, TabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -58,6 +58,7 @@ export interface TypedReplayDeps {
     readonly pipeline?: Pipeline;
     readonly enumerator?: () => Enumerators | null;
     readonly writerView: WriterView;
+    readonly mint: () => FactId;
 }
 
 export interface Replayed {
@@ -104,7 +105,7 @@ function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (r
         source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, unavailable) },
         store: { records: deps.records, ledger: deps.ledger },
         models: modelsOf(deps),
-        environment: { clock: { now: (): Instant => at.now }, repos: deps.repos, log: deps.log },
+        environment: { clock: { now: (): Instant => at.now }, repos: deps.repos, log: deps.log, mint: deps.mint },
         settings: settingsOf(deps),
     }));
 }

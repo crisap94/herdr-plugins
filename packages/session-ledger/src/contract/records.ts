@@ -1,7 +1,7 @@
 import type { Unknown } from './kernel.ts';
 import type { ScopeId, SessionKey } from './ids.ts';
 import type { RecapCause } from './session.ts';
-import type { Applied, Fact, HistoryFact, Operation, RunRef, TaskId, TaskOps } from './facts.ts';
+import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
 
 export interface SessionCursor {
     readonly pane: string;
@@ -79,7 +79,8 @@ export interface RecordedRun extends RunFacts {
     readonly error: string | null;
     readonly lanes: readonly SessionCursor[];
     readonly tasks: readonly TaskShape[];
-    readonly ops: readonly TaskOps[];
+    readonly changed: readonly Fact[];
+    readonly refused: readonly Refusal[];
     readonly input?: string;
     readonly gateStats?: GateStats;
 }
@@ -122,5 +123,4 @@ export interface FactStore {
     allOf(task: TaskId): readonly Fact[] | Unknown;
     keysOf(scope: ScopeId): readonly string[] | Unknown;
     historyOf(scope: ScopeId, key: SessionKey): readonly HistoryFact[];
-    apply(run: RunRef, ops: readonly Operation[]): Applied;
 }

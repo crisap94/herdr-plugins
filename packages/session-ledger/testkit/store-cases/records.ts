@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { scope } from '../ids.ts';
 import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
-import { addOf, advanceOf, brokenAdd, cursor, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf } from './record-fixtures.ts';
+import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf, typeIdAt } from './record-fixtures.ts';
 
 export const REC_1: Case<null, StoreUnderTest> = {
     id: 'REC-1',
@@ -19,7 +19,6 @@ export const REC_2: Case<null, StoreUnderTest> = {
     group: 'REC',
     title: 'readRecap after recordRun',
     level: 'full',
-    needsFold: true,
     async run(_world, store) {
         const run = runOf({
             at: 500,
@@ -97,9 +96,8 @@ export const REC_6: Case<null, StoreUnderTest> = {
     group: 'REC',
     title: 'recordRun that throws half way leaves nothing of the run visible',
     level: 'full',
-    needsFold: true,
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: 100, cause: 'focused', language: 'de', ops: [{ task: 'a', ops: [addOf('kept')] }] }));
+        store.records.recordRun(runOf({ at: 100, cause: 'focused', language: 'de', changed: [factAt(typeIdAt(1), { text: 'kept' })] }));
         const recap = store.records.readRecap(scope('tab-1'));
         const last = store.records.lastRunOf(scope('tab-1'));
         const factsA = store.facts.allOf({ tab: 'tab-1', key: 'a' });
@@ -112,14 +110,11 @@ export const REC_6: Case<null, StoreUnderTest> = {
             lanes: [cursor('p7'), cursor('p8')],
             tasks: [shapeOf('a', ['p7']), shapeOf('b', ['p8'])],
             marks: [{ pane: 'p7', at: 900, cursor: 3 }],
-            ops: [
-                { task: 'a', ops: [addOf('first half')] },
-                { task: 'b', ops: [brokenAdd()] },
-            ],
+            changed: [factAt(typeIdAt(2), { text: 'first half' }), brokenFact()],
         });
         assert.throws(() => {
             store.records.recordRun(broken);
-        }, /a broken op/);
+        }, /a broken fact/);
         assert.deepEqual(store.records.readRecap(scope('tab-1')), recap);
         assert.deepEqual(store.records.lastRunOf(scope('tab-1')), last);
         assert.deepEqual(store.facts.allOf({ tab: 'tab-1', key: 'a' }), factsA);
@@ -132,7 +127,6 @@ export const REC_7: Case<null, StoreUnderTest> = {
     group: 'REC',
     title: 'lastRunOf after a written run, then a failed run',
     level: 'full',
-    needsFold: true,
     async run(_world, store) {
         store.records.recordRun(runOf({ at: 100, cause: 'focused' }));
         store.records.failRun(failedOf({ at: 200, cause: 'turn-ended' }));
@@ -195,7 +189,6 @@ export const REC_12: Case<null, StoreUnderTest> = {
     group: 'REC',
     title: 'recordRun with cause imported',
     level: 'full',
-    needsFold: true,
     async run(_world, store) {
         store.records.recordRun(runOf({ cause: 'imported' }));
         assert.equal(lastOf(store, 'tab-1')?.cause, 'imported');
@@ -207,7 +200,6 @@ export const REC_13: Case<null, StoreUnderTest> = {
     group: 'REC',
     title: 'recordRun with marks',
     level: 'full',
-    needsFold: true,
     async run(_world, store) {
         store.records.recordRun(runOf({ at: 100, marks: [{ pane: 'p1', at: 90, cursor: 3 }] }));
         const stored = store.marksOf(scope('tab-1'));

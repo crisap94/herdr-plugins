@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { refreshStatusOf } from '#src/recap/domain/freshness.ts';
 import { refreshedWithin } from '#src/daemon/refresh-status.ts';
-import { memoryStore } from './db/support.ts';
+import { memoryStore, recordOps } from './db/support.ts';
 
 const never = (): Promise<void> => new Promise<void>(() => undefined);
 
@@ -35,6 +35,6 @@ test('a run that fails and then succeeds reads failed, then refreshed, on the ta
     const store = memoryStore();
     store.records.failRun({ tab: 'w1:t1', at: 100, cause: 'requested', backend: null, language: 'en', costUsd: 0, error: 'the summarizer failed', lanes: [] });
     assert.equal(await refreshedWithin(Promise.resolve(), store.records, 'w1:t1', 1_000), 'failed');
-    store.records.recordRun({ tab: 'w1:t1', at: 200, cause: 'requested', backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
+    recordOps(store, { tab: 'w1:t1', at: 200, cause: 'requested', backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
     assert.equal(await refreshedWithin(Promise.resolve(), store.records, 'w1:t1', 1_000), 'refreshed');
 });

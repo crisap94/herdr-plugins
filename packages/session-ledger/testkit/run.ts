@@ -5,7 +5,6 @@ export interface Case<W, S> {
     readonly group: string;
     readonly title: string;
     readonly level: 'surface' | 'full';
-    readonly needsFold?: true;
     run(world: W, subject: S): Promise<void>;
 }
 

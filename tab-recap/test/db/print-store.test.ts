@@ -32,7 +32,7 @@ test('print reads a database not yet upgraded to the handoff tables, and writes 
         const seeded = openDatabase(path, MIGRATIONS.slice(0, BEFORE_HANDOFF));
         assert.equal(seeded.kind, 'ready');
         const at = 1_000;
-        new RecapRecordsRepository(seeded.db).recordRun({ tab: 'w1:t1', at, cause: 'focused', backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], ops: [] });
+        new RecapRecordsRepository(seeded.db).recordRun({ tab: 'w1:t1', at, cause: 'focused', backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], changed: [], refused: [] });
         new TabViewsRepository(seeded.db).writeTab({ tab: 'w1:t1', column: null, at, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] });
         seeded.db.close();
         const before = rowCounts(path);

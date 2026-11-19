@@ -17,6 +17,7 @@ import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { pluginEngine, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const TAB = 'w1:t1';
 const lanes: readonly Lane[] = [
@@ -62,7 +63,7 @@ function world(): World {
         source: { transcripts: registryWith({ claude: reader }) },
         store: { records: store.records, ledger: store.ledger },
         models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
-        environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, log: (): void => undefined },
+        environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW, keepInput: (): boolean => true },
     };
     return { store, asked, ran, events, plugs };

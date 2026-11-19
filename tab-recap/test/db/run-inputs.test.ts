@@ -10,16 +10,15 @@ import { gzipSync } from 'node:zlib';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
-import { cursor, memoryStore } from './support.ts';
+import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 
 const DAY = 86_400_000;
 const STATS: GateStats = { refused: { G1: 2 }, flagged: { G8: 1 }, dropped: 1 };
 const SECTIONS = { goal: 'Ship retries', now: ['Review !256.'], needs: [], done: ['Merged !250.', 'Tagged 1.9.0.'], decisions: [], next: [], links: ['!256'], rules: [] };
 
-const run = (at: number, extra: Partial<RecordedRun> = {}): RecordedRun => ({
+const run = (at: number, extra: Partial<RunInput> = {}): RunInput => ({
     tab: 'w1:t1', at, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), ...extra,
 });
 
@@ -28,7 +27,7 @@ const QUERY = { tab: null, since: null, limit: 20, withInput: false } as const;
 test('a run keeps its input document (inflated equal, bytes = uncompressed length) and its gate counts', () => {
     const store = memoryStore();
     const document = '<recap_input version="1">é — ✓ </recap_input>'.repeat(40);
-    store.records.recordRun(run(1000, { input: document, gateStats: STATS }));
+    recordOps(store, run(1000, { input: document, gateStats: STATS }));
     const [stored] = store.inputs.runs(QUERY);
     assert.ok(stored !== undefined);
     assert.deepEqual([stored.tab, stored.at, stored.hasInput, stored.gateStats], ['w1:t1', 1000, true, STATS]);
@@ -41,7 +40,7 @@ test('a run keeps its input document (inflated equal, bytes = uncompressed lengt
 
 test('a run without an input or counts is listed (not as judgeable) and a failed run is not listed at all', () => {
     const store = memoryStore();
-    store.records.recordRun(run(1000));
+    recordOps(store, run(1000));
     store.records.failRun({ tab: 'w1:t1', at: 2000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: 'boom', lanes: [cursor('w1:p1')] });
     const listed = store.inputs.runs(QUERY);
     assert.deepEqual(listed.map((r) => [r.at, r.hasInput, r.gateStats]), [[1000, false, null]]);
@@ -50,9 +49,9 @@ test('a run without an input or counts is listed (not as judgeable) and a failed
 
 test('runs come newest first, by tab and by time, with a limit; the items carry their keys in the recap\'s order', () => {
     const store = memoryStore();
-    store.records.recordRun(run(1000, { input: '<a/>' }));
-    store.records.recordRun(run(2000, { input: '<b/>' }));
-    store.records.recordRun(run(3000, { tab: 'w1:t2', input: '<c/>', lanes: [cursor('w1:p2')] }));
+    recordOps(store, run(1000, { input: '<a/>' }));
+    recordOps(store, run(2000, { input: '<b/>' }));
+    recordOps(store, run(3000, { tab: 'w1:t2', input: '<c/>', lanes: [cursor('w1:p2')] }));
     assert.deepEqual(store.inputs.runs(QUERY).map((r) => r.at), [3000, 2000, 1000]);
     assert.deepEqual(store.inputs.runs({ ...QUERY, tab: 'w1:t1' }).map((r) => r.at), [2000, 1000]);
     assert.deepEqual(store.inputs.runs({ ...QUERY, since: 2000 }).map((r) => r.at), [3000, 2000]);
@@ -68,9 +67,9 @@ test('runs come newest first, by tab and by time, with a limit; the items carry 
 
 test('gate counts since a time, newest first, only for runs that have them', () => {
     const store = memoryStore();
-    store.records.recordRun(run(1000));
-    store.records.recordRun(run(2000, { gateStats: STATS }));
-    store.records.recordRun(run(3000, { gateStats: { refused: {}, flagged: {}, dropped: 0 } }));
+    recordOps(store, run(1000));
+    recordOps(store, run(2000, { gateStats: STATS }));
+    recordOps(store, run(3000, { gateStats: { refused: {}, flagged: {}, dropped: 0 } }));
     assert.deepEqual(store.inputs.gateCounts(null).map((entry) => entry.at), [3000, 2000]);
     assert.deepEqual(store.inputs.gateCounts(2500).map((entry) => entry.at), [3000]);
 });
@@ -78,8 +77,8 @@ test('gate counts since a time, newest first, only for runs that have them', () 
 test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, and keeps a 13-day-old one; it runs once a day; 0 keeps none', () => {
     const store = memoryStore();
     const now = 100 * DAY;
-    store.records.recordRun(run(now - 15 * DAY, { input: '<old/>' }));
-    store.records.recordRun(run(now - 13 * DAY, { input: '<recent/>' }));
+    recordOps(store, run(now - 15 * DAY, { input: '<old/>' }));
+    recordOps(store, run(now - 13 * DAY, { input: '<recent/>' }));
     const decision = store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now - 15 * DAY), mode: 'shadow', share: 50, tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     store.autocompactBriefs.put(decision, 'old brief', [], [], now - 15 * DAY);
     let clock = now;
@@ -104,7 +103,7 @@ const verdict = (over: Partial<Verdict>): Verdict => ({ run: 'run_x', item: 't1/
 
 test('verdicts round-trip, one transaction; operator labels are found; pairs join judge and operator on the same item and check, newest of each', () => {
     const store = memoryStore();
-    store.records.recordRun(run(1000, { input: '<a/>' }));
+    recordOps(store, run(1000, { input: '<a/>' }));
     const [stored] = store.inputs.runs(QUERY);
     assert.ok(stored !== undefined);
     const id = stored.id;

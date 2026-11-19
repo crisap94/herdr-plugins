@@ -12,7 +12,7 @@ import {
     type KeptStory,
     type Writer,
 } from '@stateforge-labs/session-ledger';
-import { createMemoryStore, type Fold, type MemoryStore } from './memory-store.ts';
+import { createMemoryStore, type MemoryStore } from './memory-store.ts';
 import { gateOf, runnerOf, type Behaviour, type Run } from './behaviour.ts';
 import { curatorOf, type CuratedAnswer } from './scripted-curator.ts';
 import { clockOf, idsOf, sessionsOf, workplacesOf, type LocatedAnswer, type ManualClock, type Probes } from './world-ports.ts';
@@ -28,7 +28,6 @@ export interface WorldOptions {
     readonly locate?: Behaviour<LocatedAnswer>;
     readonly read?: Behaviour<Chunk>;
     readonly debounce?: Debounce;
-    readonly fold?: Fold;
 }
 
 export interface EngineWorld {
@@ -172,7 +171,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const script = scriptOf(options);
     const gate = gateOf();
     const run = runnerOf(gate.opened);
-    const store = createMemoryStore(options.fold === undefined ? {} : { fold: options.fold });
+    const store = createMemoryStore();
     const clock = clockOf();
     const lines: string[] = [];
     const emitted: LedgerEvent[] = [];

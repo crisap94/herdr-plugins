@@ -12,7 +12,7 @@ runConformance({
     test: (name, body) => {
         test(name, body);
     },
-    cases: storeCases.filter((kase) => kase.needsFold !== true),
+    cases: storeCases,
     subject,
     pending: [],
 });

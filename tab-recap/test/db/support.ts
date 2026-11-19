@@ -8,7 +8,10 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { storeWith } from '#src/adapters/db/legacy.ts';
 import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import type { LaneCursor, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
+import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 
 export function openFixture(path: string = MEMORY): Database {
     const db = new Database(path);
@@ -30,11 +33,19 @@ export const shapeOf = (db: Database): string[] => (db.prepare("SELECT type, nam
 
 export const scratchDir = (name: string): string => mkdtempSync(join(tmpdir(), `recap-${name}-`));
 
+export type RunInput = Omit<RecordedRun, 'changed' | 'refused'> & { readonly ops?: readonly TaskOps[] };
+
+export function recordOps(store: Pick<Store, 'records' | 'ledger'>, run: RunInput): void {
+    const { ops = [], ...rest } = run;
+    const folded = foldedRun(throwingLedger(store.ledger), ops, { owner: { tab: run.tab }, at: run.at, language: run.language, mint: mintFactId });
+    store.records.recordRun({ ...rest, ...folded });
+}
+
 export function seed(store: Store, recap: TabRecap): void {
     const at = recap.at ?? 1;
     const facts = { tab: recap.tab, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
     if (recap.at !== null) {
-        store.records.recordRun({ ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
+        recordOps(store, { ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
     } else if (recap.lanes.length > 0) {
         store.records.advance({ tab: recap.tab, at, error: recap.error, lanes: recap.lanes });
     }

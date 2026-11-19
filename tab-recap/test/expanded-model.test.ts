@@ -7,7 +7,7 @@ import type { TabView } from '#src/ports/tab-views.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import { en } from '#src/i18n/en.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore, must, seed } from '#test/db/support.ts';
+import { cursor, memoryStore, must, seed, recordOps } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
@@ -27,7 +27,7 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
 test('the view is built from the store alone: the task\'s facts, the session facts from the store and the lanes, the lanes\' webs', () => {
     const { model, store } = setup();
     assert.equal(model.read('w1:t1', view, NOW).session.runs, null, 'the imported run is not a turn');
-    store.records.recordRun({ tab: 'w1:t1', at: NOW - MIN, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
+    recordOps(store, { tab: 'w1:t1', at: NOW - MIN, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
     const data = model.read('w1:t1', view, NOW);
     assert.deepEqual(data.tasks.map((task) => [task.name, task.facts.map((one) => one.text), task.story]), [['', ['Running the tests'], null]]);
     assert.deepEqual(data.session.agents, [{ label: 'claude · orchestrator', share: 50, window: 200_000 }]);

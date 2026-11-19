@@ -27,6 +27,7 @@ import { closedDaysOf } from '#test/fakes/closed-days.ts';
 import { silentClosures } from '#test/fakes/silent-closures.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { NO_REPOS } from '#test/support.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -50,7 +51,7 @@ async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Rec
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 }); },
     };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
         records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
     await job.refreshNow(lane.tab, [lane]);

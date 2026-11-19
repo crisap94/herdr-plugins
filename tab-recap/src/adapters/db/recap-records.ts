@@ -1,7 +1,6 @@
 import type { Database } from 'bun:sqlite';
 import { eq } from 'drizzle-orm';
 import type { Advance, FailedRun, LastRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
-import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
 import { parseTabId, tabId } from '#src/recap/domain/ids.ts';
@@ -16,8 +15,6 @@ import { guarded } from './rows.ts';
 import { RunRows } from './run-write.ts';
 import { TabRow } from './tab-row.ts';
 import { TranscriptRows } from './transcripts.ts';
-import { typeIdOf } from './typeid.ts';
-import { ids } from './uuid7.ts';
 
 type LastCause = RecapCause | 'imported';
 
@@ -75,9 +72,7 @@ export class RecapRecordsRepository implements RecapRecords {
             }
             this.runs.insertReads(id, moved);
             this.runs.writeTasks(id, run, run.tasks);
-            for (const { task, ops } of run.ops) {
-                this.ledger.applyTo(id, { id: typeIdOf('run', id) as RunId, task: { tab: run.tab, key: task }, at: run.at, language: run.language, mint: () => typeIdOf('fact', ids.next()) as FactId }, ops, 'sweep');
-            }
+            this.ledger.keep(id, run.changed);
             this.settle(run);
         });
     }

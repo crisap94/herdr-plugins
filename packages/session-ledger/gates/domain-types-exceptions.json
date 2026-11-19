@@ -443,20 +443,6 @@
   {
     "class": "contract",
     "file": "src/contract/facts.ts",
-    "symbol": "RunRef",
-    "field": "at",
-    "reason": "EC 2.2, copied shape: at of RunRef keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/facts.ts",
-    "symbol": "RunRef",
-    "field": "language",
-    "reason": "EC 2.2, copied shape: language of RunRef keeps the plain type of RunRef in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/facts.ts",
     "symbol": "TaskId",
     "field": "key",
     "reason": "EC 2.2, copied shape: key of TaskId keeps the plain type of TaskId in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
@@ -467,13 +453,6 @@
     "symbol": "TaskId",
     "field": "tab",
     "reason": "EC 2.2, copied shape: tab of TaskId keeps the plain type of TaskId in tab-recap/src/recap/domain/fact.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/facts.ts",
-    "symbol": "TaskOps",
-    "field": "task",
-    "reason": "EC 2.2, copied shape: task of TaskOps keeps the plain type of TaskOps in tab-recap/src/recap/domain/ops.ts, held equal by gates/copied-shapes/facts.json; ENG-5 types it"
   },
   {
     "class": "contract",
@@ -1272,13 +1251,6 @@
     "function": "bridged",
     "parameter": "what",
     "reason": "EP 4.1, ENG-2: parameter what of bridged keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "contractFold",
-    "parameter": "sweepNow",
-    "reason": "EP 4.1, ENG-2: parameter sweepNow of contractFold keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
   },
   {
     "class": "callback",

@@ -1,23 +1,20 @@
 import {
     unknown as unknownOf,
     type Fact,
-    type FactId,
     type FactStore,
     type LastRun,
-    type Operation,
     type Recap,
     type RecapTask,
     type Records,
     type RecordedRun,
     type Refusal,
-    type RunRef,
     type ScopeId,
     type SessionKey,
     type SessionMark,
     type TaskId,
     type Unknown,
 } from '@stateforge-labs/session-ledger';
-import { emptyRecap, factIdOf, historyOf, runIdOf, sameTask } from './facts.ts';
+import { emptyRecap, historyOf, sameTask } from './facts.ts';
 
 export { factOf } from './facts.ts';
 
@@ -25,21 +22,12 @@ const HISTORY_LIMIT = 300;
 
 export type ReadName = 'readRecap' | 'lastRunOf' | 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';
 
-export type StoreCall = ReadName | 'beginRun' | 'recordRun' | 'failRun' | 'advance' | 'historyOf' | 'apply';
-
-export interface Folded {
-    readonly ledger: readonly Fact[];
-    readonly refused: readonly Refusal[];
-    readonly changed: readonly Fact[];
-}
-
-export type Fold = (before: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow: boolean) => Folded;
+export type StoreCall = ReadName | 'beginRun' | 'recordRun' | 'failRun' | 'advance' | 'historyOf';
 
 export interface StoreParts {
     readonly recap?: Recap | null;
     readonly lastRun?: LastRun | null;
     readonly facts?: readonly Fact[];
-    readonly fold?: Fold;
 }
 
 export type StoredMark = Pick<SessionMark, 'at'>;
@@ -71,10 +59,7 @@ interface State {
     readonly recaps: Map<string, Recap>;
     readonly lastRuns: Map<string, LastRun>;
     readonly marks: Map<string, readonly StoredMark[]>;
-    readonly fold: Fold | undefined;
     stored: readonly Fact[];
-    minted: number;
-    runs: number;
     readonly recordedRuns: RecordedRun[];
     readonly refused: Refusal[];
 }
@@ -89,29 +74,10 @@ const read = <T>(state: State, which: ReadName, value: () => T): T | Unknown => 
     return value();
 };
 
-const applyTo = (fold: Fold | undefined, before: readonly Fact[], run: RunRef, ops: readonly Operation[]): { readonly next: readonly Fact[]; readonly changed: readonly Fact[]; readonly refused: readonly Refusal[] } => {
-    if (fold === undefined) {
-        return { next: before, changed: [], refused: [] };
-    }
-    const own = before.filter((fact) => sameTask(fact.task, run.task));
-    const folded = fold(own, ops, run, false);
-    return {
-        next: [...before.filter((fact) => !sameTask(fact.task, run.task)), ...folded.ledger],
-        changed: folded.changed,
-        refused: folded.refused,
-    };
-};
-
-const mintOf =
-    (state: State): (() => FactId) =>
-    () => {
-        state.minted += 1;
-        return factIdOf(`fct_${state.minted}`);
-    };
-
-const refOf = (state: State, task: TaskId, at: number, language: string): RunRef => {
-    state.runs += 1;
-    return { id: runIdOf(`run_${state.runs}`), task, at, language, mint: mintOf(state) };
+const keptOf = (stored: readonly Fact[], changed: readonly Fact[]): readonly Fact[] => {
+    const next = new Map(changed.map((fact) => [fact.id, fact]));
+    const known = new Set(stored.map((fact) => fact.id));
+    return [...stored.map((fact) => next.get(fact.id) ?? fact), ...changed.filter((fact) => !known.has(fact.id))];
 };
 
 const ensure = (state: State, scope: string, at: number | null): Recap => {
@@ -120,14 +86,8 @@ const ensure = (state: State, scope: string, at: number | null): Recap => {
     return current;
 };
 
-const foldOps = (state: State, run: RecordedRun): { readonly facts: readonly Fact[]; readonly tasks: readonly RecapTask[] } => {
-    let facts = state.stored;
-    for (const taskOps of run.ops) {
-        const applied = applyTo(state.fold, facts, refOf(state, { tab: run.tab, key: taskOps.task }, run.at, run.language), taskOps.ops);
-        facts = applied.next;
-        state.refused.push(...applied.refused);
-    }
-    const tasks = run.tasks.map((task) => ({
+const tasksOf = (facts: readonly Fact[], run: RecordedRun): readonly RecapTask[] =>
+    run.tasks.map((task) => ({
         id: task.id,
         name: task.name,
         lanes: task.lanes,
@@ -137,8 +97,6 @@ const foldOps = (state: State, run: RecordedRun): { readonly facts: readonly Fac
             .map((fact) => fact.text)
             .join('\n'),
     }));
-    return { facts, tasks };
-};
 
 const keepMarks = (state: State, scope: string, marks: readonly SessionMark[] | undefined): void => {
     state.marks.set(scope, [...(state.marks.get(scope) ?? []), ...(marks ?? []).map((mark) => ({ at: mark.at }))]);
@@ -155,12 +113,12 @@ const recordsOf = (state: State): Records => ({
         state.log.push('recordRun');
         state.recordedRuns.push(run);
         if (state.recordFailures > 0) { state.recordFailures -= 1; throw new Error('scripted recordRun failure'); }
-        const folded = foldOps(state, run);
-        state.stored = folded.facts;
+        state.stored = keptOf(state.stored, run.changed);
+        state.refused.push(...run.refused);
         state.recaps.set(run.tab, {
             tab: run.tab,
             lanes: run.lanes,
-            tasks: folded.tasks,
+            tasks: tasksOf(state.stored, run),
             at: run.at,
             running: false,
             backend: run.backend,
@@ -207,13 +165,6 @@ const factsOf = (state: State): FactStore => ({
             .slice(0, HISTORY_LIMIT)
             .map(historyOf);
     },
-    apply: (run: RunRef, ops: readonly Operation[]) => {
-        state.log.push('apply');
-        const applied = applyTo(state.fold, state.stored, run, ops);
-        state.stored = applied.next;
-        state.refused.push(...applied.refused);
-        return { changed: applied.changed, refused: applied.refused };
-    },
 });
 
 const seedOf = (state: State, parts: StoreParts): void => {
@@ -233,10 +184,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         recaps: new Map(),
         lastRuns: new Map(),
         marks: new Map(),
-        fold: parts.fold,
         stored: parts.facts ?? [],
-        minted: 0,
-        runs: 0,
         recordedRuns: [],
         refused: [],
     };

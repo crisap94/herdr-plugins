@@ -2,18 +2,16 @@ import { readFileSync } from 'node:fs';
 import * as sl from '@stateforge-labs/session-ledger';
 import { createEngineWorld, createMemoryStore, type EngineWorld, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
-import { contractFold, legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
-import type { Ledger, Applied } from '#src/ports/ledger.ts';
+import { legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
+import type { Ledger } from '#src/ports/ledger.ts';
 import type { RecapRecords, RecordedRun } from '#src/ports/recap-records.ts';
-import type { Fact, FactId, RunId } from '#src/recap/domain/fact.ts';
-import type { Operation, Refusal, RunRef, TaskOps } from '#src/recap/domain/ops.ts';
+import type { Fact, FactId } from '#src/recap/domain/fact.ts';
+import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { memoryStore } from '#test/db/support.ts';
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
 const isPluginFactId = (id: sl.FactId): id is sl.FactId & FactId => id !== '';
-const isPluginRunId = (id: sl.RunId): id is sl.RunId & RunId => id !== '';
-const isLedgerText = (text: Text): text is Text & sl.Text => text.length >= 0;
 const isPluginText = (text: sl.Text): text is sl.Text & Text => text.length >= 0;
 
 const bridged = <F, T extends F>(value: F, fits: (value: F) => value is T, what: string): T => {
@@ -27,13 +25,8 @@ const ledgerFactId = (id: FactId): sl.FactId => bridged(id, isLedgerFactId, 'a f
 const pluginFactId = (id: sl.FactId): FactId => bridged(id, isPluginFactId, 'a fact id');
 
 const ledgerFact = (fact: Fact): sl.Fact => ({ ...fact, id: ledgerFactId(fact.id) });
+const pluginFact = (fact: sl.Fact): Fact => ({ ...fact, id: pluginFactId(fact.id) });
 
-const ledgerOperation = (op: Operation): sl.Operation => {
-    if (op.op !== 'close' || op.anchor === undefined) {
-        return op.op === 'close' ? { op: 'close', id: op.id, why: op.why } : op;
-    }
-    return { ...op, anchor: bridged(op.anchor, isLedgerText, 'an anchor') };
-};
 const pluginOperation = (op: sl.Operation): Operation => {
     if (op.op !== 'close' || op.anchor === undefined) {
         return op.op === 'close' ? { op: 'close', id: op.id, why: op.why } : op;
@@ -41,21 +34,9 @@ const pluginOperation = (op: sl.Operation): Operation => {
     return { ...op, anchor: bridged(op.anchor, isPluginText, 'an anchor') };
 };
 
-const ledgerRefusal = (refusal: Refusal): sl.Refusal => ({ op: ledgerOperation(refusal.op), reason: refusal.reason });
+const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(refusal.op), reason: refusal.reason });
 
-const pluginTaskOps = (task: sl.TaskOps): TaskOps => ({ task: task.task, ops: task.ops.map(pluginOperation) });
-
-const pluginRun = (run: sl.RunRef): RunRef => ({
-    id: bridged(run.id, isPluginRunId, 'a run id'),
-    task: run.task,
-    at: run.at,
-    language: run.language,
-    mint: () => pluginFactId(run.mint()),
-});
-
-const ledgerApplied = (applied: Applied): sl.Applied => ({ changed: applied.changed.map(ledgerFact), refused: applied.refused.map(ledgerRefusal) });
-
-const pluginRecorded = (run: sl.RecordedRun): RecordedRun => ({ ...run, ops: run.ops.map(pluginTaskOps) });
+const pluginRecorded = (run: sl.RecordedRun): RecordedRun => ({ ...run, changed: run.changed.map(pluginFact), refused: run.refused.map(pluginRefusal) });
 
 const ledgerRecords = (records: RecapRecords): sl.Records => ({
     readRecap: (scope) => records.readRecap(scope),
@@ -80,21 +61,20 @@ const ledgerFacts = (ledger: Ledger): sl.FactStore => ({
     allOf: (task) => ledger.allOf(task).map(ledgerFact),
     keysOf: (scope) => ledger.keysOf(scope),
     historyOf: (scope, key) => ledger.historyOf(scope, key),
-    apply: (run, ops) => ledgerApplied(ledger.apply(pluginRun(run), ops.map(pluginOperation))),
 });
 
 export const pluginSubject: Subject<EngineWorld, sl.Engine> = {
     name: 'plugin engine',
     level: 'full',
-    world: () => createEngineWorld({ fold: contractFold }),
+    world: () => createEngineWorld(),
     create: (world) => pluginEngine(legacyPlugsOf(world.plugs)),
 };
 
 export const memoryStoreSubject: Subject<null, StoreUnderTest> = {
-    name: 'memory store with the plugin fold',
+    name: 'memory store',
     level: 'full',
     world: () => null,
-    create: () => createMemoryStore({ fold: contractFold }),
+    create: () => createMemoryStore(),
 };
 
 export const sqliteStoreSubject: Subject<null, StoreUnderTest> = {

@@ -1,5 +1,6 @@
-import type { AddOp, Advance, FailedRun, LastRun, Recap, RecordedRun, SessionCursor, TaskShape, Unknown } from '@stateforge-labs/session-ledger';
+import type { Advance, Fact, FailedRun, LastRun, Recap, RecordedRun, SessionCursor, TaskShape, Unknown } from '@stateforge-labs/session-ledger';
 import { scope } from '../ids.ts';
+import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
@@ -28,7 +29,8 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     error: null,
     lanes: [cursor('p1')],
     tasks: [shapeOf('a', ['p1'])],
-    ops: [],
+    changed: [],
+    refused: [],
     ...over,
 });
 
@@ -68,18 +70,27 @@ export const lastOf = (store: StoreUnderTest, tab: string): LastRun | null => {
     return read;
 };
 
-export const addOf = (text: string): AddOp => ({ op: 'add', section: 'now', text, why: null, ref: null, at: null, agent: null });
+export const typeIdAt = (n: number): string => `fct_${String(n).padStart(26, '0')}`;
 
-export const brokenAdd = (): AddOp => ({
-    op: 'add',
-    section: 'now',
-    get text(): string {
-        throw new Error('a broken op');
+export const factAt = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact => factOf(id, over);
+
+export const brokenFact = (): Fact => ({
+    get id(): Fact['id'] {
+        throw new Error('a broken fact');
     },
+    task: { tab: 'tab-1', key: 'b' },
+    section: 'now',
+    text: '',
     why: null,
     ref: null,
-    at: null,
     agent: null,
+    anchor: null,
+    firstAt: 0,
+    lastAt: 0,
+    state: 'open',
+    closedWhy: null,
+    closedAt: null,
+    language: 'en',
 });
 
 export const shapesOf = (recap: Recap): readonly TaskShape[] => recap.tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes }));
