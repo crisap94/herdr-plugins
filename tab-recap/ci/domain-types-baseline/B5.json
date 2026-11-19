@@ -37,43 +37,14 @@
     "property": 8,
     "assertion": 5
   },
-  "src/adapters/db/imported-chapters.ts": {
-    "parameter": 2,
-    "container": 2
-  },
-  "src/adapters/db/imported.ts": {
-    "parameter": 2
-  },
-  "src/adapters/db/ledger-history.ts": {
-    "parameter": 2,
-    "return": 1
-  },
   "src/adapters/db/legacy.ts": {
-    "legacy": 43
-  },
-  "src/adapters/db/recap-read.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 9,
-    "property": 2
+    "legacy": 52
   },
   "src/adapters/db/recap-records.ts": {
     "assertion": 2
   },
-  "src/adapters/db/requests.ts": {
-    "parameter": 2,
-    "return": 7,
-    "container": 14,
-    "property": 2
-  },
-  "src/adapters/db/retention.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/adapters/db/rows.ts": {
-    "parameter": 6,
-    "return": 5,
-    "container": 22
+  "src/adapters/db/rows/legacy.ts": {
+    "legacy": 33
   },
   "src/adapters/db/run-inputs.ts": {
     "parameter": 8,
@@ -105,9 +76,6 @@
     "container": 4,
     "property": 2
   },
-  "src/adapters/db/stories.ts": {
-    "assertion": 1
-  },
   "src/adapters/db/tab-row.ts": {
     "parameter": 2
   },
@@ -120,12 +88,8 @@
     "parameter": 5,
     "property": 3
   },
-  "src/adapters/db/typeid.ts": {
-    "parameter": 2,
-    "return": 2
-  },
-  "src/adapters/db/uuid7.ts": {
-    "return": 4
+  "src/adapters/db/typeid/legacy.ts": {
+    "legacy": 4
   },
   "src/adapters/db/verdicts.ts": {
     "parameter": 2,

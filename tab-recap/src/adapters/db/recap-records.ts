@@ -4,7 +4,7 @@ import type { Advance, FailedRun, LastRun, RecapRecords, RecordedRun, TabRecap }
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { lastGoodRun, run as runs, tab as tabs } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -45,7 +45,8 @@ export class RecapRecordsRepository implements RecapRecords {
     }
 
     readRecap(tab: string): TabRecap | null {
-        return guarded(() => this.reader.read(tab), null);
+        const parsed = parseTabId(tab);
+        return parsed.kind === 'err' ? null : guarded(() => this.reader.read(parsed.value), null);
     }
 
     lastRunOf(tab: string): LastRun | null {

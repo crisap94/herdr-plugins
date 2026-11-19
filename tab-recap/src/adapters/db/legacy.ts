@@ -7,12 +7,14 @@ import type { AnswerTally, AutocompactRecords, CoverageAmendment, Decision, Deci
 import type { Boundaries, BoundaryBreak, Break } from '#src/ports/boundaries.ts';
 import type { ActiveStage, BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionRow, StageFacts } from '#src/ports/compaction-records.ts';
 import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { CheckAnchors } from '#src/ports/judge.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -23,15 +25,19 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
+import type { AnswerRow, CompactRequest, CompactionQueue, HandoffRequestRow, NewHandoffRequest, Requests, Visibility, VisibilityRequest } from '#src/ports/requests.ts';
 import { AskBookRepository } from './ask-ledger.ts';
 import { DecisionBriefsRepository } from './autocompact-briefs.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
 import { BoundaryLogRepository } from './boundary-read.ts';
 import { CompactionLogRepository } from './compaction-records.ts';
+import { importedChaptersAt } from './imported-chapters.ts';
+import { factsOfTabAt } from './imported.ts';
 import { connectReadOnly } from './connection.ts';
 import { openStoreAt, storeOver, type Store, type StoreSettings } from './database.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
 import type { NewerDatabase } from './open.ts';
+import { RequestsStore } from './requests.ts';
 import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
 
@@ -209,5 +215,90 @@ export function operatorAnchors(path: string): CheckAnchors {
         return new Map();
     } finally {
         db.close();
+    }
+}
+
+export function importedChapters(path: string, tab: string): readonly ImportedChapter[] | null {
+    const file = parseFsPath(path);
+    const id = parseTabId(tab);
+    return file.kind === 'err' || id.kind === 'err' ? null : importedChaptersAt(file.value, id.value);
+}
+
+export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
+    const file = parseFsPath(path);
+    const id = parseTabId(tab);
+    return file.kind === 'err' || id.kind === 'err' ? null : factsOfTabAt(file.value, id.value);
+}
+
+export class RequestsRepository implements Requests, CompactionQueue {
+    private readonly store: RequestsStore;
+
+    constructor(db: Database, now: () => number = Date.now) {
+        this.store = new RequestsStore(db, () => instant(now()));
+    }
+
+    compactQueued(tab: TabId, pane: PaneId): boolean {
+        return this.store.compactQueued(tab, pane) === 'queued';
+    }
+
+    request(tab: string): void {
+        this.store.request(tabId(tab));
+    }
+
+    requestVisibility(request: VisibilityRequest): void {
+        let visibility: Visibility = request.hidden ? 'hidden' : 'shown';
+        if (request.hidden === 'toggle') visibility = 'toggle';
+        this.store.requestVisibility({ target: paneId(request.target), visibility });
+    }
+
+    requestCompact(request: CompactRequest): void {
+        this.store.requestCompact({
+            tab: tabId(request.tab), pane: request.pane === null ? null : paneId(request.pane), note: request.note === null ? null : must(parseText(request.note)),
+            ...(request.origin === undefined ? {} : { origin: request.origin }), ...(request.answer === undefined ? {} : { answer: must(parseText(request.answer)) }),
+        });
+    }
+
+    requestCurate(tab: string): void {
+        this.store.requestCurate(tabId(tab));
+    }
+
+    requestHandoff(request: NewHandoffRequest): HandoffId {
+        return this.store.requestHandoff({
+            tab: request.tab, pane: request.pane, toPane: request.toPane, note: request.note === null ? null : must(parseText(request.note)),
+            refresh: request.refreshFirst ? 'refresh-first' : 'as-is', source: request.source, ...(request.answer === undefined ? {} : { answer: request.answer }),
+        });
+    }
+
+    withdrawHandoff(id: HandoffId): boolean {
+        return this.store.withdrawHandoff(id) === 'withdrawn';
+    }
+
+    takeHandoffs(): readonly HandoffRequestRow[] {
+        const rows: HandoffRequestRow[] = [];
+        for (const record of this.store.takeHandoffs()) rows.push({
+            id: record.id, at: record.at, tab: record.tab, pane: record.pane, toPane: record.toPane, refreshFirst: record.refresh === 'refresh-first',
+            note: record.note, source: record.source, ...(record.answer === undefined ? {} : { answer: record.answer }),
+        });
+        return rows;
+    }
+
+    takeRequests(): readonly TabId[] {
+        return this.store.takeRequests();
+    }
+
+    takeVisibility(): readonly VisibilityRequest[] {
+        return this.store.takeVisibility().map((ask) => ({ target: ask.target, hidden: ask.visibility === 'toggle' ? 'toggle' : ask.visibility === 'hidden' }));
+    }
+
+    takeCompactions(): readonly CompactRequest[] {
+        return this.store.takeCompactions();
+    }
+
+    takeCurations(): readonly TabId[] {
+        return this.store.takeCurations();
+    }
+
+    takeAnswered(): readonly AnswerRow[] {
+        return this.store.takeAnswered();
     }
 }

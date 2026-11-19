@@ -12,6 +12,10 @@ import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 
+type CuratedRunId = RunId;
+
+const isCuratedRunId = (input: unknown): input is CuratedRunId => typeof input === 'string' && input.startsWith('run_');
+
 export type CurationChange = { readonly story: Text | null; readonly merges: readonly CloseOp[]; readonly reconciled?: readonly (UpdateOp | CloseOp)[] };
 
 export class StoriesRepository implements Stories {
@@ -44,7 +48,11 @@ export class StoriesRepository implements Stories {
             if (latest === undefined) {
                 throw new Error(`${run.task.tab} has no run: a curator has nothing to attribute its merges to`);
             }
-            const ref = { id: typeIdOf('run', latest.id) as RunId, task: run.task, at: run.at, language: run.language, mint: (): FactId => { throw new Error('the curator adds no fact'); } };
+            const id = typeIdOf('run', latest.id);
+            if (!isCuratedRunId(id)) {
+                throw new Error(`${id} is not a run id`);
+            }
+            const ref = { id, task: run.task, at: run.at, language: run.language, mint: (): FactId => { throw new Error('the curator adds no fact'); } };
             const applied = this.ledger.apply(ref, [...change.merges, ...(change.reconciled ?? [])]);
             if (change.story !== null) {
                 this.orm.update(tasks).set({ storyText: change.story, storyAt: run.at })

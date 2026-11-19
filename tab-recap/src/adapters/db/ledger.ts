@@ -1,7 +1,8 @@
 import type { Database } from 'bun:sqlite';
 import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
+import { must } from '#src/protocol/result.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId, tabId } from '#src/recap/domain/ids.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -39,7 +40,7 @@ export class LedgerRepository implements Ledger {
     }
 
     historyOf(tab: string, pane: string): readonly HistoryFact[] {
-        return guarded(() => this.history.read(tab, pane), []);
+        return guarded(() => this.history.read(must(parseTabId(tab)), must(parsePaneId(pane))), []);
     }
 
     apply(run: RunRef, ops: readonly Operation[]): Applied {

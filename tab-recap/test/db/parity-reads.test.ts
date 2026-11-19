@@ -91,16 +91,16 @@ describe('parity: the recap reader on the Drizzle projection', () => {
         withParity((db) => { db.exec(SEED); }, (parity) => {
             const reader = new RecapReader(parity.raw, NO_LEDGER);
             for (const tab of ['t1', 't2', 't3', 't4']) {
-                assert.deepEqual(shapeOf(reader.read(tab)), expectedShape(parity.raw, tab));
+                assert.deepEqual(shapeOf(reader.read(tabId(tab))), expectedShape(parity.raw, tab));
             }
-            assert.equal(reader.read('nope'), null);
+            assert.equal(reader.read(tabId('nope')), null);
         });
     });
 
     test('the task lanes follow the statement order', () => {
         const lanes = `INSERT INTO run_task_lane (run_id, task_id, transcript_id, position) VALUES (${L(30)}, ${L(14)}, ${L(8)}, 1), (${L(30)}, ${L(14)}, ${L(6)}, 0);`;
         withParity((db) => { db.exec(SEED); db.exec(lanes); }, (parity) => {
-            const recap = new RecapReader(parity.raw, NO_LEDGER).read('t1');
+            const recap = new RecapReader(parity.raw, NO_LEDGER).read(tabId('t1'));
             const expected = rawRows(parity.raw, TASK_LANES, keyOf(30)).map((row) => row.pane);
             assert.ok(expected.length > 0);
             assert.deepEqual(recap?.tasks.flatMap((task) => task.lanes).toSorted(byText), expected.toSorted(byText));
