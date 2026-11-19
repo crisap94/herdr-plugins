@@ -27,3 +27,11 @@ export interface Disagreement {
     readonly reason: string | null;
     readonly at: number;
 }
+
+export interface Verdicts {
+    add(verdicts: readonly Verdict[]): void;
+    ofRun(run: string): readonly Verdict[];
+    labelled(check?: string | null): ReadonlySet<string>;
+    pairs(): readonly Pair[];
+    disagreements(): readonly Disagreement[];
+}

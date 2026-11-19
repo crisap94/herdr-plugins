@@ -100,7 +100,10 @@
     "property": 3
   },
   "src/adapters/db/session-source.ts": {
-    "parameter": 1
+    "parameter": 3,
+    "return": 2,
+    "container": 4,
+    "property": 2
   },
   "src/adapters/db/stories.ts": {
     "assertion": 1
@@ -123,5 +126,9 @@
   },
   "src/adapters/db/uuid7.ts": {
     "return": 4
+  },
+  "src/adapters/db/verdicts.ts": {
+    "parameter": 2,
+    "container": 2
   }
 }

@@ -19,7 +19,6 @@ import { checksOf, ledgerText, reportOf } from '#src/recap/application/replay-re
 import { scratchDir } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
@@ -147,7 +146,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
         assert.match(text, /the last good 1\.x recap of each chapter of w1:t9 against the replay's ledger state at the same time/);
         assert.match(text, /chapter 1 \(2026-10-07 09:20, 1 key facts\)/);
         assert.match(text, /I1/);
-        assert.equal(scratch.store.verdicts.ofRun(brand<string, 'RunId'>(scratch.store.inputs.runs({ tab: 'replay:t1', since: null, limit: 5, withInput: true })[0]?.id ?? '')).length > 0, true, 'the replay\'s verdicts are kept in the scratch store');
+        assert.equal(scratch.store.verdicts.ofRun(scratch.store.inputs.runs({ tab: 'replay:t1', since: null, limit: 5, withInput: true })[0]?.id ?? '').length > 0, true, 'the replay\'s verdicts are kept in the scratch store');
     } finally {
         scratch.dispose();
     }

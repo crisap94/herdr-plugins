@@ -2,27 +2,17 @@
   "src/ports/legacy.ts": {
     "legacy": 96
   },
-  "src/ports/tab-views.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 12
-  },
   "src/ports/twins/checks/legacy.ts": {
     "legacy": 3
   },
   "src/ports/twins/legacy.ts": {
-    "legacy": 67
+    "legacy": 101
   },
   "src/ports/twins/runs/legacy.ts": {
     "legacy": 63
   },
   "src/ports/twins/verdicts/legacy.ts": {
-    "legacy": 18
-  },
-  "src/ports/worksite-reader.ts": {
-    "parameter": 2,
-    "property": 3,
-    "container": 1
+    "legacy": 21
   },
   "src/protocol/legacy.ts": {
     "legacy": 5

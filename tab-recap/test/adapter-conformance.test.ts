@@ -63,7 +63,6 @@ import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { textOf } from './fakes/decider-fixtures.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -137,7 +136,7 @@ function rows(): Row[] {
         compactable: true,
     });
 
-    const screens: Screens = { readScreen: (pane): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: brand<string, 'Text'>(pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.'), revision: brand<number, 'Count'>(1), truncated: 'absent' }) };
+    const screens: Screens = { readScreen: (pane): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.', revision: 1, truncated: false }) };
     out.push({
         kind: 'gemini', reader: new ScreenTranscripts(screens, (agent) => agent === 'gemini'),
         empty: lane('gemini', { pane: 'w1:p8' }), recorded: lane('gemini', { pane: 'w1:p3' }), unplaced: lane('zed'),
@@ -285,7 +284,7 @@ test('gemini history and compaction lookups refuse with their established wordin
 });
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
-    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: brand<string, 'Text'>(''), revision: brand<number, 'Count'>(1), truncated: 'absent' }) };
+    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: '', revision: 1, truncated: false }) };
     const daemon = daemonTranscriptRegistry(screens, () => true);
     assert.equal(modalTranscriptRegistry().unavailableReason('gemini'), 'no reader for gemini');
     assert.equal(modalTranscriptRegistry().unavailableReason('zed'), 'no reader for zed');

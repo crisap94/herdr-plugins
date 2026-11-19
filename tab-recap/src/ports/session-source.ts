@@ -4,14 +4,16 @@ import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
-export interface CompactionTokens {
+export type { CompactionTokens, SessionSource } from './twins/legacy.ts';
+
+export interface CompactionTokensRecord {
     readonly tokensBefore: Count | null;
     readonly tokensAfter: Count | null;
     readonly origin: Origin;
 }
 
-export interface SessionSource {
+export interface SessionSourcePort {
     firstSeen(tab: TabId): Instant | null;
     runsByCause(tab: TabId): Readonly<Record<Text, Count>>;
-    compactions(tab: TabId): readonly CompactionTokens[];
+    compactions(tab: TabId): readonly CompactionTokensRecord[];
 }

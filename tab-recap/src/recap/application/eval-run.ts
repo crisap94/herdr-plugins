@@ -1,8 +1,6 @@
 import type { Judge } from '#src/ports/judge.ts';
 import type { RunInputs, RunQuery } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
 import { agreeLines, candidateLines, gateLines, reportLines } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import { answerOf, candidatesOf, labelVerdicts } from './eval-label.ts';
@@ -68,7 +66,7 @@ async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, 
 
 async function label(options: EvalOptions, deps: EvalDeps): Promise<number> {
     const runs = deps.inputs.runs(queryOf(options, deps, LABEL_RUNS, false));
-    const items = candidatesOf(runs, deps.inputs, deps.verdicts.labelled(options.check === null ? null : must(parseText(options.check))), options.count, options.check);
+    const items = candidatesOf(runs, deps.inputs, deps.verdicts.labelled(options.check), options.count, options.check);
     if (items.length === 0) {
         deps.out(options.check === null ? 'no unlabelled items in the period' : `no items in the period that ${options.check} has not been asked about`);
         return 0;

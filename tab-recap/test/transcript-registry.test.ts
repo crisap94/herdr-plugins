@@ -3,7 +3,6 @@ import test from 'node:test';
 import { readerKindOf, daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { Screens } from '#src/ports/screens.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 
 test('exact lookup returns the reader for each registered kind', () => {
     const registry = modalTranscriptRegistry();
@@ -15,7 +14,7 @@ test('exact lookup returns the reader for each registered kind', () => {
 });
 
 test('exact lookup never falls back and readerFor prefers an exact reader', () => {
-    const screens: Screens = { readScreen: async () => ({ kind: 'screen', text: brand<string, 'Text'>(''), revision: brand<number, 'Count'>(1), truncated: 'absent' }) };
+    const screens: Screens = { readScreen: async () => ({ kind: 'screen', text: '', revision: 1, truncated: false }) };
     const registry = daemonTranscriptRegistry(screens, () => true);
     assert.equal(registry.exact('gemini'), undefined);
     assert.equal(registry.readerFor('gemini')?.agent, SCREEN_READER_ID);
@@ -23,7 +22,7 @@ test('exact lookup never falls back and readerFor prefers an exact reader', () =
 });
 
 test('prototype-key kinds are unknown and use only the configured fallback', () => {
-    const screens: Screens = { readScreen: async () => ({ kind: 'screen', text: brand<string, 'Text'>(''), revision: brand<number, 'Count'>(1), truncated: 'absent' }) };
+    const screens: Screens = { readScreen: async () => ({ kind: 'screen', text: '', revision: 1, truncated: false }) };
     const registry = daemonTranscriptRegistry(screens, () => true);
     for (const kind of ['constructor', 'toString', '__proto__']) {
         assert.equal(readerKindOf(kind), null);

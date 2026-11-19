@@ -4,12 +4,14 @@ import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
-import type { WindowOf } from '#src/recap/domain/compaction.ts';
+import type { ContextUse, WindowOf } from '#src/recap/domain/compaction.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
+import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-import type { TabLane } from '../tab-views.ts';
+import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
 
 export interface AutocompactBriefs {
     put(decisionId: string, brief: string, appended: readonly number[], checked: readonly CheckedFact[], briefedAt: number): void;
@@ -141,3 +143,74 @@ export interface RunInputs {
 export type SessionOf = (kind: string, agentSession: AgentSession) => SessionId | null;
 
 export type WorkspacesResult = { readonly kind: 'workspaces'; readonly ids: readonly string[] } | Unknown;
+
+export interface LaneWeb {
+    readonly base: string;
+    readonly forge: Forge;
+    readonly branch: string | null;
+}
+
+export interface TabLane {
+    readonly pane: string;
+    readonly agent: string;
+    readonly status: string;
+    readonly title: string | null;
+    readonly cwd: string | null;
+    readonly lastPrompt?: string | null;
+    readonly web?: LaneWeb | null;
+    readonly context?: ContextUse | null;
+    readonly since?: Instant | null;
+}
+
+export interface TabView {
+    readonly tab: string;
+    readonly column: string | null;
+    readonly lanes: readonly TabLane[];
+    readonly at: number;
+    readonly daemonVersion?: string | null;
+}
+
+export interface TabViews {
+    readTab(tab: string): TabView | null;
+    writeTab(view: TabView): void;
+    tabOf(pane: string): string | null;
+}
+
+export interface LastCommit {
+    readonly hash: string;
+    readonly subject: string;
+}
+
+export type LastCommitResult = ({ readonly kind: 'commit' } & LastCommit) | Unknown;
+
+export interface UncommittedPaths {
+    readonly count: number;
+    readonly paths: readonly string[];
+}
+
+export type UncommittedResult = ({ readonly kind: 'paths' } & UncommittedPaths) | Unknown;
+
+export interface WorksiteReader {
+    lastCommit(directory: string): Promise<LastCommitResult>;
+    uncommitted(directory: string): Promise<UncommittedResult>;
+}
+
+export type ScreenResult =
+    | { readonly kind: 'screen'; readonly text: string; readonly revision: number; readonly truncated: boolean }
+    | Unknown;
+
+export interface Screens {
+    readScreen(pane: string, lines: number): Promise<ScreenResult>;
+}
+
+export interface CompactionTokens {
+    readonly tokensBefore: number | null;
+    readonly tokensAfter: number | null;
+    readonly origin: Origin;
+}
+
+export interface SessionSource {
+    firstSeen(tab: string): number | null;
+    runsByCause(tab: string): Readonly<Record<string, number>>;
+    compactions(tab: string): readonly CompactionTokens[];
+}

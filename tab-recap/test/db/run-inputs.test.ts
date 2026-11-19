@@ -117,12 +117,12 @@ test('verdicts round-trip, one transaction; operator labels are found; pairs joi
         verdict({ run: id, check: 'I1', pass: true, at: 3, source: 'operator', judge: 'operator' }),
         verdict({ run: id, item: 't1/done/1', check: 'I3', pass: true, at: 3, source: 'operator', judge: 'operator' }),
     ]);
-    assert.equal(store.verdicts.ofRun(brand<string, 'RunId'>(id)).length, 7);
-    assert.deepEqual(store.verdicts.ofRun(brand<string, 'RunId'>(id)).find((v) => v.critique !== null), { ...verdict({ run: id, check: 'I3', pass: false, critique: 'names nothing', at: 2 }) });
+    assert.equal(store.verdicts.ofRun(id).length, 7);
+    assert.deepEqual(store.verdicts.ofRun(id).find((v) => v.critique !== null), { ...verdict({ run: id, check: 'I3', pass: false, critique: 'names nothing', at: 2 }) });
     assert.deepEqual([...store.verdicts.labelled()].toSorted(), [`${id}|t1/done/0`, `${id}|t1/done/1`]);
     assert.deepEqual(store.verdicts.pairs().toSorted(byCheck), [{ check: 'I1', judge: true, operator: true }, { check: 'I3', judge: false, operator: false }]);
     assert.throws(() => { store.verdicts.add([verdict({ run: 'nonsense' })]); }, /not a run id/);
-    assert.equal(store.verdicts.ofRun(brand<string, 'RunId'>(id)).length, 7, 'a failed batch writes nothing');
+    assert.equal(store.verdicts.ofRun(id).length, 7, 'a failed batch writes nothing');
 });
 
 test('retention: a brief retention of none deletes every checked brief at the daily upkeep, the newest included', () => {

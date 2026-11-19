@@ -85,9 +85,9 @@ test('readScreen asks terminal.read for the screen, keeps the last lines and cou
     await withFleet(async (core, fleet) => {
         core.on('terminal.read', () => ({ text: 'a\nb\nc\nd', complete: true, how: 'screen', why: null }));
         const first = await fleet.readScreen(paneId('t1'), count(2));
-        assert.deepEqual(first, { kind: 'screen', text: 'c\nd', revision: 1, truncated: 'present' });
+        assert.deepEqual(first, { kind: 'screen', text: 'c\nd', revision: 1, truncated: true });
         const second = await fleet.readScreen(paneId('t1'), count(10));
-        assert.deepEqual(second, { kind: 'screen', text: 'a\nb\nc\nd', revision: 2, truncated: 'absent' });
+        assert.deepEqual(second, { kind: 'screen', text: 'a\nb\nc\nd', revision: 2, truncated: false });
         assert.deepEqual(core.seen.filter((seen) => seen.method === 'terminal.read').map((seen) => seen.params), [{ terminal: 't1', lines: 0 }, { terminal: 't1', lines: 0 }]);
         core.on('terminal.read', () => { throw new FakeFault(-32000, 'not_found', 'no terminal'); });
         const gone = await fleet.readScreen(paneId('t9'), count(5));

@@ -11,7 +11,6 @@ import { sessionOfForKind } from './session-registry.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { ClosedAll, Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
@@ -176,11 +175,11 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         }
     }
 
-    async readScreen(pane: PaneId, lines: Count): Promise<ScreenResult> {
+    async readScreen(pane: string, lines: number): Promise<ScreenResult> {
         try {
             const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
             return typeof fields['text'] === 'string'
-                ? { kind: 'screen', text: must(parseText(fields['text'])), revision: must(parseCount(typeof fields['revision'] === 'number' ? fields['revision'] : 0)), truncated: fields['truncated'] === true ? 'present' : 'absent' }
+                ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
                 : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`pane.read of ${pane} returned no text`))) });
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });

@@ -18,12 +18,6 @@ export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
 const NO_DECISIONS: DecisionCounts = { decisions: must(parseCount(0)), compacted: must(parseCount(0)), waited: must(parseCount(0)) };
 
-type SessionReads = {
-    readonly firstSeen: ReturnType<SessionSource['firstSeen']>;
-    readonly runs: ReturnType<SessionSource['runsByCause']>;
-    readonly compactions: ReturnType<SessionSource['compactions']>;
-};
-
 export interface ExpandedDeps {
     readonly records: RecapRecords;
     readonly ledger: Ledger;
@@ -75,14 +69,6 @@ export class ExpandedModel {
         return { task: { name: task.name, facts, story, curating: stale && waiting !== undefined && now - waiting.at < CURATING_MS }, asks };
     }
 
-    private sessionReads(counted: ReturnType<typeof parseTabId>): SessionReads {
-        if (counted.kind === 'err') {
-            return { firstSeen: null, runs: {}, compactions: [] };
-        }
-        const id = counted.value;
-        return { firstSeen: this.deps.session.firstSeen(id), runs: this.deps.session.runsByCause(id), compactions: this.deps.session.compactions(id) };
-    }
-
     read(tab: string, view: TabView | null, now: number): ExpandedData {
         const recap = this.deps.records.readRecap(tab);
         const found = (recap?.tasks ?? []).map((task) => this.taskOf(tab, task, now));
@@ -91,9 +77,8 @@ export class ExpandedModel {
         }
         const lanes = view?.lanes ?? [];
         const counted = parseTabId(tab);
-        const reads = this.sessionReads(counted);
         const session = sessionFactsOf({
-            firstSeen: reads.firstSeen, now, runs: reads.runs, compactions: reads.compactions,
+            firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
             chapters: this.deps.boundaries.chapterCount(tab),

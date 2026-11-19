@@ -1,9 +1,7 @@
 import type { RunId } from '#src/recap/domain/fact.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Disagreement, Pair, Verdict } from './twins/verdicts/legacy.ts';
-
-export type { Disagreement, Pair, Verdict, VerdictSource } from './twins/verdicts/legacy.ts';
+export type { Disagreement, Pair, Verdict, Verdicts, VerdictSource } from './twins/verdicts/legacy.ts';
 
 export type Outcome = 'pass' | 'fail';
 
@@ -35,10 +33,10 @@ export interface DisagreementRecord {
     readonly at: Instant;
 }
 
-export interface Verdicts {
-    add(verdicts: readonly Verdict[]): void;
-    ofRun(run: RunId): readonly Verdict[];
+export interface VerdictStore {
+    add(verdicts: readonly VerdictRecord[]): void;
+    ofRun(run: RunId): readonly VerdictRecord[];
     labelled(check?: Text | null): ReadonlySet<Text>;
-    pairs(): readonly Pair[];
-    disagreements(): readonly Disagreement[];
+    pairs(): readonly PairRecord[];
+    disagreements(): readonly DisagreementRecord[];
 }

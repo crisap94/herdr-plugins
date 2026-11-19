@@ -16,7 +16,6 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 import { VerdictsRepository } from '#src/adapters/db/verdicts.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
@@ -67,21 +66,21 @@ const count = (parity: { reader: Database }, sql: string, tab: string): number =
 describe('parity: finish (boundaries, reads, retention, session source, stories, verdicts)', () => {
     test('session source: firstSeen matches the raw tab lookup', () => {
         withParity(seedAll, (parity) => {
-            const first = new SessionSourceRepository(parity.raw).firstSeen(tabId('t1'));
+            const first = new SessionSourceRepository(parity.raw).firstSeen('t1');
             expectSameRows(parity, { sql: 'SELECT first_seen FROM tab WHERE id = ?', params: ['t1'] }, [{ first_seen: first }]);
         });
     });
 
     test('session source: runsByCause groups the tab runs like the raw GROUP BY', () => {
         withParity(seedAll, (parity) => {
-            const produced = Object.entries(new SessionSourceRepository(parity.raw).runsByCause(tabId('t1'))).map(([cause, n]) => ({ cause, n }));
+            const produced = Object.entries(new SessionSourceRepository(parity.raw).runsByCause('t1')).map(([cause, n]) => ({ cause, n }));
             expectSameRows(parity, { sql: SESSION_RUNS, params: ['t1'] }, produced);
         });
     });
 
     test('session source: compactions lists the compacted stage rows in order', () => {
         withParity(seedAll, (parity) => {
-            const produced = new SessionSourceRepository(parity.raw).compactions(tabId('t1')).map((each) => ({ tokens_before: each.tokensBefore, tokens_after: each.tokensAfter, origin: each.origin }));
+            const produced = new SessionSourceRepository(parity.raw).compactions('t1').map((each) => ({ tokens_before: each.tokensBefore, tokens_after: each.tokensAfter, origin: each.origin }));
             expectSameRows(parity, { sql: SESSION_COMPACTED, params: ['t1'] }, produced, (row) => ({ tokens_before: row.tokens_before, tokens_after: row.tokens_after, origin: row.origin }));
         });
     });
@@ -168,7 +167,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('verdicts: ofRun returns the run verdicts like the raw select', () => {
         withParity(seedAll, (parity) => {
-            const produced = new VerdictsRepository(parity.raw).ofRun(brand<string, 'RunId'>(RUN_ID));
+            const produced = new VerdictsRepository(parity.raw).ofRun(RUN_ID);
             expectSameRows(parity, { sql: VERDICT_OF_RUN, params: [keyOf(4)] }, produced, (row) => ({
                 run: typeIdOf('run', row.run_id as Uint8Array), item: row.item_key, check: row.check_id, pass: Number(row.pass) === 1,
                 critique: row.critique, judge: row.judge, at: Number(row.at), source: row.source,
@@ -180,7 +179,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
         withParity(seedAll, (parity) => {
             const verdicts = new VerdictsRepository(parity.raw);
             assert.deepStrictEqual([...verdicts.labelled()].toSorted(), toKeys(parity.reader.prepare(LABELLED).all(null) as Record<string, unknown>[]));
-            assert.deepStrictEqual([...verdicts.labelled(brand<string, 'Text'>('c1'))].toSorted(), toKeys(parity.reader.prepare(LABELLED).all('c1') as Record<string, unknown>[]));
+            assert.deepStrictEqual([...verdicts.labelled('c1')].toSorted(), toKeys(parity.reader.prepare(LABELLED).all('c1') as Record<string, unknown>[]));
         });
     });
 

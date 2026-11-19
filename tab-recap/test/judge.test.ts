@@ -10,7 +10,6 @@ import type { StoredRun } from '#src/ports/run-inputs.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
-import { brand } from '#src/recap/domain/brand.ts';
 
 const SECTIONS = { goal: 'Ship retries for the upload client.', now: [], needs: [], done: ['Merged !256 after both pipelines went green.', 'Spent the morning on it.'], decisions: ['Keep three retries because the API limits bursts.'], next: [], links: ['!256'], rules: [] };
 const CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
@@ -60,7 +59,7 @@ test('a sampled run: a verdict per item and check, key facts and coverage, fille
     const result = await judgeRun(deps, run);
     assert.ok(result.kind === 'judged');
     assert.deepEqual(asked.map((call) => call.task), ['score', 'readback', 'grade']);
-    const stored = store.verdicts.ofRun(brand<string, 'RunId'>(run.id));
+    const stored = store.verdicts.ofRun(run.id);
     assert.equal(stored.filter((v) => CHECKS.includes(v.check)).length, 5 * 7, 'seven item checks for each of five items');
     assert.equal(stored.filter((v) => v.check.startsWith('S-')).length, 5, 'and the section check of each');
     assert.deepEqual(stored.filter((v) => !v.pass && v.item === 't1/done/1' && v.check !== 'filler').map((v) => [v.check, v.critique]).toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))), [['I3', 'effort, not a result'], ['S-done', 'effort, not a result']]);
@@ -86,7 +85,7 @@ test('an unparsable answer is a run not judged, nothing stored, and the next run
     const { deps, run, store } = setup({ score: 'I think it is fine.' });
     const result = await judgeRun(deps, run);
     assert.deepEqual([result.kind, result.kind === 'not-judged' ? result.why : ''], ['not-judged', 'the answer holds no JSON object']);
-    assert.deepEqual(store.verdicts.ofRun(brand<string, 'RunId'>(run.id)), []);
+    assert.deepEqual(store.verdicts.ofRun(run.id), []);
     const answers = ['nonsense', SCORE];
     const text = (task: JudgeTask): string => ({ score: answers.shift() ?? SCORE, readback: ANSWERS, grade: GRADES, cover: '' })[task];
     const flaky: JudgeDeps = { ...deps, judge: { label: 'x', ask: (task) => Promise.resolve({ kind: 'said', text: text(task), costUsd: 0 }) } };
@@ -100,7 +99,7 @@ test('answers with the wrong shape are not usable: no verdicts, no key facts, it
     for (const bad of ['{"verdicts":[]}', '{"verdicts":[{"item":"t9/x/0","check":"I1","pass":true}],"keyfacts":[],"coverage":[]}', '[1,2]', '{"verdicts":[{"item":"t1/goal/0","check":"I9","pass":true}],"keyfacts":[],"coverage":[]}']) {
         const { deps, run, store } = setup({ score: bad });
         assert.equal((await judgeRun(deps, run)).kind, 'not-judged', bad);
-        assert.deepEqual(store.verdicts.ofRun(brand<string, 'RunId'>(run.id)), [], bad);
+        assert.deepEqual(store.verdicts.ofRun(run.id), [], bad);
     }
 });
 
@@ -111,7 +110,7 @@ test('a verdict for an item\'s own section only: S-done on a goal is dropped; th
     });
     const { deps, run, store } = setup({ score: answer, readback: ANSWERS, grade: GRADES });
     await judgeRun(deps, run);
-    assert.deepEqual(store.verdicts.ofRun(brand<string, 'RunId'>(run.id)).filter((v) => v.item === 't1/goal/0' && v.check !== 'filler').map((v) => [v.check, v.pass]), [['S-goal', true]]);
+    assert.deepEqual(store.verdicts.ofRun(run.id).filter((v) => v.item === 't1/goal/0' && v.check !== 'filler').map((v) => [v.check, v.pass]), [['S-goal', true]]);
 });
 
 test('a run whose input was deleted, one the model cannot be reached for, and an unusable read-back', async () => {
@@ -125,5 +124,5 @@ test('a run whose input was deleted, one the model cannot be reached for, and an
     const judged = await judgeRun(partial.deps, partial.run);
     assert.ok(judged.kind === 'judged');
     assert.deepEqual([judged.readback, judged.note], [null, 'read-back: the answer is not six strings']);
-    assert.ok(partial.store.verdicts.ofRun(brand<string, 'RunId'>(partial.run.id)).length > 0 && partial.store.verdicts.ofRun(brand<string, 'RunId'>(partial.run.id)).every((v) => !v.check.startsWith('readback')), 'the scores are kept');
+    assert.ok(partial.store.verdicts.ofRun(partial.run.id).length > 0 && partial.store.verdicts.ofRun(partial.run.id).every((v) => !v.check.startsWith('readback')), 'the scores are kept');
 });
