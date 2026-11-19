@@ -1,7 +1,7 @@
 import type { Messages } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
-import { agoIn } from './relative.ts';
+import { agoIn } from './legacy.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
 export const es: Messages = {
