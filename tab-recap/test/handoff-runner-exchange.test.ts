@@ -1,3 +1,4 @@
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
@@ -46,7 +47,7 @@ function setup(now: number): { readonly runner: HandoffRunner; readonly tokens: 
     const ran: number[] = [];
     const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => 'on', log: (): void => undefined });
     const flow = { execute: async (): Promise<ReturnType<typeof unrendered>> => { ran.push(1); return unrendered({ kind: 'delivered' }); } };
-    const runner = new HandoffRunner({ flow, asks, answers, claims: { release: (): void => undefined }, mirror, transaction: <T>(work: () => T): T => work(), now: (): number => now, log: (): void => undefined });
+    const runner = new HandoffRunner({ flow, asks, answers, claims: { release: (): void => undefined }, mirror, transaction: <T>(work: () => T): T => work(), now: (): Instant => instant(now), log: (): void => undefined });
     return { runner, tokens, answers, ran, asks };
 }
 

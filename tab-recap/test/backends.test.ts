@@ -11,6 +11,8 @@ import type { HarnessesResult } from '#src/ports/harnesses.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { causeOf } from './fakes/cause.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 
 const found = (...ids: string[]): HarnessesResult => ({ kind: 'available', ids });
 const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];
@@ -74,7 +76,7 @@ test('Backends: picks from the cache, says so when nothing is available, and toa
         const herdr = { available: (): Promise<HarnessesResult> => Promise.resolve(found(...ids)) };
         const path = { available: (): Promise<HarnessesResult> => Promise.resolve(found(...ids)) };
         const notifier = { notify: (title: string, body: string): Promise<{ kind: 'shown' }> => { toasts.push(`${title}: ${body}`); return Promise.resolve({ kind: 'shown' }); } };
-        const backends = new Backends(dir, { herdr, path }, notifier, (line) => { lines.push(line); }, fakeRuntime({ scripts: {} }));
+        const backends = new Backends(must(parseDirectory(dir)), { herdr, path }, notifier, (line) => { lines.push(line); }, fakeRuntime({ scripts: {} }));
         await backends.refresh();
         await backends.refresh();
         assert.equal(toasts.length, 1, 'one toast, not one per resync');

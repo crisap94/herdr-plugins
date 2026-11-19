@@ -23,7 +23,6 @@ import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
-import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
@@ -31,14 +30,15 @@ import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOf, type HandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
-import { parseHandoffId, sessionId, tabId, type HandoffId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, sessionId, type HandoffId } from '#src/recap/domain/ids.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { awaitingNow } from './autocompact.ts';
+import { awaitingNow, logVia, pauseVia, refreshVia } from './legacy.ts';
 import { within } from './bounded.ts';
-import { refreshedWithin } from './refresh-status.ts';
 
 export interface HandoffRunnerDeps {
     readonly flow: Pick<HandoffFlow, 'execute'>;
@@ -47,8 +47,8 @@ export interface HandoffRunnerDeps {
     readonly claims: Pick<LaneClaims, 'release'>;
     readonly mirror: HandoffMirror;
     readonly transaction: <T>(work: () => T) => T;
-    readonly now: () => number;
-    readonly log: (line: string) => void;
+    readonly now: () => Instant;
+    readonly log: (line: Text) => void;
 }
 
 const askIdOf = (id: HandoffId): RequestId | null => {
@@ -59,6 +59,8 @@ const askIdOf = (id: HandoffId): RequestId | null => {
 const internalError = (): HandoffRun => unrendered({ kind: 'failed', reason: 'internal-error' });
 
 const settledOf = (outcome: HandoffOutcome): AskOutcome => ({ kind: outcome.kind === 'delivered' ? 'done' : 'settled' });
+
+type AttemptOutcome = 'written' | 'failed';
 
 export class HandoffRunner {
     private readonly deps: HandoffRunnerDeps;
@@ -76,16 +78,12 @@ export class HandoffRunner {
             const id = parseHandoffId(ask.ref);
             const { asks, answers, transaction } = this.deps;
             transaction(() => {
-                if (id !== null) {
-                    answers.answerHandoff(id, { kind: 'failed', reason: 'interrupted' });
-                }
+                if (id !== null) { answers.answerHandoff(id, { kind: 'failed', reason: 'interrupted' }); }
                 asks.settle({ exchange: ask.exchange, id: ask.id, pane: ask.pane }, { kind: 'interrupted' });
             });
-            if (id === null) {
-                this.deps.log(`handoff ask ${ask.id}: interrupted without a handoff id; no answer written`);
-            }
+            if (id === null) { this.deps.log(must(parseText(`handoff ask ${ask.id}: interrupted without a handoff id; no answer written`))); }
         } catch (error) {
-            this.deps.log(`handoff ask ${ask.id}: restart sweep failed ${failureCauseOf(error)}`);
+            this.deps.log(must(parseText(`handoff ask ${ask.id}: restart sweep failed ${failureCauseOf(error)}`)));
         }
     }
 
@@ -97,7 +95,7 @@ export class HandoffRunner {
                 await this.serveAsked(row);
             }
         } catch (error) {
-            this.deps.log(`handoff ${row.id}: ${failureCauseOf(error)}`);
+            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(error)}`)));
         }
     }
 
@@ -108,7 +106,7 @@ export class HandoffRunner {
         }
         const id = askIdOf(row.id);
         if (id === null) {
-            this.deps.log(`handoff ${row.id}: not a handoff id; not run`);
+            this.deps.log(must(parseText(`handoff ${row.id}: not a handoff id; not run`)));
             return;
         }
         const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
@@ -119,7 +117,7 @@ export class HandoffRunner {
     private async serveAsked(row: HandoffRequestRow): Promise<void> {
         const route = this.deps.mirror.routeOf(row);
         if (route === null) {
-            this.deps.log(`handoff ${row.id}: no ask recorded for it; not run`);
+            this.deps.log(must(parseText(`handoff ${row.id}: no ask recorded for it; not run`)));
             return;
         }
         if (this.deps.now() - row.at > HANDOFF_TAKE_MAX_AGE_MS) {
@@ -137,10 +135,8 @@ export class HandoffRunner {
 
     private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
         const mark = new DeliveryMark();
-        const run = await within<HandoffRun | null>(this.deps.flow.execute(row, mark).catch((error: unknown) => this.crashed(row.id, error)), HANDOFF_FLOW_MAX_MS, null);
-        if (run !== null) {
-            return run;
-        }
+        const run = await within<HandoffRun | null>(this.executed(row, mark), HANDOFF_FLOW_MAX_MS, null);
+        if (run !== null) { return run; }
         const abandoned = mark.abandon();
         if (abandoned === 'claimed') {
             this.deps.claims.release(String(row.pane));
@@ -149,9 +145,13 @@ export class HandoffRunner {
         return unrendered({ kind: 'failed', reason: abandoned === 'typed' ? 'unconfirmed' : 'expired' });
     }
 
-    private crashed(id: HandoffId, error: unknown): HandoffRun {
-        this.deps.log(`handoff ${id}: ${failureCauseOf(error)}`);
-        return internalError();
+    private async executed(row: HandoffRequestRow, mark: DeliveryMark): Promise<HandoffRun> {
+        try {
+            return await this.deps.flow.execute(row, mark);
+        } catch (error) {
+            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(error)}`)));
+            return internalError();
+        }
     }
 
     private finish(id: HandoffId, run: HandoffRun, key: AskKey | null): void {
@@ -159,7 +159,7 @@ export class HandoffRunner {
         this.record(id, storedOf(outcome), key, settledOf(outcome));
         const reason = 'reason' in outcome ? ` ${outcome.reason}` : '';
         const text = rendered === null ? '' : ` bytes ${rendered.bytes} omitted ${rendered.omitted} withheld ${rendered.withheld}`;
-        this.deps.log(`handoff ${id}: ${outcome.kind}${reason}${text}`);
+        this.deps.log(must(parseText(`handoff ${id}: ${outcome.kind}${reason}${text}`)));
     }
 
     private record(id: HandoffId, stored: StoredHandoffOutcome, key: AskKey | null, settled: AskOutcome): void {
@@ -172,24 +172,20 @@ export class HandoffRunner {
                 }
             });
         };
-        if (this.attempt(write, `handoff ${id}: answer write failed, retrying`)) {
-            return;
-        }
-        if (this.attempt(write, `handoff ${id}: answer write failed again`)) {
-            return;
-        }
-        if (key !== null && this.attempt(() => { transaction(() => { asks.settle(key, { kind: 'settled' }); }); }, `handoff ${id}: ask settle failed`)) {
-            this.deps.log(`handoff ${id}: ask settled without its answer`);
+        if (this.attempt(write, must(parseText(`handoff ${id}: answer write failed, retrying`))) === 'written') { return; }
+        if (this.attempt(write, must(parseText(`handoff ${id}: answer write failed again`))) === 'written') { return; }
+        if (key !== null && this.attempt(() => { transaction(() => { asks.settle(key, { kind: 'settled' }); }); }, must(parseText(`handoff ${id}: ask settle failed`))) === 'written') {
+            this.deps.log(must(parseText(`handoff ${id}: ask settled without its answer`)));
         }
     }
 
-    private attempt(work: () => void, note: string): boolean {
+    private attempt(work: () => void, note: Text): AttemptOutcome {
         try {
             work();
-            return true;
+            return 'written';
         } catch (error) {
-            this.deps.log(`${note}: ${failureCauseOf(error)}`);
-            return false;
+            this.deps.log(must(parseText(`${note}: ${failureCauseOf(error)}`)));
+            return 'failed';
         }
     }
 }
@@ -197,16 +193,24 @@ export class HandoffRunner {
 interface HandoffPollParts {
     readonly runner: Pick<HandoffRunner, 'take'>;
     readonly requests: Pick<Requests, 'takeHandoffs'>;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
 interface HandoffPruneParts {
     readonly answers: Pick<HandoffAnswers, 'prune'>;
-    readonly now: () => number;
+    readonly now: () => Instant;
 }
 
 export function pollHandoffs(parts: HandoffPollParts): void {
-    parts.runner.take(parts.requests.takeHandoffs()).catch((error: unknown) => { parts.log(`handoff poll: ${failureCauseOf(error)}`); });
+    void pollOnce(parts);
+}
+
+async function pollOnce(parts: HandoffPollParts): Promise<void> {
+    try {
+        await parts.runner.take(parts.requests.takeHandoffs());
+    } catch (error) {
+        parts.log(must(parseText(`handoff poll: ${failureCauseOf(error)}`)));
+    }
 }
 
 export function pruneHandoffAnswers(parts: HandoffPruneParts): void {
@@ -226,37 +230,37 @@ export interface HandoffWiring {
     readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly board: () => Board;
     readonly mirror: HandoffMirror;
-    readonly pause: (ms: number) => Promise<void>;
-    readonly log: (line: string) => void;
+    readonly pause: (span: Duration) => Promise<void>;
+    readonly log: (line: Text) => void;
 }
 
-const now = (): number => Date.now();
+const now = (): Instant => instant(Date.now());
 
-async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lane: HandoffLane): Promise<string | null> {
+async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lane: HandoffLane): Promise<FsPath | null> {
     const full = board().lanes.get(lane.pane);
-    if (full === undefined) {
-        return null;
-    }
+    if (full === undefined) { return null; }
     const reader = transcripts.readerFor(String(lane.agent));
     const session = await readPaneSession(String(lane.pane));
-    if (reader === undefined || typeof session !== 'string') {
-        return null;
-    }
+    if (reader === undefined || typeof session !== 'string') { return null; }
     const located = await reader.locate({ ...full, session: sessionId(session) });
-    return isUnknown(located) ? null : located.source;
+    if (isUnknown(located)) { return null; }
+    const parsed = parseFsPath(located.source);
+    return parsed.kind === 'ok' ? parsed.value : null;
 }
 
 export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
-    const { store, fleet, transcripts, repos, claims, recaps, board, mirror, pause, log } = parts;
+    const { store, fleet, transcripts, repos, claims, recaps, board, mirror } = parts;
+    const pause = pauseVia(parts.pause);
+    const log = logVia(parts.log);
     const flow = new HandoffFlow({
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
         target: { plans: handoffPlans, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
-        claims, refresh: (tab: string, lanes: readonly Lane[]): Promise<RefreshStatus> => refreshedWithin(recaps.refresh(tabId(tab), lanes), store.records, tab, RECAP_WAIT_MS),
+        claims, refresh: refreshVia(recaps, store.records),
         render: renderHandoff({
             records: store.records,
             transcripts,
-            locate: (lane: HandoffLane): Promise<string | null> => sourceOf(transcripts, board, lane),
+            locate: (lane: HandoffLane): Promise<FsPath | null> => sourceOf(transcripts, board, lane),
             worksite: { reader: new GitWorksiteReader(), repo: repos, edits: new EditCounts(transcripts) },
             tokens: fleet,
         }),
@@ -268,5 +272,5 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         }),
         pause, now, log,
     });
-    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, mirror, transaction: (work) => writeTx(store.db, work), now, log });
+    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, mirror, transaction: (work) => writeTx(store.db, work), now, log: parts.log });
 }
