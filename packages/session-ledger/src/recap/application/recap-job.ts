@@ -1,6 +1,5 @@
-import type { TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
@@ -11,8 +10,7 @@ import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts'
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
-import { DEBOUNCE_OFF } from '#src/recap/domain/debounce.ts';
-import type { Debounce } from '#src/recap/domain/debounce.ts';
+import { DEBOUNCE_OFF, type Debounce } from '#src/recap/domain/debounce.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
 import { taskFactsOf, type TaskFacts } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
@@ -83,7 +81,7 @@ function stronger(previous: Pending | null, next: Pending): Pending {
 }
 
 function laneSet(lanes: readonly Lane[]): ReadonlySet<Lane['pane']> {
-    return new Set(lanes.map((lane) => lane.pane));
+    return new Set(lanes.map((entry) => entry.pane));
 }
 
 function sameLanes(left: ReadonlySet<Lane['pane']>, right: ReadonlySet<Lane['pane']>): boolean {
@@ -160,12 +158,8 @@ export class RecapJob {
         }
         slot.running = false;
         const done = slot.pending === null ? [...covered, ...slot.waiting.splice(0)] : covered;
-        for (const finish of done) {
-            finish();
-        }
-        if (slot.pending !== null) {
-            this.arm(slot, tab);
-        }
+        for (const finish of done) finish();
+        if (slot.pending !== null) this.arm(slot, tab);
     }
 
     refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> {
@@ -178,9 +172,7 @@ export class RecapJob {
     private async locate(lane: Lane): Promise<{ reader: Transcripts; source: string } | string> {
         const agent = String(lane.agent);
         const reader = this.deps.transcripts.readerFor(agent);
-        if (reader === undefined) {
-            return this.deps.transcripts.unavailableReason(agent);
-        }
+        if (reader === undefined) return this.deps.transcripts.unavailableReason(agent);
         const located = await reader.locate(lane);
         return isUnknown(located) ? saying(located.why) : { reader, source: located.source };
     }
@@ -188,28 +180,30 @@ export class RecapJob {
     private async read(lane: Lane, prior: TabRecap, budget: number): Promise<Reading> {
         const blank: LaneCursor = { pane: String(lane.pane), agent: String(lane.agent), transcript: '', cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title, lastPrompt: null, claudeRecap: null };
         const found = await this.locate(lane);
-        if (typeof found === 'string') {
-            return { lane, cursor: blank, chunk: null, grew: false, fresh: false, error: found };
-        }
+        if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: false, fresh: false, error: found };
         const { reader, source } = found;
         const was = prior.lanes.find((c) => c.pane === String(lane.pane) && c.transcript === source) ?? { ...blank, transcript: source };
         const chunk = await reader.read(source, { cursor: was.cursor, tail: was.tail }, budget);
-        if (isUnknown(chunk)) {
-            return { lane, cursor: was, chunk: null, grew: false, fresh: false, error: saying(chunk.why) };
-        }
-        const cursor: LaneCursor = {
-            ...was,
-            title: chunk.title ?? was.title,
-            lastPrompt: chunk.lastPrompt ?? was.lastPrompt,
-            claudeRecap: chunk.claudeRecap ?? was.claudeRecap,
-        };
+        if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: false, fresh: false, error: saying(chunk.why) };
+        const cursor: LaneCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };
         return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor, error: null };
+    }
+
+    private async readAll(prior: TabRecap, lanes: readonly Lane[], cause: RecapCause): Promise<readonly Reading[]> {
+        const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
+        try {
+            return await Promise.all(lanes.map((each) => this.read(each, prior, budget)));
+        } catch (error) {
+            const facts = { tab: prior.tab, at: this.deps.clock.now(), cause, backend: this.deps.summarizer().backend, costUsd: 0 };
+            this.deps.records.beginRun(facts.tab, facts.backend, facts.at);
+            this.deps.records.failRun({ ...facts, language: hasRecap(prior) ? prior.language : this.deps.language(), error: error instanceof Error ? error.message : String(error), lanes: prior.lanes });
+            throw error;
+        }
     }
 
     private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause, writerStarted: (at: ReturnType<Clock['now']>) => void): Promise<void> {
         const prior = this.deps.records.readRecap(String(tab)) ?? blankRecap(String(tab));
-        const budget = Math.floor(READ_BUDGET / Math.max(1, lanes.length));
-        const readings = await Promise.all(lanes.map((lane) => this.read(lane, prior, budget)));
+        const readings = await this.readAll(prior, lanes, cause);
         const want = this.deps.language();
         const switched = hasRecap(prior) && (prior.language !== want || (cause !== 'focused' && this.deps.ledger.keysOf(prior.tab).some((key) => this.deps.ledger.openOf({ tab: prior.tab, key }).some((fact) => fact.language !== want))));
         if (cause === 'focused' && hasRecap(prior) && !switched && !readings.some((r) => r.grew)) return;
@@ -221,10 +215,16 @@ export class RecapJob {
         return tasks.map((task) => taskFactsOf(ledger, { tab, key: task.id }, now));
     }
 
-    private piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
+    private async piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
         const { deps } = this;
         const closeEvidence = deps.closeEvidence?.() ?? 'off';
-        return extractPiped(summarizer, { ...request, closeEvidence }, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, closeEvidence, log: (line) => { deps.log(line); } });
+        try {
+            return await extractPiped(summarizer, { ...request, closeEvidence }, ground, { pipeline: deps.pipeline?.() ?? DEFAULT_PIPELINE, enumerator: deps.enumerator?.() ?? null, closeEvidence, log: (line) => { deps.log(line); } });
+        } catch (error) {
+            const text = error instanceof Error ? error.message : String(error);
+            deps.log(`recap writer: ${text}`);
+            return { kind: 'failed', error: text, cost: 0 };
+        }
     }
 
     private async prepared(prior: TabRecap, readings: readonly Reading[], language: { want: string; was: string }): Promise<{ tasks: readonly TaskShape[]; request: RecapRequest; ground: Ground }> {
