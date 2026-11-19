@@ -32,6 +32,7 @@
       "src/ports/judge.ts",
       "src/ports/lane-settling.ts",
       "src/ports/lane-tokens.ts",
+      "src/ports/legacy.ts",
       "src/ports/modal.ts",
       "src/ports/model-catalogue.ts",
       "src/ports/notifier.ts",

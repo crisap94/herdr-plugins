@@ -1,18 +1,30 @@
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+
+export type { CheckAnchor, CheckAnchors, Judge, Said } from './legacy.ts';
 
 export type JudgeTask = 'score' | 'readback' | 'grade' | 'cover';
 
-export type Said = { readonly kind: 'said'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export interface Judge {
-    readonly label: string;
-    ask(task: JudgeTask, document: string): Promise<Said>;
+export interface SaidText {
+    readonly kind: 'said';
+    readonly text: Text;
+    readonly costUsd: Usd;
 }
 
-export interface CheckAnchor {
-    readonly item: string;
-    readonly pass: boolean;
-    readonly reason: string;
+export type JudgeAnswer = SaidText | Unknown;
+
+export interface JudgePort {
+    readonly label: Text;
+    ask(task: JudgeTask, document: Text): Promise<JudgeAnswer>;
 }
 
-export type CheckAnchors = ReadonlyMap<string, readonly CheckAnchor[]>;
+export type AnchorVerdict = 'pass' | 'fail';
+
+export interface AnchorCheck {
+    readonly item: Text;
+    readonly verdict: AnchorVerdict;
+    readonly reason: Text;
+}
+
+export type AnchorChecks = ReadonlyMap<Text, readonly AnchorCheck[]>;

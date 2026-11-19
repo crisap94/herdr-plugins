@@ -3,72 +3,94 @@ import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
-export interface VisibilityRequest {
-    readonly target: string;
-    readonly hidden: boolean | 'toggle';
+export type {
+    AnswerRow,
+    CompactRequest,
+    CompactionQueue,
+    HandoffQueue,
+    HandoffRequestRow,
+    HandoffRequester,
+    HandoffResponder,
+    NewHandoffRequest,
+    Requests,
+    VisibilityRequest,
+} from './legacy.ts';
+
+export type Visibility = 'hidden' | 'shown' | 'toggle';
+
+export type RefreshFirst = 'refresh-first' | 'as-is';
+
+export type Withdrawal = 'withdrawn' | 'not-found';
+
+export type Queued = 'queued' | 'not-queued';
+
+export interface VisibilityAsk {
+    readonly target: PaneId;
+    readonly visibility: Visibility;
 }
 
-export interface CompactRequest {
-    readonly tab: string;
-    readonly pane: string | null;
-    readonly note: string | null;
+export interface CompactAsk {
+    readonly tab: TabId;
+    readonly pane: PaneId | null;
+    readonly note: Text | null;
     readonly origin?: Origin;
-    readonly answer?: string;
+    readonly answer?: Text;
 }
 
-export interface HandoffRequestRow {
+export interface HandoffAskRecord {
     readonly id: HandoffId;
-    readonly at: number;
+    readonly at: Instant;
     readonly tab: TabId;
     readonly pane: PaneId;
     readonly toPane: PaneId;
-    readonly refreshFirst: boolean;
-    readonly note: string | null;
+    readonly refresh: RefreshFirst;
+    readonly note: Text | null;
     readonly source: HandoffSource;
     readonly answer?: Text | null;
 }
 
-export interface NewHandoffRequest {
+export interface HandoffAsk {
     readonly tab: TabId;
     readonly pane: PaneId;
     readonly toPane: PaneId;
-    readonly note: string | null;
-    readonly refreshFirst: boolean;
+    readonly note: Text | null;
+    readonly refresh: RefreshFirst;
     readonly source: HandoffSource;
     readonly answer?: Text;
 }
 
-export interface HandoffRequester {
-    requestHandoff(request: NewHandoffRequest): HandoffId;
-    withdrawHandoff(id: HandoffId): boolean;
+export interface HandoffAsker {
+    requestHandoff(request: HandoffAsk): HandoffId;
+    withdrawHandoff(id: HandoffId): Withdrawal;
 }
 
-export interface HandoffQueue {
-    queueHandoff(ask: NewAsk, request: NewHandoffRequest): void;
+export interface HandoffAskQueue {
+    queueHandoff(ask: NewAsk, request: HandoffAsk): void;
 }
 
-export interface HandoffResponder {
-    takeHandoffs(): readonly HandoffRequestRow[];
+export interface HandoffTaker {
+    takeHandoffs(): readonly HandoffAskRecord[];
 }
 
-export interface AnswerRow {
-    readonly pane: string;
-    readonly answer: string;
+export interface AnsweredPane {
+    readonly pane: PaneId;
+    readonly answer: Text;
 }
 
-export interface Requests extends HandoffRequester, HandoffResponder {
-    request(tab: string): void;
-    requestVisibility(request: VisibilityRequest): void;
-    requestCompact(request: CompactRequest): void;
-    requestCurate(tab: string): void;
+export interface RequestPort extends HandoffAsker, HandoffTaker {
+    request(tab: TabId): void;
+    requestVisibility(request: VisibilityAsk): void;
+    requestCompact(request: CompactAsk): void;
+    requestCurate(tab: TabId): void;
     takeRequests(): readonly TabId[];
-    takeVisibility(): readonly VisibilityRequest[];
-    takeCompactions(): readonly CompactRequest[];
+    takeVisibility(): readonly VisibilityAsk[];
+    takeCompactions(): readonly CompactAsk[];
     takeCurations(): readonly TabId[];
-    takeAnswered(): readonly AnswerRow[];
+    takeAnswered(): readonly AnsweredPane[];
 }
 
-export interface CompactionQueue {
-    compactQueued(tab: TabId, pane: PaneId): boolean;
+export interface CompactionAskQueue {
+    compactQueued(tab: TabId, pane: PaneId): Queued;
 }

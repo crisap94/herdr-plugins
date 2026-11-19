@@ -1,15 +1,19 @@
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 
-export interface HandoffAnswerRow {
+export type { HandoffAnswerRow, HandoffAnswers } from './legacy.ts';
+
+export interface HandoffAnswerRecord {
     readonly kind: StoredHandoffOutcome['kind'];
-    readonly reason: string | null;
+    readonly reason: Text | null;
     readonly id: HandoffId;
-    readonly at: number;
+    readonly at: Instant;
 }
 
-export interface HandoffAnswers {
+export interface HandoffAnswerStore {
     answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void;
-    handoffAnswer(id: HandoffId): HandoffAnswerRow | null;
-    prune(before: number): void;
+    handoffAnswer(id: HandoffId): HandoffAnswerRecord | null;
+    prune(before: Instant): void;
 }

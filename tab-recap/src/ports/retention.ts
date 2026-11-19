@@ -1,17 +1,20 @@
+import type { Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
-export interface Removed {
-    readonly runs: number;
-    readonly chapters: number;
-    readonly boundaries: number;
-    readonly compactions: number;
-    readonly facts: number;
+export type { Removed, Retention } from './legacy.ts';
+
+export interface RemovedCounts {
+    readonly runs: Count;
+    readonly chapters: Count;
+    readonly boundaries: Count;
+    readonly compactions: Count;
+    readonly facts: Count;
 }
 
-export interface Retention {
-    expired(cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[];
-    remove(tab: TabId): Removed;
+export interface RetentionPort {
+    expired(cutoff: Instant, protectedTabs: readonly TabId[]): readonly TabId[];
+    remove(tab: TabId): RemovedCounts;
 }
 
 export type Retirement = 'retired' | 'nothing';
