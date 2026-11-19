@@ -9,14 +9,14 @@ export type {
     AnswerRow,
     CompactRequest,
     CompactionQueue,
-    HandoffQueue,
     HandoffRequestRow,
     HandoffRequester,
     HandoffResponder,
     NewHandoffRequest,
     Requests,
     VisibilityRequest,
-} from './legacy.ts';
+} from './twins/runs/legacy.ts';
+export type { HandoffQueue } from './legacy.ts';
 
 export type Visibility = 'hidden' | 'shown' | 'toggle';
 

@@ -1,27 +1,43 @@
-import type { TokenMap } from '#src/protocol/tokens.ts';
+import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export interface Topic {
-    readonly type: string;
-    readonly pane_id?: string;
+export type { FleetSource, Frame, FrameStream, SnapshotResult, StreamResult, Topic } from './twins/legacy.ts';
+
+export interface FleetTopic {
+    readonly type: Text;
+    readonly pane?: PaneId;
 }
 
-export interface Frame {
-    readonly event: string;
-    readonly data: Readonly<Record<string, unknown>>;
+export interface FleetFrame {
+    readonly event: Text;
+    readonly payload: Text;
 }
 
-export type SnapshotResult = { readonly kind: 'snapshot'; readonly seen: Reconciliation; readonly focusedTab: string | null; readonly paneTokens: ReadonlyMap<string, TokenMap> } | Unknown;
+export interface FleetSnapshot {
+    readonly kind: 'snapshot';
+    readonly seen: Reconciliation;
+    readonly focusedTab: TabId | null;
+    readonly paneTokens: ReadonlyMap<PaneId, ReadonlyMap<TokenName, TokenValue>>;
+}
 
-export interface FrameStream {
-    frames(): AsyncIterable<Frame>;
+export type FleetSnapshotResult = FleetSnapshot | Unknown;
+
+export interface FleetFrames {
+    frames(): AsyncIterable<FleetFrame, void, undefined>;
     close(): void;
 }
 
-export type StreamResult = { readonly kind: 'stream'; readonly stream: FrameStream } | Unknown;
+export interface FleetStream {
+    readonly kind: 'stream';
+    readonly stream: FleetFrames;
+}
 
-export interface FleetSource {
-    snapshot(): Promise<SnapshotResult>;
-    subscribe(topics: readonly Topic[]): Promise<StreamResult>;
+export type FleetStreamResult = FleetStream | Unknown;
+
+export interface FleetFeed {
+    snapshot(): Promise<FleetSnapshotResult>;
+    subscribe(topics: readonly FleetTopic[]): Promise<FleetStreamResult>;
 }
