@@ -134,19 +134,19 @@ export interface CompactionFigures {
 export type CompactionOutcome = 'compacted' | 'failed' | 'unconfirmed';
 
 export interface CompactionStageMessages {
-    readonly queued: (agent: string | null, clock: string) => string;
-    readonly briefing: (agent: string | null, writer: string | null, clock: string) => string;
-    readonly compacting: (agent: string | null, clock: string) => string;
-    readonly restoring: (agent: string | null) => string;
-    readonly compacted: (agent: string | null, figures: string) => string;
-    readonly template: string;
-    readonly failed: (agent: string | null, why: string | null) => string;
-    readonly unconfirmed: (agent: string | null, why: string | null) => string;
-    readonly skipped: (agent: string | null, why: string | null) => string;
-    readonly restarted: string;
-    readonly selfFailed: string;
-    readonly tokens: (before: string, after: string) => string;
-    readonly took: (seconds: number) => string;
+    readonly queued: (agent: Text | null, clock: Text) => Text;
+    readonly briefing: (agent: Text | null, writer: Text | null, clock: Text) => Text;
+    readonly compacting: (agent: Text | null, clock: Text) => Text;
+    readonly restoring: (agent: Text | null) => Text;
+    readonly compacted: (agent: Text | null, figures: Text) => Text;
+    readonly template: Text;
+    readonly failed: (agent: Text | null, why: Text | null) => Text;
+    readonly unconfirmed: (agent: Text | null, why: Text | null) => Text;
+    readonly skipped: (agent: Text | null, why: Text | null) => Text;
+    readonly restarted: Text;
+    readonly selfFailed: Text;
+    readonly tokens: (before: Text, after: Text) => Text;
+    readonly took: (seconds: Count) => Text;
 }
 
 export interface CompactionMessages {
