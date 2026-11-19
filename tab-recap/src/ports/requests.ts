@@ -1,9 +1,11 @@
+import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { NewAsk } from '#src/ports/ask-ledger.ts';
-import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, parsePaneId, parseTabId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
 export type {
     AnswerRow,
@@ -93,4 +95,87 @@ export interface RequestPort extends HandoffAsker, HandoffTaker {
 
 export interface CompactionAskQueue {
     compactQueued(tab: TabId, pane: PaneId): Queued;
+}
+
+type Row = Record<string, unknown>;
+
+const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
+
+const VISIBILITIES: readonly Visibility[] = ['hidden', 'shown', 'toggle'];
+
+const REFRESHES: readonly RefreshFirst[] = ['refresh-first', 'as-is'];
+
+const ORIGINS: readonly Origin[] = ['operator', 'auto', 'request'];
+
+function sourceOf(row: Row): Result<HandoffSource, ParseFailure> {
+    if (row.kind === 'live') return ok({ kind: 'live' });
+    if (row.kind !== 'closed') return err({ kind: 'out-of-range' });
+    const closedAt = parseInstant(row.closedAt);
+    if (closedAt.kind === 'err') return closedAt;
+    return ok({ kind: 'closed', closedAt: closedAt.value });
+}
+
+export function parseVisibilityAsk(input: unknown): Result<VisibilityAsk, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const target = parsePaneId(input.target);
+    if (target.kind === 'err') return target;
+    const visibility = VISIBILITIES.find((option) => option === input.visibility);
+    if (visibility === undefined) return err({ kind: 'out-of-range' });
+    return ok({ target: target.value, visibility });
+}
+
+export function parseCompactAsk(input: unknown): Result<CompactAsk, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const tab = parseTabId(input.tab);
+    if (tab.kind === 'err') return tab;
+    const pane = input.pane === null ? ok(null) : parsePaneId(input.pane);
+    if (pane.kind === 'err') return pane;
+    const note = input.note === null ? ok(null) : parseText(input.note);
+    if (note.kind === 'err') return note;
+    const origin = ORIGINS.find((option) => option === input.origin);
+    if (input.origin !== undefined && origin === undefined) return err({ kind: 'out-of-range' });
+    const answer = input.answer === undefined ? ok(undefined) : parseText(input.answer);
+    if (answer.kind === 'err') return answer;
+    return ok({
+        tab: tab.value,
+        pane: pane.value,
+        note: note.value,
+        ...(origin === undefined ? {} : { origin }),
+        ...(answer.value === undefined ? {} : { answer: answer.value }),
+    });
+}
+
+export function parseHandoffAskRecord(input: unknown): Result<HandoffAskRecord, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const id = parseHandoffId(input.id);
+    if (id === null) return err({ kind: 'out-of-range' });
+    const at = parseInstant(input.at);
+    if (at.kind === 'err') return at;
+    const tab = parseTabId(input.tab);
+    if (tab.kind === 'err') return tab;
+    const pane = parsePaneId(input.pane);
+    if (pane.kind === 'err') return pane;
+    const toPane = parsePaneId(input.toPane);
+    if (toPane.kind === 'err') return toPane;
+    const refresh = REFRESHES.find((option) => option === input.refresh);
+    if (refresh === undefined) return err({ kind: 'out-of-range' });
+    const note = input.note === null ? ok(null) : parseText(input.note);
+    if (note.kind === 'err') return note;
+    const sourceRow = input.source;
+    const source: Result<HandoffSource, ParseFailure> = isRow(sourceRow) ? sourceOf(sourceRow) : err({ kind: 'not-a-row' });
+    if (source.kind === 'err') return source;
+    const answerRow = input.answer;
+    const answer = answerRow === undefined || answerRow === null ? ok(answerRow) : parseText(answerRow);
+    if (answer.kind === 'err') return answer;
+    return ok({
+        id,
+        at: at.value,
+        tab: tab.value,
+        pane: pane.value,
+        toPane: toPane.value,
+        refresh,
+        note: note.value,
+        source: source.value,
+        ...(answer.value === undefined ? {} : { answer: answer.value }),
+    });
 }

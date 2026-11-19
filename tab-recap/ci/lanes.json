@@ -97,6 +97,7 @@
       "test/protocol-traces.test.ts",
       "test/recap-reads-contract.test.ts",
       "test/record-parsers.test.ts",
+      "test/request-parsers.test.ts",
       "test/roll.test.ts",
       "test/screens.test.ts",
       "test/summarizers.test.ts",
