@@ -88,6 +88,7 @@
       "test/hc-core-scenario.test.ts",
       "test/judge-state.test.ts",
       "test/judge.test.ts",
+      "test/port-record-parsers.test.ts",
       "test/process-control.test.ts",
       "test/protocol-capability.test.ts",
       "test/protocol-codec.test.ts",
