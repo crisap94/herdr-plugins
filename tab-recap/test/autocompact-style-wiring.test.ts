@@ -1,4 +1,5 @@
 import { parseCount } from '#src/recap/domain/count.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -108,8 +109,8 @@ test('coverageOf: the pass mark is read from the tuning in force; a missing deci
     const needs: readonly CoverageFact[] = [{ section: 'needs', text: 'Keep the token', why: null }];
     const eager = tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }));
     const balanced = tuningOf(env({}));
-    assert.equal((await coverageOf(keeping(0.65), () => eager)?.check('the brief', needs))?.ok, true, 'eager passes at 0.60');
-    assert.equal((await coverageOf(keeping(0.65), () => balanced)?.check('the brief', needs))?.ok, false, 'balanced needs 0.70');
+    assert.equal((await coverageOf(keeping(0.65), () => eager)?.check(must(parseText('the brief')), needs))?.ok, true, 'eager passes at 0.60');
+    assert.equal((await coverageOf(keeping(0.65), () => balanced)?.check(must(parseText('the brief')), needs))?.ok, false, 'balanced needs 0.70');
     assert.equal(coverageOf(null, () => balanced), null);
 });
 

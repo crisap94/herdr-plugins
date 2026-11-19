@@ -1,9 +1,4 @@
 {
-  "src/daemon/compaction.ts": {
-    "parameter": 18,
-    "return": 3,
-    "container": 1
-  },
   "src/daemon/harness-makers.ts": {
     "parameter": 5
   },
@@ -12,7 +7,7 @@
     "return": 1
   },
   "src/daemon/legacy.ts": {
-    "legacy": 54
+    "legacy": 59
   },
   "src/daemon/refresh-status.ts": {
     "parameter": 2

@@ -20,6 +20,8 @@ import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
+import { listsPane } from '#src/recap/domain/board.ts';
+import type { Informer } from '#src/recap/application/informer.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import type { Available, TextAnchors } from './backends.ts';
@@ -180,6 +182,14 @@ export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number)
 
 export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<RecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {
     return (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), records, tab, RECAP_WAIT_MS);
+}
+
+export function listsPaneIn(informer: Pick<Informer, 'current'>): (pane: string) => boolean {
+    return (pane) => listsPane(informer.current, paneId(pane));
+}
+
+export function ceilingOverrideNow(): boolean {
+    return loadConfig().autocompact.ceilingPolicy === 'overrides-check';
 }
 
 export function awaitingNow(pane: string): Promise<Waiting> {
