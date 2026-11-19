@@ -14,7 +14,7 @@
     "container": 1
   },
   "src/recap/domain/legacy.ts": {
-    "legacy": 125
+    "legacy": 145
   },
   "src/recap/domain/origin.ts": {
     "parameter": 1
@@ -28,12 +28,6 @@
   "src/recap/domain/retention.ts": {
     "parameter": 2,
     "return": 2
-  },
-  "src/recap/domain/session-facts.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 4,
-    "property": 29
   },
   "src/recap/domain/session-identity.ts": {
     "parameter": 1
